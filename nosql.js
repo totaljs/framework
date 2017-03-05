@@ -2529,7 +2529,7 @@ function compare_not(doc, index, item) {
 
 function compare_eq_date(doc, index, item) {
 	var val = doc[item.name]
-	return val ? item.value === (val instanceof Date ? val : new Date(val)) : false;
+	return val ? item.value.getTime() === (val instanceof Date ? val : new Date(val)).getTime() : false;
 }
 
 function compare_lt_date(doc, index, item) {

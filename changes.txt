@@ -23,6 +23,7 @@
 - fixed: routing with `upload` flag
 - fixed: workers timeout
 - fixed: modificators by George Okojie Davis
+- fixed: NoSQL comparing dates `equal` in `where` condition
 
 - improved: mechanism of components
 - improved: performance
