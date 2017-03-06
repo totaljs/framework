@@ -30,8 +30,8 @@ const Fs = require('fs');
 const Path = require('path');
 const Events = require('events');
 
-if (!global.U)
-	global.U = require('./utils');
+if (!global.framework_utils)
+	global.framework_utils = require('./utils');
 
 if (!global.framework_image)
 	global.framework_image = require('./image');
@@ -59,7 +59,7 @@ function Database(name, filename) {
 	this.filenameTemp = filename + EXTENSION_TMP;
 	this.filenameMeta = filename + EXTENSION_META;
 	this.directory = Path.dirname(filename);
-	this.filenameBackup = U.join(this.directory, name + '_backup' + EXTENSION);
+	this.filenameBackup = framework_utils.join(this.directory, name + '_backup' + EXTENSION);
 	this.name = name;
 	this.pending_update = [];
 	this.pending_append = [];
@@ -523,7 +523,7 @@ Database.prototype.$update = function() {
 	var length = filter.length;
 	var change = false;
 
-	reader.on('data', U.streamer(NEWLINE, function(value, index) {
+	reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
 		var doc = JSON.parse(value.trim());
 		for (var i = 0; i < length; i++) {
 
@@ -709,7 +709,7 @@ Database.prototype.$reader2 = function(filename, items, callback) {
 	var filter = items;
 	var length = filter.length;
 
-	reader.on('data', U.streamer(NEWLINE, function(value, index) {
+	reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
 		var json = JSON.parse(value.trim(), jsonparser);
 		var val;
 		for (var i = 0; i < length; i++) {
@@ -965,7 +965,7 @@ Database.prototype.$views = function() {
 
 	var reader = Fs.createReadStream(self.filename);
 
-	reader.on('data', U.streamer(NEWLINE, function(value, index) {
+	reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
 		var json = JSON.parse(value.trim());
 		for (var j = 0; j < length; j++) {
 			var item = self.views[views[j]];
@@ -1111,7 +1111,7 @@ Database.prototype.$remove = function() {
 	var length = filter.length;
 	var change = false;
 
-	reader.on('data', U.streamer(NEWLINE, function(value, index) {
+	reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
 
 		var json = JSON.parse(value.trim());
 		var removed = false;
@@ -1230,7 +1230,7 @@ Database.prototype.$drop = function() {
 
 	try {
 		Fs.readdirSync(self.binary.directory).forEach(function(filename) {
-			filename.startsWith(self.name + '#') && filename.endsWith(EXTENSION_BINARY) && remove.push(U.join(self.binary.directory, filename));
+			filename.startsWith(self.name + '#') && filename.endsWith(EXTENSION_BINARY) && remove.push(framework_utils.join(self.binary.directory, filename));
 		});
 	} catch (e) {}
 
@@ -1500,7 +1500,7 @@ DatabaseBuilder.prototype.where = function(name, operator, value) {
 		operator = '=';
 	}
 
-	var date = U.isDate(value);
+	var date = framework_utils.isDate(value);
 
 	switch (operator) {
 		case '=':
@@ -1775,7 +1775,6 @@ function Counter(db) {
 	this.db = db;
 	this.cache;
 	this.timeout;
-	this.key = 'nosqlc' + db.name.hash();
 	this.type = 0; // 1 === saving, 2 === reading
 }
 
@@ -1795,58 +1794,35 @@ Counter.prototype.inc = Counter.prototype.hit = function(id, count) {
 		return self;
 	}
 
-	!self.cache && (self.cache = {});
+	if (!self.cache)
+		self.cache = {};
 
 	if (self.cache[id])
 		self.cache[id] += count || 1;
 	else
 		self.cache[id] = count || 1;
 
-	setTimeout2(self.key, () => self.save(), self.TIMEOUT, 5);
+	if (!self.timeout)
+		self.timeout = setTimeout(() => self.save(), self.TIMEOUT);
+
 	self.emit('hit', id, count || 1);
 	return self;
 };
 
-Counter.prototype.min = function(id, count) {
-	var self = this;
-	!self.cache && (self.cache = {});
-
-	id = 'min#' + id;
-
-	if (self.cache[id])
-		self.cache[id] = Math.min(self.cache[id], count);
-	else
-		self.cache[id] = count;
-
-	setTimeout2(self.key, () => self.save(), self.TIMEOUT, 5);
-	self.emit('min', id, count);
-};
-
-Counter.prototype.max = function(id, count) {
-	var self = this;
-	!self.cache && (self.cache = {});
-
-	id = 'max#' + id;
-
-	if (self.cache[id])
-		self.cache[id] = Math.max(self.cache[id], count);
-	else
-		self.cache[id] = count;
-
-	setTimeout2(self.key, () => self.save(), self.TIMEOUT, 5);
-	self.emit('max', id, count);
-};
-
 Counter.prototype.remove = function(id) {
 	var self = this;
-	!self.cache && (self.cache = {});
+
+	if (!self.cache)
+		self.cache = {};
 
 	if (id instanceof Array)
 		id.forEach(n => self.cache[n] = null);
 	else
 		self.cache[id] = null;
 
-	setTimeout2(self.key, () => self.save(), self.TIMEOUT, 5);
+	if (!self.timeout)
+		self.timeout = setTimeout(() => self.save(), self.TIMEOUT);
+
 	self.emit('remove', id);
 	return self;
 };
@@ -1913,7 +1889,7 @@ Counter.prototype.read = function(id, type, callback) {
 		callback(null, single ? (type ? output : 0) : (all ? EMPTYARRAY : output));
 	});
 
-	reader.on('data', U.streamer(NEWLINE, function(value, index) {
+	reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
 		var index = value.indexOf('=');
 		var key = value.substring(0, index);
 		if (all || id === true || keys[key])
@@ -1928,13 +1904,13 @@ Counter.prototype.read = function(id, type, callback) {
 					if (all)
 						counter_parse_years_all(output, value);
 					else
-						output[key[4] === '#' ? key.substring(4) : key] = counter_parse_years(value);
+						output[key] = counter_parse_years(value);
 					break;
 				case 2:
 					if (all)
 						counter_parse_months_all(output, value);
 					else
-						output[key[4] === '#' ? key.substring(4) : key] = counter_parse_months(value);
+						output[key] = counter_parse_months(value);
 					break;
 			}
 	}));
@@ -1996,7 +1972,7 @@ Counter.prototype.stats = function(top, year, month, callback) {
 		callback && callback(null, output);
 	});
 
-	reader.on('data', U.streamer(NEWLINE, function(value, index) {
+	reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
 		var index = value.indexOf('=');
 		var count;
 		if (date) {
@@ -2116,7 +2092,7 @@ Counter.prototype.save = function() {
 	var self = this;
 
 	if (self.type) {
-		setTimeout2('$counter.' + self.db.name, () => self.save(), 200);
+		setTimeout(() => self.save(), 200);
 		return self;
 	}
 
@@ -2125,13 +2101,9 @@ Counter.prototype.save = function() {
 	var writer = Fs.createWriteStream(filename + '-tmp');
 	var dt = F.datetime.format('yyyyMM') + '=';
 	var cache = self.cache;
-	var analytics = self.analytics || EMPTYOBJECT;
 
 	self.cache = null;
-	self.analytics = null;
 	self.type = 1;
-
-	self.save_hourly(U.clone(cache), analytics);
 
 	var flush = function() {
 		var keys = Object.keys(cache);
@@ -2142,7 +2114,7 @@ Counter.prototype.save = function() {
 		writer.end();
 	};
 
-	reader.on('data', U.streamer(NEWLINE, function(value, index) {
+	reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
 
 		var id = value.substring(0, value.indexOf('='));
 
@@ -2155,12 +2127,11 @@ Counter.prototype.save = function() {
 		// N === yyyyMM=COUNT
 		var hits = cache[id];
 		var arr = value.trim().split(';');
-		var index = arr[0].indexOf('=');
 		var is = false;
-		var type = id.substring(0, 4);
+		var index = arr[0].indexOf('=');
 
 		// Update summarize
-		arr[0] = arr[0].substring(0, index + 1) + (type === 'min#' ? Math.min(+arr[0].substring(index + 1), hits) : type === 'max#' ? Math.min(+arr[0].substring(index + 1), hits) : arr[0].substring(index + 1) + hits);
+		arr[0] = arr[0].substring(0, index + 1) + (+arr[0].substring(index + 1) + hits);
 
 		for (var i = 1, length = arr.length; i < length; i++) {
 
@@ -2169,17 +2140,13 @@ Counter.prototype.save = function() {
 
 			if (curr === dt) {
 				is = true;
-				if (type === 'min#')
-					arr[i] = curr + Math.min(+item.substring(7), hits);
-				else if (type === 'max#')
-					arr[i] = curr + Math.max(+item.substring(7), hits);
-				else
-					arr[i] = curr + (+item.substring(7) + hits);
+				arr[i] = curr + (+item.substring(7) + hits);
 				break;
 			}
 		}
 
 		cache[id] = undefined;
+
 		!is && arr.push(dt + hits);
 		writer.write(arr.join(';') + NEWLINE);
 	}));
@@ -2196,73 +2163,6 @@ Counter.prototype.save = function() {
 	});
 
 	return self;
-};
-
-Counter.prototype.save_hourly = function(cache) {
-
-	var self = this;
-	var filename = self.db.filename + '-' + F.datetime.getFullYear();
-	var reader = Fs.createReadStream(filename);
-	var writer = Fs.createWriteStream(filename + '-tmp');
-	var dt = F.datetime.format('MMddHH') + '=';
-
-	var flush = function() {
-		var keys = Object.keys(cache);
-		for (var i = 0, length = keys.length; i < length; i++) {
-			var item = cache[keys[i]];
-			item && writer.write(keys[i] + '=' + item + ';' + dt + item + NEWLINE);
-		}
-		writer.end();
-	};
-
-	reader.on('data', U.streamer(NEWLINE, function(value, index) {
-
-		var id = value.substring(0, value.indexOf('='));
-		var type = id.substring(0, 4);
-
-		if (!cache[id]) {
-			cache[id] !== null && writer.write(value);
-			return;
-		}
-
-		// 0 === id=COUNT
-		// N === MMddHH=COUNT
-		var hits = cache[id];
-		var arr = value.trim().split(';');
-		var is = false;
-		var index = arr[0].indexOf('=');
-
-		// Update summarize
-		arr[0] = arr[0].substring(0, index + 1) + (type === 'min#' ? Math.min(+arr[0].substring(index + 1), hits) : type === 'max#' ? Math.min(+arr[0].substring(index + 1), hits) : arr[0].substring(index + 1) + hits);
-		for (var i = 1, length = arr.length; i < length; i++) {
-
-			var item = arr[i];
-			var curr = item.substring(0, 7);
-
-			if (curr === dt) {
-				is = true;
-				if (type === 'min#')
-					arr[i] = curr + Math.min(+item.substring(7), hits);
-				else if (type === 'max#')
-					arr[i] = curr + Math.max(+item.substring(7), hits);
-				else
-					arr[i] = curr + (+item.substring(7) + hits);
-				break;
-			}
-		}
-
-		cache[id] = undefined;
-
-		!is && arr.push(dt + hits);
-		writer.write(arr.join(';') + NEWLINE);
-	}));
-
-	reader.on('error', flush);
-	reader.on('end', flush);
-
-	CLEANUP(writer, function() {
-		Fs.rename(filename + '-tmp', filename, (err) => clearTimeout(self.timeout));
-	});
 };
 
 Counter.prototype.clear = function(callback) {
@@ -2300,7 +2200,7 @@ Binary.prototype.__proto__ = Object.create(Events.EventEmitter.prototype, {
 Binary.prototype.insert = function(name, buffer, callback) {
 
 	var self = this;
-	var type = U.getContentType(U.getExtension(name));
+	var type = framework_utils.getContentType(framework_utils.getExtension(name));
 	var isfn = typeof(buffer) === 'function';
 
 	if (isfn || !buffer) {
@@ -2312,17 +2212,17 @@ Binary.prototype.insert = function(name, buffer, callback) {
 
 		var reader = Fs.createReadStream(name);
 		CLEANUP(reader);
-		return self.insert_stream(null, U.getName(name), type, reader, callback);
+		return self.insert_stream(null, framework_utils.getName(name), type, reader, callback);
 	}
 
 	if (typeof(buffer) === 'string')
-		buffer = U.createBuffer(buffer, 'base64');
+		buffer = framework_utils.createBuffer(buffer, 'base64');
 	else if (buffer.resume)
 		return self.insert_stream(null, name, type, buffer, callback);
 
 	var size = buffer.length;
 	var dimension;
-	var ext = U.getExtension(name);
+	var ext = framework_utils.getExtension(name);
 
 	self.check();
 
@@ -2346,11 +2246,11 @@ Binary.prototype.insert = function(name, buffer, callback) {
 		dimension = { width: 0, height: 0 };
 
 	var h = { name: name, size: size, type: type, width: dimension.width, height: dimension.height, created: F.created };
-	var header = U.createBufferSize(BINARY_HEADER_LENGTH);
+	var header = framework_utils.createBufferSize(BINARY_HEADER_LENGTH);
 	header.fill(' ');
 	header.write(JSON.stringify(h));
 
-	var id = framework.datetime.format('yyMMddHHmm') + 'T' + U.GUID(5);
+	var id = framework.datetime.format('yyMMddHHmm') + 'T' + framework_utils.GUID(5);
 	var key = self.db.name + '#' + id;
 	var stream = Fs.createWriteStream(Path.join(self.directory, key + EXTENSION_BINARY));
 
@@ -2368,15 +2268,15 @@ Binary.prototype.insert_stream = function(id, name, type, stream, callback) {
 	self.check();
 
 	var h = { name: name, size: 0, type: type, width: 0, height: 0 };
-	var header = U.createBufferSize(BINARY_HEADER_LENGTH);
+	var header = framework_utils.createBufferSize(BINARY_HEADER_LENGTH);
 	header.fill(' ');
 	header.write(JSON.stringify(h));
 
 	if (!id)
-		id = framework.datetime.format('yyMMddHHmm') + 'T' + U.GUID(5);
+		id = framework.datetime.format('yyMMddHHmm') + 'T' + framework_utils.GUID(5);
 
 	var key = self.db.name + '#' + id;
-	var writer = Fs.createWriteStream(U.join(self.directory, key + EXTENSION_BINARY));
+	var writer = Fs.createWriteStream(framework_utils.join(self.directory, key + EXTENSION_BINARY));
 
 	writer.write(header, 'binary');
 	stream.pipe(writer);
@@ -2388,7 +2288,7 @@ Binary.prototype.insert_stream = function(id, name, type, stream, callback) {
 
 Binary.prototype.update = function(id, name, buffer, callback) {
 
-	var type = U.getContentType(U.getExtension(name));
+	var type = framework_utils.getContentType(framework_utils.getExtension(name));
 	var isfn = typeof(buffer) === 'function';
 	if (isfn || !buffer) {
 
@@ -2399,11 +2299,11 @@ Binary.prototype.update = function(id, name, buffer, callback) {
 
 		var reader = Fs.createReadStream(name);
 		CLEANUP(reader);
-		return self.insert_stream(id, U.getName(name), type, reader, callback);
+		return self.insert_stream(id, framework_utils.getName(name), type, reader, callback);
 	}
 
 	if (typeof(buffer) === 'string')
-		buffer = U.createBuffer(buffer, 'base64');
+		buffer = framework_utils.createBuffer(buffer, 'base64');
 
 	if (buffer.resume)
 		return this.insert_stream(id, name, type, buffer, callback);
@@ -2411,7 +2311,7 @@ Binary.prototype.update = function(id, name, buffer, callback) {
 	var self = this;
 	var size = buffer.length;
 	var dimension;
-	var ext = U.getExtension(name);
+	var ext = framework_utils.getExtension(name);
 
 	self.check();
 
@@ -2435,13 +2335,13 @@ Binary.prototype.update = function(id, name, buffer, callback) {
 		dimension = { width: 0, height: 0 };
 
 	var h = { name: name, size: size, type: type, width: dimension.width, height: dimension.height, created: F.datetime };
-	var header = U.createBufferSize(BINARY_HEADER_LENGTH);
+	var header = framework_utils.createBufferSize(BINARY_HEADER_LENGTH);
 	var key = self.db.name + '#' + id;
 
 	header.fill(' ');
 	header.write(JSON.stringify(h));
 
-	var stream = Fs.createWriteStream(U.join(self.directory, key + EXTENSION_BINARY));
+	var stream = Fs.createWriteStream(framework_utils.join(self.directory, key + EXTENSION_BINARY));
 	stream.write(header, 'binary');
 	stream.end(buffer);
 	CLEANUP(stream);
@@ -2459,12 +2359,12 @@ Binary.prototype.read = function(id, callback) {
 	if (id.indexOf('#') === -1)
 		id = self.db.name + '#' + id;
 
-	var filename = U.join(self.directory, id + EXTENSION_BINARY);
+	var filename = framework_utils.join(self.directory, id + EXTENSION_BINARY);
 	var stream = Fs.createReadStream(filename, { start: 0, end: BINARY_HEADER_LENGTH - 1, encoding: 'binary' });
 
 	stream.on('error', err => callback(err));
 	stream.on('data', function(buffer) {
-		var json = U.createBuffer(buffer, 'binary').toString('utf8').replace(REG_CLEAN, '');
+		var json = framework_utils.createBuffer(buffer, 'binary').toString('utf8').replace(REG_CLEAN, '');
 		stream = Fs.createReadStream(filename, { start: BINARY_HEADER_LENGTH });
 		callback(null, stream, JSON.parse(json));
 	});
@@ -2482,7 +2382,7 @@ Binary.prototype.remove = function(id, callback) {
 	if (key.indexOf('#') === -1)
 		key = self.db.name + '#' + key;
 
-	var filename = U.join(self.directory, key + EXTENSION_BINARY);
+	var filename = framework_utils.join(self.directory, key + EXTENSION_BINARY);
 	Fs.unlink(filename, (err) => callback && callback(null, err ? false : true));
 	self.emit('remove', id);
 	return self;
@@ -2514,7 +2414,7 @@ Binary.prototype.clear = function(callback) {
 		var pending = [];
 		var key = self.db.name + '#';
 		var l = key.length;
-		var target = U.join(self.directory);
+		var target = framework_utils.join(self.directory);
 
 		for (var i = 0, length = response.length; i < length; i++)
 			response[i].substring(0, l) === key && pending.push(target + '/' + response[i]);
@@ -2543,7 +2443,7 @@ Binary.prototype.all = function(callback) {
 		for (var i = 0, length = response.length; i < length; i++)
 			response[i].substring(0, l) === key && pending.push(response[i]);
 
-		var target = U.join(self.directory);
+		var target = framework_utils.join(self.directory);
 		var output = [];
 		var le = EXTENSION_BINARY.length;
 
@@ -2552,7 +2452,7 @@ Binary.prototype.all = function(callback) {
 			var stream = Fs.createReadStream(target + '/' + item, { start: 0, end: BINARY_HEADER_LENGTH - 1, encoding: 'binary' });
 
 			stream.on('data', function(buffer) {
-				var json = U.createBuffer(buffer, 'binary').toString('utf8').replace(REG_CLEAN, '').parseJSON(true);
+				var json = framework_utils.createBuffer(buffer, 'binary').toString('utf8').replace(REG_CLEAN, '').parseJSON(true);
 				if (json) {
 					json.id = item.substring(l, item.length - le);
 					output.push(json);
