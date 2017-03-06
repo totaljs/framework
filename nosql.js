@@ -390,7 +390,7 @@ Database.prototype.$save = function(view) {
 			filename = filename.replace(/\.nosql/, '#' + view + '.nosql');
 
 		Fs.writeFile(filename, builder.join(NEWLINE) + NEWLINE, NOOP);
-	}, 50);
+	}, 50, 100);
 	return self;
 };
 
@@ -1774,7 +1774,7 @@ function Counter(db) {
 	this.TIMEOUT = 30000;
 	this.db = db;
 	this.cache;
-	this.timeout;
+	this.key = 'nosql' + db.name.hash();
 	this.type = 0; // 1 === saving, 2 === reading
 }
 
@@ -1794,17 +1794,14 @@ Counter.prototype.inc = Counter.prototype.hit = function(id, count) {
 		return self;
 	}
 
-	if (!self.cache)
-		self.cache = {};
+	!self.cache && (self.cache = {});
 
 	if (self.cache[id])
 		self.cache[id] += count || 1;
 	else
 		self.cache[id] = count || 1;
 
-	if (!self.timeout)
-		self.timeout = setTimeout(() => self.save(), self.TIMEOUT);
-
+	setTimeout2(self.key, () => self.save(), self.TIMEOUT, 5);
 	self.emit('hit', id, count || 1);
 	return self;
 };
@@ -1812,17 +1809,14 @@ Counter.prototype.inc = Counter.prototype.hit = function(id, count) {
 Counter.prototype.remove = function(id) {
 	var self = this;
 
-	if (!self.cache)
-		self.cache = {};
+	!self.cache && (self.cache = {});
 
 	if (id instanceof Array)
 		id.forEach(n => self.cache[n] = null);
 	else
 		self.cache[id] = null;
 
-	if (!self.timeout)
-		self.timeout = setTimeout(() => self.save(), self.TIMEOUT);
-
+	setTimeout2(self.key, () => self.save(), self.TIMEOUT, 5);
 	self.emit('remove', id);
 	return self;
 };
