@@ -20,6 +20,7 @@
 - updated: `U.request()`, added a new flag: `raw` (sends raw data)
 - updated: `F.schedule()` returns an identificator
 - updated: `U.clone()` supports `buffer` properties
+- updated: `setTimeout2()` added a new argument `limit`
 
 - fixed: routing with `upload` flag
 - fixed: workers timeout

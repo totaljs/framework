@@ -14788,8 +14788,20 @@ function async_middleware(index, req, res, middleware, callback, options, contro
 	callback = null;
 };
 
-global.setTimeout2 = function(name, fn, timeout) {
+global.setTimeout2 = function(name, fn, timeout, limit) {
 	var key = ':' + name;
+	if (limit > 0) {
+		var key2 = key + ':limit';
+		if (F.temporary.internal[key2] >= limit)
+			return;
+		F.temporary.internal[key2] = (F.temporary.internal[key2] || 0) + 1;
+		F.temporary.internal[key] && clearTimeout(F.temporary.internal[key]);
+		return F.temporary.internal[key] = setTimeout(function() {
+			F.temporary.internal[key2] = undefined;
+			fn && fn();
+		}, timeout);
+	}
+
 	F.temporary.internal[key] && clearTimeout(F.temporary.internal[key]);
 	return F.temporary.internal[key] = setTimeout(fn, timeout);
 };
@@ -14800,6 +14812,7 @@ global.clearTimeout2 = function(name) {
 	if (F.temporary.internal[key]) {
 		clearTimeout(F.temporary.internal[key]);
 		F.temporary.internal[key] = undefined;
+		F.temporary.internal[key + ':limit'] && (F.temporary.internal[key + ':limit'] = undefined);
 		return true;
 	}
 
