@@ -2842,10 +2842,11 @@ Framework.prototype.$load = function(types, targetdirectory, callback) {
 
 	var dependencies = [];
 	var operations = [];
+	var isPackage = targetdirectory.indexOf('.package') !== -1;
 
 	if (!types || types.indexOf('modules') !== -1) {
 		operations.push(function(resume) {
-			dir = U.combine(targetdirectory, F.config['directory-modules']);
+			dir = U.combine(targetdirectory, isPackage ? '/modules/' : F.config['directory-modules']);
 			arr = [];
 			listing(dir, 0, arr, '.js');
 			arr.forEach((item) => dependencies.push(next => F.install('module', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next)));
@@ -2855,7 +2856,7 @@ Framework.prototype.$load = function(types, targetdirectory, callback) {
 
 	if (!types || types.indexOf('isomorphic') !== -1) {
 		operations.push(function(resume) {
-			dir = U.combine(targetdirectory, F.config['directory-isomorphic']);
+			dir = U.combine(targetdirectory, isPackage ? '/isomorphic/' : F.config['directory-isomorphic']);
 			arr = [];
 			listing(dir, 0, arr, '.js');
 			arr.forEach((item) => dependencies.push(next => F.install('isomorphic', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next)));
@@ -2865,7 +2866,7 @@ Framework.prototype.$load = function(types, targetdirectory, callback) {
 
 	if (!types || types.indexOf('packages') !== -1) {
 		operations.push(function(resume) {
-			dir = U.combine(targetdirectory, F.config['directory-packages']);
+			dir = U.combine(targetdirectory, isPackage ? '/packages/' : F.config['directory-packages']);
 			arr = [];
 			listing(dir, 0, arr, '.package');
 			var dirtmp = U.$normalize(dir);
@@ -2892,7 +2893,7 @@ Framework.prototype.$load = function(types, targetdirectory, callback) {
 						stream.pipe(Fs.createWriteStream(Path.join(dir, filename.replace(item.filename, '').replace(/\.package$/i, ''))));
 						stream.on('end', next);
 					}, function() {
-						// Windows sometimes doesn't load package and delay solves the problem.
+						// Windows sometimes doesn't load package and this delay solves the problem.
 						setTimeout(function() {
 							resume();
 							dependencies.push(next => F.install('package2', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next));
@@ -2907,7 +2908,7 @@ Framework.prototype.$load = function(types, targetdirectory, callback) {
 
 	if (!types || types.indexOf('models') !== -1) {
 		operations.push(function(resume) {
-			dir = U.combine(targetdirectory, F.config['directory-models']);
+			dir = U.combine(targetdirectory, isPackage ? '/models/' : F.config['directory-models']);
 			arr = [];
 			listing(dir, 0, arr);
 			arr.forEach((item) => dependencies.push(next => F.install('model', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next)));
@@ -2918,7 +2919,7 @@ Framework.prototype.$load = function(types, targetdirectory, callback) {
 	if (!types || types.indexOf('themes') !== -1) {
 		operations.push(function(resume) {
 			arr = [];
-			dir = U.combine(targetdirectory, F.config['directory-themes']);
+			dir = U.combine(targetdirectory, isPackage ? '/themes/' : F.config['directory-themes']);
 			listing(dir, 0, arr, undefined, true);
 			arr.forEach(function(item) {
 				var themeName = item.name;
@@ -2941,7 +2942,7 @@ Framework.prototype.$load = function(types, targetdirectory, callback) {
 
 	if (!types || types.indexOf('definitions') !== -1) {
 		operations.push(function(resume) {
-			dir = U.combine(targetdirectory, F.config['directory-definitions']);
+			dir = U.combine(targetdirectory, isPackage ? '/definitions/' : F.config['directory-definitions']);
 			arr = [];
 			listing(dir, 0, arr);
 			arr.forEach((item) => dependencies.push(next => F.install('definition', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next)));
@@ -2952,7 +2953,7 @@ Framework.prototype.$load = function(types, targetdirectory, callback) {
 	if (!types || types.indexOf('controllers') !== -1) {
 		operations.push(function(resume) {
 			arr = [];
-			dir = U.combine(targetdirectory, F.config['directory-controllers']);
+			dir = U.combine(targetdirectory, isPackage ? '/controllers/' : F.config['directory-controllers']);
 			listing(dir, 0, arr);
 			arr.forEach((item) => dependencies.push(next => F.install('controller', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next)));
 			resume();
@@ -2962,7 +2963,7 @@ Framework.prototype.$load = function(types, targetdirectory, callback) {
 	if (!types || types.indexOf('components') !== -1) {
 		operations.push(function(resume) {
 			arr = [];
-			dir = U.combine(targetdirectory, F.config['directory-components']);
+			dir = U.combine(targetdirectory, isPackage ? '/components/' : F.config['directory-components']);
 			listing(dir, 0, arr, '.html');
 			arr.forEach((item) => dependencies.push(next => F.install('component', item.name, item.filename, undefined, undefined, undefined, undefined, undefined, undefined, next)));
 			resume();
@@ -7867,6 +7868,8 @@ Framework.prototype.clear = function(callback, isInit) {
 			}, function(filename, folder) {
 				if (folder || (plus && !filename.substring(dir.length).startsWith(plus)))
 					return false;
+				if (filename.indexOf('.package') !== -1)
+					return true;
 				var ext = U.getExtension(filename);
 				return ext === 'js' || ext === 'css' || ext === 'tmp' || ext === 'upload' || ext === 'html' || ext === 'htm';
 			});
@@ -7888,15 +7891,13 @@ Framework.prototype.clear = function(callback, isInit) {
 				var filename = files[i].substring(dir.length);
 				if (plus && !filename.startsWith(plus))
 					continue;
-				filename.indexOf('/') === -1 && !filename.endsWith('.jsoncache') && arr.push(files[i]);
+				(filename.indexOf('/') === -1 || filename.indexOf('.package/') !== -1) && !filename.endsWith('.jsoncache') && arr.push(files[i]);
 			}
 			files = arr;
-			directories = [];
+			directories = directories.remove(n => n.indexOf('.package') === -1);
 		}
 
-		F.unlink(files, function() {
-			F.rmdir(directories, callback);
-		});
+		F.unlink(files, () => F.rmdir(directories, callback));
 	});
 
 	if (!isInit) {

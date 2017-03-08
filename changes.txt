@@ -10,6 +10,7 @@
 - added: `res.status(code)` for express middleware
 - added: `F.clearSchedule(id)` for removing existing schedules
 - added: a support for WebSocket compression
+- added: removing `.package` files from `tmp` directory
 
 - updated: `F.load(debug, [types], [path])` supports a new type `service` which enables `F.on('service')`
 - updated: Components (now don't have to have `html` body)
@@ -26,6 +27,7 @@
 - fixed: workers timeout
 - fixed: modificators by George Okojie Davis
 - fixed: NoSQL comparing dates `equal` in `where` condition
+- fixed: a problem with `booting` packages if are used custom paths (by @harry-stot)
 
 - improved: mechanism of components
 - improved: performance
