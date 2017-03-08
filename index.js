@@ -2845,7 +2845,11 @@ Framework.prototype.$load = function(types, targetdirectory, callback) {
 
 	if (!types || types.indexOf('modules') !== -1) {
 		operations.push(function(resume) {
-			dir = U.combine(targetdirectory, F.config['directory-modules']);
+			if(targetdirectory.indexOf('.package') > -1){
+				dir = U.combine(targetdirectory, '/modules/');
+			} else {
+				dir = U.combine(targetdirectory, F.config['directory-modules']);
+			}
 			arr = [];
 			listing(dir, 0, arr, '.js');
 			arr.forEach((item) => dependencies.push(next => F.install('module', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next)));
@@ -2855,7 +2859,11 @@ Framework.prototype.$load = function(types, targetdirectory, callback) {
 
 	if (!types || types.indexOf('isomorphic') !== -1) {
 		operations.push(function(resume) {
-			dir = U.combine(targetdirectory, F.config['directory-isomorphic']);
+			if(targetdirectory.indexOf('.package') > -1){
+				dir = U.combine(targetdirectory, '/isomorphic/');
+			} else {
+				dir = U.combine(targetdirectory, F.config['directory-isomorphic']);
+			}
 			arr = [];
 			listing(dir, 0, arr, '.js');
 			arr.forEach((item) => dependencies.push(next => F.install('isomorphic', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next)));
@@ -2865,7 +2873,11 @@ Framework.prototype.$load = function(types, targetdirectory, callback) {
 
 	if (!types || types.indexOf('packages') !== -1) {
 		operations.push(function(resume) {
-			dir = U.combine(targetdirectory, F.config['directory-packages']);
+			if(targetdirectory.indexOf('.package') > -1){
+				dir = U.combine(targetdirectory, 'packages');
+			} else {
+				dir = U.combine(targetdirectory, F.config['directory-packages']);
+			}
 			arr = [];
 			listing(dir, 0, arr, '.package');
 			var dirtmp = U.$normalize(dir);
@@ -2907,7 +2919,11 @@ Framework.prototype.$load = function(types, targetdirectory, callback) {
 
 	if (!types || types.indexOf('models') !== -1) {
 		operations.push(function(resume) {
-			dir = U.combine(targetdirectory, F.config['directory-models']);
+			if(targetdirectory.indexOf('.package') > -1){
+				dir = U.combine(targetdirectory, '/models/');
+			} else {
+				dir = U.combine(targetdirectory, F.config['directory-models']);
+			}
 			arr = [];
 			listing(dir, 0, arr);
 			arr.forEach((item) => dependencies.push(next => F.install('model', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next)));
@@ -2918,7 +2934,11 @@ Framework.prototype.$load = function(types, targetdirectory, callback) {
 	if (!types || types.indexOf('themes') !== -1) {
 		operations.push(function(resume) {
 			arr = [];
-			dir = U.combine(targetdirectory, F.config['directory-themes']);
+			if(targetdirectory.indexOf('.package') > -1){
+				dir = U.combine(targetdirectory, '/themes/');
+			} else {
+				dir = U.combine(targetdirectory, F.config['directory-themes']);
+			}
 			listing(dir, 0, arr, undefined, true);
 			arr.forEach(function(item) {
 				var themeName = item.name;
@@ -2941,7 +2961,11 @@ Framework.prototype.$load = function(types, targetdirectory, callback) {
 
 	if (!types || types.indexOf('definitions') !== -1) {
 		operations.push(function(resume) {
-			dir = U.combine(targetdirectory, F.config['directory-definitions']);
+			if(targetdirectory.indexOf('.package') > -1){
+				dir = U.combine(targetdirectory, '/definitions/');
+			} else {
+				dir = U.combine(targetdirectory, F.config['directory-definitions']);
+			}
 			arr = [];
 			listing(dir, 0, arr);
 			arr.forEach((item) => dependencies.push(next => F.install('definition', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next)));
@@ -2952,7 +2976,11 @@ Framework.prototype.$load = function(types, targetdirectory, callback) {
 	if (!types || types.indexOf('controllers') !== -1) {
 		operations.push(function(resume) {
 			arr = [];
-			dir = U.combine(targetdirectory, F.config['directory-controllers']);
+			if(targetdirectory.indexOf('.package') > -1){
+				dir = U.combine(targetdirectory, '/controllers/');
+			} else {
+				dir = U.combine(targetdirectory, F.config['directory-controllers']);
+			}
 			listing(dir, 0, arr);
 			arr.forEach((item) => dependencies.push(next => F.install('controller', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next)));
 			resume();
@@ -2962,7 +2990,11 @@ Framework.prototype.$load = function(types, targetdirectory, callback) {
 	if (!types || types.indexOf('components') !== -1) {
 		operations.push(function(resume) {
 			arr = [];
-			dir = U.combine(targetdirectory, F.config['directory-components']);
+			if(targetdirectory.indexOf('.package') > -1){
+				dir = U.combine(targetdirectory, '/components/');
+			} else {
+				dir = U.combine(targetdirectory, F.config['directory-components']);
+			}
 			listing(dir, 0, arr, '.html');
 			arr.forEach((item) => dependencies.push(next => F.install('component', item.name, item.filename, undefined, undefined, undefined, undefined, undefined, undefined, next)));
 			resume();
