@@ -945,11 +945,16 @@ Framework.prototype.script = function(body, value, callback) {
 
 	var fn;
 	var compilation = value === undefined && callback === undefined;
+	var err;
 
 	try {
 		fn = new Function('next', 'value', 'now', 'var model=value;var global,require,process,GLOBAL,root,clearImmediate,clearInterval,clearTimeout,setImmediate,setInterval,setTimeout,console,$STRING,$VIEWCACHE,framework_internal,TransformBuilder,Pagination,Page,URLBuilder,UrlBuilder,SchemaBuilder,framework_builders,framework_utils,framework_mail,Image,framework_image,framework_nosql,Builders,U,utils,Utils,Mail,WTF,SOURCE,INCLUDE,MODULE,NOSQL,NOBIN,NOCOUNTER,NOSQLMEMORY,NOMEM,DATABASE,DB,CONFIG,INSTALL,UNINSTALL,RESOURCE,TRANSLATOR,LOG,LOGGER,MODEL,GETSCHEMA,CREATE,UID,TRANSFORM,MAKE,SINGLETON,NEWTRANSFORM,NEWSCHEMA,EACHSCHEMA,FUNCTION,ROUTING,SCHEDULE,OBSOLETE,DEBUG,TEST,RELEASE,is_client,is_server,F,framework,Controller,setTimeout2,clearTimeout2,String,Number,Boolean,Object,Function,Date,isomorphic,I,eval;UPTODATE,NEWOPERATION,OPERATION,$$$,EMIT,ON;try{' + body + '}catch(e){next(e)}');
 	} catch(e) {
-		callback && callback(e);
+		err = e;
+	}
+
+	if (err) {
+		callback && callback(err);
 		return compilation ? null : F;
 	}
 
@@ -11054,8 +11059,14 @@ Controller.prototype.place = function(name) {
 		else
 			val = '';
 
-		if (val.endsWith('.js'))
-			val = '<script src="' + val + '"></script>';
+		switch (U.getExtension(val)) {
+			case 'js':
+				val = '<script src="' + val + '"></script>';
+				break;
+			case 'css':
+				val = '<link rel="stylesheet" href="' + val + '" />';
+				break;
+		}
 
 		output += val;
 	}
