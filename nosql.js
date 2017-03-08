@@ -420,7 +420,7 @@ Database.prototype.$inmemory = function(view, callback) {
 			try {
 				item = JSON.parse(item.trim(), jsonparser);
 				item && self.inmemory[view].push(item);
-			} catch (e) {};
+			} catch (e) {}
 		}
 
 		callback();
@@ -1138,7 +1138,7 @@ Database.prototype.$remove = function() {
 	}));
 
 	CLEANUP(writer, function() {
-		Fs.rename(self.filenameTemp, self.filename, function(err) {
+		Fs.rename(self.filenameTemp, self.filename, function() {
 
 			for (var i = 0; i < length; i++) {
 				var item = filter[i];
@@ -1672,7 +1672,7 @@ DatabaseBuilder.prototype.limit = function(count) {
 };
 
 DatabaseBuilder.prototype.page = function(page, limit) {
-	this.skip(page * limit)
+	this.skip(page * limit);
 	return this.take(limit);
 };
 
@@ -1750,7 +1750,7 @@ DatabaseBuilder.prototype.done = function() {
 	return this;
 };
 
-DatabaseBuilder.prototype.cache = function(key, expire) {
+DatabaseBuilder.prototype.cache = function() {
 	// this.$cache_key = '$nosql_' + key;
 	// this.$cache_expire = expire;
 	OBSOLETE('DatabaseBuilder.cache()', 'NoSQL database supports in-memory mode.');
@@ -1763,7 +1763,7 @@ DatabaseBuilder.prototype.fields = function() {
 	for (var i = 0, length = arguments.length; i < length; i++)
 		this.$fields.push(arguments[i]);
 	return this;
-}
+};
 
 DatabaseBuilder.prototype.prepare = function(fn) {
 	this.$prepare = fn;
@@ -2039,7 +2039,7 @@ function counter_parse_years(value) {
 
 	var keys = Object.keys(tmp);
 	for (var i = 0, length = keys.length; i < length; i++)
-	 	output.push({ year: +keys[i], value: tmp[keys[i]] });
+		output.push({ year: +keys[i], value: tmp[keys[i]] });
 
 	return output;
 }
@@ -2149,7 +2149,7 @@ Counter.prototype.save = function() {
 	reader.on('end', flush);
 
 	CLEANUP(writer, function() {
-		Fs.rename(filename + '-tmp', filename, function(err) {
+		Fs.rename(filename + '-tmp', filename, function() {
 			clearTimeout(self.timeout);
 			self.timeout = 0;
 			self.type = 0;
@@ -2392,7 +2392,7 @@ Binary.prototype.check = function() {
 
 	try {
 		Fs.mkdirSync(self.directory);
-	} catch (err) {};
+	} catch (err) {}
 
 	return self;
 };
@@ -2522,7 +2522,7 @@ function compare_not(doc, index, item) {
 }
 
 function compare_eq_date(doc, index, item) {
-	var val = doc[item.name]
+	var val = doc[item.name];
 	return val ? item.value.getTime() === (val instanceof Date ? val : new Date(val)).getTime() : false;
 }
 
@@ -2630,7 +2630,7 @@ function compare_datetype(type, eqtype, val, doc) {
 	}
 
 	return eqtype === '=' ? val === doc : eqtype === '>' ? val > doc : eqtype === '<' ? val < doc : eqtype === '>=' ? val >= doc : eqtype === '<=' ? val <= doc : val !== doc;
-};
+}
 
 function compare_eq_dtmonth(doc, index, item) {
 	return compare_datetype('month', '=', item.value, doc[item.name]);

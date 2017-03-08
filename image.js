@@ -204,9 +204,9 @@ Image.prototype.save = function(filename, callback, writer) {
 	if (F.isWindows)
 		command = command.replace(REGEXP_PATH, '\\');
 
-	var cmd = exec(command, function(err, stdout, stderr) {
+	var cmd = exec(command, function(err) {
 
- 		// clean up
+		// clean up
 		cmd.kill();
 		cmd = null;
 
@@ -360,7 +360,7 @@ Image.prototype.arg = function(first, last) {
 Image.prototype.identify = function(callback) {
 	var self = this;
 
-	exec((self.isIM ? 'identify' : 'gm identify') + wrap(self.filename, true), function(err, stdout, stderr) {
+	exec((self.isIM ? 'identify' : 'gm identify') + wrap(self.filename, true), function(err, stdout) {
 
 		if (err) {
 			callback(err, null);

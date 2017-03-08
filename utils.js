@@ -409,11 +409,10 @@ exports.keywords = function(content, forSearch, alternative, max_count, max_leng
  * @param  {Number} timeout Request timeout.
  * return {Boolean}
  */
-exports.request = function(url, flags, data, callback, cookies, headers, encoding, timeout) {
+exports.request = function(url, flags, data, callback, cookies, headers, encoding) {
 
 	// No data (data is optinal argument)
 	if (typeof(data) === 'function') {
-		timeout = encoding;
 		encoding = headers;
 		headers = cookies;
 		cookies = callback;
@@ -421,21 +420,6 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 		data = '';
 	} else if (!data)
 		data = '';
-
-	if (typeof(cookies) === 'number') {
-		cookies = null;
-		timeout = cookies;
-	}
-
-	if (typeof(headers) === 'number') {
-		headers = null;
-		timeout = headers;
-	}
-
-	if (typeof(encoding) === 'number') {
-		encoding = null;
-		timeout = encoding;
-	}
 
 	if (callback === NOOP)
 		callback = null;
@@ -537,7 +521,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 	}
 
 	if (data) {
-		options.data = data instanceof Buffer ? buffer : exports.createBuffer(data, ENCODING);
+		options.data = data instanceof Buffer ? data : exports.createBuffer(data, ENCODING);
 		headers['Content-Length'] = options.data.length;
 	}
 
@@ -565,7 +549,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 	return options.evt;
 };
 
-function request_call(uri, options, counter) {
+function request_call(uri, options) {
 
 	var connection = uri.protocol === 'https:' ? Https : Http;
 	var req = options.post ? connection.request(uri, (res) => request_response(res, uri, options)) : connection.get(uri, (res) => request_response(res, uri, options));
@@ -1600,7 +1584,7 @@ exports.isDate = function(obj) {
  * @return {Boolean}
  */
 exports.isError = function(obj) {
-	return (obj && obj.stack) ? true : false;;
+	return (obj && obj.stack) ? true : false;
 };
 
 /**
@@ -2932,7 +2916,7 @@ String.prototype.contains = function(value, mustAll) {
  * @return {Number}
  */
 String.prototype.localeCompare2 = function(value) {
-	return this.removeDiacritics().localeCompare(value.removeDiacritics())
+	return this.removeDiacritics().localeCompare(value.removeDiacritics());
 };
 
 /**
@@ -3098,15 +3082,13 @@ String.prototype.params = function(obj) {
 			if (arr.length === 2) {
 				if (obj[arr[0]])
 					val = obj[arr[0]][arr[1]];
-			}
-			else if (arr.length === 3) {
+			} else if (arr.length === 3) {
 				if (obj[arr[0]] && obj[arr[0]][arr[1]])
 					val = obj[arr[0]][arr[1]][arr[2]];
-			}
-			else if (arr.length === 4)
+			} else if (arr.length === 4) {
 				if (obj[arr[0]] && obj[arr[0]][arr[1]] && obj[arr[0]][arr[1]][arr[2]])
 					val = obj[arr[0]][arr[1]][arr[2]][arr[3]];
-			else if (arr.length === 5) {
+			} else if (arr.length === 5) {
 				if (obj[arr[0]] && obj[arr[0]][arr[1]] && obj[arr[0]][arr[1]][arr[2]] && obj[arr[0]][arr[1]][arr[2]][arr[3]])
 					val = obj[arr[0]][arr[1]][arr[2]][arr[3]][arr[4]];
 			}
@@ -3402,7 +3384,7 @@ String.prototype.removeDiacritics = function() {
 String.prototype.indent = function(max, c) {
 	var plus = '';
 	if (c === undefined)
-		c = ' '
+		c = ' ';
 	while (max--)
 		plus += c;
 	return plus + this;
@@ -3517,7 +3499,7 @@ String.prototype.isBoolean = function() {
  * @return {Boolean}
  */
 String.prototype.isAlphaNumeric = function() {
-  return regexpALPHA.test(this);
+	return regexpALPHA.test(this);
 };
 
 String.prototype.soundex = function() {
@@ -3650,13 +3632,10 @@ Number.prototype.add = function(value, decimals) {
 	}
 
 	var length = value.length;
-	var isPercentage = false;
 	var num;
 
 	if (value[length - 1] === '%') {
 		value = value.substring(0, length - 1);
-		isPercentage = true;
-
 		if (is) {
 			var val = value.parseFloat();
 			switch (first) {
@@ -3691,9 +3670,6 @@ Number.prototype.add = function(value, decimals) {
 			break;
 		case 45:
 			num = this - num;
-			break;
-		case 47:
-			num = this / num;
 			break;
 		case 47:
 			num = this / num;
@@ -4392,7 +4368,6 @@ Array.prototype.wait = Array.prototype.waitFor = function(onItem, callback, thre
 Array.prototype.async = function(thread, callback) {
 
 	var self = this;
-	var init = false;
 
 	if (typeof(thread) === 'function') {
 		callback = thread;
@@ -4400,10 +4375,8 @@ Array.prototype.async = function(thread, callback) {
 	} else if (thread === undefined)
 		thread = 1;
 
-	if (self.$pending === undefined) {
+	if (self.$pending === undefined)
 		self.$pending = 0;
-		init = true;
-	}
 
 	var item = self.shift();
 	if (item === undefined) {
@@ -4443,7 +4416,7 @@ Array.prototype.random = function() {
 	var index = 0;
 	var old = 0;
 
-	self.sort(function(a, b) {
+	self.sort(function() {
 
 		var c = random[index++];
 
@@ -5280,7 +5253,7 @@ function _shellInsertionSort(list, length, gapSize, fn) {
 			j -= gapSize;
 		}
 	}
-};
+}
 
 function shellsort(arr, fn) {
 	var length = arr.length;
@@ -5290,7 +5263,7 @@ function shellsort(arr, fn) {
 		gapSize = Math.floor(gapSize / 2);
 	}
 	return arr;
-};
+}
 
 function Chunker(name, max) {
 	this.name = name;

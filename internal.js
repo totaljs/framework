@@ -35,12 +35,14 @@ const EMPTYARRAY = [];
 const EMPTYOBJECT = {};
 const CONCAT = [null, null];
 
+if (!global.framework_utils)
+	global.framework_utils = require('./utils');
+
 Object.freeze(EMPTYOBJECT);
 Object.freeze(EMPTYARRAY);
 
 const REG_1 = /[\n\r\t]+/g;
 const REG_2 = /\s{2,}/g;
-const REG_3 = /\/{1,}/g;
 const REG_4 = /\n\s{2,}./g;
 const REG_5 = />\n\s{1,}</g;
 const REG_6 = /[\<\w\"\u0080-\u07ff\u0400-\u04FF]+\s{2,}[\w\u0080-\u07ff\u0400-\u04FF\>]+/;
@@ -55,7 +57,6 @@ const RENDERNOW = ['self.$import(', 'self.route', 'self.$js(', 'self.$css(', 'se
 const REG_NOTRANSLATE = /@\{notranslate\}/gi;
 const REG_NOCOMPRESS = /@\{nocompress\s\w+}/gi;
 const REG_TAGREMOVE = /[^\>]\n\s{1,}$/;
-const REG_EMPTY = /\n|\r|\'|\\/;
 const REG_HELPERS = /helpers\.[a-z0-9A-Z_$]+\(.*?\)+/g;
 const REG_SITEMAP = /\s+(sitemap_navigation\(|sitemap\()+/g;
 const REG_CSS_1 = /\n|\s{2,}/g;
@@ -69,6 +70,7 @@ const REG_CSS_8 = /\s\{/g;
 const REG_CSS_9 = /\;\}/g;
 const AUTOVENDOR = ['filter', 'appearance', 'column-count', 'column-gap', 'column-rule', 'display', 'transform', 'transform-style', 'transform-origin', 'transition', 'user-select', 'animation', 'perspective', 'animation-name', 'animation-duration', 'animation-timing-function', 'animation-delay', 'animation-iteration-count', 'animation-direction', 'animation-play-state', 'opacity', 'background', 'background-image', 'font-smoothing', 'text-size-adjust', 'backface-visibility', 'box-sizing', 'overflow-scrolling'];
 const WRITESTREAM = { flags: 'w' };
+const EMPTYBUFFER = framework_utils.createBufferSize(0);
 
 var INDEXFILE = 0;
 var INDEXMIXED = 0;
@@ -161,7 +163,7 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 
 		stream = Fs.createWriteStream(tmp.path, WRITESTREAM);
 		stream.once('close', () => close--);
-		stream.once('error', (e) => close--);
+		stream.once('error', () => close--);
 		close++;
 	};
 
@@ -296,7 +298,6 @@ exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile) 
 	req.once('close', () => !req.$upload && req.clear());
 
 	var parser = new MultipartParser();
-	var size = 0;
 	var close = 0;
 	var stream;
 	var tmp;
@@ -352,7 +353,7 @@ exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile) 
 
 		stream = Fs.createWriteStream(tmp.path, WRITESTREAM);
 		stream.once('close', () => close--);
-		stream.once('error', (e) => close--);
+		stream.once('error', () => close--);
 		close++;
 	};
 
@@ -363,8 +364,6 @@ exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile) 
 
 		var data = buffer.slice(start, end);
 		var length = data.length;
-
-		size += length;
 
 		if (!tmp.$is)
 			return;
@@ -1567,7 +1566,7 @@ function view_parse_localization(content, language) {
 
 	var is = false;
 
-	content = content.replace(REG_NOTRANSLATE, function(text) {
+	content = content.replace(REG_NOTRANSLATE, function() {
 		is = true;
 		return '';
 	}).trim();
@@ -1643,10 +1642,7 @@ function view_parse(content, minify, filename, controller) {
 	var SPACE = ' ';
 	var builder = 'var $EMPTY=\'\';var $length=0;var $source=null;var $tmp=index;var $output=$EMPTY';
 	var command = view_find_command(content, 0);
-	var compressed = '';
-	var nocompress = false;
 	var isFirst = false;
-	var pharse = '';
 	var txtindex = -1;
 	var index = 0;
 
@@ -1708,7 +1704,6 @@ function view_parse(content, minify, filename, controller) {
 	var isCOMPILATION = false;
 	var builderTMP = '';
 	var sectionName = '';
-	var compileName = '';
 	var text;
 
 	while (command) {
@@ -1745,8 +1740,6 @@ function view_parse(content, minify, filename, controller) {
 			var index = text.indexOf('(');
 			return index === - 1 ? text : text.substring(0, index) + '.call(self' + (text.endsWith('()') ? ')' : ',' + text.substring(index + 1));
 		});
-
-		pharse = cmd;
 
 		if (cmd[0] === '\'' || cmd[0] === '"') {
 			builder += '+' + DELIMITER + (new Function('self', 'return self.$import(' + cmd[0] + '!' + cmd.substring(1) + ')'))(controller) + DELIMITER;
@@ -1790,7 +1783,7 @@ function view_parse(content, minify, filename, controller) {
 			builder += '+(function(){var $source=' + cmd.substring(index).trim() + ';if(!($source instanceof Array))$source=framework_utils.ObjectToArray($source);if(!$source.length)return $EMPTY;var $length=$source.length;var $output=$EMPTY;var index=0;for(var $i=0;$i<$length;$i++){index=$i;var ' + newCommand + '=$source[$i];$output+=$EMPTY';
 		} else if (cmd === 'end') {
 
-		  if (isFN && counter <= 0) {
+			if (isFN && counter <= 0) {
 				counter = 0;
 
 				if (isCOMPILATION) {
@@ -1826,7 +1819,7 @@ function view_parse(content, minify, filename, controller) {
 			builder += '}$output+=$EMPTY';
 		} else {
 
-			tmp = view_prepare(command.command, newCommand, functionsName, () => nocompress = true);
+			tmp = view_prepare(command.command, newCommand, functionsName);
 			var can = false;
 
 			// Inline rendering is supported only in release mode
@@ -2048,7 +2041,7 @@ function view_prepare(command, dynamicCommand, functions) {
 			return command.indexOf('(') === -1 ? '(repository[\'$' + command + '\'] || \'\').toString().encode()' : 'self.$' + command;
 
 		case 'title2':
-			return 'self.$' + command;;
+			return 'self.$' + command;
 
 		case '!title':
 		case '!description':
@@ -2138,8 +2131,6 @@ function view_prepare(command, dynamicCommand, functions) {
 		default:
 			return F.helpers[name] ? ('helpers.' + view_insert_call(command)) : ('$STRING(' + (functions.indexOf(name) === -1 ? command[0] === '!' ? command.substring(1) + ')' : command + ').encode()' : command + ')'));
 	}
-
-	return command;
 }
 
 function view_insert_call(command) {
@@ -2301,19 +2292,6 @@ function view_find_localization(content, index) {
 	return null;
 }
 
-function removeCondition(text, beg) {
-
-	if (beg) {
-		if (text[0] === '+')
-			return text.substring(1, text.length);
-	} else {
-		if (text[text.length - 1] === '+')
-			return text.substring(0, text.length - 1);
-	}
-
-	return text;
-}
-
 function removeComments(html) {
 	var tagBeg = '<!--';
 	var tagEnd = '-->';
@@ -2416,7 +2394,7 @@ function variablesCSS(content) {
 		return '';
 	});
 
-	content = content.replace(/\$[a-z0-9-_]+/gi, function(text, position) {
+	content = content.replace(/\$[a-z0-9-_]+/gi, function(text) {
 		var variable = variables[text];
 		return variable ? variable : text;
 	}).trim();
@@ -2599,8 +2577,6 @@ function make_nested(css, name) {
 	var count = 0;
 	var A = false;
 	var valid = false;
-	var beg;
-
 
 	while (true) {
 		var a = css[index++];
@@ -2623,7 +2599,6 @@ function make_nested(css, name) {
 
 			A = true;
 			count = 0;
-			beg = index;
 			valid = false;
 			continue;
 		}
@@ -2795,7 +2770,7 @@ function viewengine_read(path, controller) {
 		F.temporary.other[key] = null;
 
 	return null;
-};
+}
 
 function modificators(value, filename, type) {
 
@@ -2809,7 +2784,7 @@ function modificators(value, filename, type) {
 	}
 
 	return value;
-};
+}
 
 function viewengine_load(name, filename, controller) {
 
@@ -2844,7 +2819,7 @@ function viewengine_dynamic(content, language, controller, cachekey) {
 		F.temporary.views[cachekey] = generator;
 
 	return generator;
-};
+}
 
 exports.appendModel = function(str) {
 	var index = str.indexOf('(');
@@ -2868,7 +2843,7 @@ function cleanURL(url, index) {
 	}
 
 	return o;
-};
+}
 
 exports.preparePath = function(path, remove) {
 	var root = F.config['default-root'];
@@ -2890,7 +2865,7 @@ exports.parseURI = function(protocol, req) {
 		port = cache.port;
 		hostname = cache.hostname;
 	} else {
- 		port = req.host.lastIndexOf(':')
+		port = req.host.lastIndexOf(':');
 		if (port === -1) {
 			port = null;
 			hostname = req.host;
@@ -2998,7 +2973,7 @@ function listener(event, done) {
 			args[i] = arguments[i];
 
 		done(err, ee, event, args);
-	}
+	};
 }
 
 /*
@@ -3033,7 +3008,7 @@ function attachFinishedListener(msg, callback) {
 
 	function onSocket(socket) {
 		// remove listener
-		msg.removeListener('socket', onSocket)
+		msg.removeListener('socket', onSocket);
 
 		if (finished || eeMsg !== eeSocket)
 			return;
@@ -3049,7 +3024,7 @@ function attachFinishedListener(msg, callback) {
 	}
 
 	// wait for socket to be assigned
-	msg.on('socket', onSocket)
+	msg.on('socket', onSocket);
 
 	// node.js 0.8 patch
 	!msg.socket && patchAssignSocket(msg, onSocket);
@@ -3074,7 +3049,7 @@ function createListener(msg) {
 		if (!listener.queue)
 			return;
 		var queue = listener.queue;
-		listener.queue = null
+		listener.queue = null;
 		for (var i = 0, length = queue.length; i < length; i++)
 			queue[i](err, msg);
 	}
@@ -3102,7 +3077,7 @@ function isFinished(msg) {
 
 	// IncomingMessage
 	if (typeof msg.complete === 'boolean')
-		return Boolean(msg.upgrade || !socket || !socket.readable || (msg.complete && !msg.readable))
+		return Boolean(msg.upgrade || !socket || !socket.readable || (msg.complete && !msg.readable));
 }
 
 exports.encodeUnicodeURL = function(url) {

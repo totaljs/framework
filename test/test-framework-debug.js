@@ -847,7 +847,7 @@ function run() {
 
 		setTimeout(function() {
 			end();
-		}, 2000)
+		}, 2000);
 		return;
 	}
 

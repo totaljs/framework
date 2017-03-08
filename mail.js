@@ -24,7 +24,7 @@
  * @version 2.4.0
  */
 
-'use strict'
+'use strict';
 
 const Net = require('net');
 const Tls = require('tls');
@@ -113,7 +113,7 @@ Message.prototype.unsubscribe = function(url) {
 Message.prototype.callback = function(fn) {
 	this.$callback = fn;
 	return this;
-}
+};
 
 Message.prototype.sender = function(address, name) {
 	return this.from(address, name);
@@ -606,7 +606,6 @@ Mailer.prototype._send = function(obj, options, autosend) {
 	var buffer = [];
 	var isAuthenticated = false;
 	var isAuthorization = false;
-	var authType = '';
 	var command = '';
 	var auth = [];
 	var response = '';
@@ -673,7 +672,6 @@ Mailer.prototype._send = function(obj, options, autosend) {
 
 		if (code === 250 && !isAuthorization) {
 			if ((line.indexOf('AUTH LOGIN PLAIN') !== -1 || line.indexOf('AUTH PLAIN LOGIN') !== -1) || (options.user && options.password)) {
-				authType = 'plain';
 				isAuthorization = true;
 				if (line.indexOf('XOAUTH') === -1) {
 					auth.push('AUTH LOGIN');
