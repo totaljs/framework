@@ -711,7 +711,8 @@ function Framework() {
 		versions: {},
 		dependencies: {}, // temporary for module dependencies
 		other: {},
-		internal: {} // controllers/modules names for the routing
+		internal: {}, // controllers/modules names for the routing
+		owners: {}
 	};
 
 	this.stats = {
@@ -2780,11 +2781,7 @@ Framework.prototype.modify = function(fn) {
 	return F;
 };
 
-/**
- * Load framework
- * @return {Framework}
- */
-Framework.prototype.$load = function(types, targetdirectory, callback) {
+Framework.prototype.$load = function(types, targetdirectory, callback, packageName) {
 
 	var arr = [];
 	var dir = '';
@@ -2849,7 +2846,7 @@ Framework.prototype.$load = function(types, targetdirectory, callback) {
 			dir = U.combine(targetdirectory, isPackage ? '/modules/' : F.config['directory-modules']);
 			arr = [];
 			listing(dir, 0, arr, '.js');
-			arr.forEach((item) => dependencies.push(next => F.install('module', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next)));
+			arr.forEach((item) => dependencies.push(next => F.install('module', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next, packageName)));
 			resume();
 		});
 	}
@@ -2859,7 +2856,7 @@ Framework.prototype.$load = function(types, targetdirectory, callback) {
 			dir = U.combine(targetdirectory, isPackage ? '/isomorphic/' : F.config['directory-isomorphic']);
 			arr = [];
 			listing(dir, 0, arr, '.js');
-			arr.forEach((item) => dependencies.push(next => F.install('isomorphic', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next)));
+			arr.forEach((item) => dependencies.push(next => F.install('isomorphic', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next, packageName)));
 			resume();
 		});
 	}
@@ -2874,7 +2871,7 @@ Framework.prototype.$load = function(types, targetdirectory, callback) {
 			arr.forEach(function(item) {
 
 				if (!item.is) {
-					dependencies.push(next => F.install('package', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next));
+					dependencies.push(next => F.install('package', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next, packageName));
 					return resume();
 				}
 
@@ -2896,7 +2893,7 @@ Framework.prototype.$load = function(types, targetdirectory, callback) {
 						// Windows sometimes doesn't load package and this delay solves the problem.
 						setTimeout(function() {
 							resume();
-							dependencies.push(next => F.install('package2', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next));
+							dependencies.push(next => F.install('package2', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next, packageName));
 						}, 50);
 					});
 				});
@@ -2911,7 +2908,7 @@ Framework.prototype.$load = function(types, targetdirectory, callback) {
 			dir = U.combine(targetdirectory, isPackage ? '/models/' : F.config['directory-models']);
 			arr = [];
 			listing(dir, 0, arr);
-			arr.forEach((item) => dependencies.push(next => F.install('model', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next)));
+			arr.forEach((item) => dependencies.push(next => F.install('model', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next, packageName)));
 			resume();
 		});
 	}
@@ -2927,14 +2924,7 @@ Framework.prototype.$load = function(types, targetdirectory, callback) {
 				var filename = Path.join(themeDirectory, 'index.js');
 				F.themes[item.name] = U.path(themeDirectory);
 				F._length_themes++;
-				existsSync(filename) && dependencies.push(next => F.install('theme', item.name, filename, undefined, undefined, undefined, true, undefined, undefined, next));
-				/*
-				@TODO: FOR FUTURE VERSION
-				var components = [];
-				var components_dir = U.combine(targetdirectory, F.config['directory-themes'], themeName, F.config['directory-components']);
-				existsSync(components_dir) && listing(components_dir, 0, components, '.html', true);
-				components_dir && components.forEach((item) => F.install('component', themeName + '/' + item.name, item.filename, undefined, undefined, undefined));
-				*/
+				existsSync(filename) && dependencies.push(next => F.install('theme', item.name, filename, undefined, undefined, undefined, true, undefined, undefined, next, packageName));
 			});
 			resume();
 		});
@@ -2945,7 +2935,7 @@ Framework.prototype.$load = function(types, targetdirectory, callback) {
 			dir = U.combine(targetdirectory, isPackage ? '/definitions/' : F.config['directory-definitions']);
 			arr = [];
 			listing(dir, 0, arr);
-			arr.forEach((item) => dependencies.push(next => F.install('definition', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next)));
+			arr.forEach((item) => dependencies.push(next => F.install('definition', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next, packageName)));
 			resume();
 		});
 	}
@@ -2955,7 +2945,7 @@ Framework.prototype.$load = function(types, targetdirectory, callback) {
 			arr = [];
 			dir = U.combine(targetdirectory, isPackage ? '/controllers/' : F.config['directory-controllers']);
 			listing(dir, 0, arr);
-			arr.forEach((item) => dependencies.push(next => F.install('controller', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next)));
+			arr.forEach((item) => dependencies.push(next => F.install('controller', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next, packageName)));
 			resume();
 		});
 	}
@@ -2965,7 +2955,7 @@ Framework.prototype.$load = function(types, targetdirectory, callback) {
 			arr = [];
 			dir = U.combine(targetdirectory, isPackage ? '/components/' : F.config['directory-components']);
 			listing(dir, 0, arr, '.html');
-			arr.forEach((item) => dependencies.push(next => F.install('component', item.name, item.filename, undefined, undefined, undefined, undefined, undefined, undefined, next)));
+			arr.forEach((item) => dependencies.push(next => F.install('component', item.name, item.filename, undefined, undefined, undefined, undefined, undefined, undefined, next, packageName)));
 			resume();
 		});
 	}
@@ -3044,9 +3034,11 @@ Framework.prototype.uptodate = function(type, url, options, interval, callback, 
  * @param {Boolean} useRequired Internal, optional.
  * @param {Boolean} skipEmit Internal, optional.
  * @param {String} uptodateName Internal, optional.
+ * @param {Function} next Internal, optional.
+ * @param {String} packageName Internal, optional.
  * @return {Framework}
  */
-Framework.prototype.install = function(type, name, declaration, options, callback, internal, useRequired, skipEmit, uptodateName, next) {
+Framework.prototype.install = function(type, name, declaration, options, callback, internal, useRequired, skipEmit, uptodateName, next, packageName) {
 
 	var obj = null;
 
@@ -3070,6 +3062,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 	var key = '';
 	var tmp;
 	var content;
+	var err;
 
 	F.datetime = new Date();
 
@@ -3280,7 +3273,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		if (content.install) {
 			try {
 				var filecomponent = F.path.temp('component-' + name + '.js');
-				_owner = type + '#' + name;
+				_owner = (packageName ? packageName + '@' : '') + type + '#' + name;
 				Fs.writeFileSync(filecomponent, content.install.trim());
 				obj = require(filecomponent);
 
@@ -3291,6 +3284,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 				})(require.resolve(filecomponent));
 
 				obj.$owner = _owner;
+				F.temporary.owners[_owner] = true;
 				_controller = '';
 				F.components.instances[name] = obj;
 				obj = typeof(obj.install) === 'function' && obj.install(options || F.config[_owner], name);
@@ -3300,7 +3294,8 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		} else if (!internal) {
 			var js = declaration.replace(/\.html$/i, '.js');
 			if (existsSync(js)) {
-				_owner = type + '#' + name;
+				_owner = (packageName ? packageName + '@' : '') + type + '#' + name;
+				F.temporary.owners[_owner] = true;
 				obj = require(js);
 				obj.$owner = _owner;
 				_controller = '';
@@ -3355,9 +3350,10 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 	if (type === 'theme') {
 
-		_owner = type + '#' + name;
+		_owner = (packageName ? packageName + '@' : '') + type + '#' + name;
 		obj = require(declaration);
 		obj.$owner = _owner;
+		F.temporary.owners[_owner] = true;
 
 		typeof(obj.install) === 'function' && obj.install(options || F.config[_owner], name);
 
@@ -3422,7 +3418,9 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 	if (type === 'definition' || type === 'eval') {
 
 		_controller = '';
-		_owner = type + '#' + name;
+		_owner = (packageName ? packageName + '@' : '') + type + '#' + name;
+		F.temporary.owners[_owner] = true;
+		err = null;
 
 		try {
 
@@ -3438,9 +3436,13 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 				obj = typeof(declaration) === 'function' ? eval('(' + declaration.toString() + ')()') : eval(declaration);
 
 		} catch (ex) {
-			F.error(ex, 'F.install(\'' + type + '\')', null);
+			err = ex;
+		}
+
+		if (err) {
+			F.error(err, 'F.install(\'' + type + '\')', null);
 			next && next();
-			callback && callback(ex, name);
+			callback && callback(err, name);
 			return F;
 		}
 
@@ -3458,6 +3460,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 	if (type === 'isomorphic') {
 
 		content = '';
+		err = null;
 
 		try {
 
@@ -3481,9 +3484,13 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 			}
 
 		} catch (ex) {
-			F.error(ex, 'F.install(\'' + type + '\')', null);
+			err = ex;
+		}
+
+		if (err) {
+			F.error(err, 'F.install(\'' + type + '\')', null);
 			next && next();
-			callback && callback(ex, name);
+			callback && callback(err, name);
 			return F;
 		}
 
@@ -3517,7 +3524,9 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 	if (type === 'model' || type === 'source') {
 
 		_controller = '';
-		_owner = type + '#' + name;
+		_owner = (packageName ? packageName + '@' : '') + type + '#' + name;
+		F.temporary.owners[_owner] = true;
+		err = null;
 
 		try {
 
@@ -3551,9 +3560,13 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 			}
 
 		} catch (ex) {
-			F.error(ex, 'F.install(\'' + type + '\', \'' + name + '\')', null);
+			err = ex;
+		}
+
+		if (err) {
+			F.error(err, 'F.install(\'' + type + '\', \'' + name + '\')', null);
 			next && next();
-			callback && callback(ex, name);
+			callback && callback(err, name);
 			return F;
 		}
 
@@ -3562,7 +3575,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		else if (typeof(obj.name) === 'string')
 			name = obj.name;
 
-		_owner = type + '#' + name;
+		_owner = (packageName ? packageName + '@' : '') + type + '#' + name;
 		obj.$owner = _owner;
 
 		if (!name)
@@ -3572,6 +3585,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		tmp = F.dependencies[key];
 
 		F.uninstall(type, uptodateName || name, uptodateName ? 'uptodate' : undefined);
+		F.temporary.owners[_owner] = true;
 
 		if (tmp) {
 			F.dependencies[key] = tmp;
@@ -3611,7 +3625,8 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 		// for inline routes
 		var _ID = _controller = 'TMP' + U.random(10000);
-		_owner = type + '#' + name;
+		_owner = (packageName ? packageName + '@' : '') + type + '#' + name;
+		err = null;
 
 		try {
 			if (useRequired) {
@@ -3643,9 +3658,13 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 			}
 
 		} catch (ex) {
-			F.error(ex, 'F.install(\'' + type + '\', \'' + (name ? '' : internal) + '\')', null);
+			err = ex;
+		}
+
+		if (err) {
+			F.error(err, 'F.install(\'' + type + '\', \'' + (name ? '' : internal) + '\')', null);
 			next && next();
-			callback && callback(ex, name);
+			callback && callback(err, name);
 			return F;
 		}
 
@@ -3657,7 +3676,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		if (!name)
 			name = (Math.random() * 10000) >> 0;
 
-		_owner = type + '#' + name;
+		_owner = (packageName ? packageName + '@' : '') + type + '#' + name;
 		obj.$owner = _owner;
 
 		obj.booting && setTimeout(function() {
@@ -3689,13 +3708,14 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 				F._configure_workflows('@' + name + '/workflows');
 			}
 
-			F.$load(undefined, tmpdir);
+			F.$load(undefined, tmpdir, undefined, name);
 		}, 100);
 
 		key = type + '.' + name;
 		tmp = F.dependencies[key];
 
-		F.uninstall(type, uptodateName || name, uptodateName ? 'uptodate' : undefined);
+		F.uninstall(type, uptodateName || name, uptodateName ? 'uptodate' : undefined, undefined, packageName);
+		F.temporary.owners[_owner] = true;
 
 		if (tmp) {
 			F.dependencies[key] = tmp;
@@ -3838,7 +3858,8 @@ Framework.prototype.$restart = function() {
 			versions: {},
 			dependencies: {},
 			other: {},
-			internal: {}
+			internal: {},
+			owners: {}
 		};
 
 		F.modificators = null;
@@ -3993,7 +4014,7 @@ Framework.prototype.install_make = function(key, name, obj, options, callback, s
  * @param {Object} skipEmit Internal, optional.
  * @return {Framework}
  */
-Framework.prototype.uninstall = function(type, name, options, skipEmit) {
+Framework.prototype.uninstall = function(type, name, options, skipEmit, packageName) {
 
 	var obj = null;
 	var k, v, tmp;
@@ -4006,12 +4027,12 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit) {
 		return F;
 	}
 
-	var id = type + '#' + name;
-
 	if (type === 'schedule') {
 		F.clearSchedule(name);
 		return F;
 	}
+
+	var id = (packageName ? packageName + '@' : '') +  type + '#' + name;
 
 	if (type === 'websocket') {
 		k = typeof(name) === 'string' ? name.substring(0, 3) === 'id:' ? 'id' : 'urlraw' : 'onInitialize';
@@ -4114,7 +4135,7 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit) {
 		if (obj.id)
 			delete require.cache[require.resolve(obj.id)];
 
-		F.$uninstall(id, (isModule ? '#' : '') + name);
+		F.$uninstall(id, packageName ? '' : (isModule ? '#' : '') + name);
 
 		if (obj) {
 			obj.uninstall && obj.uninstall(options, name);
@@ -4177,6 +4198,9 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit) {
 
 Framework.prototype.$uninstall = function(owner, controller) {
 
+	if (!F.temporary.owners[owner])
+		return F;
+
 	if (controller) {
 		F.routes.web = F.routes.web.remove('controller', controller);
 		F.routes.files = F.routes.files.remove('controller', controller);
@@ -4234,6 +4258,8 @@ Framework.prototype.$uninstall = function(owner, controller) {
 
 	F.owners = owners;
 	F.$routesSort();
+	delete F.temporary.owners[owner];
+
 	return F;
 };
 
