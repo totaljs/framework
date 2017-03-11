@@ -22,6 +22,7 @@
 - updated: `F.schedule()` returns an identificator
 - updated: `U.clone()` supports `buffer` properties
 - updated: `setTimeout2()` added a new argument `limit`
+- updated: `F.script()` --> `now` argument is the function now, not a property
 
 - fixed: routing with `upload` flag
 - fixed: workers timeout

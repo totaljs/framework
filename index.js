@@ -967,7 +967,7 @@ Framework.prototype.script = function(body, value, callback) {
 						callback(value);
 					else
 						callback(null, value);
-				}, model, F.datetime);
+				}, model, n => new Date());
 			};
 		})();
 	}
