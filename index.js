@@ -6022,7 +6022,7 @@ Framework.prototype.responseRange = function(name, range, headers, req, res, don
 	RANGE.start = beg;
 	RANGE.end = end;
 	req.$tmp.done = done;
-	fsStreamRead(name, RANGE, responseRange_callback);
+	fsStreamRead(name, RANGE, responseRange_callback, req, res);
 	return F;
 };
 
