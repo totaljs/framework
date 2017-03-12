@@ -3339,7 +3339,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 				return;
 			}
 
-			F.install('module', id, filename, options, function(err) {
+			F.install('module', id, filename, options || F.config['package#' + name], function(err) {
 				setTimeout(function() {
 					F.emit(type + '#' + name);
 					F.emit('install', type, name);
@@ -3381,7 +3381,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		var id = U.getName(declaration, '.package');
 		var dir = F.config['directory-temp'][0] === '~' ? Path.join(F.config['directory-temp'].substring(1), id) : Path.join(F.path.root(), F.config['directory-temp'], id);
 		var filename = Path.join(dir, 'index.js');
-		F.install('module', id, filename, options, function(err) {
+		F.install('module', id, filename, options || F.config['package#' + name], function(err) {
 			setTimeout(function() {
 				F.emit(type + '#' + name);
 				F.emit('install', type, name);
@@ -3613,7 +3613,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		else
 			F.sources[name] = obj;
 
-		typeof(obj.install) === 'function' && obj.install(options || F.config[_owner], name);
+		typeof(obj.install) === 'function' && obj.install(options || F.config[type + '#' + name], name);
 
 		!skipEmit && setTimeout(function() {
 			F.emit(type + '#' + name, obj);
@@ -4139,7 +4139,7 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit, packageN
 		if (obj.id)
 			delete require.cache[require.resolve(obj.id)];
 
-		F.$uninstall(id, packageName ? '' : (isModule ? '#' : '') + name);
+		F.$uninstall(id, packageName ? '' : ((isModule ? '#' : '') + name));
 
 		if (obj) {
 			obj.uninstall && obj.uninstall(options, name);
