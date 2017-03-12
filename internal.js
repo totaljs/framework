@@ -2855,7 +2855,7 @@ exports.preparePath = function(path, remove) {
 	return remove ? path.substring(root.length - 1) : (root + (is ? path.substring(1) : path));
 };
 
-exports.parseURI = function(protocol, req) {
+exports.parseURI = function(req) {
 
 	var cache = F.temporary.other[req.host];
 	var port;
@@ -2897,7 +2897,7 @@ exports.parseURI = function(protocol, req) {
 			req.url += search;
 	}
 
-	return { auth: null, hash: null, host: req.host, hostname: hostname, href: protocol + '://' + req.host + req.url, path: req.url, pathname: pathname, port: port, protocol: protocol + ':', query: query, search: search, slashes: true };
+	return { auth: null, hash: null, host: req.host, hostname: hostname, href: req.$protocol + '://' + req.host + req.url, path: req.url, pathname: pathname, port: port, protocol: req.$protocol + ':', query: query, search: search, slashes: true };
 };
 
 /**

@@ -982,10 +982,14 @@ Framework.prototype.script = function(body, value, callback) {
 		else
 			callback(null, value);
 
-	}, value, F.datetime);
+	}, value, scriptNow);
 
 	return F;
 };
+
+function scriptNow() {
+	return new Date();
+}
 
 Framework.prototype.database = function(name) {
 	return F.nosql(name);
@@ -4518,10 +4522,17 @@ Framework.prototype.onParseQuery = function(value) {
 Framework.prototype.onSchema = function(req, group, name, callback, filter) {
 	var schema = GETSCHEMA(group, name);
 	if (schema)
-		schema.make(req.body, (err, res) => err ? callback(err) : callback(null, res), filter);
+		schema.make(req.body, onSchema_callback, filter, callback);
 	else
 		callback(new Error('Schema "' + group + '/' + name + '" not found.'));
 };
+
+function onSchema_callback(err, res, callback) {
+	if (err)
+		callback(err);
+	else
+		callback(null, res);
+}
 
 /**
  * Mail delegate
@@ -4866,13 +4877,13 @@ Framework.prototype.compileContent = function(extension, content, filename) {
  * @param {Function()} callback
  * @return {Framework}
  */
-Framework.prototype.compileFile = function(uri, key, filename, extension, callback) {
+Framework.prototype.compileFile = function(uri, key, filename, extension, callback, req, res) {
 	fsFileRead(filename, function(err, buffer) {
 
 		if (err) {
 			F.error(err, filename, uri);
 			F.temporary.notfound[key] = true;
-			callback();
+			callback(req, res);
 			return;
 		}
 
@@ -4881,7 +4892,7 @@ Framework.prototype.compileFile = function(uri, key, filename, extension, callba
 		Fs.writeFileSync(file, F.compileContent(extension, framework_internal.parseBlock(F.routes.blocks[uri.pathname], buffer.toString(ENCODING)), filename), ENCODING);
 		var stats = Fs.statSync(file);
 		F.temporary.path[key] = [file, stats.size, stats.mtime.toUTCString()];
-		callback();
+		callback(req, res);
 	});
 	return F;
 };
@@ -4894,7 +4905,7 @@ Framework.prototype.compileFile = function(uri, key, filename, extension, callba
  * @param {Function()} callback
  * @return {Framework}
  */
-Framework.prototype.compileMerge = function(uri, key, extension, callback) {
+Framework.prototype.compileMerge = function(uri, key, extension, callback, req, res) {
 
 	var merge = F.routes.merge[uri.pathname];
 	var filename = merge.filename;
@@ -4902,8 +4913,8 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 	if (!F.config.debug && existsSync(filename)) {
 		var stats = Fs.statSync(filename);
 		F.temporary.path[key] = [filename, stats.size, stats.mtime.toUTCString()];
-		callback();
-		return F;
+		callback(req, res);
+		return;
 	}
 
 	var writer = Fs.createWriteStream(filename);
@@ -4911,7 +4922,7 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 	writer.on('finish', function() {
 		var stats = Fs.statSync(filename);
 		F.temporary.path[key] = [filename, stats.size, stats.mtime.toUTCString()];
-		callback();
+		callback(req, res);
 	});
 
 	var index = 0;
@@ -5033,45 +5044,36 @@ function component_debug(filename, value, extension) {
 	return beg + mid + plus + '\n' + mid + 'COMPONENT: ' + filename + '\n' + mid + plus + end + '\n\n' + value;
 }
 
-/**
- * Validating static file for compilation
- * @param {URI} uri
- * @param {String} key Temporary key.
- * @param {String} filename
- * @param {String} extension File extension.
- * @param {Function()} callback
- * @return {Framework}
- */
-Framework.prototype.compileValidation = function(uri, key, filename, extension, callback, noCompress) {
+Framework.prototype.compileValidation = function(uri, key, filename, extension, callback, noCompress, req, res) {
 
 	if (F.routes.merge[uri.pathname]) {
-		F.compileMerge(uri, key, extension, callback);
+		F.compileMerge(uri, key, extension, callback, req, res);
 		return F;
 	}
 
 	fsFileExists(filename, function(e, size, sfile, stats) {
 		if (e) {
 			if (!noCompress && (extension === 'js' || extension === 'css') && !REG_NOCOMPRESS.test(filename))
-				return F.compileFile(uri, key, filename, extension, callback);
+				return F.compileFile(uri, key, filename, extension, callback, req, res);
 			F.temporary.path[key] = [filename, size, stats.mtime.toUTCString()];
-			callback();
+			callback(req, res);
 		} else if (F.isVirtualDirectory)
-			F.compileValidationVirtual(uri, key, filename, extension, callback, noCompress);
+			F.compileValidationVirtual(uri, key, filename, extension, callback, noCompress, req, res);
 		else {
 			F.temporary.notfound[key] = true;
-			callback();
+			callback(req, res);
 		}
 	});
 
 	return F;
 };
 
-Framework.prototype.compileValidationVirtual = function(uri, key, filename, extension, callback, noCompress) {
+Framework.prototype.compileValidationVirtual = function(uri, key, filename, extension, callback, noCompress, req, res) {
 
 	var tmpname = filename.replace(F.config['directory-public'], F.config['directory-public-virtual']);
 	if (tmpname === filename) {
 		F.temporary.notfound[key] = true;
-		callback();
+		callback(req, res);
 		return;
 	}
 
@@ -5080,15 +5082,15 @@ Framework.prototype.compileValidationVirtual = function(uri, key, filename, exte
 
 		if (!e) {
 			F.temporary.notfound[key] = true;
-			callback();
+			callback(req, res);
 			return;
 		}
 
 		if (!noCompress && (extension === 'js' || extension === 'css') && !REG_NOCOMPRESS.test(filename))
-			return F.compileFile(uri, key, filename, extension, callback);
+			return F.compileFile(uri, key, filename, extension, callback, req, res);
 
 		F.temporary.path[key] = [filename, size, stats.mtime.toUTCString()];
-		callback();
+		callback(req, res);
 	});
 
 	return;
@@ -5148,12 +5150,13 @@ Framework.prototype.responseStatic = function(req, res, done) {
 
 	if (!resizer.ishttp) {
 		var method = resizer.cache ? F.responseImage : F.responseImageWithoutCache;
-		method.call(F, req, res, filename, (image) => resizer.fn.call(image, image), undefined, done);
+		method(req, res, filename, resizer.fn, undefined, done);
+		// method.call(F, req, res, filename, (image) => resizer.fn.call(image, image), undefined, done);
 		return;
 	}
 
 	if (F.temporary.processing[req.uri.pathname]) {
-		setTimeout(() => F.responseStatic(req, res, done), 500);
+		setTimeout(responseStatic_timeout, 500, req, res, done);
 		return;
 	}
 
@@ -5186,6 +5189,10 @@ Framework.prototype.responseStatic = function(req, res, done) {
 
 	return F;
 };
+
+function responseStatic_timeout(req, res, done) {
+	F.responseStatic(req, res, done);
+}
 
 Framework.prototype.restore = function(filename, target, callback, filter) {
 	var backup = new Backup();
@@ -5322,10 +5329,6 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 		return F;
 	}
 
-	// Is package?
-	if (filename[0] === '@')
-		filename = F.path.package(filename.substring(1));
-
 	if (!key)
 		key = req.$key || createTemporaryKey(req);
 
@@ -5335,6 +5338,10 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 		done && done();
 		return F;
 	}
+
+	// Is package?
+	if (filename[0] === '@')
+		filename = F.path.package(filename.substring(1));
 
 	var name = F.temporary.path[key];
 	var extension = req.extension;
@@ -5352,6 +5359,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 		}
 		if (!extension && filename)
 			extension = U.getExtension(filename);
+		req.extension = extension;
 	}
 
 	if (name && RELEASE && req.headers['if-modified-since'] === name[2]) {
@@ -5384,6 +5392,9 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 		return F;
 	}
 
+	!req.$tmp && (req.$tmp = {});
+	req.$tmp.done = done;
+
 	// JS, CSS
 	if (name === undefined) {
 
@@ -5400,12 +5411,13 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 		// waiting
 		F.temporary.processing[key] = true;
 
-		// checks if the file exists and counts the file size
-		F.compileValidation(req.uri, key, filename, extension, function() {
-			delete F.temporary.processing[key];
-			F.responseFile(req, res, filename, downloadName, headers, done, key);
-		}, res.noCompress);
+		req.$tmp.key = key;
+		req.$tmp.filename = filename;
+		req.$tmp.downloadName = downloadName;
+		req.$tmp.headers = headers;
 
+		// checks if the file exists and counts the file size
+		F.compileValidation(req.uri, key, filename, extension, responseFile_compile, res.noCompress, req, res);
 		return F;
 	}
 
@@ -5482,38 +5494,43 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 		done && done();
 		!req.isStaticFile && F.emit('request-end', req, res);
 		req.clear(true);
-		return F;
-	}
-
-	if (compress) {
+	} else if (compress) {
 		res.writeHead(200, returnHeaders);
-		fsStreamRead(name[0], undefined, function(stream, next) {
-			framework_internal.onFinished(res, function() {
-				framework_internal.destroyStream(stream);
-				next();
-			});
-			stream.pipe(Zlib.createGzip()).pipe(res);
-			done && done();
-			!req.isStaticFile && F.emit('request-end', req, res);
-			req.clear(true);
-		});
-		return F;
+		fsStreamRead(name[0], undefined, responseFile_compress, req, res);
+	} else {
+		res.writeHead(200, returnHeaders);
+		fsStreamRead(name[0], undefined, responseFile_nocompress, req, res);
 	}
-
-	res.writeHead(200, returnHeaders);
-	fsStreamRead(name[0], undefined, function(stream, next) {
-		stream.pipe(res);
-		framework_internal.onFinished(res, function() {
-			framework_internal.destroyStream(stream);
-			next();
-		});
-		done && done();
-		!req.isStaticFile && F.emit('request-end', req, res);
-		req.clear(true);
-	});
 
 	return F;
 };
+
+function responseFile_compile(req, res) {
+	delete F.temporary.processing[req.$tmp.key];
+	F.responseFile(req, res, req.$tmp.filename, req.$tmp.downloadName, req.$tmp.headers, req.$tmp.done, req.$tmp.key);
+}
+
+function responseFile_compress(stream, next, req, res) {
+	framework_internal.onFinished(res, function() {
+		framework_internal.destroyStream(stream);
+		next();
+	});
+	stream.pipe(Zlib.createGzip()).pipe(res);
+	req.$tmp.done && req.$tmp.done();
+	!req.isStaticFile && F.emit('request-end', req, res);
+	req.clear(true);
+}
+
+function responseFile_nocompress(stream, next, req, res) {
+	stream.pipe(res);
+	framework_internal.onFinished(res, function() {
+		framework_internal.destroyStream(stream);
+		next();
+	});
+	req.$tmp.done && req.$tmp.done();
+	!req.isStaticFile && F.emit('request-end', req, res);
+	req.clear(true);
+}
 
 /**
  * Clears file information in release mode
@@ -5551,9 +5568,7 @@ Framework.prototype.responsePipe = function(req, res, url, headers, timeout, cal
 		var h = {};
 
 		h[RESPONSE_HEADER_CACHECONTROL] = 'private';
-
-		if (headers)
-			U.extend_headers2(h, headers);
+		headers && U.extend_headers2(h, headers);
 
 		var options = { protocol: uri.protocol, auth: uri.auth, method: 'GET', hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };
 		var connection = options.protocol === 'https:' ? require('https') : http;
@@ -5680,99 +5695,106 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 	name = F.path.temp(plus + key);
 	F.temporary.processing[key] = true;
 
+	!req.$tmp && (req.$tmp = {});
+	req.$tmp.key = key;
+	req.$tmp.headers = headers;
+	req.$tmp.done = done;
+	req.$tmp.stream = stream;
+	req.$tmp.name = name;
+	req.$tmp.fnProcess = fnProcess;
+	req.$tmp.filename = filename;
+
 	// STREAM
-	if (stream) {
-		fsFileExists(name, function(exist) {
-
-			if (exist) {
-				delete F.temporary.processing[key];
-				F.temporary.path[key] = name;
-				F.responseFile(req, res, name, undefined, headers, done, key);
-				DEBUG && (F.temporary.path[key] = undefined);
-				return;
-			}
-
-			F.path.verify('temp');
-			var image = framework_image.load(stream, IMAGEMAGICK);
-			fnProcess(image);
-
-			var extension = U.getExtension(name);
-			if (extension !== image.outputType) {
-				var index = name.lastIndexOf('.' + extension);
-				if (index !== -1)
-					name = name.substring(0, index) + '.' + image.outputType;
-				else
-					name += '.' + image.outputType;
-			}
-
-			F.stats.response.image++;
-			image.save(name, function(err) {
-
-				delete F.temporary.processing[key];
-
-				if (err) {
-					F.temporary.notfound[key] = true;
-					F.response500(req, res, err);
-					done && done();
-					DEBUG && (F.temporary.notfound[key] = undefined);
-					return;
-				}
-
-				var stats = Fs.statSync(name);
-				F.temporary.path[key] = [name, stats.size, stats.mtime.toUTCString()];
-				F.responseFile(req, res, name, undefined, headers, done, key);
-			});
-		});
-
-		return F;
-	}
-
-	// FILENAME
-	fsFileExists(filename, function(exist) {
-
-		if (!exist) {
-			delete F.temporary.processing[key];
-			F.temporary.notfound[key] = true;
-			F.response404(req, res);
-			done && done();
-			DEBUG && (F.temporary.notfound[key] = undefined);
-			return;
-		}
-
-		F.path.verify('temp');
-		var image = framework_image.load(filename, IMAGEMAGICK);
-		fnProcess(image);
-
-		var extension = U.getExtension(name);
-		if (extension !== image.outputType) {
-			var index = name.lastIndexOf('.' + extension);
-			if (index === -1)
-				name += '.' + image.outputType;
-			else
-				name = name.substring(0, index) + '.' + image.outputType;
-		}
-
-		F.stats.response.image++;
-		image.save(name, function(err) {
-
-			delete F.temporary.processing[key];
-
-			if (err) {
-				F.temporary.notfound[key] = true;
-				F.response500(req, res, err);
-				done && done();
-				DEBUG && (F.temporary.notfound[key] = undefined);
-				return;
-			}
-
-			var stats = Fs.statSync(name);
-			F.temporary.path[key] = [name, stats.size, stats.mtime.toUTCString()];
-			F.responseFile(req, res, name, undefined, headers, done, key);
-		});
-	});
-
+	if (stream)
+		fsFileExists(name, responseImage_stream, req);
+	else
+		fsFileExists(filename, responseImage_filename, req);
 	return F;
 };
+
+function responseImage_stream(exists, size, isFile, stats, req) {
+
+	var res = req.res;
+
+	if (exists) {
+		delete F.temporary.processing[req.$tmp.key];
+		F.temporary.path[req.$tmp.key] = name;
+		F.responseFile(req, res, name, undefined, req.$tmp.headers, req.$tmp.done, req.$tmp.key);
+		DEBUG && (F.temporary.path[req.$tmp.key] = undefined);
+		return;
+	}
+
+	F.path.verify('temp');
+	var image = framework_image.load(req.$tmp.stream, IMAGEMAGICK);
+	req.$tmp.fnProcess.call(image, image);
+	req.$tmp.extension = U.getExtension(req.$tmp.name);
+	if (req.$tmp.extension !== image.outputType) {
+		var index = req.$tmp.name.lastIndexOf('.' + req.$tmp.extension);
+		if (index !== -1)
+			req.$tmp.name = req.$tmp.name.substring(0, index) + '.' + image.outputType;
+		else
+			req.$tmp.name += '.' + image.outputType;
+	}
+
+	F.stats.response.image++;
+	image.save(req.$tmp.name, function(err) {
+		delete F.temporary.processing[req.$tmp.key];
+		if (err) {
+			F.temporary.notfound[req.$tmp.key] = true;
+			F.response500(req, res, err);
+			req.$tmp.done && req.$tmp.done();
+			DEBUG && (F.temporary.notfound[req.$tmp.key] = undefined);
+		} else {
+			var stats = Fs.statSync(req.$tmp.name);
+			F.temporary.path[req.$tmp.key] = [req.$tmp.name, stats.size, stats.mtime.toUTCString()];
+			F.responseFile(req, res, req.$tmp.name, undefined, req.$tmp.headers, req.$tmp.done, req.$tmp.key);
+		}
+	});
+}
+
+function responseImage_filename(exists, size, isFile, stats, req) {
+
+	var res = req.res;
+
+	if (!exists) {
+		delete F.temporary.processing[req.$tmp.key];
+		F.temporary.notfound[req.$tmp.key] = true;
+		F.response404(req, res);
+		req.$tmp.done && req.$tmp.done();
+		DEBUG && (F.temporary.notfound[req.$tmp.key] = undefined);
+		return;
+	}
+
+	F.path.verify('temp');
+	var image = framework_image.load(req.$tmp.filename, IMAGEMAGICK);
+	req.$tmp.fnProcess.call(image, image);
+
+	req.$tmp.extension = U.getExtension(req.$tmp.name);
+	if (req.$tmp.extension !== image.outputType) {
+		var index = req.$tmp.name.lastIndexOf('.' + req.$tmp.extension);
+		if (index === -1)
+			req.$tmp.name += '.' + image.outputType;
+		else
+			req.$tmp.name = req.$tmp.name.substring(0, index) + '.' + image.outputType;
+	}
+
+	F.stats.response.image++;
+	image.save(req.$tmp.name, function(err) {
+
+		delete F.temporary.processing[req.$tmp.key];
+
+		if (err) {
+			F.temporary.notfound[req.$tmp.key] = true;
+			F.response500(req, res, err);
+			req.$tmp.done && req.$tmp.done();
+			DEBUG && (F.temporary.notfound[req.$tmp.key] = undefined);
+		} else {
+			var stats = Fs.statSync(req.$tmp.name);
+			F.temporary.path[req.$tmp.key] = [req.$tmp.name, stats.size, stats.mtime.toUTCString()];
+			F.responseFile(req, res, req.$tmp.name, undefined, req.$tmp.headers, req.$tmp.done, req.$tmp.key);
+		}
+	});
+}
 
 Framework.prototype.responseImagePrepare = function(req, res, fnPrepare, fnProcess, headers, done) {
 
@@ -5836,7 +5858,7 @@ Framework.prototype.responseImageWithoutCache = function(req, res, filename, fnP
 	// STREAM
 	if (stream) {
 		var image = framework_image.load(stream, IMAGEMAGICK);
-		fnProcess(image);
+		fnProcess.call(image, image);
 		F.stats.response.image++;
 		F.responseStream(req, res, U.getContentType(image.outputType), image, null, headers, done);
 		return F;
@@ -5848,7 +5870,7 @@ Framework.prototype.responseImageWithoutCache = function(req, res, filename, fnP
 		if (e) {
 			F.path.verify('temp');
 			var image = framework_image.load(filename, IMAGEMAGICK);
-			fnProcess(image);
+			fnProcess(image, image);
 			F.stats.response.image++;
 			F.responseStream(req, res, U.getContentType(image.outputType), image, null, headers, done);
 		} else {
@@ -5999,23 +6021,24 @@ Framework.prototype.responseRange = function(name, range, headers, req, res, don
 
 	RANGE.start = beg;
 	RANGE.end = end;
-
-	fsStreamRead(name, RANGE, function(stream, next) {
-
-		framework_internal.onFinished(res, function() {
-			framework_internal.destroyStream(stream);
-			next();
-		});
-
-		stream.pipe(res);
-		F.stats.response.streaming++;
-		F._request_stats(false, req.isStaticFile);
-		done && done();
-		!req.isStaticFile && F.emit('request-end', req, res);
-	});
-
+	req.$tmp.done = done;
+	fsStreamRead(name, RANGE, responseRange_callback);
 	return F;
 };
+
+function responseRange_callback(stream, next, req, res) {
+
+	framework_internal.onFinished(res, function() {
+		framework_internal.destroyStream(stream);
+		next();
+	});
+
+	stream.pipe(res);
+	F.stats.response.streaming++;
+	F._request_stats(false, req.isStaticFile);
+	req.$tmp.done && req.$tmp.done();
+	!req.isStaticFile && F.emit('request-end', req, res);
+}
 
 /**
  * Responds with a binary
@@ -6778,17 +6801,17 @@ Framework.prototype.listener = function(req, res) {
 		return F.response400(req, res);
 
 	var headers = req.headers;
-	var protocol = req.connection.encrypted || headers['x-forwarded-protocol'] === 'https' ? 'https' : 'http';
+	req.$protocol = req.connection.encrypted || headers['x-forwarded-protocol'] === 'https' ? 'https' : 'http';
 
 	res.req = req;
 	req.res = res;
-	req.uri = framework_internal.parseURI(protocol, req);
+	req.uri = framework_internal.parseURI(req);
 
 	F.stats.request.request++;
 	F.emit('request', req, res);
 
 	if (F._request_check_redirect) {
-		var redirect = F.routes.redirects[protocol + '://' + req.host];
+		var redirect = F.routes.redirects[req.$protocol + '://' + req.host];
 		if (redirect) {
 			F.stats.response.forward++;
 			F.responseRedirect(req, res, redirect.url + (redirect.path ? req.url : ''), redirect.permanent);
@@ -6827,10 +6850,14 @@ Framework.prototype.listener = function(req, res) {
 	F._request_stats(true, true);
 
 	if (F._length_request_middleware)
-		async_middleware(0, req, res, F.routes.request, () => F._request_continue(res.req, res, res.req.headers, protocol));
+		async_middleware(0, req, res, F.routes.request, _request_continue_middleware);
 	else
-		F._request_continue(req, res, headers, protocol);
+		F._request_continue(req, res, headers);
 };
+
+function _request_continue_middleware(req, res)  {
+	F._request_continue(req, res, req.headers);
+}
 
 /**
  * Continue to process
@@ -6841,7 +6868,7 @@ Framework.prototype.listener = function(req, res) {
  * @param {String} protocol [description]
  * @return {Framework}
  */
-Framework.prototype._request_continue = function(req, res, headers, protocol) {
+Framework.prototype._request_continue = function(req, res, headers) {
 
 	if (!req || !res || res.headersSent || res.success)
 		return;
@@ -6873,11 +6900,11 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 	} else
 		F.stats.request.desktop++;
 
-	if (protocol[5])
-		req.$flags += protocol[5];
+	if (req.$protocol[5])
+		req.$flags += req.$protocol[5];
 
 	req.$type = 0;
-	flags.push(protocol);
+	flags.push(req.$protocol);
 
 	var method = req.method;
 	var first = method[0];
@@ -6968,7 +6995,7 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 		case 'G':
 			F.stats.request.get++;
 			if (isCORS)
-				F._cors(req, res, (req, res) => new Subscribe(framework, req, res, 0).end());
+				F._cors(req, res, cors_callback0);
 			else
 				new Subscribe(F, req, res, 0).end();
 			return F;
@@ -6976,7 +7003,7 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 		case 'O':
 			F.stats.request.options++;
 			if (isCORS)
-				F._cors(req, res, (req, res) => new Subscribe(framework, req, res, 0).end());
+				F._cors(req, res, cors_callback0);
 			else
 				new Subscribe(framework, req, res, 0).end();
 			return F;
@@ -6984,7 +7011,7 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 		case 'H':
 			F.stats.request.head++;
 			if (isCORS)
-				F._cors(req, res, (req, res) => new Subscribe(framework, req, res, 0).end());
+				F._cors(req, res, cors_callback0);
 			else
 				new Subscribe(F, req, res, 0).end();
 			return F;
@@ -6992,7 +7019,7 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 		case 'D':
 			F.stats.request['delete']++;
 			if (isCORS)
-				F._cors(req, res, (req, res) => new Subscribe(framework, req, res, 1).urlencoded());
+				F._cors(req, res, cors_callback1);
 			else
 				new Subscribe(F, req, res, 1).urlencoded();
 			return F;
@@ -7002,7 +7029,7 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 				if (multipart) {
 
 					if (isCORS)
-						F._cors(req, res, (req, res, multipart) => req.$type === 4 ? F._request_mmr(req, res, multipart) : new Subscribe(F, req, res, 2).multipart(multipart), multipart);
+						F._cors(req, res, cors_callback_multipart, multipart);
 					else if (req.$type === 4)
 						F._request_mmr(req, res, multipart);
 					else
@@ -7018,7 +7045,7 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 					else
 						F.stats.request.post++;
 					if (isCORS)
-						F._cors(req, res, (req, res) => new Subscribe(F, req, res, 1).urlencoded());
+						F._cors(req, res, cors_callback1);
 					else
 						new Subscribe(F, req, res, 1).urlencoded();
 				}
@@ -7035,6 +7062,21 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 	res.end();
 	return F;
 };
+
+function cors_callback0(req, res) {
+	new Subscribe(F, req, res, 0).end();
+}
+
+function cors_callback1(req, res) {
+	new Subscribe(framework, req, res, 1).urlencoded();
+}
+
+function cors_callback_multipart(req, res, multipart) {
+	if (req.$type === 4)
+		F._request_mmr(req, res, multipart);
+	else
+		new Subscribe(F, req, res, 2).multipart(multipart);
+}
 
 Framework.prototype._request_mmr = function(req, res, header) {
 	var route = F.routes.mmr[req.url];
@@ -7094,8 +7136,10 @@ Framework.prototype._cors = function(req, res, fn, arg) {
 		var current = headers['access-control-request-method'] || req.method;
 		if (current !== 'OPTIONS') {
 			for (var i = 0, length = cors.methods.length; i < length; i++) {
-				if (current.indexOf(cors.methods[i]) !== -1)
+				if (current.indexOf(cors.methods[i]) !== -1) {
 					isAllowed = true;
+					break;
+				}
 			}
 
 			if (!isAllowed)
@@ -7175,9 +7219,9 @@ Framework.prototype._upgrade = function(req, socket, head) {
 	socket.on('error', NOOP);
 
 	var headers = req.headers;
-	var protocol = req.connection.encrypted || headers['x-forwarded-protocol'] === 'https' ? 'https' : 'http';
+	req.$protocol = req.connection.encrypted || headers['x-forwarded-protocol'] === 'https' ? 'https' : 'http';
 
-	req.uri = framework_internal.parseURI(protocol, req);
+	req.uri = framework_internal.parseURI(req);
 
 	F.emit('websocket', req, socket, head);
 	F.stats.request.websocket++;
@@ -7186,7 +7230,7 @@ Framework.prototype._upgrade = function(req, socket, head) {
 	req.user = null;
 	req.flags = [req.secured ? 'https' : 'http', 'get'];
 
-	var path = U.path(req.uri.pathname);
+	req.$wspath = U.path(req.uri.pathname);
 	var websocket = new WebSocketClient(req, socket, head);
 
 	req.path = framework_internal.routeSplit(req.uri.pathname);
@@ -7196,10 +7240,14 @@ Framework.prototype._upgrade = function(req, socket, head) {
 		req.$language = F.onLocale(req, socket);
 
 	if (F._length_request_middleware)
-		async_middleware(0, req, req.websocket, F.routes.request, () => F._upgrade_prepare(req, path, req.headers));
+		async_middleware(0, req, req.websocket, F.routes.request, _upgrade_prepare_middleware);
 	else
-		F._upgrade_prepare(req, path, headers);
+		F._upgrade_prepare(req, req.$wspath, headers);
 };
+
+function _upgrade_prepare_middleware(req) {
+	F._upgrade_prepare(req, req.$wspath, req.headers);
+}
 
 /**
  * Prepare WebSocket
@@ -7507,12 +7555,10 @@ Framework.prototype.assert = function(name, url, flags, callback, data, cookies,
 
 				case 'json':
 					headers['Content-Type'] = 'application/json';
-					type = 1;
 					break;
 
 				case 'xml':
 					headers['Content-Type'] = 'text/xml';
-					type = 2;
 					break;
 
 				case 'get':
@@ -9631,21 +9677,27 @@ Subscribe.prototype.execute = function(status, isError) {
 
 	if (!self.isCanceled && route.timeout) {
 		self.timeout && clearTimeout(self.timeout);
-		self.timeout = setTimeout(function() {
-			self.controller && self.controller.precache && self.controller.precache(null, null, null);
-			self.doCancel();
-		}, route.timeout);
+		self.timeout = setTimeout(subscribe_timeout, route.timeout, self);
 	}
 
 	route.isDELAY && self.res.writeContinue();
 	if (self.isSchema)
 		req.body.$$controller = controller;
 
-	if (!F._length_middleware || !route.middleware)
-		self.doExecute();
+	if (route.middleware)
+		async_middleware(0, req, res, route.middleware, subscribe_timeout_middleware, route.options, controller, self);
 	else
-		async_middleware(0, req, res, route.middleware, () => self.doExecute(), route.options, controller);
+		self.doExecute();
 };
+
+function subscribe_timeout(self) {
+	self.controller && self.controller.precache && self.controller.precache(null, null, null);
+	self.doCancel();
+}
+
+function subscribe_timeout_middleware(req, res, self) {
+	self.doExecute();
+}
 
 Subscribe.prototype.prepare = function(flags, url) {
 
@@ -9684,10 +9736,14 @@ Subscribe.prototype.prepare = function(flags, url) {
 	if (!self.schema || !self.route)
 		self.execute(code);
 	else
-		self.validate(self.route, () => self.execute(code));
+		self.validate(self.route, subscribe_validate_callback, code);
 
 	return self;
 };
+
+function subscribe_validate_callback(self, code) {
+	self.execute(code);
+}
 
 Subscribe.prototype.doExecute = function() {
 
@@ -9739,11 +9795,13 @@ Subscribe.prototype.doAuthorize = function(isLogged, user, roles) {
 	if (user)
 		req.user = user;
 
+	var code = req.buffer_exceeded ? 431 : 401;
+
 	if (self.route && self.route.isUNIQUE && !roles && (!self.route.MEMBER || self.route.MEMBER === membertype)) {
-		if (self.schema)
-			self.validate(self.route, () => self.execute(code));
+		if (code === 401 &&self.schema)
+			self.validate(self.route, subscribe_validate_callback, code);
 		else
-			self.execute(req.buffer_exceeded ? 431 : 401, true);
+			self.execute(code, true);
 		return;
 	}
 
@@ -9751,13 +9809,11 @@ Subscribe.prototype.doAuthorize = function(isLogged, user, roles) {
 	var status = req.$isAuthorized ? 404 : 401;
 	var code = req.buffer_exceeded ? 431 : status;
 
-	if (!route)
-		route = F.lookup(req, '#' + status, EMPTYARRAY, 0);
-
+	!route && (route = F.lookup(req, '#' + status, EMPTYARRAY, 0));
 	self.route = route;
 
 	if (self.route && self.schema)
-		self.validate(self.route, () => self.execute(code));
+		self.validate(self.route, subscribe_validate_callback, code);
 	else
 		self.execute(code);
 
@@ -9847,7 +9903,7 @@ Subscribe.prototype.doEnd = function() {
 	return self;
 };
 
-Subscribe.prototype.validate = function(route, next) {
+Subscribe.prototype.validate = function(route, next, code) {
 	var self = this;
 	var req = self.req;
 	self.schema = false;
@@ -9864,7 +9920,7 @@ Subscribe.prototype.validate = function(route, next) {
 			F.stats.request.schema++;
 			req.body = body;
 			self.isSchema = true;
-			next();
+			next(self, code);
 		}
 
 	}, route.schema[2]);
@@ -13003,7 +13059,6 @@ const SOCKET_RESPONSE = 'HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\
 const SOCKET_RESPONSE_COMPRESS = 'HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: {0}\r\nSec-WebSocket-Extensions: permessage-deflate\r\n\r\n';
 const SOCKET_RESPONSE_PROTOCOL = 'HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: {0}\r\nSec-WebSocket-Protocol: {1}\r\n\r\n';
 const SOCKET_RESPONSE_PROTOCOL_COMPRESS = 'HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: {0}\r\nSec-WebSocket-Protocol: {1}\r\nSec-WebSocket-Extensions: permessage-deflate\r\n\r\n';
-const SOCKET_RESPONSE_ERROR = 'HTTP/1.1 403 Forbidden\r\nConnection: close\r\nX-WebSocket-Reject-Reason: 403 Forbidden\r\n\r\n';
 const SOCKET_HASH = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
 const SOCKET_ALLOW_VERSION = [13];
 
@@ -14646,16 +14701,16 @@ function fsFileRead(filename, callback) {
 	});
 }
 
-function fsFileExists(filename, callback) {
+function fsFileExists(filename, callback, arg) {
 	U.queue('F.files', F.config['default-maximum-file-descriptors'], function(next) {
 		Fs.lstat(filename, function(err, stats) {
 			next();
-			callback(!err && stats.isFile(), stats ? stats.size : 0, stats ? stats.isFile() : false, stats);
+			callback(!err && stats.isFile(), stats ? stats.size : 0, stats ? stats.isFile() : false, stats, arg);
 		});
 	});
 }
 
-function fsStreamRead(filename, options, callback) {
+function fsStreamRead(filename, options, callback, req, res) {
 
 	if (!callback) {
 		callback = options;
@@ -14674,7 +14729,7 @@ function fsStreamRead(filename, options, callback) {
 	U.queue('F.files', F.config['default-maximum-file-descriptors'], function(next) {
 		var stream = Fs.createReadStream(filename, opt);
 		stream.on('error', NOOP);
-		callback(stream, next);
+		callback(stream, next, req, res);
 	});
 }
 
@@ -14776,7 +14831,7 @@ function existsSync(filename, file) {
 	}
 }
 
-function async_middleware(index, req, res, middleware, callback, options, controller) {
+function async_middleware(index, req, res, middleware, callback, options, controller, subscribe) {
 
 	if (res.success || res.headersSent) {
 		// Prevents timeout
@@ -14787,12 +14842,12 @@ function async_middleware(index, req, res, middleware, callback, options, contro
 
 	var name = middleware[index++];
 	if (!name)
-		return callback && callback();
+		return callback && callback(req, res, subscribe);
 
 	var item = F.routes.middleware[name];
 	if (!item) {
 		F.error('Middleware not found: ' + name, null, req.uri);
-		return async_middleware(index, req, res, middleware, callback, options, controller);
+		return async_middleware(index, req, res, middleware, callback, options, controller, subscribe);
 	}
 
 	var output = item.call(framework, req, res, function(err) {
@@ -14803,7 +14858,7 @@ function async_middleware(index, req, res, middleware, callback, options, contro
 			return;
 		}
 
-		async_middleware(index, req, res, middleware, callback, options, controller);
+		async_middleware(index, req, res, middleware, callback, options, controller, subscribe);
 	}, options, controller);
 
 	if (output !== false)
