@@ -9909,7 +9909,7 @@ Subscribe.prototype.validate = function(route, next, code) {
 	self.schema = false;
 
 	if (!route.schema || req.method === 'DELETE')
-		return next();
+		return next(next, code);
 
 	F.onSchema(req, route.schema[0], route.schema[1], function(err, body) {
 
