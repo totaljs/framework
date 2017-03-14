@@ -644,7 +644,7 @@ function Framework() {
 	this.isTest = false;
 	this.isLoaded = false;
 	this.isWorker = true;
-	this.isCluster = require('cluster').isWorker;
+	this.isCluster = process.env.PASSENGER_APP_ENV ? false : require('cluster').isWorker;
 
 	this.routes = {
 		sitemap: null,
