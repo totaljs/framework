@@ -25,6 +25,7 @@
 - updated: `setTimeout2()` added a new argument `limit`
 - updated: `F.script()` --> `now` argument is a function `now()` which it still returns `new Date()`
 - updated: `F.script()` --> `now` argument is the function now, not a property
+- updated: middleware `next(false)` cancels calling of next middleware and controller
 
 - fixed: routing with `upload` flag
 - fixed: workers timeout
