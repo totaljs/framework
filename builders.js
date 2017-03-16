@@ -110,7 +110,6 @@ function SchemaBuilderEntity(parent, name) {
 	this.trim = true;
 	this.schema = {};
 	this.meta = {};
-	this.newversion = {};
 	this.properties = [];
 	this.resourcePrefix;
 	this.resourceName;
@@ -544,9 +543,9 @@ SchemaBuilderEntity.prototype.setPrepare = function(fn) {
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.setSave = function(fn, description) {
+	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	this.onSave = fn;
 	this.meta.save = description;
-	this.newversion.save = REGEXP_NEWOPERATION.test(fn.toString());
 	return this;
 };
 
@@ -567,9 +566,9 @@ SchemaBuilderEntity.prototype.setError = function(fn) {
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.setGet = SchemaBuilderEntity.prototype.setRead = function(fn, description) {
+	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	this.onGet = fn;
 	this.meta.get = description;
-	this.newversion.get = REGEXP_NEWOPERATION.test(fn.toString());
 	return this;
 };
 
@@ -580,9 +579,9 @@ SchemaBuilderEntity.prototype.setGet = SchemaBuilderEntity.prototype.setRead = f
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.setQuery = function(fn, description) {
+	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	this.onQuery = fn;
 	this.meta.query = description;
-	this.newversion.query = REGEXP_NEWOPERATION.test(fn.toString());
 	return this;
 };
 
@@ -593,9 +592,9 @@ SchemaBuilderEntity.prototype.setQuery = function(fn, description) {
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.setRemove = function(fn, description) {
+	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	this.onRemove = fn;
 	this.meta.remove = description;
-	this.newversion.remove = REGEXP_NEWOPERATION.test(fn.toString());
 	return this;
 };
 
@@ -611,9 +610,7 @@ SchemaBuilderEntity.prototype.constant = function(name, value, description) {
 	if (value === undefined)
 		return this.constants ? this.constants[name] : undefined;
 
-	if (!this.constants)
-		this.constants = {};
-
+	!this.constants && (this.constants = {});
 	this.constants[name] = value;
 	this.meta['constant#' + name] = description;
 	return this;
@@ -633,12 +630,10 @@ SchemaBuilderEntity.prototype.addTransform = function(name, fn, description) {
 		name = 'default';
 	}
 
-	if (!this.transforms)
-		this.transforms = {};
-
+	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
+	!this.transforms && (this.transforms = {});
 	this.transforms[name] = fn;
 	this.meta['transform#' + name] = description;
-	this.newversion['transform#' + name] = REGEXP_NEWOPERATION.test(fn.toString());
 	return this;
 };
 
@@ -656,12 +651,10 @@ SchemaBuilderEntity.prototype.addOperation = function(name, fn, description) {
 		name = 'default';
 	}
 
-	if (!this.operations)
-		this.operations = {};
-
+	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
+	!this.operations && (this.operations = {});
 	this.operations[name] = fn;
 	this.meta['operation#' + name] = description;
-	this.newversion['operation#' + name] = REGEXP_NEWOPERATION.test(fn.toString());
 	return this;
 };
 
@@ -679,12 +672,10 @@ SchemaBuilderEntity.prototype.addWorkflow = function(name, fn, description) {
 		name = 'default';
 	}
 
-	if (!this.workflows)
-		this.workflows = {};
-
+	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
+	!this.workflows && (this.workflows = {});
 	this.workflows[name] = fn;
 	this.meta['workflow#' + name] = description;
-	this.newversion['workflow#' + name] = REGEXP_NEWOPERATION.test(fn.toString());
 	return this;
 };
 
@@ -693,12 +684,10 @@ SchemaBuilderEntity.prototype.addHook = function(name, fn, description) {
 	if (!this.hooks)
 		this.hooks = {};
 
-	if (!this.hooks[name])
-		this.hooks[name] = [];
-
+	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
+	!this.hooks[name] && (this.hooks[name] = []);
 	this.hooks[name].push({ owner: F.$owner(), fn: fn });
 	this.meta['hook#' + name] = description;
-	this.newversion['hook#' + name] = REGEXP_NEWOPERATION.test(fn.toString());
 	return this;
 };
 
@@ -785,7 +774,7 @@ SchemaBuilderEntity.prototype.save = function(model, options, callback, controll
 		self.resourcePrefix && builder.setPrefix(self.resourcePrefix);
 
 		if (!isGenerator(self, $type, self.onSave)) {
-			if (self.newversion.save)
+			if (self.onSave.$newversion)
 				self.onSave(new SchemaOptions(builder, model, options, function(res) {
 					self.$process(arguments, model, $type, undefined, builder, res, callback);
 				}, controller));
@@ -823,7 +812,7 @@ SchemaBuilderEntity.prototype.save = function(model, options, callback, controll
 			callback(has ? builder : null, res === undefined ? model : res);
 		};
 
-		if (self.newversion.save)
+		if (self.onSave.$newversion)
 			async.call(self, self.onSave)(onError, new SchemaOptions(builder, model, options, onCallback, controller));
 		else
 			async.call(self, self.onSave)(onError, builder, model, options, onCallback, controller, skip !== true);
@@ -862,7 +851,7 @@ SchemaBuilderEntity.prototype.get = SchemaBuilderEntity.prototype.read = functio
 	var $type = 'get';
 
 	if (!isGenerator(self, $type, self.onGet)) {
-		if (self.newversion.get)
+		if (self.onGet.$newversion)
 			self.onGet(new SchemaOptions(builder, output, options, function(res) {
 				self.$process(arguments, output, $type, undefined, builder, res, callback);
 			}, controller));
@@ -900,7 +889,7 @@ SchemaBuilderEntity.prototype.get = SchemaBuilderEntity.prototype.read = functio
 		callback(has ? builder : null, res === undefined ? output : res);
 	};
 
-	if (self.newversion.get)
+	if (self.onGet.$newversion)
 		async.call(self, self.onGet)(onError, new SchemaOptions(builder, output, options, onCallback, controller));
 	else
 		async.call(self, self.onGet)(onError, builder, output, options, onCallback, controller);
@@ -929,7 +918,7 @@ SchemaBuilderEntity.prototype.remove = function(options, callback, controller) {
 	self.resourcePrefix && builder.setPrefix(self.resourcePrefix);
 
 	if (!isGenerator(self, $type, self.onRemove)) {
-		if (self.newversion.remove)
+		if (self.onRemove.$newversion)
 			self.onRemove(new SchemaOptions(builder, undefined, options, function(res) {
 				self.$process(arguments, undefined, $type, undefined, builder, res, callback);
 			}, controller));
@@ -968,7 +957,7 @@ SchemaBuilderEntity.prototype.remove = function(options, callback, controller) {
 		callback(has ? builder : null, res === undefined ? options : res);
 	};
 
-	if (self.newversion.remove)
+	if (self.onRemove.$newversion)
 		async.call(self, self.onRemove)(onError, new SchemaOptions(builder, undefined, options, onCallback, controller));
 	else
 		async.call(self, self.onRemove)(onError, builder, options, onCallback, controller);
@@ -997,7 +986,7 @@ SchemaBuilderEntity.prototype.query = function(options, callback, controller) {
 	self.resourcePrefix && builder.setPrefix(self.resourcePrefix);
 
 	if (!isGenerator(self, $type, self.onQuery)) {
-		if (self.newversion.query)
+		if (self.onQuery.$newversion)
 			self.onQuery(new SchemaOptions(builder, undefined, options, function(res) {
 				self.$process(arguments, undefined, $type, undefined, builder, res, callback);
 			}, controller));
@@ -1036,7 +1025,7 @@ SchemaBuilderEntity.prototype.query = function(options, callback, controller) {
 		callback(builder.hasError() ? builder : null, res);
 	};
 
-	if (self.newversion.query)
+	if (self.onQuery.$newversion)
 		async.call(self, self.onQuery)(onError, new SchemaOptions(builder, undefined, options, onCallback, controller));
 	else
 		async.call(self, self.onQuery)(onError, builder, options, onCallback, controller);
@@ -1648,24 +1637,24 @@ SchemaBuilderEntity.prototype.workflow2 = function(name, options, callback, cont
  * @param {Boolean} skip Skips preparing and validation, optional.
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.hook = function(name, model, helper, callback, skip, controller) {
+SchemaBuilderEntity.prototype.hook = function(name, model, options, callback, skip, controller) {
 
 	var self = this;
 
 	if (typeof(name) !== 'string') {
-		callback = helper;
-		helper = model;
+		callback = options;
+		options = model;
 		model = name;
 		name = 'default';
 	}
 
 	if (typeof(callback) === 'boolean') {
 		skip = callback;
-		callback = helper;
-		helper = undefined;
-	} else if (typeof(helper) === 'function') {
-		callback = helper;
-		helper = undefined;
+		callback = options;
+		options = undefined;
+	} else if (typeof(options) === 'function') {
+		callback = options;
+		options = undefined;
 	}
 
 	if (typeof(callback) !== 'function')
@@ -1689,10 +1678,17 @@ SchemaBuilderEntity.prototype.hook = function(name, model, helper, callback, ski
 		var output = [];
 
 		async_wait(hook, function(item, next) {
-			item.fn.call(self, builder, model, helper, function(result) {
-				output.push(result == undefined ? model : result);
-				next();
-			}, controller, skip !== true);
+
+			if (item.fn.$newversion)
+				item.fn.call(self, new SchemaOptions(builder, model, options, function(result) {
+					output.push(result == undefined ? model : result);
+					next();
+				}, controller));
+			else
+				item.fn.call(self, builder, model, options, function(result) {
+					output.push(result == undefined ? model : result);
+					next();
+				}, controller, skip !== true);
 		}, function() {
 			self.$process_hook(model, $type, name, builder, output, callback);
 		}, 0);
@@ -1716,44 +1712,59 @@ SchemaBuilderEntity.prototype.hook = function(name, model, helper, callback, ski
 		async_wait(hook, function(item, next, index) {
 
 			if (!isGenerator(self, 'hook.' + name + '.' + index, item.fn)) {
-				item.fn.call(self, builder, model, helper, function(result) {
-					output.push(result == undefined ? model : result);
-					next();
-				}, controller, skip !== true);
+				if (item.fn.$newversion)
+					item.fn.call(self, new SchemaOptions(builder, model, options, function(res) {
+						output.push(res === undefined ? model : res);
+						next();
+					}, controller));
+				else
+					item.fn.call(self, builder, model, options, function(res) {
+						output.push(res === undefined ? model : res);
+						next();
+					}, controller, skip !== true);
 				return;
 			}
 
 			callback.success = false;
 
-			async.call(self, item.fn)(function(err) {
-				if (!err)
-					return;
-				builder.push(err);
-				next();
-			}, builder, model, helper, function(result) {
-				output.push(result == undefined ? model : result);
-				next();
-			}, controller, skip !== true);
+			if (item.fn.$newversion)
+				async.call(self, item.fn)(function(err) {
+					if (!err)
+						return;
+					builder.push(err);
+					next();
+				}, new SchemaOptions(builder, model, options, function(res) {
+					output.push(res == undefined ? model : res);
+					next();
+				}, controller));
+			else
+				async.call(self, item.fn)(function(err) {
+					if (!err)
+						return;
+					builder.push(err);
+					next();
+				}, builder, model, options, function(res) {
+					output.push(res == undefined ? model : res);
+					next();
+				}, controller, skip !== true);
 
-		}, function() {
-			self.$process_hook(model, $type, name, builder, output, callback);
-		}, 0);
+		}, () => self.$process_hook(model, $type, name, builder, output, callback), 0);
 	});
 
 	return self;
 };
 
-SchemaBuilderEntity.prototype.hook2 = function(name, helper, callback, controller) {
+SchemaBuilderEntity.prototype.hook2 = function(name, options, callback, controller) {
 
-	if (typeof(helper) === 'function') {
-		callback = helper;
-		helper = undefined;
+	if (typeof(options) === 'function') {
+		callback = options;
+		options = undefined;
 	}
 
 	if (!callback)
 		callback = function(){};
 
-	return this.hook(name, this.create(), helper, callback, true, controller);
+	return this.hook(name, this.create(), options, callback, true, controller);
 };
 
 SchemaBuilderEntity.prototype.$execute = function(type, name, model, options, callback, skip, controller) {
@@ -1786,13 +1797,11 @@ SchemaBuilderEntity.prototype.$execute = function(type, name, model, options, ca
 		return self;
 	}
 
-	var newversion = self.newversion[type + '#' + name];
-
 	if (skip === true) {
 		var builder = new ErrorBuilder();
 		self.resourceName && builder.setResource(self.resourceName);
 		self.resourcePrefix && builder.setPrefix(self.resourcePrefix);
-		if (newversion)
+		if (item.$newversion)
 			item.call(self, new SchemaOptions(builder, model, options, function(res) {
 				self.$process(arguments, model, type, name, builder, res, callback);
 			}, controller));
@@ -1816,7 +1825,7 @@ SchemaBuilderEntity.prototype.$execute = function(type, name, model, options, ca
 		self.resourcePrefix && builder.setPrefix(self.resourcePrefix);
 
 		if (!isGenerator(self, type + '.' + name, item)) {
-			if (newversion)
+			if (item.$newversion)
 				item.call(self, new SchemaOptions(builder, model, options, function(res) {
 					self.$process(arguments, model, type, name, builder, res, callback);
 				}, controller));
@@ -1855,7 +1864,10 @@ SchemaBuilderEntity.prototype.$execute = function(type, name, model, options, ca
 			callback(has ? builder : null, res === undefined ? model : res);
 		};
 
-		async.call(self, item)(onError, builder, model, options, onCallback, controller);
+		if (item.$newversion)
+			async.call(self, item)(onError, new SchemaOptions(builder, model, options, onCallback, controller));
+		else
+			async.call(self, item)(onError, builder, model, options, onCallback, controller);
 	});
 
 	return self;
@@ -1872,7 +1884,97 @@ SchemaBuilderEntity.prototype.$execute = function(type, name, model, options, ca
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.operation = function(name, model, options, callback, skip, controller) {
-	return this.$execute('operation', name, model, options, callback, skip, controller);
+
+	var self = this;
+
+	var th = typeof(options);
+	var tc = typeof(callback);
+
+	if (tc === 'undefined') {
+		if (th === 'function') {
+			callback = options;
+			options = model;
+			model = undefined;
+		} else if (th === 'undefined') {
+			options = model;
+			model = undefined;
+		}
+	} else if (th === 'undefined') {
+		options = model;
+		model = undefined;
+	} else if (tc === 'boolean') {
+		skip = callback;
+		callback = options;
+		options = undefined;
+	}
+
+	if (typeof(options) === 'function') {
+		callback = options;
+		options = undefined;
+	}
+
+	if (typeof(callback) !== 'function')
+		callback = function(){};
+
+	var operation = self.operations ? self.operations[name] : undefined;
+
+	if (!operation) {
+		callback(new ErrorBuilder().push('', 'Operation "{0}" not found.'.format(name)));
+		return self;
+	}
+
+	var builder = new ErrorBuilder();
+	var $type = 'operation';
+
+	self.resourceName && builder.setResource(self.resourceName);
+	self.resourcePrefix && builder.setPrefix(self.resourcePrefix);
+
+	if (!isGenerator(self, 'operation.' + name, operation)) {
+		if (operation.$newversion) {
+			operation.call(self, new SchemaOptions(builder, model, options, function(res) {
+				self.$process(arguments, model, $type, name, builder, res, callback);
+			}, controller));
+		} else
+			operation.call(self, builder, model, options, function(res) {
+				self.$process(arguments, model, $type, name, builder, res, callback);
+			}, controller, skip !== true);
+		return self;
+	}
+
+	callback.success = false;
+
+	var onError = function(err) {
+		if (!err || callback.success)
+			return;
+		callback.success = true;
+		builder.push(err);
+		self.onError && self.onError(builder, model, $type, name);
+		callback(builder);
+	};
+
+	var onCallback = function(res) {
+
+		if (callback.success)
+			return;
+
+		if (arguments.length === 2 || (res instanceof Error || res instanceof ErrorBuilder)) {
+			if ((res instanceof Error || res instanceof ErrorBuilder) && builder !== res)
+				builder.push(res);
+			res = arguments[1];
+		}
+
+		var has = builder.hasError();
+		has && self.onError && self.onError(builder, model, $type, name);
+		callback.success = true;
+		callback(has ? builder : null, res);
+	};
+
+	if (operation.$newversion)
+		async.call(self, operation)(onError, new SchemaOptions(builder, model, options, onCallback, controller));
+	else
+		async.call(self, operation)(onError, builder, model, options, onCallback, controller, skip !== true);
+
+	return self;
 };
 
 SchemaBuilderEntity.prototype.operation2 = function(name, options, callback, controller) {

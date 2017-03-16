@@ -223,13 +223,13 @@ function test_Schema() {
 		assert.ok(result === true, 'schema - remove');
 	}).query(output, function(err, result) {
 		assert.ok(result.length === 0, 'schema - query');
-	}).operation(true, function(err, result) {
+	}).operation('', function(err, result) {
 		assert.ok(!result, 'schema - operation - result');
 	});
 
 	GETSCHEMA('default', '2').addOperation('test2', function(error, model, helper, next) {
-		assert.ok(model.age === -1, 'schema - operation problem with model');
-		assert.ok(helper === 2 || helper === undefined, 'schema - operation problem with helper');
+		assert.ok(model === 1 || model == null, 'schema - operation problem with model');
+		assert.ok(helper === 2 || helper == null, 'schema - operation problem with helper');
 		next(3);
 	}).operation('test2', 1, 2, function(err, value) {
 		assert.ok(value === 3, 'schema - operation advanced 1');
