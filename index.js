@@ -14852,7 +14852,13 @@ function async_middleware(index, req, res, middleware, callback, options, contro
 
 	var output = item.call(framework, req, res, function(err) {
 
-		if (err) {
+		if (err === false) {
+			controller && controller.subscribe.success();
+			callback = null;
+			return;
+		}
+
+		if (err instanceof Error || err instanceof ErrorBuilder) {
 			res.throw500(err);
 			callback = null;
 			return;
@@ -14864,6 +14870,7 @@ function async_middleware(index, req, res, middleware, callback, options, contro
 	if (output !== false)
 		return;
 
+	controller && controller.subscribe.success();
 	callback = null;
 }
 
