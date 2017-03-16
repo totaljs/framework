@@ -1568,15 +1568,15 @@ SchemaBuilderEntity.prototype.transform = function(name, model, options, callbac
 	return this.$execute('transform', name, model, options, callback, skip, controller);
 };
 
-SchemaBuilderEntity.prototype.transform2 = function(name, optoins, callback, controller) {
+SchemaBuilderEntity.prototype.transform2 = function(name, options, callback, controller) {
 
-	if (typeof(optoins) === 'function') {
-		callback = optoins;
-		optoins = undefined;
+	if (typeof(options) === 'function') {
+		callback = options;
+		options = undefined;
 	}
 
 	!callback && (callback = function(){});
-	return this.transform(name, this.create(), optoins, callback, true, controller);
+	return this.transform(name, this.create(), options, callback, true, controller);
 };
 
 SchemaBuilderEntity.prototype.$process = function(arg, model, type, name, builder, response, callback) {
