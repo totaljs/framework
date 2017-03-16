@@ -11,6 +11,7 @@
 - added: `F.clearSchedule(id)` for removing existing schedules
 - added: a support for WebSocket compression
 - added: removing `.package` files from `tmp` directory
+- added: a new schema implementation (more in docs)
 
 - updated: `F.load(debug, [types], [path])` supports a new type `service` which enables `F.on('service')`
 - updated: Components (now don't have to have `html` body)

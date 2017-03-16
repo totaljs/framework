@@ -171,9 +171,9 @@ function test_Schema() {
 
 	GETSCHEMA('2').addTransform('xml', function(err, model, helper, next) {
 		next('<xml>OK</xml>');
-	}).addWorkflow('send', function(err, model, helper, next) {
+	}).addWorkflow('send', function($) {
 		countW++;
-		next('workflow');
+		$.callback('workflow');
 	}).addOperation('test', function(err, model, helper, next) {
 		assert.ok(!model, 'schema - operation 1');
 		assert.ok(helper === true, 'schema - operation 2');
@@ -228,14 +228,14 @@ function test_Schema() {
 	});
 
 	GETSCHEMA('default', '2').addOperation('test2', function(error, model, helper, next) {
-		assert.ok(model === 1 || model === undefined, 'schema - operation problem with model');
+		assert.ok(model.age === -1, 'schema - operation problem with model');
 		assert.ok(helper === 2 || helper === undefined, 'schema - operation problem with helper');
 		next(3);
 	}).operation('test2', 1, 2, function(err, value) {
 		assert.ok(value === 3, 'schema - operation advanced 1');
 	}).operation('test2', 2, function(err, value) {
 		assert.ok(value === 3, 'schema - operation advanced 2');
-	}).operation('test2', function(err, value) {
+	}).operation('test2', null, function(err, value) {
 		assert.ok(value === 3, 'schema - operation advanced 3');
 	}).constant('test', true);
 
