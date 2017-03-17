@@ -265,7 +265,7 @@ if (!global.framework_nosql)
 	global.framework_nosql = require('./nosql');
 
 global.Builders = framework_builders;
-var utils = U = global.Utils = global.utils = global.U = global.framework_utils;
+var U = global.Utils = global.utils = global.U = global.framework_utils;
 global.Mail = framework_mail;
 
 global.WTF = function(message, name, uri) {
