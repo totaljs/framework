@@ -712,7 +712,8 @@ function Framework() {
 		dependencies: {}, // temporary for module dependencies
 		other: {},
 		internal: {}, // controllers/modules names for the routing
-		owners: {}
+		owners: {},
+		ready: {}
 	};
 
 	this.stats = {
@@ -817,10 +818,48 @@ Framework.prototype = {
 
 Framework.prototype.__proto__ = Object.create(Events.EventEmitter.prototype, {
 	constructor: {
-		value: WebSocket,
+		value: Framework,
 		enumberable: false
 	}
 });
+
+Framework.prototype.on2 = Framework.prototype.on;
+
+Framework.prototype.on = function(name, fn) {
+
+	if (name === 'init' || name === 'ready' || name === 'load') {
+		if (this.isLoaded) {
+			fn.call(this);
+			return;
+		}
+	} else if (name.indexOf('#') !== -1) {
+		var arr = name.split('#');
+		switch (arr[0]) {
+			case 'middleware':
+				F.temporary.ready[name] && fn.call(this);
+				break;
+			case 'component':
+				F.temporary.ready[name] && fn.call(this);
+				break;
+			case 'model':
+				F.temporary.ready[name] && fn.call(this, F.models[arr[1]]);
+				break;
+			case 'source':
+				F.temporary.ready[name] && fn.call(this, F.sources[arr[1]]);
+				break;
+			case 'package':
+			case 'module':
+				F.temporary.ready[name] && fn.call(this, F.modules[arr[1]]);
+				break;
+			case 'controller':
+				F.temporary.ready[name] && fn.call(this, F.controllers[arr[1]]);
+				break;
+		}
+	}
+
+	this.on2.apply(this, arguments);
+	return this;
+};
 
 /**
  * Internal function
@@ -3185,6 +3224,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		setTimeout(function() {
 			F.emit(type + '#' + name);
 			F.emit('install', type, name);
+			F.temporary.ready[type + '#' + name] = F.datetime;
 		}, 500);
 
 		return F;
@@ -3197,6 +3237,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 			delete F.temporary['mail-settings'];
 			F.emit(type + '#' + name, F.config);
 			F.emit('install', type, name);
+			F.temporary.ready[type + '#' + name] = F.datetime;
 		}, 500);
 
 		next && next();
@@ -3210,6 +3251,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		setTimeout(function() {
 			F.emit(type + '#' + name);
 			F.emit('install', type, name);
+			F.temporary.ready[type + '#' + name] = F.datetime;
 		}, 500);
 
 		next && next();
@@ -3223,6 +3265,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		setTimeout(function() {
 			F.emit(type + '#' + name);
 			F.emit('install', type, name);
+			F.temporary.ready[type + '#' + name] = F.datetime;
 		}, 500);
 
 		next && next();
@@ -3236,6 +3279,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		setTimeout(function() {
 			F.emit(type + '#' + name);
 			F.emit('install', type, name);
+			F.temporary.ready[type + '#' + name] = F.datetime;
 		}, 500);
 
 		next && next();
@@ -3316,6 +3360,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		!skipEmit && setTimeout(function() {
 			F.emit(type + '#' + name);
 			F.emit('install', type, name);
+			F.temporary.ready[type + '#' + name] = F.datetime;
 		}, 500);
 
 		next && next();
@@ -3341,8 +3386,12 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 			F.install('module', id, filename, options || F.config['package#' + name], function(err) {
 				setTimeout(function() {
+					F.emit('module#' + name);
 					F.emit(type + '#' + name);
+					F.emit('install', 'module', name);
 					F.emit('install', type, name);
+					F.temporary.ready['package#' + name] = F.datetime;
+					F.temporary.ready['module#' + name] = F.datetime;
 				}, 500);
 				callback && callback(err, name);
 			}, internal, useRequired, true, undefined);
@@ -3364,6 +3413,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		!skipEmit && setTimeout(function() {
 			F.emit(type + '#' + name);
 			F.emit('install', type, name);
+			F.temporary.ready[type + '#' + name] = F.datetime;
 		}, 500);
 
 		next && next();
@@ -3378,13 +3428,18 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 	}
 
 	if (type === 'package2') {
+		type = type.substring(0, type.length - 1);
 		var id = U.getName(declaration, '.package');
 		var dir = F.config['directory-temp'][0] === '~' ? Path.join(F.config['directory-temp'].substring(1), id) : Path.join(F.path.root(), F.config['directory-temp'], id);
 		var filename = Path.join(dir, 'index.js');
-		F.install('module', id, filename, options || F.config['package#' + name], function(err) {
+		F.install('module', id.replace(/\.package$/i, ''), filename, options || F.config['package#' + name], function(err) {
 			setTimeout(function() {
+				F.emit('module#' + name);
 				F.emit(type + '#' + name);
 				F.emit('install', type, name);
+				F.emit('install', 'module', name);
+				F.temporary.ready['package#' + name] = F.datetime;
+				F.temporary.ready['module#' + name] = F.datetime;
 			}, 500);
 			callback && callback(err, name);
 		}, internal, useRequired, true);
@@ -3412,6 +3467,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		setTimeout(function() {
 			F.emit(type + '#' + name);
 			F.emit('install', type, name);
+			F.temporary.ready[type + '#' + name] = F.datetime;
 		}, 500);
 
 		next && next();
@@ -3456,6 +3512,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		setTimeout(function() {
 			F.emit(type + '#' + name);
 			F.emit('install', type, name);
+			F.temporary.ready[type + '#' + name] = F.datetime;
 		}, 500);
 
 		return F;
@@ -3520,6 +3577,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		setTimeout(function() {
 			F.emit(type + '#' + name, obj);
 			F.emit('install', type, name, obj);
+			F.temporary.ready[type + '#' + name] = F.datetime;
 		}, 500);
 
 		return F;
@@ -3618,6 +3676,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		!skipEmit && setTimeout(function() {
 			F.emit(type + '#' + name, obj);
 			F.emit('install', type, name, obj);
+			F.temporary.ready[type + '#' + name] = F.datetime;
 		}, 500);
 
 		next && next();
@@ -3650,6 +3709,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 					if (tmp)
 						name = tmp.toString().replace(/\.js/i, '');
 				}
+
 				filename = F.path.temporary(plus + 'installed-' + type + '-' + U.GUID(10) + '.js');
 				Fs.writeFileSync(filename, declaration);
 				obj = require(filename);
@@ -3863,7 +3923,8 @@ Framework.prototype.$restart = function() {
 			dependencies: {},
 			other: {},
 			internal: {},
-			owners: {}
+			owners: {},
+			ready: {}
 		};
 
 		F.modificators = null;
@@ -3998,11 +4059,13 @@ Framework.prototype.install_make = function(key, name, obj, options, callback, s
 
 	F.$routesSort();
 	_controller = '';
+	name = name.replace(/\.package$/gi, '');
 
 	if (!skipEmit) {
 		setTimeout(function() {
 			F.emit(type + '#' + name, obj);
 			F.emit('install', type, name, obj);
+			F.temporary.ready[type + '#' + name] = F.datetime;
 		}, 500);
 	}
 
@@ -4063,6 +4126,7 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit, packageN
 		if (obj.url)
 			delete F.routes.mapping[F._version(obj.url)];
 		delete F.isomorphic[name];
+		delete F.temporary.ready[type + '#' + name];
 	} else if (type === 'middleware') {
 
 		if (!F.routes.middleware[name])
@@ -4070,6 +4134,7 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit, packageN
 
 		delete F.routes.middleware[name];
 		delete F.dependencies[type + '.' + name];
+		delete F.temporary.ready[type + '#' + name];
 		F._length_middleware = Object.keys(F.routes.middleware).length;
 
 		for (var i = 0, length = F.routes.web.length; i < length; i++) {
@@ -4092,6 +4157,7 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit, packageN
 
 	} else if (type === 'package') {
 		delete F.routes.packages[name];
+		delete F.temporary.ready['package#' + name];
 		F.uninstall('module', name, options, true);
 		return F;
 	} else if (type === 'view' || type === 'precompile') {
@@ -4103,6 +4169,7 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit, packageN
 
 		delete F.routes.views[name];
 		delete F.dependencies[type + '.' + name];
+		delete F.temporary.ready[type + '#' + name];
 
 		fsFileExists(obj.filename, function(e) {
 			e && Fs.unlink(obj.filename, NOOP);
@@ -4127,6 +4194,7 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit, packageN
 			delete F.sources[name];
 
 		delete F.dependencies[type + '.' + name];
+		delete F.temporary.ready[type + '#' + name];
 
 	} else if (type === 'module' || type === 'controller') {
 
@@ -4140,6 +4208,7 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit, packageN
 			delete require.cache[require.resolve(obj.id)];
 
 		F.$uninstall(id, packageName ? '' : ((isModule ? '#' : '') + name));
+		delete F.temporary.ready[type + '#' + name];
 
 		if (obj) {
 			obj.uninstall && obj.uninstall(options, name);
@@ -4164,6 +4233,7 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit, packageN
 
 		delete F.components.instances[name];
 		delete F.components.views[name];
+		delete F.temporary.ready[type + '#' + name];
 
 		var temporary = (F.id ? 'i-' + F.id + '_' : '') + 'components';
 		var data;

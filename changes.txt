@@ -33,6 +33,7 @@
 - fixed: NoSQL comparing dates `equal` in `where` condition
 - fixed: a problem with `booting` packages if are used custom paths (by @harry-stot)
 
+- improved: events
 - improved: mechanism of components
 - improved: performance
 
