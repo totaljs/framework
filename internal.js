@@ -1850,8 +1850,8 @@ function view_parse(content, minify, filename, controller) {
 
 			if (can && !counter) {
 				try {
-					var fn = new Function('self', 'return ' + tmp);
-					builder += '+' + DELIMITER + fn(controller).replace(/\\/g, '\\\\').replace(/\'/g, '\\\'') + DELIMITER;
+					var fn = new Function('self', 'config', 'return ' + tmp);
+					builder += '+' + DELIMITER + fn(controller, F.config).replace(/\\/g, '\\\\').replace(/\'/g, '\\\'') + DELIMITER;
 				} catch (e) {
 
 					console.log('VIEW EXCEPTION --->', filename, e, tmp);
