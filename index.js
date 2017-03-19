@@ -5999,15 +5999,15 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 		returnHeaders['Last-Modified'] = 'Mon, 01 Jan 2001 08:00:00 GMT';
 	}
 
-	if (headers)
-		returnHeaders = U.extend_headers(returnHeaders, headers);
-
 	if (download)
 		returnHeaders['Content-Disposition'] = 'attachment; filename=' + encodeURIComponent(download);
 	else if (returnHeaders['Content-Disposition'])
 		delete returnHeaders['Content-Disposition'];
 
 	returnHeaders[RESPONSE_HEADER_CONTENTTYPE] = contentType;
+
+	if (headers)
+		returnHeaders = U.extend_headers(returnHeaders, headers);
 
 	F.stats.response.stream++;
 	F._request_stats(false, req.isStaticFile);
@@ -6144,15 +6144,15 @@ Framework.prototype.responseBinary = function(req, res, contentType, buffer, enc
 
 	returnHeaders['Vary'] = 'Accept-Encoding' + (req.$mobile ? ', User-Agent' : '');
 
-	if (headers)
-		returnHeaders = U.extend_headers(returnHeaders, headers);
-
 	if (download)
 		returnHeaders['Content-Disposition'] = 'attachment; filename=' + encodeURIComponent(download);
 	else if (returnHeaders['Content-Disposition'])
 		delete returnHeaders['Content-Disposition'];
 
 	returnHeaders[RESPONSE_HEADER_CONTENTTYPE] = contentType;
+
+	if (headers)
+		returnHeaders = U.extend_headers(returnHeaders, headers);
 
 	F.stats.response.binary++;
 	F._request_stats(false, req.isStaticFile);
@@ -6344,9 +6344,6 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 	else
 		returnHeaders = gzip ? HEADERS['responseContent.compress'] : HEADERS.responseContent;
 
-	if (headers)
-		returnHeaders = U.extend_headers(returnHeaders, headers);
-
 	// Safari resolve
 	if (contentType === 'application/json')
 		returnHeaders[RESPONSE_HEADER_CACHECONTROL] = 'private, no-cache, no-store, must-revalidate';
@@ -6357,6 +6354,9 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 		contentType += '; charset=utf-8';
 
 	returnHeaders[RESPONSE_HEADER_CONTENTTYPE] = contentType;
+
+	if (headers)
+		returnHeaders = U.extend_headers(returnHeaders, headers);
 
 	if (req.method === 'HEAD') {
 		res.writeHead(code, returnHeaders);
