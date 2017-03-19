@@ -5114,7 +5114,7 @@ function component_debug(filename, value, extension) {
 	return beg + mid + plus + '\n' + mid + 'COMPONENT: ' + filename + '\n' + mid + plus + end + '\n\n' + value;
 }
 
-Framework.prototype.compileValidation = function(uri, key, filename, extension, callback, noCompress, req, res) {
+Framework.prototype.compileValidation = function(uri, key, filename, extension, callback, req, res) {
 
 	if (F.routes.merge[uri.pathname]) {
 		F.compileMerge(uri, key, extension, callback, req, res);
@@ -5123,12 +5123,12 @@ Framework.prototype.compileValidation = function(uri, key, filename, extension, 
 
 	fsFileExists(filename, function(e, size, sfile, stats) {
 		if (e) {
-			if (!noCompress && (extension === 'js' || extension === 'css') && !REG_NOCOMPRESS.test(filename))
+			if (!res.noCompress && (extension === 'js' || extension === 'css') && !REG_NOCOMPRESS.test(filename))
 				return F.compileFile(uri, key, filename, extension, callback, req, res);
 			F.temporary.path[key] = [filename, size, stats.mtime.toUTCString()];
 			callback(req, res);
 		} else if (F.isVirtualDirectory)
-			F.compileValidationVirtual(uri, key, filename, extension, callback, noCompress, req, res);
+			F.compileValidationVirtual(uri, key, filename, extension, callback, req, res);
 		else {
 			F.temporary.notfound[key] = true;
 			callback(req, res);
@@ -5138,7 +5138,7 @@ Framework.prototype.compileValidation = function(uri, key, filename, extension, 
 	return F;
 };
 
-Framework.prototype.compileValidationVirtual = function(uri, key, filename, extension, callback, noCompress, req, res) {
+Framework.prototype.compileValidationVirtual = function(uri, key, filename, extension, callback, req, res) {
 
 	var tmpname = filename.replace(F.config['directory-public'], F.config['directory-public-virtual']);
 	if (tmpname === filename) {
@@ -5156,7 +5156,7 @@ Framework.prototype.compileValidationVirtual = function(uri, key, filename, exte
 			return;
 		}
 
-		if (!noCompress && (extension === 'js' || extension === 'css') && !REG_NOCOMPRESS.test(filename))
+		if (!res.noCompress && (extension === 'js' || extension === 'css') && !REG_NOCOMPRESS.test(filename))
 			return F.compileFile(uri, key, filename, extension, callback, req, res);
 
 		F.temporary.path[key] = [filename, size, stats.mtime.toUTCString()];
@@ -5403,7 +5403,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 		key = req.$key || createTemporaryKey(req);
 
 	if (F.temporary.notfound[key]) {
-		F.config.debug && (F.temporary.notfound[key] = undefined);
+		DEBUG && (F.temporary.notfound[key] = undefined);
 		F.response404(req, res);
 		done && done();
 		return F;
@@ -5487,18 +5487,17 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 		req.$tmp.headers = headers;
 
 		// checks if the file exists and counts the file size
-		F.compileValidation(req.uri, key, filename, extension, responseFile_compile, res.noCompress, req, res);
+		F.compileValidation(req.uri, key, filename, extension, responseFile_compile, req, res);
 		return F;
 	}
 
 	var contentType = U.getContentType(extension);
 	var accept = req.headers['accept-encoding'] || '';
 
-	if (!accept && isGZIP(req))
-		accept = 'gzip';
+	!accept && isGZIP(req) && (accept = 'gzip');
 
 	var compress = F.config['allow-gzip'] && REQUEST_COMPRESS_CONTENTTYPE[contentType] && accept.indexOf('gzip') !== -1;
-	var range = req.headers['range'];
+	var range = req.headers.range;
 	var canCache = RELEASE && contentType !== 'text/cache-manifest';
 
 	if (canCache) {
