@@ -46,6 +46,8 @@ const REG_2 = /\s{2,}/g;
 const REG_4 = /\n\s{2,}./g;
 const REG_5 = />\n\s{1,}</g;
 const REG_6 = /[\<\w\"\u0080-\u07ff\u0400-\u04FF]+\s{2,}[\w\u0080-\u07ff\u0400-\u04FF\>]+/;
+const REG_7 = /\\/g;
+const REG_8 = /\'/g;
 const REG_BLOCK_BEG = /\@\{block.*?\}/gi;
 const REG_BLOCK_END = /\@\{end\}/gi;
 const REG_SKIP_1 = /\(\'|\"/;
@@ -1850,8 +1852,15 @@ function view_parse(content, minify, filename, controller) {
 
 			if (can && !counter) {
 				try {
-					var fn = new Function('self', 'config', 'return ' + tmp);
-					builder += '+' + DELIMITER + fn(controller, F.config).replace(/\\/g, '\\\\').replace(/\'/g, '\\\'') + DELIMITER;
+					var r = (new Function('self', 'config', 'return ' + tmp))(controller, F.config).replace(REG_7, '\\\\').replace(REG_8, '\\\'');
+					if (r) {
+						txtindex = $VIEWCACHE.indexOf(r);
+						if (txtindex === -1) {
+							txtindex = $VIEWCACHE.length;
+							$VIEWCACHE.push(r);
+						}
+						builder += '+$VIEWCACHE[' + txtindex + ']';
+					}
 				} catch (e) {
 
 					console.log('VIEW EXCEPTION --->', filename, e, tmp);
