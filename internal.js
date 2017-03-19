@@ -2996,11 +2996,11 @@ function attachFinishedListener(msg, callback) {
 	var eeSocket;
 	var finished = false;
 
-	function onFinish(error) {
+	function onFinish(err) {
 		eeMsg.cancel();
 		eeSocket.cancel();
 		finished = true;
-		callback(error);
+		callback(err);
 	}
 
 	// finished on first message event
