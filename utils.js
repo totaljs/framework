@@ -411,7 +411,7 @@ exports.keywords = function(content, forSearch, alternative, max_count, max_leng
  */
 exports.request = function(url, flags, data, callback, cookies, headers, encoding) {
 
-	// No data (data is optinal argument)
+	// No data (data is optional argument)
 	if (typeof(data) === 'function') {
 		encoding = headers;
 		headers = cookies;
@@ -703,7 +703,7 @@ exports.atob = function(str) {
  */
 exports.download = function(url, flags, data, callback, cookies, headers, encoding, timeout) {
 
-	// No data (data is optinal argument)
+	// No data (data is optional argument)
 	if (typeof(data) === 'function') {
 		timeout = encoding;
 		encoding = headers;

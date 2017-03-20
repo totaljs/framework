@@ -1520,7 +1520,7 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 				continue;
 			}
 
-			// ROUTE ientificator
+			// ROUTE identificator
 			if (flags[i].substring(0, 3) === 'id:') {
 				id = flags[i].substring(3).trim();
 				continue;
@@ -4417,7 +4417,7 @@ Framework.prototype.onLocale = null;
 // OLD: Framework.prototype.onLocate = null;
 
 /**
- * Sets theme to controlller
+ * Sets theme to controller
  * @controller {Controller}
  * @return {String}
  */
@@ -6115,7 +6115,7 @@ function responseRange_callback(stream, next, req, res) {
  * @param {Response} res
  * @param {String} contentType
  * @param {Buffer} buffer
- * @param {Encoding} type Default: "binary", optioanl
+ * @param {Encoding} type Default: "binary", optional
  * @param {String} download Optional, download name.
  * @param {Object} headers Optional
  * @return {Framework}
@@ -12702,7 +12702,7 @@ Controller.prototype.close = function(end) {
  * Sends an object to another total.js application (POST + JSON)
  * @param {String} url
  * @param {Object} obj
- * @param {Funciton(err, data, code, headers)} callback
+ * @param {Function(err, data, code, headers)} callback
  * @param {Number} timeout Timeout, optional default 10 seconds.
  * @return {EventEmitter}
  */
@@ -13410,7 +13410,7 @@ WebSocket.prototype.find = function(id) {
 };
 
 /**
- * Destroyes a WebSocket controller
+ * Destroys a WebSocket controller
  * @param {String} problem Optional.
  * @return {WebSocket}
  */

@@ -1235,7 +1235,7 @@ SchemaBuilderEntity.prototype.make = function(model, filter, callback, argument)
 	return output;
 };
 
-SchemaBuilderEntity.prototype.load = SchemaBuilderEntity.prototype.make; // Because JSDoc is not works with double asserting
+SchemaBuilderEntity.prototype.load = SchemaBuilderEntity.prototype.make; // Because JSDoc doesn't work with double asserting
 
 function autotrim(context, value) {
 	return context.trim ? value.trim() : value;
