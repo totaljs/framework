@@ -4790,6 +4790,7 @@ Framework.prototype.usage = function(detailed) {
 		uptime: Math.floor(process.uptime() / 60),
 		memoryTotal: (memory.heapTotal / 1024 / 1024).floor(2),
 		memoryUsage: (memory.heapUsed / 1024 / 1024).floor(2),
+		memoryRss: (memory.rss / 1024 / 1024).floor(2),
 		mode: F.config.debug ? 'debug' : 'release',
 		port: F.port,
 		ip: F.ip,
