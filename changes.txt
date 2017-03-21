@@ -22,10 +22,11 @@
 - updated: `U.request()`, added a new flag: `raw` (sends raw data)
 - updated: `F.schedule()` returns an identificator
 - updated: `U.clone()` supports `buffer` properties
-- updated: `setTimeout2()` added a new argument `limit`
-- updated: `F.script()` --> `now` argument is a function `now()` which it still returns `new Date()`
-- updated: `F.script()` --> `now` argument is the function now, not a property
+- updated: `setTimeout2(name, fn(param), timeout, [limit], [param])` added a new argument `limit` and `param`
+- updated: `F.script()` --> `now` argument (in the script body) is function `now()` which it still returns `new Date()`
+- updated: `F.script(body, value, callback(err, response, param), [param])` --> `param` argument is a helper
 - updated: middleware `next(false)` cancels calling of next middleware and controller
+- updated: `OPERATION(name, value, [callback(err, response, param)], [param])` added a new (helper) argument `param`
 
 - fixed: routing with `upload` flag
 - fixed: workers timeout
@@ -34,6 +35,7 @@
 - fixed: a problem with `booting` packages if are used custom paths (by @harry-stot)
 
 - improved: events
+- improved: parsing data from requests
 - improved: mechanism of components
 - improved: performance
 
