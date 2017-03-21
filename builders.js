@@ -3802,7 +3802,7 @@ global.NEWOPERATION = function(name, fn) {
 	return this;
 };
 
-global.OPERATION = function(name, value, callback) {
+global.OPERATION = function(name, value, callback, param) {
 
 	if (callback === undefined) {
 		callback = value;
@@ -3817,13 +3817,12 @@ global.OPERATION = function(name, value, callback) {
 			var opt = {};
 			opt.error = error;
 			opt.value = opt.model = value;
-
 			opt.callback = function(value) {
 				if (value instanceof Error) {
 					error.push(value);
 					value = EMPTYOBJECT;
 				}
-				callback(error.hasError() ? error : null, value);
+				callback(error.hasError() ? error : null, value, param);
 			};
 			fn(opt);
 		} else
@@ -3832,11 +3831,11 @@ global.OPERATION = function(name, value, callback) {
 					error.push(value);
 					value = EMPTYOBJECT;
 				}
-				callback(error.hasError() ? error : null, value);
+				callback(error.hasError() ? error : null, value, param);
 			});
 	} else {
 		error.push('Operation "{0}" not found.'.format(name));
-		callback(error, EMPTYOBJECT);
+		callback(error, EMPTYOBJECT, param);
 	}
 };
 
