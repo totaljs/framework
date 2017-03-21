@@ -246,55 +246,44 @@ var _test;
 var _flags;
 
 // GO ONLINE MODE
-if (!global.framework_internal)
-	global.framework_internal = require('./internal');
-
-if (!global.framework_builders)
-	global.framework_builders = require('./builders');
-
-if (!global.framework_utils)
-	global.framework_utils = require('./utils');
-
-if (!global.framework_mail)
-	global.framework_mail = require('./mail');
-
-if (!global.framework_image)
-	global.framework_image = require('./image');
-
-if (!global.framework_nosql)
-	global.framework_nosql = require('./nosql');
+!global.framework_internal && (global.framework_internal = require('./internal'));
+!global.framework_builders && (global.framework_builders = require('./builders'));
+!global.framework_utils && (global.framework_utils = require('./utils'));
+!global.framework_mail && (global.framework_mail = require('./mail'));
+!global.framework_image && (global.framework_image = require('./image'));
+!global.framework_nosql && (global.framework_nosql = require('./nosql'));
 
 global.Builders = framework_builders;
 var U = global.Utils = global.utils = global.U = global.framework_utils;
 global.Mail = framework_mail;
 
-global.WTF = function(message, name, uri) {
-	return F.problem(message, name, uri);
-};
-
-global.INCLUDE = global.SOURCE = function(name, options) {
-	return F.source(name, options);
-};
-
-global.MODULE = function(name) {
-	return F.module(name);
-};
-
-global.NOSQL = function(name) {
-	return F.nosql(name);
-};
-
-global.NOBIN = function(name) {
-	return F.nosql(name).binary;
-};
-
-global.NOCOUNTER = function(name) {
-	return F.nosql(name).counter;
-};
-
-global.NOMEM = global.NOSQLMEMORY = function(name, view) {
-	return global.framework_nosql.inmemory(name, view);
-};
+global.WTF = (message, name, uri) => F.problem(message, name, uri);
+global.INCLUDE = global.SOURCE = (name, options) => F.source(name, options);
+global.MODULE = (name) => F.module(name);
+global.NOSQL = (name) => F.nosql(name);
+global.NOBIN = (name) => F.nosql(name).binary;
+global.NOCOUNTER = (name) => F.nosql(name).counter;
+global.NOMEM = global.NOSQLMEMORY = (name, view) => global.framework_nosql.inmemory(name, view);
+global.CONFIG = (name) => F.config[name];
+global.UPTODATE = (type, url, options, interval, callback) => F.uptodate(type, url, options, interval, callback);
+global.INSTALL = (type, name, declaration, options, callback) => F.install(type, name, declaration, options, callback);
+global.UNINSTALL = (type, name, options) => F.uninstall(type, name, options);
+global.RESOURCE = (name, key) => F.resource(name, key);
+global.TRANSLATE = (name, key) => F.translate(name, key);
+global.TRANSLATOR = (name, text) => F.translator(name, text);
+global.TRACE = (message, name, uri, ip) => F.trace(message, name, uri, ip);
+global.MODEL = (name) => F.model(name);
+global.$$$ = global.GETSCHEMA = (group, name, fn, timeout) => framework_builders.getschema(group, name, fn, timeout);
+global.CREATE = (group, name) => framework_builders.getschema(group, name).default();
+global.SCRIPT = (body, value, callback, param) => F.script(body, value, callback, param);
+global.UID = () => UIDGENERATOR.date + (UIDGENERATOR.index++).padLeft(4, '0') + UIDGENERATOR.instance + (UIDGENERATOR.index % 2 ? 1 : 0);
+global.SINGLETON = (name, def) => SINGLETONS[name] || (SINGLETONS[name] = (new Function('return ' + (def || '{}')))());
+global.EACHSCHEMA = (group, fn) => framework_builders.eachschema(group, fn);
+global.FUNCTION = (name) => F.functions[name];
+global.ROUTING = (name) => F.routing(name);
+global.SCHEDULE = (date, each, fn, param) => F.schedule(date, each, fn, param);
+global.FINISHED = (stream, callback) => framework_internal.onFinished(stream, callback);
+global.DESTROY = (stream) => framework_internal.destroyStream(stream);
 
 global.DB = global.DATABASE = function() {
 	return typeof(F.database) === 'object' ? F.database : F.database.apply(framework, arguments);
@@ -312,65 +301,12 @@ global.EMIT = function() {
 	return F.emit.apply(F, arguments);
 };
 
-global.CONFIG = function(name) {
-	return F.config[name];
-};
-
-global.UPTODATE = function(type, url, options, interval, callback) {
-	return F.uptodate(type, url, options, interval, callback);
-};
-
-global.INSTALL = function(type, name, declaration, options, callback) {
-	return F.install(type, name, declaration, options, callback);
-};
-
-global.UNINSTALL = function(type, name, options) {
-	return F.uninstall(type, name, options);
-};
-
-global.RESOURCE = function(name, key) {
-	return F.resource(name, key);
-};
-
-global.TRANSLATE = function(name, key) {
-	return F.translate(name, key);
-};
-
-global.TRANSLATOR = function(name, text) {
-	return F.translator(name, text);
-};
-
 global.LOG = function() {
 	return F.log.apply(F, arguments);
 };
 
-global.TRACE = function(message, name, uri, ip) {
-	return F.trace(message, name, uri, ip);
-};
-
 global.LOGGER = function() {
 	return F.logger.apply(F, arguments);
-};
-
-global.MODEL = function(name) {
-	return F.model(name);
-};
-
-global.$$$ = global.GETSCHEMA = function(group, name, fn, timeout) {
-	return framework_builders.getschema(group, name, fn, timeout);
-};
-
-global.CREATE = function(group, name) {
-	return framework_builders.getschema(group, name).default();
-};
-
-global.SCRIPT = function(body, value, callback) {
-	return F.script(body, value, callback);
-};
-
-global.UID = function() {
-	var plus = UIDGENERATOR.index % 2 ? 1 : 0;
-	return UIDGENERATOR.date + (UIDGENERATOR.index++).padLeft(4, '0') + UIDGENERATOR.instance + plus;
 };
 
 global.MAKE = global.TRANSFORM = function(transform, fn) {
@@ -392,10 +328,6 @@ global.MAKE = global.TRANSFORM = function(transform, fn) {
 	return transform ? TransformBuilder.transform.apply(obj, arguments) : obj;
 };
 
-global.SINGLETON = function(name, def) {
-	return SINGLETONS[name] || (SINGLETONS[name] = (new Function('return ' + (def || '{}')))());
-};
-
 global.NEWTRANSFORM = function() {
 	return TransformBuilder.addTransform.apply(this, arguments);
 };
@@ -406,30 +338,6 @@ global.NEWSCHEMA = function(group, name) {
 		group = 'default';
 	}
 	return framework_builders.newschema(group, name);
-};
-
-global.EACHSCHEMA = function(group, fn) {
-	return framework_builders.eachschema(group, fn);
-};
-
-global.FUNCTION = function(name) {
-	return F.functions[name];
-};
-
-global.ROUTING = function(name) {
-	return F.routing(name);
-};
-
-global.SCHEDULE = function(date, each, fn) {
-	return F.schedule(date, each, fn);
-};
-
-global.FINISHED = function(stream, callback) {
-	framework_internal.onFinished(stream, callback);
-};
-
-global.DESTROY = function(stream) {
-	framework_internal.destroyStream(stream);
 };
 
 global.CLEANUP = function(stream, callback) {
@@ -823,9 +731,11 @@ Framework.prototype.__proto__ = Object.create(Events.EventEmitter.prototype, {
 	}
 });
 
-Framework.prototype.on2 = Framework.prototype.on;
+var framework = new Framework();
+global.framework = global.F = module.exports = framework;
 
-Framework.prototype.on = function(name, fn) {
+F.on2 = F.on;
+F.on = function(name, fn) {
 
 	if (name === 'init' || name === 'ready' || name === 'load') {
 		if (this.isLoaded) {
@@ -865,15 +775,15 @@ Framework.prototype.on = function(name, fn) {
  * Internal function
  * @return {String} Returns current (dependency type and name) owner.
  */
-Framework.prototype.$owner = function() {
+F.$owner = function() {
 	return _owner;
 };
 
-Framework.prototype.isSuccess = function(obj) {
+F.isSuccess = function(obj) {
 	return obj === SUCCESSHELPER;
 };
 
-Framework.prototype.convert = function(value, convertor) {
+F.convert = function(value, convertor) {
 
 	if (convertor) {
 		if (F.convertors.findIndex('name', value) !== -1)
@@ -920,7 +830,7 @@ Framework.prototype.convert = function(value, convertor) {
  * @param {String} name
  * @return {Object}
  */
-Framework.prototype.controller = function(name) {
+F.controller = function(name) {
 	return F.controllers[name] || null;
 };
 
@@ -929,7 +839,7 @@ Framework.prototype.controller = function(name) {
  * @param {String} filename
  * @return {Framework}
  */
-Framework.prototype.useConfig = function(name) {
+F.useConfig = function(name) {
 	return F._configure(name, true);
 };
 
@@ -937,7 +847,7 @@ Framework.prototype.useConfig = function(name) {
  * Sort all routes
  * @return {Framework}
  */
-Framework.prototype.$routesSort = function(type) {
+F.$routesSort = function(type) {
 
 	F.routes.web.sort((a, b) => a.priority > b.priority ? -1 : a.priority < b.priority ? 1 : 0);
 	F.routes.websockets.sort((a, b) => a.priority > b.priority ? -1 : a.priority < b.priority ? 1 : 0);
@@ -979,9 +889,9 @@ Framework.prototype.$routesSort = function(type) {
 	return F;
 };
 
-Framework.prototype.parseComponent = parseComponent;
+F.parseComponent = parseComponent;
 
-Framework.prototype.script = function(body, value, callback) {
+F.script = function(body, value, callback, param) {
 
 	var fn;
 	var compilation = value === undefined && callback === undefined;
@@ -1000,13 +910,13 @@ Framework.prototype.script = function(body, value, callback) {
 
 	if (compilation) {
 		return (function() {
-			return function(model, callback) {
+			return function(model, callback, param) {
 				return fn.call(EMPTYOBJECT, function(value) {
 					if (value instanceof Error)
-						callback(value);
+						callback(value, undefined, param);
 					else
-						callback(null, value);
-				}, model, n => new Date());
+						callback(null, value, param);
+				}, model, scriptNow);
 			};
 		})();
 	}
@@ -1021,7 +931,7 @@ Framework.prototype.script = function(body, value, callback) {
 		else
 			callback(null, value);
 
-	}, value, scriptNow);
+	}, value, scriptNow, param);
 
 	return F;
 };
@@ -1030,11 +940,11 @@ function scriptNow() {
 	return new Date();
 }
 
-Framework.prototype.database = function(name) {
+F.database = function(name) {
 	return F.nosql(name);
 };
 
-Framework.prototype.nosql = function(name) {
+F.nosql = function(name) {
 	var db = F.databases[name];
 	if (db)
 		return db;
@@ -1044,7 +954,7 @@ Framework.prototype.nosql = function(name) {
 	return db;
 };
 
-Framework.prototype.stop = Framework.prototype.kill = function(signal) {
+F.stop = F.kill = function(signal) {
 
 	for (var m in F.workers) {
 		var worker = F.workers[m];
@@ -1064,7 +974,7 @@ Framework.prototype.stop = Framework.prototype.kill = function(signal) {
 };
 
 
-Framework.prototype.redirect = function(host, newHost, withPath, permanent) {
+F.redirect = function(host, newHost, withPath, permanent) {
 
 	var external = host.startsWith('http://') || host.startsWith('https');
 	if (external) {
@@ -1130,7 +1040,7 @@ Framework.prototype.redirect = function(host, newHost, withPath, permanent) {
  * @param {Function} fn
  * @return {Framework}
  */
-Framework.prototype.schedule = function(date, repeat, fn) {
+F.schedule = function(date, repeat, fn) {
 
 	if (fn === undefined) {
 		fn = repeat;
@@ -1152,7 +1062,7 @@ Framework.prototype.schedule = function(date, repeat, fn) {
 	return id;
 };
 
-Framework.prototype.clearSchedule = function(id) {
+F.clearSchedule = function(id) {
 	F.schedules.remove('id', id);
 	return F;
 };
@@ -1164,7 +1074,7 @@ Framework.prototype.clearSchedule = function(id) {
  * @param {String Array} flags Optional, can contains extensions `.jpg`, `.gif' or watching path `/img/gallery/`
  * @return {Framework}
  */
-Framework.prototype.resize = function(url, fn, flags) {
+F.resize = function(url, fn, flags) {
 
 	var extensions = {};
 	var cache = true;
@@ -1232,7 +1142,7 @@ Framework.prototype.resize = function(url, fn, flags) {
  * @param {Function(id)} onDelete
  * @return {Framework}
  */
-Framework.prototype.restful = function(url, flags, onQuery, onGet, onSave, onDelete) {
+F.restful = function(url, flags, onQuery, onGet, onSave, onDelete) {
 
 	var tmp;
 
@@ -1277,7 +1187,7 @@ Framework.prototype.restful = function(url, flags, onQuery, onGet, onSave, onDel
  * @param {Boolean} credentials
  * @return {Framework}
  */
-Framework.prototype.cors = function(url, flags, credentials) {
+F.cors = function(url, flags, credentials) {
 
 	var route = {};
 	var origins = [];
@@ -1352,7 +1262,7 @@ Framework.prototype.cors = function(url, flags, credentials) {
 	return F;
 };
 
-Framework.prototype.group = function(flags, fn) {
+F.group = function(flags, fn) {
 	_flags = flags;
 	fn.call(this);
 	_flags = undefined;
@@ -1369,7 +1279,7 @@ Framework.prototype.group = function(flags, fn) {
  * @param {Number timeout Response timeout.
  * @return {Framework}
  */
-Framework.prototype.web = Framework.prototype.route = function(url, funcExecute, flags, length, language) {
+F.web = F.route = function(url, funcExecute, flags, length, language) {
 
 	var name;
 	var tmp;
@@ -1902,7 +1812,7 @@ function flags_to_object(flags) {
 	return obj;
 }
 
-Framework.prototype.mmr = function(url, process) {
+F.mmr = function(url, process) {
 	url = framework_internal.preparePath(U.path(url));
 	F.routes.mmr[url] = { exec: process };
 	F._request_check_POST = true;
@@ -1914,7 +1824,7 @@ Framework.prototype.mmr = function(url, process) {
  * @param {String} name
  * @return {Object}
  */
-Framework.prototype.routing = function(name) {
+F.routing = function(name) {
 	for (var i = 0, length = F.routes.web.length; i < length; i++) {
 		var route = F.routes.web[i];
 		if (route.name === name) {
@@ -1935,7 +1845,7 @@ Framework.prototype.routing = function(name) {
  * @param {String/String Array} fileN Filename or URL.
  * @return {Framework}
  */
-Framework.prototype.merge = function(url) {
+F.merge = function(url) {
 
 	var arr = [];
 
@@ -1970,7 +1880,7 @@ Framework.prototype.merge = function(url) {
 	return F;
 };
 
-Framework.prototype.mapping = function(url, path) {
+F.mapping = function(url, path) {
 	return F.map.apply(F, arguments);
 };
 
@@ -1980,7 +1890,7 @@ Framework.prototype.mapping = function(url, path) {
  * @param  {Object} handle
  * @return {Framework}
  */
-Framework.prototype.send = function(message, handle) {
+F.send = function(message, handle) {
 	process.send(message, handle);
 	return F;
 };
@@ -1992,7 +1902,7 @@ Framework.prototype.send = function(message, handle) {
  * @param {Function(filename) or String Array} filter
  * @return {Framework}
  */
-Framework.prototype.map = function(url, filename, filter) {
+F.map = function(url, filename, filter) {
 
 	if (url[0] !== '/')
 		url = '/' + url;
@@ -2128,7 +2038,7 @@ Framework.prototype.map = function(url, filename, filter) {
  * @param {Function(req, res, next, options)} funcExecute
  * @return {Framework}
  */
-Framework.prototype.middleware = function(name, funcExecute) {
+F.middleware = function(name, funcExecute) {
 	F.install('middleware', name, funcExecute);
 	_owner && F.owners.push({ type: 'middleware', owner: _owner, id: name });
 	return F;
@@ -2142,7 +2052,7 @@ Framework.prototype.middleware = function(name, funcExecute) {
  * @first {Boolean} Optional, add a middleware as first
  * @return {Framework}
  */
-Framework.prototype.use = function(name, url, types, first) {
+F.use = function(name, url, types, first) {
 	if (!url && !types) {
 		if (name instanceof Array) {
 			for (var i = 0; i < name.length; i++)
@@ -2229,7 +2139,7 @@ function merge_middleware(a, b, first) {
  * @param {Object} options Optional, additional options for middleware.
  * @return {Framework}
  */
-Framework.prototype.websocket = function(url, funcInitialize, flags, length) {
+F.websocket = function(url, funcInitialize, flags, length) {
 
 	var tmp;
 
@@ -2484,7 +2394,7 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, length) {
  * @param {String Array} middleware
  * @return {Framework}
  */
-Framework.prototype.file = function(fnValidation, fnExecute, flags) {
+F.file = function(fnValidation, fnExecute, flags) {
 
 	var a;
 
@@ -2599,7 +2509,7 @@ Framework.prototype.file = function(fnValidation, fnExecute, flags) {
 	return F;
 };
 
-Framework.prototype.localize = function(url, flags, minify) {
+F.localize = function(url, flags, minify) {
 
 	url = url.replace('*', '');
 
@@ -2674,7 +2584,7 @@ Framework.prototype.localize = function(url, flags, minify) {
 	return F;
 };
 
-Framework.prototype.$notModified = function(req, res, date) {
+F.$notModified = function(req, res, date) {
 	if (date === req.headers['if-modified-since']) {
 		HEADERS.responseNotModified['Last-Modified'] = date;
 		res.success = true;
@@ -2693,7 +2603,7 @@ Framework.prototype.$notModified = function(req, res, date) {
  * @param {Object} uri
  * @return {Framework}
  */
-Framework.prototype.error = function(err, name, uri) {
+F.error = function(err, name, uri) {
 
 	if (!arguments.length) {
 		return function(err) {
@@ -2722,7 +2632,7 @@ Framework.prototype.error = function(err, name, uri) {
  * @param {String} ip
  * @return {Framework}
  */
-Framework.prototype.problem = Framework.prototype.wtf = function(message, name, uri, ip) {
+F.problem = F.wtf = function(message, name, uri, ip) {
 	F.emit('problem', message, name, uri, ip);
 
 	if (message instanceof framework_builders.ErrorBuilder)
@@ -2749,7 +2659,7 @@ Framework.prototype.problem = Framework.prototype.wtf = function(message, name, 
  * @param {String} ip
  * @return {Framework}
  */
-Framework.prototype.change = function(message, name, uri, ip) {
+F.change = function(message, name, uri, ip) {
 	F.emit('change', message, name, uri, ip);
 
 	if (message instanceof framework_builders.ErrorBuilder)
@@ -2776,7 +2686,7 @@ Framework.prototype.change = function(message, name, uri, ip) {
  * @param {String} ip
  * @return {Framework}
  */
-Framework.prototype.trace = function(message, name, uri, ip) {
+F.trace = function(message, name, uri, ip) {
 
 	if (!F.config.trace)
 		return F;
@@ -2807,7 +2717,7 @@ Framework.prototype.trace = function(message, name, uri, ip) {
  * @param {String} name
  * @return {Object}
  */
-Framework.prototype.module = function(name) {
+F.module = function(name) {
 	return F.modules[name] || null;
 };
 
@@ -2816,7 +2726,7 @@ Framework.prototype.module = function(name) {
  * @param {Function(type, filename, content)} fn The `fn` must return modified value.
  * @return {String}
  */
-Framework.prototype.modify = function(fn) {
+F.modify = function(fn) {
 	if (!F.modificators)
 		F.modificators = [];
 	F.modificators.push(fn);
@@ -2824,7 +2734,7 @@ Framework.prototype.modify = function(fn) {
 	return F;
 };
 
-Framework.prototype.$load = function(types, targetdirectory, callback, packageName) {
+F.$load = function(types, targetdirectory, callback, packageName) {
 
 	var arr = [];
 	var dir = '';
@@ -3015,7 +2925,7 @@ Framework.prototype.$load = function(types, targetdirectory, callback, packageNa
 	return F;
 };
 
-Framework.prototype.$startup = function(callback) {
+F.$startup = function(callback) {
 
 	var dir = Path.join(directory, '/startup/');
 
@@ -3046,7 +2956,7 @@ Framework.prototype.$startup = function(callback) {
 	return this;
 };
 
-Framework.prototype.uptodate = function(type, url, options, interval, callback, next) {
+F.uptodate = function(type, url, options, interval, callback, next) {
 
 	if (typeof(options) === 'string' && typeof(interval) !== 'string') {
 		interval = options;
@@ -3081,7 +2991,7 @@ Framework.prototype.uptodate = function(type, url, options, interval, callback, 
  * @param {String} packageName Internal, optional.
  * @return {Framework}
  */
-Framework.prototype.install = function(type, name, declaration, options, callback, internal, useRequired, skipEmit, uptodateName, next, packageName) {
+F.install = function(type, name, declaration, options, callback, internal, useRequired, skipEmit, uptodateName, next, packageName) {
 
 	var obj = null;
 
@@ -3826,7 +3736,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 	return F;
 };
 
-Framework.prototype.restart = function() {
+F.restart = function() {
 	if (!F.isRestarted) {
 		F.isRestarted = true;
 		F.emit('restart');
@@ -3835,7 +3745,7 @@ Framework.prototype.restart = function() {
 	return F;
 };
 
-Framework.prototype.$restart = function() {
+F.$restart = function() {
 
 	console.log('----------------------------------------------------> RESTART ' + new Date().format('yyyy-MM-dd HH:mm:ss'));
 
@@ -3969,7 +3879,7 @@ Framework.prototype.$restart = function() {
 	return F;
 };
 
-Framework.prototype.install_prepare = function(noRecursive) {
+F.install_prepare = function(noRecursive) {
 
 	var keys = Object.keys(F.temporary.dependencies);
 
@@ -4025,7 +3935,7 @@ Framework.prototype.install_prepare = function(noRecursive) {
 	return F;
 };
 
-Framework.prototype.install_make = function(key, name, obj, options, callback, skipEmit, type) {
+F.install_make = function(key, name, obj, options, callback, skipEmit, type) {
 
 	var me = F.dependencies[key];
 	var routeID = me._id;
@@ -4081,7 +3991,7 @@ Framework.prototype.install_make = function(key, name, obj, options, callback, s
  * @param {Object} skipEmit Internal, optional.
  * @return {Framework}
  */
-Framework.prototype.uninstall = function(type, name, options, skipEmit, packageName) {
+F.uninstall = function(type, name, options, skipEmit, packageName) {
 
 	var obj = null;
 	var k, v, tmp;
@@ -4270,7 +4180,7 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit, packageN
 	return F;
 };
 
-Framework.prototype.$uninstall = function(owner, controller) {
+F.$uninstall = function(owner, controller) {
 
 	if (!F.temporary.owners[owner])
 		return F;
@@ -4342,7 +4252,7 @@ Framework.prototype.$uninstall = function(owner, controller) {
  * @param {String} path
  * @return {Framework}
  */
-Framework.prototype.register = function(path) {
+F.register = function(path) {
 
 	var key;
 	var extension = '.' + U.getExtension(path);
@@ -4381,7 +4291,7 @@ Framework.prototype.register = function(path) {
  * @param {String or Function} script Function to eval or Code or URL address.
  * @return {Framework}
  */
-Framework.prototype.eval = function(script) {
+F.eval = function(script) {
 	return F.install('eval', script);
 };
 
@@ -4392,7 +4302,7 @@ Framework.prototype.eval = function(script) {
  * @param {Object} uri URI address, optional.
  * @return {Framework}
  */
-Framework.prototype.onError = function(err, name, uri) {
+F.onError = function(err, name, uri) {
 	F.datetime = new Date();
 	console.log('======= ' + (F.datetime.format('yyyy-MM-dd HH:mm:ss')) + ': ' + (name ? name + ' ---> ' : '') + err.toString() + (uri ? ' (' + Parser.format(uri) + ')' : ''), err.stack);
 	return F;
@@ -4405,7 +4315,7 @@ Framework.prototype.onError = function(err, name, uri) {
 	@flags {String array}
 	@callback {Function} - @callback(Boolean), true is [authorize]d and false is [unauthorize]d
 */
-Framework.prototype.onAuthorize = null;
+F.onAuthorize = null;
 
 /*
 	Sets the current language for the current request
@@ -4413,22 +4323,22 @@ Framework.prototype.onAuthorize = null;
 	@res {Response} OR {WebSocketClient}
 	@return {String}
 */
-Framework.prototype.onLocale = null;
-// OLD: Framework.prototype.onLocate = null;
+F.onLocale = null;
+// OLD: F.onLocate = null;
 
 /**
  * Sets theme to controller
  * @controller {Controller}
  * @return {String}
  */
-Framework.prototype.onTheme = null;
+F.onTheme = null;
 
 /*
 	Versioning static files (this delegate call LESS CSS by the background property)
 	@name {String} :: name of static file (style.css or script.js)
 	return {String} :: return new name of static file (style-new.css or script-new.js)
 */
-Framework.prototype.onVersion = null;
+F.onVersion = null;
 
 /**
  * On mapping static files
@@ -4436,7 +4346,7 @@ Framework.prototype.onVersion = null;
  * @param {String} def Default value.
  * @return {String}
  */
-Framework.prototype.onMapping = function(url, def, ispublic, encode) {
+F.onMapping = function(url, def, ispublic, encode) {
 
 	if (url[0] !== '/')
 		url = '/' + url;
@@ -4465,7 +4375,7 @@ Framework.prototype.onMapping = function(url, def, ispublic, encode) {
 
 	return def;
 };
-Framework.prototype.download = Framework.prototype.snapshot = function(url, filename, callback) {
+F.download = F.snapshot = function(url, filename, callback) {
 
 	url = framework_internal.preparePath(url);
 	if (!url.match(/^http:|https:/gi)) {
@@ -4505,7 +4415,7 @@ Framework.prototype.download = Framework.prototype.snapshot = function(url, file
  * @param {String/RegExp} path
  * @return {WebSocket}
  */
-Framework.prototype.findConnection = function(path) {
+F.findConnection = function(path) {
 	var arr = Object.keys(F.connections);
 	var is = U.isRegExp(path);
 	for (var i = 0, length = arr.length; i < length; i++) {
@@ -4525,7 +4435,7 @@ Framework.prototype.findConnection = function(path) {
  * @param {String/RegExp} path
  * @return {WebSocket Array}
  */
-Framework.prototype.findConnections = function(path) {
+F.findConnections = function(path) {
 	var arr = Object.keys(F.connections);
 	var is = U.isRegExp(path);
 	var output = [];
@@ -4546,26 +4456,26 @@ Framework.prototype.findConnections = function(path) {
  * @param {Function(name, value)} delegate
  * @type {Boolean or StringErrorMessage}
  */
-Framework.prototype.onValidate = null;
+F.onValidate = null;
 
 /**
  * Global XML parsing
  * @param {String} value
  * @return {Object}
  */
-Framework.prototype.onParseXML = function(value) {
+F.onParseXML = function(value) {
 	var val = U.parseXML(value);
 	F._length_convertors && F.convert(val);
 	return val;
 };
+F.onParseXML.$def = true;
 
-/**
- * Global JSON parsing
- * @param {String} value
- * @return {Object}
- */
-Framework.prototype.onParseJSON = function(value) {
-	return JSON.parse(value);
+F.$onParseXML = function(req) {
+	if (F.onParseXML.$def) {
+		req.body = U.parseXML(req.buffer_data);
+		F._length_convertors && F.convert(req.body);
+	} else
+		req.body = F.onParseXML(req.buffer_data);
 };
 
 /**
@@ -4573,13 +4483,47 @@ Framework.prototype.onParseJSON = function(value) {
  * @param {String} value
  * @return {Object}
  */
-Framework.prototype.onParseQuery = function(value) {
+F.onParseJSON = function(value) {
+	return JSON.parse(value);
+};
+F.onParseJSON.$def = true;
+
+F.$onParseJSON = function(req) {
+	req.body = F.onParseJSON.$def ? JSON.parse(req.buffer_data) : F.onParseJSON(req.buffer_data);
+};
+
+/**
+ * Global JSON parsing
+ * @param {String} value
+ * @return {Object}
+ */
+F.onParseQuery = function(value) {
 	if (value) {
 		var val = Qs.parse(value, null, null, QUERYPARSEROPTIONS);
 		F._length_convertors && F.convert(val);
 		return val;
 	}
 	return {};
+};
+F.onParseQuery.$def = true;
+
+F.$onParseQueryBody = function(req) {
+	if (F.onParseQuery.$def) {
+		if (req.buffer_data) {
+			req.body = Qs.parse(req.buffer_data, null, null, QUERYPARSEROPTIONS);
+			F._length_convertors && F.convert(req.body);
+		} else
+			req.body = {};
+	} else
+		req.body = F.onParseQuery(req.buffer_data, req);
+};
+
+F.$onParseQueryUrl = function(req) {
+	if (F.onParseQuery.$def) {
+		req._querydata = Qs.parse(req.uri.query, null, null, QUERYPARSEROPTIONS);
+		F._length_convertors && F.convert(req._querydata);
+	} else
+		req._querydata = F.onParseQuery(req.uri.query, req);
 };
 
 /**
@@ -4589,7 +4533,7 @@ Framework.prototype.onParseQuery = function(value) {
  * @param {String} name
  * @param {Function(err, body)} callback
  */
-Framework.prototype.onSchema = function(req, group, name, callback, filter) {
+F.onSchema = function(req, group, name, callback, filter) {
 	var schema = GETSCHEMA(group, name);
 	if (schema)
 		schema.make(req.body, onSchema_callback, filter, callback);
@@ -4613,7 +4557,7 @@ function onSchema_callback(err, res, callback) {
  * @param {String} replyTo
  * @return {MailMessage}
  */
-Framework.prototype.onMail = function(address, subject, body, callback, replyTo) {
+F.onMail = function(address, subject, body, callback, replyTo) {
 
 	var tmp;
 
@@ -4666,7 +4610,7 @@ Framework.prototype.onMail = function(address, subject, body, callback, replyTo)
 	return message;
 };
 
-Framework.prototype.onMeta = function() {
+F.onMeta = function() {
 
 	var builder = '';
 	var length = arguments.length;
@@ -4700,7 +4644,7 @@ Framework.prototype.onMeta = function() {
 };
 
 // @arguments {Object params}
-Framework.prototype.log = function() {
+F.log = function() {
 
 	F.datetime = new Date();
 	var filename = F.datetime.getFullYear() + '-' + (F.datetime.getMonth() + 1).toString().padLeft(2, '0') + '-' + F.datetime.getDate().toString().padLeft(2, '0');
@@ -4724,7 +4668,7 @@ Framework.prototype.log = function() {
 	return F;
 };
 
-Framework.prototype.logger = function() {
+F.logger = function() {
 	F.datetime = new Date();
 	var dt = F.datetime.getFullYear() + '-' + (F.datetime.getMonth() + 1).toString().padLeft(2, '0') + '-' + F.datetime.getDate().toString().padLeft(2, '0') + ' ' + F.datetime.getHours().toString().padLeft(2, '0') + ':' + F.datetime.getMinutes().toString().padLeft(2, '0') + ':' + F.datetime.getSeconds().toString().padLeft(2, '0');
 	var str = '';
@@ -4746,7 +4690,7 @@ Framework.prototype.logger = function() {
 	return F;
 };
 
-Framework.prototype.logmail = function(address, subject, body, callback) {
+F.logmail = function(address, subject, body, callback) {
 
 	if (typeof(body) === FUNCTION) {
 		callback = body;
@@ -4764,7 +4708,7 @@ Framework.prototype.logmail = function(address, subject, body, callback) {
 	return F.onMail(address, subject, body, callback);
 };
 
-Framework.prototype.usage = function(detailed) {
+F.usage = function(detailed) {
 	var memory = process.memoryUsage();
 	var cache = Object.keys(F.cache.items);
 	var resources = Object.keys(F.resources);
@@ -4887,7 +4831,7 @@ Framework.prototype.usage = function(detailed) {
  * @param {Object} model
  * @return {String}
  */
-Framework.prototype.onCompileView = function(name, html, model) {
+F.onCompileView = function(name, html, model) {
 	return html;
 };
 
@@ -4897,7 +4841,7 @@ Framework.prototype.onCompileView = function(name, html, model) {
 	@content {String} :: Content of CSS file
 	return {String}
 */
-Framework.prototype.onCompileStyle = null;
+F.onCompileStyle = null;
 
 /*
 	3rd JavaScript compiler (Sync)
@@ -4905,7 +4849,7 @@ Framework.prototype.onCompileStyle = null;
 	@content {String} :: Content of JavaScript file
 	return {String}
 */
-Framework.prototype.onCompileScript = null;
+F.onCompileScript = null;
 
 /**
  * Compile content (JS, CSS, HTML)
@@ -4914,7 +4858,7 @@ Framework.prototype.onCompileScript = null;
  * @param {String} filename
  * @return {String}
  */
-Framework.prototype.compileContent = function(extension, content, filename) {
+F.compileContent = function(extension, content, filename) {
 
 	if (filename && REG_NOCOMPRESS.test(filename))
 		return content;
@@ -4948,7 +4892,7 @@ Framework.prototype.compileContent = function(extension, content, filename) {
  * @param {Function()} callback
  * @return {Framework}
  */
-Framework.prototype.compileFile = function(uri, key, filename, extension, callback, req, res) {
+F.compileFile = function(uri, key, filename, extension, callback, req, res) {
 	fsFileRead(filename, function(err, buffer) {
 
 		if (err) {
@@ -4976,7 +4920,7 @@ Framework.prototype.compileFile = function(uri, key, filename, extension, callba
  * @param {Function()} callback
  * @return {Framework}
  */
-Framework.prototype.compileMerge = function(uri, key, extension, callback, req, res) {
+F.compileMerge = function(uri, key, extension, callback, req, res) {
 
 	var merge = F.routes.merge[uri.pathname];
 	var filename = merge.filename;
@@ -5115,7 +5059,7 @@ function component_debug(filename, value, extension) {
 	return beg + mid + plus + '\n' + mid + 'COMPONENT: ' + filename + '\n' + mid + plus + end + '\n\n' + value;
 }
 
-Framework.prototype.compileValidation = function(uri, key, filename, extension, callback, req, res) {
+F.compileValidation = function(uri, key, filename, extension, callback, req, res) {
 
 	if (F.routes.merge[uri.pathname]) {
 		F.compileMerge(uri, key, extension, callback, req, res);
@@ -5139,7 +5083,7 @@ Framework.prototype.compileValidation = function(uri, key, filename, extension, 
 	return F;
 };
 
-Framework.prototype.compileValidationVirtual = function(uri, key, filename, extension, callback, req, res) {
+F.compileValidationVirtual = function(uri, key, filename, extension, callback, req, res) {
 
 	var tmpname = filename.replace(F.config['directory-public'], F.config['directory-public-virtual']);
 	if (tmpname === filename) {
@@ -5173,7 +5117,7 @@ Framework.prototype.compileValidationVirtual = function(uri, key, filename, exte
  * @param {Response} res
  * @return {Framework}
  */
-Framework.prototype.responseStatic = function(req, res, done) {
+F.responseStatic = function(req, res, done) {
 
 	if (res.success || res.headersSent) {
 		done && done();
@@ -5265,12 +5209,12 @@ function responseStatic_timeout(req, res, done) {
 	F.responseStatic(req, res, done);
 }
 
-Framework.prototype.restore = function(filename, target, callback, filter) {
+F.restore = function(filename, target, callback, filter) {
 	var backup = new Backup();
 	backup.restore(filename, target, callback, filter);
 };
 
-Framework.prototype.backup = function(filename, path, callback, filter) {
+F.backup = function(filename, path, callback, filter) {
 
 	var length = path.length;
 	var padding = 120;
@@ -5302,7 +5246,7 @@ Framework.prototype.backup = function(filename, path, callback, filter) {
 	return this;
 };
 
-Framework.prototype.exists = function(req, res, max, callback) {
+F.exists = function(req, res, max, callback) {
 
 	if (typeof(max) === 'function') {
 		callback = max;
@@ -5337,7 +5281,7 @@ Framework.prototype.exists = function(req, res, max, callback) {
  * @param {String / Request} filename Filename or Request object.
  * @return {Boolean}
  */
-Framework.prototype.isProcessed = function(filename) {
+F.isProcessed = function(filename) {
 
 	if (filename.url) {
 		var name = filename.url;
@@ -5355,7 +5299,7 @@ Framework.prototype.isProcessed = function(filename) {
  * @param {String / Request} filename Filename or Request object.
  * @return {Boolean}
  */
-Framework.prototype.isProcessing = function(filename) {
+F.isProcessing = function(filename) {
 
 	if (!filename.url)
 		return F.temporary.processing[filename] ? true : false;
@@ -5376,7 +5320,7 @@ Framework.prototype.isProcessing = function(filename) {
  * @param  {Response} res (optional) Response
  * @return {Framework}
  */
-Framework.prototype.noCache = function(req, res) {
+F.noCache = function(req, res) {
 	req.noCache();
 	res && res.noCache();
 	return F;
@@ -5393,7 +5337,7 @@ Framework.prototype.noCache = function(req, res) {
  * @param {String} key Path to file, INTERNAL.
  * @return {Framework}
  */
-Framework.prototype.responseFile = function(req, res, filename, downloadName, headers, done, key) {
+F.responseFile = function(req, res, filename, downloadName, headers, done, key) {
 
 	if (res.success || res.headersSent) {
 		done && done();
@@ -5607,7 +5551,7 @@ function responseFile_nocompress(stream, next, req, res) {
  * @param {String/Request} url
  * @return {Framework}
  */
-Framework.prototype.touch = function(url) {
+F.touch = function(url) {
 	if (url) {
 		var key = createTemporaryKey(url);
 		delete F.temporary.path[key];
@@ -5629,7 +5573,7 @@ Framework.prototype.touch = function(url) {
  * @param {Function(err)} callback
  * @return {Framework}
  */
-Framework.prototype.responsePipe = function(req, res, url, headers, timeout, callback) {
+F.responsePipe = function(req, res, url, headers, timeout, callback) {
 
 	if (res.success || res.headersSent)
 		return F;
@@ -5706,7 +5650,7 @@ Framework.prototype.responsePipe = function(req, res, url, headers, timeout, cal
  * @param {Response} res
  * @return {Framework}
  */
-Framework.prototype.responseCustom = function(req, res) {
+F.responseCustom = function(req, res) {
 	if (res.success || res.headersSent)
 		return F;
 	res.success = true;
@@ -5727,7 +5671,7 @@ Framework.prototype.responseCustom = function(req, res) {
  * @param {Function} done Optional, callback function.
  * @return {Framework}
  */
-Framework.prototype.responseImage = function(req, res, filename, fnProcess, headers, done) {
+F.responseImage = function(req, res, filename, fnProcess, headers, done) {
 
 	var key = req.$key || createTemporaryKey(req);
 	if (F.temporary.notfound[key]) {
@@ -5866,7 +5810,7 @@ function responseImage_filename(exists, size, isFile, stats, req) {
 	});
 }
 
-Framework.prototype.responseImagePrepare = function(req, res, fnPrepare, fnProcess, headers, done) {
+F.responseImagePrepare = function(req, res, fnPrepare, fnProcess, headers, done) {
 
 	var key = req.$key || createTemporaryKey(req);
 
@@ -5916,7 +5860,7 @@ Framework.prototype.responseImagePrepare = function(req, res, fnPrepare, fnProce
  * @param {Function} done Optional, callback.
  * @return {Framework}
  */
-Framework.prototype.responseImageWithoutCache = function(req, res, filename, fnProcess, headers, done) {
+F.responseImageWithoutCache = function(req, res, filename, fnProcess, headers, done) {
 
 	var stream;
 
@@ -5962,7 +5906,7 @@ Framework.prototype.responseImageWithoutCache = function(req, res, filename, fnP
  * @param {Object} headers Optional
  * @return {Framework}
  */
-Framework.prototype.responseStream = function(req, res, contentType, stream, download, headers, done, nocompress) {
+F.responseStream = function(req, res, contentType, stream, download, headers, done, nocompress) {
 
 	if (res.success || res.headersSent) {
 		done && done();
@@ -6052,7 +5996,7 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
  * @param {Function} done Optional, callback.
  * @return {Framework}
  */
-Framework.prototype.responseRange = function(name, range, headers, req, res, done) {
+F.responseRange = function(name, range, headers, req, res, done) {
 
 	var arr = range.replace(REG_RANGE, '').split('-');
 	var beg = +arr[0] || 0;
@@ -6121,7 +6065,7 @@ function responseRange_callback(stream, next, req, res) {
  * @param {Object} headers Optional
  * @return {Framework}
  */
-Framework.prototype.responseBinary = function(req, res, contentType, buffer, encoding, download, headers, done) {
+F.responseBinary = function(req, res, contentType, buffer, encoding, download, headers, done) {
 
 	if (res.success || res.headersSent) {
 		done && done();
@@ -6183,7 +6127,7 @@ Framework.prototype.responseBinary = function(req, res, contentType, buffer, enc
 	return F;
 };
 
-Framework.prototype.setModified = function(req, res, value) {
+F.setModified = function(req, res, value) {
 	if (typeof(value) === 'string')
 		res.setHeader('Etag', value + F.config['etag-version']);
 	else
@@ -6191,7 +6135,7 @@ Framework.prototype.setModified = function(req, res, value) {
 	return F;
 };
 
-Framework.prototype.notModified = function(req, res, compare, strict) {
+F.notModified = function(req, res, compare, strict) {
 
 	var type = typeof(compare);
 	if (type === 'boolean') {
@@ -6232,7 +6176,7 @@ Framework.prototype.notModified = function(req, res, compare, strict) {
 	return true;
 };
 
-Framework.prototype.responseCode = function(req, res, code, problem) {
+F.responseCode = function(req, res, code, problem) {
 	problem && F.problem(problem, 'response' + code + '()', req.uri, req.ip);
 	if (res.success || res.headersSent)
 		return F;
@@ -6254,31 +6198,31 @@ Framework.prototype.responseCode = function(req, res, code, problem) {
 	return F;
 };
 
-Framework.prototype.response400 = function(req, res, problem) {
+F.response400 = function(req, res, problem) {
 	return F.responseCode(req, res, 400, problem);
 };
 
-Framework.prototype.response401 = function(req, res, problem) {
+F.response401 = function(req, res, problem) {
 	return F.responseCode(req, res, 401, problem);
 };
 
-Framework.prototype.response403 = function(req, res, problem) {
+F.response403 = function(req, res, problem) {
 	return F.responseCode(req, res, 403, problem);
 };
 
-Framework.prototype.response404 = function(req, res, problem) {
+F.response404 = function(req, res, problem) {
 	return F.responseCode(req, res, 404, problem);
 };
 
-Framework.prototype.response408 = function(req, res, problem) {
+F.response408 = function(req, res, problem) {
 	return F.responseCode(req, res, 408, problem);
 };
 
-Framework.prototype.response431 = function(req, res, problem) {
+F.response431 = function(req, res, problem) {
 	return F.responseCode(req, res, 431, problem);
 };
 
-Framework.prototype.response500 = function(req, res, error) {
+F.response500 = function(req, res, error) {
 	error && F.error(error, null, req.uri);
 	if (res.success || res.headersSent)
 		return F;
@@ -6298,11 +6242,11 @@ Framework.prototype.response500 = function(req, res, error) {
 	return F;
 };
 
-Framework.prototype.response501 = function(req, res, problem) {
+F.response501 = function(req, res, problem) {
 	return F.responseCode(req, res, 501, problem);
 };
 
-Framework.prototype.response503 = function(req, res) {
+F.response503 = function(req, res) {
 	var keys = '';
 	var headers = {};
 	headers[RESPONSE_HEADER_CACHECONTROL] = 'private, no-cache, no-store, must-revalidate';
@@ -6325,7 +6269,7 @@ Framework.prototype.response503 = function(req, res) {
  * @param {Object} headers Custom headers.
  * @return {Framework}
  */
-Framework.prototype.responseContent = function(req, res, code, contentBody, contentType, compress, headers) {
+F.responseContent = function(req, res, code, contentBody, contentType, compress, headers) {
 	if (res.success || res.headersSent)
 		return F;
 
@@ -6385,7 +6329,7 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
  * @param {Boolean} permanent Optional.
  * @return {Framework}
  */
-Framework.prototype.responseRedirect = function(req, res, url, permanent) {
+F.responseRedirect = function(req, res, url, permanent) {
 	if (res.success || res.headersSent)
 		return F;
 	F._request_stats(false, req.isStaticFile);
@@ -6399,7 +6343,7 @@ Framework.prototype.responseRedirect = function(req, res, url, permanent) {
 	return F;
 };
 
-Framework.prototype.load = function(debug, types, pwd) {
+F.load = function(debug, types, pwd) {
 
 	if (pwd && pwd[0] === '.' && pwd.length < 4)
 		F.directory = directory = U.$normalize(Path.normalize(directory + '/..'));
@@ -6463,7 +6407,7 @@ Framework.prototype.load = function(debug, types, pwd) {
  * @param  {Object} options
  * @return {Framework}
  */
-Framework.prototype.initialize = function(http, debug, options, restart) {
+F.initialize = function(http, debug, options, restart) {
 
 	if (!options)
 		options = {};
@@ -6591,7 +6535,7 @@ Framework.prototype.initialize = function(http, debug, options, restart) {
  * @param  {Object} options Framework settings.
  * @return {Framework}
  */
-Framework.prototype.http = function(mode, options) {
+F.http = function(mode, options) {
 
 	if (options === undefined)
 		options = {};
@@ -6608,7 +6552,7 @@ Framework.prototype.http = function(mode, options) {
  * @param {Object} options Framework settings.
  * @return {Framework}
  */
-Framework.prototype.https = function(mode, options) {
+F.https = function(mode, options) {
 	return F.mode(require('https'), mode, options || {});
 };
 
@@ -6617,7 +6561,7 @@ Framework.prototype.https = function(mode, options) {
  * @param {String} mode New mode (e.g. debug or release)
  * @return {Framework}
  */
-Framework.prototype.mode = function(http, name, options) {
+F.mode = function(http, name, options) {
 
 	var debug = false;
 
@@ -6683,7 +6627,7 @@ Framework.prototype.mode = function(http, name, options) {
 	return F;
 };
 
-Framework.prototype.console = function() {
+F.console = function() {
 	console.log('====================================================');
 	console.log('PID         : ' + process.pid);
 	console.log('Node.js     : ' + process.version);
@@ -6704,7 +6648,7 @@ Framework.prototype.console = function() {
  * Re-connect server
  * @return {Framework}
  */
-Framework.prototype.reconnect = function() {
+F.reconnect = function() {
 	if (F.config['default-port'] !== undefined)
 		F.port = F.config['default-port'];
 	if (F.config['default-ip'] !== undefined)
@@ -6719,7 +6663,7 @@ Framework.prototype.reconnect = function() {
  * @param {Number} count Run count.
  * @return {Framework}
  */
-Framework.prototype._service = function(count) {
+F._service = function(count) {
 
 	UIDGENERATOR.date = F.datetime.format('yyMMddHHmm');
 	UIDGENERATOR.index = 1;
@@ -6863,7 +6807,7 @@ Framework.prototype._service = function(count) {
  * @param {Request} req
  * @param {Response} res
  */
-Framework.prototype.listener = function(req, res) {
+F.listener = function(req, res) {
 
 	if (F._length_wait)
 		return F.response503(req, res);
@@ -6938,7 +6882,7 @@ function _request_continue_middleware(req, res)  {
  * @param {String} protocol [description]
  * @return {Framework}
  */
-Framework.prototype._request_continue = function(req, res, headers) {
+F._request_continue = function(req, res, headers) {
 
 	if (!req || !res || res.headersSent || res.success)
 		return;
@@ -7148,7 +7092,7 @@ function cors_callback_multipart(req, res, multipart) {
 		new Subscribe(F, req, res, 2).multipart(multipart);
 }
 
-Framework.prototype._request_mmr = function(req, res, header) {
+F._request_mmr = function(req, res, header) {
 	var route = F.routes.mmr[req.url];
 	F.stats.request.mmr++;
 
@@ -7165,7 +7109,7 @@ Framework.prototype._request_mmr = function(req, res, header) {
 	res.end();
 };
 
-Framework.prototype._cors = function(req, res, fn, arg) {
+F._cors = function(req, res, fn, arg) {
 
 	var isAllowed = false;
 	var cors;
@@ -7279,7 +7223,7 @@ Framework.prototype._cors = function(req, res, fn, arg) {
  * @param {Socket} socket
  * @param {Buffer} head
  */
-Framework.prototype._upgrade = function(req, socket, head) {
+F._upgrade = function(req, socket, head) {
 
 	if ((req.headers.upgrade || '').toLowerCase() !== 'websocket')
 		return;
@@ -7327,7 +7271,7 @@ function _upgrade_prepare_middleware(req) {
  * @param {String} path
  * @param {Object} headers
  */
-Framework.prototype._upgrade_prepare = function(req, path) {
+F._upgrade_prepare = function(req, path) {
 	var auth = F.onAuthorize;
 	if (auth) {
 		auth.call(F, req, req.websocket, req.flags, function(isLogged, user) {
@@ -7362,7 +7306,7 @@ Framework.prototype._upgrade_prepare = function(req, path) {
  * @param {String} path
  * @param {Object} headers
  */
-Framework.prototype._upgrade_continue = function(route, req, path) {
+F._upgrade_continue = function(route, req, path) {
 
 	var socket = req.websocket;
 
@@ -7407,7 +7351,7 @@ Framework.prototype._upgrade_continue = function(route, req, path) {
  * @param {Boolean} isStaticFile
  * @return {Framework}
  */
-Framework.prototype._request_stats = function(beg, isStaticFile) {
+F._request_stats = function(beg, isStaticFile) {
 
 	if (beg)
 		F.stats.request.pending++;
@@ -7425,7 +7369,7 @@ Framework.prototype._request_stats = function(beg, isStaticFile) {
  * @param {String} name
  * @return {Object}
  */
-Framework.prototype.model = function(name) {
+F.model = function(name) {
 	var obj = F.models[name];
 	if (obj || obj === null)
 		return obj;
@@ -7440,7 +7384,7 @@ Framework.prototype.model = function(name) {
  * @param {Object} options Custom initial options, optional.
  * @return {Object}
  */
-Framework.prototype.source = function(name, options, callback) {
+F.source = function(name, options, callback) {
 	var obj = F.sources[name];
 	if (obj || obj === null)
 		return obj;
@@ -7455,7 +7399,7 @@ Framework.prototype.source = function(name, options, callback) {
  * @param {Object} options Custom initial options, optional.
  * @return {Object}
  */
-Framework.prototype.include = function(name, options, callback) {
+F.include = function(name, options, callback) {
 	return F.source(name, options, callback);
 };
 
@@ -7465,7 +7409,7 @@ Framework.prototype.include = function(name, options, callback) {
  * @param {String} message
  * @return {Framework}
  */
-Framework.prototype._log = function() {
+F._log = function() {
 
 	if (RELEASE)
 		return false;
@@ -7489,7 +7433,7 @@ Framework.prototype._log = function() {
  * @param {String} language Optional.
  * @return {MailMessage}
  */
-Framework.prototype.mail = function(address, subject, view, model, callback, language) {
+F.mail = function(address, subject, view, model, callback, language) {
 
 	if (typeof(callback) === 'string') {
 		var tmp = language;
@@ -7528,7 +7472,7 @@ Framework.prototype.mail = function(address, subject, view, model, callback, lan
  * @param {String} language Optional.
  * @return {String}
  */
-Framework.prototype.view = function(name, model, layout, repository, language) {
+F.view = function(name, model, layout, repository, language) {
 
 	var controller = EMPTYCONTROLLER;
 
@@ -7563,7 +7507,7 @@ Framework.prototype.view = function(name, model, layout, repository, language) {
  * @param {String} language Optional.
  * @return {String}
  */
-Framework.prototype.viewCompile = function(body, model, layout, repository, language) {
+F.viewCompile = function(body, model, layout, repository, language) {
 
 	var controller = EMPTYCONTROLLER;
 
@@ -7592,7 +7536,7 @@ Framework.prototype.viewCompile = function(body, model, layout, repository, lang
  * @param {Object} headers Additional headers.
  * @return {Framework}
  */
-Framework.prototype.assert = function(name, url, flags, callback, data, cookies, headers) {
+F.assert = function(name, url, flags, callback, data, cookies, headers) {
 
 	// !IMPORTANT! F.testsPriority is created dynamically in F.test()
 	if (typeof(url) === 'function') {
@@ -7710,7 +7654,7 @@ Framework.prototype.assert = function(name, url, flags, callback, data, cookies,
  * @param {Function} callback Callback.
  * @return {Framework}
  */
-Framework.prototype.testing = function(stop, callback) {
+F.testing = function(stop, callback) {
 
 	if (stop === undefined)
 		stop = true;
@@ -7852,7 +7796,7 @@ Framework.prototype.testing = function(stop, callback) {
  * @param {Function()} cb
  * @return {Framework}
  */
-Framework.prototype.test = function(stop, names, cb) {
+F.test = function(stop, names, cb) {
 
 	if (stop === undefined)
 		stop = true;
@@ -7996,7 +7940,7 @@ Framework.prototype.test = function(stop, names, cb) {
  * @param {Boolean} isInit Private argument.
  * @return {Framework}
  */
-Framework.prototype.clear = function(callback, isInit) {
+F.clear = function(callback, isInit) {
 
 	var dir = F.path.temp();
 	var plus = F.id ? 'i-' + F.id + '_' : '';
@@ -8059,7 +8003,7 @@ Framework.prototype.clear = function(callback, isInit) {
  * @param {Function} callback
  * @return {Framework}
  */
-Framework.prototype.unlink = function(arr, callback) {
+F.unlink = function(arr, callback) {
 
 	if (typeof(arr) === 'string')
 		arr = [arr];
@@ -8084,7 +8028,7 @@ Framework.prototype.unlink = function(arr, callback) {
  * @param {Function} callback
  * @return {Framework}
  */
-Framework.prototype.rmdir = function(arr, callback) {
+F.rmdir = function(arr, callback) {
 	if (typeof(arr) === 'string')
 		arr = [arr];
 
@@ -8109,7 +8053,7 @@ Framework.prototype.rmdir = function(arr, callback) {
  * @param {Boolean} isUnique Optional, default true.
  * @return {String}
  */
-Framework.prototype.encrypt = function(value, key, isUnique) {
+F.encrypt = function(value, key, isUnique) {
 
 	if (value === undefined)
 		return '';
@@ -8139,7 +8083,7 @@ Framework.prototype.encrypt = function(value, key, isUnique) {
  * @param {Boolean} jsonConvert Optional, default true.
  * @return {Object or String}
  */
-Framework.prototype.decrypt = function(value, key, jsonConvert) {
+F.decrypt = function(value, key, jsonConvert) {
 
 	if (typeof(key) === 'boolean') {
 		var tmp = jsonConvert;
@@ -8173,7 +8117,7 @@ Framework.prototype.decrypt = function(value, key, jsonConvert) {
  * @param {String} salt Optional, default false.
  * @return {String}
  */
-Framework.prototype.hash = function(type, value, salt) {
+F.hash = function(type, value, salt) {
 	var hash = Crypto.createHash(type);
 	var plus = '';
 
@@ -8192,7 +8136,7 @@ Framework.prototype.hash = function(type, value, salt) {
  * @param {String} key Resource key.
  * @return {String} String
  */
-Framework.prototype.resource = function(name, key) {
+F.resource = function(name, key) {
 
 	if (!key) {
 		key = name;
@@ -8232,7 +8176,7 @@ Framework.prototype.resource = function(name, key) {
  * @param {String} text
  * @return {String}
  */
-Framework.prototype.translate = function(language, text) {
+F.translate = function(language, text) {
 
 	if (!text) {
 		text = language;
@@ -8252,11 +8196,11 @@ Framework.prototype.translate = function(language, text) {
  * @param {String} text
  * @return {String}
  */
-Framework.prototype.translator = function(language, text) {
+F.translator = function(language, text) {
 	return framework_internal.parseLocalization(text, language);
 };
 
-Framework.prototype._configure_sitemap = function(arr, clean) {
+F._configure_sitemap = function(arr, clean) {
 
 	if (!arr || typeof(arr) === 'string') {
 		var filename = prepare_filename(arr || 'sitemap');
@@ -8312,7 +8256,7 @@ Framework.prototype._configure_sitemap = function(arr, clean) {
 	return F;
 };
 
-Framework.prototype.sitemap = function(name, me, language) {
+F.sitemap = function(name, me, language) {
 
 	if (!F.routes.sitemap)
 		return EMPTYARRAY;
@@ -8394,7 +8338,7 @@ Framework.prototype.sitemap = function(name, me, language) {
  * @param {String} language Optional, language
  * @return {Array}
  */
-Framework.prototype.sitemap_navigation = function(parent, language) {
+F.sitemap_navigation = function(parent, language) {
 
 	var key = REPOSITORY_SITEMAP + '_n_' + (parent || '') + '$' + (language || '');
 	if (F.temporary.other[key])
@@ -8432,12 +8376,12 @@ Framework.prototype.sitemap_navigation = function(parent, language) {
  * @param {String|Array} obj - 'ID : Title ---> URL --> [Parent]' parent is optional
  * @return {framework}
  */
-Framework.prototype.sitemap_add = function (obj) {
+F.sitemap_add = function (obj) {
 	F._configure_sitemap(obj instanceof Array ? obj : [obj]);
 	return F;
 };
 
-Framework.prototype._configure_dependencies = function(arr, callback) {
+F._configure_dependencies = function(arr, callback) {
 
 	if (!arr || typeof(arr) === 'string') {
 		var filename = prepare_filename(arr || 'dependencies');
@@ -8571,7 +8515,7 @@ Framework.prototype._configure_dependencies = function(arr, callback) {
 	return F;
 };
 
-Framework.prototype._configure_workflows = function(arr, clean) {
+F._configure_workflows = function(arr, clean) {
 
 	if (arr === undefined || typeof(arr) === 'string') {
 		var filename = prepare_filename(arr || 'workflows');
@@ -8629,7 +8573,7 @@ Framework.prototype._configure_workflows = function(arr, clean) {
 	return F;
 };
 
-Framework.prototype._configure_versions = function(arr, clean) {
+F._configure_versions = function(arr, clean) {
 
 	if (arr === undefined || typeof(arr) === 'string') {
 		var filename = prepare_filename(arr || 'versions');
@@ -8684,7 +8628,7 @@ Framework.prototype._configure_versions = function(arr, clean) {
 	return F;
 };
 
-Framework.prototype._configure = function(arr, rewrite) {
+F._configure = function(arr, rewrite) {
 
 	var type = typeof(arr);
 	if (type === 'string') {
@@ -8894,7 +8838,7 @@ Framework.prototype._configure = function(arr, rewrite) {
  * @param {String} name
  * @return {String}
  */
-Framework.prototype.routeScript = function(name, theme) {
+F.routeScript = function(name, theme) {
 	if (!name.endsWith('.js'))
 		name += '.js';
 	return F.$routeStatic(name, F.config['static-url-script'], theme);
@@ -8905,31 +8849,31 @@ Framework.prototype.routeScript = function(name, theme) {
  * @param {String} name
  * @return {String}
  */
-Framework.prototype.routeStyle = function(name, theme) {
+F.routeStyle = function(name, theme) {
 	return F.$routeStatic(name + (name.endsWith('.css') ? '' : '.css'), F.config['static-url-style'], theme);
 };
 
-Framework.prototype.routeImage = function(name, theme) {
+F.routeImage = function(name, theme) {
 	return F.$routeStatic(name, F.config['static-url-image'], theme);
 };
 
-Framework.prototype.routeVideo = function(name, theme) {
+F.routeVideo = function(name, theme) {
 	return F.$routeStatic(name, F.config['static-url-video'], theme);
 };
 
-Framework.prototype.routeFont = function(name, theme) {
+F.routeFont = function(name, theme) {
 	return F.$routeStatic(name, F.config['static-url-font'], theme);
 };
 
-Framework.prototype.routeDownload = function(name, theme) {
+F.routeDownload = function(name, theme) {
 	return F.$routeStatic(name, F.config['static-url-download'], theme);
 };
 
-Framework.prototype.routeStatic = function(name, theme) {
+F.routeStatic = function(name, theme) {
 	return F.$routeStatic(name, F.config['static-url'], theme);
 };
 
-Framework.prototype.$routeStatic = function(name, directory, theme) {
+F.$routeStatic = function(name, directory, theme) {
 	var key = name + directory + '$' + theme;
 	var val = F.temporary.other[key];
 	if (RELEASE && val)
@@ -8964,7 +8908,7 @@ Framework.prototype.$routeStatic = function(name, directory, theme) {
 	return F.temporary.other[key] = framework_internal.preparePath(this._version(filename));
 };
 
-Framework.prototype._version = function(name) {
+F._version = function(name) {
 	if (F.versions)
 		name = F.versions[name] || name;
 	if (F.onVersion)
@@ -8972,7 +8916,7 @@ Framework.prototype._version = function(name) {
 	return name;
 };
 
-Framework.prototype._version_prepare = function(html) {
+F._version_prepare = function(html) {
 	var match = html.match(REG_VERSIONS);
 	if (!match)
 		return html;
@@ -9001,7 +8945,7 @@ Framework.prototype._version_prepare = function(html) {
  * @param {Boolean} membertype Not defined = 0, Authorized = 1, Unauthorized = 2
  * @return {Object}
  */
-Framework.prototype.lookup = function(req, url, flags, membertype) {
+F.lookup = function(req, url, flags, membertype) {
 
 	var isSystem = url[0] === '#';
 	var subdomain = F._length_subdomain_web && req.subdomain ? req.subdomain.join('.') : null;
@@ -9081,7 +9025,7 @@ Framework.prototype.lookup = function(req, url, flags, membertype) {
 	return null;
 };
 
-Framework.prototype.lookup_websocket = function(req, url, membertype) {
+F.lookup_websocket = function(req, url, membertype) {
 
 	var subdomain = F._length_subdomain_websocket && req.subdomain ? req.subdomain.join('.') : null;
 	var length = F.routes.websockets.length;
@@ -9148,7 +9092,7 @@ Framework.prototype.lookup_websocket = function(req, url, membertype) {
  * @param {String} contentType Content-Type for file extension, optional.
  * @return {Framework}
  */
-Framework.prototype.accept = function(extension, contentType) {
+F.accept = function(extension, contentType) {
 	if (extension[0] === '.')
 		extension = extension.substring(1);
 	F.config['static-accepts'][extension] = true;
@@ -9164,7 +9108,7 @@ Framework.prototype.accept = function(extension, contentType) {
  * @param {Array} args Additional arguments, optional.
  * @return {ChildProcess}
  */
-Framework.prototype.worker = function(name, id, timeout, args) {
+F.worker = function(name, id, timeout, args) {
 
 	var fork = null;
 	var type = typeof(id);
@@ -9226,7 +9170,7 @@ Framework.prototype.worker = function(name, id, timeout, args) {
 	return fork;
 };
 
-Framework.prototype.worker2 = function(name, args, callback, timeout) {
+F.worker2 = function(name, args, callback, timeout) {
 
 	if (typeof(args) === 'function') {
 		timeout = callback;
@@ -9265,7 +9209,7 @@ Framework.prototype.worker2 = function(name, args, callback, timeout) {
  * @param {Boolean} enable Enable waiting (optional, default: by the current state).
  * @return {Boolean}
  */
-Framework.prototype.wait = function(name, enable) {
+F.wait = function(name, enable) {
 
 	if (!F.waits)
 		F.waits = {};
@@ -9931,7 +9875,7 @@ Subscribe.prototype.doEnd = function() {
 		}
 
 		try {
-			req.body = F.onParseXML(req.buffer_data.trim(), req);
+			F.$onParseXML(req);
 			req.buffer_data = null;
 			self.prepare(req.flags, req.uri.pathname);
 		} catch (err) {
@@ -9956,18 +9900,16 @@ Subscribe.prototype.doEnd = function() {
 
 	if (req.$type === 1) {
 		try {
-			req.body = F.onParseJSON(req.buffer_data, req);
+			F.$onParseJSON(req);
 			req.buffer_data = null;
 		} catch (e) {
 			self.route400('Invalid JSON data.');
 			return self;
 		}
 	} else
-		req.body = F.onParseQuery(req.buffer_data, req);
+		F.$onParseQueryBody(req);
 
-	if (self.route.schema)
-		self.schema = true;
-
+	self.route.schema && (self.schema = true);
 	req.buffer_data = null;
 	self.prepare(req.flags, req.uri.pathname);
 	return self;
@@ -14516,14 +14458,12 @@ http.IncomingMessage.prototype = {
 
 	get query() {
 		var self = this;
-		if (self._dataGET)
-			return self._dataGET;
-		self._dataGET = F.onParseQuery(self.uri.query, self);
-		return self._dataGET;
+		!self._querydata && F.$onParseQueryUrl(self);
+		return self._querydata;
 	},
 
 	set query(value) {
-		this._dataGET = value;
+		this._querydata = value;
 	},
 
 	get subdomain() {
@@ -14739,8 +14679,6 @@ http.IncomingMessage.prototype.hostname = function(path) {
 	return uri.protocol + '//' + uri.hostname + (uri.port && uri.port !== 80 ? ':' + uri.port : '') + (path || '');
 };
 
-var framework = new Framework();
-global.framework = global.F = module.exports = framework;
 global.Controller = Controller;
 
 process.on('uncaughtException', function(e) {
@@ -14944,7 +14882,7 @@ function async_middleware(index, req, res, middleware, callback, options, contro
 	callback = null;
 }
 
-global.setTimeout2 = function(name, fn, timeout, limit) {
+global.setTimeout2 = function(name, fn, timeout, limit, param) {
 	var key = ':' + name;
 	if (limit > 0) {
 		var key2 = key + ':limit';
@@ -14955,11 +14893,11 @@ global.setTimeout2 = function(name, fn, timeout, limit) {
 		return F.temporary.internal[key] = setTimeout(function() {
 			F.temporary.internal[key2] = undefined;
 			fn && fn();
-		}, timeout);
+		}, timeout, param);
 	}
 
 	F.temporary.internal[key] && clearTimeout(F.temporary.internal[key]);
-	return F.temporary.internal[key] = setTimeout(fn, timeout);
+	return F.temporary.internal[key] = setTimeout(fn, timeout, param);
 };
 
 global.clearTimeout2 = function(name) {
