@@ -13862,11 +13862,13 @@ WebSocketClient.prototype.parseInflate = function() {
 	self.inflate.write(buf);
 	self.inflate.write(U.createBuffer(WEBSOCKET_COMPRESS));
 	self.inflate.flush(function() {
-		var data = buffer_concat(self.inflatechunks, self.inflatechunkslength);
-		self.inflatechunks = null;
-		self.inflatelock = false;
-		self._decode(self.type === 1 ? data : data.toString(ENCODING));
-		self.parseInflate();
+		if (self.inflatechunks) {
+			var data = buffer_concat(self.inflatechunks, self.inflatechunkslength);
+			self.inflatechunks = null;
+			self.inflatelock = false;
+			self._decode(self.type === 1 ? data : data.toString(ENCODING));
+			self.parseInflate();
+		}
 	});
 };
 
@@ -14526,7 +14528,7 @@ http.ServerResponse.prototype.binary = function(buffer, contentType, type, downl
 	}
 
 	F.responseBinary(this.req, this, contentType, buffer, type, download, headers);
-	return self;
+	return this;
 };
 
 /**
