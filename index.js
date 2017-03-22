@@ -14508,6 +14508,27 @@ http.ServerResponse.prototype.stream = function(contentType, stream, download, h
 	return self;
 };
 
+http.ServerResponse.prototype.binary = function(buffer, contentType, type, download, headers) {
+
+	if (this.success || this.headersSent)
+		return this;
+
+	if (typeof(type) === 'object') {
+		var tmp = type;
+		type = download;
+		download = headers;
+		headers = tmp;
+	}
+
+	if (typeof(download) === 'object') {
+		headers = download;
+		download = headers;
+	}
+
+	F.responseBinary(this.req, this, contentType, buffer, type, download, headers);
+	return self;
+};
+
 /**
  * Responds with an image
  * @param {String or Stream} filename
