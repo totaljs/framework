@@ -1140,10 +1140,9 @@ F.resize = function(url, fn, flags) {
  * @param {Function(id)} onGet
  * @param {Function([id])} onSave
  * @param {Function(id)} onDelete
- * @param {Boolean} noUpdate Optional, default: false
  * @return {Framework}
  */
-F.restful = function(url, flags, onQuery, onGet, onSave, onDelete, noUpdate) {
+F.restful = function(url, flags, onQuery, onGet, onSave, onDelete) {
 
 	var tmp;
 
@@ -1165,17 +1164,47 @@ F.restful = function(url, flags, onQuery, onGet, onSave, onDelete, noUpdate) {
 		tmp = ['post'];
 		flags && tmp.push.apply(tmp, flags);
 		F.route(url, tmp, onSave);
-		if (!noUpdate) {
-			tmp = ['put'];
-			flags && tmp.push.apply(tmp, flags);
-			F.route(restful, tmp, onSave);
-		}
+		tmp = ['put'];
+		flags && tmp.push.apply(tmp, flags);
+		F.route(restful, tmp, onSave);
 	}
 
 	if (onDelete) {
 		tmp = ['delete'];
 		flags && tmp.push.apply(tmp, flags);
 		F.route(restful, tmp, onDelete);
+	}
+
+	return F;
+};
+
+// This version of RESTful doesn't create advanced routing for insert/update/delete and all URL address of all operations are without "{id}" param because they expect some identificator in request body
+F.restful2 = function(url, flags, onQuery, onGet, onSave, onDelete) {
+
+	var tmp;
+
+	if (onQuery) {
+		tmp = [];
+		flags && tmp.push.apply(tmp, flags);
+		F.route(url, tmp, onQuery);
+	}
+
+	if (onGet) {
+		tmp = [];
+		flags && tmp.push.apply(tmp, flags);
+		F.route(U.path(url) + '{id}', tmp, onGet);
+	}
+
+	if (onSave) {
+		tmp = ['post'];
+		flags && tmp.push.apply(tmp, flags);
+		F.route(url, tmp, onSave);
+	}
+
+	if (onDelete) {
+		tmp = ['delete'];
+		flags && tmp.push.apply(tmp, flags);
+		F.route(url, tmp, onDelete);
 	}
 
 	return F;

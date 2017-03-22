@@ -12,6 +12,7 @@
 - added: a support for WebSocket compression
 - added: removing `.package` files from `tmp` directory
 - added: a new schema implementation (more in docs)
+- added: `F.restful2()` has simplified route mechanism (it doesn't use "{id}" param (insert(POST)/update(POST)/delete(DELETE)) with except "GET" method)
 
 - updated: `F.load(debug, [types], [path])` supports a new type `service` which enables `F.on('service')`
 - updated: Components (now don't have to have `html` body)
