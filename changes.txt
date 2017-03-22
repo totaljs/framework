@@ -28,6 +28,7 @@
 - updated: middleware `next(false)` cancels calling of next middleware and controller
 - updated: `OPERATION(name, value, [callback(err, response, param)], [param])` added a new (helper) argument `param`
 - updated: Mail error handling (added Message instance)
+- updated: `F.restful()` add a new argument `noUpdate` which it doesn't create `PUT` route for save
 
 - fixed: routing with `upload` flag
 - fixed: workers timeout

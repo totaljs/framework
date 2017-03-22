@@ -1140,9 +1140,10 @@ F.resize = function(url, fn, flags) {
  * @param {Function(id)} onGet
  * @param {Function([id])} onSave
  * @param {Function(id)} onDelete
+ * @param {Boolean} noUpdate Optional, default: false
  * @return {Framework}
  */
-F.restful = function(url, flags, onQuery, onGet, onSave, onDelete) {
+F.restful = function(url, flags, onQuery, onGet, onSave, onDelete, noUpdate) {
 
 	var tmp;
 
@@ -1164,9 +1165,11 @@ F.restful = function(url, flags, onQuery, onGet, onSave, onDelete) {
 		tmp = ['post'];
 		flags && tmp.push.apply(tmp, flags);
 		F.route(url, tmp, onSave);
-		tmp = ['put'];
-		flags && tmp.push.apply(tmp, flags);
-		F.route(restful, tmp, onSave);
+		if (!noUpdate) {
+			tmp = ['put'];
+			flags && tmp.push.apply(tmp, flags);
+			F.route(restful, tmp, onSave);
+		}
 	}
 
 	if (onDelete) {
