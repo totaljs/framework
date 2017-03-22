@@ -1773,67 +1773,69 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 	if (subdomain)
 		F._length_subdomain_web++;
 
-	F.routes.web.push({
-		hash: hash,
-		id: id,
-		name: name,
-		priority: priority,
-		sitemap: sitemap ? sitemap.id : '',
-		schema: schema,
-		workflow: workflow,
-		subdomain: subdomain,
-		description: description,
-		controller: _controller ? _controller : 'unknown',
-		owner: _owner,
-		urlraw: urlraw,
-		url: routeURL,
-		param: arr,
-		flags: flags || EMPTYARRAY,
-		flags2: flags_to_object(flags),
-		method: method,
-		execute: funcExecute,
-		length: (length || F.config['default-request-length']) * 1024,
-		middleware: middleware,
-		timeout: timeout === undefined ? (isDELAY ? 0 : F.config['default-request-timeout']) : timeout,
-		isGET: flags.indexOf('get') !== -1,
-		isMULTIPLE: isMULTIPLE,
-		isJSON: isJSON,
-		isXML: flags.indexOf('xml') !== -1,
-		isRAW: isRaw,
-		isBINARY: isBINARY,
-		isMOBILE: isMOBILE,
-		isROBOT: isROBOT,
-		isMOBILE_VARY: isMOBILE,
-		isGENERATOR: isGENERATOR,
-		MEMBER: membertype,
-		isASTERIX: isASTERIX,
-		isROLE: isROLE,
-		isREFERER: flags.indexOf('referer') !== -1,
-		isHTTPS: flags.indexOf('https') !== -1,
-		isHTTP: flags.indexOf('http') !== -1,
-		isDEBUG: flags.indexOf('debug') !== -1,
-		isRELEASE: flags.indexOf('release') !== -1,
-		isPROXY: flags.indexOf('proxy') !== -1,
-		isBOTH: isNOXHR ? false : true,
-		isXHR: flags.indexOf('xhr') !== -1,
-		isUPLOAD: flags.indexOf('upload') !== -1,
-		isSYSTEM: url.startsWith('/#'),
-		isCACHE: !url.startsWith('/#') && !CUSTOM && !arr.length && !isASTERIX,
-		isPARAM: arr.length > 0,
-		isDELAY: isDELAY,
-		CUSTOM: CUSTOM,
-		options: options,
-		regexp: reg,
-		regexpIndexer: regIndex
-	});
+	var instance = new FrameworkRoute();
+	var r = instance.route;
+	r.hash = hash;
+	r.id = id;
+	r.name = name;
+	r.priority = priority;
+	r.sitemap = sitemap ? sitemap.id : '';
+	r.schema = schema;
+	r.workflow = workflow;
+	r.subdomain = subdomain;
+	r.description = description;
+	r.controller = _controller ? _controller : 'unknown';
+	r.owner = _owner;
+	r.urlraw = urlraw;
+	r.url = routeURL;
+	r.param = arr;
+	r.flags = flags || EMPTYARRAY;
+	r.flags2 = flags_to_object(flags);
+	r.method = method;
+	r.execute = funcExecute;
+	r.length = (length || F.config['default-request-length']) * 1024;
+	r.middleware = middleware;
+	r.timeout = timeout === undefined ? (isDELAY ? 0 : F.config['default-request-timeout']) : timeout;
+	r.isGET = flags.indexOf('get') !== -1;
+	r.isMULTIPLE = isMULTIPLE;
+	r.isJSON = isJSON;
+	r.isXML = flags.indexOf('xml') !== -1;
+	r.isRAW = isRaw;
+	r.isBINARY = isBINARY;
+	r.isMOBILE = isMOBILE;
+	r.isROBOT = isROBOT;
+	r.isMOBILE_VARY = isMOBILE;
+	r.isGENERATOR = isGENERATOR;
+	r.MEMBER = membertype;
+	r.isASTERIX = isASTERIX;
+	r.isROLE = isROLE;
+	r.isREFERER = flags.indexOf('referer') !== -1;
+	r.isHTTPS = flags.indexOf('https') !== -1;
+	r.isHTTP = flags.indexOf('http') !== -1;
+	r.isDEBUG = flags.indexOf('debug') !== -1;
+	r.isRELEASE = flags.indexOf('release') !== -1;
+	r.isPROXY = flags.indexOf('proxy') !== -1;
+	r.isBOTH = isNOXHR ? false : true;
+	r.isXHR = flags.indexOf('xhr') !== -1;
+	r.isUPLOAD = flags.indexOf('upload') !== -1;
+	r.isSYSTEM = url.startsWith('/#');
+	r.isCACHE = !url.startsWith('/#') && !CUSTOM && !arr.length && !isASTERIX;
+	r.isPARAM = arr.length > 0;
+	r.isDELAY = isDELAY;
+	r.CUSTOM = CUSTOM;
+	r.options = options;
+	r.regexp = reg;
+	r.regexpIndexer = regIndex;
+	r.type = 'web';
 
-	F.emit('route', 'web', F.routes.web[F.routes.web.length - 1]);
+	F.routes.web.push(r);
+	F.emit('route', 'web', instance);
 
 	// Appends cors route
 	isCORS && F.cors(urlcache, corsflags);
 	!_controller && F.$routesSort(1);
 
-	return F;
+	return instance;
 };
 
 function flags_to_object(flags) {
@@ -2379,43 +2381,44 @@ F.websocket = function(url, funcInitialize, flags, length) {
 	if (subdomain)
 		F._length_subdomain_websocket++;
 
-	F.routes.websockets.push({
-		id: id,
-		urlraw: urlraw,
-		hash: hash,
-		controller: _controller ? _controller : 'unknown',
-		owner: _owner,
-		url: routeURL,
-		param: arr,
-		subdomain: subdomain,
-		priority: priority,
-		flags: flags || EMPTYARRAY,
-		flags2: flags_to_object(flags),
-		onInitialize: funcInitialize,
-		protocols: protocols || EMPTYARRAY,
-		allow: allow || [],
-		length: (length || F.config['default-websocket-request-length']) * 1024,
-		isWEBSOCKET: true,
-		MEMBER: membertype,
-		isJSON: isJSON,
-		isBINARY: isBINARY,
-		isROLE: isROLE,
-		isASTERIX: isASTERIX,
-		isHTTPS: flags.indexOf('https'),
-		isHTTP: flags.indexOf('http'),
-		isDEBUG: flags.indexOf('debug'),
-		isRELEASE: flags.indexOf('release'),
-		CUSTOM: CUSTOM,
-		middleware: middleware ? middleware : null,
-		options: options,
-		isPARAM: arr.length > 0,
-		regexp: reg,
-		regexpIndexer: regIndex
-	});
-
-	F.emit('route', 'websocket', F.routes.websockets[F.routes.websockets.length - 1]);
+	var instance = new FrameworkRoute();
+	var r = instance.route;
+	r.id = id;
+	r.urlraw = urlraw;
+	r.hash = hash;
+	r.controller = _controller ? _controller : 'unknown';
+	r.owner = _owner;
+	r.url = routeURL;
+	r.param = arr;
+	r.subdomain = subdomain;
+	r.priority = priority;
+	r.flags = flags || EMPTYARRAY;
+	r.flags2 = flags_to_object(flags);
+	r.onInitialize = funcInitialize;
+	r.protocols = protocols || EMPTYARRAY;
+	r.allow = allow || [];
+	r.length = (length || F.config['default-websocket-request-length']) * 1024;
+	r.isWEBSOCKET = true;
+	r.MEMBER = membertype;
+	r.isJSON = isJSON;
+	r.isBINARY = isBINARY;
+	r.isROLE = isROLE;
+	r.isASTERIX = isASTERIX;
+	r.isHTTPS = flags.indexOf('https');
+	r.isHTTP = flags.indexOf('http');
+	r.isDEBUG = flags.indexOf('debug');
+	r.isRELEASE = flags.indexOf('release');
+	r.CUSTOM = CUSTOM;
+	r.middleware = middleware ? middleware : null;
+	r.options = options;
+	r.isPARAM = arr.length > 0;
+	r.regexp = reg;
+	r.regexpIndexer = regIndex;
+	r.type = 'websocket';
+	F.routes.websockets.push(r);
+	F.emit('route', 'websocket', r);
 	!_controller && F.$routesSort(2);
-	return F;
+	return instance;
 };
 
 /**
@@ -2519,24 +2522,25 @@ F.file = function(fnValidation, fnExecute, flags) {
 	} else if (!extensions && !fnValidation)
 		fnValidation = fnExecute;
 
+	var instance = new FrameworkRoute();
+	var r = instance.route;
+	r.id = id;
+	r.urlraw = urlraw;
+	r.controller = _controller ? _controller : 'unknown';
+	r.owner = _owner;
+	r.url = url;
+	r.fixedfile = fixedfile;
+	r.wildcard = wildcard;
+	r.extensions = extensions;
+	r.onValidate = fnValidation;
+	r.execute = fnExecute;
+	r.middleware = middleware;
+	r.options = options;
+	r.type = 'file';
 
-	F.routes.files.push({
-		id: id,
-		urlraw: urlraw,
-		controller: _controller ? _controller : 'unknown',
-		owner: _owner,
-		url: url,
-		fixedfile: fixedfile,
-		wildcard: wildcard,
-		extensions: extensions,
-		onValidate: fnValidation,
-		execute: fnExecute,
-		middleware: middleware,
-		options: options
-	});
-
+	F.routes.files.push(r);
 	F.routes.files.sort((a, b) => !a.url ? -1 : !b.url ? 1 : a.url.length > b.url.length ? -1 : 1);
-	F.emit('route', 'file', F.routes.files[F.routes.files.length - 1]);
+	F.emit('route', 'file', r);
 	F._length_files++;
 	return F;
 };
@@ -9266,11 +9270,80 @@ F.wait = function(name, enable) {
 	return enable === true;
 };
 
-// *********************************************************************************
+// =================================================================================
+// Framework route
+// =================================================================================
+
+function FrameworkRoute() {
+	this.route = {};
+}
+
+FrameworkRoute.prototype = {
+	get id() {
+		return this.route.id;
+	},
+	set id(value) {
+		this.route.id = value;
+	},
+	get description() {
+		return this.route.description;
+	},
+	set description(value) {
+		this.route.description = value;
+	},
+	get maxlength() {
+		return this.route.length;
+	},
+	set maxlength(value) {
+		this.route.length = value;
+	},
+	get options() {
+		return this.route.options;
+	},
+	set options(value) {
+		this.route.options = value;
+	},
+	get url() {
+		return this.route.urlraw;
+	},
+	get flags() {
+		return this.route.flags || EMPTYARRAY;
+	}
+};
+
+FrameworkRoute.prototype.make = function(fn) {
+	fn && fn.call(this, this);
+	return this;
+};
+
+FrameworkRoute.prototype.setId = function(value) {
+	this.route.id = value;
+	return this;
+};
+
+FrameworkRoute.prototype.setDecription = function(value) {
+	this.route.description = value;
+	return this;
+};
+
+FrameworkRoute.prototype.setTimeout = function(value) {
+	this.route.timeout = value;
+	return this;
+};
+
+FrameworkRoute.prototype.setMaxLength = function(value) {
+	this.route.length = value;
+	return this;
+};
+
+FrameworkRoute.prototype.setOptions = function(value) {
+	this.route.options = value;
+	return this;
+};
+
 // =================================================================================
 // Framework path
 // =================================================================================
-// *********************************************************************************
 
 function FrameworkPath() {}
 
@@ -9403,11 +9476,9 @@ FrameworkPath.prototype.package = function(name, filename) {
 	return F.isWindows ? p.replace(REG_WINDOWSPATH, '/') : p;
 };
 
-// *********************************************************************************
 // =================================================================================
 // Cache declaration
 // =================================================================================
-// *********************************************************************************
 
 function FrameworkCache() {
 	this.items = {};
