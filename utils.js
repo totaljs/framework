@@ -485,6 +485,10 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 					method = flags[i].toUpperCase();
 					break;
 
+				case 'noredirect':
+					options.noredirect = true;
+					break;
+
 				case 'upload':
 					headers['Content-Type'] = 'multipart/form-data';
 					break;
@@ -588,6 +592,26 @@ function request_response(res, uri, options) {
 
 	// We have redirect
 	if (res.statusCode === 301 || res.statusCode === 302) {
+
+		if (options.noredirect) {
+
+			if (options.callback) {
+				options.callback(null, '', res.statusCode, res.headers, uri.host);
+				options.callback = null;
+			}
+
+			if (options.evt) {
+				options.evt.removeAllListeners();
+				options.evt = null;
+			}
+
+			res.req.removeAllListeners();
+			res.req = null;
+			res.removeAllListeners();
+			res = null;
+
+			return;
+		}
 
 		if (options.redirect > 3) {
 

@@ -3423,6 +3423,7 @@ function RESTBuilder(url) {
 	// this.$nodnscache = true;
 	// this.$cache_expire;
 	// this.$cache_nocache;
+	// this.$redirect
 }
 
 RESTBuilder.make = function(fn) {
@@ -3614,6 +3615,11 @@ RESTBuilder.prototype.xml = function(data) {
 	return this;
 };
 
+RESTBuilder.prototype.redirect = function(value) {
+	this.$redirect = value;
+	return this;
+};
+
 RESTBuilder.prototype.raw = function(value) {
 	this.$data = value && value.$clean ? value.$clean() : value;
 	return this;
@@ -3692,6 +3698,7 @@ RESTBuilder.prototype.exec = function(callback) {
 
 		!self.$nodnscache && flags.push('dnscache');
 		self.$length && flags.push('<' + self.$length);
+		self.$redirect === false && flags.push('noredirect');
 
 		switch (self.$type) {
 			case 1:
@@ -3701,7 +3708,6 @@ RESTBuilder.prototype.exec = function(callback) {
 				flags.push('xml');
 				break;
 		}
-
 		self.$flags = flags;
 	}
 
@@ -3723,7 +3729,7 @@ RESTBuilder.prototype.exec = function(callback) {
 
 	return U.request(self.$url, flags, self.$data, function(err, response, status, headers, hostname) {
 
-		var type = err ? '' : headers['content-type'];
+		var type = err ? '' : headers['content-type'] || '';
 		var output = new RESTBuilderResponse();
 
 		output.value = type.indexOf('/xml') === -1 ? response.isJSON() ? F.onParseJSON(response) : F.onParseQuery(response) : response.parseXML();
