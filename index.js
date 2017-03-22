@@ -6637,7 +6637,6 @@ F.mode = function(http, name, options) {
 		case 'test-debug':
 		case 'debug-test':
 		case 'testing-debug':
-			test = true;
 			debug = true;
 			F.isTest = true;
 			break;
@@ -6647,7 +6646,6 @@ F.mode = function(http, name, options) {
 		case 'testing-release':
 		case 'test-production':
 		case 'testing-production':
-			test = true;
 			debug = false;
 			break;
 	}
