@@ -27,6 +27,7 @@
 - updated: `F.script(body, value, callback(err, response, param), [param])` --> `param` argument is a helper
 - updated: middleware `next(false)` cancels calling of next middleware and controller
 - updated: `OPERATION(name, value, [callback(err, response, param)], [param])` added a new (helper) argument `param`
+- updated: Mail error handling (added Message instance)
 
 - fixed: routing with `upload` flag
 - fixed: workers timeout

@@ -490,7 +490,6 @@ Mailer.prototype._writemessage = function(obj, buffer) {
 	var msg = obj.messages.shift();
 	var message = [];
 
-
 	if (global.F)
 		global.F.stats.other.mail++;
 
@@ -577,6 +576,7 @@ Mailer.prototype._writemessage = function(obj, buffer) {
 
 	obj.message = message.join(CRLF);
 	obj.messagecallback = msg.$callback;
+	obj.instance = msg;
 
 	message = null;
 	return self;
@@ -708,7 +708,7 @@ Mailer.prototype._send = function(obj, options, autosend) {
 			case 235: // VERIFY
 			case 999: // total.js again
 
-				obj.messagecallback && obj.messagecallback();
+				obj.messagecallback && obj.messagecallback(null, obj.instance);
 				obj.messagecallback = null;
 				mailer._writeline(obj, buffer.shift());
 
@@ -785,7 +785,7 @@ Mailer.prototype._send = function(obj, options, autosend) {
 					}
 				}
 
-				obj.messagecallback && obj.messagecallback(err);
+				obj.messagecallback && obj.messagecallback(err, obj.instance);
 				obj.messagecallback = null;
 
 				if (obj.message) {
