@@ -4575,10 +4575,10 @@ F.$onParseQueryUrl = function(req) {
  * @param {String} name
  * @param {Function(err, body)} callback
  */
-F.onSchema = function(req, group, name, callback, filter, validate) {
+F.onSchema = function(req, group, name, callback, filter, novalidate) {
 	var schema = GETSCHEMA(group, name);
 	if (schema)
-		schema.make(req.body, onSchema_callback, filter, callback, undefined, validate ? false: true);
+		schema.make(req.body, filter, onSchema_callback, callback, novalidate);
 	else
 		callback(new Error('Schema "' + group + '/' + name + '" not found.'));
 };
