@@ -285,6 +285,48 @@ global.SCHEDULE = (date, each, fn, param) => F.schedule(date, each, fn, param);
 global.FINISHED = (stream, callback) => framework_internal.onFinished(stream, callback);
 global.DESTROY = (stream) => framework_internal.destroyStream(stream);
 
+global.$MAKE = function(schema, model, callback) {
+	schema = parseSchema(schema);
+	var o = framework_builders.getschema(schema[0], schema[1]);
+	o && o.make(model, callback);
+	return o ? true : false;
+};
+
+global.$QUERY = function(schema, options, callback, controller) {
+	schema = parseSchema(schema);
+	var o = framework_builders.getschema(schema[0], schema[1]);
+	o && o.query(options, callback, controller);
+	return o ? true : false;
+};
+
+global.$GET = function(schema, options, callback, controller) {
+	schema = parseSchema(schema);
+	var o = framework_builders.getschema(schema[0], schema[1]);
+	o && o.get(options, callback, controller);
+	return o ? true : false;
+};
+
+global.$WORKFLOW = function(schema, name, options, callback, controller) {
+	schema = parseSchema(schema);
+	var o = framework_builders.getschema(schema[0], schema[1]);
+	o && o.workflow2(name, options, callback, controller);
+	return o ? true : false;
+};
+
+global.$TRANSFORM = function(schema, name, options, callback, controller) {
+	schema = parseSchema(schema);
+	var o = framework_builders.getschema(schema[0], schema[1]);
+	o && o.transform2(name, options, callback, controller);
+	return o ? true : false;
+};
+
+global.$OPERATION = function(schema, name, options, callback, controller) {
+	schema = parseSchema(schema);
+	var o = framework_builders.getschema(schema[0], schema[1]);
+	o && o.operation2(name, options, callback, controller);
+	return o ? true : false;
+};
+
 global.DB = global.DATABASE = function() {
 	return typeof(F.database) === 'object' ? F.database : F.database.apply(framework, arguments);
 };
@@ -898,7 +940,7 @@ F.script = function(body, value, callback, param) {
 	var err;
 
 	try {
-		fn = new Function('next', 'value', 'now', 'var model=value;var global,require,process,GLOBAL,root,clearImmediate,clearInterval,clearTimeout,setImmediate,setInterval,setTimeout,console,$STRING,$VIEWCACHE,framework_internal,TransformBuilder,Pagination,Page,URLBuilder,UrlBuilder,SchemaBuilder,framework_builders,framework_utils,framework_mail,Image,framework_image,framework_nosql,Builders,U,utils,Utils,Mail,WTF,SOURCE,INCLUDE,MODULE,NOSQL,NOBIN,NOCOUNTER,NOSQLMEMORY,NOMEM,DATABASE,DB,CONFIG,INSTALL,UNINSTALL,RESOURCE,TRANSLATOR,LOG,LOGGER,MODEL,GETSCHEMA,CREATE,UID,TRANSFORM,MAKE,SINGLETON,NEWTRANSFORM,NEWSCHEMA,EACHSCHEMA,FUNCTION,ROUTING,SCHEDULE,OBSOLETE,DEBUG,TEST,RELEASE,is_client,is_server,F,framework,Controller,setTimeout2,clearTimeout2,String,Number,Boolean,Object,Function,Date,isomorphic,I,eval;UPTODATE,NEWOPERATION,OPERATION,$$$,EMIT,ON;try{' + body + '}catch(e){next(e)}');
+		fn = new Function('next', 'value', 'now', 'var model=value;var global,require,process,GLOBAL,root,clearImmediate,clearInterval,clearTimeout,setImmediate,setInterval,setTimeout,console,$STRING,$VIEWCACHE,framework_internal,TransformBuilder,Pagination,Page,URLBuilder,UrlBuilder,SchemaBuilder,framework_builders,framework_utils,framework_mail,Image,framework_image,framework_nosql,Builders,U,utils,Utils,Mail,WTF,SOURCE,INCLUDE,MODULE,NOSQL,NOBIN,NOCOUNTER,NOSQLMEMORY,NOMEM,DATABASE,DB,CONFIG,INSTALL,UNINSTALL,RESOURCE,TRANSLATOR,LOG,LOGGER,MODEL,GETSCHEMA,CREATE,UID,TRANSFORM,MAKE,SINGLETON,NEWTRANSFORM,NEWSCHEMA,EACHSCHEMA,FUNCTION,ROUTING,SCHEDULE,OBSOLETE,DEBUG,TEST,RELEASE,is_client,is_server,F,framework,Controller,setTimeout2,clearTimeout2,String,Number,Boolean,Object,Function,Date,isomorphic,I,eval;UPTODATE,NEWOPERATION,OPERATION,$$$,EMIT,ON,$QUERY,$GET,$WORKFLOW,$TRANSFORM,$OPERATION,$MAKE;try{' + body + '}catch(e){next(e)}');
 	} catch(e) {
 		err = e;
 	}
@@ -15104,6 +15146,23 @@ function controller_json_workflow(id) {
 	var self = this;
 	self.id = id;
 	self.$exec(self.route.workflow, self, self.callback());
+}
+
+// Parses schema group and schema name from string e.g. "User" or "Company/User"
+function parseSchema(name) {
+	var schema = F.temporary.internal['$$$' + name];
+	if (schema)
+		return schema;
+
+	schema = name.split('/');
+
+	if (!schema[1]) {
+		schema[1] = schema[0];
+		schema[0] = 'default';
+	}
+
+	F.temporary.internal['$$$' + name] = schema;
+	return schema;
 }
 
 // Because of controller prototypes
