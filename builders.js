@@ -1210,7 +1210,7 @@ SchemaBuilderEntity.prototype.default = function() {
  * @param [callback]
  * @returns {SchemaInstance}
  */
-SchemaBuilderEntity.prototype.make = function(model, filter, callback, argument) {
+SchemaBuilderEntity.prototype.make = function(model, filter, callback, argument, novalidate) {
 
 	if (typeof(model) === 'function') {
 		model.call(this, this);
@@ -1224,6 +1224,11 @@ SchemaBuilderEntity.prototype.make = function(model, filter, callback, argument)
 	}
 
 	var output = this.prepare(model);
+	if (novalidate) {
+		callback && callback(null, output, argument);
+		return output;
+	}
+
 	var builder = this.validate(output, undefined, undefined, undefined, filter);
 	if (builder.hasError()) {
 		this.onError && this.onError(builder, model, 'make');

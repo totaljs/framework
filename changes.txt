@@ -14,6 +14,7 @@
 - added: a new schema implementation (more in docs)
 - added: `F.restful2()` has simplified route mechanism (it doesn't use "{id}" param (insert(POST)/update(POST)/delete(DELETE)) with except "GET" method)
 - added: `res.binary(buffer, contentType, [type], [download], [headers])`
+- added: a new route flag `novalidate` (a prevention for Schema validation)
 
 - updated: `F.route()`, `F.websocket()` and `F.file()` --> now returns `FrameworkRoute` instance instead of `Framework` instance (more in docs)
 - updated: `F.load(debug, [types], [path])` supports a new type `service` which enables `F.on('service')`

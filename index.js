@@ -1418,6 +1418,7 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 	var isBINARY = false;
 	var isCORS = false;
 	var isROLE = false;
+	var novalidate = false;
 	var middleware = null;
 	var timeout;
 	var options;
@@ -1549,6 +1550,10 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 					isGENERATOR = true;
 					count--;
 					continue;
+
+				case 'novalidate':
+					novalidate = true;
+					break;
 
 				case 'noxhr':
 				case '-xhr':
@@ -1781,6 +1786,7 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 	r.priority = priority;
 	r.sitemap = sitemap ? sitemap.id : '';
 	r.schema = schema;
+	r.novalidate = novalidate;
 	r.workflow = workflow;
 	r.subdomain = subdomain;
 	r.description = description;
@@ -4569,10 +4575,10 @@ F.$onParseQueryUrl = function(req) {
  * @param {String} name
  * @param {Function(err, body)} callback
  */
-F.onSchema = function(req, group, name, callback, filter) {
+F.onSchema = function(req, group, name, callback, filter, validate) {
 	var schema = GETSCHEMA(group, name);
 	if (schema)
-		schema.make(req.body, onSchema_callback, filter, callback);
+		schema.make(req.body, onSchema_callback, filter, callback, undefined, validate ? false: true);
 	else
 		callback(new Error('Schema "' + group + '/' + name + '" not found.'));
 };
@@ -10036,7 +10042,7 @@ Subscribe.prototype.validate = function(route, next, code) {
 			next(self, code);
 		}
 
-	}, route.schema[2]);
+	}, route.schema[2], route.novalidate);
 };
 
 Subscribe.prototype.route400 = function(problem) {
