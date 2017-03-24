@@ -13604,7 +13604,7 @@ WebSocket.prototype.destroy = function(problem) {
 		return self;
 
 	self.close();
-	self.container.$events.destroy && self.emit('destroy');
+	self.$events.destroy && self.emit('destroy');
 
 	setTimeout(function() {
 
