@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkMail
- * @version 2.4.0
+ * @version 2.5.0
  */
 
 'use strict';
@@ -54,14 +54,58 @@ function Mailer() {
 	this.Message = Message;
 	this.Mail = Message;
 	this.connections = {};
+	this.$events = {};
 }
 
-Mailer.prototype.__proto__ = Object.create(Events.EventEmitter.prototype, {
-	constructor: {
-		value: Mailer,
-		enumberable: false
+Mailer.prototype.emit = function(name, a, b, c, d, e, f, g) {
+	var evt = this.$events[name];
+	if (evt) {
+		var clean = false;
+		for (var i = 0, length = evt.length; i < length; i++) {
+			if (evt[i].$once)
+				clean = true;
+			evt[i].call(this, a, b, c, d, e, f, g);
+		}
+		if (clean) {
+			evt = evt.remove(n => n.$once);
+			if (evt.length)
+				this.$events[name] = evt;
+			else
+				this.$events[name] = undefined;
+		}
 	}
-});
+	return this;
+};
+
+Mailer.prototype.on = function(name, fn) {
+	if (this.$events[name])
+		this.$events[name].push(fn);
+	else
+		this.$events[name] = [fn];
+	return this;
+};
+
+Mailer.prototype.once = function(name, fn) {
+	fn.$once = true;
+	return this.on(name, fn);
+};
+
+Mailer.prototype.removeListener = function(name, fn) {
+	var evt = this.$events[name];
+	if (evt) {
+		evt = evt.remove(n => n === fn);
+		if (evt.length)
+			this.$events[name] = evt;
+		else
+			this.$events[name] = undefined;
+	}
+	return this;
+};
+
+Mailer.prototype.removeAllListeners = function(name) {
+	this.$events[name] = undefined;
+	return this;
+};
 
 /**
  * Create Mail Message
@@ -257,35 +301,20 @@ Mailer.prototype.switchToTLS = function(obj, options) {
 	obj.socket2 = Tls.connect(opt, () => self._send(obj, options, true));
 
 	obj.socket2.on('error', function(err) {
-
 		mailer.destroy(obj);
 		self.closed = true;
 		self.callback && self.callback(err);
 		self.callback = null;
-
 		if (obj.try || err.stack.indexOf('ECONNRESET') !== -1)
 			return;
-
-		try {
-			mailer.emit('error', err, obj);
-		} catch(e) {
-			F.error(err, 'FrameworkMail');
-		}
+		mailer.$events.error && mailer.emit('error', err, obj);
 	});
 
 	obj.socket2.on('clientError', function(err) {
 		mailer.destroy(obj);
 		self.callback && self.callback(err);
 		self.callback = null;
-
-		if (obj.try)
-			return;
-
-		try {
-			mailer.emit('error', err, obj);
-		} catch(e) {
-			F.error(err, 'FrameworkMail');
-		}
+		mailer.$events.error && !obj.try && mailer.emit('error', err, obj);
 	});
 
 	obj.socket2.on('connect', () => !options.secure && self._send(obj, options));
@@ -449,35 +478,19 @@ Mailer.prototype.send = function(smtp, options, messages, callback) {
 	obj.socket.$host = smtp;
 	obj.host = smtp.substring(smtp.lastIndexOf('.', smtp.lastIndexOf('.') - 1) + 1);
 	obj.socket.on('error', function(err) {
-
 		mailer.destroy(obj);
 		obj.callback && obj.callback(err);
 		obj.callback = null;
-
 		if (obj.try || err.stack.indexOf('ECONNRESET') !== -1)
 			return;
-
-		try {
-			mailer.emit('error', err, obj);
-		} catch(e) {
-			F.error(err, 'FrameworkMail');
-		}
+		mailer.$events.error && mailer.emit('error', err, obj);
 	});
 
 	obj.socket.on('clientError', function(err) {
-
 		mailer.destroy(obj);
 		obj.callback && obj.callback(err);
 		obj.callback = null;
-
-		if (obj.try)
-			return;
-
-		try {
-			mailer.emit('error', err, obj);
-		} catch(e) {
-			F.error(err, 'FrameworkMail');
-		}
+		mailer.$events.error && !obj.try && mailer.emit('error', err, obj);
 	});
 
 	obj.socket.on('connect', () => !options.secure && mailer._send(obj, options));
@@ -614,24 +627,14 @@ Mailer.prototype._send = function(obj, options, autosend) {
 
 	var isAttach = !options.tls || (obj.tls && options.tls);
 
-	isAttach && mailer.emit('send', obj);
+	isAttach && mailer.$events.send && mailer.emit('send', obj);
 	socket.setEncoding('utf8');
 	socket.setTimeout(options.timeout || 8000, function() {
-
 		var err = new Error(framework_utils.httpStatus(408));
-
 		mailer.destroy(obj);
 		obj.callback && obj.callback(err);
 		obj.callback = null;
-
-		if (obj.try)
-			return;
-
-		try {
-			mailer.emit('error', err, obj);
-		} catch(e) {
-			F.error(err, 'FrameworkMail');
-		}
+		mailer.$events.error && !obj.try && mailer.emit('error', err, obj);
 	});
 
 	socket.on('end', function() {
@@ -742,22 +745,11 @@ Mailer.prototype._send = function(obj, options, autosend) {
 
 				var value = auth.shift();
 				if (!value) {
-
 					var err = new Error('Forbidden.');
-
 					mailer.destroy(obj);
 					obj.callback && obj.callback(err);
 					obj.callback = null;
-
-					if (obj.try)
-						return;
-
-					try {
-						mailer.emit('error', err, obj);
-					} catch(e) {
-						F.error(err, 'FrameworkMail');
-					}
-
+					mailer.$events.error && !obj.try && mailer.emit('error', err, obj);
 					return;
 				}
 
@@ -777,14 +769,7 @@ Mailer.prototype._send = function(obj, options, autosend) {
 
 				var err = new Error(line);
 
-				if (!obj.try) {
-					try {
-						mailer.emit('error', err, obj);
-					} catch(e) {
-						F.error(err, 'FrameworkMail');
-					}
-				}
-
+				mailer.$events.error && !obj.try && mailer.emit('error', err, obj);
 				obj.messagecallback && obj.messagecallback(err, obj.instance);
 				obj.messagecallback = null;
 

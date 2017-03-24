@@ -424,7 +424,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 	if (callback === NOOP)
 		callback = null;
 
-	var options = { length: 0, timeout: 10000, evt: new Events.EventEmitter(), encoding: typeof(encoding) !== 'string' ? ENCODING : encoding, callback: callback, post: false, redirect: 0 };
+	var options = { length: 0, timeout: 10000, evt: new EventEmitter2(), encoding: typeof(encoding) !== 'string' ? ENCODING : encoding, callback: callback, post: false, redirect: 0 };
 	var method;
 	var type = 0;
 
@@ -609,7 +609,6 @@ function request_response(res, uri, options) {
 			res.req = null;
 			res.removeAllListeners();
 			res = null;
-
 			return;
 		}
 
@@ -660,7 +659,7 @@ function request_response(res, uri, options) {
 	}
 
 	options.length = +res.headers['content-length'] || 0;
-	options.evt && options.evt.emit('begin', options.length);
+	options.evt && options.evt.$events.begin && options.evt.emit('begin', options.length);
 
 	res.on('data', function(chunk) {
 		var self = this;
@@ -673,7 +672,7 @@ function request_response(res, uri, options) {
 		} else
 			self._buffer = chunk;
 		self._bufferlength += chunk.length;
-		options.evt && options.evt.emit('data', chunk, options.length ? (self._bufferlength / options.length) * 100 : 0);
+		options.evt && options.evt.$events.data && options.evt.emit('data', chunk, options.length ? (self._bufferlength / options.length) * 100 : 0);
 	});
 
 	res.on('end', function() {
@@ -682,7 +681,7 @@ function request_response(res, uri, options) {
 		self._buffer = undefined;
 
 		if (options.evt) {
-			options.evt.emit('end', str, self.statusCode, self.headers, uri.host);
+			options.evt.$events.end && options.evt.emit('end', str, self.statusCode, self.headers, uri.host);
 			options.evt.removeAllListeners();
 			options.evt = null;
 		}
@@ -757,7 +756,7 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 
 	var method = 'GET';
 	var type = 0;
-	var options = { callback: callback, resolve: false, length: 0, evt: new Events.EventEmitter(), timeout: timeout || 60000, post: false, encoding: encoding };
+	var options = { callback: callback, resolve: false, length: 0, evt: new EventEmitter2(), timeout: timeout || 60000, post: false, encoding: encoding };
 
 	if (headers)
 		headers = exports.extend({}, headers);
@@ -915,7 +914,7 @@ function download_call(uri, options) {
 	req.on('response', function(response) {
 		response.req = req;
 		options.length = +response.headers['content-length'] || 0;
-		options.evt && options.evt.emit('begin', options.length);
+		options.evt && options.evt.$events.begin && options.evt.emit('begin', options.length);
 	});
 
 	req.end(options.data);
@@ -966,7 +965,7 @@ function download_response(res, uri, options) {
 	res.on('data', function(chunk) {
 		var self = this;
 		self._bufferlength += chunk.length;
-		options.evt && options.evt.emit('data', chunk, options.length ? (self._bufferlength / options.length) * 100 : 0);
+		options.evt && options.evt.$events.data && options.evt.emit('data', chunk, options.length ? (self._bufferlength / options.length) * 100 : 0);
 	});
 
 	res.on('end', function() {
@@ -976,7 +975,7 @@ function download_response(res, uri, options) {
 		self._buffer = undefined;
 
 		if (options.evt) {
-			options.evt.emit('end', str, self.statusCode, self.headers, uri.host);
+			options.evt.$events.end && options.evt.emit('end', str, self.statusCode, self.headers, uri.host);
 			options.evt.removeAllListeners();
 			options.evt = null;
 		}
@@ -1029,7 +1028,7 @@ exports.send = function(name, stream, url, callback, cookies, headers, method, t
 	h['Cache-Control'] = 'max-age=0';
 	h['Content-Type'] = 'multipart/form-data; boundary=' + BOUNDARY;
 
-	var e = new Events.EventEmitter();
+	var e = new EventEmitter2();
 	var uri = Url.parse(url);
 	var options = { protocol: uri.protocol, auth: uri.auth, method: method || 'POST', hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };
 	var responseLength = 0;
@@ -1044,12 +1043,12 @@ exports.send = function(name, stream, url, callback, cookies, headers, method, t
 			CONCAT[1] = chunk;
 			res.body = Buffer.concat(CONCAT);
 			res._bufferlength += chunk.length;
-			e.emit('data', chunk, responseLength ? (res._bufferlength / responseLength) * 100 : 0);
+			e.$events.data && e.emit('data', chunk, responseLength ? (res._bufferlength / responseLength) * 100 : 0);
 		});
 
 		res.on('end', function() {
 			var self = this;
-			e.emit('end', self.statusCode, self.headers);
+			e.$events.end && e.emit('end', self.statusCode, self.headers);
 			e.removeAllListeners();
 			e = null;
 			callback && callback(null, self.body.toString('utf8'), self.statusCode, self.headers, uri.host);
@@ -1062,7 +1061,7 @@ exports.send = function(name, stream, url, callback, cookies, headers, method, t
 
 	req.on('response', function(response) {
 		responseLength = +response.headers['content-length'] || 0;
-		e.emit('begin', responseLength);
+		e.$events.begin && e.emit('begin', responseLength);
 	});
 
 	req.setTimeout(timeout || 60000, function() {
@@ -5288,6 +5287,62 @@ function shellsort(arr, fn) {
 	}
 	return arr;
 }
+
+function EventEmitter2() {
+	this.$events = {};
+}
+
+EventEmitter2.prototype.emit = function(name, a, b, c, d, e, f, g) {
+	var evt = this.$events[name];
+	if (evt) {
+		var clean = false;
+		for (var i = 0, length = evt.length; i < length; i++) {
+			if (evt[i].$once)
+				clean = true;
+			evt[i].call(this, a, b, c, d, e, f, g);
+		}
+		if (clean) {
+			evt = evt.remove(n => n.$once);
+			if (evt.length)
+				this.$events[name] = evt;
+			else
+				this.$events[name] = undefined;
+		}
+	}
+	return this;
+};
+
+EventEmitter2.prototype.on = function(name, fn) {
+	if (this.$events[name])
+		this.$events[name].push(fn);
+	else
+		this.$events[name] = [fn];
+	return this;
+};
+
+EventEmitter2.prototype.once = function(name, fn) {
+	fn.$once = true;
+	return this.on(name, fn);
+};
+
+EventEmitter2.prototype.removeListener = function(name, fn) {
+	var evt = this.$events[name];
+	if (evt) {
+		evt = evt.remove(n => n === fn);
+		if (evt.length)
+			this.$events[name] = evt;
+		else
+			this.$events[name] = undefined;
+	}
+	return this;
+};
+
+EventEmitter2.prototype.removeAllListeners = function(name) {
+	this.$events[name] = undefined;
+	return this;
+};
+
+exports.EventEmitter2 = EventEmitter2;
 
 function Chunker(name, max) {
 	this.name = name;

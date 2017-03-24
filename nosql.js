@@ -28,7 +28,6 @@
 
 const Fs = require('fs');
 const Path = require('path');
-const Events = require('events');
 
 if (!global.framework_utils)
 	global.framework_utils = require('./utils');
@@ -77,14 +76,58 @@ function Database(name, filename) {
 	this.metadata;
 	this.$meta();
 	this.$timeoutmeta;
+	this.$events = {};
 }
 
-Database.prototype.__proto__ = Object.create(Events.EventEmitter.prototype, {
-	constructor: {
-		value: Database,
-		enumberable: false
+Database.prototype.emit = function(name, a, b, c, d, e, f, g) {
+	var evt = this.$events[name];
+	if (evt) {
+		var clean = false;
+		for (var i = 0, length = evt.length; i < length; i++) {
+			if (evt[i].$once)
+				clean = true;
+			evt[i].call(this, a, b, c, d, e, f, g);
+		}
+		if (clean) {
+			evt = evt.remove(n => n.$once);
+			if (evt.length)
+				this.$events[name] = evt;
+			else
+				this.$events[name] = undefined;
+		}
 	}
-});
+	return this;
+};
+
+Database.prototype.on = function(name, fn) {
+	if (this.$events[name])
+		this.$events[name].push(fn);
+	else
+		this.$events[name] = [fn];
+	return this;
+};
+
+Database.prototype.once = function(name, fn) {
+	fn.$once = true;
+	return this.on(name, fn);
+};
+
+Database.prototype.removeListener = function(name, fn) {
+	var evt = this.$events[name];
+	if (evt) {
+		evt = evt.remove(n => n === fn);
+		if (evt.length)
+			this.$events[name] = evt;
+		else
+			this.$events[name] = undefined;
+	}
+	return this;
+};
+
+Database.prototype.removeAllListeners = function(name) {
+	this.$events[name] = undefined;
+	return this;
+};
 
 exports.load = function(name, filename) {
 	return new Database(name, filename);
@@ -1776,14 +1819,58 @@ function Counter(db) {
 	this.cache;
 	this.key = 'nosql' + db.name.hash();
 	this.type = 0; // 1 === saving, 2 === reading
+	this.$events = {};
 }
 
-Counter.prototype.__proto__ = Object.create(Events.EventEmitter.prototype, {
-	constructor: {
-		value: Counter,
-		enumberable: false
+Counter.prototype.emit = function(name, a, b, c, d, e, f, g) {
+	var evt = this.$events[name];
+	if (evt) {
+		var clean = false;
+		for (var i = 0, length = evt.length; i < length; i++) {
+			if (evt[i].$once)
+				clean = true;
+			evt[i].call(this, a, b, c, d, e, f, g);
+		}
+		if (clean) {
+			evt = evt.remove(n => n.$once);
+			if (evt.length)
+				this.$events[name] = evt;
+			else
+				this.$events[name] = undefined;
+		}
 	}
-});
+	return this;
+};
+
+Counter.prototype.on = function(name, fn) {
+	if (this.$events[name])
+		this.$events[name].push(fn);
+	else
+		this.$events[name] = [fn];
+	return this;
+};
+
+Counter.prototype.once = function(name, fn) {
+	fn.$once = true;
+	return this.on(name, fn);
+};
+
+Counter.prototype.removeListener = function(name, fn) {
+	var evt = this.$events[name];
+	if (evt) {
+		evt = evt.remove(n => n === fn);
+		if (evt.length)
+			this.$events[name] = evt;
+		else
+			this.$events[name] = undefined;
+	}
+	return this;
+};
+
+Counter.prototype.removeAllListeners = function(name) {
+	this.$events[name] = undefined;
+	return this;
+};
 
 Counter.prototype.inc = Counter.prototype.hit = function(id, count) {
 
@@ -2182,14 +2269,58 @@ function Binary(db, directory) {
 	this.db = db;
 	this.directory = directory;
 	this.exists = false;
+	this.$events = {};
 }
 
-Binary.prototype.__proto__ = Object.create(Events.EventEmitter.prototype, {
-	constructor: {
-		value: Binary,
-		enumberable: false
+Binary.prototype.emit = function(name, a, b, c, d, e, f, g) {
+	var evt = this.$events[name];
+	if (evt) {
+		var clean = false;
+		for (var i = 0, length = evt.length; i < length; i++) {
+			if (evt[i].$once)
+				clean = true;
+			evt[i].call(this, a, b, c, d, e, f, g);
+		}
+		if (clean) {
+			evt = evt.remove(n => n.$once);
+			if (evt.length)
+				this.$events[name] = evt;
+			else
+				this.$events[name] = undefined;
+		}
 	}
-});
+	return this;
+};
+
+Binary.prototype.on = function(name, fn) {
+	if (this.$events[name])
+		this.$events[name].push(fn);
+	else
+		this.$events[name] = [fn];
+	return this;
+};
+
+Binary.prototype.once = function(name, fn) {
+	fn.$once = true;
+	return this.on(name, fn);
+};
+
+Binary.prototype.removeListener = function(name, fn) {
+	var evt = this.$events[name];
+	if (evt) {
+		evt = evt.remove(n => n === fn);
+		if (evt.length)
+			this.$events[name] = evt;
+		else
+			this.$events[name] = undefined;
+	}
+	return this;
+};
+
+Binary.prototype.removeAllListeners = function(name) {
+	this.$events[name] = undefined;
+	return this;
+};
 
 Binary.prototype.insert = function(name, buffer, callback) {
 
@@ -2252,7 +2383,7 @@ Binary.prototype.insert = function(name, buffer, callback) {
 	stream.end(buffer);
 	CLEANUP(stream);
 	callback && callback(null, id, h);
-	self.emit('insert', id, h);
+	self.$events.insert && self.emit('insert', id, h);
 	return id;
 };
 
@@ -2276,7 +2407,7 @@ Binary.prototype.insert_stream = function(id, name, type, stream, callback) {
 	stream.pipe(writer);
 	CLEANUP(writer);
 	callback && callback(null, id, h);
-	self.emit('insert', id, h);
+	self.$events.insert && self.emit('insert', id, h);
 	return id;
 };
 
@@ -2340,7 +2471,7 @@ Binary.prototype.update = function(id, name, buffer, callback) {
 	stream.end(buffer);
 	CLEANUP(stream);
 	callback && callback(null, id, h);
-	self.emit('insert', id, h);
+	self.$events.insert && self.emit('insert', id, h);
 	return id;
 };
 
@@ -2378,7 +2509,7 @@ Binary.prototype.remove = function(id, callback) {
 
 	var filename = framework_utils.join(self.directory, key + EXTENSION_BINARY);
 	Fs.unlink(filename, (err) => callback && callback(null, err ? false : true));
-	self.emit('remove', id);
+	self.$events.remove && self.emit('remove', id);
 	return self;
 };
 
@@ -2413,7 +2544,7 @@ Binary.prototype.clear = function(callback) {
 		for (var i = 0, length = response.length; i < length; i++)
 			response[i].substring(0, l) === key && pending.push(target + '/' + response[i]);
 
-		self.emit('clear', pending.length);
+		self.$events.clear && self.emit('clear', pending.length);
 		framework.unlink(pending, callback);
 	});
 

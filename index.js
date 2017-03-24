@@ -35,7 +35,6 @@ const Crypto = require('crypto');
 const Parser = require('url');
 const Child = require('child_process');
 const Util = require('util');
-const Events = require('events');
 const http = require('http');
 
 const ENCODING = 'utf8';
@@ -756,6 +755,8 @@ function Framework() {
 	this.isVirtualDirectory = false;
 	this.isTheme = false;
 	this.isWindows = Os.platform().substring(0, 3).toLowerCase() === 'win';
+
+	this.$events = {};
 }
 
 // ======================================================
@@ -772,17 +773,9 @@ Framework.prototype = {
 	}
 };
 
-Framework.prototype.__proto__ = Object.create(Events.EventEmitter.prototype, {
-	constructor: {
-		value: Framework,
-		enumberable: false
-	}
-});
-
 var framework = new Framework();
 global.framework = global.F = module.exports = framework;
 
-F.on2 = F.on;
 F.on = function(name, fn) {
 
 	if (name === 'init' || name === 'ready' || name === 'load') {
@@ -815,8 +808,54 @@ F.on = function(name, fn) {
 		}
 	}
 
-	this.on2.apply(this, arguments);
+	if (F.$events[name])
+		F.$events[name].push(fn);
+	else
+		F.$events[name] = [fn];
+
 	return this;
+};
+
+F.emit = function(name, a, b, c, d, e, f, g) {
+	var evt = F.$events[name];
+	if (evt) {
+		var clean = false;
+		for (var i = 0, length = evt.length; i < length; i++) {
+			if (evt[i].$once)
+				clean = true;
+			evt[i].call(F, a, b, c, d, e, f, g);
+		}
+		if (clean) {
+			evt = evt.remove(n => n.$once);
+			if (evt.length)
+				F.$events[name] = evt;
+			else
+				F.$events[name] = undefined;
+		}
+	}
+	return F;
+};
+
+F.once = function(name, fn) {
+	fn.$once = true;
+	return F.on(name, fn);
+};
+
+F.removeListener = function(name, fn) {
+	var evt = F.$events[name];
+	if (evt) {
+		evt = evt.remove(n => n === fn);
+		if (evt.length)
+			F.$events[name] = evt;
+		else
+			F.$events[name] = undefined;
+	}
+	return F;
+};
+
+F.removeAllListeners = function(name) {
+	F.$events[name] = undefined;
+	return F;
 };
 
 /**
@@ -2723,7 +2762,7 @@ F.error = function(err, name, uri) {
  * @return {Framework}
  */
 F.problem = F.wtf = function(message, name, uri, ip) {
-	F.emit('problem', message, name, uri, ip);
+	F.$events.problem && F.emit('problem', message, name, uri, ip);
 
 	if (message instanceof framework_builders.ErrorBuilder)
 		message = message.plain();
@@ -2750,7 +2789,7 @@ F.problem = F.wtf = function(message, name, uri, ip) {
  * @return {Framework}
  */
 F.change = function(message, name, uri, ip) {
-	F.emit('change', message, name, uri, ip);
+	F.$events.change && F.emit('change', message, name, uri, ip);
 
 	if (message instanceof framework_builders.ErrorBuilder)
 		message = message.plain();
@@ -2781,7 +2820,7 @@ F.trace = function(message, name, uri, ip) {
 	if (!F.config.trace)
 		return F;
 
-	F.emit('trace', message, name, uri, ip);
+	F.$events.trace && F.emit('trace', message, name, uri, ip);
 
 	if (message instanceof framework_builders.ErrorBuilder)
 		message = message.plain();
@@ -3882,6 +3921,7 @@ F.$restart = function() {
 
 		F.cache.clear();
 		F.cache.stop();
+		F.$events = {};
 		F.global = {};
 		F.resources = {};
 		F.connections = {};
@@ -5492,7 +5532,7 @@ F.responseFile = function(req, res, filename, downloadName, headers, done, key) 
 		F.stats.response.notModified++;
 		F._request_stats(false, req.isStaticFile);
 		done && done();
-		!req.isStaticFile && F.emit('request-end', req, res);
+		F.$events['request-end'] && !req.isStaticFile && F.emit('request-end', req, res);
 		req.clear(true);
 		return F;
 	}
@@ -5596,7 +5636,7 @@ F.responseFile = function(req, res, filename, downloadName, headers, done, key) 
 		res.writeHead(200, returnHeaders);
 		res.end();
 		done && done();
-		!req.isStaticFile && F.emit('request-end', req, res);
+		F.$events['request-end'] && !req.isStaticFile && F.emit('request-end', req, res);
 		req.clear(true);
 	} else if (compress) {
 		res.writeHead(200, returnHeaders);
@@ -5621,7 +5661,7 @@ function responseFile_compress(stream, next, req, res) {
 	});
 	stream.pipe(Zlib.createGzip()).pipe(res);
 	req.$tmp.done && req.$tmp.done();
-	!req.isStaticFile && F.emit('request-end', req, res);
+	F.$events['request-end'] && !req.isStaticFile && F.emit('request-end', req, res);
 	req.clear(true);
 }
 
@@ -5632,7 +5672,7 @@ function responseFile_nocompress(stream, next, req, res) {
 		next();
 	});
 	req.$tmp.done && req.$tmp.done();
-	!req.isStaticFile && F.emit('request-end', req, res);
+	F.$events['request-end'] && !req.isStaticFile && F.emit('request-end', req, res);
 	req.clear(true);
 }
 
@@ -5725,7 +5765,7 @@ F.responsePipe = function(req, res, url, headers, timeout, callback) {
 			F.stats.response.pipe++;
 			F._request_stats(false, req.isStaticFile);
 			res.success = true;
-			!req.isStaticFile && F.emit('request-end', req, res);
+			F.$events['request-end'] && !req.isStaticFile && F.emit('request-end', req, res);
 			req.clear(true);
 			callback && callback();
 		});
@@ -5746,7 +5786,7 @@ F.responseCustom = function(req, res) {
 	res.success = true;
 	F.stats.response.custom++;
 	F._request_stats(false, req.isStaticFile);
-	!req.isStaticFile && F.emit('request-end', req, res);
+	F.$events['request-end'] && !req.isStaticFile && F.emit('request-end', req, res);
 	req.clear(true);
 	return F;
 };
@@ -6050,7 +6090,7 @@ F.responseStream = function(req, res, contentType, stream, download, headers, do
 		res.writeHead(200, returnHeaders);
 		res.end();
 		done && done();
-		!req.isStaticFile && F.emit('request-end', req, res);
+		F.$events['request-end'] && !req.isStaticFile && F.emit('request-end', req, res);
 		req.clear(true);
 		return F;
 	}
@@ -6061,7 +6101,7 @@ F.responseStream = function(req, res, contentType, stream, download, headers, do
 		stream.pipe(Zlib.createGzip()).pipe(res);
 		framework_internal.onFinished(res, () => framework_internal.destroyStream(stream));
 		done && done();
-		!req.isStaticFile && F.emit('request-end', req, res);
+		F.$events['request-end'] && !req.isStaticFile && F.emit('request-end', req, res);
 		req.clear(true);
 		return F;
 	}
@@ -6071,7 +6111,7 @@ F.responseStream = function(req, res, contentType, stream, download, headers, do
 	stream.pipe(res);
 
 	done && done();
-	!req.isStaticFile && F.emit('request-end', req, res);
+	F.$events['request-end'] && !req.isStaticFile && F.emit('request-end', req, res);
 	req.clear(true);
 	return F;
 };
@@ -6117,7 +6157,7 @@ F.responseRange = function(name, range, headers, req, res, done) {
 		F.stats.response.streaming++;
 		F._request_stats(false, req.isStaticFile);
 		done && done();
-		!req.isStaticFile && F.emit('request-end', req, res);
+		F.$events['request-end'] && !req.isStaticFile && F.emit('request-end', req, res);
 		return F;
 	}
 
@@ -6141,7 +6181,7 @@ function responseRange_callback(stream, next, req, res) {
 	F.stats.response.streaming++;
 	F._request_stats(false, req.isStaticFile);
 	req.$tmp.done && req.$tmp.done();
-	!req.isStaticFile && F.emit('request-end', req, res);
+	F.$events['request-end'] && !req.isStaticFile && F.emit('request-end', req, res);
 }
 
 /**
@@ -6195,7 +6235,7 @@ F.responseBinary = function(req, res, contentType, buffer, encoding, download, h
 		res.writeHead(200, returnHeaders);
 		res.end();
 		done && done();
-		!req.isStaticFile && F.emit('request-end', req, res);
+		F.$events['request-end'] && !req.isStaticFile && F.emit('request-end', req, res);
 		req.clear(true);
 		return F;
 	}
@@ -6204,7 +6244,7 @@ F.responseBinary = function(req, res, contentType, buffer, encoding, download, h
 		res.writeHead(200, returnHeaders);
 		Zlib.gzip(encoding === 'binary' ? buffer : buffer.toString(encoding), (err, buffer) => res.end(buffer));
 		done && done();
-		!req.isStaticFile && F.emit('request-end', req, res);
+		F.$events['request-end'] && !req.isStaticFile && F.emit('request-end', req, res);
 		return F;
 	}
 
@@ -6212,7 +6252,7 @@ F.responseBinary = function(req, res, contentType, buffer, encoding, download, h
 	res.end(encoding === 'binary' ? buffer : buffer.toString(encoding));
 
 	done && done();
-	!req.isStaticFile && F.emit('request-end', req, res);
+	F.$events['request-end'] && !req.isStaticFile && F.emit('request-end', req, res);
 	req.clear(true);
 	return F;
 };
@@ -6262,7 +6302,7 @@ F.notModified = function(req, res, compare, strict) {
 
 	F.stats.response.notModified++;
 	F._request_stats(false, req.isStaticFile);
-	!req.isStaticFile && F.emit('request-end', req, res);
+	F.$events['request-end'] && !req.isStaticFile && F.emit('request-end', req, res);
 	return true;
 };
 
@@ -6280,10 +6320,10 @@ F.responseCode = function(req, res, code, problem) {
 	else
 		res.end(U.httpStatus(code));
 
-	!req.isStaticFile && F.emit('request-end', req, res);
+	F.$events['request-end'] && !req.isStaticFile && F.emit('request-end', req, res);
 	req.clear(true);
 	var key = 'error' + code;
-	F.emit(key, req, res, problem);
+	F.$events[key] && F.emit(key, req, res, problem);
 	F.stats.response[key]++;
 	return F;
 };
@@ -6326,7 +6366,7 @@ F.response500 = function(req, res, error) {
 	else
 		res.end(U.httpStatus(500) + prepare_error(error));
 
-	!req.isStaticFile && F.emit('request-end', req, res);
+	F.$events['request-end'] && !req.isStaticFile && F.emit('request-end', req, res);
 	req.clear(true);
 	F.stats.response.error500++;
 	return F;
@@ -6406,7 +6446,7 @@ F.responseContent = function(req, res, code, contentBody, contentType, compress,
 	}
 
 	F._request_stats(false, req.isStaticFile);
-	!req.isStaticFile && F.emit('request-end', req, res);
+	F.$events['request-end'] && !req.isStaticFile && F.emit('request-end', req, res);
 	req.clear(true);
 	return F;
 };
@@ -6428,7 +6468,7 @@ F.responseRedirect = function(req, res, url, permanent) {
 	headers.Location = url;
 	res.writeHead(permanent ? 301 : 302, headers);
 	res.end();
-	!req.isStaticFile && F.emit('request-end', req, res);
+	F.$events['request-end'] && !req.isStaticFile && F.emit('request-end', req, res);
 	req.clear(true);
 	return F;
 };
@@ -6910,7 +6950,7 @@ F.listener = function(req, res) {
 	req.uri = framework_internal.parseURI(req);
 
 	F.stats.request.request++;
-	F.emit('request', req, res);
+	F.$events.request && F.emit('request', req, res);
 
 	if (F._request_check_redirect) {
 		var redirect = F.routes.redirects[req.$protocol + '://' + req.host];
@@ -7089,7 +7129,7 @@ F._request_continue = function(req, res, headers) {
 	}
 
 	req.flags = flags;
-	F.emit('request-begin', req, res);
+	F.$events['request-begin'] && F.emit('request-begin', req, res);
 
 	var isCORS = req.headers['origin'] && F._length_cors;
 
@@ -7157,7 +7197,7 @@ F._request_continue = function(req, res, headers) {
 			break;
 	}
 
-	F.emit('request-end', req, res);
+	F.$events['request-end'] && F.emit('request-end', req, res);
 	F._request_stats(false, false);
 	F.stats.request.blocked++;
 	res.writeHead(403);
@@ -7190,7 +7230,7 @@ F._request_mmr = function(req, res, header) {
 		return;
 	}
 
-	F.emit('request-end', req, res);
+	F.$events['request-end'] && F.emit('request-end', req, res);
 	F._request_stats(false, false);
 	F.stats.request.blocked++;
 	res.writeHead(403);
@@ -7286,7 +7326,7 @@ F._cors = function(req, res, fn, arg) {
 
 	if (stop) {
 		fn = null;
-		F.emit('request-end', req, res);
+		F.$events['request-end'] && F.emit('request-end', req, res);
 		F._request_stats(false, false);
 		F.stats.request.blocked++;
 		res.writeHead(404);
@@ -7298,7 +7338,7 @@ F._cors = function(req, res, fn, arg) {
 		return fn(req, res, arg);
 
 	fn = null;
-	F.emit('request-end', req, res);
+	F.$events['request-end'] && F.emit('request-end', req, res);
 	F._request_stats(false, false);
 	res.writeHead(200);
 	res.end();
@@ -7325,7 +7365,7 @@ F._upgrade = function(req, socket, head) {
 
 	req.uri = framework_internal.parseURI(req);
 
-	F.emit('websocket', req, socket, head);
+	F.$events.websocket && F.emit('websocket', req, socket, head);
 	F.stats.request.websocket++;
 
 	req.session = null;
@@ -9608,7 +9648,7 @@ FrameworkCache.prototype.set = FrameworkCache.prototype.add = function(name, val
 	}
 
 	this.items[name] = { value: value, expire: expire };
-	F.emit('cache-set', name, value, expire, sync);
+	F.$events['cache-set'] && F.emit('cache-set', name, value, expire, sync);
 	return value;
 };
 
@@ -9622,7 +9662,7 @@ FrameworkCache.prototype.read = FrameworkCache.prototype.get = function(key, def
 
 	if (value.expire < F.datetime) {
 		this.items[key] = undefined;
-		F.emit('cache-expire', key, value.value);
+		F.$events['cache-expire'] && F.emit('cache-expire', key, value.value);
 		return def;
 	}
 
@@ -9637,7 +9677,7 @@ FrameworkCache.prototype.read2 = FrameworkCache.prototype.get2 = function(key, d
 
 	if (value.expire < F.datetime) {
 		this.items[key] = undefined;
-		F.emit('cache-expire', key, value.value);
+		F.$events['cache-expire'] && F.emit('cache-expire', key, value.value);
 		return def;
 	}
 
@@ -9784,7 +9824,7 @@ Subscribe.prototype.urlencoded = function() {
 	F._request_stats(false, false);
 	self.res.writeHead(403);
 	self.res.end();
-	F.emit('request-end', self.req, self.res);
+	F.$events['request-end'] && F.emit('request-end', self.req, self.res);
 	self.req.clear(true);
 
 	return self;
@@ -9811,7 +9851,7 @@ Subscribe.prototype.execute = function(status, isError) {
 
 	if (isError || !route) {
 		F.stats.response['error' + status]++;
-		status !== 500 && F.emit('error' + status, req, res, self.exception);
+		status !== 500 && F.$events['error'] && F.emit('error' + status, req, res, self.exception);
 	}
 
 	if (!route) {
@@ -9929,7 +9969,7 @@ Subscribe.prototype.doExecute = function() {
 		if (controller.isCanceled)
 			return self;
 
-		F.emit('controller', controller, name, self.route.options);
+		F.$events.controller && F.emit('controller', controller, name, self.route.options);
 
 		if (controller.isCanceled)
 			return self;
@@ -10957,7 +10997,7 @@ Controller.prototype.$meta = function() {
 		return '';
 	}
 
-	F.emit('controller-render-meta', self);
+	F.$events['controller-render-meta'] && F.emit('controller-render-meta', self);
 	var repository = self.repository;
 	return F.onMeta.call(self, repository[REPOSITORY_META_TITLE], repository[REPOSITORY_META_DESCRIPTION], repository[REPOSITORY_META_KEYWORDS], repository[REPOSITORY_META_IMAGE]);
 };
@@ -12601,7 +12641,7 @@ Controller.prototype.redirect = function(url, permanent) {
 	self.res.writeHead(permanent ? 301 : 302, HEADERS.redirect);
 	self.res.end();
 	F._request_stats(false, false);
-	F.emit('request-end', self.req, self.res);
+	F.$events['request-end'] && F.emit('request-end', self.req, self.res);
 	self.req.clear(true);
 	F.stats.response.redirect++;
 	return self;
@@ -12778,7 +12818,7 @@ Controller.prototype.close = function(end) {
 		self.isConnected = false;
 		self.res.success = true;
 		F._request_stats(false, false);
-		F.emit('request-end', self.req, self.res);
+		F.$events['request-end'] && F.emit('request-end', self.req, self.res);
 		self.type = 0;
 		end && self.res.end();
 		return self;
@@ -12791,7 +12831,7 @@ Controller.prototype.close = function(end) {
 
 	self.res.success = true;
 	F._request_stats(false, false);
-	F.emit('request-end', self.req, self.res);
+	F.$events['request-end'] && F.emit('request-end', self.req, self.res);
 	end && self.res.end();
 	return self;
 };
@@ -13239,6 +13279,7 @@ function WebSocket(path, name, id) {
 	this.isController = true;
 	this.url = U.path(path);
 	this.route = null;
+	this.$events = {};
 
 	// on('open', function(client) {});
 	// on('close', function(client) {});
@@ -13282,12 +13323,55 @@ WebSocket.prototype = {
 	},
 };
 
-WebSocket.prototype.__proto__ = Object.create(Events.EventEmitter.prototype, {
-	constructor: {
-		value: WebSocket,
-		enumberable: false
+WebSocket.prototype.emit = function(name, a, b, c, d, e, f, g) {
+	var evt = this.$events[name];
+	if (evt) {
+		var clean = false;
+		for (var i = 0, length = evt.length; i < length; i++) {
+			if (evt[i].$once)
+				clean = true;
+			evt[i].call(this, a, b, c, d, e, f, g);
+		}
+		if (clean) {
+			evt = evt.remove(n => n.$once);
+			if (evt.length)
+				this.$events[name] = evt;
+			else
+				this.$events[name] = undefined;
+		}
 	}
-});
+	return this;
+};
+
+WebSocket.prototype.on = function(name, fn) {
+	if (this.$events[name])
+		this.$events[name].push(fn);
+	else
+		this.$events[name] = [fn];
+	return this;
+};
+
+WebSocket.prototype.once = function(name, fn) {
+	fn.$once = true;
+	return this.on(name, fn);
+};
+
+WebSocket.prototype.removeListener = function(name, fn) {
+	var evt = this.$events[name];
+	if (evt) {
+		evt = evt.remove(n => n === fn);
+		if (evt.length)
+			this.$events[name] = evt;
+		else
+			this.$events[name] = undefined;
+	}
+	return this;
+};
+
+WebSocket.prototype.removeAllListeners = function(name) {
+	this.$events[name] = undefined;
+	return this;
+};
 
 /**
  * Sends a message
@@ -13520,7 +13604,7 @@ WebSocket.prototype.destroy = function(problem) {
 		return self;
 
 	self.close();
-	self.emit('destroy');
+	self.container.$events.destroy && self.emit('destroy');
 
 	setTimeout(function() {
 
@@ -13707,13 +13791,6 @@ WebSocketClient.prototype = {
 	}
 };
 
-WebSocketClient.prototype.__proto__ = Object.create(Events.EventEmitter.prototype, {
-	constructor: {
-		value: WebSocketClient,
-		enumberable: false
-	}
-});
-
 WebSocketClient.prototype.isWebSocket = true;
 
 WebSocketClient.prototype.cookie = function(name) {
@@ -13797,8 +13874,8 @@ WebSocketClient.prototype.upgrade = function(container) {
 	self.container._add(self);
 	self.container._refresh();
 
-	F.emit('websocket-begin', self.container, self);
-	self.container.emit('open', self);
+	F.$events['websocket-begin'] && F.emit('websocket-begin', self.container, self);
+	self.container.$events.open && self.container.emit('open', self);
 	return self;
 };
 
@@ -13817,7 +13894,7 @@ WebSocketClient.prototype._ondata = function(data) {
 
 	if (this.buffer.length > this.length) {
 		this.errors++;
-		this.container.emit('error', new Error('Maximum request length exceeded.'), this);
+		this.container.$events.error && this.container.emit('error', new Error('Maximum request length exceeded.'), this);
 		return;
 	}
 
@@ -13937,7 +14014,7 @@ WebSocketClient.prototype._decode = function(data) {
 			} catch (ex) {
 				if (DEBUG) {
 					this.errors++;
-					this.container.emit('error', new Error('JSON parser: ' + ex.toString()), this);
+					this.container.$events.error && this.container.emit('error', new Error('JSON parser: ' + ex.toString()), this);
 				}
 			}
 		} else
@@ -13955,7 +14032,7 @@ WebSocketClient.prototype._onerror = function(err) {
 		this.isClosed = true;
 		this._onclose();
 	} else
-		this.container.emit('error', err, this);
+		this.container.$events.error && this.container.emit('error', err, this);
 };
 
 WebSocketClient.prototype._onclose = function() {
@@ -13978,10 +14055,10 @@ WebSocketClient.prototype._onclose = function() {
 
 	this.container._remove(this._id);
 	this.container._refresh();
-	this.container.emit('close', this);
+	self.container.$events.close && this.container.emit('close', this);
 	this.socket.removeAllListeners();
 	this.removeAllListeners();
-	F.emit('websocket-end', this.container, this);
+	F.$events['websocket-end'] && F.emit('websocket-end', this.container, this);
 };
 
 /**
@@ -14935,7 +15012,7 @@ process.on('exit', () => F.stop());
 process.on('message', function(msg, h) {
 
 	if (typeof(msg) !== 'string') {
-		F.emit('message', msg, h);
+		F.$events.message && F.emit('message', msg, h);
 		return;
 	}
 
@@ -14972,7 +15049,7 @@ process.on('message', function(msg, h) {
 		return;
 	}
 
-	F.emit('message', msg, h);
+	F.$events.message && F.emit('message', msg, h);
 });
 
 function prepare_error(e) {

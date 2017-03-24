@@ -228,7 +228,7 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 		}
 
 		req.files.push(tmp);
-		F.emit('upload-begin', req, tmp);
+		F.$events['upload-begin'] && F.emit('upload-begin', req, tmp);
 		stream.write(data);
 		tmp.length += length;
 	};
@@ -247,7 +247,7 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 			tmp.$data = undefined;
 			tmp.$is = undefined;
 			tmp.$step = undefined;
-			F.emit('upload-end', req, tmp);
+			F.$events['upload-end'] && F.emit('upload-end', req, tmp);
 			return;
 		}
 

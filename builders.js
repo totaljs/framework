@@ -26,7 +26,6 @@
 
 'use strict';
 
-const Events = require('events');
 const REQUIRED = 'The field "@" is invalid.';
 const DEFAULT_SCHEMA = 'default';
 const SKIP = { $$schema: true, $$result: true, $$callback: true, $$async: true, $$index: true, $$repository: true, $$can: true, $$controller: true };
@@ -3720,7 +3719,7 @@ RESTBuilder.prototype.exec = function(callback) {
 		key = '$rest_' + (self.$url + flags.join(',') + (self.$data ? Qs.stringify(self.$data) : '')).hash();
 		var data = F.cache.read2(key);
 		if (data) {
-			var evt = new Events.EventEmitter();
+			var evt = new framework_utils.EventEmitter2();
 
 			setImmediate(function() {
 				evt.removeAllListeners();
