@@ -279,8 +279,7 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 
 	req.on('data', chunk => parser.write(chunk));
 	req.on('end', function() {
-		if (!req.buffer_exceeded)
-			req.$upload = true;
+		!req.buffer_exceeded && (req.$upload = true);
 		parser.end();
 	});
 };
