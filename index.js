@@ -14082,7 +14082,7 @@ WebSocketClient.prototype.send = function(message, raw, replacer) {
 		} else
 			this.socket.write(U.getWebSocketFrame(0, data, 0x01));
 	} else if (message) {
-		if (self.deflate) {
+		if (this.deflate) {
 			this.deflatepending.push(U.createBuffer(message));
 			this.sendDeflate();
 		} else
