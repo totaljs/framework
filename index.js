@@ -14055,9 +14055,8 @@ WebSocketClient.prototype._onclose = function() {
 
 	this.container._remove(this._id);
 	this.container._refresh();
-	self.container.$events.close && this.container.emit('close', this);
+	this.container.$events.close && this.container.emit('close', this);
 	this.socket.removeAllListeners();
-	this.removeAllListeners();
 	F.$events['websocket-end'] && F.emit('websocket-end', this.container, this);
 };
 
