@@ -290,11 +290,10 @@ global.$CREATE = function(schema) {
 	return o ? o.default() : null;
 };
 
-global.$MAKE = function(schema, model, callback) {
+global.$MAKE = function(schema, model, filter, callback, novalidate, argument) {
 	schema = parseSchema(schema);
 	var o = framework_builders.getschema(schema[0], schema[1]);
-	o && o.make(model, callback);
-	return o ? true : false;
+	return o ? o.make(model, filter, callback, argument, novalidate) : undefined;
 };
 
 global.$QUERY = function(schema, options, callback, controller) {
