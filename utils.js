@@ -5338,7 +5338,10 @@ EventEmitter2.prototype.removeListener = function(name, fn) {
 };
 
 EventEmitter2.prototype.removeAllListeners = function(name) {
-	this.$events[name] = undefined;
+	if (name)
+		this.$events[name] = undefined;
+	else
+		this.$events = {};
 	return this;
 };
 

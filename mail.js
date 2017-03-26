@@ -103,7 +103,10 @@ Mailer.prototype.removeListener = function(name, fn) {
 };
 
 Mailer.prototype.removeAllListeners = function(name) {
-	this.$events[name] = undefined;
+	if (name)
+		this.$events[name] = undefined;
+	else
+		this.$events = {};
 	return this;
 };
 

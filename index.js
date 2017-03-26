@@ -854,7 +854,10 @@ F.removeListener = function(name, fn) {
 };
 
 F.removeAllListeners = function(name) {
-	F.$events[name] = undefined;
+	if (name)
+		F.$events[name] = undefined;
+	else
+		F.$events = {};
 	return F;
 };
 
@@ -6593,10 +6596,10 @@ F.initialize = function(http, debug, options, restart) {
 
 		Object.keys(F.connections).forEach(function(key) {
 			var item = F.connections[key];
-			if (!item)
-				return;
-			item.removeAllListeners();
-			item.close();
+			if (item) {
+				item.removeAllListeners();
+				item.close();
+			}
 		});
 
 		F.server.close();
@@ -13369,7 +13372,10 @@ WebSocket.prototype.removeListener = function(name, fn) {
 };
 
 WebSocket.prototype.removeAllListeners = function(name) {
-	this.$events[name] = undefined;
+	if (name)
+		this.$events[name] = undefined;
+	else
+		this.$events = {};
 	return this;
 };
 
@@ -13612,8 +13618,8 @@ WebSocket.prototype.destroy = function(problem) {
 			var conn = self.connections[key];
 			if (conn) {
 				conn._isClosed = true;
-				conn.socket.removeAllListeners();
 				conn.removeAllListeners();
+				conn.socket.removeAllListeners();
 			}
 		});
 

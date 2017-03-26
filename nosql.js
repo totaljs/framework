@@ -125,7 +125,10 @@ Database.prototype.removeListener = function(name, fn) {
 };
 
 Database.prototype.removeAllListeners = function(name) {
-	this.$events[name] = undefined;
+	if (name)
+		this.$events[name] = undefined;
+	else
+		this.$events[name] = {};
 	return this;
 };
 
@@ -1868,7 +1871,10 @@ Counter.prototype.removeListener = function(name, fn) {
 };
 
 Counter.prototype.removeAllListeners = function(name) {
-	this.$events[name] = undefined;
+	if (name)
+		this.$events[name] = undefined;
+	else
+		this.$events = {};
 	return this;
 };
 
@@ -2318,7 +2324,10 @@ Binary.prototype.removeListener = function(name, fn) {
 };
 
 Binary.prototype.removeAllListeners = function(name) {
-	this.$events[name] = undefined;
+	if (name)
+		this.$events[name] = undefined;
+	else
+		this.$events = {};
 	return this;
 };
 
