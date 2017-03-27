@@ -13617,7 +13617,6 @@ WebSocket.prototype.destroy = function(problem) {
 			var conn = self.connections[key];
 			if (conn) {
 				conn._isClosed = true;
-				conn.removeAllListeners();
 				conn.socket.removeAllListeners();
 			}
 		});
