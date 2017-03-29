@@ -12,7 +12,7 @@
 - added: a support for WebSocket compression
 - added: removing `.package` files from `tmp` directory
 - added: a new schema implementation (more in docs)
-- added: `F.restful2()` has simplified route mechanism (it doesn't use "{id}" param (insert(POST)/update(POST)/delete(DELETE)) with except "GET" method)
+- added: `F.restful2()` has simplified route mechanism (it doesn't use "{id}" param for insert(POST)/update(POST)/delete(DELETE) method with except "GET" method)
 - added: `res.binary(buffer, contentType, [type], [download], [headers])`
 - added: a new route flag `novalidate` (a prevention for Schema validation)
 
