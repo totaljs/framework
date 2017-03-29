@@ -6,7 +6,7 @@
 - added: `OFF()` alias for `F.removeListener(eventName, listener)` or `F.removeAllListeners([eventName])`
 - added: `controller.components()` adds script/css tag into the head
 - added: `@{components([group], [settings])}` renders all components together from selected group
-- added: a new alias `WAIT()` alias for `U.WAIT()`
+- added: a new alias `WAIT()` alias for `U.wait()`
 - added: `res.status(code)` for express middleware
 - added: `F.clearSchedule(id)` for removing existing schedules
 - added: a support for WebSocket compression
