@@ -2428,7 +2428,6 @@ F.websocket = function(url, funcInitialize, flags, length) {
 			isJSON = false;
 		}
 
-
 		if (flag[0] === '@') {
 			isROLE = true;
 			tmp.push(flag);
