@@ -77,6 +77,7 @@ function Database(name, filename) {
 	this.$meta();
 	this.$timeoutmeta;
 	this.$events = {};
+	this.$free = true;
 }
 
 Database.prototype.emit = function(name, a, b, c, d, e, f, g) {
@@ -100,6 +101,10 @@ Database.prototype.emit = function(name, a, b, c, d, e, f, g) {
 };
 
 Database.prototype.on = function(name, fn) {
+
+	if (!fn.$once)
+		this.$free = false;
+
 	if (this.$events[name])
 		this.$events[name].push(fn);
 	else
@@ -125,7 +130,9 @@ Database.prototype.removeListener = function(name, fn) {
 };
 
 Database.prototype.removeAllListeners = function(name) {
-	if (name)
+	if (name === true)
+		this.$events = EMPTYOBJECT;
+	else if (name)
 		this.$events[name] = undefined;
 	else
 		this.$events[name] = {};
@@ -247,9 +254,13 @@ Database.prototype.drop = function() {
 	return self;
 };
 
-Database.prototype.free = function() {
+Database.prototype.free = function(force) {
 	var self = this;
-	self.removeAllListeners();
+	if (!force && !self.$free)
+		return self;
+	self.counter.removeAllListeners(true);
+	self.binary.removeAllListeners(true);
+	self.removeAllListeners(true);
 	delete framework.databases[self.name];
 	return self;
 };
@@ -1282,7 +1293,7 @@ Database.prototype.$drop = function() {
 
 	remove.wait((filename, next) => Fs.unlink(filename, next), function() {
 		self.next(0);
-		self.free();
+		self.free(true);
 	}, 5);
 
 	Object.keys(self.inmemory).forEach(function(key) {
@@ -1846,10 +1857,15 @@ Counter.prototype.emit = function(name, a, b, c, d, e, f, g) {
 };
 
 Counter.prototype.on = function(name, fn) {
+
+	if (!fn.$once)
+		this.db.$free = false;
+
 	if (this.$events[name])
 		this.$events[name].push(fn);
 	else
 		this.$events[name] = [fn];
+
 	return this;
 };
 
@@ -1871,7 +1887,9 @@ Counter.prototype.removeListener = function(name, fn) {
 };
 
 Counter.prototype.removeAllListeners = function(name) {
-	if (name)
+	if (name === true)
+		this.$events = EMPTYOBJECT;
+	else if (name)
 		this.$events[name] = undefined;
 	else
 		this.$events = {};
@@ -2299,6 +2317,10 @@ Binary.prototype.emit = function(name, a, b, c, d, e, f, g) {
 };
 
 Binary.prototype.on = function(name, fn) {
+
+	if (!fn.$once)
+		this.db.$free = false;
+
 	if (this.$events[name])
 		this.$events[name].push(fn);
 	else
@@ -2324,7 +2346,9 @@ Binary.prototype.removeListener = function(name, fn) {
 };
 
 Binary.prototype.removeAllListeners = function(name) {
-	if (name)
+	if (name === true)
+		this.$events = EMPTYOBJECT;
+	else if (name)
 		this.$events[name] = undefined;
 	else
 		this.$events = {};

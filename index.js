@@ -13371,7 +13371,9 @@ WebSocket.prototype.removeListener = function(name, fn) {
 };
 
 WebSocket.prototype.removeAllListeners = function(name) {
-	if (name)
+	if (name === true)
+		this.$events = EMPTYOBJECT;
+	else if (name)
 		this.$events[name] = undefined;
 	else
 		this.$events = {};
