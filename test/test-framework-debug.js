@@ -83,7 +83,7 @@ function test_view_functions(next) {
 		assert.ok(data === '{"r":true}', 'json');
 		next();
 	});
-};
+}
 
 function test_view_error(next) {
 	errorStatus = 1;
@@ -674,7 +674,7 @@ function test_routing(next) {
 	});
 
 	async.await('upload', function(complete) {
-		utils.send(',;-test.txt', Buffer.from('dG90YWwuanMgaXMga2luZyBvZiB3ZWI=', 'base64'), url + 'upload/', function(error, data, code, headers) {
+		utils.upload([{ name: 'file', filename: ',;-test.txt', buffer: Buffer.from('dG90YWwuanMgaXMga2luZyBvZiB3ZWI=', 'base64') }], url + 'upload/', function(error, data, code, headers) {
 			assert(data === '{"name":",;-test.txt","length":25,"type":"text/plain"}', 'upload');
 			complete();
 		});
