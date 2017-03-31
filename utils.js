@@ -1094,7 +1094,8 @@ exports.send = function(name, stream, url, callback, cookies, headers, method, t
 
 	// Is Buffer
 	if (stream.length) {
-		req.end(stream.toString(ENCODING) + NEWLINE + NEWLINE + '--' + BOUNDARY + '--');
+		req.write(stream);
+		req.end(NEWLINE + NEWLINE + '--' + BOUNDARY + '--');
 		return e;
 	}
 
@@ -1194,7 +1195,7 @@ exports.upload = function(files, url, callback, cookies, headers, method, timeou
 		req.write(header.format(item.name, U.getName(item.filename), exports.getContentType(exports.getExtension(item.filename))));
 
 		if (item.buffer) {
-			req.write(item.buffer.toString(ENCODING));
+			req.write(item.buffer);
 			return next();
 		}
 
