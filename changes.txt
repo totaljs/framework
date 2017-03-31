@@ -17,6 +17,7 @@
 - added: a new route flag `novalidate` (a prevention for Schema validation)
 - added: `U.upload(files, url, [callback], [cookies], [headers], [method], [timeout])` for multiple uploading files
 - added: `RESTBuilder.redirect(true/false)` enables/disables auto-redirect (default: enabled)
+- added: new schema aliases (`$QUERY()`, `$GET()`, `$WORKFLOW()`, '$TRANSFORM()' and `$OPERATION()`)
 
 - updated: `F.route()`, `F.websocket()` and `F.file()` --> now returns `FrameworkRoute` instance instead of `Framework` instance (more in docs)
 - updated: `F.load(debug, [types], [path])` supports a new type `service` which enables `F.on('service')`
