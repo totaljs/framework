@@ -1,6 +1,6 @@
 ======= 2.5.0 (BETA)
 
-- added: a property for WebSocket controller `controller.mobile`
+- added: a missing property for WebSocket controller `controller.mobile`
 - added: `EMIT()` alias for `F.emit()`
 - added: `ON()` alias for `F.on()`
 - added: `OFF()` alias for `F.removeListener(eventName, listener)` or `F.removeAllListeners([eventName])`
@@ -16,10 +16,11 @@
 - added: `res.binary(buffer, contentType, [type], [download], [headers])`
 - added: a new route flag `novalidate` (a prevention for Schema validation)
 - added: `U.upload(files, url, [callback], [cookies], [headers], [method], [timeout])` for multiple uploading files
+- added: `RESTBuilder.redirect(true/false)` enables/disables auto-redirect (default: enabled)
 
 - updated: `F.route()`, `F.websocket()` and `F.file()` --> now returns `FrameworkRoute` instance instead of `Framework` instance (more in docs)
 - updated: `F.load(debug, [types], [path])` supports a new type `service` which enables `F.on('service')`
-- updated: Components (now don't have to have `html` body)
+- updated: Components (now doesn't have to has `html` body)
 - updated: A component implementation can contain `exports.group = 'name';`
 - updated: framework loads all dependencies in order
 - updated: routes (web/websockets/files) can have an identificator in this form `F.route('/', ['id:custom_dentificator']);
@@ -34,7 +35,6 @@
 - updated: `OPERATION(name, value, [callback(err, response, param)], [param])` added a new (helper) argument `param`
 - updated: Mail error handling (added Message instance)
 - updated: `U.request()` add a new flag `noredirect`
-- updated: `RESTBuilder.redirect(true/false)` enables/disables auto-redirect (default: enabled)
 
 - fixed: routing with `upload` flag
 - fixed: workers timeout
