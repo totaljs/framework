@@ -275,7 +275,6 @@ global.MODEL = (name) => F.model(name);
 global.$$$ = global.GETSCHEMA = (group, name, fn, timeout) => framework_builders.getschema(group, name, fn, timeout);
 global.CREATE = (group, name) => framework_builders.getschema(group, name).default();
 global.SCRIPT = (body, value, callback, param) => F.script(body, value, callback, param);
-global.UID = () => UIDGENERATOR.date + (UIDGENERATOR.index++).padLeft(4, '0') + UIDGENERATOR.instance + (UIDGENERATOR.index % 2 ? 1 : 0);
 global.SINGLETON = (name, def) => SINGLETONS[name] || (SINGLETONS[name] = (new Function('return ' + (def || '{}')))());
 global.EACHSCHEMA = (group, fn) => framework_builders.eachschema(group, fn);
 global.FUNCTION = (name) => F.functions[name];
@@ -283,6 +282,7 @@ global.ROUTING = (name) => F.routing(name);
 global.SCHEDULE = (date, each, fn, param) => F.schedule(date, each, fn, param);
 global.FINISHED = (stream, callback) => framework_internal.onFinished(stream, callback);
 global.DESTROY = (stream) => framework_internal.destroyStream(stream);
+global.UID = () => UIDGENERATOR.date + (++UIDGENERATOR.index).padLeft(4, '0') + UIDGENERATOR.instance + (UIDGENERATOR.index % 2 ? 1 : 0);
 
 global.$CREATE = function(schema) {
 	schema = parseSchema(schema);
