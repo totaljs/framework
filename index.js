@@ -10815,7 +10815,7 @@ Controller.prototype.invalid = function(status) {
 		self.status = status;
 
 	var builder = new ErrorBuilder();
-	process.nextTick(next_controller_invalid);
+	process.nextTick(next_controller_invalid, self, builder);
 	return builder;
 };
 
