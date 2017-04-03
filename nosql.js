@@ -161,6 +161,10 @@ Database.prototype.meta = function(name, value) {
 	return self;
 };
 
+function next_operation(self, type) {
+	self.next(type);
+}
+
 Database.prototype.insert = function(doc, unique) {
 	var self = this;
 	var builder;
@@ -187,7 +191,7 @@ Database.prototype.insert = function(doc, unique) {
 	builder = new DatabaseBuilder2();
 	var json = framework_builders.isSchema(doc) ? doc.$clean() : doc;
 	self.pending_append.push({ doc: JSON.stringify(json), builder: builder });
-	setImmediate(() => self.next(1));
+	process.nextTick(next_operation, self, 1);
 	self.emit('insert', json);
 	return builder;
 };
@@ -200,7 +204,7 @@ Database.prototype.update = function(doc, insert) {
 	var self = this;
 	var builder = new DatabaseBuilder();
 	self.pending_update.push({ builder: builder, doc: framework_builders.isSchema(doc) ? doc.$clean() : doc, count: 0, insert: insert });
-	setImmediate(() => self.next(2));
+	process.nextTick(next_operation, self, 2);
 	return builder;
 };
 
@@ -214,7 +218,7 @@ Database.prototype.modify = function(doc, insert) {
 		return builder;
 
 	self.pending_update.push({ builder: builder, doc: data, count: 0, keys: keys, insert: insert });
-	setImmediate(() => self.next(2));
+	process.nextTick(next_operation, self, 2);
 	return builder;
 };
 
@@ -250,7 +254,7 @@ Database.prototype.backup = function(filename, remove) {
 Database.prototype.drop = function() {
 	var self = this;
 	self.pending_drops = true;
-	setImmediate(() => self.next(7));
+	process.nextTick(next_operation, self, 7);
 	return self;
 };
 
@@ -281,7 +285,7 @@ Database.prototype.clear = Database.prototype.remove = function(filename) {
 		backup = new Backuper(backup);
 
 	self.pending_remove.push({ builder: builder, count: 0, backup: backup });
-	setImmediate(() => self.next(3));
+	process.nextTick(next_operation, self, 3);
 	return builder;
 };
 
@@ -291,10 +295,10 @@ Database.prototype.find = function(view) {
 
 	if (view) {
 		self.pending_reader_view.push({ builder: builder, count: 0, counter: 0, view: view });
-		setImmediate(() => self.next(6));
+		process.nextTick(next_operation, self, 6);
 	} else {
 		self.pending_reader.push({ builder: builder, count: 0, counter: 0, view: view });
-		setImmediate(() => self.next(4));
+		process.nextTick(next_operation, self, 4);
 	}
 
 	return builder;
@@ -310,10 +314,10 @@ Database.prototype.count = function(view) {
 
 	if (view) {
 		self.pending_reader_view.push({ builder: builder, count: 0, view: view, type: 1 });
-		setImmediate(() => self.next(6));
+		process.nextTick(next_operation, self, 6);
 	} else {
 		self.pending_reader.push({ builder: builder, count: 0, view: view, type: 1 });
-		setImmediate(() => self.next(4));
+		process.nextTick(next_operation, self, 4);
 	}
 
 	return builder;
@@ -326,10 +330,10 @@ Database.prototype.one = function(view) {
 
 	if (view) {
 		self.pending_reader_view.push({ builder: builder, count: 0, view: view });
-		setImmediate(() => self.next(6));
+		process.nextTick(next_operation, self, 6);
 	} else {
 		self.pending_reader.push({ builder: builder, count: 0, view: view });
-		setImmediate(() => self.next(4));
+		process.nextTick(next_operation, self, 4);
 	}
 
 	return builder;
@@ -342,10 +346,10 @@ Database.prototype.top = function(max, view) {
 
 	if (view) {
 		self.pending_reader_view.push({ builder: builder, count: 0, counter: 0, view: view });
-		setImmediate(() => self.next(6));
+		process.nextTick(next_operation, self, 6);
 	} else {
 		self.pending_reader.push({ builder: builder, count: 0, counter: 0, view: view });
-		setImmediate(() => self.next(4));
+		process.nextTick(next_operation, self, 4);
 	}
 
 	return builder;
@@ -414,7 +418,7 @@ Database.prototype.next = function(type) {
 
 	if (self.step !== type) {
 		self.step = 0;
-		setImmediate(() => self.next(0));
+		process.nextTick(next_operation, self, 0);
 	}
 
 	return self;
@@ -425,7 +429,7 @@ Database.prototype.refresh = function() {
 	if (!self.views)
 		return self;
 	self.pending_views = true;
-	setImmediate(() => self.next(5));
+	process.nextTick(next_operation, self, 5);
 	return self;
 };
 
@@ -525,15 +529,15 @@ Database.prototype.$append = function() {
 			next();
 		});
 
-	}, function() {
-		setImmediate(function() {
-			self.next(0);
-			setImmediate(() => self.refresh());
-		});
-	});
+	}, () => process.nextTick(next_append, self));
 
 	return self;
 };
+
+function next_append(self) {
+	self.next(0);
+	process.nextTick(() => self.refresh());
+}
 
 Database.prototype.$append_inmemory = function() {
 	var self = this;
@@ -555,11 +559,7 @@ Database.prototype.$append_inmemory = function() {
 		}
 
 		self.$save('#');
-
-		setImmediate(function() {
-			self.next(0);
-			setImmediate(() => self.refresh());
-		});
+		process.nextTick(next_append, self);
 	});
 };
 
@@ -621,9 +621,9 @@ Database.prototype.$update = function() {
 					item.builder.$callback && item.builder.$callback(errorhandling(err, item.builder, item.count), item.count);
 			}
 
-			setImmediate(function() {
+			process.nextTick(function() {
 				self.next(0);
-				change && setImmediate(() => self.refresh());
+				change && process.nextTick(() => self.refresh());
 			});
 		});
 	});
@@ -691,9 +691,9 @@ Database.prototype.$update_inmemory = function() {
 			}
 		}
 
-		setImmediate(function() {
+		process.nextTick(function() {
 			self.next(0);
-			change && setImmediate(() => self.refresh());
+			change && process.nextTick(() => self.refresh());
 		});
 	});
 };
@@ -1202,9 +1202,9 @@ Database.prototype.$remove = function() {
 				item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count);
 			}
 
-			setImmediate(function() {
+			process.nextTick(function() {
 				self.next(0);
-				change && setImmediate(() => self.refresh());
+				change && process.nextTick(() => self.refresh());
 			});
 		});
 	});
@@ -1268,7 +1268,7 @@ Database.prototype.$remove_inmemory = function() {
 		}
 
 		self.next(0);
-		change && setImmediate(() => self.refresh());
+		change && process.nextTick(() => self.refresh());
 	});
 };
 
@@ -1342,7 +1342,7 @@ DatabaseBuilder.prototype.$callback2 = function(err, response, count) {
 		return self.$callback(err, response, count);
 
 	if (self.$joincount) {
-		setImmediate(() => self.$callback2(err, response, count));
+		process.nextTick(() => self.$callback2(err, response, count));
 		return self;
 	}
 
@@ -1472,7 +1472,7 @@ DatabaseBuilder.prototype.join = function(field, name, view) {
 		self.$joincount--;
 	});
 
-	setImmediate(function() {
+	process.nextTick(function() {
 		join.$fields && join.fields(self.$join[key].b);
 		join.$fields && self.$join[key].scalarfield && join.fields(self.$join[key].scalarfield);
 	});

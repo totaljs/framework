@@ -290,25 +290,25 @@ exports.resolve = function(url, callback) {
 	}
 
 	Dns.resolve4(uri.hostname, function(e, addresses) {
-
-		if (!e) {
+		if (e)
+			process.nextTick(dnsresolve_callback, uri, callback);
+		else {
 			dnscache[uri.host] = addresses[0];
 			uri.host = addresses[0];
 			callback(null, uri);
-			return;
 		}
-
-		setImmediate(function() {
-			Dns.resolve4(uri.hostname, function(e, addresses) {
-				if (e)
-					return callback(e, uri);
-				dnscache[uri.host] = addresses[0];
-				uri.host = addresses[0];
-				callback(null, uri);
-			});
-		});
 	});
 };
+
+function dnsresolve_callback(uri, callback) {
+	Dns.resolve4(uri.hostname, function(e, addresses) {
+		if (e)
+			return callback(e, uri);
+		dnscache[uri.host] = addresses[0];
+		uri.host = addresses[0];
+		callback(null, uri);
+	});
+}
 
 exports.$$resolve = function(url) {
 	return function(callback) {
@@ -3683,7 +3683,7 @@ Number.prototype.padRight = function(max, c) {
 Number.prototype.async = function(fn, callback) {
 	var number = this;
 	if (number)
-		fn(number--, () => setImmediate(() => number.async(fn, callback)));
+		fn(number--, () => process.nextTick(() => number.async(fn, callback)));
 	else
 		callback && callback();
 	return number;
@@ -4476,12 +4476,7 @@ Array.prototype.wait = Array.prototype.waitFor = function(onItem, callback, thre
 	}
 
 	onItem.$pending++;
-	onItem.call(self, item, function() {
-		setImmediate(function() {
-			onItem.$pending--;
-			self.wait(onItem, callback, thread);
-		});
-	});
+	onItem.call(self, item, () => process.nextTick(next_wait, self, onItem, callback, thread));
 
 	if (!init || thread === true)
 		return self;
@@ -4491,6 +4486,11 @@ Array.prototype.wait = Array.prototype.waitFor = function(onItem, callback, thre
 
 	return self;
 };
+
+function next_wait(self, onItem, callback, thread) {
+	onItem.$pending--;
+	self.wait(onItem, callback, thread);
+}
 
 /**
  * Creates a function async list
@@ -4526,7 +4526,7 @@ Array.prototype.async = function(thread, callback) {
 
 		self.$pending++;
 		item(function() {
-			setImmediate(function() {
+			process.nextTick(function() {
 				self.$pending--;
 				self.async(1, callback);
 			});
@@ -4686,7 +4686,7 @@ AsyncTask.prototype.run = function() {
 			self.interval = setTimeout(function() { self.timeout(); }, timeout);
 
 		self.fn(function() {
-			setImmediate(() => self.complete());
+			process.nextTick(() => self.complete());
 		});
 
 	} catch (ex) {
@@ -4712,7 +4712,7 @@ AsyncTask.prototype.timeout = function(timeout) {
 		return self;
 	}
 
-	setImmediate(() => self.cancel(true));
+	process.nextTick(() => self.cancel(true));
 	return self;
 };
 
@@ -4752,7 +4752,7 @@ AsyncTask.prototype.complete = function() {
 		}
 	}
 
-	setImmediate(function() {
+	process.nextTick(function() {
 		self.reload();
 		self.refresh();
 	});
@@ -4962,7 +4962,7 @@ Async.prototype.refresh = function(name) {
 				self.emit('error', ex);
 			}
 		}
-		setImmediate(() => self._isEnd = false);
+		process.nextTick(() => self._isEnd = false);
 	}
 
 	return self;
@@ -5161,7 +5161,7 @@ exports.async = function(fn, isApply) {
 					return;
 				}
 
-				type === 'function' && setImmediate(() => complete(e));
+				type === 'function' && process.nextTick(() => complete(e));
 				return;
 			}
 
@@ -5189,7 +5189,7 @@ exports.async = function(fn, isApply) {
 				});
 
 			} catch (e) {
-				setImmediate(() => next.call(self, e));
+				process.nextTick(() => next.call(self, e));
 			}
 		}
 
@@ -5240,11 +5240,11 @@ function queue_next(name) {
 	}
 
 	item.running++;
-	(function(name){
-		setImmediate(function() {
-			fn(() => queue_next(name));
-		});
-	})(name);
+	process.nextTick(queue_next_callback, fn, name);
+}
+
+function queue_next_callback(fn, name) {
+	fn(() => queue_next(name));
 }
 
 /**
@@ -5273,12 +5273,7 @@ exports.queue = function(name, max, fn) {
 	}
 
 	item.running++;
-	(function(name){
-		setImmediate(function() {
-			fn(() => queue_next(name));
-		});
-	})(name);
-
+	process.nextTick(queue_next_callback, fn, name);
 	return true;
 };
 

@@ -7464,7 +7464,7 @@ F._upgrade_continue = function(route, req, path) {
 		connection.options = route.options;
 		F.connections[id] = connection;
 		route.onInitialize.apply(connection, framework_internal.routeParam(route.param.length ? req.split : req.path, route));
-		setImmediate(() => socket.upgrade(connection));
+		process.nextTick(next_upgrade_continue, socket, connection);
 	};
 
 	if (route.middleware)
@@ -7473,6 +7473,10 @@ F._upgrade_continue = function(route, req, path) {
 		next();
 };
 
+function next_upgrade_continue(socket, connection) {
+	socket.upgrade(connection);
+}
+
 /**
  * Request statistics writer
  * @private
@@ -7480,7 +7484,7 @@ F._upgrade_continue = function(route, req, path) {
  * @param {Boolean} isStaticFile
  * @return {Framework}
  */
-F._request_stats = function(beg, isStaticFile) {
+F._request_stats = function(beg) {
 
 	if (beg)
 		F.stats.request.pending++;
@@ -10811,9 +10815,13 @@ Controller.prototype.invalid = function(status) {
 		self.status = status;
 
 	var builder = new ErrorBuilder();
-	setImmediate(() => self.content(builder));
+	process.nextTick(next_controller_invalid);
 	return builder;
 };
+
+function next_controller_invalid(self, builder) {
+	self.content(builder);
+}
 
 /**
  * Registers a new problem

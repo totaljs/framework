@@ -2086,26 +2086,23 @@ SchemaInstance.prototype.$$schema = null;
 
 SchemaInstance.prototype.$async = function(callback, index) {
 	var self = this;
-
-	if (!callback)
-		callback = function(){};
-
+	!callback && (callback = function(){});
 	self.$$async = [];
 	self.$$result = [];
 	self.$$index = index;
 	self.$$callback = callback;
 	self.$$can = true;
-
-	setImmediate(function() {
-		self.$$can = false;
-		async_queue(self.$$async, function() {
-			self.$$callback(null, self.$$index !== undefined ? self.$$result[self.$$index] : self.$$result);
-			self.$$callback = null;
-		});
-	});
-
+	process.nextTick(async_continue, self);
 	return self;
 };
+
+function async_continue(self) {
+	self.$$can = false;
+	async_queue(self.$$async, function() {
+		self.$$callback(null, self.$$index !== undefined ? self.$$result[self.$$index] : self.$$result);
+		self.$$callback = null;
+	});
+}
 
 SchemaInstance.prototype.$repository = function(name, value) {
 
@@ -3720,12 +3717,7 @@ RESTBuilder.prototype.exec = function(callback) {
 		var data = F.cache.read2(key);
 		if (data) {
 			var evt = new framework_utils.EventEmitter2();
-
-			setImmediate(function() {
-				evt.removeAllListeners();
-				evt = null;
-			});
-
+			process.nextTick(exec_removelisteners, evt);
 			callback(null, self.maketransform(this.$schema ? this.$schema.make(data.json) : data.json, data), data);
 			return evt;
 		}
@@ -3768,6 +3760,10 @@ RESTBuilder.prototype.exec = function(callback) {
 
 	}, self.$cookies, self.$headers, undefined, self.$timeout);
 };
+
+function exec_removelisteners(evt) {
+	evt.removeAllListeners();
+}
 
 function RESTBuilderResponse() {}
 
