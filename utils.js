@@ -291,7 +291,7 @@ exports.resolve = function(url, callback) {
 
 	Dns.resolve4(uri.hostname, function(e, addresses) {
 		if (e)
-			process.nextTick(dnsresolve_callback, uri, callback);
+			setImmediate(dnsresolve_callback, uri, callback);
 		else {
 			dnscache[uri.host] = addresses[0];
 			uri.host = addresses[0];
@@ -3683,7 +3683,7 @@ Number.prototype.padRight = function(max, c) {
 Number.prototype.async = function(fn, callback) {
 	var number = this;
 	if (number)
-		fn(number--, () => process.nextTick(() => number.async(fn, callback)));
+		fn(number--, () => setImmediate(() => number.async(fn, callback)));
 	else
 		callback && callback();
 	return number;
@@ -4476,7 +4476,7 @@ Array.prototype.wait = Array.prototype.waitFor = function(onItem, callback, thre
 	}
 
 	onItem.$pending++;
-	onItem.call(self, item, () => process.nextTick(next_wait, self, onItem, callback, thread));
+	onItem.call(self, item, () => setImmediate(next_wait, self, onItem, callback, thread));
 
 	if (!init || thread === true)
 		return self;
@@ -4526,7 +4526,7 @@ Array.prototype.async = function(thread, callback) {
 
 		self.$pending++;
 		item(function() {
-			process.nextTick(function() {
+			setImmediate(function() {
 				self.$pending--;
 				self.async(1, callback);
 			});
@@ -4686,7 +4686,7 @@ AsyncTask.prototype.run = function() {
 			self.interval = setTimeout(function() { self.timeout(); }, timeout);
 
 		self.fn(function() {
-			process.nextTick(() => self.complete());
+			setImmediate(() => self.complete());
 		});
 
 	} catch (ex) {
@@ -4712,7 +4712,7 @@ AsyncTask.prototype.timeout = function(timeout) {
 		return self;
 	}
 
-	process.nextTick(() => self.cancel(true));
+	setImmediate(() => self.cancel(true));
 	return self;
 };
 
@@ -4752,7 +4752,7 @@ AsyncTask.prototype.complete = function() {
 		}
 	}
 
-	process.nextTick(function() {
+	setImmediate(function() {
 		self.reload();
 		self.refresh();
 	});
@@ -4962,7 +4962,7 @@ Async.prototype.refresh = function(name) {
 				self.emit('error', ex);
 			}
 		}
-		process.nextTick(() => self._isEnd = false);
+		setImmediate(() => self._isEnd = false);
 	}
 
 	return self;
@@ -5161,7 +5161,7 @@ exports.async = function(fn, isApply) {
 					return;
 				}
 
-				type === 'function' && process.nextTick(() => complete(e));
+				type === 'function' && setImmediate(() => complete(e));
 				return;
 			}
 
@@ -5189,7 +5189,7 @@ exports.async = function(fn, isApply) {
 				});
 
 			} catch (e) {
-				process.nextTick(() => next.call(self, e));
+				setImmediate(() => next.call(self, e));
 			}
 		}
 
@@ -5240,7 +5240,7 @@ function queue_next(name) {
 	}
 
 	item.running++;
-	process.nextTick(queue_next_callback, fn, name);
+	setImmediate(queue_next_callback, fn, name);
 }
 
 function queue_next_callback(fn, name) {
@@ -5273,7 +5273,7 @@ exports.queue = function(name, max, fn) {
 	}
 
 	item.running++;
-	process.nextTick(queue_next_callback, fn, name);
+	setImmediate(queue_next_callback, fn, name);
 	return true;
 };
 

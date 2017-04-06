@@ -2092,7 +2092,7 @@ SchemaInstance.prototype.$async = function(callback, index) {
 	self.$$index = index;
 	self.$$callback = callback;
 	self.$$can = true;
-	process.nextTick(async_continue, self);
+	setImmediate(async_continue, self);
 	return self;
 };
 

@@ -116,6 +116,7 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 
 	req.buffer_exceeded = false;
 	req.buffer_has = true;
+	req.buffer_parser = parser;
 
 	parser.initWithBoundary(boundary);
 
@@ -266,23 +267,27 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 	};
 
 	parser.onEnd = function() {
-		var cb = function() {
-			if (close) {
-				setImmediate(cb);
-			} else {
-				rm && F.unlink(rm);
-				subscribe.doEnd();
-			}
-		};
-		cb();
+		if (close) {
+			setImmediate(parser.onEnd);
+		} else {
+			rm && F.unlink(rm);
+			subscribe.doEnd();
+			req.buffer_parser = null;
+		}
 	};
 
-	req.on('data', chunk => parser.write(chunk));
-	req.on('end', function() {
-		!req.buffer_exceeded && (req.$upload = true);
-		parser.end();
-	});
+	req.on('data', uploadparser);
+	req.on('end', uploadparser_done);
 };
+
+function uploadparser(chunk) {
+	this.buffer_parser.write(chunk);
+}
+
+function uploadparser_done() {
+	!this.buffer_exceeded && (this.$upload = true);
+	this.buffer_parser.end();
+}
 
 exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile) {
 
@@ -308,6 +313,7 @@ exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile) 
 	boundary = boundary.substring(boundary.indexOf('=', 2) + 1);
 	req.buffer_exceeded = false;
 	req.buffer_has = true;
+	req.buffer_parser = parser;
 
 	parser.initWithBoundary(boundary);
 
@@ -344,18 +350,16 @@ exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile) 
 		tmp.$is = header[1] !== null;
 		tmp.name = header[0];
 
-		if (!tmp.$is) {
+		if (tmp.$is) {
+			tmp.filename = header[1];
+			tmp.path = path + (INDEXMIXED++) + '.bin';
+
+			stream = Fs.createWriteStream(tmp.path, WRITESTREAM);
+			stream.once('close', () => close--);
+			stream.once('error', () => close--);
+			close++;
+		} else
 			destroyStream(stream);
-			return;
-		}
-
-		tmp.filename = header[1];
-		tmp.path = path + (INDEXMIXED++) + '.bin';
-
-		stream = Fs.createWriteStream(tmp.path, WRITESTREAM);
-		stream.once('close', () => close--);
-		stream.once('error', () => close--);
-		close++;
 	};
 
 	parser.onPartData = function(buffer, start, end) {
@@ -395,19 +399,16 @@ exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile) 
 	};
 
 	parser.onEnd = function() {
-		var cb = function() {
-			if (close)
-				setImmediate(cb);
-			else {
-				onFile(req, null);
-				F.responseContent(req, req.res, 200, EMPTYBUFFER, 'text/plain', false);
-			}
-		};
-		cb();
+		if (close) {
+			setImmediate(parser.onEnd);
+		} else {
+			onFile(req, null);
+			F.responseContent(req, req.res, 200, EMPTYBUFFER, 'text/plain', false);
+		}
 	};
 
-	req.on('data', chunk => parser.write(chunk));
-	req.on('end', () => parser.end());
+	req.on('data', uploadparser);
+	req.on('end', uploadparser_done);
 };
 
 function parse_multipart_header(header) {
