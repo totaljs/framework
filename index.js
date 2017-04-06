@@ -8875,7 +8875,7 @@ F._configure = function(arr, rewrite) {
 				obj[name] = {};
 				tmp = value.replace(REG_ACCEPTCLEANER, '').split(',');
 				for (var j = 0; j < tmp.length; j++)
-					obj[name][tmp[j].substring(1)] = true;
+					obj[name][tmp[j]] = true;
 				break;
 
 			case 'allow-gzip':

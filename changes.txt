@@ -37,6 +37,7 @@
 - updated: Mail error handling (added Message instance)
 - updated: `U.request()` add a new flag `noredirect`
 
+- fixed: config `static-accepts` (it doesn't work)
 - fixed: routing with `upload` flag
 - fixed: workers timeout
 - fixed: modificators by George Okojie Davis
