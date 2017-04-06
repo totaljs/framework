@@ -119,7 +119,7 @@ Please support the framework on social networks.
 - [Follow Total.js on Google Plus](https://plus.google.com/u/0/113175077493180148081/posts)
 - [Follow Total.js on LinkedIn](https://www.linkedin.com/groups/totaljs-8109884)
 
-## Contact
+## Contact
 
 - contact form <https://www.totaljs.com/contact/>
 - <info@totaljs.com>
