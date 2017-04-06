@@ -203,7 +203,8 @@ Database.prototype.upsert = function(doc) {
 Database.prototype.update = function(doc, insert) {
 	var self = this;
 	var builder = new DatabaseBuilder();
-	self.pending_update.push({ builder: builder, doc: framework_builders.isSchema(doc) ? doc.$clean() : doc, count: 0, insert: insert });
+	var data = framework_builders.isSchema(doc) ? doc.$clean() : doc;
+	self.pending_update.push({ builder: builder, doc: data, count: 0, insert: insert === true ? data : insert });
 	process.nextTick(next_operation, self, 2);
 	return builder;
 };
@@ -217,7 +218,7 @@ Database.prototype.modify = function(doc, insert) {
 	if (!keys.length)
 		return builder;
 
-	self.pending_update.push({ builder: builder, doc: data, count: 0, keys: keys, insert: insert });
+	self.pending_update.push({ builder: builder, doc: data, count: 0, keys: keys, insert: insert === true ? data : insert });
 	process.nextTick(next_operation, self, 2);
 	return builder;
 };
