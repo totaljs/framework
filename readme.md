@@ -13,7 +13,8 @@ $ npm install -g total.js
 
 [![Support](https://www.totaljs.com/img/button-support.png?v=3)](https://www.totaljs.com/support/)
 
-- [__NEW__: Total.js Messenger](https://www.totaljs.com/messenger/)
+- [Total.js Flow](https://www.totaljs.com/flow/)
+- [Total.js Messenger](https://www.totaljs.com/messenger/)
 - [Total.js Dashboard](https://www.totaljs.com/dashboard/)
 - [Total.js BlogEngine](https://www.totaljs.com/blogengine/)
 - [NoSQL embedded database explorer](https://www.totaljs.com/nosql/)
