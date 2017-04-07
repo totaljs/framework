@@ -572,6 +572,7 @@ function Framework() {
 		'allow-custom-titles': false,
 		'allow-cache-snapshot': false,
 		'allow-defer': true,
+		'allow-debug': false,
 		'disable-strict-server-certificate-validation': true,
 		'disable-clear-temporary-directory': false,
 
@@ -2954,6 +2955,7 @@ F.$load = function(types, targetdirectory, callback, packageName) {
 
 	if (!types || types.indexOf('packages') !== -1) {
 		operations.push(function(resume) {
+
 			dir = U.combine(targetdirectory, isPackage ? '/packages/' : F.config['directory-packages']);
 			arr = [];
 			listing(dir, 0, arr, '.package');
@@ -3052,10 +3054,13 @@ F.$load = function(types, targetdirectory, callback, packageName) {
 	}
 
 	operations.async(function() {
+		var count = dependencies.length;
+		F.consoledebug('load dependencies ' + count + 'x');
 		dependencies.async(function() {
 			types && types.indexOf('service') === -1 && F.cache.stop();
 			F.$routesSort();
 			(!types || types.indexOf('dependencies') !== -1) && F._configure_dependencies();
+			F.consoledebug('load dependencies {0}x (done)'.format(count));
 			callback && callback();
 		});
 	});
@@ -3180,6 +3185,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 
 		if (declaration.startsWith('http://') || declaration.startsWith('https://')) {
 			if (type === 'package') {
+				F.consoledebug('download', type, declaration);
 				U.download(declaration, REQUEST_INSTALL_FLAGS, function(err, response) {
 
 					if (err) {
@@ -3213,6 +3219,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 				return F;
 			}
 
+			F.consoledebug('download', type, declaration);
 			U.request(declaration, REQUEST_INSTALL_FLAGS, function(err, data, code) {
 
 				if (code !== 200 && !err)
@@ -3275,6 +3282,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 			F.temporary.ready[type + '#' + name] = F.datetime;
 		}, 500);
 
+		F.consoledebug('install', type + '#' + name);
 		return F;
 	}
 
@@ -3288,6 +3296,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 			F.temporary.ready[type + '#' + name] = F.datetime;
 		}, 500);
 
+		F.consoledebug('install', type + '#' + name);
 		next && next();
 		callback && callback(null, name);
 		return F;
@@ -3302,6 +3311,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 			F.temporary.ready[type + '#' + name] = F.datetime;
 		}, 500);
 
+		F.consoledebug('install', type + '#' + name);
 		next && next();
 		callback && callback(null, name);
 		return F;
@@ -3314,6 +3324,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 			F.emit(type + '#' + name);
 			F.emit('install', type, name);
 			F.temporary.ready[type + '#' + name] = F.datetime;
+			F.consoledebug('install', type + '#' + name);
 		}, 500);
 
 		next && next();
@@ -3328,6 +3339,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 			F.emit(type + '#' + name);
 			F.emit('install', type, name);
 			F.temporary.ready[type + '#' + name] = F.datetime;
+			F.consoledebug('install', type + '#' + name);
 		}, 500);
 
 		next && next();
@@ -3411,6 +3423,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 			F.temporary.ready[type + '#' + name] = F.datetime;
 		}, 500);
 
+		F.consoledebug('install', type + '#' + name);
 		next && next();
 		callback && callback(null, name);
 		return F;
@@ -3441,6 +3454,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 					F.temporary.ready['package#' + name] = F.datetime;
 					F.temporary.ready['module#' + name] = F.datetime;
 				}, 500);
+				F.consoledebug('install', 'package#' + name);
 				callback && callback(err, name);
 			}, internal, useRequired, true, undefined);
 			next && next();
@@ -3465,6 +3479,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 			F.temporary.ready[type + '#' + name] = F.datetime;
 		}, 500);
 
+		F.consoledebug('install', type + '#' + name);
 		next && next();
 		callback && callback(null, name);
 
@@ -3490,6 +3505,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 				F.temporary.ready['package#' + name] = F.datetime;
 				F.temporary.ready['module#' + name] = F.datetime;
 			}, 500);
+			F.consoledebug('install', 'package#' + name);
 			callback && callback(err, name);
 		}, internal, useRequired, true);
 		next && next();
@@ -3519,6 +3535,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 			F.temporary.ready[type + '#' + name] = F.datetime;
 		}, 500);
 
+		F.consoledebug('install', type + '#' + name);
 		next && next();
 		callback && callback(null, name);
 		return F;
@@ -3556,6 +3573,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 			return F;
 		}
 
+		F.consoledebug('install', type + '#' + (name || '::undefined::'));
 		next && next();
 		callback && callback(null, name);
 
@@ -3622,6 +3640,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 		F.isomorphic[name] = obj;
 		Fs.writeFileSync(tmp, prepare_isomorphic(name, framework_internal.compile_javascript(content, '#' + name)));
 
+		F.consoledebug('install', type + '#' + name);
 		next && next();
 		callback && callback(null, name);
 
@@ -3731,6 +3750,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 			F.temporary.ready[type + '#' + name] = F.datetime;
 		}, 500);
 
+		F.consoledebug('install', type + '#' + name);
 		next && next();
 		callback && callback(null, name);
 		return F;
@@ -4124,6 +4144,7 @@ F.install_make = function(key, name, obj, options, callback, skipEmit, type) {
 		}, 500);
 	}
 
+	F.consoledebug('install', type + '#' + name);
 	callback && callback(null, name);
 	return F;
 };
@@ -4146,11 +4167,13 @@ F.uninstall = function(type, name, options, skipEmit, packageName) {
 		v = k === 'execute' ? name : k === 'id' ? name.substring(3).trim() : name;
 		F.routes.web = F.routes.web.remove(k, v);
 		F.$routesSort();
+		F.consoledebug('uninstall', type + '#' + name);
 		return F;
 	}
 
 	if (type === 'schedule') {
 		F.clearSchedule(name);
+		F.consoledebug('uninstall', type + '#' + name);
 		return F;
 	}
 
@@ -4161,6 +4184,7 @@ F.uninstall = function(type, name, options, skipEmit, packageName) {
 		v = k === 'onInitialize' ? name : k === 'id' ? name.substring(3).trim() : name;
 		F.routes.websockets = F.routes.websockets.remove(k, v);
 		F.$routesSort();
+		F.consoledebug('uninstall', type + '#' + name);
 		return F;
 	}
 
@@ -4168,20 +4192,24 @@ F.uninstall = function(type, name, options, skipEmit, packageName) {
 		k = typeof(name) === 'string' ? name.substring(0, 3) === 'id:' ? 'id' : 'urlraw' : 'execute';
 		v = k === 'execute' ? name : k === 'id' ? name.substring(3).trim() : name;
 		F.routes.files = F.routes.files.remove(k, v);
+		F.consoledebug('uninstall', type + '#' + name);
 		return F;
 	}
 
 	if (type === 'schema') {
 		tmp = name.split('/');
 		tmp.length === 2 ? framework_builders.remove(tmp[0], tmp[1]) : framework_builders.remove(undefined, tmp[0]);
+		F.consoledebug('uninstall', type + '#' + name);
 	} else if (type === 'mapping') {
 		delete F.routes.mapping[name];
+		F.consoledebug('uninstall', type + '#' + name);
 	} else if (type === 'isomorphic') {
 		var obj = F.isomorphic[name];
 		if (obj.url)
 			delete F.routes.mapping[F._version(obj.url)];
 		delete F.isomorphic[name];
 		delete F.temporary.ready[type + '#' + name];
+		F.consoledebug('uninstall', type + '#' + name);
 	} else if (type === 'middleware') {
 
 		if (!F.routes.middleware[name])
@@ -4210,10 +4238,13 @@ F.uninstall = function(type, name, options, skipEmit, packageName) {
 				tmp.middleware = tmp.middleware.remove(name);
 		}
 
+		F.consoledebug('uninstall', type + '#' + name);
+
 	} else if (type === 'package') {
 		delete F.routes.packages[name];
 		delete F.temporary.ready['package#' + name];
 		F.uninstall('module', name, options, true);
+		F.consoledebug('uninstall', type + '#' + name);
 		return F;
 	} else if (type === 'view' || type === 'precompile') {
 
@@ -4228,6 +4259,7 @@ F.uninstall = function(type, name, options, skipEmit, packageName) {
 
 		fsFileExists(obj.filename, function(e) {
 			e && Fs.unlink(obj.filename, NOOP);
+			F.consoledebug('uninstall', type + '#' + name);
 		});
 
 	} else if (type === 'model' || type === 'source') {
@@ -4250,6 +4282,7 @@ F.uninstall = function(type, name, options, skipEmit, packageName) {
 
 		delete F.dependencies[type + '.' + name];
 		delete F.temporary.ready[type + '#' + name];
+		F.consoledebug('uninstall', type + '#' + name);
 
 	} else if (type === 'module' || type === 'controller') {
 
@@ -4264,6 +4297,7 @@ F.uninstall = function(type, name, options, skipEmit, packageName) {
 
 		F.$uninstall(id, packageName ? '' : ((isModule ? '#' : '') + name));
 		delete F.temporary.ready[type + '#' + name];
+		F.consoledebug('uninstall', type + '#' + name);
 
 		if (obj) {
 			obj.uninstall && obj.uninstall(options, name);
@@ -4319,6 +4353,7 @@ F.uninstall = function(type, name, options, skipEmit, packageName) {
 
 		if (is)
 			F.components.version = U.GUID(5);
+		F.consoledebug('uninstall', type + '#' + name);
 	}
 
 	!skipEmit && F.emit('uninstall', type, name);
@@ -6492,6 +6527,8 @@ F.responseRedirect = function(req, res, url, permanent) {
 
 F.load = function(debug, types, pwd) {
 
+	F.consoledebug('begin');
+
 	if (pwd && pwd[0] === '.' && pwd.length < 4)
 		F.directory = directory = U.$normalize(Path.normalize(directory + '/..'));
 	else if (pwd)
@@ -6505,8 +6542,10 @@ F.load = function(debug, types, pwd) {
 	global.RELEASE = !debug;
 	global.I = global.isomorphic = F.isomorphic;
 
+	F.consoledebug('startup');
 	F.$startup(function() {
 
+		F.consoledebug('startup (done)');
 		F._configure();
 
 		if (!types || types.indexOf('versions') !== -1)
@@ -6518,6 +6557,7 @@ F.load = function(debug, types, pwd) {
 		if (!types || types.indexOf('sitemap') !== -1)
 			F._configure_sitemap();
 
+		F.consoledebug('init');
 		F.cache.init();
 		F.emit('init');
 		F.isLoaded = true;
@@ -6541,6 +6581,8 @@ F.load = function(debug, types, pwd) {
 				delete F.testing;
 				delete F.assert;
 			}, 500);
+
+			F.consoledebug('end');
 		});
 	});
 
@@ -6582,6 +6624,7 @@ F.initialize = function(http, debug, options, restart) {
 	F._configure_sitemap();
 	F.isTest && F._configure('config-test', false);
 	F.cache.init();
+	F.consoledebug('init');
 	F.emit('init');
 
 	if (!port) {
@@ -6630,13 +6673,19 @@ F.initialize = function(http, debug, options, restart) {
 	});
 
 	F.config['allow-websocket'] && F.server.on('upgrade', F._upgrade);
+
+	F.consoledebug('HTTP listening');
 	F.server.listen(F.port, F.ip === 'auto' ? undefined : F.ip);
 
 	// clears static files
+	F.consoledebug('clean temporary');
 	F.clear(function() {
+		F.consoledebug('clean temporary (done)');
 		F.$load(undefined, directory, function() {
 
 			F.isLoaded = true;
+
+			F.consoledebug('end');
 
 			if (!process.connected || restart)
 				F.console();
@@ -6684,6 +6733,8 @@ F.initialize = function(http, debug, options, restart) {
  */
 F.http = function(mode, options) {
 
+	F.consoledebug('begin');
+
 	if (options === undefined)
 		options = {};
 
@@ -6700,6 +6751,7 @@ F.http = function(mode, options) {
  * @return {Framework}
  */
 F.https = function(mode, options) {
+	F.consoledebug('begin');
 	return F.mode(require('https'), mode, options || {});
 };
 
@@ -6768,7 +6820,11 @@ F.mode = function(http, name, options) {
 		F.temporary.init = { name: name, isHTTPS: typeof(http.STATUS_CODES) === 'undefined', options: options };
 
 	F.config.trace = debug;
-	F.$startup(() => F.initialize(http, debug, options, restart));
+	F.consoledebug('startup');
+	F.$startup(function() {
+		F.consoledebug('startup (done)');
+		F.initialize(http, debug, options, restart);
+	});
 	return F;
 };
 
@@ -6787,6 +6843,18 @@ F.console = function() {
 	console.log('====================================================\n');
 	console.log('{2}://{0}:{1}/'.format(F.ip, F.port, F.isHTTPS ? 'https' : 'http'));
 	console.log('');
+};
+
+F.consoledebug = function() {
+
+	if (!F.config['allow-debug'])
+		return F;
+
+	var arr = [new Date().format('yyyy-MM-dd HH:mm:ss'), '--------->'];
+	for (var i = 0; i < arguments.length; i++)
+		arr.push(arguments[i]);
+	console.log.apply(console, arr);
+	return F;
 };
 
 /**
