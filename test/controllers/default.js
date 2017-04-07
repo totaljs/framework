@@ -4,9 +4,9 @@ exports.install = function() {
 
 	F.localize('/templates/');
 
-	F.route(function(url, req, flags) {
+	F.route(function DEFER(url, req, flags) {
 		return url === '/custom/route/';
-	}, function() {
+	}, function DEFER() {
 		this.plain('CUSTOM');
 	});
 
@@ -22,7 +22,7 @@ exports.install = function() {
 		this.plain('OK');
 	}, ['unauthorize']);
 */
-	F.route('/', function() {
+	F.route('/', function DEFER() {
 		this.plain('ROBOT');
 	}, ['robot']);
 
@@ -67,7 +67,7 @@ exports.install = function() {
 	F.route('/translate/', viewTranslate);
 	F.route('/test-view/', view_test_view);
 	F.route('/login/google/callback/', aa);
-	F.route('/timeout/', function() {}, [50]);
+	F.route('/timeout/', function DEFER() {}, [50]);
 
 	F.route('/get/', plain_get);
 	F.route('/post/raw/', plain_post_raw, ['post', 'raw']);
@@ -91,7 +91,7 @@ exports.install = function() {
 
 	F.redirect('http://www.google.sk', 'http://www.petersirka.sk');
 
-	F.route('#408', function() {
+	F.route('#408', function DEFER() {
 		var self = this;
 		F.global.timeout++;
 		self.plain('408');
@@ -243,8 +243,7 @@ function file_plain_status(req, res, isValidation) {
 
 function resize_image(req, res) {
 	var fs = require('fs');
-	this.responseImage(req, res, fs.createReadStream(this.path.public(req.url)), function(image) {
-	//this.responseImageWithoutCache(req, res, this.path.public(req.url), function(image) {
+	this.responseImage(req, res, fs.createReadStream(this.path.public(req.url)), function DEFER(image) {
 		image.resize('20%');
 	});
 }
@@ -335,30 +334,30 @@ function viewCustomTesting() {/*
 		B: true
 	}]));*/
 	this.plain(this.template('new', [{ tag: '<b>A</b>' }, { tag: '<b>B</b>' }]));
-	setTimeout(function() {
+	setTimeout(function DEFER() {
 		framework.stop();
 	}, 500);
 }
 
 function socket(self, framework) {
 
-	self.on('open', function(client) {
+	self.on('open', function DEFER(client) {
 		console.log('open ->', client.id);
 		console.log(client.get);
 	});
 
-	self.on('close', function(client) {
+	self.on('close', function DEFER(client) {
 		console.log('close ->', client.id);
 	});
 
-	self.on('message', function(client, message) {
+	self.on('message', function DEFER(client, message) {
 		console.log('message ->', client.id, message);
 
 		if (message === 'disconnect')
 			client.close();
 	});
 
-	self.on('error', function(error, client) {
+	self.on('error', function DEFER(error, client) {
 		console.log('error –>', error);
 	});
 }
