@@ -4907,6 +4907,7 @@ F.usage = function(detailed) {
 	var output = {};
 
 	output.framework = {
+		datetime: F.datetime,
 		pid: process.pid,
 		node: process.version,
 		version: 'v' + F.version_header,
@@ -6527,8 +6528,6 @@ F.responseRedirect = function(req, res, url, permanent) {
 
 F.load = function(debug, types, pwd) {
 
-	F.consoledebug('begin');
-
 	if (pwd && pwd[0] === '.' && pwd.length < 4)
 		F.directory = directory = U.$normalize(Path.normalize(directory + '/..'));
 	else if (pwd)
@@ -6582,7 +6581,10 @@ F.load = function(debug, types, pwd) {
 				delete F.assert;
 			}, 500);
 
-			F.consoledebug('end');
+			if (F.config['allow-debug']) {
+				F.consoledebug('done');
+				F.usagesnapshot();
+			}
 		});
 	});
 
@@ -6606,6 +6608,9 @@ F.initialize = function(http, debug, options, restart) {
 
 	if (options.config)
 		U.copy(options.config, F.config);
+
+	if (options.debug || options['allow-debug'])
+		F.config['allow-debug'] = true;
 
 	F.isHTTPS = typeof(http.STATUS_CODES) === 'undefined';
 	if (isNaN(port) && typeof(port) !== 'string')
@@ -6678,14 +6683,17 @@ F.initialize = function(http, debug, options, restart) {
 	F.server.listen(F.port, F.ip === 'auto' ? undefined : F.ip);
 
 	// clears static files
-	F.consoledebug('clean temporary');
+	F.consoledebug('clear temporary');
 	F.clear(function() {
-		F.consoledebug('clean temporary (done)');
+		F.consoledebug('clear temporary (done)');
 		F.$load(undefined, directory, function() {
 
 			F.isLoaded = true;
 
-			F.consoledebug('end');
+			if (F.config['allow-debug']) {
+				F.consoledebug('done');
+				F.usagesnapshot();
+			}
 
 			if (!process.connected || restart)
 				F.console();
@@ -6845,6 +6853,11 @@ F.console = function() {
 	console.log('');
 };
 
+F.usagesnapshot = function(filename) {
+	Fs.writeFile(filename || F.path.root('usage.log'), JSON.stringify(F.usage(true), null, '    '), NOOP);
+	return F;
+};
+
 F.consoledebug = function() {
 
 	if (!F.config['allow-debug'])
@@ -6888,8 +6901,7 @@ F._service = function(count) {
 
 	// every 7 minutes (default) service clears static cache
 	if (count % F.config['default-interval-clear-cache'] === 0) {
-
-		F.emit('clear', 'temporary', F.temporary);
+		F.$events.clear && F.emit('clear', 'temporary', F.temporary);
 		F.temporary.path = {};
 		F.temporary.range = {};
 		F.temporary.views = {};
@@ -6904,6 +6916,7 @@ F._service = function(count) {
 			F.databases[key] && F.databases[key].inmemorylastusage < dt && F.databases[key].release();
 
 		releasegc = true;
+		F.config['allow-debug'] && F.consoledebug('clear temporary cache');
 	}
 
 	// every 61 minutes (default) services precompile all (installed) views
@@ -6915,19 +6928,23 @@ F._service = function(count) {
 	}
 
 	if (count % F.config['default-interval-clear-dnscache'] === 0) {
-		F.emit('clear', 'dns');
+		F.$events.clear && F.emit('clear', 'dns');
 		U.clearDNS();
+		F.config['allow-debug'] && F.consoledebug('clear DNS cache');
 	}
 
 	var ping = F.config['default-interval-websocket-ping'];
 	if (ping > 0 && count % ping === 0) {
+		var has = false;
 		for (var item in F.connections) {
 			var conn = F.connections[item];
 			if (conn) {
 				conn.check();
 				conn.ping();
+				has = true;
 			}
 		}
+		has && F.config['allow-debug'] && F.consoledebug('ping websocket connections');
 	}
 
 	if (F.uptodates && (count % F.config['default-interval-uptodate'] === 0) && F.uptodates.length) {
@@ -6941,8 +6958,10 @@ F._service = function(count) {
 			item.count++;
 
 			setTimeout(function() {
-
+				F.config['allow-debug'] && F.consoledebug('uptodate', item.type + '#' + item.url);
 				F.install(item.type, item.url, item.options, function(err, name, skip) {
+
+					F.config['allow-debug'] && F.consoledebug('uptodate', item.type + '#' + item.url + ' (done)');
 
 					if (skip)
 						return next();
@@ -6953,7 +6972,7 @@ F._service = function(count) {
 					} else {
 						hasUpdate = true;
 						item.name = name;
-						F.emit('uptodate', item.type, name);
+						F.$events.uptodate && F.emit('uptodate', item.type, name);
 					}
 
 					item.callback && item.callback(err, name);
@@ -6976,16 +6995,26 @@ F._service = function(count) {
 
 	// every 20 minutes (default) service clears resources
 	if (count % F.config['default-interval-clear-resources'] === 0) {
-		F.emit('clear', 'resources');
+		F.$events.clear && F.emit('clear', 'resources');
 		F.resources = {};
 		releasegc = true;
+		F.config['allow-debug'] && F.consoledebug('clear resources');
 	}
 
 	// Update expires date
 	count % 1000 === 0 && (DATE_EXPIRES = F.datetime.add('y', 1).toUTCString());
 
-	F.emit('service', count);
-	releasegc && global.gc && setTimeout(() => global.gc(), 1000);
+	F.$events.service && F.emit('service', count);
+
+	if (F.config['allow-debug']) {
+		F.consoledebug('service ({0}x)'.format(count));
+		F.usagesnapshot();
+	}
+
+	releasegc && global.gc && setTimeout(function() {
+		global.gc();
+		F.config['allow-debug'] && F.consoledebug('gc()');
+	}, 1000);
 
 	// Run schedules
 	if (!F.schedules.length)
@@ -7008,6 +7037,7 @@ F._service = function(count) {
 		else
 			F.schedules.splice(index, 1);
 
+		F.config['allow-debug'] && F.consoledebug('schedule', schedule.id);
 		schedule.fn.call(F);
 	}
 
@@ -15398,6 +15428,7 @@ function parseDeferFile(type, filename) {
 		return filename;
 	var tmp = F.path.temp('defer-' + type + '$' + U.getName(filename));
 	Fs.writeFileSync(tmp, parseDefer(data));
+	F.config['allow-debug'] && F.consoledebug('defer', filename + ' <--> ' + tmp);
 	return tmp;
 }
 

@@ -20,7 +20,9 @@
 - added: new schema aliases (`$QUERY()`, `$GET()`, `$WORKFLOW()`, '$TRANSFORM()' and `$OPERATION()`)
 - added: `F.config['allow-defer']` enables deferring functions with `DEFER` keyword (default: true)
 - added: `DEFER` feature
+- added: `F.config['allow-debug']` starts a mini debugger
 
+- updated: `F.http('debug/release/test', { debug: true })` can start a mini debugger
 - updated: `F.route()`, `F.websocket()` and `F.file()` --> now returns `FrameworkRoute` instance instead of `Framework` instance (more in docs)
 - updated: `F.load(debug, [types], [path])` supports a new type `service` which enables `F.on('service')`
 - updated: Components (now doesn't have to has `html` body)
