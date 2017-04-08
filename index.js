@@ -14695,7 +14695,7 @@ http.ServerResponse.prototype.$text = function() {
 	if (REG_TEXTAPPLICATION.test(options.type))
 		options.type += '; charset=utf-8';
 
-	headers[RESPONSE_HEADER_CONTENTTYPE] = options.type;
+	headers[RESPONSE_HEADER_CONTENTTYPE] = options.type || CONTENTTYPE_TEXTPLAIN;
 
 	if (options.headers)
 		headers = U.extend_headers(headers, options.headers);
