@@ -40,6 +40,7 @@
 - updated: `OPERATION(name, value, [callback(err, response, param)], [param])` added a new (helper) argument `param`
 - updated: Mail error handling (added Message instance)
 - updated: `U.request()` add a new flag `noredirect`
+- updated: `F.exists(req, res, [max], callback(next, filaname, req, res))` added a new arguments into the callback `req` and `res`
 
 - fixed: config `static-accepts` (it doesn't work)
 - fixed: routing with `upload` flag
@@ -47,11 +48,13 @@
 - fixed: modificators by George Okojie Davis
 - fixed: NoSQL comparing dates `equal` in `where` condition
 - fixed: a problem with `booting` packages if are used custom paths (by @harry-stot)
+- fixed: JavaScript compression
 
 - improved: events
 - improved: parsing data from requests
 - improved: mechanism of components
 - improved: performance
+- improved: responding
 
 ======= 2.4.0
 

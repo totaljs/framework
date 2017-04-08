@@ -87,7 +87,7 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 
 	var boundary = contentType.split(';')[1];
 	if (!boundary) {
-		F._request_stats(false, false);
+		F.reqstats(false, false);
 		F.stats.request.error400++;
 		subscribe.res.writeHead(400);
 		subscribe.res.end();
@@ -293,7 +293,7 @@ exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile) 
 
 	var boundary = contentType.split(';')[1];
 	if (!boundary) {
-		F._request_stats(false, false);
+		F.reqstats(false, false);
 		F.stats.request.error400++;
 		req.res.writeHead(400);
 		req.res.end();
@@ -1078,7 +1078,7 @@ function minify_javascript(data) {
 	var output = [];
 	var isCS = false;
 	var isCI = false;
-	var alpha = /[0-9a-z]/i;
+	var alpha = /[0-9a-z\$]/i;
 	var white = /\W/;
 	var skip = { '$': true, '_': true };
 	var regexp = false;
@@ -1168,7 +1168,7 @@ function minify_javascript(data) {
 				scope = c;
 		}
 
-		if (c === '}' && last === ';')
+		if ((c === '}' && last === ';') || ((c === '}' || c === ']') && output[output.length - 1] === ' ' && alpha.test(output[output.length - 2])))
 			output.pop();
 
 		output.push(c);
@@ -1648,7 +1648,7 @@ function view_parse(content, minify, filename, controller) {
 	var txtindex = -1;
 	var index = 0;
 
-	if (REG_HEAD.test(content) !== -1 && REG_COMPONENTS.test(content)) {
+	if ((controller.$hasComponents || REG_COMPONENTS.test(content)) && REG_HEAD.test(content)) {
 		index = content.indexOf('@{import(');
 		var add = true;
 		while (index !== -1) {
@@ -1821,7 +1821,7 @@ function view_parse(content, minify, filename, controller) {
 			builder += '}$output+=$EMPTY';
 		} else {
 
-			tmp = view_prepare(command.command, newCommand, functionsName);
+			tmp = view_prepare(command.command, newCommand, functionsName, controller);
 			var can = false;
 
 			// Inline rendering is supported only in release mode
@@ -1912,7 +1912,7 @@ function view_parse_plus(builder) {
 	return c !== '!' && c !== '?' && c !== '+' && c !== '.' && c !== ':';
 }
 
-function view_prepare(command, dynamicCommand, functions) {
+function view_prepare(command, dynamicCommand, functions, controller) {
 
 	var a = command.indexOf('.');
 	var b = command.indexOf('(');
@@ -2074,7 +2074,6 @@ function view_prepare(command, dynamicCommand, functions) {
 			return command.indexOf('(') === -1 ? 'self.$meta()' : 'self.$' + command;
 
 		case 'import':
-		case 'components':
 		case 'favicon':
 		case 'js':
 		case 'css':
@@ -2082,10 +2081,17 @@ function view_prepare(command, dynamicCommand, functions) {
 		case 'absolute':
 			return 'self.$' + command + (command.indexOf('(') === -1 ? '()' : '');
 
+		case 'components':
+			controller.$hasComponents = true;
+			return 'self.$' + command + (command.indexOf('(') === -1 ? '()' : '');
+
 		case 'index':
 			return '(' + command + ')';
 
 		case 'component':
+			controller.$hasComponents = true;
+			return 'self.' + command;
+
 		case 'routeJS':
 		case 'routeCSS':
 		case 'routeScript':
