@@ -573,7 +573,7 @@ function Framework() {
 		'allow-performance': false,
 		'allow-custom-titles': false,
 		'allow-cache-snapshot': false,
-		'allow-defer': true,
+		'allow-defer': false,
 		'allow-debug': false,
 		'disable-strict-server-certificate-validation': true,
 		'disable-clear-temporary-directory': false,
@@ -8122,6 +8122,8 @@ F._configure = function(arr, rewrite) {
 			case 'allow-compile-html':
 			case 'allow-compile-style':
 			case 'allow-compile-script':
+			case 'allow-defer':
+			case 'allow-debug':
 			case 'disable-strict-server-certificate-validation':
 			case 'disable-clear-temporary-directory':
 			case 'trace':
@@ -13936,6 +13938,11 @@ http.ServerResponse.prototype.image = function(filename, make, headers, callback
 	return res;
 };
 
+http.ServerResponse.prototype.image_nocache = function(filename, make, headers, callback) {
+	this.options.cache = false;
+	return this.image(filename, make, headers, callback);
+};
+
 /**
  * Response JSON
  * @param {Object} obj
@@ -13949,10 +13956,12 @@ http.ServerResponse.prototype.json = function(obj) {
 	return res.$text();
 };
 
-http.ServerResponse.prototype.continue = function() {
+http.ServerResponse.prototype.continue = function(callback) {
 
 	var res = this;
 	var req = res.req;
+
+	callback && (res.options.callback = callback);
 
 	if (res.success || res.headersSent)
 		return res;
@@ -14708,33 +14717,39 @@ http.ServerResponse.prototype.$text = function() {
 	return res;
 };
 
-http.ServerResponse.prototype.throw400 = function() {
+http.ServerResponse.prototype.throw400 = function(problem) {
 	this.options.code = 400;
+	problem && (this.options.problem = problem);
 	return this.$throw();
 };
 
-http.ServerResponse.prototype.throw401 = function() {
+http.ServerResponse.prototype.throw401 = function(problem) {
 	this.options.code = 401;
+	problem && (this.options.problem = problem);
 	return this.$throw();
 };
 
-http.ServerResponse.prototype.throw403 = function() {
+http.ServerResponse.prototype.throw403 = function(problem) {
 	this.options.code = 403;
+	problem && (this.options.problem = problem);
 	return this.$throw();
 };
 
-http.ServerResponse.prototype.throw404 = function() {
+http.ServerResponse.prototype.throw404 = function(problem) {
 	this.options.code = 404;
+	problem && (this.options.problem = problem);
 	return this.$throw();
 };
 
-http.ServerResponse.prototype.throw408 = function() {
+http.ServerResponse.prototype.throw408 = function(problem) {
 	this.options.code = 408;
+	problem && (this.options.problem = problem);
 	return this.$throw();
 };
 
-http.ServerResponse.prototype.throw431 = function() {
+http.ServerResponse.prototype.throw431 = function(problem) {
 	this.options.code = 431;
+	problem && (this.options.problem = problem);
 	return this.$throw();
 };
 
@@ -14745,8 +14760,9 @@ http.ServerResponse.prototype.throw500 = function(error) {
 	return this.$throw();
 };
 
-http.ServerResponse.prototype.throw501 = function() {
+http.ServerResponse.prototype.throw501 = function(problem) {
 	this.options.code = 501;
+	problem && (this.options.problem = problem);
 	return this.$throw();
 };
 
