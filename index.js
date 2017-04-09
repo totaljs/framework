@@ -5562,49 +5562,49 @@ F.notModified = function(req, res, compare, strict) {
 
 F.responseCode = function(req, res, code, problem) {
 	res.options.code = code;
-	res.options.problem = problem;
+	problem && (res.options.problem = problem);
 	res.$throw();
 	return F;
 };
 
 F.response400 = function(req, res, problem) {
 	res.options.code = 400;
-	res.options.problem = problem;
+	problem && (res.options.problem = problem);
 	res.$throw();
 	return F;
 };
 
 F.response401 = function(req, res, problem) {
 	res.options.code = 401;
-	res.options.problem = problem;
+	problem && (res.options.problem = problem);
 	res.$throw();
 	return F;
 };
 
 F.response403 = function(req, res, problem) {
 	res.options.code = 403;
-	res.options.problem = problem;
+	problem && (res.options.problem = problem);
 	res.$throw();
 	return F;
 };
 
 F.response404 = function(req, res, problem) {
 	res.options.code = 404;
-	res.options.problem = problem;
+	problem && (res.options.problem = problem);
 	res.$throw();
 	return F;
 };
 
 F.response408 = function(req, res, problem) {
 	res.options.code = 408;
-	res.options.problem = problem;
+	problem && (res.options.problem = problem);
 	res.$throw();
 	return F;
 };
 
 F.response431 = function(req, res, problem) {
 	res.options.code = 431;
-	res.options.problem = problem;
+	problem && (res.options.problem = problem);
 	res.$throw();
 	return F;
 };
@@ -5616,7 +5616,7 @@ F.response500 = function(req, res, error) {
 
 F.response501 = function(req, res, problem) {
 	res.options.code = 501;
-	res.options.problem = problem;
+	problem && (res.options.problem = problem);
 	res.$throw();
 	return F;
 };
@@ -6179,7 +6179,7 @@ F.listener = function(req, res) {
 	if (F._length_wait)
 		return F.response503(req, res);
 	else if (!req.host) // HTTP 1.0 without host
-		return F.response400(req, res);
+		return res.throw400();
 
 	var headers = req.headers;
 	req.$protocol = req.connection.encrypted || headers['x-forwarded-protocol'] === 'https' ? 'https' : 'http';
@@ -9290,7 +9290,7 @@ Subscribe.prototype.doEnd = function() {
 			self.route = route;
 			self.execute(431, true);
 		} else
-			F.response431(req, res);
+			rers.throw431();
 
 		return self;
 	}
@@ -11931,6 +11931,7 @@ Controller.prototype.baa = function(label) {
 	res.options.body = '401: NOT AUTHORIZED';
 	res.options.compress = false;
 	res.options.headers = headers;
+	res.options.type = CONTENTTYPE_TEXTPLAIN;
 	res.$text();
 	self.cancel();
 	return null;
@@ -14695,7 +14696,7 @@ http.ServerResponse.prototype.$text = function() {
 	if (REG_TEXTAPPLICATION.test(options.type))
 		options.type += '; charset=utf-8';
 
-	headers[RESPONSE_HEADER_CONTENTTYPE] = options.type || CONTENTTYPE_TEXTPLAIN;
+	headers[RESPONSE_HEADER_CONTENTTYPE] = options.type;
 
 	if (options.headers)
 		headers = U.extend_headers(headers, options.headers);
