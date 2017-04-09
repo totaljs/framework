@@ -9109,6 +9109,7 @@ Subscribe.prototype.execute = function(status, isError) {
 			res.$text();
 		} else {
 			res.options.body = U.httpStatus(status) + prepare_error(self.exception);
+			res.options.type = CONTENTTYPE_TEXTPLAIN;
 			res.options.code = status || 404;
 			res.$text();
 		}
