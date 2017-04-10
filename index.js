@@ -489,7 +489,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2500;
-	this.version_header = '2.5.0-15';
+	this.version_header = '2.5.0-16';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -12400,7 +12400,9 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
 		return self;
 	}
 
-	var output = self.cache.read2(key);
+	self.themeName && (key += '#' + self.themeName);
+
+	var output = self.cache.read2();
 	if (!output)
 		return self.$memorize_prepare(key, expires, disabled, fnTo, fnFrom);
 
