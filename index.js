@@ -12479,7 +12479,7 @@ Controller.prototype.$memorize_prepare = function(key, expires, disabled, fnTo, 
 			return;
 		}
 
-		var options = { content: value, type: contentType, layout: self.layoutName, theme: self.themeName };
+		var options = { content: value, type: contentType || CONTENTTYPE_TEXTPLAIN, layout: self.layoutName, theme: self.themeName };
 		if (headers)
 			options.headers = headers;
 
