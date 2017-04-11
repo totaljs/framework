@@ -575,6 +575,7 @@ function Framework() {
 		'allow-cache-snapshot': false,
 		'allow-defer': false,
 		'allow-debug': false,
+		'allow-head': false,
 		'disable-strict-server-certificate-validation': true,
 		'disable-clear-temporary-directory': false,
 
@@ -934,7 +935,7 @@ F.controller = function(name) {
  * @return {Framework}
  */
 F.useConfig = function(name) {
-	return F._configure(name, true);
+	return F.$configure_configs(name, true);
 };
 
 /**
@@ -1831,19 +1832,15 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 		}
 	}
 
-	if (flags.indexOf('get') === -1 &&
-		flags.indexOf('options') === -1 &&
-		flags.indexOf('post') === -1 &&
-		flags.indexOf('delete') === -1 &&
-		flags.indexOf('put') === -1 &&
-		flags.indexOf('upload') === -1 &&
-		flags.indexOf('head') === -1 &&
-		flags.indexOf('trace') === -1 &&
-		flags.indexOf('patch') === -1 &&
-		flags.indexOf('propfind') === -1) {
-			flags.push('get');
-			method += (method ? ',' : '') + 'get';
-		}
+	if (flags.indexOf('get') === -1 && flags.indexOf('options') === -1 && flags.indexOf('post') === -1 && flags.indexOf('delete') === -1 && flags.indexOf('put') === -1 && flags.indexOf('upload') === -1 && flags.indexOf('head') === -1 && flags.indexOf('trace') === -1 && flags.indexOf('patch') === -1 && flags.indexOf('propfind') === -1) {
+		flags.push('get');
+		method += (method ? ',' : '') + 'get';
+	}
+
+	if (F.config['allow-head'] && flags.indexOf('get') !== -1) {
+		flags.append('head');
+		method += (method ? ',' : '') + 'head';
+	}
 
 	if (flags.indexOf('referer') !== -1)
 		F._request_check_referer = true;
@@ -2002,7 +1999,7 @@ F.merge = function(url) {
 		}
 	}
 
-	url = framework_internal.preparePath(F._version(url));
+	url = framework_internal.preparePath(F.$version(url));
 
 	if (url[0] !== '/')
 		url = '/' + url;
@@ -2044,7 +2041,7 @@ F.map = function(url, filename, filter) {
 	var isPackage = false;
 
 	filename = U.$normalize(filename);
-	url = framework_internal.preparePath(F._version(url));
+	url = framework_internal.preparePath(F.$version(url));
 
 	// isomorphic
 	if (filename[0] === '#') {
@@ -3066,7 +3063,7 @@ F.$load = function(types, targetdirectory, callback, packageName) {
 		dependencies.async(function() {
 			types && types.indexOf('service') === -1 && F.cache.stop();
 			F.$routesSort();
-			(!types || types.indexOf('dependencies') !== -1) && F._configure_dependencies();
+			(!types || types.indexOf('dependencies') !== -1) && F.$configure_dependencies();
 			F.consoledebug('load dependencies {0}x (done)'.format(count));
 			callback && callback();
 		});
@@ -3295,7 +3292,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 
 	if (type === 'config' || type === 'configuration' || type === 'settings') {
 
-		F._configure(declaration instanceof Array ? declaration : declaration.toString().split('\n'), true);
+		F.$configure_configs(declaration instanceof Array ? declaration : declaration.toString().split('\n'), true);
 		setTimeout(function() {
 			delete F.temporary['mail-settings'];
 			F.emit(type + '#' + name, F.config);
@@ -3311,7 +3308,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 
 	if (type === 'version' || type === 'versions') {
 
-		F._configure_versions(declaration.toString().split('\n'));
+		F.$configure_versions(declaration.toString().split('\n'));
 		setTimeout(function() {
 			F.emit(type + '#' + name);
 			F.emit('install', type, name);
@@ -3326,7 +3323,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 
 	if (type === 'workflow' || type === 'workflows') {
 
-		F._configure_workflows(declaration.toString().split('\n'));
+		F.$configure_workflows(declaration.toString().split('\n'));
 		setTimeout(function() {
 			F.emit(type + '#' + name);
 			F.emit('install', type, name);
@@ -3341,7 +3338,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 
 	if (type === 'sitemap') {
 
-		F._configure_sitemap(declaration.toString().split('\n'));
+		F.$cofnigure_sitemap(declaration.toString().split('\n'));
 		setTimeout(function() {
 			F.emit(type + '#' + name);
 			F.emit('install', type, name);
@@ -3831,25 +3828,25 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 				F.directory = directory = tmpdir;
 				F.temporary.path = {};
 				F.temporary.notfound = {};
-				F._configure();
-				F._configure_versions();
-				F._configure_dependencies();
-				F._configure_sitemap();
-				F._configure_workflows();
+				F.$configure_configs();
+				F.$configure_versions();
+				F.$configure_dependencies();
+				F.$cofnigure_sitemap();
+				F.$configure_workflows();
 			} else {
 
-				F._configure('@' + name + '/config');
+				F.$configure_configs('@' + name + '/config');
 
 				if (F.config.debug)
-					F._configure('@' + name + '/config-debug');
+					F.$configure_configs('@' + name + '/config-debug');
 				else
-					F._configure('@' + name + '/config-release');
+					F.$configure_configs('@' + name + '/config-release');
 
-				F.isTest && F._configure('@' + name + '/config-test');
-				F._configure_versions('@' + name + '/versions');
-				F._configure_dependencies('@' + name + '/dependencies');
-				F._configure_sitemap('@' + name + '/sitemap');
-				F._configure_workflows('@' + name + '/workflows');
+				F.isTest && F.$configure_configs('@' + name + '/config-test');
+				F.$configure_versions('@' + name + '/versions');
+				F.$configure_dependencies('@' + name + '/dependencies');
+				F.$cofnigure_sitemap('@' + name + '/sitemap');
+				F.$configure_workflows('@' + name + '/workflows');
 			}
 
 			F.$load(undefined, tmpdir, undefined, name);
@@ -4213,7 +4210,7 @@ F.uninstall = function(type, name, options, skipEmit, packageName) {
 	} else if (type === 'isomorphic') {
 		var obj = F.isomorphic[name];
 		if (obj.url)
-			delete F.routes.mapping[F._version(obj.url)];
+			delete F.routes.mapping[F.$version(obj.url)];
 		delete F.isomorphic[name];
 		delete F.temporary.ready[type + '#' + name];
 		F.consoledebug('uninstall', type + '#' + name);
@@ -5282,7 +5279,7 @@ F.compile_content = function(extension, content, filename) {
 				for (var i = 0, length = matches.length; i < length; i++) {
 					var key = matches[i];
 					var url = key.substring(4, key.length - 1);
-					content = content.replace(key, 'url(' + F._version(url) + ')');
+					content = content.replace(key, 'url(' + F.$version(url) + ')');
 				}
 			}
 			return content;
@@ -5670,16 +5667,16 @@ F.load = function(debug, types, pwd) {
 	F.$startup(function() {
 
 		F.consoledebug('startup (done)');
-		F._configure();
+		F.$configure_configs();
 
 		if (!types || types.indexOf('versions') !== -1)
-			F._configure_versions();
+			F.$configure_versions();
 
 		if (!types || types.indexOf('workflows') !== -1)
-			F._configure_workflows();
+			F.$configure_workflows();
 
 		if (!types || types.indexOf('sitemap') !== -1)
-			F._configure_sitemap();
+			F.$cofnigure_sitemap();
 
 		F.consoledebug('init');
 		F.cache.init();
@@ -5748,11 +5745,11 @@ F.initialize = function(http, debug, options, restart) {
 	global.RELEASE = !debug;
 	global.I = global.isomorphic = F.isomorphic;
 
-	F._configure();
-	F._configure_versions();
-	F._configure_workflows();
-	F._configure_sitemap();
-	F.isTest && F._configure('config-test', false);
+	F.$configure_configs();
+	F.$configure_versions();
+	F.$configure_workflows();
+	F.$cofnigure_sitemap();
+	F.isTest && F.$configure_configs('config-test', false);
 	F.cache.init();
 	F.consoledebug('init');
 	F.emit('init');
@@ -6231,13 +6228,13 @@ F.listener = function(req, res) {
 	F.reqstats(true, true);
 
 	if (F._length_request_middleware)
-		async_middleware(0, req, res, F.routes.request, _request_continue_middleware);
+		async_middleware(0, req, res, F.routes.request, requestcontinue_middleware);
 	else
-		F._request_continue(req, res, headers);
+		F.$requestcontinue(req, res, headers);
 };
 
-function _request_continue_middleware(req, res)  {
-	F._request_continue(req, res, req.headers);
+function requestcontinue_middleware(req, res)  {
+	F.$requestcontinue(req, res, req.headers);
 }
 
 /**
@@ -6249,7 +6246,7 @@ function _request_continue_middleware(req, res)  {
  * @param {String} protocol [description]
  * @return {Framework}
  */
-F._request_continue = function(req, res, headers) {
+F.$requestcontinue = function(req, res, headers) {
 
 	if (!req || !res || res.headersSent || res.success)
 		return;
@@ -6370,13 +6367,13 @@ F._request_continue = function(req, res, headers) {
 	req.flags = flags;
 	F.$events['request-begin'] && F.emit('request-begin', req, res);
 
-	var isCORS = req.headers['origin'] && F._length_cors;
+	var isCORS = F._length_cors && req.headers['origin'];
 
 	switch (first) {
 		case 'G':
 			F.stats.request.get++;
 			if (isCORS)
-				F._cors(req, res, cors_callback0);
+				F.$cors(req, res, cors_callback0);
 			else
 				new Subscribe(F, req, res, 0).end();
 			return F;
@@ -6384,7 +6381,7 @@ F._request_continue = function(req, res, headers) {
 		case 'O':
 			F.stats.request.options++;
 			if (isCORS)
-				F._cors(req, res, cors_callback0);
+				F.$cors(req, res, cors_callback0);
 			else
 				new Subscribe(framework, req, res, 0).end();
 			return F;
@@ -6392,7 +6389,7 @@ F._request_continue = function(req, res, headers) {
 		case 'H':
 			F.stats.request.head++;
 			if (isCORS)
-				F._cors(req, res, cors_callback0);
+				F.$cors(req, res, cors_callback0);
 			else
 				new Subscribe(F, req, res, 0).end();
 			return F;
@@ -6400,7 +6397,7 @@ F._request_continue = function(req, res, headers) {
 		case 'D':
 			F.stats.request['delete']++;
 			if (isCORS)
-				F._cors(req, res, cors_callback1);
+				F.$cors(req, res, cors_callback1);
 			else
 				new Subscribe(F, req, res, 1).urlencoded();
 			return F;
@@ -6410,9 +6407,9 @@ F._request_continue = function(req, res, headers) {
 				if (multipart) {
 
 					if (isCORS)
-						F._cors(req, res, cors_callback_multipart, multipart);
+						F.$cors(req, res, cors_callback_multipart, multipart);
 					else if (req.$type === 4)
-						F._request_mmr(req, res, multipart);
+						F.$requestcontinue_mmr(req, res, multipart);
 					else
 						new Subscribe(F, req, res, 2).multipart(multipart);
 
@@ -6426,7 +6423,7 @@ F._request_continue = function(req, res, headers) {
 					else
 						F.stats.request.post++;
 					if (isCORS)
-						F._cors(req, res, cors_callback1);
+						F.$cors(req, res, cors_callback1);
 					else
 						new Subscribe(F, req, res, 1).urlencoded();
 				}
@@ -6454,12 +6451,12 @@ function cors_callback1(req, res) {
 
 function cors_callback_multipart(req, res, multipart) {
 	if (req.$type === 4)
-		F._request_mmr(req, res, multipart);
+		F.$requestcontinue_mmr(req, res, multipart);
 	else
 		new Subscribe(F, req, res, 2).multipart(multipart);
 }
 
-F._request_mmr = function(req, res, header) {
+F.$requestcontinue_mmr = function(req, res, header) {
 	var route = F.routes.mmr[req.url];
 	F.stats.request.mmr++;
 
@@ -6476,7 +6473,7 @@ F._request_mmr = function(req, res, header) {
 	res.end();
 };
 
-F._cors = function(req, res, fn, arg) {
+F.$cors = function(req, res, fn, arg) {
 
 	var isAllowed = false;
 	var cors;
@@ -6621,24 +6618,16 @@ F._upgrade = function(req, socket, head) {
 		req.$language = F.onLocale(req, socket);
 
 	if (F._length_request_middleware)
-		async_middleware(0, req, req.websocket, F.routes.request, _upgrade_prepare_middleware);
+		async_middleware(0, req, req.websocket, F.routes.request, websocketcontinue_middleware);
 	else
-		F._upgrade_prepare(req, req.$wspath, headers);
+		F.$websocketcontinue(req, req.$wspath, headers);
 };
 
-function _upgrade_prepare_middleware(req) {
-	F._upgrade_prepare(req, req.$wspath, req.headers);
+function websocketcontinue_middleware(req) {
+	F.$websocketcontinue(req, req.$wspath, req.headers);
 }
 
-/**
- * Prepare WebSocket
- * @private
- * @param {HttpRequest} req
- * @param {WebSocketClient} websocket
- * @param {String} path
- * @param {Object} headers
- */
-F._upgrade_prepare = function(req, path) {
+F.$websocketcontinue = function(req, path) {
 	var auth = F.onAuthorize;
 	if (auth) {
 		auth.call(F, req, req.websocket, req.flags, function(isLogged, user) {
@@ -6648,7 +6637,7 @@ F._upgrade_prepare = function(req, path) {
 
 			var route = F.lookup_websocket(req, req.websocket.uri.pathname, isLogged ? 1 : 2);
 			if (route) {
-				F._upgrade_continue(route, req, path);
+				F.$websocketcontinue_process(route, req, path);
 			} else {
 				req.websocket.close();
 				req.connection.destroy();
@@ -6657,7 +6646,7 @@ F._upgrade_prepare = function(req, path) {
 	} else {
 		var route = F.lookup_websocket(req, req.websocket.uri.pathname, 0);
 		if (route) {
-			F._upgrade_continue(route, req, path);
+			F.$websocketcontinue_process(route, req, path);
 		} else {
 			req.websocket.close();
 			req.connection.destroy();
@@ -6665,15 +6654,7 @@ F._upgrade_prepare = function(req, path) {
 	}
 };
 
-/**
- * Prepare WebSocket
- * @private
- * @param {HttpRequest} req
- * @param {WebSocketClient} websocket
- * @param {String} path
- * @param {Object} headers
- */
-F._upgrade_continue = function(route, req, path) {
+F.$websocketcontinue_process = function(route, req, path) {
 
 	var socket = req.websocket;
 
@@ -6772,26 +6753,6 @@ F.source = function(name, options, callback) {
  */
 F.include = function(name, options, callback) {
 	return F.source(name, options, callback);
-};
-
-/**
- * Internal logger
- * @private
- * @param {String} message
- * @return {Framework}
- */
-F._log = function() {
-
-	if (RELEASE)
-		return false;
-
-	var length = arguments.length;
-	var params = ['---->'];
-
-	for (var i = 0; i < length; i++)
-		params.push(arguments[i]);
-
-	setTimeout(() => console.log.apply(console, params), 1000);
 };
 
 /**
@@ -7181,7 +7142,7 @@ F.test = function(stop, names, cb) {
 	var counter = 0;
 	var dir = F.config['directory-tests'];
 	F.isTest = true;
-	F._configure('config-test', true);
+	F.$configure_configs('config-test', true);
 
 	var logger = function(name, start, err) {
 		var time = Math.floor(new Date() - start) + ' ms';
@@ -7571,7 +7532,7 @@ F.translator = function(language, text) {
 	return framework_internal.parseLocalization(text, language);
 };
 
-F._configure_sitemap = function(arr, clean) {
+F.$cofnigure_sitemap = function(arr, clean) {
 
 	if (!arr || typeof(arr) === 'string') {
 		var filename = prepare_filename(arr || 'sitemap');
@@ -7748,11 +7709,11 @@ F.sitemap_navigation = function(parent, language) {
  * @return {framework}
  */
 F.sitemap_add = function (obj) {
-	F._configure_sitemap(obj instanceof Array ? obj : [obj]);
+	F.$cofnigure_sitemap(obj instanceof Array ? obj : [obj]);
 	return F;
 };
 
-F._configure_dependencies = function(arr, callback) {
+F.$configure_dependencies = function(arr, callback) {
 
 	if (!arr || typeof(arr) === 'string') {
 		var filename = prepare_filename(arr || 'dependencies');
@@ -7886,7 +7847,7 @@ F._configure_dependencies = function(arr, callback) {
 	return F;
 };
 
-F._configure_workflows = function(arr, clean) {
+F.$configure_workflows = function(arr, clean) {
 
 	if (arr === undefined || typeof(arr) === 'string') {
 		var filename = prepare_filename(arr || 'workflows');
@@ -7944,7 +7905,7 @@ F._configure_workflows = function(arr, clean) {
 	return F;
 };
 
-F._configure_versions = function(arr, clean) {
+F.$configure_versions = function(arr, clean) {
 
 	if (arr === undefined || typeof(arr) === 'string') {
 		var filename = prepare_filename(arr || 'versions');
@@ -7999,7 +7960,7 @@ F._configure_versions = function(arr, clean) {
 	return F;
 };
 
-F._configure = function(arr, rewrite) {
+F.$configure_configs = function(arr, rewrite) {
 
 	var type = typeof(arr);
 	if (type === 'string') {
@@ -8271,17 +8232,17 @@ F.$routeStatic = function(name, directory, theme) {
 	if (REG_ROUTESTATIC.test(name))
 		filename = name;
 	else if (name[0] === '/')
-		filename = U.join(theme, this._version(name));
+		filename = U.join(theme, this.$version(name));
 	else {
-		filename = U.join(theme, directory, this._version(name));
+		filename = U.join(theme, directory, this.$version(name));
 		if (REG_HTTPHTTPS.test(filename))
 			filename = filename.substring(1);
 	}
 
-	return F.temporary.other[key] = framework_internal.preparePath(this._version(filename));
+	return F.temporary.other[key] = framework_internal.preparePath(this.$version(filename));
 };
 
-F._version = function(name) {
+F.$version = function(name) {
 	if (F.versions)
 		name = F.versions[name] || name;
 	if (F.onVersion)
@@ -8289,7 +8250,7 @@ F._version = function(name) {
 	return name;
 };
 
-F._version_prepare = function(html) {
+F.$versionprepare = function(html) {
 	var match = html.match(REG_VERSIONS);
 	if (!match)
 		return html;
@@ -8304,7 +8265,7 @@ F._version_prepare = function(html) {
 			end = 6;
 
 		var name = src.substring(end, src.length - 1);
-		html = html.replace(match[i], src.substring(0, end) + F._version(name) + '"');
+		html = html.replace(match[i], src.substring(0, end) + F.$version(name) + '"');
 	}
 
 	return html;
@@ -8993,6 +8954,7 @@ function Subscribe(framework, req, res) {
 	// this.controller;
 	this.req = req;
 	this.res = res;
+	req.$subscribe = this;
 
 	// Because of performance
 	// this.route = null;
@@ -9021,10 +8983,14 @@ Subscribe.prototype.success = function() {
 
 Subscribe.prototype.file = function() {
 	var self = this;
-	self.req.on('end', () => self.doEndfile(this));
+	self.req.on('end', subscribe_file);
 	self.req.resume();
 	return self;
 };
+
+function subscribe_file() {
+	this.$subscribe.doEndfile(this);
+}
 
 /**
  * Process MULTIPART (uploaded files)
@@ -9061,7 +9027,7 @@ Subscribe.prototype.urlencoded = function() {
 	if (self.route) {
 		self.req.buffer_has = true;
 		self.req.buffer_exceeded = false;
-		self.req.on('data', (chunk) => self.doParsepost(chunk));
+		self.req.on('data', subscribe_parse);
 		self.end();
 		return self;
 	}
@@ -9076,11 +9042,19 @@ Subscribe.prototype.urlencoded = function() {
 	return self;
 };
 
+function subscribe_parse(chunk) {
+	this.$subscribe.doParsepost(chunk);
+}
+
 Subscribe.prototype.end = function() {
 	var self = this;
-	self.req.on('end', () => self.doEnd());
+	self.req.on('end', subscribe_end);
 	self.req.resume();
 };
+
+function subscribe_end() {
+	this.$subscribe.doEnd();
+}
 
 /**
  * Execute controller
@@ -9278,22 +9252,20 @@ Subscribe.prototype.doAuthorize = function(isLogged, user, roles) {
 
 Subscribe.prototype.doEnd = function() {
 
-	var self = this;
-	var req = self.req;
-	var res = self.res;
-	var route = self.route;
+	var req = this.req;
+	var route = this.route;
 
 	if (req.buffer_exceeded) {
 		route = F.lookup(req, '#431', EMPTYARRAY, 0);
 		req.buffer_data = null;
 
 		if (route) {
-			self.route = route;
-			self.execute(431, true);
+			this.route = route;
+			this.execute(431, true);
 		} else
-			rers.throw431();
+			this.res.throw431();
 
-		return self;
+		return this;
 	}
 
 	if (req.buffer_data && (!route || !route.isBINARY))
@@ -9301,42 +9273,42 @@ Subscribe.prototype.doEnd = function() {
 
 	if (!req.buffer_data) {
 		if (route && route.schema)
-			self.schema = true;
+			this.schema = true;
 		req.buffer_data = null;
-		self.prepare(req.flags, req.uri.pathname);
-		return self;
+		this.prepare(req.flags, req.uri.pathname);
+		return this;
 	}
 
 	if (route.isXML) {
 
 		if (req.$type !== 2) {
-			self.route400('Invalid "Content-Type".');
+			this.route400('Invalid "Content-Type".');
 			req.buffer_data = null;
-			return self;
+			return this;
 		}
 
 		try {
 			F.$onParseXML(req);
 			req.buffer_data = null;
-			self.prepare(req.flags, req.uri.pathname);
+			this.prepare(req.flags, req.uri.pathname);
 		} catch (err) {
 			F.error(err, null, req.uri);
-			self.route500(err);
+			this.route500(err);
 		}
-		return self;
+		return this;
 	}
 
-	if (self.route.isRAW) {
+	if (this.route.isRAW) {
 		req.body = req.buffer_data;
 		req.buffer_data = null;
-		self.prepare(req.flags, req.uri.pathname);
-		return self;
+		this.prepare(req.flags, req.uri.pathname);
+		return this;
 	}
 
 	if (!req.$type) {
 		req.buffer_data = null;
-		self.route400('Invalid "Content-Type".');
-		return self;
+		this.route400('Invalid "Content-Type".');
+		return this;
 	}
 
 	if (req.$type === 1) {
@@ -9344,25 +9316,26 @@ Subscribe.prototype.doEnd = function() {
 			F.$onParseJSON(req);
 			req.buffer_data = null;
 		} catch (e) {
-			self.route400('Invalid JSON data.');
-			return self;
+			this.route400('Invalid JSON data.');
+			return this;
 		}
 	} else
 		F.$onParseQueryBody(req);
 
-	self.route.schema && (self.schema = true);
+	this.route.schema && (this.schema = true);
 	req.buffer_data = null;
-	self.prepare(req.flags, req.uri.pathname);
-	return self;
+	this.prepare(req.flags, req.uri.pathname);
+	return this;
 };
 
 Subscribe.prototype.validate = function(route, next, code) {
-	var self = this;
-	var req = self.req;
-	self.schema = false;
+	var req = this.req;
+	this.schema = false;
 
 	if (!route.schema || req.method === 'DELETE')
-		return next(self, code);
+		return next(this, code);
+
+	var self = this;
 
 	F.onSchema(req, route.schema[0], route.schema[1], function(err, body) {
 
@@ -13085,32 +13058,40 @@ WebSocketClient.prototype.prepare = function(flags, protocols, allow, length) {
 		return false;
 
 	var compress = (self.req.headers['sec-websocket-extensions'] || '').indexOf('permessage-deflate') !== -1;
-	var header = protocols.length ? (compress ? SOCKET_RESPONSE_PROTOCOL_COMPRESS : SOCKET_RESPONSE_PROTOCOL).format(self._request_accept_key(self.req), protocols.join(', ')) : (compress ? SOCKET_RESPONSE_COMPRESS : SOCKET_RESPONSE).format(self._request_accept_key(self.req));
+	var header = protocols.length ? (compress ? SOCKET_RESPONSE_PROTOCOL_COMPRESS : SOCKET_RESPONSE_PROTOCOL).format(self.$weboscket_key(self.req), protocols.join(', ')) : (compress ? SOCKET_RESPONSE_COMPRESS : SOCKET_RESPONSE).format(self.$weboscket_key(self.req));
+
 	self.socket.write(U.createBuffer(header, 'binary'));
 
 	if (compress) {
 		self.inflatepending = [];
 		self.inflatelock = false;
 		self.inflate = Zlib.createInflateRaw();
+		self.inflate.$websocket = self;
 		self.inflate.on('error', F.error());
-		self.inflate.on('data', function(data) {
-			self.inflatechunks.push(data);
-			self.inflatechunkslength += data.length;
-		});
+		self.inflate.on('data', websocket_inflate);
+
 		self.deflatepending = [];
 		self.deflatelock = false;
 		self.deflate = Zlib.createDeflateRaw();
+		self.deflate.$websocket = self;
 		self.deflate.on('error', F.error());
-		self.deflate.on('data', function(data) {
-			self.deflatechunks.push(data);
-			self.deflatechunkslength += data.length;
-		});
+		self.deflate.on('data', websocket_deflate);
 	}
 
 	self._id = Date.now() + U.GUID(5);
 	self.id = self._id;
 	return true;
 };
+
+function websocket_inflate(data) {
+	this.$websocket.inflatechunks.push(data);
+	this.$websocket.inflatechunkslength += data.length;
+}
+
+function websocket_deflate(data) {
+	this.$websocket.deflatechunks.push(data);
+	this.$websocket.deflatechunkslength += data.length;
+}
 
 /**
  * Add a container to client
@@ -13121,18 +13102,29 @@ WebSocketClient.prototype.upgrade = function(container) {
 
 	var self = this;
 	self.container = container;
-
-	self.socket.on('data', n => self._ondata(n));
-	self.socket.on('error', n => self._onerror(n));
-	self.socket.on('close', () => self._onclose());
-	self.socket.on('end', () => self._onclose());
+	self.socket.$websocket = this;
+	self.socket.on('data', websocket_ondata);
+	self.socket.on('error', websocket_onerror);
+	self.socket.on('close', websocket_close);
+	self.socket.on('end', websocket_close);
 	self.container._add(self);
 	self.container._refresh();
-
 	F.$events['websocket-begin'] && F.emit('websocket-begin', self.container, self);
 	self.container.$events.open && self.container.emit('open', self);
 	return self;
 };
+
+function websocket_ondata(chunk) {
+	this.$websocket._ondata(chunk);
+}
+
+function websocket_onerror(e) {
+	this.$websocket._onerror(e);
+}
+
+function websocket_close() {
+	this.$websocket._onclose();
+}
 
 /**
  * Internal handler written by Jozef Gula
@@ -13239,23 +13231,20 @@ WebSocketClient.prototype.parseInflate = function() {
 		return;
 
 	var buf = self.inflatepending.shift();
-	if (!buf)
-		return;
-
-	self.inflatechunks = [];
-	self.inflatechunkslength = 0;
-	self.inflatelock = true;
-	self.inflate.write(buf);
-	self.inflate.write(U.createBuffer(WEBSOCKET_COMPRESS));
-	self.inflate.flush(function() {
-		if (self.inflatechunks) {
+	if (buf) {
+		self.inflatechunks = [];
+		self.inflatechunkslength = 0;
+		self.inflatelock = true;
+		self.inflate.write(buf);
+		self.inflate.write(U.createBuffer(WEBSOCKET_COMPRESS));
+		self.inflate.flush(function() {
 			var data = buffer_concat(self.inflatechunks, self.inflatechunkslength);
 			self.inflatechunks = null;
 			self.inflatelock = false;
 			self._decode(self.type === 1 ? data : data.toString(ENCODING));
 			self.parseInflate();
-		}
-	});
+		});
+	}
 };
 
 WebSocketClient.prototype._decode = function(data) {
@@ -13293,6 +13282,7 @@ WebSocketClient.prototype._onerror = function(err) {
 WebSocketClient.prototype._onclose = function() {
 	if (this._isClosed)
 		return;
+
 	this.isClosed = true;
 	this._isClosed = true;
 
@@ -13352,21 +13342,20 @@ WebSocketClient.prototype.sendDeflate = function() {
 		return;
 
 	var buf = self.deflatepending.shift();
-	if (!buf)
-		return;
-
-	self.deflatechunks = [];
-	self.deflatechunkslength = 0;
-	self.deflatelock = true;
-	self.deflate.write(self.type === 1 ? new Int8Array(buf) : buf);
-	self.deflate.flush(function() {
-		var data = buffer_concat(self.deflatechunks, self.deflatechunkslength);
-		data = data.slice(0, data.length - 4);
-		self.deflatelock = false;
-		self.deflatechunks = null;
-		self.socket.write(U.getWebSocketFrame(0, data, self.type === 1 ? 0x02 : 0x01, true));
-		self.sendDeflate();
-	});
+	if (buf) {
+		self.deflatechunks = [];
+		self.deflatechunkslength = 0;
+		self.deflatelock = true;
+		self.deflate.write(self.type === 1 ? new Int8Array(buf) : buf);
+		self.deflate.flush(function() {
+			var data = buffer_concat(self.deflatechunks, self.deflatechunkslength);
+			data = data.slice(0, data.length - 4);
+			self.deflatelock = false;
+			self.deflatechunks = null;
+			self.socket.write(U.getWebSocketFrame(0, data, self.type === 1 ? 0x02 : 0x01, true));
+			self.sendDeflate();
+		});
+	}
 };
 
 /**
@@ -13400,7 +13389,7 @@ WebSocketClient.prototype.close = function(message, code) {
  * @param {Request} req
  * @return {String}
  */
-WebSocketClient.prototype._request_accept_key = function(req) {
+WebSocketClient.prototype.$weboscket_key = function(req) {
 	var sha1 = Crypto.createHash('sha1');
 	sha1.update((req.headers['sec-websocket-key'] || '') + SOCKET_HASH);
 	return sha1.digest('base64');
@@ -15147,10 +15136,10 @@ process.on('message', function(msg, h) {
 	}
 
 	if (msg === 'reconfigure') {
-		F._configure();
-		F._configure_versions();
-		F._configure_workflows();
-		F._configure_sitemap();
+		F.$configure_configs();
+		F.$configure_versions();
+		F.$configure_workflows();
+		F.$cofnigure_sitemap();
 		F.emit(msg);
 		return;
 	}

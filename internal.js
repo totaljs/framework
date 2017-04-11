@@ -1638,7 +1638,7 @@ function view_parse(content, minify, filename, controller) {
 	if (!nocompressCSS)
 		content = compressCSS(content, 0, filename);
 
-	content = F._version_prepare(content);
+	content = F.$versionprepare(content);
 
 	var DELIMITER = '\'';
 	var SPACE = ' ';
