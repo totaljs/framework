@@ -13719,7 +13719,7 @@ http.ServerResponse.prototype.send = function(code, body, type) {
 	if (!accept && isGZIP(req))
 		accept = 'gzip';
 
-	var compress = accept.indexOf('gzip') !== -1;
+	var compress = F.config['allow-gzip'] && accept.indexOf('gzip') !== -1;
 	if (isHEAD) {
 		compress && (headers['Content-Encoding'] = 'gzip');
 		res.writeHead(200, headers);
@@ -13857,7 +13857,7 @@ http.ServerResponse.prototype.proxy = function(url, headers, timeout, callback) 
 
 		var options = { protocol: uri.protocol, auth: uri.auth, method: 'GET', hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: headers };
 		var connection = options.protocol === 'https:' ? require('https') : http;
-		var gzip = (res.req.headers['accept-encoding'] || '').lastIndexOf('gzip') !== -1;
+		var gzip = F.config['allow-gzip'] && (res.req.headers['accept-encoding'] || '').lastIndexOf('gzip') !== -1;
 
 		var client = connection.get(options, function(response) {
 
@@ -14671,7 +14671,7 @@ http.ServerResponse.prototype.$text = function() {
 	var accept = req.headers['accept-encoding'] || '';
 	!accept && isGZIP(req) && (accept = 'gzip');
 
-	var gzip = options.compress === undefined || options.compress ? accept.indexOf('gzip') !== -1 : false;
+	var gzip = F.config['allow-gzip'] && (options.compress === undefined || options.compress) ? accept.indexOf('gzip') !== -1 : false;
 	var headers;
 
 	if (req.$mobile)
