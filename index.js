@@ -38,13 +38,14 @@ const Util = require('util');
 const http = require('http');
 
 const ENCODING = 'utf8';
-const RESPONSE_HEADER_CACHECONTROL = 'Cache-Control';
-const RESPONSE_HEADER_CONTENTTYPE = 'Content-Type';
-const RESPONSE_HEADER_CONTENTLENGTH = 'Content-Length';
-const CONTENTTYPE_TEXTPLAIN = 'text/plain';
-const CONTENTTYPE_TEXTHTML = 'text/html';
-const REQUEST_COMPRESS_CONTENTTYPE = { 'text/plain': true, 'text/javascript': true, 'text/css': true, 'text/jsx': true, 'application/x-javascript': true, 'application/json': true, 'text/xml': true, 'image/svg+xml': true, 'text/x-markdown': true, 'text/html': true };
-const TEMPORARY_KEY_REGEX = /\//g;
+const HEADER_CACHE = 'Cache-Control';
+const HEADER_TYPE = 'Content-Type';
+const HEADER_LENGTH = 'Content-Length';
+const CT_TEXT = 'text/plain';
+const CT_HTML = 'text/html';
+const CT_JSON = 'application/json';
+const COMPRESSION = { 'text/plain': true, 'text/javascript': true, 'text/css': true, 'text/jsx': true, 'application/x-javascript': true, 'application/json': true, 'text/xml': true, 'image/svg+xml': true, 'text/x-markdown': true, 'text/html': true };
+const REG_TEMPORARY = /\//g;
 const REG_MOBILE = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet/i;
 const REG_ROBOT = /search|agent|bot|crawler|spider/i;
 const REG_VERSIONS = /(href|src)="[a-zA-Z0-9\/\:\-\.]+\.(jpg|js|css|png|gif|svg|html|ico|json|less|sass|scss|swf|txt|webp|woff|woff2|xls|xlsx|xml|xsl|xslt|zip|rar|csv|doc|docx|eps|gzip|jpe|jpeg|manifest|mov|mp3|flac|mp4|ogg|package|pdf)"/gi;
@@ -61,9 +62,9 @@ const REG_HTTPHTTPS = /^(\/)?(http|https)\:\/\//i;
 const REG_NOCOMPRESS = /[\.|-]+min\.(css|js)$/i;
 const REG_TEXTAPPLICATION = /text|application/;
 const REG_ENCODINGCLEANER = /[\;\s]charset=utf\-8/g;
-const REQUEST_PROXY_FLAGS = ['post', 'json'];
-const REQUEST_INSTALL_FLAGS = ['get'];
-const REQUEST_DOWNLOAD_FLAGS = ['get', 'dnscache'];
+const FLAGS_PROXY = ['post', 'json'];
+const FLAGS_INSTALL = ['get'];
+const FLAGS_DOWNLOAD = ['get', 'dnscache'];
 const QUERYPARSEROPTIONS = { maxKeys: 69 };
 const EMPTYARRAY = [];
 const EMPTYOBJECT = {};
@@ -93,150 +94,157 @@ var HEADERS = {};
 var SUCCESSHELPER = { success: true };
 
 // Cached headers for repeated usage
-HEADERS['responseCode'] = {};
-HEADERS['responseCode'][RESPONSE_HEADER_CONTENTTYPE] = CONTENTTYPE_TEXTPLAIN;
-HEADERS['redirect'] = {};
-HEADERS['redirect'][RESPONSE_HEADER_CONTENTTYPE] = CONTENTTYPE_TEXTHTML + '; charset=utf-8';
-HEADERS['redirect'][RESPONSE_HEADER_CONTENTLENGTH] = '0';
-HEADERS['sse'] = {};
-HEADERS['sse'][RESPONSE_HEADER_CACHECONTROL] = 'no-cache, no-store, must-revalidate';
-HEADERS['sse']['Pragma'] = 'no-cache';
-HEADERS['sse']['Expires'] = '0';
-HEADERS['sse'][RESPONSE_HEADER_CONTENTTYPE] = 'text/event-stream';
-HEADERS['sse']['X-Powered-By'] = 'Total.js';
-HEADERS['mmr'] = {};
-HEADERS['mmr'][RESPONSE_HEADER_CACHECONTROL] = 'no-cache, no-store, must-revalidate';
-HEADERS['mmr']['Pragma'] = 'no-cache';
-HEADERS['mmr']['Expires'] = '0';
-HEADERS['mmr']['X-Powered-By'] = 'Total.js';
-HEADERS['proxy'] = {};
-HEADERS['proxy']['X-Proxy'] = 'total.js';
-HEADERS['file_lastmodified'] = {};
-HEADERS['file_lastmodified']['Access-Control-Allow-Origin'] = '*';
-HEADERS['file_lastmodified'][RESPONSE_HEADER_CACHECONTROL] = 'public, max-age=11111111';
-HEADERS['file_lastmodified']['X-Powered-By'] = 'Total.js';
-HEADERS['file_release_compress'] = {};
-HEADERS['file_release_compress'][RESPONSE_HEADER_CACHECONTROL] = 'public, max-age=11111111';
-HEADERS['file_release_compress']['Vary'] = 'Accept-Encoding';
-HEADERS['file_release_compress']['Access-Control-Allow-Origin'] = '*';
-HEADERS['file_release_compress']['Last-Modified'] = 'Mon, 01 Jan 2001 08:00:00 GMT';
-HEADERS['file_release_compress']['Content-Encoding'] = 'gzip';
-HEADERS['file_release_compress']['X-Powered-By'] = 'Total.js';
-HEADERS['file_release_compress_range'] = {};
-HEADERS['file_release_compress_range']['Accept-Ranges'] = 'bytes';
-HEADERS['file_release_compress_range'][RESPONSE_HEADER_CACHECONTROL] = 'public, max-age=11111111';
-HEADERS['file_release_compress_range']['Vary'] = 'Accept-Encoding';
-HEADERS['file_release_compress_range']['Access-Control-Allow-Origin'] = '*';
-HEADERS['file_release_compress_range']['Last-Modified'] = 'Mon, 01 Jan 2001 08:00:00 GMT';
-HEADERS['file_release_compress_range']['Content-Encoding'] = 'gzip';
-HEADERS['file_release_compress_range'][RESPONSE_HEADER_CONTENTLENGTH] = '0';
-HEADERS['file_release_compress_range']['Content-Range'] = '';
-HEADERS['file_release_compress_range']['X-Powered-By'] = 'Total.js';
-HEADERS['file_release'] = {};
-HEADERS['file_release'][RESPONSE_HEADER_CACHECONTROL] = 'public, max-age=11111111';
-HEADERS['file_release']['Vary'] = 'Accept-Encoding';
-HEADERS['file_release']['Access-Control-Allow-Origin'] = '*';
-HEADERS['file_release']['Last-Modified'] = 'Mon, 01 Jan 2001 08:00:00 GMT';
-HEADERS['file_release']['X-Powered-By'] = 'Total.js';
-HEADERS['file_release_range'] = {};
-HEADERS['file_release_range']['Accept-Ranges'] = 'bytes';
-HEADERS['file_release_range'][RESPONSE_HEADER_CACHECONTROL] = 'public, max-age=11111111';
-HEADERS['file_release_range']['Vary'] = 'Accept-Encoding';
-HEADERS['file_release_range']['Access-Control-Allow-Origin'] = '*';
-HEADERS['file_release_range']['Last-Modified'] = 'Mon, 01 Jan 2001 08:00:00 GMT';
-HEADERS['file_release_range'][RESPONSE_HEADER_CONTENTLENGTH] = '0';
-HEADERS['file_release_range']['Content-Range'] = '';
-HEADERS['file_release_range']['X-Powered-By'] = 'Total.js';
-HEADERS['file_debug_compress'] = {};
-HEADERS['file_debug_compress'][RESPONSE_HEADER_CACHECONTROL] = 'private, no-cache, no-store, must-revalidate';
-HEADERS['file_debug_compress']['Vary'] = 'Accept-Encoding';
-HEADERS['file_debug_compress']['Access-Control-Allow-Origin'] = '*';
-HEADERS['file_debug_compress']['Pragma'] = 'no-cache';
-HEADERS['file_debug_compress']['Expires'] = '0';
-HEADERS['file_debug_compress']['Content-Encoding'] = 'gzip';
-HEADERS['file_debug_compress']['X-Powered-By'] = 'Total.js';
-HEADERS['file_debug_compress_range'] = {};
-HEADERS['file_debug_compress_range']['Accept-Ranges'] = 'bytes';
-HEADERS['file_debug_compress_range'][RESPONSE_HEADER_CACHECONTROL] = 'private, no-cache, no-store, must-revalidate';
-HEADERS['file_debug_compress_range']['Vary'] = 'Accept-Encoding';
-HEADERS['file_debug_compress_range']['Access-Control-Allow-Origin'] = '*';
-HEADERS['file_debug_compress_range']['Content-Encoding'] = 'gzip';
-HEADERS['file_debug_compress_range']['Pragma'] = 'no-cache';
-HEADERS['file_debug_compress_range']['Expires'] = '0';
-HEADERS['file_debug_compress_range'][RESPONSE_HEADER_CONTENTLENGTH] = '0';
-HEADERS['file_debug_compress_range']['Content-Range'] = '';
-HEADERS['file_debug_compress_range']['X-Powered-By'] = 'Total.js';
-HEADERS['file_debug'] = {};
-HEADERS['file_debug'][RESPONSE_HEADER_CACHECONTROL] = 'private, no-cache, no-store, must-revalidate';
-HEADERS['file_debug']['Vary'] = 'Accept-Encoding';
-HEADERS['file_debug']['Pragma'] = 'no-cache';
-HEADERS['file_debug']['Expires'] = '0';
-HEADERS['file_debug']['Access-Control-Allow-Origin'] = '*';
-HEADERS['file_debug']['X-Powered-By'] = 'Total.js';
-HEADERS['file_debug_range'] = {};
-HEADERS['file_debug_range']['Accept-Ranges'] = 'bytes';
-HEADERS['file_debug_range'][RESPONSE_HEADER_CACHECONTROL] = 'private, no-cache, no-store, must-revalidate';
-HEADERS['file_debug_range']['Vary'] = 'Accept-Encoding';
-HEADERS['file_debug_range']['Access-Control-Allow-Origin'] = '*';
-HEADERS['file_debug_range']['Pragma'] = 'no-cache';
-HEADERS['file_debug_range']['Expires'] = '0';
-HEADERS['file_debug_range'][RESPONSE_HEADER_CONTENTLENGTH] = '0';
-HEADERS['file_debug_range']['Content-Range'] = '';
-HEADERS['file_debug_range']['X-Powered-By'] = 'Total.js';
-HEADERS['content_mobile_release'] = {};
-HEADERS['content_mobile_release']['Vary'] = 'Accept-Encoding, User-Agent';
-HEADERS['content_mobile_release']['Content-Encoding'] = 'gzip';
-HEADERS['content_mobile'] = {};
-HEADERS['content_mobile']['Vary'] = 'Accept-Encoding, User-Agent';
-HEADERS['content_mobile']['X-Powered-By'] = 'Total.js';
-HEADERS['content_compress'] = {};
-HEADERS['content_compress'][RESPONSE_HEADER_CACHECONTROL] = 'private';
-HEADERS['content_compress']['Vary'] = 'Accept-Encoding';
-HEADERS['content_compress']['Content-Encoding'] = 'gzip';
-HEADERS['content_compress']['X-Powered-By'] = 'Total.js';
-HEADERS['content'] = {};
-HEADERS['content']['Vary'] = 'Accept-Encoding';
-HEADERS['content']['X-Powered-By'] = 'Total.js';
-HEADERS['stream_release_compress'] = {};
-HEADERS['stream_release_compress'][RESPONSE_HEADER_CACHECONTROL] = 'public, max-age=11111111';
-HEADERS['stream_release_compress']['Access-Control-Allow-Origin'] = '*';
-HEADERS['stream_release_compress']['Content-Encoding'] = 'gzip';
-HEADERS['stream_release_compress']['X-Powered-By'] = 'Total.js';
-HEADERS['stream_release'] = {};
-HEADERS['stream_release'][RESPONSE_HEADER_CACHECONTROL] = 'public, max-age=11111111';
-HEADERS['stream_release']['Access-Control-Allow-Origin'] = '*';
-HEADERS['stream_release']['X-Powered-By'] = 'Total.js';
-HEADERS['stream_debug_compress'] = {};
-HEADERS['stream_debug_compress'][RESPONSE_HEADER_CACHECONTROL] = 'private, no-cache, no-store, must-revalidate';
-HEADERS['stream_debug_compress']['Pragma'] = 'no-cache';
-HEADERS['stream_debug_compress']['Expires'] = '0';
-HEADERS['stream_debug_compress']['Access-Control-Allow-Origin'] = '*';
-HEADERS['stream_debug_compress']['Content-Encoding'] = 'gzip';
-HEADERS['stream_debug_compress']['X-Powered-By'] = 'Total.js';
-HEADERS['stream_debug'] = {};
-HEADERS['stream_debug'][RESPONSE_HEADER_CACHECONTROL] = 'private, no-cache, no-store, must-revalidate';
-HEADERS['stream_debug']['Pragma'] = 'no-cache';
-HEADERS['stream_debug']['Expires'] = '0';
-HEADERS['stream_debug']['Access-Control-Allow-Origin'] = '*';
-HEADERS['stream_debug']['X-Powered-By'] = 'Total.js';
-HEADERS['binary_compress'] = {};
-HEADERS['binary_compress'][RESPONSE_HEADER_CACHECONTROL] = 'public';
-HEADERS['binary_compress']['Content-Encoding'] = 'gzip';
-HEADERS['binary_compress']['X-Powered-By'] = 'Total.js';
-HEADERS['binary'] = {};
-HEADERS['binary'][RESPONSE_HEADER_CACHECONTROL] = 'public';
-HEADERS['binary']['X-Powered-By'] = 'Total.js';
+HEADERS.responseCode = {};
+HEADERS.responseCode[HEADER_TYPE] = CT_TEXT;
+HEADERS.responseCode['X-Powered-By'] = 'Total.js';
+HEADERS.redirect = {};
+HEADERS.redirect[HEADER_TYPE] = CT_HTML + '; charset=utf-8';
+HEADERS.redirect[HEADER_LENGTH] = '0';
+HEADERS.sse = {};
+HEADERS.sse[HEADER_CACHE] = 'no-cache, no-store, must-revalidate';
+HEADERS.sse['Pragma'] = 'no-cache';
+HEADERS.sse['Expires'] = '0';
+HEADERS.sse[HEADER_TYPE] = 'text/event-stream';
+HEADERS.sse['X-Powered-By'] = 'Total.js';
+HEADERS.mmr = {};
+HEADERS.mmr[HEADER_CACHE] = 'no-cache, no-store, must-revalidate';
+HEADERS.mmr['Pragma'] = 'no-cache';
+HEADERS.mmr['Expires'] = '0';
+HEADERS.mmr['X-Powered-By'] = 'Total.js';
+HEADERS.proxy = {};
+HEADERS.proxy['X-Proxy'] = 'total.js';
+HEADERS.file_lastmodified = {};
+HEADERS.file_lastmodified['Access-Control-Allow-Origin'] = '*';
+HEADERS.file_lastmodified[HEADER_CACHE] = 'public, max-age=11111111';
+HEADERS.file_lastmodified['X-Powered-By'] = 'Total.js';
+HEADERS.file_release_compress = {};
+HEADERS.file_release_compress[HEADER_CACHE] = 'public, max-age=11111111';
+HEADERS.file_release_compress['Vary'] = 'Accept-Encoding';
+HEADERS.file_release_compress['Access-Control-Allow-Origin'] = '*';
+HEADERS.file_release_compress['Last-Modified'] = 'Mon, 01 Jan 2001 08:00:00 GMT';
+HEADERS.file_release_compress['Content-Encoding'] = 'gzip';
+HEADERS.file_release_compress['X-Powered-By'] = 'Total.js';
+HEADERS.file_release_compress_range = {};
+HEADERS.file_release_compress_range['Accept-Ranges'] = 'bytes';
+HEADERS.file_release_compress_range[HEADER_CACHE] = 'public, max-age=11111111';
+HEADERS.file_release_compress_range['Vary'] = 'Accept-Encoding';
+HEADERS.file_release_compress_range['Access-Control-Allow-Origin'] = '*';
+HEADERS.file_release_compress_range['Last-Modified'] = 'Mon, 01 Jan 2001 08:00:00 GMT';
+HEADERS.file_release_compress_range['Content-Encoding'] = 'gzip';
+HEADERS.file_release_compress_range[HEADER_LENGTH] = '0';
+HEADERS.file_release_compress_range['Content-Range'] = '';
+HEADERS.file_release_compress_range['X-Powered-By'] = 'Total.js';
+HEADERS.file_release = {};
+HEADERS.file_release[HEADER_CACHE] = 'public, max-age=11111111';
+HEADERS.file_release['Vary'] = 'Accept-Encoding';
+HEADERS.file_release['Access-Control-Allow-Origin'] = '*';
+HEADERS.file_release['Last-Modified'] = 'Mon, 01 Jan 2001 08:00:00 GMT';
+HEADERS.file_release['X-Powered-By'] = 'Total.js';
+HEADERS.file_release_range = {};
+HEADERS.file_release_range['Accept-Ranges'] = 'bytes';
+HEADERS.file_release_range[HEADER_CACHE] = 'public, max-age=11111111';
+HEADERS.file_release_range['Vary'] = 'Accept-Encoding';
+HEADERS.file_release_range['Access-Control-Allow-Origin'] = '*';
+HEADERS.file_release_range['Last-Modified'] = 'Mon, 01 Jan 2001 08:00:00 GMT';
+HEADERS.file_release_range[HEADER_LENGTH] = '0';
+HEADERS.file_release_range['Content-Range'] = '';
+HEADERS.file_release_range['X-Powered-By'] = 'Total.js';
+HEADERS.file_debug_compress = {};
+HEADERS.file_debug_compress[HEADER_CACHE] = 'private, no-cache, no-store, must-revalidate';
+HEADERS.file_debug_compress['Vary'] = 'Accept-Encoding';
+HEADERS.file_debug_compress['Access-Control-Allow-Origin'] = '*';
+HEADERS.file_debug_compress['Pragma'] = 'no-cache';
+HEADERS.file_debug_compress['Expires'] = '0';
+HEADERS.file_debug_compress['Content-Encoding'] = 'gzip';
+HEADERS.file_debug_compress['X-Powered-By'] = 'Total.js';
+HEADERS.file_debug_compress_range = {};
+HEADERS.file_debug_compress_range['Accept-Ranges'] = 'bytes';
+HEADERS.file_debug_compress_range[HEADER_CACHE] = 'private, no-cache, no-store, must-revalidate';
+HEADERS.file_debug_compress_range['Vary'] = 'Accept-Encoding';
+HEADERS.file_debug_compress_range['Access-Control-Allow-Origin'] = '*';
+HEADERS.file_debug_compress_range['Content-Encoding'] = 'gzip';
+HEADERS.file_debug_compress_range['Pragma'] = 'no-cache';
+HEADERS.file_debug_compress_range['Expires'] = '0';
+HEADERS.file_debug_compress_range[HEADER_LENGTH] = '0';
+HEADERS.file_debug_compress_range['Content-Range'] = '';
+HEADERS.file_debug_compress_range['X-Powered-By'] = 'Total.js';
+HEADERS.file_debug = {};
+HEADERS.file_debug[HEADER_CACHE] = 'private, no-cache, no-store, must-revalidate';
+HEADERS.file_debug['Vary'] = 'Accept-Encoding';
+HEADERS.file_debug['Pragma'] = 'no-cache';
+HEADERS.file_debug['Expires'] = '0';
+HEADERS.file_debug['Access-Control-Allow-Origin'] = '*';
+HEADERS.file_debug['X-Powered-By'] = 'Total.js';
+HEADERS.file_debug_range = {};
+HEADERS.file_debug_range['Accept-Ranges'] = 'bytes';
+HEADERS.file_debug_range[HEADER_CACHE] = 'private, no-cache, no-store, must-revalidate';
+HEADERS.file_debug_range['Vary'] = 'Accept-Encoding';
+HEADERS.file_debug_range['Access-Control-Allow-Origin'] = '*';
+HEADERS.file_debug_range['Pragma'] = 'no-cache';
+HEADERS.file_debug_range['Expires'] = '0';
+HEADERS.file_debug_range[HEADER_LENGTH] = '0';
+HEADERS.file_debug_range['Content-Range'] = '';
+HEADERS.file_debug_range['X-Powered-By'] = 'Total.js';
+HEADERS.content_mobile_release = {};
+HEADERS.content_mobile_release['Vary'] = 'Accept-Encoding, User-Agent';
+HEADERS.content_mobile_release['Content-Encoding'] = 'gzip';
+HEADERS.content_mobile = {};
+HEADERS.content_mobile['Vary'] = 'Accept-Encoding, User-Agent';
+HEADERS.content_mobile['X-Powered-By'] = 'Total.js';
+HEADERS.content_compress = {};
+HEADERS.content_compress[HEADER_CACHE] = 'private';
+HEADERS.content_compress['Vary'] = 'Accept-Encoding';
+HEADERS.content_compress['Content-Encoding'] = 'gzip';
+HEADERS.content_compress['X-Powered-By'] = 'Total.js';
+HEADERS.content = {};
+HEADERS.content['Vary'] = 'Accept-Encoding';
+HEADERS.content['X-Powered-By'] = 'Total.js';
+HEADERS.stream_release_compress = {};
+HEADERS.stream_release_compress[HEADER_CACHE] = 'public, max-age=11111111';
+HEADERS.stream_release_compress['Access-Control-Allow-Origin'] = '*';
+HEADERS.stream_release_compress['Content-Encoding'] = 'gzip';
+HEADERS.stream_release_compress['X-Powered-By'] = 'Total.js';
+HEADERS.stream_release = {};
+HEADERS.stream_release[HEADER_CACHE] = 'public, max-age=11111111';
+HEADERS.stream_release['Access-Control-Allow-Origin'] = '*';
+HEADERS.stream_release['X-Powered-By'] = 'Total.js';
+HEADERS.stream_debug_compress = {};
+HEADERS.stream_debug_compress[HEADER_CACHE] = 'private, no-cache, no-store, must-revalidate';
+HEADERS.stream_debug_compress['Pragma'] = 'no-cache';
+HEADERS.stream_debug_compress['Expires'] = '0';
+HEADERS.stream_debug_compress['Access-Control-Allow-Origin'] = '*';
+HEADERS.stream_debug_compress['Content-Encoding'] = 'gzip';
+HEADERS.stream_debug_compress['X-Powered-By'] = 'Total.js';
+HEADERS.stream_debug = {};
+HEADERS.stream_debug[HEADER_CACHE] = 'private, no-cache, no-store, must-revalidate';
+HEADERS.stream_debug['Pragma'] = 'no-cache';
+HEADERS.stream_debug['Expires'] = '0';
+HEADERS.stream_debug['Access-Control-Allow-Origin'] = '*';
+HEADERS.stream_debug['X-Powered-By'] = 'Total.js';
+HEADERS.binary_compress = {};
+HEADERS.binary_compress[HEADER_CACHE] = 'public';
+HEADERS.binary_compress['Content-Encoding'] = 'gzip';
+HEADERS.binary_compress['X-Powered-By'] = 'Total.js';
+HEADERS.binary = {};
+HEADERS.binary[HEADER_CACHE] = 'public';
+HEADERS.binary['X-Powered-By'] = 'Total.js';
 HEADERS.authorization = { user: '', password: '', empty: true };
 HEADERS.fsStreamRead = { flags: 'r', mode: '0666', autoClose: true };
 HEADERS.fsStreamReadRange = { flags: 'r', mode: '0666', autoClose: true, start: 0, end: 0 };
 HEADERS.workers = { cwd: '' };
 HEADERS.mmrpipe = { end: false };
-HEADERS['responseLocalize'] = {};
-HEADERS['responseNotModified'] = {};
-HEADERS['responseNotModified'][RESPONSE_HEADER_CACHECONTROL] = 'public, max-age=11111111';
-HEADERS['response503'] = {};
-HEADERS['response503'][RESPONSE_HEADER_CACHECONTROL] = 'private, no-cache, no-store, must-revalidate';
-HEADERS['response503'][RESPONSE_HEADER_CONTENTTYPE] = CONTENTTYPE_TEXTHTML;
+HEADERS.responseLocalize = {};
+HEADERS.responseNotModified = {};
+HEADERS.responseNotModified[HEADER_CACHE] = 'public, max-age=11111111';
+HEADERS.responseNotModified['X-Powered-By'] = 'Total.js';
+HEADERS.response503 = {};
+HEADERS.response503[HEADER_CACHE] = 'private, no-cache, no-store, must-revalidate';
+HEADERS.response503[HEADER_TYPE] = CT_HTML;
+HEADERS.response503['X-Powered-By'] = 'Total.js';
+HEADERS.notModifiedEtag = {};
+HEADERS.notModifiedEtag['X-Powered-By'] = 'Total.js';
+HEADERS.notModifiedLastModifiedDate = {};
+HEADERS.notModifiedLastModifiedDate['X-Powered-By'] = 'Total.js';
 
 Object.freeze(HEADERS.authorization);
 
@@ -3190,7 +3198,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 		if (declaration.startsWith('http://') || declaration.startsWith('https://')) {
 			if (type === 'package') {
 				F.consoledebug('download', type, declaration);
-				U.download(declaration, REQUEST_INSTALL_FLAGS, function(err, response) {
+				U.download(declaration, FLAGS_INSTALL, function(err, response) {
 
 					if (err) {
 						F.error(err, 'F.install(\'{0}\', \'{1}\')'.format(type, declaration), null);
@@ -3224,7 +3232,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 			}
 
 			F.consoledebug('download', type, declaration);
-			U.request(declaration, REQUEST_INSTALL_FLAGS, function(err, data, code) {
+			U.request(declaration, FLAGS_INSTALL, function(err, data, code) {
 
 				if (code !== 200 && !err)
 					err = new Error(data);
@@ -4568,7 +4576,7 @@ F.download = F.snapshot = function(url, filename, callback) {
 		url = 'http://' + (F.ip === 'auto' ? '0.0.0.0' : F.ip) + ':' + F.port + url;
 	}
 
-	U.download(url, REQUEST_INSTALL_FLAGS, function(err, response) {
+	U.download(url, FLAGS_INSTALL, function(err, response) {
 
 		if (err) {
 			callback && callback(err);
@@ -5103,7 +5111,7 @@ F.compile_merge = function(res) {
 		}
 
 		if (filename.startsWith('http://') || filename.startsWith('https://')) {
-			U.request(filename, REQUEST_DOWNLOAD_FLAGS, function(err, data) {
+			U.request(filename, FLAGS_DOWNLOAD, function(err, data) {
 
 				var output = F.compile_content(req.extension, framework_internal.parseBlock(block, data), filename);
 
@@ -5548,8 +5556,19 @@ F.notModified = function(req, res, compare, strict) {
 		}
 	}
 
+
+	var headers;
+
+	if (isEtag) {
+		headers = HEADERS.notModifiedEtag;
+		headers['Etag'] = val;
+	} else {
+		headers = HEADERS.notModifiedLastModifiedDate;
+		headers['Last-Modified'] = val;
+	}
+
 	res.success = true;
-	res.writeHead(304);
+	res.writeHead(304, headers);
 	res.end();
 
 	F.stats.response.notModified++;
@@ -6900,7 +6919,7 @@ F.assert = function(name, url, flags, callback, data, cookies, headers) {
 					break;
 
 				case 'json':
-					headers['Content-Type'] = 'application/json';
+					headers['Content-Type'] = CT_JSON;
 					break;
 
 				case 'xml':
@@ -7094,13 +7113,13 @@ F.testing = function(stop, callback) {
 		test.data = test.data();
 
 	if (typeof(test.data) !== 'string')
-		test.data = (test.headers[RESPONSE_HEADER_CONTENTTYPE] || '').indexOf('json') !== -1 ? JSON.stringify(test.data) : Qs.stringify(test.data);
+		test.data = (test.headers[HEADER_TYPE] || '').indexOf('json') !== -1 ? JSON.stringify(test.data) : Qs.stringify(test.data);
 
 	var buf;
 
 	if (test.data && test.data.length) {
 		buf = U.createBuffer(test.data);
-		test.headers[RESPONSE_HEADER_CONTENTLENGTH] = buf.length;
+		test.headers[HEADER_LENGTH] = buf.length;
 	}
 
 	options.method = test.method;
@@ -9083,7 +9102,7 @@ Subscribe.prototype.execute = function(status, isError) {
 			res.$text();
 		} else {
 			res.options.body = U.httpStatus(status) + prepare_error(self.exception);
-			res.options.type = CONTENTTYPE_TEXTPLAIN;
+			res.options.type = CT_TEXT;
 			res.options.code = status || 404;
 			res.$text();
 		}
@@ -11453,12 +11472,13 @@ Controller.prototype.json = function(obj, headers, beautify, replacer) {
 	}
 
 	res.options.code = self.status;
-	res.options.type = 'application/json';
+	res.options.type = CT_JSON;
 	res.options.headers = headers;
 
 	// Checks the HEAD method
 	if (self.req.method === 'HEAD') {
 		res.options.body = EMPTYBUFFER;
+		res.options.type = CT_JSON;
 		res.$text();
 		F.stats.response.json++;
 		return self;
@@ -11466,10 +11486,12 @@ Controller.prototype.json = function(obj, headers, beautify, replacer) {
 
 	if (obj instanceof framework_builders.ErrorBuilder) {
 		self.req.$language && !obj.isResourceCustom && obj.setResource(self.req.$language);
-		obj.contentType && (res.options.type = obj.contentType);
+		if (obj.contentType)
+			res.options.type = obj.contentType;
+		else
+			res.options.type =
 		obj = obj.output();
 		F.stats.response.errorBuilder++;
-
 	} else {
 
 		if (framework_builders.isSchema(obj))
@@ -11599,15 +11621,18 @@ Controller.prototype.content = function(body, type, headers) {
 	var res = self.res;
 
 	res.options.code = self.status;
-	res.options.type = type || CONTENTTYPE_TEXTPLAIN;
 	res.options.headers = headers;
 
 	if (body instanceof ErrorBuilder) {
 		var tmp = body.output();
-		!type && (type = body.contentType || 'application/json');
+		if (body.contentType)
+			res.options.type = body.contentType;
+		else
+			res.options.type = CT_JSON;
 		body = tmp;
 		F.stats.response.errorBuilder++;
-	}
+	} else
+		res.options.type = type || CT_TEXT;
 
 	res.options.body = body;
 	res.$text();
@@ -11633,7 +11658,7 @@ Controller.prototype.plain = function(body, headers) {
 
 	res.options.code = self.status;
 	res.options.headers = headers;
-	res.options.type = CONTENTTYPE_TEXTPLAIN;
+	res.options.type = CT_TEXT;
 
 	// Checks the HEAD method
 	if (self.req.method === 'HEAD') {
@@ -11679,7 +11704,7 @@ Controller.prototype.empty = function(headers) {
 	res.options.code = self.status;
 	res.options.headers = headers;
 	res.options.body = EMPTYBUFFER;
-	res.options.type = CONTENTTYPE_TEXTPLAIN;
+	res.options.type = CT_TEXT;
 	res.options.compress = false;
 	res.$text();
 	F.stats.response.empty++;
@@ -11905,7 +11930,7 @@ Controller.prototype.baa = function(label) {
 	res.options.body = '401: NOT AUTHORIZED';
 	res.options.compress = false;
 	res.options.headers = headers;
-	res.options.type = CONTENTTYPE_TEXTPLAIN;
+	res.options.type = CT_TEXT;
 	res.$text();
 	self.cancel();
 	return null;
@@ -11995,11 +12020,11 @@ Controller.prototype.mmr = function(name, stream, callback) {
 		self.subscribe.success();
 		self.req.on('close', () => self.close());
 		res.success = true;
-		HEADERS.mmr[RESPONSE_HEADER_CONTENTTYPE] = 'multipart/x-mixed-replace; boundary=' + self.boundary;
+		HEADERS.mmr[HEADER_TYPE] = 'multipart/x-mixed-replace; boundary=' + self.boundary;
 		res.writeHead(self.status, HEADERS.mmr);
 	}
 
-	res.write('--' + self.boundary + NEWLINE + RESPONSE_HEADER_CONTENTTYPE + ': ' + U.getContentType(U.getExtension(name)) + NEWLINE + NEWLINE);
+	res.write('--' + self.boundary + NEWLINE + HEADER_TYPE + ': ' + U.getContentType(U.getExtension(name)) + NEWLINE + NEWLINE);
 	F.stats.response.mmr++;
 
 	if (typeof(stream) === 'string')
@@ -12073,7 +12098,7 @@ Controller.prototype.proxy = function(url, obj, callback, timeout) {
 		obj = tmp;
 	}
 
-	return U.request(url, REQUEST_PROXY_FLAGS, obj, function(err, data, code, headers) {
+	return U.request(url, FLAGS_PROXY, obj, function(err, data, code, headers) {
 		if (!callback)
 			return;
 		if ((headers['content-type'] || '').lastIndexOf('/json') !== -1)
@@ -12107,7 +12132,7 @@ Controller.prototype.proxy2 = function(url, callback, headers, timeout) {
 	flags.push(req.method);
 	flags.push('dnscache');
 
-	if (type === 'application/json')
+	if (type === CT_JSON)
 		flags.push('json');
 
 	var c = req.method[0];
@@ -12312,7 +12337,7 @@ Controller.prototype.$viewrender = function(filename, generator, model, headers,
 	}
 
 	if (!isLayout && self.precache && self.status === 200 && !partial)
-		self.precache(value, CONTENTTYPE_TEXTHTML, headers, true);
+		self.precache(value, CT_HTML, headers, true);
 
 	if (isLayout || !self.layoutName) {
 
@@ -12331,7 +12356,7 @@ Controller.prototype.$viewrender = function(filename, generator, model, headers,
 		var res = self.res;
 		res.options.body = value;
 		res.options.code = self.status;
-		res.options.type = CONTENTTYPE_TEXTHTML;
+		res.options.type = CT_HTML;
 		res.options.headers = headers;
 		res.$text();
 		F.stats.response.view++;
@@ -12395,20 +12420,20 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
 	res.options.headers = output.headers;
 	res.options.body = output.content;
 
-	if (output.type !== CONTENTTYPE_TEXTHTML) {
+	if (output.type !== CT_HTML) {
 		fnFrom && fnFrom.call(self);
 		res.$text();
 		return;
 	}
 
 	switch (output.type) {
-		case CONTENTTYPE_TEXTPLAIN:
+		case CT_TEXT:
 			F.stats.response.plain++;
 			return self;
-		case 'application/json':
+		case CT_JSON:
 			F.stats.response.json++;
 			return self;
-		case CONTENTTYPE_TEXTHTML:
+		case CT_HTML:
 			F.stats.response.view++;
 			break;
 	}
@@ -12454,7 +12479,7 @@ Controller.prototype.$memorize_prepare = function(key, expires, disabled, fnTo, 
 			return;
 		}
 
-		var options = { content: value, type: contentType || CONTENTTYPE_TEXTPLAIN, layout: self.layoutName, theme: self.themeName };
+		var options = { content: value, type: contentType || CT_TEXT, layout: self.layoutName, theme: self.themeName };
 		if (headers)
 			options.headers = headers;
 
@@ -13643,7 +13668,7 @@ http.ServerResponse.prototype.cookie = function(name, value, expires, options) {
  */
 http.ServerResponse.prototype.noCache = function() {
 	var self = this;
-	self.removeHeader(RESPONSE_HEADER_CACHECONTROL);
+	self.removeHeader(HEADER_CACHE);
 	self.removeHeader('Etag');
 	self.removeHeader('Last-Modified');
 	return self;
@@ -13694,8 +13719,7 @@ http.ServerResponse.prototype.send = function(code, body, type) {
 					F.stats.response.errorBuilder++;
 				} else
 					body = JSON.stringify(body);
-				if (!contentType)
-					contentType = 'application/json';
+				!contentType && (contentType = CT_JSON);
 			}
 			break;
 	}
@@ -13703,17 +13727,17 @@ http.ServerResponse.prototype.send = function(code, body, type) {
 	var accept = req.headers['accept-encoding'] || '';
 	var headers = {};
 
-	headers[RESPONSE_HEADER_CACHECONTROL] = 'private';
+	headers[HEADER_CACHE] = 'private';
 	headers['Vary'] = 'Accept-Encoding' + (req.$mobile ? ', User-Agent' : '');
 
 	// Safari resolve
-	if (contentType === 'application/json')
-		headers[RESPONSE_HEADER_CACHECONTROL] = 'private, no-cache, no-store, must-revalidate';
+	if (contentType === CT_JSON)
+		headers[HEADER_CACHE] = 'private, no-cache, no-store, must-revalidate';
 
 	if ((/text|application/).test(contentType))
 		contentType += '; charset=utf-8';
 
-	headers[RESPONSE_HEADER_CONTENTTYPE] = contentType;
+	headers[HEADER_TYPE] = contentType;
 	res.$custom();
 
 	if (!accept && isGZIP(req))
@@ -13852,7 +13876,7 @@ http.ServerResponse.prototype.proxy = function(url, headers, timeout, callback) 
 
 		var headers = {};
 
-		headers[RESPONSE_HEADER_CACHECONTROL] = 'private';
+		headers[HEADER_CACHE] = 'private';
 		res.options.headers && U.extend_headers2(headers, res.options.headers);
 
 		var options = { protocol: uri.protocol, auth: uri.auth, method: 'GET', hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: headers };
@@ -13870,7 +13894,7 @@ http.ServerResponse.prototype.proxy = function(url, headers, timeout, callback) 
 			var attachment = response.headers['content-disposition'] || '';
 
 			attachment && res.setHeader('Content-Disposition', attachment);
-			res.setHeader(RESPONSE_HEADER_CONTENTTYPE, contentType);
+			res.setHeader(HEADER_TYPE, contentType);
 			res.setHeader('Vary', 'Accept-Encoding' + (res.req.$mobile ? ', User-Agent' : ''));
 
 			res.on('error', function() {
@@ -13945,7 +13969,7 @@ http.ServerResponse.prototype.json = function(obj) {
 	var res = this;
 	F.stats.response.json++;
 	res.options.body = JSON.stringify(obj);
-	res.options.type = 'application/json';
+	res.options.type = CT_JSON;
 	return res.$text();
 };
 
@@ -14022,7 +14046,7 @@ http.ServerResponse.prototype.continue = function(callback) {
 
 	F.temporary.processing[req.uri.pathname] = true;
 
-	U.download(name, REQUEST_DOWNLOAD_FLAGS, function(err, response) {
+	U.download(name, FLAGS_DOWNLOAD, function(err, response) {
 		var writer = Fs.createWriteStream(tmp);
 		response.pipe(writer);
 		CLEANUP(writer, function() {
@@ -14119,7 +14143,7 @@ http.ServerResponse.prototype.$file = function() {
 
 	!accept && isGZIP(req) && (accept = 'gzip');
 
-	var compress = F.config['allow-gzip'] && REQUEST_COMPRESS_CONTENTTYPE[contentType] && accept.indexOf('gzip') !== -1;
+	var compress = F.config['allow-gzip'] && COMPRESSION[contentType] && accept.indexOf('gzip') !== -1;
 	var range = req.headers.range;
 	var canCache = RELEASE && contentType !== 'text/cache-manifest';
 
@@ -14140,9 +14164,9 @@ http.ServerResponse.prototype.$file = function() {
 	else
 		headers.Vary = 'Accept-Encoding';
 
-	headers[RESPONSE_HEADER_CONTENTTYPE] = contentType;
+	headers[HEADER_TYPE] = contentType;
 	if (REG_TEXTAPPLICATION.test(contentType))
-		headers[RESPONSE_HEADER_CONTENTTYPE] += '; charset=utf-8';
+		headers[HEADER_TYPE] += '; charset=utf-8';
 
 	if (canCache && !res.getHeader('Expires'))
 		headers.Expires = DATE_EXPIRES;
@@ -14172,9 +14196,9 @@ http.ServerResponse.prototype.$file = function() {
 	DEBUG && F.isProcessed(req.$key) && (F.temporary.path[req.$key] = undefined);
 
 	if (name[1] && !compress)
-		headers[RESPONSE_HEADER_CONTENTLENGTH] = name[1];
-	else if (headers[RESPONSE_HEADER_CONTENTLENGTH])
-		delete headers[RESPONSE_HEADER_CONTENTLENGTH];
+		headers[HEADER_LENGTH] = name[1];
+	else if (headers[HEADER_LENGTH])
+		delete headers[HEADER_LENGTH];
 
 	F.stats.response.file++;
 
@@ -14214,7 +14238,7 @@ function $file_notmodified(res, name) {
 	else
 		headers.Etag = ETAG + F.config['etag-version'];
 
-	headers[RESPONSE_HEADER_CONTENTTYPE] = U.getContentType(req.extension);
+	headers[HEADER_TYPE] = U.getContentType(req.extension);
 	res.writeHead(304, headers);
 	res.end();
 	F.stats.response.notModified++;
@@ -14261,7 +14285,7 @@ function $file_range(name, range, headers, res) {
 
 	var length = (end - beg) + 1;
 
-	headers[RESPONSE_HEADER_CONTENTLENGTH] = length;
+	headers[HEADER_LENGTH] = length;
 	headers['Content-Range'] = 'bytes ' + beg + '-' + end + '/' + total;
 
 	var req = res;
@@ -14336,7 +14360,7 @@ http.ServerResponse.prototype.$binary = function() {
 	var accept = req.headers['accept-encoding'] || '';
 	!accept && isGZIP(req) && (accept = 'gzip');
 
-	var compress = F.config['allow-gzip'] && REQUEST_COMPRESS_CONTENTTYPE[options.type] && accept.indexOf('gzip') !== -1;
+	var compress = F.config['allow-gzip'] && COMPRESSION[options.type] && accept.indexOf('gzip') !== -1;
 	var headers = compress ? HEADERS.binary_compress : HEADERS.binary;
 
 	headers['Vary'] = 'Accept-Encoding' + (req.$mobile ? ', User-Agent' : '');
@@ -14346,7 +14370,7 @@ http.ServerResponse.prototype.$binary = function() {
 	else if (headers['Content-Disposition'])
 		delete headers['Content-Disposition'];
 
-	headers[RESPONSE_HEADER_CONTENTTYPE] = options.type;
+	headers[HEADER_TYPE] = options.type;
 
 	if (options.headers)
 		headers = U.extend_headers(headers, options.headers);
@@ -14395,7 +14419,7 @@ http.ServerResponse.prototype.$stream = function() {
 	var accept = req.headers['accept-encoding'] || '';
 	!accept && isGZIP(req) && (accept = 'gzip');
 
-	var compress = (options.compress === undefined || options.compress) && F.config['allow-gzip'] && REQUEST_COMPRESS_CONTENTTYPE[options.type] && accept.indexOf('gzip') !== -1;
+	var compress = (options.compress === undefined || options.compress) && F.config['allow-gzip'] && COMPRESSION[options.type] && accept.indexOf('gzip') !== -1;
 	var headers;
 
 	if (RELEASE) {
@@ -14422,7 +14446,7 @@ http.ServerResponse.prototype.$stream = function() {
 	else if (headers['Content-Disposition'])
 		delete headers['Content-Disposition'];
 
-	headers[RESPONSE_HEADER_CONTENTTYPE] = options.type;
+	headers[HEADER_TYPE] = options.type;
 
 	if (options.headers)
 		headers = U.extend_headers(headers, options.headers);
@@ -14680,15 +14704,15 @@ http.ServerResponse.prototype.$text = function() {
 		headers = gzip ? HEADERS.content_compress : HEADERS.content;
 
 	// Safari resolve
-	if (options.type === 'application/json')
-		headers[RESPONSE_HEADER_CACHECONTROL] = 'private, no-cache, no-store, must-revalidate';
+	if (options.type === CT_JSON)
+		headers[HEADER_CACHE] = 'private, no-cache, no-store, must-revalidate';
 	else
-		headers[RESPONSE_HEADER_CACHECONTROL] = 'private';
+		headers[HEADER_CACHE] = 'private';
 
 	if (REG_TEXTAPPLICATION.test(options.type))
 		options.type += '; charset=utf-8';
 
-	headers[RESPONSE_HEADER_CONTENTTYPE] = options.type;
+	headers[HEADER_TYPE] = options.type;
 
 	if (options.headers)
 		headers = U.extend_headers(headers, options.headers);
@@ -14876,7 +14900,7 @@ function response_end(res) {
 	res.req.clear(true);
 	res.controller && res.controller.subscribe.success();
 	res.options.callback && res.options.callback();
-	res.options = EMPTYOBJECT;
+	// res.options = EMPTYOBJECT;
 	res.controller = null;
 }
 
@@ -15108,7 +15132,7 @@ function fsStreamRead(filename, options, callback, req, res) {
  * @return {String}
  */
 function createTemporaryKey(req) {
-	return (req.uri ? req.uri.pathname : req).replace(TEMPORARY_KEY_REGEX, '-').substring(1);
+	return (req.uri ? req.uri.pathname : req).replace(REG_TEMPORARY, '-').substring(1);
 }
 
 process.on('SIGTERM', () => F.stop());
