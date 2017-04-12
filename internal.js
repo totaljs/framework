@@ -1534,23 +1534,13 @@ MultipartParser.prototype.write = function(buffer) {
 };
 
 MultipartParser.prototype.end = function() {
-
-	var self = this;
-
-	var callback = function(self, name) {
-		var callbackSymbol = 'on' + name.substr(0, 1).toUpperCase() + name.substr(1);
-		if (callbackSymbol in self)
-			self[callbackSymbol]();
-	};
-
-	if ((self.state === S.HEADER_FIELD_START && self.index === 0) ||
-		(self.state === S.PART_DATA && self.index == self.boundary.length)) {
-		callback(self, 'partEnd');
-		callback(self, 'end');
-	} else if (self.state != S.END) {
-		callback(self, 'partEnd');
-		callback(self, 'end');
-		return new Error('MultipartParser.end(): stream ended unexpectedly: ' + self.explain());
+	if ((this.state === S.HEADER_FIELD_START && this.index === 0) || (this.state === S.PART_DATA && this.index == this.boundary.length)) {
+		this.onPartEnd && this.onPartEnd();
+		this.onEnd && this.onEnd();
+	} else if (this.state != S.END) {
+		this.onPartEnd && this.onPartEnd();
+		this.onEnd && this.onEnd();
+		return new Error('MultipartParser.end(): stream ended unexpectedly: ' + this.explain());
 	}
 };
 
