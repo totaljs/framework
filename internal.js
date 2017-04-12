@@ -272,7 +272,6 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 		} else {
 			rm && F.unlink(rm);
 			subscribe.doEnd();
-			req.buffer_parser = null;
 		}
 	};
 
