@@ -52,6 +52,7 @@
 - fixed: NoSQL comparing dates `equal` in `where` condition
 - fixed: a problem with `booting` packages if are used custom paths (by @harry-stot)
 - fixed: JavaScript compression
+- fixed: `allow-compile-style` for inline CSS in views
 
 - improved: events
 - improved: parsing data from requests

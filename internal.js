@@ -70,6 +70,8 @@ const REG_CSS_6 = /\,\s{1,}/g;
 const REG_CSS_7 = /\s\}/g;
 const REG_CSS_8 = /\s\{/g;
 const REG_CSS_9 = /\;\}/g;
+const REG_CSS_10 = /\$[a-z0-9-_]+\:.*?;/gi;
+const REG_CSS_11 = /\$[a-z0-9-_]+/gi;
 const AUTOVENDOR = ['filter', 'appearance', 'column-count', 'column-gap', 'column-rule', 'display', 'transform', 'transform-style', 'transform-origin', 'transition', 'user-select', 'animation', 'perspective', 'animation-name', 'animation-duration', 'animation-timing-function', 'animation-delay', 'animation-iteration-count', 'animation-direction', 'animation-play-state', 'opacity', 'background', 'background-image', 'font-smoothing', 'text-size-adjust', 'backface-visibility', 'box-sizing', 'overflow-scrolling'];
 const WRITESTREAM = { flags: 'w' };
 const EMPTYBUFFER = framework_utils.createBufferSize(0);
@@ -2360,6 +2362,9 @@ function compressJS(html, index, filename) {
 
 function compressCSS(html, index, filename) {
 
+	if (!F.config['allow-compile-style'])
+		return html;
+
 	var strFrom = '<style type="text/css">';
 	var strTo = '</style>';
 
@@ -2389,7 +2394,7 @@ function variablesCSS(content) {
 
 	var variables = {};
 
-	content = content.replace(/\$[a-z0-9-_]+\:.*?;/gi, function(text) {
+	content = content.replace(REG_CSS_10, function(text) {
 		var index = text.indexOf(':');
 		if (index === -1)
 			return text;
@@ -2398,7 +2403,7 @@ function variablesCSS(content) {
 		return '';
 	});
 
-	content = content.replace(/\$[a-z0-9-_]+/gi, function(text) {
+	content = content.replace(REG_CSS_11, function(text) {
 		var variable = variables[text];
 		return variable ? variable : text;
 	}).trim();
