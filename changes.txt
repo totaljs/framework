@@ -44,6 +44,7 @@
 - updated: `U.request()` add a new flag `noredirect`
 - updated: `F.exists(req, res, [max], callback(next, filename, req, res))` added a new arguments into the callback `req` and `res`
 - updated: `F.memorize()` uses `themeName` as a part of the cache key
+- updated: `debug.js` (missing `startup` directory)
 
 - fixed: config `static-accepts` (it didn't work)
 - fixed: routing with `upload` flag
