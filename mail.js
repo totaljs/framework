@@ -28,7 +28,6 @@
 
 const Net = require('net');
 const Tls = require('tls');
-const Events = require('events');
 const Fs = require('fs');
 
 const CRLF = '\r\n';
@@ -281,13 +280,6 @@ Message.prototype.attachmentInline = function(filename, name, contentId) {
 	return this;
 };
 
-/**
- * Send e-mail
- * @param {String} smtp SMTP server / hostname.
- * @param {Object} options Options (optional).
- * @param {Function(err)} fnCallback
- * @return {Message}
- */
 Message.prototype.send = function(smtp, options, callback) {
 	mailer.send(smtp, options, this, callback);
 	return this;
@@ -301,7 +293,7 @@ Mailer.prototype.switchToTLS = function(obj, options) {
 	obj.socket.removeAllListeners();
 
 	var opt = framework_utils.copy(options.tls, { socket: obj.socket, host: obj.socket.$host, ciphers: 'SSLv3' });
-	obj.socket2 = Tls.connect(opt, () => self._send(obj, options, true));
+	obj.socket2 = Tls.connect(opt, () => self.$send(obj, options, true));
 
 	obj.socket2.on('error', function(err) {
 		mailer.destroy(obj);
@@ -320,7 +312,7 @@ Mailer.prototype.switchToTLS = function(obj, options) {
 		mailer.$events.error && !obj.try && mailer.emit('error', err, obj);
 	});
 
-	obj.socket2.on('connect', () => !options.secure && self._send(obj, options));
+	obj.socket2.on('connect', () => !options.secure && self.$send(obj, options));
 };
 
 Mailer.prototype.destroy = function(obj) {
@@ -349,17 +341,11 @@ Mailer.prototype.destroy = function(obj) {
 	return this;
 };
 
-/**
- * Internal: Write attachment into the current socket
- * @param  {Function} write  Write function.
- * @param  {String} boundary Boundary.
- * @param  {Socket} socket   Current socket.
- */
-Mailer.prototype._writeattachment = function(obj) {
+Mailer.prototype.$writeattachment = function(obj) {
 
 	var attachment = obj.files ? obj.files.shift() : false;
 	if (!attachment) {
-		mailer._writeline(obj, '--' + obj.boundary + '--', '', '.');
+		mailer.$writeline(obj, '--' + obj.boundary + '--', '', '.');
 		return this;
 	}
 
@@ -382,32 +368,37 @@ Mailer.prototype._writeattachment = function(obj) {
 	message.push('Content-Type: ' + extension + ';' + (isCalendar ? ' charset="utf-8"; method=REQUEST' : ''));
 	message.push('Content-Transfer-Encoding: base64');
 	message.push(CRLF);
-	mailer._writeline(obj, message.join(CRLF));
+	mailer.$writeline(obj, message.join(CRLF));
 
-	stream.on('data', function(buf) {
-
-		var length = buf.length;
-		var count = 0;
-		var beg = 0;
-
-		while (count < length) {
-
-			count += 68;
-			if (count > length)
-				count = length;
-
-			mailer._writeline(obj, buf.slice(beg, count).toString('base64'));
-			beg = count;
-		}
-	});
+	stream.$mailer = mailer;
+	stream.$mailerobj = obj;
+	stream.on('data', writeattachment_data);
 
 	CLEANUP(stream, function() {
-		mailer._writeline(obj, CRLF);
-		mailer._writeattachment(obj);
+		mailer.$writeline(obj, CRLF);
+		mailer.$writeattachment(obj);
 	});
 
 	return this;
 };
+
+function writeattachment_data(chunk) {
+
+	var length = chunk.length;
+	var count = 0;
+	var beg = 0;
+
+	while (count < length) {
+
+		count += 68;
+
+		if (count > length)
+			count = length;
+
+		this.$mailer.$writeline(this.$mailerobj, chunk.slice(beg, count).toString('base64'));
+		beg = count;
+	}
+}
 
 Mailer.prototype.try = function(smtp, options, callback) {
 	return this.send(smtp, options, undefined, callback);
@@ -474,7 +465,7 @@ Mailer.prototype.send = function(smtp, options, messages, callback) {
 	if (options.secure) {
 		var internal = framework_utils.copy(options);
 		internal.host = smtp;
-		obj.socket = Tls.connect(internal, () => mailer._send(obj, options));
+		obj.socket = Tls.connect(internal, () => mailer.$send(obj, options));
 	} else
 		obj.socket = Net.createConnection(options.port, smtp);
 
@@ -496,11 +487,11 @@ Mailer.prototype.send = function(smtp, options, messages, callback) {
 		mailer.$events.error && !obj.try && mailer.emit('error', err, obj);
 	});
 
-	obj.socket.on('connect', () => !options.secure && mailer._send(obj, options));
+	obj.socket.on('connect', () => !options.secure && mailer.$send(obj, options));
 	return self;
 };
 
-Mailer.prototype._writemessage = function(obj, buffer) {
+Mailer.prototype.$writemessage = function(obj, buffer) {
 
 	var self = this;
 	var msg = obj.messages.shift();
@@ -598,7 +589,7 @@ Mailer.prototype._writemessage = function(obj, buffer) {
 	return self;
 };
 
-Mailer.prototype._writeline = function(obj) {
+Mailer.prototype.$writeline = function(obj) {
 
 	if (obj.closed)
 		return false;
@@ -616,7 +607,7 @@ Mailer.prototype._writeline = function(obj) {
 	return true;
 };
 
-Mailer.prototype._send = function(obj, options, autosend) {
+Mailer.prototype.$send = function(obj, options, autosend) {
 
 	var self = this;
 	var buffer = [];
@@ -706,7 +697,7 @@ Mailer.prototype._send = function(obj, options, autosend) {
 				}
 
 				command = obj.isTLS || (options.user && options.password) || REG_ESMTP.test(line) ? 'EHLO' : 'HELO';
-				mailer._writeline(obj, command + ' ' + host);
+				mailer.$writeline(obj, command + ' ' + host);
 				break;
 
 			case 250: // OPERATION
@@ -716,20 +707,20 @@ Mailer.prototype._send = function(obj, options, autosend) {
 
 				obj.messagecallback && obj.messagecallback(null, obj.instance);
 				obj.messagecallback = null;
-				mailer._writeline(obj, buffer.shift());
+				mailer.$writeline(obj, buffer.shift());
 
 				if (buffer.length)
 					return;
 
 				// NEW MESSAGE
 				if (obj.messages.length) {
-					mailer._writemessage(obj, buffer);
-					mailer._writeline(obj, buffer.shift());
+					mailer.$writemessage(obj, buffer);
+					mailer.$writeline(obj, buffer.shift());
 					return;
 				}
 
 				// end
-				mailer._writeline(obj, 'QUIT');
+				mailer.$writeline(obj, 'QUIT');
 				return;
 
 			case 221: // BYE
@@ -742,7 +733,7 @@ Mailer.prototype._send = function(obj, options, autosend) {
 
 				if (!self.tls && !obj.isTLS && options.tls) {
 					obj.isTLS = true;
-					mailer._writeline(obj, 'STARTTLS');
+					mailer.$writeline(obj, 'STARTTLS');
 					return;
 				}
 
@@ -756,12 +747,12 @@ Mailer.prototype._send = function(obj, options, autosend) {
 					return;
 				}
 
-				mailer._writeline(obj, value);
+				mailer.$writeline(obj, value);
 				return;
 
 			case 354:
-				mailer._writeline(obj, obj.message);
-				mailer._writeattachment(obj);
+				mailer.$writeline(obj, obj.message);
+				mailer.$writeattachment(obj);
 				obj.message = null;
 				return;
 
@@ -791,7 +782,7 @@ Mailer.prototype._send = function(obj, options, autosend) {
 		}
 	});
 
-	autosend && self._writeline(obj, 'EHLO ' + host);
+	autosend && self.$writeline(obj, 'EHLO ' + host);
 };
 
 Mailer.prototype.restart = function() {
