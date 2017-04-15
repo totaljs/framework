@@ -6226,7 +6226,11 @@ F.listener = function(req, res) {
 	req.session = null;
 	req.user = null;
 	req.isStaticFile = F.config['allow-handle-static-files'] && U.isStaticFile(req.uri.pathname);
-	req.isStaticFile && (req.extension = U.getExtension(req.uri.pathname));
+
+	if (req.isStaticFile)
+		req.extension = U.getExtension(req.uri.pathname);
+	else
+		req.$language = F.onLocale(req, res, req.isStaticFile);
 
 	F.reqstats(true, true);
 
