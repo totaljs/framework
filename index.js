@@ -6229,7 +6229,7 @@ F.listener = function(req, res) {
 
 	if (req.isStaticFile)
 		req.extension = U.getExtension(req.uri.pathname);
-	else
+	else if (F.onLocale)
 		req.$language = F.onLocale(req, res, req.isStaticFile);
 
 	F.reqstats(true, true);
