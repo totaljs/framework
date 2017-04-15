@@ -2680,6 +2680,8 @@ F.localize = function(url, flags, minify) {
 	url = framework_internal.preparePath(url);
 	F.file(url, function(req, res) {
 
+		F.onLocale && (req.$language = F.onLocale(req, res, req.isStaticFile));
+
 		var key = 'locate_' + (req.$language ? req.$language : 'default') + '_' + req.url;
 		var output = F.temporary.other[key];
 
@@ -6224,25 +6226,7 @@ F.listener = function(req, res) {
 	req.session = null;
 	req.user = null;
 	req.isStaticFile = F.config['allow-handle-static-files'] && U.isStaticFile(req.uri.pathname);
-
-	var can = true;
-
-	if (req.isStaticFile) {
-		req.extension = U.getExtension(req.uri.pathname);
-		switch (req.extension) {
-			case 'html':
-			case 'htm':
-			case 'txt':
-			case 'md':
-				break;
-			default:
-				can = false;
-				break;
-		}
-	}
-
-	if (can && F.onLocale)
-		req.$language = F.onLocale(req, res, req.isStaticFile);
+	req.isStaticFile && (req.extension = U.getExtension(req.uri.pathname));
 
 	F.reqstats(true, true);
 
@@ -14923,6 +14907,11 @@ http.IncomingMessage.prototype.__proto__ = _tmp;
  */
 http.IncomingMessage.prototype.signature = function(key) {
 	return F.encrypt((this.headers['user-agent'] || '') + '#' + this.ip + '#' + this.url + '#' + (key || ''), 'request-signature', false);
+};
+
+http.IncomingMessage.prototype.localize = function() {
+	F.onLocale && (this.$language = F.onLocale(this, this.res, this.isStaticFile));
+	return this.$language;
 };
 
 /**

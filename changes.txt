@@ -23,6 +23,7 @@
 - added: `DEFER` feature
 - added: `F.config['allow-debug']` starts a mini debugger
 - added: `res.image_nocache()` alternative to `F.responseImageWithoutCache`
+- added: `req.localize()` performs localization (executes `F.onLocale`)
 
 - updated: `F.http('debug/release/test', { debug: true })` can start a mini debugger
 - updated: `F.route()`, `F.websocket()` and `F.file()` --> now returns `FrameworkRoute` instance instead of `Framework` instance (more in docs)
