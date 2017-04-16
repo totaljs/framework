@@ -571,6 +571,7 @@ function Framework() {
 		// gm = graphicsmagick or im = imagemagick
 		'default-image-converter': 'gm',
 		'default-image-quality': 93,
+		'default-image-consumption': 50,
 
 		'allow-handle-static-files': true,
 		'allow-gzip': true,
@@ -8066,6 +8067,10 @@ F.$configure_configs = function(arr, rewrite) {
 			case 'default-maximum-file-descriptors':
 			case 'default-interval-clear-dnscache':
 				obj[name] = U.parseInt(value);
+				break;
+			case 'default-image-consumption':
+			case 'default-image-quality':
+				obj[name] = U.parseInt(value.replace(/\%|\s/g, ''));
 				break;
 
 			case 'static-accepts-custom':
