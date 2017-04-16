@@ -471,6 +471,10 @@ Image.prototype.trim = function() {
 	return this.push('-trim +repage', 1);
 };
 
+Image.prototype.limit = function(type, value) {
+	return this.push('-limit ' + type + ' ' + value, 1);
+};
+
 Image.prototype.extent = function(w, h) {
 
 	var self = this;
