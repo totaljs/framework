@@ -488,7 +488,7 @@ Image.prototype.trim = function() {
 
 Image.prototype.limit = function(type, value) {
 	this.islimit = true;
-	return this.push('-limit ' + type + ' ' + value, 1);
+	return this.push('-limit', type + ' ' + value, 1);
 };
 
 Image.prototype.extent = function(w, h) {
