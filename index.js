@@ -571,7 +571,7 @@ function Framework() {
 		// gm = graphicsmagick or im = imagemagick
 		'default-image-converter': 'gm',
 		'default-image-quality': 93,
-		'default-image-consumption': 50,
+		'default-image-consumption': 30,
 
 		'allow-handle-static-files': true,
 		'allow-gzip': true,

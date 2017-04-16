@@ -25,6 +25,7 @@
 - added: `res.image_nocache()` alternative to `F.responseImageWithoutCache`
 - added: `req.localize()` performs localization (executes `F.onLocale`)
 - added: `image.limit(type, value)` creates a memory/map/disk/etc. limitation for GM or IM
+- added: `default-image-consumption` for GM/IM memory limitation (default value `30%`)
 
 - updated: `F.http('debug/release/test', { debug: true })` can start a mini debugger
 - updated: `F.route()`, `F.websocket()` and `F.file()` --> now returns `FrameworkRoute` instance instead of `Framework` instance (more in docs)
