@@ -1,7 +1,6 @@
 var utils = require('../utils');
 var assert = require('assert');
 var framework = require('../index');
-var fs = require('fs');
 var url = 'http://127.0.0.1:8001/';
 var errorStatus = 0;
 var max = 100;
@@ -11,7 +10,7 @@ var max = 100;
 //framework.map('/minify/', '@testpackage', ['.html', 'js']);
 //framework.map('/minify/', 'models');
 //framework.map('/minify/', F.path.models());
-framework.onCompileView = function(name, html, model) {
+framework.onCompileView = function(name, html) {
 	return html + 'COMPILED';
 };
 
