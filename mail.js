@@ -409,7 +409,7 @@ Mailer.prototype.send2 = function(messages, callback) {
 	var opt = F.temporary['mail-settings'];
 
 	if (!opt) {
-		var config = F.config['mail.smtp.options'];
+		var config = F.config['mail-smtp-options'];
 		if (config) {
 			if (typeof(config) === 'object')
 				opt = config;
@@ -423,7 +423,7 @@ Mailer.prototype.send2 = function(messages, callback) {
 		F.temporary['mail-settings'] = opt;
 	}
 
-	return this.send(F.config['mail.smtp'], opt, messages, callback);
+	return this.send(F.config['mail-smtp'], opt, messages, callback);
 };
 
 Mailer.prototype.send = function(smtp, options, messages, callback) {

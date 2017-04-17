@@ -26,6 +26,7 @@
 - added: `req.localize()` performs localization (executes `F.onLocale`)
 - added: `image.limit(type, value)` creates a memory/map/disk/etc. limitation for GM or IM
 - added: `default-image-consumption` for GM/IM memory limitation (default value `30%`)
+- added: `F.useSMTP(smtp, [options], [callback(err)])` rewrites current SMTP settings
 
 - updated: `F.http('debug/release/test', { debug: true })` can start a mini debugger
 - updated: `F.route()`, `F.websocket()` and `F.file()` --> now returns `FrameworkRoute` instance instead of `Framework` instance (more in docs)
@@ -48,6 +49,12 @@
 - updated: `F.exists(req, res, [max], callback(next, filename, req, res))` added a new arguments into the callback `req` and `res`
 - updated: `F.memorize()` uses `themeName` as a part of the cache key
 - updated: `debug.js` (missing `startup` directory)
+
+- renamed: configuration `mail.address.from` for `mail-address-form`
+- renamed: configuration `mail.address.reply` for `mail-address-reply`
+- renamed: configuration `mail.address.copy` for `mail-address-copy`
+- renamed: configuration `mail.smtp` for `mail-smtp`
+- renamed: configuration `mail.smtp-options` for `mail-smtp-options`
 
 - fixed: config `static-accepts` (it didn't work)
 - fixed: routing with `upload` flag

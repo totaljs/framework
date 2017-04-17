@@ -947,6 +947,30 @@ F.useConfig = function(name) {
 	return F.$configure_configs(name, true);
 };
 
+F.useSMTP = function(smtp, options, callback) {
+
+	if (typeof(options) === 'function') {
+		callback = options;
+		options = undefined;
+	}
+
+	Mail.try(smtp, options, function(err) {
+
+		if (!err) {
+			delete F.temporary['mail-settings'];
+			F.config['mail-smtp'] = smtp;
+			F.config['mail-smtp-options'] = options;
+		}
+
+		if (callback)
+			callback(err);
+		else if (err)
+			F.error(err, 'F.useSMTP()', null);
+	});
+
+	return F;
+};
+
 /**
  * Sort all routes
  * @return {Framework}
@@ -4770,38 +4794,27 @@ F.onMail = function(address, subject, body, callback, replyTo) {
 	} else
 		message.to(address);
 
-	message.from(F.config['mail.address.from'] || '', F.config.name);
-	tmp = F.config['mail.address.reply'];
+	message.from(F.config['mail-address-from'] || '', F.config.name);
 
 	if (replyTo)
 		message.reply(replyTo);
-	else if (tmp && tmp.isEmail())
-		message.reply(F.config['mail.address.reply']);
+	else {
+		tmp = F.config['mail-address-reply'];
+		tmp && tmp.length > 3 && message.reply(tmp);
+	}
 
-	tmp = F.config['mail.address.copy'];
-
-	if (tmp && tmp.isEmail())
-		message.bcc(tmp);
+	tmp = F.config['mail-address-copy'];
+	tmp && tmp.length > 3 && message.bcc(tmp);
 
 	var opt = F.temporary['mail-settings'];
 
 	if (!opt) {
-		var config = F.config['mail.smtp.options'];
-		if (config) {
-			var type = typeof(config);
-			if (type === 'string')
-				opt = config.parseJSON();
-			else if (type === 'object')
-				opt = config;
-		}
-
-		if (!opt)
-			opt = {};
-
-		F.temporary['mail-settings'] = opt;
+		var config = F.config['mail-smtp-options'];
+		config && (opt = config);
+		F.temporary['mail-settings'] = opt || {};
 	}
 
-	message.$sending = setTimeout(() => message.send(F.config['mail.smtp'], opt, callback), 5);
+	message.$sending = setTimeout(() => message.send(F.config['mail-smtp'], opt, callback), 5);
 	return message;
 };
 
@@ -8089,6 +8102,22 @@ F.$configure_configs = function(arr, rewrite) {
 					obj[name][tmp[j]] = true;
 				break;
 
+			case 'mail.smtp':
+			case 'mail.smtp.options':
+			case 'mail.address.from':
+			case 'mail.address.copy':
+			case 'mail.address.bcc':
+			case 'mail.address.reply':
+
+				if (name === 'mail.address.bcc')
+					tmp = 'mail-address-copy';
+				else
+					tmp = name.replace(/\./g, '-');
+
+				OBSOLETE(name, 'is renamed to "' + tmp + '"');
+				obj[tmp] = value;
+				break;
+
 			case 'allow-gzip':
 			case 'allow-websocket':
 			case 'allow-performance':
@@ -8140,6 +8169,12 @@ F.$configure_configs = function(arr, rewrite) {
 
 	U.extend(F.config, obj, rewrite);
 
+	var tmp = F.config['mail-smtp-options'];
+	if (typeof(tmp) === 'string' && tmp) {
+		tmp = new Function('return ' + tmp)();
+		F.config['mail-smtp-options'] = tmp;
+	}
+
 	if (!F.config['directory-temp'])
 		F.config['directory-temp'] = '~' + U.path(Path.join(Os.tmpdir(), 'totaljs' + F.directory.hash()));
 
@@ -8176,6 +8211,7 @@ F.$configure_configs = function(arr, rewrite) {
 	IMAGEMAGICK = F.config['default-image-converter'] === 'im';
 	done();
 	F.emit('configure', F.config);
+	// console.log(F.config);
 	return F;
 };
 
