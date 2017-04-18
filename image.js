@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkImage
- * @version 2.4.0
+ * @version 2.5.0
  */
 
 'use strict';
@@ -127,6 +127,7 @@ function Image(filename, useImageMagick, width, height) {
 	this.currentStream = type === 'object' ? filename : null;
 	this.isIM = useImageMagick == null ? F.config['default-image-converter'] === 'im' : useImageMagick;
 	this.outputType = type === 'string' ? framework_utils.getExtension(filename) : 'jpg';
+	this.islimit = false;
 }
 
 Image.prototype.clear = function() {
@@ -204,9 +205,9 @@ Image.prototype.save = function(filename, callback, writer) {
 	if (F.isWindows)
 		command = command.replace(REGEXP_PATH, '\\');
 
-	var cmd = exec(command, function(err, stdout, stderr) {
+	var cmd = exec(command, function(err) {
 
- 		// clean up
+		// clean up
 		cmd.kill();
 		cmd = null;
 
@@ -240,7 +241,6 @@ Image.prototype.save = function(filename, callback, writer) {
 
 	CLEANUP(cmd.stdin);
 	writer && writer(cmd.stdin);
-
 	return self;
 };
 
@@ -261,9 +261,7 @@ Image.prototype.pipe = function(stream, type, options) {
 	}
 
 	!self.builder.length && self.minify();
-
-	if (!type)
-		type = self.outputType;
+	!type && (type = self.outputType);
 
 	var cmd = spawn(self.isIM ? 'convert' : 'gm', self.arg(self.filename ? wrap(self.filename) : '-', (type ? type + ':' : '') + '-'));
 
@@ -322,7 +320,13 @@ Image.prototype.cmd = function(filenameFrom, filenameTo) {
 	var self = this;
 	var cmd = '';
 
-	self.builder.sort((a, b) => a.priority > b.priority ? 1 : -1);
+	if (!self.islimit) {
+		var tmp = F.config['default-image-consumption'];
+		self.limit('memory', (1500 / 100) * tmp);
+		self.limit('map', (3000 / 100) * tmp);
+	}
+
+	self.builder.sort(sort);
 
 	var length = self.builder.length;
 	for (var i = 0; i < length; i++)
@@ -331,6 +335,10 @@ Image.prototype.cmd = function(filenameFrom, filenameTo) {
 	return (self.isIM ? 'convert' : 'gm -convert') + wrap(filenameFrom, true) + ' ' + cmd + wrap(filenameTo, true);
 };
 
+function sort(a, b) {
+	return a.priority > b.priority ? 1 : -1;
+}
+
 Image.prototype.arg = function(first, last) {
 
 	var self = this;
@@ -338,7 +346,14 @@ Image.prototype.arg = function(first, last) {
 
 	!self.isIM && arr.push('-convert');
 	first && arr.push(first);
-	self.builder.sort((a, b) => a.priority > b.priority ? 1 : -1);
+
+	if (!self.islimit) {
+		var tmp = F.config['default-image-consumption'];
+		self.limit('memory', (1500 / 100) * tmp);
+		self.limit('map', (3000 / 100) * tmp);
+	}
+
+	self.builder.sort(sort);
 
 	var length = self.builder.length;
 
@@ -360,7 +375,7 @@ Image.prototype.arg = function(first, last) {
 Image.prototype.identify = function(callback) {
 	var self = this;
 
-	exec((self.isIM ? 'identify' : 'gm identify') + wrap(self.filename, true), function(err, stdout, stderr) {
+	exec((self.isIM ? 'identify' : 'gm identify') + wrap(self.filename, true), function(err, stdout) {
 
 		if (err) {
 			callback(err, null);
@@ -469,6 +484,11 @@ Image.prototype.filter = function(type) {
 
 Image.prototype.trim = function() {
 	return this.push('-trim +repage', 1);
+};
+
+Image.prototype.limit = function(type, value) {
+	this.islimit = true;
+	return this.push('-limit', type + ' ' + value, 1);
 };
 
 Image.prototype.extent = function(w, h) {

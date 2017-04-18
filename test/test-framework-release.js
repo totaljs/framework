@@ -1,7 +1,6 @@
 var utils = require('../utils');
 var assert = require('assert');
 var framework = require('../index');
-var fs = require('fs');
 var url = 'http://127.0.0.1:8001/';
 var errorStatus = 0;
 var max = 100;
@@ -11,7 +10,7 @@ var max = 100;
 //framework.map('/minify/', '@testpackage', ['.html', 'js']);
 //framework.map('/minify/', 'models');
 //framework.map('/minify/', F.path.models());
-framework.onCompileView = function(name, html, model) {
+framework.onCompileView = function(name, html) {
 	return html + 'COMPILED';
 };
 
@@ -83,7 +82,7 @@ function test_view_functions(next) {
 		assert.ok(data === '{"r":true}', 'json');
 		next();
 	});
-};
+}
 
 function test_view_error(next) {
 	errorStatus = 1;
@@ -674,7 +673,7 @@ function test_routing(next) {
 	});
 
 	async.await('upload', function(complete) {
-		utils.send(',;-test.txt', new Buffer('dG90YWwuanMgaXMga2luZyBvZiB3ZWI=', 'base64'), url + 'upload/', function(error, data, code, headers) {
+		utils.upload([{ name: 'file', filename: ',;-test.txt', buffer: Buffer.from('dG90YWwuanMgaXMga2luZyBvZiB3ZWI=', 'base64') }], url + 'upload/', function(error, data, code, headers) {
 			assert(data === '{"name":",;-test.txt","length":25,"type":"text/plain"}', 'upload');
 			complete();
 		});
@@ -847,7 +846,7 @@ function run() {
 
 		setTimeout(function() {
 			end();
-		}, 2000)
+		}, 2000);
 		return;
 	}
 

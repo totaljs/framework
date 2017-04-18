@@ -21,14 +21,13 @@
 
 /**
  * @module FrameworkMail
- * @version 2.4.0
+ * @version 2.5.0
  */
 
-'use strict'
+'use strict';
 
 const Net = require('net');
 const Tls = require('tls');
-const Events = require('events');
 const Fs = require('fs');
 
 const CRLF = '\r\n';
@@ -54,14 +53,61 @@ function Mailer() {
 	this.Message = Message;
 	this.Mail = Message;
 	this.connections = {};
+	this.$events = {};
 }
 
-Mailer.prototype.__proto__ = Object.create(Events.EventEmitter.prototype, {
-	constructor: {
-		value: Mailer,
-		enumberable: false
+Mailer.prototype.emit = function(name, a, b, c, d, e, f, g) {
+	var evt = this.$events[name];
+	if (evt) {
+		var clean = false;
+		for (var i = 0, length = evt.length; i < length; i++) {
+			if (evt[i].$once)
+				clean = true;
+			evt[i].call(this, a, b, c, d, e, f, g);
+		}
+		if (clean) {
+			evt = evt.remove(n => n.$once);
+			if (evt.length)
+				this.$events[name] = evt;
+			else
+				this.$events[name] = undefined;
+		}
 	}
-});
+	return this;
+};
+
+Mailer.prototype.on = function(name, fn) {
+	if (this.$events[name])
+		this.$events[name].push(fn);
+	else
+		this.$events[name] = [fn];
+	return this;
+};
+
+Mailer.prototype.once = function(name, fn) {
+	fn.$once = true;
+	return this.on(name, fn);
+};
+
+Mailer.prototype.removeListener = function(name, fn) {
+	var evt = this.$events[name];
+	if (evt) {
+		evt = evt.remove(n => n === fn);
+		if (evt.length)
+			this.$events[name] = evt;
+		else
+			this.$events[name] = undefined;
+	}
+	return this;
+};
+
+Mailer.prototype.removeAllListeners = function(name) {
+	if (name)
+		this.$events[name] = undefined;
+	else
+		this.$events = {};
+	return this;
+};
 
 /**
  * Create Mail Message
@@ -113,7 +159,7 @@ Message.prototype.unsubscribe = function(url) {
 Message.prototype.callback = function(fn) {
 	this.$callback = fn;
 	return this;
-}
+};
 
 Message.prototype.sender = function(address, name) {
 	return this.from(address, name);
@@ -234,13 +280,6 @@ Message.prototype.attachmentInline = function(filename, name, contentId) {
 	return this;
 };
 
-/**
- * Send e-mail
- * @param {String} smtp SMTP server / hostname.
- * @param {Object} options Options (optional).
- * @param {Function(err)} fnCallback
- * @return {Message}
- */
 Message.prototype.send = function(smtp, options, callback) {
 	mailer.send(smtp, options, this, callback);
 	return this;
@@ -254,41 +293,26 @@ Mailer.prototype.switchToTLS = function(obj, options) {
 	obj.socket.removeAllListeners();
 
 	var opt = framework_utils.copy(options.tls, { socket: obj.socket, host: obj.socket.$host, ciphers: 'SSLv3' });
-	obj.socket2 = Tls.connect(opt, () => self._send(obj, options, true));
+	obj.socket2 = Tls.connect(opt, () => self.$send(obj, options, true));
 
 	obj.socket2.on('error', function(err) {
-
 		mailer.destroy(obj);
 		self.closed = true;
 		self.callback && self.callback(err);
 		self.callback = null;
-
 		if (obj.try || err.stack.indexOf('ECONNRESET') !== -1)
 			return;
-
-		try {
-			mailer.emit('error', err, obj);
-		} catch(e) {
-			F.error(err, 'FrameworkMail');
-		}
+		mailer.$events.error && mailer.emit('error', err, obj);
 	});
 
 	obj.socket2.on('clientError', function(err) {
 		mailer.destroy(obj);
 		self.callback && self.callback(err);
 		self.callback = null;
-
-		if (obj.try)
-			return;
-
-		try {
-			mailer.emit('error', err, obj);
-		} catch(e) {
-			F.error(err, 'FrameworkMail');
-		}
+		mailer.$events.error && !obj.try && mailer.emit('error', err, obj);
 	});
 
-	obj.socket2.on('connect', () => !options.secure && self._send(obj, options));
+	obj.socket2.on('connect', () => !options.secure && self.$send(obj, options));
 };
 
 Mailer.prototype.destroy = function(obj) {
@@ -317,17 +341,11 @@ Mailer.prototype.destroy = function(obj) {
 	return this;
 };
 
-/**
- * Internal: Write attachment into the current socket
- * @param  {Function} write  Write function.
- * @param  {String} boundary Boundary.
- * @param  {Socket} socket   Current socket.
- */
-Mailer.prototype._writeattachment = function(obj) {
+Mailer.prototype.$writeattachment = function(obj) {
 
 	var attachment = obj.files ? obj.files.shift() : false;
 	if (!attachment) {
-		mailer._writeline(obj, '--' + obj.boundary + '--', '', '.');
+		mailer.$writeline(obj, '--' + obj.boundary + '--', '', '.');
 		return this;
 	}
 
@@ -350,32 +368,37 @@ Mailer.prototype._writeattachment = function(obj) {
 	message.push('Content-Type: ' + extension + ';' + (isCalendar ? ' charset="utf-8"; method=REQUEST' : ''));
 	message.push('Content-Transfer-Encoding: base64');
 	message.push(CRLF);
-	mailer._writeline(obj, message.join(CRLF));
+	mailer.$writeline(obj, message.join(CRLF));
 
-	stream.on('data', function(buf) {
-
-		var length = buf.length;
-		var count = 0;
-		var beg = 0;
-
-		while (count < length) {
-
-			count += 68;
-			if (count > length)
-				count = length;
-
-			mailer._writeline(obj, buf.slice(beg, count).toString('base64'));
-			beg = count;
-		}
-	});
+	stream.$mailer = mailer;
+	stream.$mailerobj = obj;
+	stream.on('data', writeattachment_data);
 
 	CLEANUP(stream, function() {
-		mailer._writeline(obj, CRLF);
-		mailer._writeattachment(obj);
+		mailer.$writeline(obj, CRLF);
+		mailer.$writeattachment(obj);
 	});
 
 	return this;
 };
+
+function writeattachment_data(chunk) {
+
+	var length = chunk.length;
+	var count = 0;
+	var beg = 0;
+
+	while (count < length) {
+
+		count += 68;
+
+		if (count > length)
+			count = length;
+
+		this.$mailer.$writeline(this.$mailerobj, chunk.slice(beg, count).toString('base64'));
+		beg = count;
+	}
+}
 
 Mailer.prototype.try = function(smtp, options, callback) {
 	return this.send(smtp, options, undefined, callback);
@@ -386,7 +409,7 @@ Mailer.prototype.send2 = function(messages, callback) {
 	var opt = F.temporary['mail-settings'];
 
 	if (!opt) {
-		var config = F.config['mail.smtp.options'];
+		var config = F.config['mail-smtp-options'];
 		if (config) {
 			if (typeof(config) === 'object')
 				opt = config;
@@ -400,7 +423,7 @@ Mailer.prototype.send2 = function(messages, callback) {
 		F.temporary['mail-settings'] = opt;
 	}
 
-	return this.send(F.config['mail.smtp'], opt, messages, callback);
+	return this.send(F.config['mail-smtp'], opt, messages, callback);
 };
 
 Mailer.prototype.send = function(smtp, options, messages, callback) {
@@ -442,54 +465,37 @@ Mailer.prototype.send = function(smtp, options, messages, callback) {
 	if (options.secure) {
 		var internal = framework_utils.copy(options);
 		internal.host = smtp;
-		obj.socket = Tls.connect(internal, () => mailer._send(obj, options));
+		obj.socket = Tls.connect(internal, () => mailer.$send(obj, options));
 	} else
 		obj.socket = Net.createConnection(options.port, smtp);
 
 	obj.socket.$host = smtp;
 	obj.host = smtp.substring(smtp.lastIndexOf('.', smtp.lastIndexOf('.') - 1) + 1);
 	obj.socket.on('error', function(err) {
-
 		mailer.destroy(obj);
 		obj.callback && obj.callback(err);
 		obj.callback = null;
-
 		if (obj.try || err.stack.indexOf('ECONNRESET') !== -1)
 			return;
-
-		try {
-			mailer.emit('error', err, obj);
-		} catch(e) {
-			F.error(err, 'FrameworkMail');
-		}
+		mailer.$events.error && mailer.emit('error', err, obj);
 	});
 
 	obj.socket.on('clientError', function(err) {
-
 		mailer.destroy(obj);
 		obj.callback && obj.callback(err);
 		obj.callback = null;
-
-		if (obj.try)
-			return;
-
-		try {
-			mailer.emit('error', err, obj);
-		} catch(e) {
-			F.error(err, 'FrameworkMail');
-		}
+		mailer.$events.error && !obj.try && mailer.emit('error', err, obj);
 	});
 
-	obj.socket.on('connect', () => !options.secure && mailer._send(obj, options));
+	obj.socket.on('connect', () => !options.secure && mailer.$send(obj, options));
 	return self;
 };
 
-Mailer.prototype._writemessage = function(obj, buffer) {
+Mailer.prototype.$writemessage = function(obj, buffer) {
 
 	var self = this;
 	var msg = obj.messages.shift();
 	var message = [];
-
 
 	if (global.F)
 		global.F.stats.other.mail++;
@@ -577,12 +583,13 @@ Mailer.prototype._writemessage = function(obj, buffer) {
 
 	obj.message = message.join(CRLF);
 	obj.messagecallback = msg.$callback;
+	obj.instance = msg;
 
 	message = null;
 	return self;
 };
 
-Mailer.prototype._writeline = function(obj) {
+Mailer.prototype.$writeline = function(obj) {
 
 	if (obj.closed)
 		return false;
@@ -600,13 +607,12 @@ Mailer.prototype._writeline = function(obj) {
 	return true;
 };
 
-Mailer.prototype._send = function(obj, options, autosend) {
+Mailer.prototype.$send = function(obj, options, autosend) {
 
 	var self = this;
 	var buffer = [];
 	var isAuthenticated = false;
 	var isAuthorization = false;
-	var authType = '';
 	var command = '';
 	var auth = [];
 	var response = '';
@@ -615,24 +621,14 @@ Mailer.prototype._send = function(obj, options, autosend) {
 
 	var isAttach = !options.tls || (obj.tls && options.tls);
 
-	isAttach && mailer.emit('send', obj);
+	isAttach && mailer.$events.send && mailer.emit('send', obj);
 	socket.setEncoding('utf8');
 	socket.setTimeout(options.timeout || 8000, function() {
-
 		var err = new Error(framework_utils.httpStatus(408));
-
 		mailer.destroy(obj);
 		obj.callback && obj.callback(err);
 		obj.callback = null;
-
-		if (obj.try)
-			return;
-
-		try {
-			mailer.emit('error', err, obj);
-		} catch(e) {
-			F.error(err, 'FrameworkMail');
-		}
+		mailer.$events.error && !obj.try && mailer.emit('error', err, obj);
 	});
 
 	socket.on('end', function() {
@@ -673,7 +669,6 @@ Mailer.prototype._send = function(obj, options, autosend) {
 
 		if (code === 250 && !isAuthorization) {
 			if ((line.indexOf('AUTH LOGIN PLAIN') !== -1 || line.indexOf('AUTH PLAIN LOGIN') !== -1) || (options.user && options.password)) {
-				authType = 'plain';
 				isAuthorization = true;
 				if (line.indexOf('XOAUTH') === -1) {
 					auth.push('AUTH LOGIN');
@@ -702,7 +697,7 @@ Mailer.prototype._send = function(obj, options, autosend) {
 				}
 
 				command = obj.isTLS || (options.user && options.password) || REG_ESMTP.test(line) ? 'EHLO' : 'HELO';
-				mailer._writeline(obj, command + ' ' + host);
+				mailer.$writeline(obj, command + ' ' + host);
 				break;
 
 			case 250: // OPERATION
@@ -710,22 +705,22 @@ Mailer.prototype._send = function(obj, options, autosend) {
 			case 235: // VERIFY
 			case 999: // total.js again
 
-				obj.messagecallback && obj.messagecallback();
+				obj.messagecallback && obj.messagecallback(null, obj.instance);
 				obj.messagecallback = null;
-				mailer._writeline(obj, buffer.shift());
+				mailer.$writeline(obj, buffer.shift());
 
 				if (buffer.length)
 					return;
 
 				// NEW MESSAGE
 				if (obj.messages.length) {
-					mailer._writemessage(obj, buffer);
-					mailer._writeline(obj, buffer.shift());
+					mailer.$writemessage(obj, buffer);
+					mailer.$writeline(obj, buffer.shift());
 					return;
 				}
 
 				// end
-				mailer._writeline(obj, 'QUIT');
+				mailer.$writeline(obj, 'QUIT');
 				return;
 
 			case 221: // BYE
@@ -738,37 +733,26 @@ Mailer.prototype._send = function(obj, options, autosend) {
 
 				if (!self.tls && !obj.isTLS && options.tls) {
 					obj.isTLS = true;
-					mailer._writeline(obj, 'STARTTLS');
+					mailer.$writeline(obj, 'STARTTLS');
 					return;
 				}
 
 				var value = auth.shift();
 				if (!value) {
-
 					var err = new Error('Forbidden.');
-
 					mailer.destroy(obj);
 					obj.callback && obj.callback(err);
 					obj.callback = null;
-
-					if (obj.try)
-						return;
-
-					try {
-						mailer.emit('error', err, obj);
-					} catch(e) {
-						F.error(err, 'FrameworkMail');
-					}
-
+					mailer.$events.error && !obj.try && mailer.emit('error', err, obj);
 					return;
 				}
 
-				mailer._writeline(obj, value);
+				mailer.$writeline(obj, value);
 				return;
 
 			case 354:
-				mailer._writeline(obj, obj.message);
-				mailer._writeattachment(obj);
+				mailer.$writeline(obj, obj.message);
+				mailer.$writeattachment(obj);
 				obj.message = null;
 				return;
 
@@ -779,15 +763,8 @@ Mailer.prototype._send = function(obj, options, autosend) {
 
 				var err = new Error(line);
 
-				if (!obj.try) {
-					try {
-						mailer.emit('error', err, obj);
-					} catch(e) {
-						F.error(err, 'FrameworkMail');
-					}
-				}
-
-				obj.messagecallback && obj.messagecallback(err);
+				mailer.$events.error && !obj.try && mailer.emit('error', err, obj);
+				obj.messagecallback && obj.messagecallback(err, obj.instance);
 				obj.messagecallback = null;
 
 				if (obj.message) {
@@ -805,7 +782,7 @@ Mailer.prototype._send = function(obj, options, autosend) {
 		}
 	});
 
-	autosend && self._writeline(obj, 'EHLO ' + host);
+	autosend && self.$writeline(obj, 'EHLO ' + host);
 };
 
 Mailer.prototype.restart = function() {

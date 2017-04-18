@@ -1,3 +1,77 @@
+======= 2.5.0 (BETA)
+
+- added: a missing property for WebSocket controller `controller.mobile`
+- added: `EMIT()` alias for `F.emit()`
+- added: `ON()` alias for `F.on()`
+- added: `OFF()` alias for `F.removeListener(eventName, listener)` or `F.removeAllListeners([eventName])`
+- added: `controller.components()` adds script/css tag into the head
+- added: `@{components([group], [settings])}` renders all components together from selected group
+- added: a new alias `WAIT()` alias for `U.wait()`
+- added: `res.status(code)` for express middleware
+- added: `F.clearSchedule(id)` for removing existing schedules
+- added: a support for WebSocket compression
+- added: removing `.package` files from `tmp` directory
+- added: a new schema implementation (more in docs)
+- added: `F.restful2()` has simplified route mechanism (it doesn't use "{id}" param for insert(POST)/update(POST)/delete(DELETE) method with except "GET" method)
+- added: `res.binary(buffer, contentType, [type], [download], [headers])`
+- added: a new route flag `novalidate` (a prevention for Schema validation)
+- added: `U.upload(files, url, [callback], [cookies], [headers], [method], [timeout])` for multiple uploading files
+- added: `RESTBuilder.redirect(true/false)` enables/disables auto-redirect (default: enabled)
+- added: new schema aliases (`$QUERY()`, `$GET()`, `$WORKFLOW()`, '$TRANSFORM()' and `$OPERATION()`)
+- added: `allow-head` (default: false) adds `head` method into the each route automatically
+- added: `F.config['allow-defer']` enables deferring functions with `DEFER` keyword (default: false)
+- added: `DEFER` feature
+- added: `F.config['allow-debug']` starts a mini debugger
+- added: `res.image_nocache()` alternative to `F.responseImageWithoutCache`
+- added: `req.localize()` performs localization (executes `F.onLocale`)
+- added: `image.limit(type, value)` creates a memory/map/disk/etc. limitation for GM or IM
+- added: `default-image-consumption` for GM/IM memory limitation (default value `30%`)
+- added: `F.useSMTP(smtp, [options], [callback(err)])` rewrites current SMTP settings
+
+- updated: `F.http('debug/release/test', { debug: true })` can start a mini debugger
+- updated: `F.route()`, `F.websocket()` and `F.file()` --> now returns `FrameworkRoute` instance instead of `Framework` instance (more in docs)
+- updated: `F.load(debug, [types], [path])` supports a new type `service` which enables `F.on('service')`
+- updated: Components (now doesn't have to has `html` body)
+- updated: A component implementation can contain `exports.group = 'name';`
+- updated: framework loads all dependencies in order
+- updated: routes (web/websockets/files) can have an identificator in this form `F.route('/', ['id:custom_dentificator']);
+- updated: `UNINSTALL(type, url/id/fn)` supports new types `web`, `websocket` and `file`, e.g. `UNINSTALL('web', 'id:custom_identificator')`
+- updated: `U.request()`, added a new flag: `raw` (sends raw data)
+- updated: `F.schedule()` returns an identificator
+- updated: `U.clone()` supports `buffer` properties
+- updated: `setTimeout2(name, fn(param), timeout, [limit], [param])` added a new argument `limit` and `param`
+- updated: `F.script()` --> `now` argument (in the script body) is function `now()` which it still returns `new Date()`
+- updated: `F.script(body, value, callback(err, response, param), [param])` --> `param` argument is a helper
+- updated: middleware `next(false)` cancels calling of next middleware and controller
+- updated: `OPERATION(name, value, [callback(err, response, param)], [param])` added a new (helper) argument `param`
+- updated: Mail error handling (added Message instance)
+- updated: `U.request()` add a new flag `noredirect`
+- updated: `F.exists(req, res, [max], callback(next, filename, req, res))` added a new arguments into the callback `req` and `res`
+- updated: `F.memorize()` uses `themeName` as a part of the cache key
+- updated: `debug.js` (missing `startup` directory)
+
+- renamed: configuration `mail.address.from` for `mail-address-form`
+- renamed: configuration `mail.address.reply` for `mail-address-reply`
+- renamed: configuration `mail.address.copy` for `mail-address-copy`
+- renamed: configuration `mail.smtp` for `mail-smtp`
+- renamed: configuration `mail.smtp-options` for `mail-smtp-options`
+
+- fixed: config `static-accepts` (it didn't work)
+- fixed: routing with `upload` flag
+- fixed: workers timeout
+- fixed: modificators by George Okojie Davis
+- fixed: NoSQL comparing dates `equal` in `where` condition
+- fixed: a problem with `booting` packages if are used custom paths (by @harry-stot)
+- fixed: JavaScript compression
+- fixed: `allow-compile-style` for inline CSS in views
+
+- improved: events
+- improved: parsing data from requests
+- improved: mechanism of components
+- improved: performance
+- improved: responding
+- improved: mail attachments
+
 ======= 2.4.0
 
 - added: `components` more in docs

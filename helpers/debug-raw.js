@@ -38,11 +38,8 @@ process.title = 'total: debug';
 function debug() {
 	var port = parseInt(process.argv[process.argv.length - 1]);
 
-	if (!isNaN(port)) {
-		if (!options)
-			options = {};
+	if (!isNaN(port))
 		options.port = port;
-	}
 
 	if (port > 0 && !options.port)
 		options.port = port || 8000;
@@ -60,7 +57,7 @@ function debug() {
 
 function app() {
 	const fork = require('child_process').fork;
-	const directories = [directory + '/components', directory + '/controllers', directory + '/definitions', directory + '/isomorphic', directory + '/modules', directory + '/resources', directory + '/models', directory + '/source', directory + '/workers', directory + '/packages', directory + '/themes', directory + '/configs'];
+	const directories = [directory + '/components', directory + '/controllers', directory + '/definitions', directory + '/isomorphic', directory + '/modules', directory + '/resources', directory + '/models', directory + '/source', directory + '/workers', directory + '/packages', directory + '/themes', directory + '/configs', directory + '/startup'];
 	const async = new U.Async();
 	const prefix = '---------------------------------> ';
 
@@ -70,7 +67,6 @@ function app() {
 	var app = null;
 	var status = 0;
 	var pid = '';
-	var pidInterval = null;
 	var isLoaded = false;
 	var isSkip = false;
 	var pidIncrease;
@@ -82,10 +78,10 @@ function app() {
 
 	function onIncrease(clear) {
 
- 		if (clear) {
+		if (clear) {
 			clearTimeout(pidIncrease);
 			speed = TIME;
- 		}
+		}
 
 		pidIncrease = setTimeout(function() {
 			speed += TIME;
@@ -119,10 +115,10 @@ function app() {
 
 	function refresh() {
 
-		 var filenames = Object.keys(files);
-		 var length = filenames.length;
+		var filenames = Object.keys(files);
+		var length = filenames.length;
 
-		 for (var i = 0; i < length; i++) {
+		for (var i = 0; i < length; i++) {
 			var filename = filenames[i];
 			(function(filename) {
 				async.await(function(next) {
@@ -148,9 +144,9 @@ function app() {
 				});
 
 			})(filename);
-		 }
+		}
 
-		 async.complete(function() {
+		async.complete(function() {
 
 			isLoaded = true;
 			setTimeout(refresh_directory, speed);
@@ -168,7 +164,7 @@ function app() {
 
 			changes = [];
 			force = false;
-		 });
+		});
 
 	}
 
@@ -258,7 +254,7 @@ function app() {
 		pid = path.join(directory, 'debug.pid');
 		fs.writeFileSync(pid, process.pid);
 
-		pidInterval = setInterval(function() {
+		setInterval(function() {
 			fs.exists(pid, function(e) {
 
 				if (e)
@@ -291,7 +287,7 @@ function run() {
 	var filename = path.join(directory, 'debug.pid');
 	if (fs.existsSync(filename)) {
 		fs.unlinkSync(filename);
-		setTimeout(function() { app() }, 3000);
+		setTimeout(function() { app(); }, 3000);
 	} else
 		app();
 }

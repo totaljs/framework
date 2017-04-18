@@ -13,7 +13,8 @@ $ npm install -g total.js
 
 [![Support](https://www.totaljs.com/img/button-support.png?v=3)](https://www.totaljs.com/support/)
 
-- [__NEW__: Total.js Messenger](https://www.totaljs.com/messenger/)
+- [Total.js Flow](https://www.totaljs.com/flow/)
+- [Total.js Messenger](https://www.totaljs.com/messenger/)
 - [Total.js Dashboard](https://www.totaljs.com/dashboard/)
 - [Total.js BlogEngine](https://www.totaljs.com/blogengine/)
 - [NoSQL embedded database explorer](https://www.totaljs.com/nosql/)
@@ -33,7 +34,7 @@ $ npm install -g total.js
 - [Homepage](http://www.totaljs.com)
 - [__Get Started__](http://www.totaljs.com/get-started/)
 - [__Documentation__](http://docs.totaljs.com)
-- [__Chat with professional support__](https://messenger.totaljs.com)
+- [__Live chat with professional support__](https://messenger.totaljs.com)
 - [__HelpDesk with professional support__](https://helpdesk.totaljs.com)
 - [__Blogs__](https://blog.totaljs.com)
 - [__Membership__](https://my.totaljs.com)
@@ -119,7 +120,7 @@ Please support the framework on social networks.
 - [Follow Total.js on Google Plus](https://plus.google.com/u/0/113175077493180148081/posts)
 - [Follow Total.js on LinkedIn](https://www.linkedin.com/groups/totaljs-8109884)
 
-## Contact
+## Contact
 
 - contact form <https://www.totaljs.com/contact/>
 - <info@totaljs.com>

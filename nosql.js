@@ -21,14 +21,13 @@
 
 /**
  * @module NoSQL
- * @version 2.4.0
+ * @version 2.5.0
  */
 
 'use strict';
 
 const Fs = require('fs');
 const Path = require('path');
-const Events = require('events');
 
 if (!global.framework_utils)
 	global.framework_utils = require('./utils');
@@ -77,14 +76,68 @@ function Database(name, filename) {
 	this.metadata;
 	this.$meta();
 	this.$timeoutmeta;
+	this.$events = {};
+	this.$free = true;
 }
 
-Database.prototype.__proto__ = Object.create(Events.EventEmitter.prototype, {
-	constructor: {
-		value: Database,
-		enumberable: false
+Database.prototype.emit = function(name, a, b, c, d, e, f, g) {
+	var evt = this.$events[name];
+	if (evt) {
+		var clean = false;
+		for (var i = 0, length = evt.length; i < length; i++) {
+			if (evt[i].$once)
+				clean = true;
+			evt[i].call(this, a, b, c, d, e, f, g);
+		}
+		if (clean) {
+			evt = evt.remove(n => n.$once);
+			if (evt.length)
+				this.$events[name] = evt;
+			else
+				this.$events[name] = undefined;
+		}
 	}
-});
+	return this;
+};
+
+Database.prototype.on = function(name, fn) {
+
+	if (!fn.$once)
+		this.$free = false;
+
+	if (this.$events[name])
+		this.$events[name].push(fn);
+	else
+		this.$events[name] = [fn];
+	return this;
+};
+
+Database.prototype.once = function(name, fn) {
+	fn.$once = true;
+	return this.on(name, fn);
+};
+
+Database.prototype.removeListener = function(name, fn) {
+	var evt = this.$events[name];
+	if (evt) {
+		evt = evt.remove(n => n === fn);
+		if (evt.length)
+			this.$events[name] = evt;
+		else
+			this.$events[name] = undefined;
+	}
+	return this;
+};
+
+Database.prototype.removeAllListeners = function(name) {
+	if (name === true)
+		this.$events = EMPTYOBJECT;
+	else if (name)
+		this.$events[name] = undefined;
+	else
+		this.$events[name] = {};
+	return this;
+};
 
 exports.load = function(name, filename) {
 	return new Database(name, filename);
@@ -107,6 +160,10 @@ Database.prototype.meta = function(name, value) {
 	self.timeoutmeta = setTimeout(() => self.$meta(true), 500);
 	return self;
 };
+
+function next_operation(self, type) {
+	self.next(type);
+}
 
 Database.prototype.insert = function(doc, unique) {
 	var self = this;
@@ -134,7 +191,7 @@ Database.prototype.insert = function(doc, unique) {
 	builder = new DatabaseBuilder2();
 	var json = framework_builders.isSchema(doc) ? doc.$clean() : doc;
 	self.pending_append.push({ doc: JSON.stringify(json), builder: builder });
-	setImmediate(() => self.next(1));
+	setImmediate(next_operation, self, 1);
 	self.emit('insert', json);
 	return builder;
 };
@@ -146,8 +203,9 @@ Database.prototype.upsert = function(doc) {
 Database.prototype.update = function(doc, insert) {
 	var self = this;
 	var builder = new DatabaseBuilder();
-	self.pending_update.push({ builder: builder, doc: framework_builders.isSchema(doc) ? doc.$clean() : doc, count: 0, insert: insert });
-	setImmediate(() => self.next(2));
+	var data = framework_builders.isSchema(doc) ? doc.$clean() : doc;
+	self.pending_update.push({ builder: builder, doc: data, count: 0, insert: insert === true ? data : insert });
+	setImmediate(next_operation, self, 2);
 	return builder;
 };
 
@@ -160,8 +218,8 @@ Database.prototype.modify = function(doc, insert) {
 	if (!keys.length)
 		return builder;
 
-	self.pending_update.push({ builder: builder, doc: data, count: 0, keys: keys, insert: insert });
-	setImmediate(() => self.next(2));
+	self.pending_update.push({ builder: builder, doc: data, count: 0, keys: keys, insert: insert === true ? data : insert });
+	setImmediate(next_operation, self, 2);
 	return builder;
 };
 
@@ -197,13 +255,17 @@ Database.prototype.backup = function(filename, remove) {
 Database.prototype.drop = function() {
 	var self = this;
 	self.pending_drops = true;
-	setImmediate(() => self.next(7));
+	setImmediate(next_operation, self, 7);
 	return self;
 };
 
-Database.prototype.free = function() {
+Database.prototype.free = function(force) {
 	var self = this;
-	self.removeAllListeners();
+	if (!force && !self.$free)
+		return self;
+	self.counter.removeAllListeners(true);
+	self.binary.removeAllListeners(true);
+	self.removeAllListeners(true);
 	delete framework.databases[self.name];
 	return self;
 };
@@ -224,7 +286,7 @@ Database.prototype.clear = Database.prototype.remove = function(filename) {
 		backup = new Backuper(backup);
 
 	self.pending_remove.push({ builder: builder, count: 0, backup: backup });
-	setImmediate(() => self.next(3));
+	setImmediate(next_operation, self, 3);
 	return builder;
 };
 
@@ -234,10 +296,10 @@ Database.prototype.find = function(view) {
 
 	if (view) {
 		self.pending_reader_view.push({ builder: builder, count: 0, counter: 0, view: view });
-		setImmediate(() => self.next(6));
+		setImmediate(next_operation, self, 6);
 	} else {
 		self.pending_reader.push({ builder: builder, count: 0, counter: 0, view: view });
-		setImmediate(() => self.next(4));
+		setImmediate(next_operation, self, 4);
 	}
 
 	return builder;
@@ -253,10 +315,10 @@ Database.prototype.count = function(view) {
 
 	if (view) {
 		self.pending_reader_view.push({ builder: builder, count: 0, view: view, type: 1 });
-		setImmediate(() => self.next(6));
+		setImmediate(next_operation, self, 6);
 	} else {
 		self.pending_reader.push({ builder: builder, count: 0, view: view, type: 1 });
-		setImmediate(() => self.next(4));
+		setImmediate(next_operation, self, 4);
 	}
 
 	return builder;
@@ -269,10 +331,10 @@ Database.prototype.one = function(view) {
 
 	if (view) {
 		self.pending_reader_view.push({ builder: builder, count: 0, view: view });
-		setImmediate(() => self.next(6));
+		setImmediate(next_operation, self, 6);
 	} else {
 		self.pending_reader.push({ builder: builder, count: 0, view: view });
-		setImmediate(() => self.next(4));
+		setImmediate(next_operation, self, 4);
 	}
 
 	return builder;
@@ -285,10 +347,10 @@ Database.prototype.top = function(max, view) {
 
 	if (view) {
 		self.pending_reader_view.push({ builder: builder, count: 0, counter: 0, view: view });
-		setImmediate(() => self.next(6));
+		setImmediate(next_operation, self, 6);
 	} else {
 		self.pending_reader.push({ builder: builder, count: 0, counter: 0, view: view });
-		setImmediate(() => self.next(4));
+		setImmediate(next_operation, self, 4);
 	}
 
 	return builder;
@@ -357,7 +419,7 @@ Database.prototype.next = function(type) {
 
 	if (self.step !== type) {
 		self.step = 0;
-		setImmediate(() => self.next(0));
+		setImmediate(next_operation, self, 0);
 	}
 
 	return self;
@@ -368,7 +430,7 @@ Database.prototype.refresh = function() {
 	if (!self.views)
 		return self;
 	self.pending_views = true;
-	setImmediate(() => self.next(5));
+	setImmediate(next_operation, self, 5);
 	return self;
 };
 
@@ -390,7 +452,7 @@ Database.prototype.$save = function(view) {
 			filename = filename.replace(/\.nosql/, '#' + view + '.nosql');
 
 		Fs.writeFile(filename, builder.join(NEWLINE) + NEWLINE, NOOP);
-	}, 50);
+	}, 50, 100);
 	return self;
 };
 
@@ -420,7 +482,7 @@ Database.prototype.$inmemory = function(view, callback) {
 			try {
 				item = JSON.parse(item.trim(), jsonparser);
 				item && self.inmemory[view].push(item);
-			} catch (e) {};
+			} catch (e) {}
 		}
 
 		callback();
@@ -468,15 +530,15 @@ Database.prototype.$append = function() {
 			next();
 		});
 
-	}, function() {
-		setImmediate(function() {
-			self.next(0);
-			setImmediate(() => self.refresh());
-		});
-	});
+	}, () => setImmediate(next_append, self));
 
 	return self;
 };
+
+function next_append(self) {
+	self.next(0);
+	setImmediate(() => self.refresh());
+}
 
 Database.prototype.$append_inmemory = function() {
 	var self = this;
@@ -498,11 +560,7 @@ Database.prototype.$append_inmemory = function() {
 		}
 
 		self.$save('#');
-
-		setImmediate(function() {
-			self.next(0);
-			setImmediate(() => self.refresh());
-		});
+		setImmediate(next_append, self);
 	});
 };
 
@@ -1138,7 +1196,7 @@ Database.prototype.$remove = function() {
 	}));
 
 	CLEANUP(writer, function() {
-		Fs.rename(self.filenameTemp, self.filename, function(err) {
+		Fs.rename(self.filenameTemp, self.filename, function() {
 
 			for (var i = 0; i < length; i++) {
 				var item = filter[i];
@@ -1236,7 +1294,7 @@ Database.prototype.$drop = function() {
 
 	remove.wait((filename, next) => Fs.unlink(filename, next), function() {
 		self.next(0);
-		self.free();
+		self.free(true);
 	}, 5);
 
 	Object.keys(self.inmemory).forEach(function(key) {
@@ -1672,7 +1730,7 @@ DatabaseBuilder.prototype.limit = function(count) {
 };
 
 DatabaseBuilder.prototype.page = function(page, limit) {
-	this.skip(page * limit)
+	this.skip(page * limit);
 	return this.take(limit);
 };
 
@@ -1750,7 +1808,7 @@ DatabaseBuilder.prototype.done = function() {
 	return this;
 };
 
-DatabaseBuilder.prototype.cache = function(key, expire) {
+DatabaseBuilder.prototype.cache = function() {
 	// this.$cache_key = '$nosql_' + key;
 	// this.$cache_expire = expire;
 	OBSOLETE('DatabaseBuilder.cache()', 'NoSQL database supports in-memory mode.');
@@ -1763,7 +1821,7 @@ DatabaseBuilder.prototype.fields = function() {
 	for (var i = 0, length = arguments.length; i < length; i++)
 		this.$fields.push(arguments[i]);
 	return this;
-}
+};
 
 DatabaseBuilder.prototype.prepare = function(fn) {
 	this.$prepare = fn;
@@ -1774,16 +1832,70 @@ function Counter(db) {
 	this.TIMEOUT = 30000;
 	this.db = db;
 	this.cache;
-	this.timeout;
+	this.key = 'nosql' + db.name.hash();
 	this.type = 0; // 1 === saving, 2 === reading
+	this.$events = {};
 }
 
-Counter.prototype.__proto__ = Object.create(Events.EventEmitter.prototype, {
-	constructor: {
-		value: Counter,
-		enumberable: false
+Counter.prototype.emit = function(name, a, b, c, d, e, f, g) {
+	var evt = this.$events[name];
+	if (evt) {
+		var clean = false;
+		for (var i = 0, length = evt.length; i < length; i++) {
+			if (evt[i].$once)
+				clean = true;
+			evt[i].call(this, a, b, c, d, e, f, g);
+		}
+		if (clean) {
+			evt = evt.remove(n => n.$once);
+			if (evt.length)
+				this.$events[name] = evt;
+			else
+				this.$events[name] = undefined;
+		}
 	}
-});
+	return this;
+};
+
+Counter.prototype.on = function(name, fn) {
+
+	if (!fn.$once)
+		this.db.$free = false;
+
+	if (this.$events[name])
+		this.$events[name].push(fn);
+	else
+		this.$events[name] = [fn];
+
+	return this;
+};
+
+Counter.prototype.once = function(name, fn) {
+	fn.$once = true;
+	return this.on(name, fn);
+};
+
+Counter.prototype.removeListener = function(name, fn) {
+	var evt = this.$events[name];
+	if (evt) {
+		evt = evt.remove(n => n === fn);
+		if (evt.length)
+			this.$events[name] = evt;
+		else
+			this.$events[name] = undefined;
+	}
+	return this;
+};
+
+Counter.prototype.removeAllListeners = function(name) {
+	if (name === true)
+		this.$events = EMPTYOBJECT;
+	else if (name)
+		this.$events[name] = undefined;
+	else
+		this.$events = {};
+	return this;
+};
 
 Counter.prototype.inc = Counter.prototype.hit = function(id, count) {
 
@@ -1794,17 +1906,14 @@ Counter.prototype.inc = Counter.prototype.hit = function(id, count) {
 		return self;
 	}
 
-	if (!self.cache)
-		self.cache = {};
+	!self.cache && (self.cache = {});
 
 	if (self.cache[id])
 		self.cache[id] += count || 1;
 	else
 		self.cache[id] = count || 1;
 
-	if (!self.timeout)
-		self.timeout = setTimeout(() => self.save(), self.TIMEOUT);
-
+	setTimeout2(self.key, () => self.save(), self.TIMEOUT, 5);
 	self.emit('hit', id, count || 1);
 	return self;
 };
@@ -1812,17 +1921,14 @@ Counter.prototype.inc = Counter.prototype.hit = function(id, count) {
 Counter.prototype.remove = function(id) {
 	var self = this;
 
-	if (!self.cache)
-		self.cache = {};
+	!self.cache && (self.cache = {});
 
 	if (id instanceof Array)
 		id.forEach(n => self.cache[n] = null);
 	else
 		self.cache[id] = null;
 
-	if (!self.timeout)
-		self.timeout = setTimeout(() => self.save(), self.TIMEOUT);
-
+	setTimeout2(self.key, () => self.save(), self.TIMEOUT, 5);
 	self.emit('remove', id);
 	return self;
 };
@@ -2045,7 +2151,7 @@ function counter_parse_years(value) {
 
 	var keys = Object.keys(tmp);
 	for (var i = 0, length = keys.length; i < length; i++)
-	 	output.push({ year: +keys[i], value: tmp[keys[i]] });
+		output.push({ year: +keys[i], value: tmp[keys[i]] });
 
 	return output;
 }
@@ -2155,7 +2261,7 @@ Counter.prototype.save = function() {
 	reader.on('end', flush);
 
 	CLEANUP(writer, function() {
-		Fs.rename(filename + '-tmp', filename, function(err) {
+		Fs.rename(filename + '-tmp', filename, function() {
 			clearTimeout(self.timeout);
 			self.timeout = 0;
 			self.type = 0;
@@ -2188,14 +2294,67 @@ function Binary(db, directory) {
 	this.db = db;
 	this.directory = directory;
 	this.exists = false;
+	this.$events = {};
 }
 
-Binary.prototype.__proto__ = Object.create(Events.EventEmitter.prototype, {
-	constructor: {
-		value: Binary,
-		enumberable: false
+Binary.prototype.emit = function(name, a, b, c, d, e, f, g) {
+	var evt = this.$events[name];
+	if (evt) {
+		var clean = false;
+		for (var i = 0, length = evt.length; i < length; i++) {
+			if (evt[i].$once)
+				clean = true;
+			evt[i].call(this, a, b, c, d, e, f, g);
+		}
+		if (clean) {
+			evt = evt.remove(n => n.$once);
+			if (evt.length)
+				this.$events[name] = evt;
+			else
+				this.$events[name] = undefined;
+		}
 	}
-});
+	return this;
+};
+
+Binary.prototype.on = function(name, fn) {
+
+	if (!fn.$once)
+		this.db.$free = false;
+
+	if (this.$events[name])
+		this.$events[name].push(fn);
+	else
+		this.$events[name] = [fn];
+	return this;
+};
+
+Binary.prototype.once = function(name, fn) {
+	fn.$once = true;
+	return this.on(name, fn);
+};
+
+Binary.prototype.removeListener = function(name, fn) {
+	var evt = this.$events[name];
+	if (evt) {
+		evt = evt.remove(n => n === fn);
+		if (evt.length)
+			this.$events[name] = evt;
+		else
+			this.$events[name] = undefined;
+	}
+	return this;
+};
+
+Binary.prototype.removeAllListeners = function(name) {
+	if (name === true)
+		this.$events = EMPTYOBJECT;
+	else if (name)
+		this.$events[name] = undefined;
+	else
+		this.$events = {};
+	return this;
+};
 
 Binary.prototype.insert = function(name, buffer, callback) {
 
@@ -2258,7 +2417,7 @@ Binary.prototype.insert = function(name, buffer, callback) {
 	stream.end(buffer);
 	CLEANUP(stream);
 	callback && callback(null, id, h);
-	self.emit('insert', id, h);
+	self.$events.insert && self.emit('insert', id, h);
 	return id;
 };
 
@@ -2282,7 +2441,7 @@ Binary.prototype.insert_stream = function(id, name, type, stream, callback) {
 	stream.pipe(writer);
 	CLEANUP(writer);
 	callback && callback(null, id, h);
-	self.emit('insert', id, h);
+	self.$events.insert && self.emit('insert', id, h);
 	return id;
 };
 
@@ -2346,7 +2505,7 @@ Binary.prototype.update = function(id, name, buffer, callback) {
 	stream.end(buffer);
 	CLEANUP(stream);
 	callback && callback(null, id, h);
-	self.emit('insert', id, h);
+	self.$events.insert && self.emit('insert', id, h);
 	return id;
 };
 
@@ -2366,7 +2525,7 @@ Binary.prototype.read = function(id, callback) {
 	stream.on('data', function(buffer) {
 		var json = framework_utils.createBuffer(buffer, 'binary').toString('utf8').replace(REG_CLEAN, '');
 		stream = Fs.createReadStream(filename, { start: BINARY_HEADER_LENGTH });
-		callback(null, stream, JSON.parse(json));
+		callback(null, stream, JSON.parse(json, jsonparser));
 	});
 
 	return self;
@@ -2384,7 +2543,7 @@ Binary.prototype.remove = function(id, callback) {
 
 	var filename = framework_utils.join(self.directory, key + EXTENSION_BINARY);
 	Fs.unlink(filename, (err) => callback && callback(null, err ? false : true));
-	self.emit('remove', id);
+	self.$events.remove && self.emit('remove', id);
 	return self;
 };
 
@@ -2398,7 +2557,7 @@ Binary.prototype.check = function() {
 
 	try {
 		Fs.mkdirSync(self.directory);
-	} catch (err) {};
+	} catch (err) {}
 
 	return self;
 };
@@ -2419,7 +2578,7 @@ Binary.prototype.clear = function(callback) {
 		for (var i = 0, length = response.length; i < length; i++)
 			response[i].substring(0, l) === key && pending.push(target + '/' + response[i]);
 
-		self.emit('clear', pending.length);
+		self.$events.clear && self.emit('clear', pending.length);
 		framework.unlink(pending, callback);
 	});
 
@@ -2528,8 +2687,8 @@ function compare_not(doc, index, item) {
 }
 
 function compare_eq_date(doc, index, item) {
-	var val = doc[item.name]
-	return val ? item.value === (val instanceof Date ? val : new Date(val)) : false;
+	var val = doc[item.name];
+	return val ? item.value.getTime() === (val instanceof Date ? val : new Date(val)).getTime() : false;
 }
 
 function compare_lt_date(doc, index, item) {
@@ -2636,7 +2795,7 @@ function compare_datetype(type, eqtype, val, doc) {
 	}
 
 	return eqtype === '=' ? val === doc : eqtype === '>' ? val > doc : eqtype === '<' ? val < doc : eqtype === '>=' ? val >= doc : eqtype === '<=' ? val <= doc : val !== doc;
-};
+}
 
 function compare_eq_dtmonth(doc, index, item) {
 	return compare_datetype('month', '=', item.value, doc[item.name]);

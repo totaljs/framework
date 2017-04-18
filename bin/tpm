@@ -12,7 +12,6 @@ const Zlib = require('zlib');
 const Http = require('http');
 const Https = require('https');
 const Os = require('os');
-const EOF = Os.platform() === 'win32' ? '\r\n' : '\n';
 const REG_EMPTY = /\s/g;
 const isWindows = Os.platform().substring(0, 3).toLowerCase() === 'win';
 const NODEVERSION = parseFloat(process.version.toString().replace('v', '').replace(/\./g, ''));
@@ -245,8 +244,6 @@ Backup.prototype.$compress = function() {
 		return;
 	}
 
-	var buffer = '';
-
 	Fs.readFile(filename, function(err, data) {
 		Zlib.gzip(data, function(err, data) {
 
@@ -443,7 +440,7 @@ Backup.prototype.clear = function(path, callback, filter) {
 		self.directory = [];
 
 		if (typeof(filter) !== 'function')
-			filter = function(o) { return true; };
+			filter = function() { return true; };
 
 		var length = files.length;
 
@@ -495,7 +492,6 @@ Backup.prototype.removeDirectory = function() {
 function download(url, callback) {
 	var uri = parser.parse(url);
 	var h = {};
-	var encoding = 'utf8';
 
 	h['X-Powered-By'] = 'Total.js Package Manager';
 
@@ -553,7 +549,7 @@ function display_help() {
 	log('');
 	log(colors.red + '$ tpm unpack [package_name] [optional: target_directory]' + colors.reset);
 	log('');
-}colors.dim +
+}
 
 function display_repositories() {
 	log('');
@@ -829,13 +825,12 @@ function unlink(path) {
 		return;
 	}
 
-	 !Fs.readdirSync(p).length && Fs.rmdirSync(p);
+	!Fs.readdirSync(p).length && Fs.rmdirSync(p);
 }
 
 function main() {
 
 	var filename = Path.join(Path.dirname(process.argv[1]), 'tpm.json');
-	var dir = process.cwd();
 	settings = { 'default': 'https://modules.totaljs.com/packages/' };
 
 	if (Fs.existsSync(filename))
