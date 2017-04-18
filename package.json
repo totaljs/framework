@@ -20,7 +20,7 @@
     "engines": {
         "node": ">=4.0.0"
     },
-    "keywords": ["total", "framework", "web", "websocket", "mvc", "controller", "view", "angular.js", "upload", "picture", "graphicsmagick", "imagemagick", "eshop", "blog", "forum", "chat", "game", "nosql", "database", "streaming", "live", "server sent events", "sse", "multipart", "x-mixed-replace"],
+    "keywords": ["total", "iot", "framework", "web", "websocket", "mvc", "controller", "view", "angular.js", "upload", "picture", "graphicsmagick", "imagemagick", "eshop", "blog", "forum", "chat", "game", "nosql", "database", "streaming", "live", "server sent events", "sse", "multipart", "x-mixed-replace"],
     "license": "MIT",
     "main": "./index.js",
     "name": "total.js",
@@ -75,7 +75,7 @@
         "name": "Peter Štolc",
         "email": "stolcp@gmail.com"
     }],
-    "version": "2.5.0-17",
+    "version": "2.5.0",
     "homepage": "http://www.totaljs.com",
     "bugs": {
         "url": "https://github.com/totaljs/framework/issues",

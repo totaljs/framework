@@ -497,7 +497,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2500;
-	this.version_header = '2.5.0-17';
+	this.version_header = '2.5.0';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
