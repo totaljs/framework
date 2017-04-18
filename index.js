@@ -15474,3 +15474,9 @@ function parseDeferFile(type, filename) {
 // It's used in F.view() and F.viewCompile()
 const EMPTYCONTROLLER = new Controller('', null, null, null, '');
 EMPTYCONTROLLER.isConnected = false;
+EMPTYCONTROLLER.req = {};
+EMPTYCONTROLLER.req.url = '';
+EMPTYCONTROLLER.req.uri = EMPTYOBJECT;
+EMPTYCONTROLLER.req.query = EMPTYOBJECT;
+EMPTYCONTROLLER.req.body = EMPTYOBJECT;
+EMPTYCONTROLLER.req.files = EMPTYARRAY;
