@@ -13299,6 +13299,8 @@ WebSocketClient.prototype.parseInflate = function() {
 		self.inflate.write(buf);
 		self.inflate.write(U.createBuffer(WEBSOCKET_COMPRESS));
 		self.inflate.flush(function() {
+			if (!self.inflatechunks)
+				return;
 			var data = buffer_concat(self.inflatechunks, self.inflatechunkslength);
 			self.inflatechunks = null;
 			self.inflatelock = false;
@@ -13409,6 +13411,8 @@ WebSocketClient.prototype.sendDeflate = function() {
 		self.deflatelock = true;
 		self.deflate.write(self.type === 1 ? new Int8Array(buf) : buf);
 		self.deflate.flush(function() {
+			if (!self.deflatechunks)
+				return;
 			var data = buffer_concat(self.deflatechunks, self.deflatechunkslength);
 			data = data.slice(0, data.length - 4);
 			self.deflatelock = false;
