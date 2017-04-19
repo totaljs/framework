@@ -5762,6 +5762,7 @@ F.initialize = function(http, debug, options, restart) {
 
 	var port = options.port;
 	var ip = options.ip;
+	var listenpath = options.path;
 
 	if (options.config)
 		U.copy(options.config, F.config);
@@ -5810,9 +5811,11 @@ F.initialize = function(http, debug, options, restart) {
 	if (F.ip == null)
 		F.ip = 'auto';
 
+	!listenpath && (listenpath = F.config['default-path']);
+	F.listenpath = listenpath;
+
 	if (F.server) {
 		F.server.removeAllListeners();
-
 		Object.keys(F.connections).forEach(function(key) {
 			var item = F.connections[key];
 			if (item) {
@@ -5833,7 +5836,11 @@ F.initialize = function(http, debug, options, restart) {
 	F.config['allow-websocket'] && F.server.on('upgrade', F._upgrade);
 
 	F.consoledebug('HTTP listening');
-	F.server.listen(F.port, F.ip === 'auto' ? undefined : F.ip);
+
+	if (listenpath)
+		F.server.listen(listenpath);
+	else
+		F.server.listen(F.port, F.ip === 'auto' ? undefined : F.ip);
 
 	// clears static files
 	F.consoledebug('clear temporary');

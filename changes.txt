@@ -1,3 +1,10 @@
+======= 2.5.1 (BETA)
+
+- added: `F.config['default-path']` start a UNIX socket server listening for connections on the given path
+- added: `F.listenpath` contains `default-path` location
+
+- updated: `F.http(type, options)` supports `options.path` for HTTP server (a direct shortcut for `default-path`)
+
 ======= 2.5.0
 
 - added: a missing property for WebSocket controller `controller.mobile`
