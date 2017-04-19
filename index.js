@@ -21,7 +21,7 @@
 
 /**
  * @module Framework
- * @version 2.5.0
+ * @version 2.5.1
  */
 
 'use strict';
@@ -496,8 +496,8 @@ const controller_error_status = function(controller, status, problem) {
 function Framework() {
 
 	this.id = null;
-	this.version = 2500;
-	this.version_header = '2.5.0';
+	this.version = 2510;
+	this.version_header = '2.5.1-1';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
