@@ -5762,7 +5762,7 @@ F.initialize = function(http, debug, options, restart) {
 
 	var port = options.port;
 	var ip = options.ip;
-	var listenpath = options.path;
+	var listenpath = options.listenpath;
 
 	if (options.config)
 		U.copy(options.config, F.config);
@@ -5811,7 +5811,7 @@ F.initialize = function(http, debug, options, restart) {
 	if (F.ip == null)
 		F.ip = 'auto';
 
-	!listenpath && (listenpath = F.config['default-path']);
+	!listenpath && (listenpath = F.config['default-listenpath']);
 	F.listenpath = listenpath;
 
 	if (F.server) {
@@ -12666,9 +12666,9 @@ WebSocket.prototype.removeAllListeners = function(name) {
 /**
  * Sends a message
  * @param {String} message
- * @param {String Array or Function(id, client)} id
- * @param {String Array or Function(id, client)} blacklist
- * @param {String} raw internal
+ * @param {String Array or Function(id, client)} id (optional)
+ * @param {String Array or Function(id, client)} blacklist (optional)
+ * @param {Function(key, value)} replacer for JSON (optional)
  * @return {WebSocket}
  */
 WebSocket.prototype.send = function(message, id, blacklist, replacer) {
@@ -12682,15 +12682,14 @@ WebSocket.prototype.send = function(message, id, blacklist, replacer) {
 
 	for (var i = 0, length = keys.length; i < length; i++) {
 
-		var _id = keys[i];
-		var conn = this.connections[_id];
+		var conn = this.connections[keys[i]];
 
 		if (id) {
 			if (id instanceof Array) {
-				if (!websocket_valid_array(_id, id))
+				if (!websocket_valid_array(conn.id, id))
 					continue;
 			} else if (id instanceof Function) {
-				if (!websocket_valid_fn(_id, conn, id))
+				if (!websocket_valid_fn(conn.id, conn, id))
 					continue;
 			} else
 				throw new Error('Invalid "id" argument.');
@@ -12698,10 +12697,10 @@ WebSocket.prototype.send = function(message, id, blacklist, replacer) {
 
 		if (blacklist) {
 			if (blacklist instanceof Array) {
-				if (websocket_valid_array(_id, blacklist))
+				if (websocket_valid_array(conn.id, blacklist))
 					continue;
 			} else if (blacklist instanceof Function) {
-				if (websocket_valid_fn(_id, conn, blacklist))
+				if (websocket_valid_fn(conn.id, conn, blacklist))
 					continue;
 			} else
 				throw new Error('Invalid "blacklist" argument.');

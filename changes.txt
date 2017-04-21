@@ -1,9 +1,11 @@
 ======= 2.5.1 (BETA)
 
-- added: `F.config['default-path']` start a UNIX socket server listening for connections on the given path
-- added: `F.listenpath` contains `default-path` location
+- added: `F.config['default-listenpath']` start a UNIX socket server listening for connections on the given path
+- added: `F.listenpath` contains `default-listenpath` location
 
-- updated: `F.http(type, options)` supports `options.path` for HTTP server (a direct shortcut for `default-path`)
+- updated: `F.http(type, options)` supports `options.listenpath` for HTTP server (a direct shortcut for `default-listenpath`)
+
+- fixed: `controller.send()` bad declaration of `connection.id` for `id` and `blacklist` arguments
 
 ======= 2.5.0
 
