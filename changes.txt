@@ -7,6 +7,7 @@
 - updated: `F.script` returns error if compilation fails
 
 - fixed: `controller.send()` bad declaration of `connection.id` for `id` and `blacklist` arguments
+- fixed: `totaljs --translate` problem with `node_modules` and `.git` directory
 
 ======= 2.5.0
 
