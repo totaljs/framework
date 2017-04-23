@@ -1033,7 +1033,7 @@ F.script = function(body, value, callback, param) {
 
 	if (err) {
 		callback && callback(err);
-		return compilation ? null : F;
+		return compilation ? err : F;
 	}
 
 	if (compilation) {

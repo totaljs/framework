@@ -4,6 +4,7 @@
 - added: `F.listenpath` contains `default-listenpath` location
 
 - updated: `F.http(type, options)` supports `options.listenpath` for HTTP server (a direct shortcut for `default-listenpath`)
+- updated: `F.script` returns error if compilation fails
 
 - fixed: `controller.send()` bad declaration of `connection.id` for `id` and `blacklist` arguments
 
