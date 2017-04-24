@@ -21,7 +21,7 @@
 
 /**
  * @module Framework
- * @version 2.5.1
+ * @version 2.6.0
  */
 
 'use strict';
@@ -497,7 +497,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2510;
-	this.version_header = '2.5.1-2';
+	this.version_header = '2.6.0-2';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
