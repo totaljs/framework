@@ -318,7 +318,7 @@ Database.prototype.count = function(view) {
 		self.pending_reader_view.push({ builder: builder, count: 0, view: view, type: 1 });
 		setImmediate(next_operation, self, 6);
 	} else {
-		self.pending_reader.push({ builder: builder, count: 0, view: view, type: 1 });
+		self.pending_reader.push({ builder: builder, count: 0, type: 1 });
 		setImmediate(next_operation, self, 4);
 	}
 
@@ -334,7 +334,7 @@ Database.prototype.one = function(view) {
 		self.pending_reader_view.push({ builder: builder, count: 0, view: view });
 		setImmediate(next_operation, self, 6, builder);
 	} else {
-		self.pending_reader.push({ builder: builder, count: 0, view: view });
+		self.pending_reader.push({ builder: builder, count: 0 });
 		setImmediate(next_operation, self, 4, builder);
 	}
 
@@ -350,7 +350,7 @@ Database.prototype.top = function(max, view) {
 		self.pending_reader_view.push({ builder: builder, count: 0, counter: 0, view: view });
 		setImmediate(next_operation, self, 6, builder);
 	} else {
-		self.pending_reader.push({ builder: builder, count: 0, counter: 0, view: view });
+		self.pending_reader.push({ builder: builder, count: 0, counter: 0 });
 		setImmediate(next_operation, self, 4, builder);
 	}
 
