@@ -161,7 +161,8 @@ Database.prototype.meta = function(name, value) {
 	return self;
 };
 
-function next_operation(self, type) {
+function next_operation(self, type, builder) {
+	builder && builder.$sortinline();
 	self.next(type);
 }
 
@@ -296,10 +297,10 @@ Database.prototype.find = function(view) {
 
 	if (view) {
 		self.pending_reader_view.push({ builder: builder, count: 0, counter: 0, view: view });
-		setImmediate(next_operation, self, 6);
+		setImmediate(next_operation, self, 6, builder);
 	} else {
-		self.pending_reader.push({ builder: builder, count: 0, counter: 0, view: view });
-		setImmediate(next_operation, self, 4);
+		self.pending_reader.push({ builder: builder, count: 0, counter: 0 });
+		setImmediate(next_operation, self, 4, builder);
 	}
 
 	return builder;
@@ -331,10 +332,10 @@ Database.prototype.one = function(view) {
 
 	if (view) {
 		self.pending_reader_view.push({ builder: builder, count: 0, view: view });
-		setImmediate(next_operation, self, 6);
+		setImmediate(next_operation, self, 6, builder);
 	} else {
 		self.pending_reader.push({ builder: builder, count: 0, view: view });
-		setImmediate(next_operation, self, 4);
+		setImmediate(next_operation, self, 4, builder);
 	}
 
 	return builder;
@@ -347,10 +348,10 @@ Database.prototype.top = function(max, view) {
 
 	if (view) {
 		self.pending_reader_view.push({ builder: builder, count: 0, counter: 0, view: view });
-		setImmediate(next_operation, self, 6);
+		setImmediate(next_operation, self, 6, builder);
 	} else {
 		self.pending_reader.push({ builder: builder, count: 0, counter: 0, view: view });
-		setImmediate(next_operation, self, 4);
+		setImmediate(next_operation, self, 4, builder);
 	}
 
 	return builder;
@@ -1815,7 +1816,6 @@ DatabaseBuilder.prototype.sort = function(name, desc) {
 	}
 
 	this.$sort = { name: name, asc: desc ? false : true };
-	this.$sortinline();
 	return this;
 };
 
