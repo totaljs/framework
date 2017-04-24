@@ -12,6 +12,7 @@ const options = {};
 // options.config = { name: 'Total.js' };
 // options.https = { key: fs.readFileSync('keys/agent2-key.pem'), cert: fs.readFileSync('keys/agent2-cert.pem')};
 // options.sleep = 3000;
+// options.inspector = 9229;
 // options.debugger = 40894;
 
 require('total.js');
@@ -19,7 +20,7 @@ require('total.js');
 const isDebugging = process.argv.indexOf('debugging') !== -1;
 const directory = process.cwd();
 const path = require('path');
-const VERSION = '8.0';
+const VERSION = '9.0';
 const TIME = 2000;
 const REG_CONFIGS = /configs\//g;
 const REG_FILES = /config\-debug|config\-release|config|versions|sitemap|dependencies|\.js|\.resource/i;
@@ -186,8 +187,13 @@ function app() {
 		var arr = process.argv;
 		var port = arr.pop();
 
-		if (process.execArgv.indexOf('--debug') !== -1) {
+		if (process.execArgv.indexOf('--debug') !== -1 || options.debugger) {
 			var key = '--debug=' + (options.debugger || 40894);
+			process.execArgv.indexOf(key) === -1 && process.execArgv.push(key);
+		}
+
+		if (process.execArgv.indexOf('--inspect') !== -1 || options.inspector) {
+			var key = '--inspect=' + (options.inspector || 9229);
 			process.execArgv.indexOf(key) === -1 && process.execArgv.push(key);
 		}
 
