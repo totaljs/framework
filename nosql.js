@@ -21,7 +21,7 @@
 
 /**
  * @module NoSQL
- * @version 2.5.0
+ * @version 2.6.0
  */
 
 'use strict';
@@ -781,7 +781,7 @@ Database.prototype.$reader2 = function(filename, items, callback) {
 
 			item.count++;
 
-			if (!builder.$sort && ((builder.$skip && builder.$skip >= item.count) || (builder.$take && builder.$take <= item.counter)))
+			if (!builder.$inlinesort && ((builder.$skip && builder.$skip >= item.count) || (builder.$take && builder.$take <= item.counter)))
 				continue;
 
 			item.counter++;
@@ -819,7 +819,9 @@ Database.prototype.$reader2 = function(filename, items, callback) {
 						item.scalar[val] = 1;
 					break;
 				default:
-					if (item.response)
+					if (builder.$inlinesort)
+						nosqlinlinesorter(item, builder, output);
+					else if (item.response)
 						item.response.push(output);
 					else
 						item.response = [output];
@@ -849,9 +851,10 @@ Database.prototype.$reader2 = function(filename, items, callback) {
 			}
 
 			if (item.count) {
-				if (builder.$sort.name)
-					item.response.quicksort(builder.$sort.name, builder.$sort.asc);
-				else if (builder.$sort === EMPTYOBJECT)
+				if (builder.$sort.name) {
+					if (!builder.$inlinesort || builder.$take !== item.response.length)
+						item.response.quicksort(builder.$sort.name, builder.$sort.asc);
+				} else if (builder.$sort === EMPTYOBJECT)
 					item.response.random();
 				else
 					item.response.sort(builder.$sort);
@@ -860,7 +863,7 @@ Database.prototype.$reader2 = function(filename, items, callback) {
 					item.response = item.response.splice(builder.$skip, builder.$take);
 				else if (builder.$skip)
 					item.response = item.response.splice(builder.$skip);
-				else if (builder.$take)
+				else if (!builder.$inlinesort && builder.$take)
 					item.response = item.response.splice(0, builder.$take);
 			}
 
@@ -878,6 +881,53 @@ Database.prototype.$reader2 = function(filename, items, callback) {
 
 	return self;
 };
+
+function nosqlinlinesorter(item, builder, doc) {
+
+	if (!item.response) {
+		item.response = [doc];
+		return;
+	}
+
+	var length = item.response.length;
+	if (length < builder.$limit) {
+		item.response.push(doc);
+		length + 1 >= builder.$limit && item.response.quicksort(builder.$sort.name, builder.$sort.asc);
+	} else
+		nosqlresort(item.response, builder, doc); // inline sorter
+}
+
+function nosqlsortvalue(a, b, sorter) {
+	var type = typeof(a);
+	if (type === 'number')
+		return sorter.asc ? a < b : a > b;
+	else if (type === 'string') {
+		a = a.substring(0, 3).toLowerCase().removeDiacritics();
+		var c = a.localeCompare(b);
+		return sorter.asc ? c === -1 : c === 1;
+	} else if (a instanceof Date)
+		return sorter.asc ? a < b : a > b;
+
+	return false;
+}
+
+function nosqlresort(arr, builder, doc) {
+
+	var b = doc[builder.$sort.name];
+	if (typeof(b) === 'string')
+		b = b.substring(0, 3).toLowerCase().removeDiacritics();
+
+	var length = arr.length;
+	for (var i = 0; i < length; i++) {
+		var item = arr[i];
+		if (nosqlsortvalue(item[builder.$sort.name], b, builder.$sort))
+			return;
+		for (var j = length - 1; j > i; j--)
+			arr[j] = arr[j - 1];
+		arr[i] = doc;
+		return;
+	}
+}
 
 Database.prototype.$reader2_inmemory = function(name, items, callback) {
 
@@ -1765,6 +1815,13 @@ DatabaseBuilder.prototype.sort = function(name, desc) {
 	}
 
 	this.$sort = { name: name, asc: desc ? false : true };
+	this.$sortinline();
+	return this;
+};
+
+DatabaseBuilder.prototype.$sortinline = function() {
+	this.$inlinesort = this.$take && this.$sort && this.$sort !== EMPTYOBJECT;
+	this.$limit = (this.$take || 0) + (this.$skip || 0);
 	return this;
 };
 
