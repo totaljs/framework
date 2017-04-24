@@ -5,6 +5,8 @@
 
 - updated: `F.http(type, options)` supports `options.listenpath` for HTTP server (a direct shortcut for `default-listenpath`)
 - updated: `F.script` returns error if compilation fails
+- updated: `debug.js` supports `inspector`
+- updated: NoSQL embedded database sorting (increased read performance about 70%)
 
 - fixed: `controller.send()` bad declaration of `connection.id` for `id` and `blacklist` arguments
 - fixed: `totaljs --translate` problem with `node_modules` and `.git` directory
