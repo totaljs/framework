@@ -560,6 +560,7 @@ function Framework() {
 		'default-timezone': '',
 		'default-root': '',
 		'default-response-maxage': '11111111',
+		'default-errorbuilder-status': 200,
 
 		// Seconds (2 minutes)
 		'default-cors-maxage': 120,
@@ -9133,6 +9134,7 @@ Subscribe.prototype.execute = function(status, isError) {
 		if (status === 400 && self.exception instanceof framework_builders.ErrorBuilder) {
 			F.stats.response.errorBuilder++;
 			req.$language && self.exception.setResource(req.$language);
+			res.options.code = self.exception.status;
 			res.options.body = self.exception.output();
 			res.options.type = self.exception.contentType;
 			res.$text();
@@ -11525,7 +11527,11 @@ Controller.prototype.json = function(obj, headers, beautify, replacer) {
 		if (obj.contentType)
 			res.options.type = obj.contentType;
 		else
-			res.options.type =
+			res.options.type = CT_JSON;
+
+		if (obj.status !== 200)
+			res.options.code = obj.status;
+
 		obj = obj.output();
 		F.stats.response.errorBuilder++;
 	} else {
@@ -11582,6 +11588,8 @@ Controller.prototype.jsonp = function(name, obj, headers, beautify, replacer) {
 	if (obj instanceof framework_builders.ErrorBuilder) {
 		self.req.$language && !obj.isResourceCustom && obj.setResource(self.req.$language);
 		obj = obj.json(beautify);
+		if (obj.status !== 200)
+			res.options.code = obj.status;
 		F.stats.response.errorBuilder++;
 	} else {
 
@@ -11656,8 +11664,8 @@ Controller.prototype.content = function(body, type, headers) {
 	var self = this;
 	var res = self.res;
 
-	res.options.code = self.status;
 	res.options.headers = headers;
+	res.options.code = self.status;
 
 	if (body instanceof ErrorBuilder) {
 		var tmp = body.output();
@@ -11665,8 +11673,13 @@ Controller.prototype.content = function(body, type, headers) {
 			res.options.type = body.contentType;
 		else
 			res.options.type = CT_JSON;
+
 		body = tmp;
 		F.stats.response.errorBuilder++;
+
+		if (body.status !== 200)
+			res.options.code = body.status;
+
 	} else
 		res.options.type = type || CT_TEXT;
 

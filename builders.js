@@ -2352,6 +2352,7 @@ function ErrorBuilder(onResource) {
 	this.replacer = [];
 	this.isPrepared = false;
 	this.contentType = 'application/json';
+	this.status = F.config['default-errorbuilder-status'] || 200;
 
 	// Hidden: when the .push() contains a classic Error instance
 	// this.unexpected;
