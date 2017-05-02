@@ -4309,9 +4309,6 @@ F.uninstall = function(type, name, options, skipEmit, packageName) {
 		if (!obj)
 			return F;
 
-		if (obj.id)
-			delete require.cache[require.resolve(obj.id)];
-
 		F.$uninstall(id);
 		typeof(obj.uninstall) === 'function' && obj.uninstall(options, name);
 
@@ -4331,9 +4328,6 @@ F.uninstall = function(type, name, options, skipEmit, packageName) {
 
 		if (!obj)
 			return F;
-
-		if (obj.id)
-			delete require.cache[require.resolve(obj.id)];
 
 		F.$uninstall(id, packageName ? '' : ((isModule ? '#' : '') + name));
 		delete F.temporary.ready[type + '#' + name];
