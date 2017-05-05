@@ -9090,8 +9090,14 @@ Subscribe.prototype.success = function() {
 
 Subscribe.prototype.file = function() {
 	var self = this;
-	self.req.on('end', subscribe_file);
-	self.req.resume();
+	var h = this.req.method[0];
+	if (h === 'G' || h === 'H') {
+		this.req.resume();
+		subscribe_file.call(this.req);
+	} else {
+		self.req.on('end', subscribe_file);
+		this.req.resume();
+	}
 	return self;
 };
 
@@ -9145,7 +9151,6 @@ Subscribe.prototype.urlencoded = function() {
 	self.res.end();
 	F.$events['request-end'] && F.emit('request-end', self.req, self.res);
 	self.req.clear(true);
-
 	return self;
 };
 
@@ -9154,9 +9159,14 @@ function subscribe_parse(chunk) {
 }
 
 Subscribe.prototype.end = function() {
-	var self = this;
-	self.req.on('end', subscribe_end);
-	self.req.resume();
+	var h = this.req.method[0];
+	if (h === 'G' || h === 'H') {
+		this.req.resume();
+		subscribe_end.call(this.req);
+	} else {
+		this.req.on('end', subscribe_end);
+		this.req.resume();
+	}
 };
 
 function subscribe_end() {
