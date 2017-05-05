@@ -3846,7 +3846,7 @@ RESTBuilder.prototype.exec = function(callback) {
 		if (data) {
 			var evt = new framework_utils.EventEmitter2();
 			process.nextTick(exec_removelisteners, evt);
-			callback(null, self.maketransform(this.$schema ? this.$schema.make(data.json) : data.json, data), data);
+			callback(null, self.maketransform(this.$schema ? this.$schema.make(data.value) : data.value, data), data);
 			return evt;
 		}
 	}
@@ -3856,7 +3856,7 @@ RESTBuilder.prototype.exec = function(callback) {
 		var type = err ? '' : headers['content-type'] || '';
 		var output = new RESTBuilderResponse();
 
-		output.value = type.indexOf('/xml') === -1 ? response.isJSON() ? F.onParseJSON(response) : F.onParseQuery(response) : response.parseXML();
+		output.value = type.indexOf('/xml') === -1 ? response.isJSON() ? JSON.parse(response, jsonparser) : F.onParseQuery(response) : response.parseXML();
 
 		if (output.value == null)
 			output.value = EMPTYOBJECT;
@@ -3972,6 +3972,10 @@ global.OPERATION = function(name, value, callback, param) {
 		callback(error, EMPTYOBJECT, param);
 	}
 };
+
+function jsonparser(key, value) {
+	return typeof(value) === 'string' && value.isJSONDate() ? new Date(value) : value;
+}
 
 // ======================================================
 // EXPORTS
