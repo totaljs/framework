@@ -1,4 +1,4 @@
-![Total.js logo](https://www.totaljs.com/img/logo-signature.png)
+![Total.js logo](https://www.totaljs.com/img/logo-totaljs.png)
 
 [![NPM version][npm-version-image]][npm-url] [![NPM quality][npm-quality]](http://packagequality.com/#?package=total.js) [![NPM downloads][npm-downloads-image]][npm-url] [![MIT License][license-image]][license-url] [![Build Status][travis-image]][travis-url] [![Gitter chat](https://badges.gitter.im/totaljs/framework.png)](https://gitter.im/totaljs/framework)
 
