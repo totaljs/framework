@@ -123,7 +123,6 @@ function SchemaBuilderEntity(parent, name) {
 	this.onDefault;
 	this.$onDefault; // Array of functions for inherits
 	this.onValidate = F.onValidate;
-	this.$onValidate; // Array of functions for inherits
 	this.onSave;
 	this.onGet;
 	this.onRemove;
@@ -178,6 +177,7 @@ SchemaBuilderEntity.prototype.define = function(name, type, required, custom) {
 		type = type.name;
 
 	this.schema[name] = this.$parse(name, type, required, custom);
+
 	switch (this.schema[name].type) {
 		case 7:
 			if (!this.dependencies)
@@ -221,23 +221,29 @@ SchemaBuilderEntity.prototype.inherit = function(group, name) {
 		if (!self.resourcePrefix && schema.resourcePrefix)
 			self.resourcePrefix = schema.resourcePrefix;
 
-		self.schema = copy_inherit(self, 'schema', schema.schema);
-		self.meta = copy_inherit(self, 'meta', schema.meta);
-		self.transforms = copy_inherit(self, 'transforms', schema.transforms);
-		self.workflows = copy_inherit(self, 'workflows', schema.workflows);
-		self.hooks = copy_inherit(self, 'hooks', schema.hooks);
-		self.operations = copy_inherit(self, 'operations', schema.operations);
-		self.constants = copy_inherit(self, 'constants', schema.constants);
+		copy_inherit(self, 'schema', schema.schema);
+		copy_inherit(self, 'meta', schema.meta);
+		copy_inherit(self, 'transforms', schema.transforms);
+		copy_inherit(self, 'workflows', schema.workflows);
+		copy_inherit(self, 'hooks', schema.hooks);
+		copy_inherit(self, 'operations', schema.operations);
+		copy_inherit(self, 'constants', schema.constants);
 
 		schema.properties.forEach(function(item) {
 			self.properties.indexOf(item) === -1 && self.properties.push(item);
 		});
 
-		if (!self.onPrepare && schema.onPrepare)
-			self.onPrepare = schema.onPrepare;
+		if (schema.onPrepare) {
+			if (!self.$onPrepare)
+				self.$onPrepare = [];
+			self.$onPrepare.push(schema.onPrepare);
+		}
 
-		if (!self.onDefault && schema.onDefault)
-			self.onDefault = schema.onDefault;
+		if (schema.onDefault) {
+			if (!self.$onDefault)
+				self.$onDefault = [];
+			self.$onDefault.push(schema.onDefault);
+		}
 
 		if (self.onValidate === F.onValidate && self.onValidate !== schema.onValidate)
 			self.onValidate = schema.onValidate;
@@ -257,7 +263,7 @@ SchemaBuilderEntity.prototype.inherit = function(group, name) {
 		if (!self.onError && schema.onError)
 			self.onError = schema.onError;
 
-		self.fields = Object.keys(this.schema);
+		self.fields = Object.keys(self.schema);
 	});
 
 	return self;
@@ -792,6 +798,7 @@ SchemaBuilderEntity.prototype.destroy = function() {
 	this.properties = undefined;
 	this.schema = undefined;
 	this.onDefault = undefined;
+	this.$onDefault = undefined;
 	this.onValidate = undefined;
 	this.onSave = undefined;
 	this.onRead = undefined;
@@ -807,6 +814,7 @@ SchemaBuilderEntity.prototype.destroy = function() {
 	this.hooks = undefined;
 	this.constants = undefined;
 	this.onPrepare = undefined;
+	this.$onPrepare = undefined;
 	this.onError = undefined;
 	this.gcache = undefined;
 	this.dependencies = undefined;
@@ -1223,15 +1231,15 @@ SchemaBuilderEntity.prototype.default = function() {
 	if (obj === null)
 		return null;
 
-	var defaults = this.onDefault;
 	var item = new this.CurrentSchemaInstance();
+	var defaults = this.onDefault || this.$onDefault ? true : false;
 
 	for (var property in obj) {
 
 		var type = obj[property];
 
 		if (defaults) {
-			var def = defaults(property, true, this.name);
+			var def = this.$ondefault(property, true, this.name);
 			if (def !== undefined) {
 				item[property] = def;
 				continue;
@@ -1331,11 +1339,40 @@ function autotrim(context, value) {
 }
 
 SchemaBuilderEntity.prototype.$onprepare = function(name, value, index, model) {
-	if (this.onPrepare) {
-		var val = this.onPrepare(name, value, index, model);
-		return val === undefined ? value : val;
+
+	var val = value;
+
+	if (this.$onPrepare) {
+		for (var i = 0, length = this.$onPrepare.length; i < length; i++) {
+			var tmp = this.$onPrepare[i](name, val, index, model);
+			if (tmp !== undefined)
+				val = tmp;
+		}
 	}
-	return value;
+
+	if (this.onPrepare)
+		val = this.onPrepare(name, val, index, model);
+
+	return val === undefined ? value : val;
+};
+
+SchemaBuilderEntity.prototype.$ondefault = function(property, create, entity) {
+
+	var val;
+
+	if (this.onDefault) {
+		val = this.onDefault(property, create, entity);
+		if (val !== undefined)
+			return val;
+	}
+
+	if (this.$onDefault) {
+		for (var i = 0, length = this.$onDefault.length; i < length; i++) {
+			val = this.$onDefault[i](property, create, entity);
+			if (val !== undefined)
+				return val;
+		}
+	}
 };
 
 /**
@@ -1358,7 +1395,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 	var tmp;
 	var entity;
 	var item = new self.CurrentSchemaInstance();
-	var defaults = self.onDefault;
+	var defaults = self.onDefault || self.$onDefault ? true : false;
 
 	for (var property in obj) {
 
@@ -1369,7 +1406,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 			val = undefined;
 
 		if (val === undefined && defaults)
-			val = defaults(property, false, self.name);
+			val = self.$ondefault(property, false, self.name);
 
 		if (val === undefined)
 			val = '';
@@ -1463,7 +1500,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 					if (framework_utils.isDate(tmp))
 						tmp = self.$onprepare(property, tmp, undefined, model);
 					else
-						tmp = (defaults ? isUndefined(defaults(property, false, self.name), null) : null);
+						tmp = (defaults ? isUndefined(self.$ondefault(property, false, self.name), null) : null);
 
 					item[property] = tmp;
 					break;
@@ -1491,7 +1528,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 				case 7:
 
 					if (!val) {
-						val = (defaults ? isUndefined(defaults(property, false, self.name), null) : null);
+						val = (defaults ? isUndefined(self.$ondefault(property, false, self.name), null) : null);
 						// val = defaults(property, false, self.name);
 						if (val === null) {
 							item[property] = null;
@@ -1520,7 +1557,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 
 		// ARRAY:
 		if (!(val instanceof Array)) {
-			item[property] = (defaults ? isUndefined(defaults(property, false, self.name), []) : []);
+			item[property] = (defaults ? isUndefined(self.$ondefault(property, false, self.name), []) : []);
 			continue;
 		}
 
