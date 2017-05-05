@@ -11,6 +11,7 @@
 
 - fixed: `controller.send()` bad declaration of `connection.id` for `id` and `blacklist` arguments
 - fixed: `totaljs --translate` problem with `node_modules` and `.git` directory
+- fixed: a waiting mode in `GETSCHEMA()`
 
 ======= 2.5.0
 

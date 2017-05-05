@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkBuilders
- * @version 2.5.0
+ * @version 2.6.0
  */
 
 'use strict';
@@ -110,6 +110,7 @@ function SchemaBuilderEntity(parent, name) {
 	this.schema = {};
 	this.meta = {};
 	this.properties = [];
+	this.inherits = [];
 	this.resourcePrefix;
 	this.resourceName;
 	this.transforms;
@@ -118,8 +119,11 @@ function SchemaBuilderEntity(parent, name) {
 	this.operations;
 	this.constants;
 	this.onPrepare;
+	this.$onPrepare; // Array of functions for inherits
 	this.onDefault;
+	this.$onDefault; // Array of functions for inherits
 	this.onValidate = F.onValidate;
+	this.$onValidate; // Array of functions for inherits
 	this.onSave;
 	this.onGet;
 	this.onRemove;
@@ -193,6 +197,87 @@ SchemaBuilderEntity.prototype.define = function(name, type, required, custom) {
 	this.properties.indexOf(name) === -1 && this.properties.push(name);
 	return this;
 };
+
+SchemaBuilderEntity.prototype.inherit = function(group, name) {
+
+	if (!name) {
+		name = group;
+		group = DEFAULT_SCHEMA;
+	}
+
+	var self = this;
+
+	exports.getschema(group, name, function(err, schema) {
+
+		if (err)
+			throw err;
+
+		self.primary = schema.primary;
+		self.inherits.push(schema);
+
+		if (!self.resourceName && schema.resourceName)
+			self.resourceName = schema.resourceName;
+
+		if (!self.resourcePrefix && schema.resourcePrefix)
+			self.resourcePrefix = schema.resourcePrefix;
+
+		self.schema = copy_inherit(self, 'schema', schema.schema);
+		self.meta = copy_inherit(self, 'meta', schema.meta);
+		self.transforms = copy_inherit(self, 'transforms', schema.transforms);
+		self.workflows = copy_inherit(self, 'workflows', schema.workflows);
+		self.hooks = copy_inherit(self, 'hooks', schema.hooks);
+		self.operations = copy_inherit(self, 'operations', schema.operations);
+		self.constants = copy_inherit(self, 'constants', schema.constants);
+
+		schema.properties.forEach(function(item) {
+			self.properties.indexOf(item) === -1 && self.properties.push(item);
+		});
+
+		if (!self.onPrepare && schema.onPrepare)
+			self.onPrepare = schema.onPrepare;
+
+		if (!self.onDefault && schema.onDefault)
+			self.onDefault = schema.onDefault;
+
+		if (self.onValidate === F.onValidate && self.onValidate !== schema.onValidate)
+			self.onValidate = schema.onValidate;
+
+		if (!self.onSave && schema.onSave)
+			self.onSave = schema.onSave;
+
+		if (!self.onGet && schema.onGet)
+			self.onGet = schema.onGet;
+
+		if (!self.onRemove && schema.onRemove)
+			self.onRemove = schema.onRemove;
+
+		if (!self.onQuery && schema.onQuery)
+			self.onQuery = schema.onQuery;
+
+		if (!self.onError && schema.onError)
+			self.onError = schema.onError;
+
+		self.fields = Object.keys(this.schema);
+	});
+
+	return self;
+};
+
+function copy_inherit(schema, field, value) {
+
+	if (!value)
+		return;
+
+	if (value && !schema[field]) {
+		schema[field] = framework_utils.clone(value);
+		return;
+	}
+
+	Object.keys(value).forEach(function(key) {
+		if (schema[field][key] === undefined)
+			schema[field][key] = framework_utils.clone(value[key]);
+	});
+}
 
 /**
  * Set primary key
@@ -2406,8 +2491,13 @@ exports.getschema = function(group, name, fn, timeout) {
 		group = DEFAULT_SCHEMA;
 	}
 
-	if (fn)
-		return framework_utils.wait(() => schemas[group], err => fn(err, schemas[group]), timeout || 20000);
+	if (fn) {
+		framework_utils.wait(function() {
+			var g = schemas[group];
+			return g && g.get(name) ? true : false;
+		}, err => fn(err, schemas[group].get(name)), timeout || 20000);
+		return;
+	}
 
 	var g = schemas[group];
 	return g ? g.get(name) : undefined;
