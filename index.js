@@ -81,6 +81,10 @@ const REPOSITORY_SITEMAP = '$sitemap';
 const ATTR_END = '"';
 const ETAG = '858';
 const CONCAT = [null, null];
+const CLUSTER_CACHE_SET = { type: 'cache-set' };
+const CLUSTER_CACHE_REMOVE = { type: 'cache-remove' };
+const CLUSTER_CACHE_REMOVEALL = { type: 'cache-remove-all' };
+const CLUSTER_CACHE_CLEAR = { type: 'cache-clear' };
 
 Object.freeze(EMPTYOBJECT);
 Object.freeze(EMPTYARRAY);
@@ -495,7 +499,7 @@ const controller_error_status = function(controller, status, problem) {
 
 function Framework() {
 
-	this.id = null;
+	this.$id = null; // F.id ==> property
 	this.version = 2600;
 	this.version_header = '2.6.0-4';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
@@ -779,6 +783,17 @@ function Framework() {
 // ======================================================
 
 Framework.prototype = {
+	get id() {
+		return F.$id;
+	},
+	set id(value) {
+		CLUSTER_CACHE_SET.id = value;
+		CLUSTER_CACHE_REMOVE.id = value;
+		CLUSTER_CACHE_REMOVEALL.id = value;
+		CLUSTER_CACHE_CLEAR.id = value;
+		F.$id = value;
+		return F.$id;
+	},
 	get onLocate() {
 		return this.onLocale;
 	},
@@ -5769,6 +5784,9 @@ F.initialize = function(http, debug, options, restart) {
 	if (isNaN(port) && typeof(port) !== 'string')
 		port = null;
 
+	if (options.id)
+		F.id = options.id;
+
 	F.config.debug = debug;
 	F.isDebug = debug;
 
@@ -8921,8 +8939,9 @@ FrameworkCache.prototype.stop = function() {
 	return this;
 };
 
-FrameworkCache.prototype.clear = function() {
+FrameworkCache.prototype.clear = function(sync) {
 	this.items = {};
+	F.isCluster && sync !== false && process.send(CLUSTER_CACHE_CLEAR);
 	return this;
 };
 
@@ -8951,6 +8970,13 @@ FrameworkCache.prototype.recycle = function() {
 FrameworkCache.prototype.set = FrameworkCache.prototype.add = function(name, value, expire, sync) {
 	var type = typeof(expire);
 
+	if (F.isCluster && sync !== false) {
+		CLUSTER_CACHE_SET.key = name;
+		CLUSTER_CACHE_SET.value = value;
+		CLUSTER_CACHE_SET.expire = expire;
+		process.send(CLUSTER_CACHE_SET);
+	}
+
 	switch (type) {
 		case 'string':
 			expire = expire.parseDateExpiration();
@@ -8961,7 +8987,7 @@ FrameworkCache.prototype.set = FrameworkCache.prototype.add = function(name, val
 	}
 
 	this.items[name] = { value: value, expire: expire };
-	F.$events['cache-set'] && F.emit('cache-set', name, value, expire, sync);
+	F.$events['cache-set'] && F.emit('cache-set', name, value, expire, sync !== false);
 	return value;
 };
 
@@ -9004,14 +9030,20 @@ FrameworkCache.prototype.setExpire = function(name, expire) {
 	return this;
 };
 
-FrameworkCache.prototype.remove = function(name) {
+FrameworkCache.prototype.remove = function(name, sync) {
 	var value = this.items[name];
 	if (value)
 		this.items[name] = undefined;
+
+	if (F.isCluster && sync !== false) {
+		CLUSTER_CACHE_REMOVE.key = name;
+		process.send(CLUSTER_CACHE_REMOVE);
+	}
+
 	return value;
 };
 
-FrameworkCache.prototype.removeAll = function(search) {
+FrameworkCache.prototype.removeAll = function(search, sync) {
 	var count = 0;
 	var isReg = U.isRegExp(search);
 
@@ -9027,6 +9059,11 @@ FrameworkCache.prototype.removeAll = function(search) {
 
 		this.remove(key);
 		count++;
+	}
+
+	if (F.isCluster && sync !== false) {
+		CLUSTER_CACHE_REMOVEALL.key = name;
+		process.send(CLUSTER_CACHE_REMOVEALL);
 	}
 
 	return count;
@@ -10642,7 +10679,7 @@ Controller.prototype.$viewToggle = function(visible, name, model, expire, key) {
 	if (!value)
 		return '';
 
-	expire && self.cache.add(cache, value, expire);
+	expire && self.cache.add(cache, value, expire, false);
 	return value;
 };
 
@@ -12601,7 +12638,7 @@ Controller.prototype.$memorize_prepare = function(key, expires, disabled, fnTo, 
 			}
 		}
 
-		self.cache.add(key, options, expires);
+		self.cache.add(key, options, expires, false);
 		self.precache = null;
 		delete F.temporary.processing[pk];
 	};
@@ -15263,45 +15300,28 @@ process.on('SIGINT', () => F.stop());
 process.on('exit', () => F.stop());
 
 process.on('message', function(msg, h) {
-
-	if (typeof(msg) !== 'string') {
-		F.$events.message && F.emit('message', msg, h);
-		return;
-	}
-
 	if (msg === 'debugging') {
 		U.wait(() => F.isLoaded, function() {
 			F.isLoaded = undefined;
 			F.console();
 		}, 10000, 500);
-		return;
-	}
-
-	if (msg === 'reconnect') {
+	} else if (msg === 'reconnect')
 		F.reconnect();
-		return;
-	}
-
-	if (msg === 'reconfigure') {
-		F.$configure_configs();
-		F.$configure_versions();
-		F.$configure_workflows();
-		F.$cofnigure_sitemap();
-		F.emit(msg);
-		return;
-	}
-
-	if (msg === 'reset') {
-		// F.clear();
+	else if (msg === 'reset')
 		F.cache.clear();
-		return;
-	}
-
-	if (msg === 'stop' || msg === 'exit') {
+	else if (msg === 'stop' || msg === 'exit' || msg === 'kill')
 		F.stop();
-		return;
+	else if (msg && msg.type && msg.id !== F.id) {
+		msg.type === 'cache-set' && F.cache.set(msg.key, msg.value, msg.expire, false);
+		msg.type === 'cache-remove' && F.cache.remove(msg.key, false);
+		msg.type === 'cache-remove-all' && F.cache.removeAll(msg.key, false);
+		msg.type === 'cache-clear' && F.cache.clear(false);
+		msg.type === 'nosql-lock' && F.databases[msg.name] && F.databases[msg.name].lock();
+		msg.type === 'nosql-unlock' && F.databases[msg.name] && F.databases[msg.name].unlock();
+		msg.type === 'nosql-meta' && F.databases[msg.name] && F.databases[msg.name].$meta();
+		msg.type === 'nosql-counter-lock' && F.databases[msg.name] && (F.databases[msg.name].counter.locked = true);
+		msg.type === 'nosql-counter-unlock' && F.databases[msg.name] && (F.databases[msg.name].counter.locked = false);
 	}
-
 	F.$events.message && F.emit('message', msg, h);
 });
 

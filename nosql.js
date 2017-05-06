@@ -50,6 +50,11 @@ const NEWLINE = '\n';
 const EMPTYARRAY = [];
 const REG_CLEAN = /^[\s]+|[\s]+$/g;
 const INMEMORY = {};
+const CLUSTER_LOCK = { type: 'nosql-lock' };
+const CLUSTER_UNLOCK = { type: 'nosql-unlock' };
+const CLUSTER_META = { type: 'nosql-meta' };
+const CLUSTER_LOCK_COUNTER = { type: 'nosql-counter-lock' };
+const CLUSTER_UNLOCK_COUNTER = { type: 'nosql-counter-unlock' };
 
 Object.freeze(EMPTYARRAY);
 
@@ -78,6 +83,7 @@ function Database(name, filename) {
 	this.$timeoutmeta;
 	this.$events = {};
 	this.$free = true;
+	this.locked = false;
 }
 
 Database.prototype.emit = function(name, a, b, c, d, e, f, g) {
@@ -140,6 +146,11 @@ Database.prototype.removeAllListeners = function(name) {
 };
 
 exports.load = function(name, filename) {
+	CLUSTER_LOCK.id = F.id;
+	CLUSTER_UNLOCK.id = F.id;
+	CLUSTER_META.id = F.id;
+	CLUSTER_LOCK_COUNTER.id = F.id;
+	CLUSTER_UNLOCK_COUNTER.id = F.id;
 	return new Database(name, filename);
 };
 
@@ -365,10 +376,21 @@ Database.prototype.view = function(name) {
 	return builder;
 };
 
+Database.prototype.lock = function() {
+	this.locked = true;
+	return this;
+};
+
+Database.prototype.unlock = function() {
+	this.locked = false;
+	next_operation(this, 0);
+	return this;
+};
+
 Database.prototype.next = function(type) {
 	var self = this;
 
-	if (type && self.step)
+	if (self.locked || (type && self.step))
 		return self;
 
 	if (self.step !== 6 && self.pending_reader_view.length) {
@@ -497,7 +519,12 @@ Database.prototype.$meta = function(write) {
 	var self = this;
 
 	if (write) {
-		Fs.writeFile(self.filenameMeta, JSON.stringify(self.metadata), NOOP);
+		Fs.writeFile(self.filenameMeta, JSON.stringify(self.metadata), function() {
+			if (F.isCluster) {
+				CLUSTER_META.name = self.name;
+				process.send(CLUSTER_META);
+			}
+		});
 		return self;
 	}
 
@@ -515,6 +542,11 @@ Database.prototype.$append = function() {
 	if (!self.pending_append.length) {
 		self.next(0);
 		return self;
+	}
+
+	if (F.isCluster) {
+		CLUSTER_LOCK.name = self.name;
+		process.send(CLUSTER_LOCK);
 	}
 
 	self.pending_append.splice(0).limit(20, function(items, next) {
@@ -537,6 +569,12 @@ Database.prototype.$append = function() {
 };
 
 function next_append(self) {
+
+	if (F.isCluster) {
+		CLUSTER_UNLOCK.name = self.name;
+		process.send(CLUSTER_UNLOCK);
+	}
+
 	self.next(0);
 	setImmediate(() => self.refresh());
 }
@@ -573,6 +611,11 @@ Database.prototype.$update = function() {
 	if (!self.pending_update.length) {
 		self.next(0);
 		return self;
+	}
+
+	if (F.isCluster) {
+		CLUSTER_LOCK.name = self.name;
+		process.send(CLUSTER_LOCK);
 	}
 
 	var reader = Fs.createReadStream(self.filename);
@@ -621,6 +664,11 @@ Database.prototype.$update = function() {
 					self.insert(item.insert).$callback = item.builder.$callback;
 				else
 					item.builder.$callback && item.builder.$callback(errorhandling(err, item.builder, item.count), item.count);
+			}
+
+			if (F.isCluster) {
+				CLUSTER_UNLOCK.name = self.name;
+				process.send(CLUSTER_UNLOCK);
 			}
 
 			setImmediate(function() {
@@ -1067,6 +1115,11 @@ Database.prototype.$views = function() {
 		return self;
 	}
 
+	if (F.isCluster) {
+		CLUSTER_LOCK.name = self.name;
+		process.send(CLUSTER_LOCK);
+	}
+
 	var response = [];
 
 	for (var i = 0; i < length; i++)
@@ -1121,6 +1174,12 @@ Database.prototype.$views = function() {
 						builder.push(JSON.stringify(items[i]));
 					Fs.appendFile(filename, builder.join(NEWLINE) + NEWLINE, next);
 				}, function() {
+
+					if (F.isCluster) {
+						CLUSTER_UNLOCK.name = self.name;
+						process.send(CLUSTER_UNLOCK);
+					}
+
 					// clears in-memory
 					self.inmemory[item.name] = undefined;
 					next();
@@ -1220,6 +1279,11 @@ Database.prototype.$remove = function() {
 	var length = filter.length;
 	var change = false;
 
+	if (F.isCluster) {
+		CLUSTER_LOCK.name = self.name;
+		process.send(CLUSTER_LOCK);
+	}
+
 	reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
 
 		var json = JSON.parse(value.trim());
@@ -1255,6 +1319,12 @@ Database.prototype.$remove = function() {
 			}
 
 			setImmediate(function() {
+
+				if (F.isCluster) {
+					CLUSTER_UNLOCK.name = self.name;
+					process.send(CLUSTER_UNLOCK);
+				}
+
 				self.next(0);
 				change && setImmediate(() => self.refresh());
 			});
@@ -1892,6 +1962,7 @@ function Counter(db) {
 	this.key = 'nosql' + db.name.hash();
 	this.type = 0; // 1 === saving, 2 === reading
 	this.$events = {};
+	this.locked = false;
 }
 
 Counter.prototype.emit = function(name, a, b, c, d, e, f, g) {
@@ -2254,7 +2325,7 @@ function counter_parse_months_all(output, value) {
 Counter.prototype.save = function() {
 	var self = this;
 
-	if (self.type) {
+	if (self.type || self.locked) {
 		setTimeout(() => self.save(), 200);
 		return self;
 	}
@@ -2267,6 +2338,11 @@ Counter.prototype.save = function() {
 
 	self.cache = null;
 	self.type = 1;
+
+	if (F.isCluster) {
+		CLUSTER_LOCK_COUNTER.name = self.name;
+		process.send(CLUSTER_LOCK_COUNTER);
+	}
 
 	var flush = function() {
 		var keys = Object.keys(cache);
@@ -2322,6 +2398,10 @@ Counter.prototype.save = function() {
 			clearTimeout(self.timeout);
 			self.timeout = 0;
 			self.type = 0;
+			if (F.isCluster) {
+				CLUSTER_UNLOCK_COUNTER.name = self.name;
+				process.send(CLUSTER_UNLOCK_COUNTER);
+			}
 		});
 	});
 
@@ -2331,14 +2411,25 @@ Counter.prototype.save = function() {
 Counter.prototype.clear = function(callback) {
 	var self = this;
 
-	if (self.type) {
+	if (self.type || self.locked) {
 		setTimeout(() => self.clear(callback), 200);
 		return self;
+	}
+
+	if (F.isCluster) {
+		CLUSTER_LOCK_COUNTER.name = self.name;
+		process.send(CLUSTER_LOCK_COUNTER);
 	}
 
 	self.type = 3;
 
 	Fs.unlink(self.db.filename + '-counter', function() {
+
+		if (F.isCluster) {
+			CLUSTER_UNLOCK_COUNTER.name = self.name;
+			process.send(CLUSTER_UNLOCK_COUNTER);
+		}
+
 		self.type = 0;
 		self.emit('clear');
 		callback && callback();

@@ -5,6 +5,8 @@
 - added: `F.listenpath` contains `default-listenpath` location
 - added: `F.custom(mode, http, request_prototype, response_prototype, options)` a new mode for overwriting default HTTP server
 - added: `schema.inherit([group], name)` can inherit all values from another schema
+- added: NoSQL synchronization for cluster (more in docs)
+- added: cache synchronization for cluster (more in docs)
 
 - updated: `F.http(type, options)` supports `options.listenpath` for HTTP server (a direct shortcut for `default-listenpath`)
 - updated: `F.script` returns error if compilation fails
