@@ -9062,7 +9062,7 @@ FrameworkCache.prototype.removeAll = function(search, sync) {
 	}
 
 	if (F.isCluster && sync !== false) {
-		CLUSTER_CACHE_REMOVEALL.key = name;
+		CLUSTER_CACHE_REMOVEALL.key = search;
 		process.send(CLUSTER_CACHE_REMOVEALL);
 	}
 
