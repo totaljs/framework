@@ -50,11 +50,11 @@ const NEWLINE = '\n';
 const EMPTYARRAY = [];
 const REG_CLEAN = /^[\s]+|[\s]+$/g;
 const INMEMORY = {};
-const CLUSTER_LOCK = { type: 'nosql-lock' };
-const CLUSTER_UNLOCK = { type: 'nosql-unlock' };
-const CLUSTER_META = { type: 'nosql-meta' };
-const CLUSTER_LOCK_COUNTER = { type: 'nosql-counter-lock' };
-const CLUSTER_UNLOCK_COUNTER = { type: 'nosql-counter-unlock' };
+const CLUSTER_LOCK = { TYPE: 'nosql-lock' };
+const CLUSTER_UNLOCK = { TYPE: 'nosql-unlock' };
+const CLUSTER_META = { TYPE: 'nosql-meta' };
+const CLUSTER_LOCK_COUNTER = { TYPE: 'nosql-counter-lock' };
+const CLUSTER_UNLOCK_COUNTER = { TYPE: 'nosql-counter-unlock' };
 
 Object.freeze(EMPTYARRAY);
 

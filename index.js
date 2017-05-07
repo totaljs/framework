@@ -81,10 +81,10 @@ const REPOSITORY_SITEMAP = '$sitemap';
 const ATTR_END = '"';
 const ETAG = '858';
 const CONCAT = [null, null];
-const CLUSTER_CACHE_SET = { type: 'cache-set' };
-const CLUSTER_CACHE_REMOVE = { type: 'cache-remove' };
-const CLUSTER_CACHE_REMOVEALL = { type: 'cache-remove-all' };
-const CLUSTER_CACHE_CLEAR = { type: 'cache-clear' };
+const CLUSTER_CACHE_SET = { TYPE: 'cache-set' };
+const CLUSTER_CACHE_REMOVE = { TYPE: 'cache-remove' };
+const CLUSTER_CACHE_REMOVEALL = { TYPE: 'cache-remove-all' };
+const CLUSTER_CACHE_CLEAR = { TYPE: 'cache-clear' };
 
 Object.freeze(EMPTYOBJECT);
 Object.freeze(EMPTYARRAY);
@@ -783,6 +783,9 @@ function Framework() {
 // ======================================================
 
 Framework.prototype = {
+	get cluster() {
+		return require('./cluster');
+	},
 	get id() {
 		return F.$id;
 	},
@@ -4945,6 +4948,7 @@ F.usage = function(detailed) {
 	var output = {};
 
 	output.framework = {
+		id: F.id,
 		datetime: F.datetime,
 		pid: process.pid,
 		node: process.version,
@@ -15311,16 +15315,19 @@ process.on('message', function(msg, h) {
 		F.cache.clear();
 	else if (msg === 'stop' || msg === 'exit' || msg === 'kill')
 		F.stop();
-	else if (msg && msg.type && msg.id !== F.id) {
-		msg.type === 'cache-set' && F.cache.set(msg.key, msg.value, msg.expire, false);
-		msg.type === 'cache-remove' && F.cache.remove(msg.key, false);
-		msg.type === 'cache-remove-all' && F.cache.removeAll(msg.key, false);
-		msg.type === 'cache-clear' && F.cache.clear(false);
-		msg.type === 'nosql-lock' && F.databases[msg.name] && F.databases[msg.name].lock();
-		msg.type === 'nosql-unlock' && F.databases[msg.name] && F.databases[msg.name].unlock();
-		msg.type === 'nosql-meta' && F.databases[msg.name] && F.databases[msg.name].$meta();
-		msg.type === 'nosql-counter-lock' && F.databases[msg.name] && (F.databases[msg.name].counter.locked = true);
-		msg.type === 'nosql-counter-unlock' && F.databases[msg.name] && (F.databases[msg.name].counter.locked = false);
+	else if (msg && msg.TYPE && msg.id !== F.id) {
+		msg.TYPE === 'cache-set' && F.cache.set(msg.key, msg.value, msg.expire, false);
+		msg.TYPE === 'cache-remove' && F.cache.remove(msg.key, false);
+		msg.TYPE === 'cache-remove-all' && F.cache.removeAll(msg.key, false);
+		msg.TYPE === 'cache-clear' && F.cache.clear(false);
+		msg.TYPE === 'nosql-lock' && F.databases[msg.name] && F.databases[msg.name].lock();
+		msg.TYPE === 'nosql-unlock' && F.databases[msg.name] && F.databases[msg.name].unlock();
+		msg.TYPE === 'nosql-meta' && F.databases[msg.name] && F.databases[msg.name].$meta();
+		msg.TYPE === 'nosql-counter-lock' && F.databases[msg.name] && (F.databases[msg.name].counter.locked = true);
+		msg.TYPE === 'nosql-counter-unlock' && F.databases[msg.name] && (F.databases[msg.name].counter.locked = false);
+		msg.TYPE === 'req' && F.cluster.req(msg);
+		msg.TYPE === 'res' && msg.target === F.id && F.cluster.res(msg);
+		msg.TYPE === 'emit' && F.$events[msg.name] && F.emit(msg.name, msg.data);
 	}
 	F.$events.message && F.emit('message', msg, h);
 });

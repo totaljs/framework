@@ -7,6 +7,7 @@
 - added: `schema.inherit([group], name)` can inherit all values from another schema
 - added: NoSQL synchronization for cluster (more in docs)
 - added: cache synchronization for cluster (more in docs)
+- added: `F.cluster` (more in docs)
 
 - updated: `F.http(type, options)` supports `options.listenpath` for HTTP server (a direct shortcut for `default-listenpath`)
 - updated: `F.script` returns error if compilation fails
