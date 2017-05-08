@@ -1616,12 +1616,18 @@ DatabaseBuilder.prototype.compare = function(doc, index) {
 
 	var can = true;
 	var wasor = false;
+	var prevscope = false;
 
 	for (var i = 0, length = this.$filter.length; i < length; i++) {
-		var filter = this.$filter[i];
 
+		var filter = this.$filter[i];
 		if (wasor && filter.scope)
 			continue;
+
+		if (prevscope && !filter.scope && !wasor)
+			return;
+
+		prevscope = filter.scope;
 
 		var res = filter.filter(doc, i, filter);
 
@@ -1630,10 +1636,9 @@ DatabaseBuilder.prototype.compare = function(doc, index) {
 			if (filter.scope)
 				wasor = true;
 			continue;
-		}
-
-		if (filter.scope) {
+		} else if (filter.scope) {
 			can = false;
+			wasor = false;
 			continue;
 		}
 
