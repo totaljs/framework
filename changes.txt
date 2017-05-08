@@ -19,6 +19,7 @@
 - fixed: `totaljs --translate` problem with `node_modules` and `.git` directory
 - fixed: a waiting mode in `GETSCHEMA()`
 - fixed: cache `instance.cache()` in RESTBuilder
+- fixed: NoSQL filtering (critical)
 
 ======= 2.5.0
 
