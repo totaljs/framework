@@ -50,6 +50,7 @@ const NEWLINE = '\n';
 const EMPTYARRAY = [];
 const REG_CLEAN = /^[\s]+|[\s]+$/g;
 const INMEMORY = {};
+const CLUSTER_TIMEOUT = 150;
 const CLUSTER_LOCK = { TYPE: 'nosql-lock' };
 const CLUSTER_UNLOCK = { TYPE: 'nosql-unlock' };
 const CLUSTER_META = { TYPE: 'nosql-meta' };
@@ -388,73 +389,100 @@ Database.prototype.unlock = function() {
 };
 
 Database.prototype.next = function(type) {
-	var self = this;
 
-	if (self.locked || (type && self.step))
-		return self;
+	if (this.locked || (type && this.step))
+		return this;
 
-	if (self.step !== 6 && self.pending_reader_view.length) {
-		self.$readerview();
-		return self;
+	if (this.step !== 6 && this.pending_reader_view.length) {
+		this.$readerview();
+		return this;
 	}
 
-	if (self.step !== 4 && self.pending_reader.length) {
-		self.$reader();
-		return self;
+	if (this.step !== 4 && this.pending_reader.length) {
+		this.$reader();
+		return this;
 	}
 
-	if (self.step !== 1 && self.pending_append.length) {
-		if (INMEMORY[self.name])
-			self.$append_inmemory();
+	if (this.step !== 1 && this.pending_append.length) {
+		if (INMEMORY[this.name])
+			this.$append_inmemory();
 		else
-			self.$append();
-		return self;
+			this.$append();
+		return this;
 	}
 
-	if (self.step !== 2 && self.pending_update.length) {
-		if (INMEMORY[self.name])
-			self.$update_inmemory();
+	if (this.step !== 2 && this.pending_update.length) {
+		if (INMEMORY[this.name])
+			this.$update_inmemory();
 		else
-			self.$update();
-		return self;
+			this.$update();
+		return this;
 	}
 
-	if (self.step !== 3 && self.pending_remove.length) {
-		if (INMEMORY[self.name])
-			self.$remove_inmemory();
+	if (this.step !== 3 && this.pending_remove.length) {
+		if (INMEMORY[this.name])
+			this.$remove_inmemory();
 		else
-			self.$remove();
-		return self;
+			this.$remove();
+		return this;
 	}
 
-	if (self.step !== 5 && self.pending_views) {
-		if (INMEMORY[self.name])
-			self.$views_inmemory();
+	if (this.step !== 5 && this.pending_views) {
+		if (INMEMORY[this.name])
+			this.$views_inmemory();
 		else
-			self.$views();
-		return self;
+			this.$views();
+		return this;
 	}
 
-	if (self.step !== 7 && self.pending_drops) {
-		self.$drop();
-		return self;
+	if (this.step !== 7 && this.pending_drops) {
+		this.$drop();
+		return this;
 	}
 
-	if (self.step !== type) {
-		self.step = 0;
-		setImmediate(next_operation, self, 0);
+	if (this.step !== type) {
+		this.step = 0;
+		setImmediate(next_operation, this, 0);
 	}
 
-	return self;
+	return this;
 };
 
 Database.prototype.refresh = function() {
-	var self = this;
-	if (!self.views)
-		return self;
-	self.pending_views = true;
-	setImmediate(next_operation, self, 5);
-	return self;
+	if (this.views) {
+		this.pending_views = true;
+		setImmediate(next_operation, this, 5);
+	} else if (F.cluster)
+		this.$unlock();
+
+	return this;
+};
+
+Database.prototype.$lock = function() {
+	if (this.lockwait === 2)
+		return false;
+	CLUSTER_LOCK.name = this.name;
+	process.send(CLUSTER_LOCK);
+	if (this.lockwait === 1)
+		return true;
+	if (this.lockwait === 2)
+		return false;
+	this.lockwait = 1;
+	setTimeout(locker_timeout, CLUSTER_TIMEOUT, this);
+	return true;
+};
+
+function locker_timeout(self) {
+	self.lockwait = 2;
+	self.next(0);
+}
+
+Database.prototype.$unlock = function() {
+	if (!this.lockwait)
+		return;
+	this.lockwait = 0;
+	CLUSTER_UNLOCK.name = this.name;
+	process.send(CLUSTER_UNLOCK);
 };
 
 // ======================================================================
@@ -539,15 +567,13 @@ Database.prototype.$append = function() {
 	var self = this;
 	self.step = 1;
 
-	if (!self.pending_append.length) {
+	if (self.locked || !self.pending_append.length) {
 		self.next(0);
-		return self;
+		return;
 	}
 
-	if (F.isCluster) {
-		CLUSTER_LOCK.name = self.name;
-		process.send(CLUSTER_LOCK);
-	}
+	if (F.isCluster && self.$lock())
+		return;
 
 	self.pending_append.splice(0).limit(20, function(items, next) {
 		var json = [];
@@ -564,26 +590,19 @@ Database.prototype.$append = function() {
 		});
 
 	}, () => setImmediate(next_append, self));
-
-	return self;
 };
 
 function next_append(self) {
-
-	if (F.isCluster) {
-		CLUSTER_UNLOCK.name = self.name;
-		process.send(CLUSTER_UNLOCK);
-	}
-
 	self.next(0);
-	setImmediate(() => self.refresh());
+	// $unlock() is in refresh()
+	setImmediate(views_refresh, self);
 }
 
 Database.prototype.$append_inmemory = function() {
 	var self = this;
 	self.step = 1;
 
-	if (!self.pending_append.length) {
+	if (self.locked || !self.pending_append.length) {
 		self.next(0);
 		return self;
 	}
@@ -608,15 +627,13 @@ Database.prototype.$update = function() {
 	var self = this;
 	self.step = 2;
 
-	if (!self.pending_update.length) {
+	if (self.locked || !self.pending_update.length) {
 		self.next(0);
 		return self;
 	}
 
-	if (F.isCluster) {
-		CLUSTER_LOCK.name = self.name;
-		process.send(CLUSTER_LOCK);
-	}
+	if (F.isCluster && self.$lock())
+		return;
 
 	var reader = Fs.createReadStream(self.filename);
 	var writer = Fs.createWriteStream(self.filenameTemp);
@@ -666,14 +683,12 @@ Database.prototype.$update = function() {
 					item.builder.$callback && item.builder.$callback(errorhandling(err, item.builder, item.count), item.count);
 			}
 
-			if (F.isCluster) {
-				CLUSTER_UNLOCK.name = self.name;
-				process.send(CLUSTER_UNLOCK);
-			}
-
 			setImmediate(function() {
 				self.next(0);
-				change && setImmediate(() => self.refresh());
+				if (change)
+					setImmediate(views_refresh, self);
+				else if (F.isCluster)
+					self.$unlock();
 			});
 		});
 	});
@@ -682,12 +697,16 @@ Database.prototype.$update = function() {
 	return self;
 };
 
+function views_refresh(self) {
+	self.refresh();
+}
+
 Database.prototype.$update_inmemory = function() {
 
 	var self = this;
 	self.step = 2;
 
-	if (!self.pending_update.length) {
+	if (self.locked || !self.pending_update.length) {
 		self.next(0);
 		return self;
 	}
@@ -743,7 +762,7 @@ Database.prototype.$update_inmemory = function() {
 
 		setImmediate(function() {
 			self.next(0);
-			change && setImmediate(() => self.refresh());
+			change && setImmediate(views_refresh, self);
 		});
 	});
 };
@@ -753,7 +772,7 @@ Database.prototype.$reader = function() {
 	var self = this;
 	self.step = 4;
 
-	if (!self.pending_reader.length) {
+	if (self.locked || !self.pending_reader.length) {
 		self.next(0);
 		return self;
 	}
@@ -772,7 +791,7 @@ Database.prototype.$readerview = function() {
 	var self = this;
 	self.step = 6;
 
-	if (!self.pending_reader_view.length) {
+	if (self.locked || !self.pending_reader_view.length) {
 		self.next(0);
 		return self;
 	}
@@ -1100,9 +1119,10 @@ Database.prototype.$views = function() {
 	var self = this;
 	self.step = 5;
 
-	if (!self.pending_views) {
+	if (self.locked || !self.pending_views) {
+		F.isCluster && self.$unlock();
 		self.next(0);
-		return self;
+		return;
 	}
 
 	self.pending_views = false;
@@ -1111,14 +1131,13 @@ Database.prototype.$views = function() {
 	var length = views.length;
 
 	if (!length) {
+		F.isCluster && self.$unlock();
 		self.next(0);
 		return self;
 	}
 
-	if (F.isCluster) {
-		CLUSTER_LOCK.name = self.name;
-		process.send(CLUSTER_LOCK);
-	}
+	if (F.isCluster && self.$lock())
+		return;
 
 	var response = [];
 
@@ -1174,21 +1193,16 @@ Database.prototype.$views = function() {
 						builder.push(JSON.stringify(items[i]));
 					Fs.appendFile(filename, builder.join(NEWLINE) + NEWLINE, next);
 				}, function() {
-
-					if (F.isCluster) {
-						CLUSTER_UNLOCK.name = self.name;
-						process.send(CLUSTER_UNLOCK);
-					}
-
 					// clears in-memory
 					self.inmemory[item.name] = undefined;
 					next();
 				});
 			});
-		}, () => self.next(0), 5);
+		}, function() {
+			F.isCluster && self.$unlock();
+			self.next(0);
+		}, 5);
 	});
-
-	return self;
 };
 
 Database.prototype.$views_inmemory = function() {
@@ -1196,7 +1210,7 @@ Database.prototype.$views_inmemory = function() {
 	var self = this;
 	self.step = 5;
 
-	if (!self.pending_views) {
+	if (self.locked || !self.pending_views) {
 		self.next(0);
 		return self;
 	}
@@ -1269,7 +1283,7 @@ Database.prototype.$remove = function() {
 
 	if (!self.pending_remove.length) {
 		self.next(0);
-		return self;
+		return;
 	}
 
 	var reader = Fs.createReadStream(self.filename);
@@ -1279,10 +1293,8 @@ Database.prototype.$remove = function() {
 	var length = filter.length;
 	var change = false;
 
-	if (F.isCluster) {
-		CLUSTER_LOCK.name = self.name;
-		process.send(CLUSTER_LOCK);
-	}
+	if (F.isCluster && self.$lock())
+		return;
 
 	reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
 
@@ -1319,20 +1331,16 @@ Database.prototype.$remove = function() {
 			}
 
 			setImmediate(function() {
-
-				if (F.isCluster) {
-					CLUSTER_UNLOCK.name = self.name;
-					process.send(CLUSTER_UNLOCK);
-				}
-
 				self.next(0);
-				change && setImmediate(() => self.refresh());
+				if (change)
+					setImmediate(views_refresh, self);
+				else if (F.cluster)
+					self.$unlock();
 			});
 		});
 	});
 
 	CLEANUP(reader, () => writer.end());
-	return self;
 };
 
 Database.prototype.$remove_inmemory = function() {
@@ -1340,7 +1348,7 @@ Database.prototype.$remove_inmemory = function() {
 	var self = this;
 	self.step = 3;
 
-	if (!self.pending_remove.length) {
+	if (self.locked || !self.pending_remove.length) {
 		self.next(0);
 		return self;
 	}
@@ -1390,7 +1398,7 @@ Database.prototype.$remove_inmemory = function() {
 		}
 
 		self.next(0);
-		change && setImmediate(() => self.refresh());
+		change && setImmediate(views_refresh, self);
 	});
 };
 
@@ -1398,10 +1406,13 @@ Database.prototype.$drop = function() {
 	var self = this;
 	self.step = 7;
 
-	if (!self.pending_drops) {
+	if (self.locked || !self.pending_drops) {
 		self.next(0);
-		return self;
+		return;
 	}
+
+	if (F.isCluster && self.$lock())
+		return;
 
 	self.pending_drops = false;
 	var remove = [self.filename, self.filenameTemp];
@@ -1414,6 +1425,7 @@ Database.prototype.$drop = function() {
 	} catch (e) {}
 
 	remove.wait((filename, next) => Fs.unlink(filename, next), function() {
+		F.isCluster && self.$unlock();
 		self.next(0);
 		self.free(true);
 	}, 5);
@@ -1421,8 +1433,6 @@ Database.prototype.$drop = function() {
 	Object.keys(self.inmemory).forEach(function(key) {
 		self.inmemory[key] = undefined;
 	});
-
-	return self;
 };
 
 function DatabaseBuilder2() {
