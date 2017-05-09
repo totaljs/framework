@@ -4259,7 +4259,7 @@ Array.prototype.quicksort = Array.prototype.orderBy = function(name, asc, maxlen
 	}
 
 	if (maxlength === undefined)
-		maxlength = 3;
+		maxlength = 5;
 
 	if (asc === undefined)
 		asc = true;
@@ -4295,7 +4295,7 @@ Array.prototype.quicksort = Array.prototype.orderBy = function(name, asc, maxlen
 
 		// String
 		if (type === 1) {
-			return va && vb ? (asc ? va.substring(0, maxlength).removeDiacritics().localeCompare(vb.substring(0, maxlength).removeDiacritics()) : vb.substring(0, maxlength).removeDiacritics().localeCompare(va.substring(0, maxlength).removeDiacritics())) : 0;
+			return va && vb ? (asc ? (va.length > maxlength ? va.substring(0, maxlength) : va).removeDiacritics().localeCompare((vb.length > maxlength ? vb.substring(0, maxlength) : vb).removeDiacritics()) : (vb.length > maxlength ? vb.substring(0, maxlength) : vb).removeDiacritics().localeCompare((va.length > maxlength ? va.substring(0, maxlength) : va).removeDiacritics())) : 0;
 		} else if (type === 2) {
 			return va > vb ? (asc ? 1 : -1) : va < vb ? (asc ? -1 : 1) : 0;
 		} else if (type === 3) {

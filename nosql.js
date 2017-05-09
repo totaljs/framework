@@ -961,8 +961,12 @@ function nosqlinlinesorter(item, builder, doc) {
 	if (length < builder.$limit) {
 		item.response.push(doc);
 		length + 1 >= builder.$limit && item.response.quicksort(builder.$sort.name, builder.$sort.asc);
-	} else
-		nosqlresort(item.response, builder, doc); // inline sorter
+	} else {
+		if (builder.$sort.asc)
+			nosqlresort_asc(item.response, builder, doc); // inline sorter
+		else
+			nosqlresort_desc(item.response, builder, doc); // inline sorter
+	}
 }
 
 function nosqlsortvalue(a, b, sorter) {
@@ -970,7 +974,7 @@ function nosqlsortvalue(a, b, sorter) {
 	if (type === 'number')
 		return sorter.asc ? a < b : a > b;
 	else if (type === 'string') {
-		a = a.substring(0, 3).toLowerCase().removeDiacritics();
+		a = (a.length > 5 ? a.substring(0, 5) : a).toLowerCase().removeDiacritics();
 		var c = a.localeCompare(b);
 		return sorter.asc ? c === -1 : c === 1;
 	} else if (a instanceof Date)
@@ -979,17 +983,35 @@ function nosqlsortvalue(a, b, sorter) {
 	return false;
 }
 
-function nosqlresort(arr, builder, doc) {
-
+function nosqlresort_asc(arr, builder, doc) {
 	var b = doc[builder.$sort.name];
 	if (typeof(b) === 'string')
-		b = b.substring(0, 3).toLowerCase().removeDiacritics();
-
+		b = (b.length > 5 ? b.substring(0, 5) : b).toLowerCase().removeDiacritics();
 	var length = arr.length;
-	for (var i = 0; i < length; i++) {
+	for (var i = 0, length = arr.length; i < length; i++) {
+	// for (var i = length - 1; i > -1; i--) {
 		var item = arr[i];
-		if (nosqlsortvalue(item[builder.$sort.name], b, builder.$sort))
-			return;
+		var sort = nosqlsortvalue(item[builder.$sort.name], b, builder.$sort);
+		console.log('CYCLES', JSON.stringify(arr), item[builder.$sort.name], b, sort);
+		if (sort)
+			continue;
+		for (var j = length - 1; j > i; j--)
+			arr[j] = arr[j - 1];
+		arr[i] = doc;
+		return;
+	}
+}
+
+function nosqlresort_desc(arr, builder, doc) {
+	var b = doc[builder.$sort.name];
+	if (typeof(b) === 'string')
+		b = (b.length > 5 ? b.substring(0, 5) : b).toLowerCase().removeDiacritics();
+	for (var i = 0, length = arr.length; i < length; i++) {
+		console.log('CYCLES');
+		var item = arr[i];
+		var sort = nosqlsortvalue(item[builder.$sort.name], b, builder.$sort);
+		if (sort)
+			continue;
 		for (var j = length - 1; j > i; j--)
 			arr[j] = arr[j - 1];
 		arr[i] = doc;
