@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkInternal
- * @version 2.5.0
+ * @version 2.6.0
  */
 
 'use strict';
@@ -85,14 +85,14 @@ global.$STRING = function(value) {
 
 global.$VIEWCACHE = [];
 
-exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscribe) {
+exports.parseMULTIPART = function(req, contentType, route, tmpDirectory) {
 
 	var boundary = contentType.split(';')[1];
 	if (!boundary) {
 		F.reqstats(false, false);
 		F.stats.request.error400++;
-		subscribe.res.writeHead(400);
-		subscribe.res.end();
+		req.res.writeHead(400);
+		req.res.end();
 		return;
 	}
 
@@ -273,7 +273,7 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 			setImmediate(parser.onEnd);
 		} else {
 			rm && F.unlink(rm);
-			subscribe.doEnd();
+			req.$total_end2();
 		}
 	};
 
@@ -1297,6 +1297,7 @@ function MultipartParser() {
 	this.index = null;
 	this.flags = 0;
 }
+
 exports.MultipartParser = MultipartParser;
 
 MultipartParser.stateToString = function(stateNumber) {

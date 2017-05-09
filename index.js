@@ -490,10 +490,10 @@ const controller_error_status = function(controller, status, problem) {
 
 	controller.precache && controller.precache(null, null, null);
 	controller.req.path = EMPTYARRAY;
-	controller.subscribe.success();
-	controller.subscribe.route = F.lookup(controller.req, '#' + status, EMPTYARRAY, 0);
-	controller.subscribe.exception = problem;
-	controller.subscribe.execute(status, true);
+	controller.req.$total_success();
+	controller.req.$total_route = F.lookup(controller.req, '#' + status, EMPTYARRAY, 0);
+	controller.req.$total_exception = problem;
+	controller.req.$total_execute(status, true);
 	return controller;
 };
 
@@ -501,7 +501,7 @@ function Framework() {
 
 	this.$id = null; // F.id ==> property
 	this.version = 2600;
-	this.version_header = '2.6.0-4';
+	this.version_header = '2.6.0-5';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -6357,10 +6357,10 @@ F.$requestcontinue = function(req, res, headers) {
 	if (req.isStaticFile) {
 		F.stats.request.file++;
 		if (F._length_files)
-			new Subscribe(F, req, res, 3).file();
+			req.$total_file();
 		else
 			res.continue();
-		return F;
+		return;
 	}
 
 	req.body = EMPTYOBJECT;
@@ -6477,32 +6477,32 @@ F.$requestcontinue = function(req, res, headers) {
 			if (isCORS)
 				F.$cors(req, res, cors_callback0);
 			else
-				new Subscribe(F, req, res, 0).end();
-			return F;
+				req.$total_end();
+			return;
 
 		case 'O':
 			F.stats.request.options++;
 			if (isCORS)
 				F.$cors(req, res, cors_callback0);
 			else
-				new Subscribe(framework, req, res, 0).end();
-			return F;
+				req.$total_end();
+			return;
 
 		case 'H':
 			F.stats.request.head++;
 			if (isCORS)
 				F.$cors(req, res, cors_callback0);
 			else
-				new Subscribe(F, req, res, 0).end();
-			return F;
+				req.$total_end();
+			return;
 
 		case 'D':
 			F.stats.request['delete']++;
 			if (isCORS)
 				F.$cors(req, res, cors_callback1);
 			else
-				new Subscribe(F, req, res, 1).urlencoded();
-			return F;
+				req.$total_urlencoded();
+			return;
 
 		case 'P':
 			if (F._request_check_POST) {
@@ -6513,8 +6513,7 @@ F.$requestcontinue = function(req, res, headers) {
 					else if (req.$type === 4)
 						F.$requestcontinue_mmr(req, res, multipart);
 					else
-						new Subscribe(F, req, res, 2).multipart(multipart);
-
+						req.$total_multipart(multipart);
 					return F;
 
 				} else {
@@ -6527,10 +6526,9 @@ F.$requestcontinue = function(req, res, headers) {
 					if (isCORS)
 						F.$cors(req, res, cors_callback1);
 					else
-						new Subscribe(F, req, res, 1).urlencoded();
+						req.$total_urlencoded();
 				}
-
-				return F;
+				return;
 			}
 			break;
 	}
@@ -6543,19 +6541,19 @@ F.$requestcontinue = function(req, res, headers) {
 	return F;
 };
 
-function cors_callback0(req, res) {
-	new Subscribe(F, req, res, 0).end();
+function cors_callback0(req) {
+	req.$total_end();
 }
 
-function cors_callback1(req, res) {
-	new Subscribe(framework, req, res, 1).urlencoded();
+function cors_callback1(req) {
+	req.$total_urlencoded();
 }
 
 function cors_callback_multipart(req, res, multipart) {
 	if (req.$type === 4)
 		F.$requestcontinue_mmr(req, res, multipart);
 	else
-		new Subscribe(F, req, res, 2).multipart(multipart);
+		req.$total_multipart(multipart);
 }
 
 F.$requestcontinue_mmr = function(req, res, header) {
@@ -8292,7 +8290,6 @@ F.$configure_configs = function(arr, rewrite) {
 	IMAGEMAGICK = F.config['default-image-converter'] === 'im';
 	done();
 	F.emit('configure', F.config);
-	// console.log(F.config);
 	return F;
 };
 
@@ -9091,555 +9088,30 @@ FrameworkCache.prototype.fn = function(name, fnCache, fnCallback) {
 	return self;
 };
 
-// *********************************************************************************
-// =================================================================================
-// Framework.Subscribe
-// =================================================================================
-// *********************************************************************************
-
-function Subscribe(framework, req, res) {
-
-	// this.controller;
-	this.req = req;
-	this.res = res;
-	req.$subscribe = this;
-
-	// Because of performance
-	// this.route = null;
-	// this.timeout = null;
-	// this.isCanceled = false;
-	// this.isTransfer = false;
-	// this.header = '';
-	// this.error = null;
+function subscribe_parse(chunk) {
+	this.$total_parsebody(chunk);
 }
-
-Subscribe.prototype.success = function() {
-	var self = this;
-
-	self.timeout && clearTimeout(self.timeout);
-	self.timeout = null;
-	self.isCanceled = true;
-
-	if (self.controller) {
-		self.controller.res.controller = null;
-		self.controller.req.controller = null;
-		self.controller = null;
-	}
-
-	return self;
-};
-
-Subscribe.prototype.file = function() {
-	var self = this;
-	var h = this.req.method[0];
-	if (h === 'G' || h === 'H') {
-		this.req.resume();
-		subscribe_file.call(this.req);
-	} else {
-		self.req.on('end', subscribe_file);
-		this.req.resume();
-	}
-	return self;
-};
 
 function subscribe_file() {
-	this.$subscribe.doEndfile(this);
+	this.$total_endfile();
 }
-
-/**
- * Process MULTIPART (uploaded files)
- * @param {String} header Content-Type header.
- * @return {FrameworkSubscribe}
- */
-Subscribe.prototype.multipart = function(header) {
-
-	var self = this;
-	var req = self.req;
-
-	F.stats.request.upload++;
-	self.route = F.lookup(req, req.uri.pathname, req.flags, 0);
-	self.header = header;
-
-	if (self.route) {
-		F.path.verify('temp');
-		framework_internal.parseMULTIPART(req, header, self.route, F.config['directory-temp'], self);
-		return self;
-	}
-
-	F.reqstats(false, false);
-	F.stats.request.blocked++;
-	self.res.writeHead(403);
-	self.res.end();
-	return self;
-};
-
-Subscribe.prototype.urlencoded = function() {
-
-	var self = this;
-	self.route = F.lookup(self.req, self.req.uri.pathname, self.req.flags, 0);
-
-	if (self.route) {
-		self.req.buffer_has = true;
-		self.req.buffer_exceeded = false;
-		self.req.on('data', subscribe_parse);
-		self.end();
-		return self;
-	}
-
-	F.stats.request.blocked++;
-	F.reqstats(false, false);
-	self.res.writeHead(403);
-	self.res.end();
-	F.$events['request-end'] && F.emit('request-end', self.req, self.res);
-	self.req.clear(true);
-	return self;
-};
-
-function subscribe_parse(chunk) {
-	this.$subscribe.doParsepost(chunk);
-}
-
-Subscribe.prototype.end = function() {
-	var h = this.req.method[0];
-	if (h === 'G' || h === 'H') {
-		this.req.resume();
-		subscribe_end.call(this.req);
-	} else {
-		this.req.on('end', subscribe_end);
-		this.req.resume();
-	}
-};
 
 function subscribe_end() {
-	this.$subscribe.doEnd();
+	this.$total_end2();
 }
 
-/**
- * Execute controller
- * @private
- * @param {Number} status Default HTTP status.
- * @return {FrameworkSubscribe}
- */
-Subscribe.prototype.execute = function(status, isError) {
-
-	var self = this;
-	var route = self.route;
-	var req = self.req;
-	var res = self.res;
-
-	if (isError || !route) {
-		F.stats.response['error' + status]++;
-		status !== 500 && F.$events['error'] && F.emit('error' + status, req, res, self.exception);
-	}
-
-	if (!route) {
-		if (status === 400 && self.exception instanceof framework_builders.ErrorBuilder) {
-			F.stats.response.errorBuilder++;
-			req.$language && self.exception.setResource(req.$language);
-			res.options.code = self.exception.status;
-			res.options.body = self.exception.output();
-			res.options.type = self.exception.contentType;
-			res.$text();
-		} else {
-			res.options.body = U.httpStatus(status) + prepare_error(self.exception);
-			res.options.type = CT_TEXT;
-			res.options.code = status || 404;
-			res.$text();
-		}
-		return self;
-	}
-
-	var name = route.controller;
-
-	if (route.isMOBILE_VARY)
-		req.$mobile = true;
-
-	if (route.currentViewDirectory === undefined)
-		route.currentViewDirectory = name && name[0] !== '#' && name !== 'default' && name !== 'unknown' ? '/' + name + '/' : '';
-
-	var controller = new Controller(name, req, res, self, route.currentViewDirectory);
-
-	controller.isTransfer = self.isTransfer;
-	controller.exception = self.exception;
-	self.controller = controller;
-
-	if (!self.isCanceled && route.timeout) {
-		self.timeout && clearTimeout(self.timeout);
-		self.timeout = setTimeout(subscribe_timeout, route.timeout, self);
-	}
-
-	route.isDELAY && self.res.writeContinue();
-
-	if (self.isSchema)
-		req.body.$$controller = controller;
-
-	if (route.middleware)
-		async_middleware(0, req, res, route.middleware, subscribe_timeout_middleware, route.options, controller, self);
-	else
-		self.doExecute();
-};
-
-function subscribe_timeout(self) {
-	self.controller && self.controller.precache && self.controller.precache(null, null, null);
-	self.doCancel();
+function subscribe_timeout(req) {
+	req.controller && req.controller.precache && req.controller.precache(null, null, null);
+	req.$total_cancel();
 }
 
-function subscribe_timeout_middleware(req, res, self) {
-	self.doExecute();
+function subscribe_timeout_middleware(req) {
+	req.$total_execute2();
 }
 
-Subscribe.prototype.prepare = function(flags, url) {
-
-	var self = this;
-	var req = self.req;
-	var res = self.res;
-	var auth = F.onAuthorize;
-
-	if (auth) {
-		var length = flags.length;
-		auth(req, res, flags, function(isAuthorized, user) {
-
-			var hasRoles = length !== flags.length;
-			if (hasRoles)
-				req.$flags += flags.slice(length).join('');
-
-			if (typeof(isAuthorized) !== 'boolean') {
-				user = isAuthorized;
-				isAuthorized = !user;
-			}
-
-			req.isAuthorized = isAuthorized;
-			self.doAuthorize(isAuthorized, user, hasRoles);
-		});
-		return self;
-	}
-
-	if (!self.route)
-		self.route = F.lookup(req, req.buffer_exceeded ? '#431' : url || req.uri.pathname, req.flags, 0);
-
-	if (!self.route)
-		self.route = F.lookup(req, '#404', EMPTYARRAY, 0);
-
-	var code = req.buffer_exceeded ? 431 : 404;
-
-	if (!self.schema || !self.route)
-		self.execute(code);
-	else
-		self.validate(self.route, subscribe_validate_callback, code);
-
-	return self;
-};
-
-function subscribe_validate_callback(self, code) {
-	self.execute(code);
+function subscribe_validate_callback(req, code) {
+	req.$total_execute(code);
 }
-
-Subscribe.prototype.doExecute = function() {
-
-	var self = this;
-	var name = self.route.controller;
-	var controller = self.controller;
-	var req = self.req;
-
-	try {
-
-		if (F.onTheme)
-			controller.themeName = F.onTheme(controller);
-
-		if (controller.isCanceled)
-			return self;
-
-		F.$events.controller && F.emit('controller', controller, name, self.route.options);
-
-		if (controller.isCanceled)
-			return self;
-
-		if (self.route.isCACHE && !F.temporary.other[req.uri.pathname])
-			F.temporary.other[req.uri.pathname] = req.path;
-
-		if (self.route.isGENERATOR)
-			async.call(controller, self.route.execute, true)(controller, framework_internal.routeParam(self.route.param.length ? req.split : req.path, self.route));
-		else
-			self.route.execute.apply(controller, framework_internal.routeParam(self.route.param.length ? req.split : req.path, self.route));
-
-	} catch (err) {
-		controller = null;
-		F.error(err, name, req.uri);
-		self.exception = err;
-		self.route = F.lookup(req, '#500', EMPTYARRAY, 0);
-		self.execute(500, true);
-	}
-
-	return self;
-};
-
-Subscribe.prototype.doAuthorize = function(isLogged, user, roles) {
-
-	var self = this;
-	var req = self.req;
-	var membertype = isLogged ? 1 : 2;
-
-	req.$flags += membertype;
-
-	if (user)
-		req.user = user;
-
-	var code = req.buffer_exceeded ? 431 : 401;
-
-	if (self.route && self.route.isUNIQUE && !roles && (!self.route.MEMBER || self.route.MEMBER === membertype)) {
-		if (code === 401 &&self.schema)
-			self.validate(self.route, subscribe_validate_callback, code);
-		else
-			self.execute(code, true);
-		return;
-	}
-
-	var route = F.lookup(req, req.buffer_exceeded ? '#431' : req.uri.pathname, req.flags, req.buffer_exceeded ? 0 : membertype);
-	var status = req.$isAuthorized ? 404 : 401;
-	var code = req.buffer_exceeded ? 431 : status;
-
-	!route && (route = F.lookup(req, '#' + status, EMPTYARRAY, 0));
-	self.route = route;
-
-	if (self.route && self.schema)
-		self.validate(self.route, subscribe_validate_callback, code);
-	else
-		self.execute(code);
-
-	return self;
-};
-
-Subscribe.prototype.doEnd = function() {
-
-	var req = this.req;
-	var route = this.route;
-
-	if (req.buffer_exceeded) {
-		route = F.lookup(req, '#431', EMPTYARRAY, 0);
-		req.buffer_data = null;
-
-		if (route) {
-			this.route = route;
-			this.execute(431, true);
-		} else
-			this.res.throw431();
-
-		return this;
-	}
-
-	if (req.buffer_data && (!route || !route.isBINARY))
-		req.buffer_data = req.buffer_data.toString(ENCODING);
-
-	if (!req.buffer_data) {
-		if (route && route.schema)
-			this.schema = true;
-		req.buffer_data = null;
-		this.prepare(req.flags, req.uri.pathname);
-		return this;
-	}
-
-	if (route.isXML) {
-
-		if (req.$type !== 2) {
-			this.route400('Invalid "Content-Type".');
-			req.buffer_data = null;
-			return this;
-		}
-
-		try {
-			F.$onParseXML(req);
-			req.buffer_data = null;
-			this.prepare(req.flags, req.uri.pathname);
-		} catch (err) {
-			F.error(err, null, req.uri);
-			this.route500(err);
-		}
-		return this;
-	}
-
-	if (this.route.isRAW) {
-		req.body = req.buffer_data;
-		req.buffer_data = null;
-		this.prepare(req.flags, req.uri.pathname);
-		return this;
-	}
-
-	if (!req.$type) {
-		req.buffer_data = null;
-		this.route400('Invalid "Content-Type".');
-		return this;
-	}
-
-	if (req.$type === 1) {
-		try {
-			F.$onParseJSON(req);
-			req.buffer_data = null;
-		} catch (e) {
-			this.route400('Invalid JSON data.');
-			return this;
-		}
-	} else
-		F.$onParseQueryBody(req);
-
-	this.route.schema && (this.schema = true);
-	req.buffer_data = null;
-	this.prepare(req.flags, req.uri.pathname);
-	return this;
-};
-
-Subscribe.prototype.validate = function(route, next, code) {
-	var req = this.req;
-	this.schema = false;
-
-	if (!route.schema || req.method === 'DELETE')
-		return next(this, code);
-
-	var self = this;
-
-	F.onSchema(req, route.schema[0], route.schema[1], function(err, body) {
-
-		if (err) {
-			self.route400(err);
-			next = null;
-		} else {
-			F.stats.request.schema++;
-			req.body = body;
-			self.isSchema = true;
-			next(self, code);
-		}
-
-	}, route.schema[2], route.novalidate);
-};
-
-Subscribe.prototype.route400 = function(problem) {
-	var self = this;
-	self.route = F.lookup(self.req, '#400', EMPTYARRAY, 0);
-	self.exception = problem;
-	self.execute(400, true);
-	return self;
-};
-
-Subscribe.prototype.route500 = function(problem) {
-	var self = this;
-	self.route = F.lookup(self.req, '#500', EMPTYARRAY, 0);
-	self.exception = problem;
-	self.execute(500, true);
-	return self;
-};
-
-Subscribe.prototype.doEndfile = function() {
-
-	var self = this;
-	var req = self.req;
-	var res = self.res;
-
-	if (!F._length_files)
-		return res.continue();
-
-	for (var i = 0; i < F._length_files; i++) {
-
-		var file = F.routes.files[i];
-		try {
-
-			if (file.extensions && !file.extensions[self.req.extension])
-				continue;
-
-			if (file.url) {
-				var skip = false;
-				var length = file.url.length;
-
-				if (!file.wildcard && !file.fixedfile && length !== req.path.length - 1)
-					continue;
-
-				for (var j = 0; j < length; j++) {
-					if (file.url[j] === req.path[j])
-						continue;
-					skip = true;
-					break;
-				}
-
-				if (skip)
-					continue;
-
-			} else if (file.onValidate && !file.onValidate.call(framework, req, res, true))
-				continue;
-
-			if (file.middleware)
-				self.doEndfile_middleware(file);
-			else
-				file.execute.call(framework, req, res, false);
-
-			return self;
-
-		} catch (err) {
-			F.error(err, file.controller, req.uri);
-			res.throw500();
-			return self;
-		}
-	}
-
-	res.continue();
-};
-
-/**
- * Executes a file middleware
- * @param {FileRoute} file
- * @return {Subscribe}
- */
-Subscribe.prototype.doEndfile_middleware = function(file) {
-	var self = this;
-	async_middleware(0, self.req, self.res, file.middleware, function() {
-		try {
-			file.execute.call(framework, self.req, self.res, false);
-		} catch (err) {
-			F.error(err, file.controller + ' :: ' + file.name, self.req.uri);
-			self.res.throw500();
-		}
-	}, file.options);
-};
-
-/**
- * Parse data from CHUNK
- * @param {Buffer} chunk
- * @return {FrameworkSubscribe}
- */
-Subscribe.prototype.doParsepost = function(chunk) {
-
-	var self = this;
-	var req = self.req;
-
-	if (req.buffer_exceeded)
-		return self;
-
-	if (!req.buffer_exceeded) {
-		CONCAT[0] = req.buffer_data;
-		CONCAT[1] = chunk;
-		req.buffer_data = Buffer.concat(CONCAT);
-	}
-
-	if (req.buffer_data.length < self.route.length)
-		return self;
-
-	req.buffer_exceeded = true;
-	req.buffer_data = U.createBuffer();
-	return self;
-};
-
-Subscribe.prototype.doCancel = function() {
-	var self = this;
-
-	F.stats.response.timeout++;
-	clearTimeout(self.timeout);
-	self.timeout = null;
-
-	if (!self.controller)
-		return;
-
-	self.controller.isTimeout = true;
-	self.controller.isCanceled = true;
-	self.route = F.lookup(self.req, '#408', EMPTYARRAY, 0);
-	self.execute(408, true);
-};
 
 /**
  * FrameworkController
@@ -9649,9 +9121,8 @@ Subscribe.prototype.doCancel = function() {
  * @param {Response} res
  * @param {FrameworkSubscribe} subscribe
  */
-function Controller(name, req, res, subscribe, currentView) {
+function Controller(name, req, res, currentView) {
 
-	this.subscribe = subscribe;
 	this.name = name;
 	// this.exception;
 
@@ -9697,11 +9168,11 @@ function Controller(name, req, res, subscribe, currentView) {
 Controller.prototype = {
 
 	get schema() {
-		return this.route.schema[0] === 'default' ? this.route.schema[1] : this.route.schema.join('/');
+		return this.$total_route.schema[0] === 'default' ? this.$total_route.schema[1] : this.$total_route.schema.join('/');
 	},
 
 	get workflow() {
-		return this.route.schema_workflow;
+		return this.$total_route.schema_workflow;
 	},
 
 	get sseID() {
@@ -9709,15 +9180,15 @@ Controller.prototype = {
 	},
 
 	get route() {
-		return this.subscribe.route;
+		return this.req.$total_route;
 	},
 
 	get options() {
-		return this.subscribe.route.options;
+		return this.req.$total_route.options;
 	},
 
 	get flags() {
-		return this.subscribe.route.flags;
+		return this.req.$total_route.flags;
 	},
 
 	get path() {
@@ -9962,7 +9433,7 @@ Controller.prototype.$async = function(callback, index) {
 };
 
 Controller.prototype.getSchema = function() {
-	var route = this.subscribe.route;
+	var route = this.req.$total_route;
 	if (!route.schema || !route.schema[1])
 		throw new Error('The controller\'s route does not define any schema.');
 	var schema = GETSCHEMA(route.schema[0], route.schema[1]);
@@ -10147,15 +9618,11 @@ Controller.prototype.error = function(err) {
 	}
 
 	var result = F.error(typeof(err) === 'string' ? new Error(err) : err, self.name, self.uri);
-
 	if (err === undefined)
 		return result;
 
-	if (self.subscribe) {
-		self.subscribe.exception = err;
-		self.exception = err;
-	}
-
+	self.req.$total_exception = err;
+	self.exception = err;
 	return self;
 };
 
@@ -10257,10 +9724,10 @@ Controller.prototype.transfer = function(url, flags) {
 
 	self.cancel();
 	self.req.path = EMPTYARRAY;
-	self.subscribe.isTransfer = true;
-	self.subscribe.success();
-	self.subscribe.route = selected;
-	self.subscribe.execute(404);
+	self.req.$total_transfer = true;
+	self.req.$total_success();
+	self.req.$total_route = selected;
+	self.req.$total_execute(404);
 	return true;
 };
 
@@ -11874,7 +11341,7 @@ Controller.prototype.destroy = function(problem) {
 	if (self.res.success || self.res.headersSent || !self.isConnected)
 		return self;
 
-	self.subscribe.success();
+	self.req.$total_success();
 	self.req.connection && self.req.connection.destroy();
 	F.stats.response.destroy++;
 	return self;
@@ -12114,9 +11581,9 @@ Controller.prototype.sse = function(data, eventname, id, retry) {
 		self.type = 1;
 
 		if (retry === undefined)
-			retry = self.subscribe.route.timeout;
+			retry = self.req.$total_route.timeout;
 
-		self.subscribe.success();
+		self.req.$total_success();
 		self.req.on('close', () => self.close());
 		res.success = true;
 		res.writeHead(self.status, HEADERS.sse);
@@ -12168,7 +11635,7 @@ Controller.prototype.mmr = function(name, stream, callback) {
 	if (!self.type) {
 		self.type = 2;
 		self.boundary = '----totaljs' + U.GUID(10);
-		self.subscribe.success();
+		self.req.$total_success();
 		self.req.on('close', () => self.close());
 		res.success = true;
 		HEADERS.mmr[HEADER_TYPE] = 'multipart/x-mixed-replace; boundary=' + self.boundary;
@@ -12499,7 +11966,7 @@ Controller.prototype.$viewrender = function(filename, generator, model, headers,
 		if (partial)
 			return value;
 
-		self.subscribe.success();
+		self.req.$total_success();
 
 		if (!self.isConnected)
 			return self;
@@ -12603,7 +12070,7 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
 		self.isLayout = true;
 		self.view(self.layoutName, null);
 	} else {
-		self.subscribe.success();
+		self.req.$total_success();
 		res.$text();
 	}
 
@@ -12617,7 +12084,7 @@ Controller.prototype.$memorize_prepare = function(key, expires, disabled, fnTo, 
 
 	if (F.temporary.processing[pk]) {
 		setTimeout(function() {
-			!self.subscribe.isCanceled && self.memorize(key, expires, disabled, fnTo, fnFrom);
+			!self.req.$total_canceled && self.memorize(key, expires, disabled, fnTo, fnFrom);
 		}, 500);
 		return self;
 	}
@@ -14005,6 +13472,431 @@ function extend_request(PROTO) {
 
 		return uri.protocol + '//' + uri.hostname + (uri.port && uri.port !== 80 ? ':' + uri.port : '') + (path || '');
 	};
+
+	PROTO.$total_success = function() {
+		this.$total_timeout && clearTimeout(this.$total_timeout);
+		this.$total_canceled = true;
+		if (this.controller) {
+			this.controller.res.controller = null;
+			this.controller = null;
+		}
+	};
+
+	PROTO.$total_file = function() {
+		var h = this.method[0];
+		if (h === 'G' || h === 'H')
+			subscribe_file.call(this);
+		else
+			this.on('end', subscribe_file);
+			// this.req.resume();
+	};
+
+	PROTO.$total_multipart = function(header) {
+		F.stats.request.upload++;
+		this.$total_route = F.lookup(this, this.uri.pathname, this.flags, 0);
+		this.$total_header = header;
+		if (this.$total_route) {
+			F.path.verify('temp');
+			framework_internal.parseMULTIPART(this, header, this.$total_route, F.config['directory-temp']);
+		} else {
+			F.reqstats(false, false);
+			F.stats.request.blocked++;
+			this.res.writeHead(403);
+			this.res.end();
+		}
+	};
+
+	PROTO.$total_urlencoded = function() {
+		this.$total_route = F.lookup(this, this.uri.pathname, this.flags, 0);
+		if (this.$total_route) {
+			this.buffer_has = true;
+			this.buffer_exceeded = false;
+			this.on('data', subscribe_parse);
+			this.$total_end();
+		} else {
+			F.stats.request.blocked++;
+			F.reqstats(false, false);
+			this.res.writeHead(403);
+			this.res.end();
+			F.$events['request-end'] && F.emit('request-end', this, this.res);
+			this.clear(true);
+		}
+	};
+
+	PROTO.$total_end = function() {
+		var h = this.method[0];
+		if (h === 'G' || h === 'H' || h === 'O')
+			subscribe_end.call(this);
+		else
+			this.on('end', subscribe_end);
+	};
+
+	PROTO.$total_execute = function(status, isError) {
+
+		var route = this.$total_route;
+		var res = this.res;
+
+		if (isError || !route) {
+			F.stats.response['error' + status]++;
+			status !== 500 && F.$events['error'] && F.emit('error' + status, this, res, this.$total_exception);
+		}
+
+		if (!route) {
+			if (status === 400 && this.$total_exception instanceof framework_builders.ErrorBuilder) {
+				F.stats.response.errorBuilder++;
+				this.$language && this.$total_exception.setResource(this.$language);
+				res.options.code = this.$total_exception.status;
+				res.options.body = this.$total_exception.output();
+				res.options.type = this.$total_exception.contentType;
+				res.$text();
+			} else {
+				res.options.body = U.httpStatus(status) + prepare_error(this.$total_exception);
+				res.options.type = CT_TEXT;
+				res.options.code = status || 404;
+				res.$text();
+			}
+			return;
+		}
+
+		var name = route.controller;
+
+		if (route.isMOBILE_VARY)
+			this.$mobile = true;
+
+		if (route.currentViewDirectory === undefined)
+			route.currentViewDirectory = name && name[0] !== '#' && name !== 'default' && name !== 'unknown' ? '/' + name + '/' : '';
+
+		var controller = new Controller(name, this, res, route.currentViewDirectory);
+
+		controller.isTransfer = this.$total_transfer;
+		controller.exception = this.$total_exception;
+		this.controller = controller;
+
+		if (!this.$total_canceled && route.timeout) {
+			this.$total_timeout && clearTimeout(this.$total_timeout);
+			this.$total_timeout = setTimeout(subscribe_timeout, route.timeout, this);
+		}
+
+		route.isDELAY && res.writeContinue();
+
+		if (this.$total_schema)
+			this.body.$$controller = controller;
+
+		if (route.middleware)
+			async_middleware(0, this, res, route.middleware, subscribe_timeout_middleware, route.options, controller);
+		else
+			this.$total_execute2();
+	};
+
+	PROTO.$total_execute2 = function() {
+
+		var name = this.$total_route.controller;
+		var controller = this.controller;
+
+		try {
+
+			if (F.onTheme)
+				controller.themeName = F.onTheme(controller);
+
+			if (controller.isCanceled)
+				return;
+
+			F.$events.controller && F.emit('controller', controller, name, this.$total_route.options);
+
+			if (controller.isCanceled)
+				return;
+
+			if (this.$total_route.isCACHE && !F.temporary.other[this.uri.pathname])
+				F.temporary.other[this.uri.pathname] = this.path;
+
+			if (this.$total_route.isGENERATOR)
+				async.call(controller, this.$total_route.execute, true)(controller, framework_internal.routeParam(this.$total_route.param.length ? this.split : this.path, this.$total_route));
+			else {
+				if (this.$total_route.param.length)
+					this.$total_route.execute.apply(controller, framework_internal.routeParam(this.split, this.$total_route));
+				else
+					this.$total_route.execute.call(controller);
+			}
+
+		} catch (err) {
+			F.error(err, name, this.uri);
+			this.$total_exception = err;
+			this.$total_route = F.lookup(this, '#500', EMPTYARRAY, 0);
+			this.$total_execute(500, true);
+		}
+	};
+
+	PROTO.$total_parsebody = function(chunk) {
+
+		if (this.buffer_exceeded)
+			return;
+
+		if (!this.buffer_exceeded) {
+			CONCAT[0] = this.buffer_data;
+			CONCAT[1] = chunk;
+			this.buffer_data = Buffer.concat(CONCAT);
+		}
+
+		if (this.buffer_data.length < this.$total_route.length)
+			return;
+
+		this.buffer_exceeded = true;
+		this.buffer_data = U.createBuffer();
+	};
+
+	PROTO.$total_cancel = function() {
+		F.stats.response.timeout++;
+		clearTimeout(this.$total_timeout);
+		if (!this.controller)
+			return;
+		this.controller.isTimeout = true;
+		this.controller.isCanceled = true;
+		this.$total_route = F.lookup(this, '#408', EMPTYARRAY, 0);
+		this.$total_execute(408, true);
+	};
+
+	PROTO.$total_validate = function(route, next, code) {
+
+		this.$total_schema = false;
+
+		if (!this.$total_route.schema || this.method === 'DELETE')
+			return next(this, code);
+
+		var self = this;
+
+		F.onSchema(this, this.$total_route.schema[0], this.$total_route.schema[1], function(err, body) {
+
+			if (err) {
+				self.$total_400(err);
+				next = null;
+			} else {
+				F.stats.request.schema++;
+				self.body = body;
+				self.$total_schema = true;
+				next(self, code);
+			}
+
+		}, route.schema[2], route.novalidate);
+	};
+
+	PROTO.$total_authorize = function(isLogged, user, roles) {
+
+		var membertype = isLogged ? 1 : 2;
+		var code = this.buffer_exceeded ? 431 : 401;
+
+		this.$flags += membertype;
+		user && (this.user = user);
+
+		if (this.$total_route && this.$total_route.isUNIQUE && !roles && (!this.$total_route.MEMBER || this.$total_route.MEMBER === membertype)) {
+			if (code === 401 && this.$total_schema)
+				this.$total_validate(this.$total_route, subscribe_validate_callback, code);
+			else
+				this.$total_execute(code, true);
+		} else {
+			var route = F.lookup(this, this.buffer_exceeded ? '#431' : this.uri.pathname, this.flags, this.buffer_exceeded ? 0 : membertype);
+			var status = this.$isAuthorized ? 404 : 401;
+			var code = this.buffer_exceeded ? 431 : status;
+			!route && (route = F.lookup(this, '#' + status, EMPTYARRAY, 0));
+
+			this.$total_route = route;
+
+			if (this.$total_route && this.$total_schema)
+				this.$total_validate(this.$total_route, subscribe_validate_callback, code);
+			else
+				this.$total_execute(code);
+		}
+	};
+
+	PROTO.$total_end2 = function() {
+
+		var route = this.$total_route;
+
+		if (this.buffer_exceeded) {
+			route = F.lookup(this, '#431', EMPTYARRAY, 0);
+			this.buffer_data = null;
+			if (route) {
+				this.$total_route = route;
+				this.$total_execute(431, true);
+			} else
+				this.res.throw431();
+			return;
+		}
+
+		if (this.buffer_data && (!route || !route.isBINARY))
+			this.buffer_data = this.buffer_data.toString(ENCODING);
+
+		if (!this.buffer_data) {
+			if (route && route.schema)
+				this.$total_schema = true;
+			this.buffer_data = null;
+			this.$total_prepare(this.flags, this.uri.pathname);
+			return;
+		}
+
+		if (route.isXML) {
+
+			if (this.$type !== 2) {
+				this.$total_400('Invalid "Content-Type".');
+				this.buffer_data = null;
+				return;
+			}
+
+			try {
+				F.$onParseXML(this);
+				this.buffer_data = null;
+				this.$total_prepare(this.flags, this.uri.pathname);
+			} catch (err) {
+				F.error(err, null, this.uri);
+				this.$total_500(err);
+			}
+			return;
+		}
+
+		if (route.isRAW) {
+			this.body = this.buffer_data;
+			this.buffer_data = null;
+			this.$total_prepare(this.flags, this.uri.pathname);
+			return;
+		}
+
+		if (!this.$type) {
+			this.buffer_data = null;
+			this.$total_400('Invalid "Content-Type".');
+			return;
+		}
+
+		if (this.$type === 1) {
+			try {
+				F.$onParseJSON(this);
+				this.buffer_data = null;
+			} catch (e) {
+				this.$total_400('Invalid JSON data.');
+				return;
+			}
+		} else
+			F.$onParseQueryBody(this);
+
+		route.schema && (this.$total_schema = true);
+		this.buffer_data = null;
+		this.$total_prepare(this.flags, this.uri.pathname);
+	};
+
+	PROTO.$total_endfile = function() {
+
+		var req = this;
+		var res = this.res;
+
+		if (!F._length_files)
+			return res.continue();
+
+		for (var i = 0; i < F._length_files; i++) {
+
+			var file = F.routes.files[i];
+			try {
+
+				if (file.extensions && !file.extensions[req.extension])
+					continue;
+
+				if (file.url) {
+					var skip = false;
+					var length = file.url.length;
+
+					if (!file.wildcard && !file.fixedfile && length !== req.path.length - 1)
+						continue;
+
+					for (var j = 0; j < length; j++) {
+						if (file.url[j] === req.path[j])
+							continue;
+						skip = true;
+						break;
+					}
+
+					if (skip)
+						continue;
+
+				} else if (file.onValidate && !file.onValidate.call(F, req, res, true))
+					continue;
+
+				if (file.middleware)
+					req.$total_endfilemiddleware(file);
+				else
+					file.execute.call(F, req, res, false);
+				return;
+
+			} catch (err) {
+				F.error(err, file.controller, req.uri);
+				res.throw500();
+				return;
+			}
+		}
+
+		res.continue();
+	};
+
+	PROTO.$total_endfilemiddleware = function(file) {
+		this.$total_filemiddleware = file;
+		async_middleware(0, this, this.res, file.middleware, total_endmiddleware, file.options);
+	};
+
+	PROTO.$total_400 = function(problem) {
+		this.$total_route = F.lookup(this, '#400', EMPTYARRAY, 0);
+		this.$total_exception = problem;
+		this.$total_execute(400, true);
+	};
+
+	PROTO.$total_500 = function(problem) {
+		this.$total_route = F.lookup(this, '#500', EMPTYARRAY, 0);
+		this.$total_exception = problem;
+		this.$total_execute(500, true);
+	};
+
+	PROTO.$total_prepare = function(flags, url) {
+
+		var req = this;
+		var res = this.res;
+		var auth = F.onAuthorize;
+
+		if (auth) {
+			var length = flags.length;
+			auth(req, res, flags, function(isAuthorized, user) {
+
+				var hasRoles = length !== flags.length;
+				if (hasRoles)
+					req.$flags += flags.slice(length).join('');
+
+				if (typeof(isAuthorized) !== 'boolean') {
+					user = isAuthorized;
+					isAuthorized = !user;
+				}
+
+				req.isAuthorized = isAuthorized;
+				req.$total_authorize(isAuthorized, user, hasRoles);
+			});
+		} else {
+
+			if (!req.$total_route)
+				req.$total_route = F.lookup(req, req.buffer_exceeded ? '#431' : url || req.uri.pathname, req.flags, 0);
+
+			if (!req.$total_route)
+				req.$total_route = F.lookup(req, '#404', EMPTYARRAY, 0);
+
+			var code = req.buffer_exceeded ? 431 : 404;
+
+			if (!req.$total_schema || !req.$total_route)
+				req.$total_execute(code);
+			else
+				req.$total_validate(req.$total_route, subscribe_validate_callback, code);
+		}
+	};
+}
+
+function total_endmiddleware(req) {
+	try {
+		req.$total_filemiddleware.execute.call(F, req, req.res, false);
+	} catch (err) {
+		F.error(err, req.$total_filemiddleware.controller + ' :: ' + req.$total_filemiddleware.name, req.uri);
+		req.res.throw500();
+	}
 }
 
 function extend_response(PROTO) {
@@ -14082,7 +13974,7 @@ function extend_response(PROTO) {
 		if (this.headersSent)
 			return this;
 
-		this.controller && this.controller.subscribe.success();
+		this.controller && this.$total_success();
 
 		var res = this;
 		var req = this.req;
@@ -15212,7 +15104,7 @@ function response_end(res) {
 	res.success = true;
 	!res.req.isStaticFile && F.$events['request-end'] && F.emit('request-end', res.req, res);
 	res.req.clear(true);
-	res.controller && res.controller.subscribe.success();
+	res.controller && res.req.$total_success();
 	res.options.callback && res.options.callback();
 	// res.options = EMPTYOBJECT;
 	res.controller = null;
@@ -15374,29 +15266,28 @@ function existsSync(filename, file) {
 	}
 }
 
-function async_middleware(index, req, res, middleware, callback, options, controller, subscribe) {
+function async_middleware(index, req, res, middleware, callback, options) {
 
 	if (res.success || res.headersSent) {
-		// Prevents timeout
-		controller && controller.subscribe.success();
+		req.$total_route && req.$total_success();
 		callback = null;
 		return;
 	}
 
 	var name = middleware[index++];
 	if (!name)
-		return callback && callback(req, res, subscribe);
+		return callback && callback(req, res);
 
 	var item = F.routes.middleware[name];
 	if (!item) {
 		F.error('Middleware not found: ' + name, null, req.uri);
-		return async_middleware(index, req, res, middleware, callback, options, controller, subscribe);
+		return async_middleware(index, req, res, middleware, callback, options);
 	}
 
 	var output = item.call(framework, req, res, function(err) {
 
 		if (err === false) {
-			controller && controller.subscribe.success();
+			req.$total_route && req.$total_success();
 			callback = null;
 			return;
 		}
@@ -15407,13 +15298,13 @@ function async_middleware(index, req, res, middleware, callback, options, contro
 			return;
 		}
 
-		async_middleware(index, req, res, middleware, callback, options, controller, subscribe);
-	}, options, controller);
+		async_middleware(index, req, res, middleware, callback, options);
+	}, options);
 
 	if (output !== false)
 		return;
 
-	controller && controller.subscribe.success();
+	req.$total_route && req.$total_success();
 	callback = null;
 }
 
@@ -15588,7 +15479,7 @@ function parseDeferFile(type, filename) {
 
 // Because of controller prototypes
 // It's used in F.view() and F.viewCompile()
-const EMPTYCONTROLLER = new Controller('', null, null, null, '');
+const EMPTYCONTROLLER = new Controller('', null, null, '');
 EMPTYCONTROLLER.isConnected = false;
 EMPTYCONTROLLER.req = {};
 EMPTYCONTROLLER.req.url = '';
