@@ -961,62 +961,52 @@ function nosqlinlinesorter(item, builder, doc) {
 	if (length < builder.$limit) {
 		item.response.push(doc);
 		length + 1 >= builder.$limit && item.response.quicksort(builder.$sort.name, builder.$sort.asc);
-	} else {
-		if (builder.$sort.asc)
-			nosqlresort_asc(item.response, builder, doc); // inline sorter
-		else
-			nosqlresort_desc(item.response, builder, doc); // inline sorter
-	}
+	} else
+		nosqlresort(item.response, builder, doc);
 }
 
 function nosqlsortvalue(a, b, sorter) {
 	var type = typeof(a);
 	if (type === 'number')
-		return sorter.asc ? a < b : a > b;
+		return sorter.asc ? a > b : a < b;
 	else if (type === 'string') {
 		a = (a.length > 5 ? a.substring(0, 5) : a).toLowerCase().removeDiacritics();
 		var c = a.localeCompare(b);
-		return sorter.asc ? c === -1 : c === 1;
+		return sorter.asc ? c === 1 : c === -1;
 	} else if (a instanceof Date)
-		return sorter.asc ? a < b : a > b;
-
+		return sorter.asc ? a > b : a < b;
 	return false;
 }
 
-function nosqlresort_asc(arr, builder, doc) {
+function nosqlresort(arr, builder, doc) {
 	var b = doc[builder.$sort.name];
 	if (typeof(b) === 'string')
 		b = (b.length > 5 ? b.substring(0, 5) : b).toLowerCase().removeDiacritics();
-	var length = arr.length;
-	for (var i = 0, length = arr.length; i < length; i++) {
-	// for (var i = length - 1; i > -1; i--) {
-		var item = arr[i];
-		var sort = nosqlsortvalue(item[builder.$sort.name], b, builder.$sort);
-		console.log('CYCLES', JSON.stringify(arr), item[builder.$sort.name], b, sort);
-		if (sort)
-			continue;
-		for (var j = length - 1; j > i; j--)
-			arr[j] = arr[j - 1];
-		arr[i] = doc;
-		return;
-	}
-}
 
-function nosqlresort_desc(arr, builder, doc) {
-	var b = doc[builder.$sort.name];
-	if (typeof(b) === 'string')
-		b = (b.length > 5 ? b.substring(0, 5) : b).toLowerCase().removeDiacritics();
-	for (var i = 0, length = arr.length; i < length; i++) {
-		console.log('CYCLES');
+	var beg = 0;
+	var length = arr.length;
+	var tmp = length - 1;
+
+	var sort = nosqlsortvalue(arr[tmp][builder.$sort.name], b, builder.$sort);
+	if (!sort)
+		return;
+
+	tmp = arr.length / 2 >> 0;
+	sort = nosqlsortvalue(arr[tmp][builder.$sort.name], b, builder.$sort);
+	if (!sort)
+		beg = tmp + 1;
+
+	for (var i = beg; i < length; i++) {
 		var item = arr[i];
 		var sort = nosqlsortvalue(item[builder.$sort.name], b, builder.$sort);
-		if (sort)
+		if (!sort)
 			continue;
 		for (var j = length - 1; j > i; j--)
 			arr[j] = arr[j - 1];
 		arr[i] = doc;
 		return;
 	}
+
 }
 
 Database.prototype.$reader2_inmemory = function(name, items, callback) {
