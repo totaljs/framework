@@ -1179,7 +1179,7 @@ SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourc
 		}
 
 		if (!schema.isArray) {
-			(model[key] != null || schema.required) && s.validate(model[key], resourcePrefix, resourceName, builder, filter, path + key, j);
+			(model[key] != null || schema.required) && s.validate(model[key], resourcePrefix, resourceName, builder, filter, path + key, -1);
 			continue;
 		}
 
