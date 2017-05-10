@@ -1645,6 +1645,7 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 				if (index !== -1) {
 					schema[2] = schema[1].substring(index + 1).trim();
 					schema[1] = schema[1].substring(0, index).trim();
+					(schema[2] && schema[2][0] !== '*') && (schema[2] = '*' + schema[2]);
 				}
 
 				continue;
