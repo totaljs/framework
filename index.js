@@ -5198,7 +5198,7 @@ F.compile_merge = function(res) {
 			var output = F.compile_content(req.extension, framework_internal.parseBlock(block, buffer.toString(ENCODING)), filename);
 			if (req.extension === 'js') {
 				if (output[output.length - 1] !== ';')
-					output += ';';
+					output += ';' + NEWLINE;
 			} else if (req.extension === 'html') {
 				if (output[output.length - 1] !== NEWLINE)
 					output += NEWLINE;
