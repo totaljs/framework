@@ -15267,7 +15267,7 @@ function existsSync(filename, file) {
 	}
 }
 
-function async_middleware(index, req, res, middleware, callback, options) {
+function async_middleware(index, req, res, middleware, callback, options, controller) {
 
 	if (res.success || res.headersSent) {
 		req.$total_route && req.$total_success();
@@ -15282,7 +15282,7 @@ function async_middleware(index, req, res, middleware, callback, options) {
 	var item = F.routes.middleware[name];
 	if (!item) {
 		F.error('Middleware not found: ' + name, null, req.uri);
-		return async_middleware(index, req, res, middleware, callback, options);
+		return async_middleware(index, req, res, middleware, callback, options, controller);
 	}
 
 	var output = item.call(framework, req, res, function(err) {
@@ -15299,8 +15299,8 @@ function async_middleware(index, req, res, middleware, callback, options) {
 			return;
 		}
 
-		async_middleware(index, req, res, middleware, callback, options);
-	}, options);
+		async_middleware(index, req, res, middleware, callback, options, controller);
+	}, options, controller);
 
 	if (output !== false)
 		return;
