@@ -33,7 +33,7 @@ const spawn = child.spawn;
 const Fs = require('fs');
 const REGEXP_SVG = /(width=\"\d+\")+|(height=\"\d+\")+/g;
 const REGEXP_PATH = /\//g;
-const REGEXP_ESCAPE = /\$\(.*?\)|\'/g;
+const REGEXP_ESCAPE = /\'/g;
 
 var CACHE = {};
 var middlewares = {};
@@ -404,7 +404,7 @@ Image.prototype.push = function(key, value, priority, encode) {
 
 	if (value != null) {
 		if (encode && typeof(value) === 'string')
-			cmd += ' "' + value.replace(REGEXP_ESCAPE, '') + '"';
+			cmd += ' \'' + value.replace(REGEXP_ESCAPE, '') + '\'';
 		else
 			cmd += ' ' + value;
 	}
@@ -686,7 +686,7 @@ Image.prototype.command = function(key, value, priority, esc) {
 };
 
 function wrap(command, empty) {
-	return (empty ? ' ' : '') + command.replace(REGEXP_ESCAPE, '');
+	return (empty ? ' ' : '') + '\'' + command.replace(REGEXP_ESCAPE, '') + '\'';
 }
 
 exports.Image = Image;
