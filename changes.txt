@@ -20,6 +20,7 @@
 - fixed: a waiting mode in `GETSCHEMA()`
 - fixed: cache `instance.cache()` in RESTBuilder
 - fixed: NoSQL filtering (critical)
+- fixed: a bug ImageMagick/GraphicsMagick when the path contains spaces (critical)
 
 ======= 2.5.0
 

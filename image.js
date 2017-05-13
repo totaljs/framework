@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkImage
- * @version 2.5.0
+ * @version 2.6.0
  */
 
 'use strict';
@@ -34,6 +34,7 @@ const Fs = require('fs');
 const REGEXP_SVG = /(width=\"\d+\")+|(height=\"\d+\")+/g;
 const REGEXP_PATH = /\//g;
 const REGEXP_ESCAPE = /\'/g;
+const D = require('os').platform().substring(0, 3).toLowerCase() === 'win' ? '"' : '\'';
 
 var CACHE = {};
 var middlewares = {};
@@ -404,7 +405,7 @@ Image.prototype.push = function(key, value, priority, encode) {
 
 	if (value != null) {
 		if (encode && typeof(value) === 'string')
-			cmd += ' \'' + value.replace(REGEXP_ESCAPE, '') + '\'';
+			cmd += ' ' + D + value.replace(REGEXP_ESCAPE, '') + D;
 		else
 			cmd += ' ' + value;
 	}
@@ -673,7 +674,7 @@ Image.prototype.sepia = function() {
 };
 
 Image.prototype.watermark = function(filename, x, y, w, h) {
-	return this.push('-draw', 'image over {1},{2} {3},{4} \'{0}\''.format(filename, x || 0, y || 0, w || 0, h || 0), 6, true);
+	return this.push('-draw', 'image over {1},{2} {3},{4} {5}{0}{5}'.format(filename, x || 0, y || 0, w || 0, h || 0, D), 6, true);
 };
 
 Image.prototype.make = function(fn) {
@@ -686,7 +687,7 @@ Image.prototype.command = function(key, value, priority, esc) {
 };
 
 function wrap(command, empty) {
-	return (empty ? ' ' : '') + '\'' + command.replace(REGEXP_ESCAPE, '') + '\'';
+	return (empty ? ' ' : '') + D + command.replace(REGEXP_ESCAPE, '') + D;
 }
 
 exports.Image = Image;
