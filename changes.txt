@@ -21,6 +21,7 @@
 - fixed: cache `instance.cache()` in RESTBuilder
 - fixed: NoSQL filtering (critical)
 - fixed: a bug ImageMagick/GraphicsMagick when the path contains spaces (critical)
+- fixed: `controller.memorize()` didn't work (critical)
 
 ======= 2.5.0
 
