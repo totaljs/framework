@@ -1436,7 +1436,7 @@ F.group = function(flags, fn) {
  * @param {String Array} flags
  * @param {Number} length Maximum length of request data.
  * @param {String Array} middleware Loads custom middleware.
- * @param {Number timeout Response timeout.
+ * @param {Number} timeout Response timeout.
  * @return {Framework}
  */
 F.web = F.route = function(url, funcExecute, flags, length, language) {
@@ -1587,7 +1587,7 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 
 			if (first === '&') {
 				// resource (sitemap localization)
-				// doesn't used now
+				// isn't used now
 				continue;
 			}
 
@@ -2902,7 +2902,7 @@ F.module = function(name) {
 /**
  * Add a new modificator
  * @param {Function(type, filename, content)} fn The `fn` must return modified value.
- * @return {String}
+ * @return {Framework}
  */
 F.modify = function(fn) {
 	if (!F.modificators)
