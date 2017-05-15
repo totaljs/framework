@@ -5731,9 +5731,9 @@ F.load = function(debug, types, pwd) {
 		F.consoledebug('init');
 		F.cache.init();
 		F.emit('init');
-		F.isLoaded = true;
 
 		F.$load(types, directory, function() {
+			F.isLoaded = true;
 			setTimeout(function() {
 
 				try {
