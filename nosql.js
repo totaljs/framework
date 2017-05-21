@@ -1582,8 +1582,9 @@ DatabaseBuilder.prototype.join = function(field, name, view) {
 		self.$joincount = 0;
 	}
 
-	var key = name + '.' + (view || '');
-	if (self.$join[key])
+	var key = name + '.' + (view || '') + '.' + field;
+	var join = self.$join[key];
+	if (join)
 		return join;
 
 	self.$join[key] = {};
@@ -1591,7 +1592,7 @@ DatabaseBuilder.prototype.join = function(field, name, view) {
 	self.$join[key].pending = true;
 	self.$joincount++;
 
-	var join = NOSQL(name).find(view);
+	join = NOSQL(name).find(view);
 
 	join.where = function(a, b) {
 		self.$join[key].a = a;
