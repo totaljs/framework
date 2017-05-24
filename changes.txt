@@ -1,7 +1,7 @@
 ======= 2.6.0 (BETA)
 
 - added: `F.config['default-errorbuilder-status']` a default HTTP status for all error builders default `200`
-- added: `F.config['default-listenpath']` start a UNIX socket server listening for connections on the given path
+- added: `F.config['default-listenpath']` starts a UNIX socket server listening for connections on the given path
 - added: `F.listenpath` contains `default-listenpath` location
 - added: `F.custom(mode, http, request_prototype, response_prototype, options)` a new mode for overwriting default HTTP server
 - added: `schema.inherit([group], name)` can inherit all values from another schema
