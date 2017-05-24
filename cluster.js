@@ -109,10 +109,15 @@ exports.http = function(count, mode, options) {
 };
 
 exports.restart = function(index) {
-	var fork = FORKS[index];
-	fork.removeAllListeners();
-	fork.disconnect();
-	exec(index);
+	if (index === undefined) {
+		for (var i = 0; i < THREADS; i++)
+			exports.restart(i);
+	} else {
+		var fork = FORKS[index];
+		fork.removeAllListeners();
+		fork.disconnect();
+		exec(index);
+	}
 };
 
 function master(count, mode, options, callback) {
