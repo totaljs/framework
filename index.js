@@ -9727,6 +9727,11 @@ Controller.prototype.transfer = function(url, flags) {
 	self.req.path = EMPTYARRAY;
 	self.req.$total_transfer = true;
 	self.req.$total_success();
+
+	// Because of dynamic params
+	// Hidden variable
+	self.req.$path = framework_internal.routeSplit(url, true);
+
 	self.req.$total_route = selected;
 	self.req.$total_execute(404);
 	return true;
