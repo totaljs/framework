@@ -25,7 +25,7 @@
 - fixed: NoSQL filtering (critical)
 - fixed: a bug ImageMagick/GraphicsMagick when the path contains spaces (critical)
 - fixed: `controller.memorize()` didn't work (critical)
-
+- fixed: dynamic params when `controller.transfer()` is performed
 
 ======= 2.5.0
 
