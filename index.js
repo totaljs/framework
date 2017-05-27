@@ -10761,6 +10761,11 @@ Controller.prototype.$import = function() {
 			continue;
 		}
 
+		if (filename === 'favicon.ico' || filename === 'favicon.png') {
+			builder += self.$favicon(filename);
+			continue;
+		}
+
 		var extension = filename.substring(filename.lastIndexOf('.'));
 		var tag = filename[0] !== '!';
 		if (!tag)
@@ -10779,6 +10784,12 @@ Controller.prototype.$import = function() {
 			case '.ico':
 				builder += self.$favicon(filename);
 				break;
+			case '.jpg':
+			case '.gif':
+			case '.png':
+			case '.jpeg':
+				builder += self.routeImage(filename);
+				break;
 			case '.mp4':
 			case '.avi':
 			case '.ogv':
@@ -10789,12 +10800,6 @@ Controller.prototype.$import = function() {
 			case '.mpeg':
 			case '.m4v':
 				builder += self.routeVideo(filename);
-				break;
-			case '.jpg':
-			case '.gif':
-			case '.png':
-			case '.jpeg':
-				builder += self.routeImage(filename);
 				break;
 			default:
 				builder += self.routeStatic(filename);
@@ -10921,7 +10926,7 @@ Controller.prototype.$favicon = function(name) {
 	else if (name.lastIndexOf('.gif') !== -1)
 		contentType = 'image/gif';
 
-	return F.temporary.other[key] = '<link rel="shortcut icon" href="' + F.routeStatic('/' + name) + '" type="' + contentType + '" />';
+	return F.temporary.other[key] = '<link rel="icon" href="' + F.routeStatic('/' + name) + '" type="' + contentType + '" />';
 };
 
 /**

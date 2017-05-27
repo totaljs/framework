@@ -15,6 +15,7 @@
 - updated: `debug.js` supports `inspector`
 - updated: NoSQL embedded database sorting (increased read performance about 30%)
 - updated: RESTBuilder parsers JSON date string as `Date` object
+- updated: `favicon()` generates `<link rel="icon"` instead of `<link rel="shortcut icon"`
 
 - fixed: `controller.send()` bad declaration of `connection.id` for `id` and `blacklist` arguments
 - fixed: `totaljs --translate` problem with `node_modules` and `.git` directory
@@ -23,6 +24,7 @@
 - fixed: NoSQL filtering (critical)
 - fixed: a bug ImageMagick/GraphicsMagick when the path contains spaces (critical)
 - fixed: `controller.memorize()` didn't work (critical)
+
 
 ======= 2.5.0
 
