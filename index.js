@@ -10944,7 +10944,8 @@ Controller.prototype._routeHelper = function(name, fn) {
 /**
  * Create URL: JavaScript
  * @param {String} name
- * @param {Boolean} tag Append tag?
+ * @param {Boolean} tag Optional, default "false"
+ * @param {String} path Optional, default undefined
  * @return {String}
  */
 Controller.prototype.routeScript = function(name, tag, path) {
@@ -10952,9 +10953,16 @@ Controller.prototype.routeScript = function(name, tag, path) {
 	if (name === undefined)
 		name = 'default.js';
 
+	var async = false;
 	var url;
 
-	// isomorphic
+	// Checks "async "
+	if (tag && name[0] === 'a' && name[5] === ' ') {
+		async = true;
+		name = name.substring(6);
+	}
+
+	// Isomorphic
 	if (name[0] === '#') {
 		var tmp = F.isomorphic[name.substring(1)];
 		if (tmp)
@@ -10969,7 +10977,7 @@ Controller.prototype.routeScript = function(name, tag, path) {
 			url = F.isWindows ? U.join(path, url) : U.join(path, url).substring(1);
 	}
 
-	return tag ? '<script src="' + url + '"></script>' : url;
+	return tag ? ('<script src="' + url + '"' + (async ? ' async' : '') + '></script>') : url;
 };
 
 /**
