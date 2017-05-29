@@ -122,6 +122,9 @@ exports.restart = function(index) {
 
 function master(count, mode, options, callback) {
 
+	if (count == null || count === 'auto')
+		count = require('os').cpus().length;
+
 	if (!options)
 		options = {};
 

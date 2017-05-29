@@ -18,7 +18,7 @@ module.exports = function(opt) {
 
 process.on('uncaughtException', e => e.toString().indexOf('ESRCH') == -1 && console.log(e));
 
-process.title = 'total: watch';
+process.title = 'total: debug';
 
 function runapp() {
 
@@ -260,9 +260,9 @@ function runwatching() {
 
 		if (process.pid > 0) {
 
-			console.log(prefix.substring(8) + 'WATCH PID: ' + process.pid + ' (v' + VERSION + ')');
+			console.log(prefix.substring(8) + 'DEBUG PID: ' + process.pid + ' (v' + VERSION + ')');
 
-			pid = Path.join(directory, 'watch.pid');
+			pid = Path.join(directory, 'debug.pid');
 			Fs.writeFileSync(pid, process.pid);
 
 			setInterval(function() {
@@ -288,10 +288,10 @@ function runwatching() {
 		refresh_directory();
 	}
 
-	var filename = Path.join(directory, 'watch.pid');
+	var filename = Path.join(directory, 'debug.pid');
 	if (Fs.existsSync(filename)) {
 		Fs.unlinkSync(filename);
-		setTimeout(function() { app(); }, 3000);
+		setTimeout(app, 2500);
 	} else
 		app();
 }

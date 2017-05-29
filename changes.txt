@@ -8,7 +8,7 @@
 - added: NoSQL synchronization for cluster (more in docs)
 - added: cache synchronization for cluster (more in docs)
 - added: `F.cluster` (more in docs)
-- added: Total.js `watch` script `require('total.js/watch')` instead of `debug.js` file
+- added: Total.js `debug` script `require('total.js/debug')` instead of `debug.js` file
 - added: a support for `async` attribute when `<script async src="` tag is generating, e.g. `@{import('async default.js')}`
 
 - updated: `F.http(type, options)` supports `options.listenpath` for HTTP server (a direct shortcut for `default-listenpath`)
