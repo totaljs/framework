@@ -1,4 +1,4 @@
-======= 2.6.0 (BETA)
+======= 2.6.0
 
 - added: `F.config['default-errorbuilder-status']` a default HTTP status for all error builders default `200`
 - added: `F.config['default-listenpath']` starts a UNIX socket server listening for connections on the given path
