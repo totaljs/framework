@@ -411,7 +411,7 @@ exports.keywords = function(content, forSearch, alternative, max_count, max_leng
  * @param  {Number} timeout Request timeout.
  * return {Boolean}
  */
-exports.request = function(url, flags, data, callback, cookies, headers, encoding) {
+exports.request = function(url, flags, data, callback, cookies, headers, encoding, timeout) {
 
 	// No data (data is optional argument)
 	if (typeof(data) === 'function') {
@@ -426,7 +426,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 	if (callback === NOOP)
 		callback = null;
 
-	var options = { length: 0, timeout: 10000, evt: new EventEmitter2(), encoding: typeof(encoding) !== 'string' ? ENCODING : encoding, callback: callback, post: false, redirect: 0 };
+	var options = { length: 0, timeout: timeout || 10000, evt: new EventEmitter2(), encoding: typeof(encoding) !== 'string' ? ENCODING : encoding, callback: callback, post: false, redirect: 0 };
 	var method;
 	var type = 0;
 

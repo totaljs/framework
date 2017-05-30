@@ -1,3 +1,7 @@
+======= 2.6.1 (HOTFIX)
+
+- fixed: timeout in `RESTBuilder` and `U.request()`
+
 ======= 2.6.0
 
 - added: `F.config['default-errorbuilder-status']` a default HTTP status for all error builders default `200`
