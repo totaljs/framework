@@ -1,3 +1,32 @@
+======= 2.6.0
+
+- added: `F.config['default-errorbuilder-status']` a default HTTP status for all error builders default `200`
+- added: `F.config['default-listenpath']` starts a UNIX socket server listening for connections on the given path
+- added: `F.listenpath` contains `default-listenpath` location
+- added: `F.custom(mode, http, request_prototype, response_prototype, options)` a new mode for overwriting default HTTP server
+- added: `schema.inherit([group], name)` can inherit all values from another schema
+- added: NoSQL synchronization for cluster (more in docs)
+- added: cache synchronization for cluster (more in docs)
+- added: `F.cluster` (more in docs)
+- added: Total.js `debug` script `require('total.js/debug')` instead of `debug.js` file
+- added: a support for `async` attribute when `<script async src="` tag is generating, e.g. `@{import('async default.js')}`
+
+- updated: `F.http(type, options)` supports `options.listenpath` for HTTP server (a direct shortcut for `default-listenpath`)
+- updated: `F.script` returns error if compilation fails
+- updated: `debug.js` supports `inspector`
+- updated: NoSQL embedded database sorting (increased read performance about 30%)
+- updated: RESTBuilder parsers JSON date string as `Date` object
+- updated: `favicon()` generates `<link rel="icon"` instead of `<link rel="shortcut icon"`
+
+- fixed: `controller.send()` bad declaration of `connection.id` for `id` and `blacklist` arguments
+- fixed: `totaljs --translate` problem with `node_modules` and `.git` directory
+- fixed: a waiting mode in `GETSCHEMA()`
+- fixed: cache `instance.cache()` in RESTBuilder
+- fixed: NoSQL filtering (critical)
+- fixed: a bug ImageMagick/GraphicsMagick when the path contains spaces (critical)
+- fixed: `controller.memorize()` didn't work (critical)
+- fixed: dynamic params when `controller.transfer()` is performed
+
 ======= 2.5.0
 
 - added: a missing property for WebSocket controller `controller.mobile`

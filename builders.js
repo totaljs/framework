@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkBuilders
- * @version 2.5.0
+ * @version 2.6.0
  */
 
 'use strict';
@@ -110,6 +110,7 @@ function SchemaBuilderEntity(parent, name) {
 	this.schema = {};
 	this.meta = {};
 	this.properties = [];
+	this.inherits = [];
 	this.resourcePrefix;
 	this.resourceName;
 	this.transforms;
@@ -118,7 +119,9 @@ function SchemaBuilderEntity(parent, name) {
 	this.operations;
 	this.constants;
 	this.onPrepare;
+	this.$onPrepare; // Array of functions for inherits
 	this.onDefault;
+	this.$onDefault; // Array of functions for inherits
 	this.onValidate = F.onValidate;
 	this.onSave;
 	this.onGet;
@@ -174,6 +177,7 @@ SchemaBuilderEntity.prototype.define = function(name, type, required, custom) {
 		type = type.name;
 
 	this.schema[name] = this.$parse(name, type, required, custom);
+
 	switch (this.schema[name].type) {
 		case 7:
 			if (!this.dependencies)
@@ -193,6 +197,93 @@ SchemaBuilderEntity.prototype.define = function(name, type, required, custom) {
 	this.properties.indexOf(name) === -1 && this.properties.push(name);
 	return this;
 };
+
+SchemaBuilderEntity.prototype.inherit = function(group, name) {
+
+	if (!name) {
+		name = group;
+		group = DEFAULT_SCHEMA;
+	}
+
+	var self = this;
+
+	exports.getschema(group, name, function(err, schema) {
+
+		if (err)
+			throw err;
+
+		self.primary = schema.primary;
+		self.inherits.push(schema);
+
+		if (!self.resourceName && schema.resourceName)
+			self.resourceName = schema.resourceName;
+
+		if (!self.resourcePrefix && schema.resourcePrefix)
+			self.resourcePrefix = schema.resourcePrefix;
+
+		copy_inherit(self, 'schema', schema.schema);
+		copy_inherit(self, 'meta', schema.meta);
+		copy_inherit(self, 'transforms', schema.transforms);
+		copy_inherit(self, 'workflows', schema.workflows);
+		copy_inherit(self, 'hooks', schema.hooks);
+		copy_inherit(self, 'operations', schema.operations);
+		copy_inherit(self, 'constants', schema.constants);
+
+		schema.properties.forEach(function(item) {
+			self.properties.indexOf(item) === -1 && self.properties.push(item);
+		});
+
+		if (schema.onPrepare) {
+			if (!self.$onPrepare)
+				self.$onPrepare = [];
+			self.$onPrepare.push(schema.onPrepare);
+		}
+
+		if (schema.onDefault) {
+			if (!self.$onDefault)
+				self.$onDefault = [];
+			self.$onDefault.push(schema.onDefault);
+		}
+
+		if (self.onValidate === F.onValidate && self.onValidate !== schema.onValidate)
+			self.onValidate = schema.onValidate;
+
+		if (!self.onSave && schema.onSave)
+			self.onSave = schema.onSave;
+
+		if (!self.onGet && schema.onGet)
+			self.onGet = schema.onGet;
+
+		if (!self.onRemove && schema.onRemove)
+			self.onRemove = schema.onRemove;
+
+		if (!self.onQuery && schema.onQuery)
+			self.onQuery = schema.onQuery;
+
+		if (!self.onError && schema.onError)
+			self.onError = schema.onError;
+
+		self.fields = Object.keys(self.schema);
+	});
+
+	return self;
+};
+
+function copy_inherit(schema, field, value) {
+
+	if (!value)
+		return;
+
+	if (value && !schema[field]) {
+		schema[field] = framework_utils.clone(value);
+		return;
+	}
+
+	Object.keys(value).forEach(function(key) {
+		if (schema[field][key] === undefined)
+			schema[field][key] = framework_utils.clone(value[key]);
+	});
+}
 
 /**
  * Set primary key
@@ -707,6 +798,7 @@ SchemaBuilderEntity.prototype.destroy = function() {
 	this.properties = undefined;
 	this.schema = undefined;
 	this.onDefault = undefined;
+	this.$onDefault = undefined;
 	this.onValidate = undefined;
 	this.onSave = undefined;
 	this.onRead = undefined;
@@ -722,6 +814,7 @@ SchemaBuilderEntity.prototype.destroy = function() {
 	this.hooks = undefined;
 	this.constants = undefined;
 	this.onPrepare = undefined;
+	this.$onPrepare = undefined;
 	this.onError = undefined;
 	this.gcache = undefined;
 	this.dependencies = undefined;
@@ -1086,7 +1179,7 @@ SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourc
 		}
 
 		if (!schema.isArray) {
-			(model[key] != null || schema.required) && s.validate(model[key], resourcePrefix, resourceName, builder, filter, path + key, j);
+			(model[key] != null || schema.required) && s.validate(model[key], resourcePrefix, resourceName, builder, filter, path + key, -1);
 			continue;
 		}
 
@@ -1138,15 +1231,15 @@ SchemaBuilderEntity.prototype.default = function() {
 	if (obj === null)
 		return null;
 
-	var defaults = this.onDefault;
 	var item = new this.CurrentSchemaInstance();
+	var defaults = this.onDefault || this.$onDefault ? true : false;
 
 	for (var property in obj) {
 
 		var type = obj[property];
 
 		if (defaults) {
-			var def = defaults(property, true, this.name);
+			var def = this.$ondefault(property, true, this.name);
 			if (def !== undefined) {
 				item[property] = def;
 				continue;
@@ -1246,11 +1339,40 @@ function autotrim(context, value) {
 }
 
 SchemaBuilderEntity.prototype.$onprepare = function(name, value, index, model) {
-	if (this.onPrepare) {
-		var val = this.onPrepare(name, value, index, model);
-		return val === undefined ? value : val;
+
+	var val = value;
+
+	if (this.$onPrepare) {
+		for (var i = 0, length = this.$onPrepare.length; i < length; i++) {
+			var tmp = this.$onPrepare[i](name, val, index, model);
+			if (tmp !== undefined)
+				val = tmp;
+		}
 	}
-	return value;
+
+	if (this.onPrepare)
+		val = this.onPrepare(name, val, index, model);
+
+	return val === undefined ? value : val;
+};
+
+SchemaBuilderEntity.prototype.$ondefault = function(property, create, entity) {
+
+	var val;
+
+	if (this.onDefault) {
+		val = this.onDefault(property, create, entity);
+		if (val !== undefined)
+			return val;
+	}
+
+	if (this.$onDefault) {
+		for (var i = 0, length = this.$onDefault.length; i < length; i++) {
+			val = this.$onDefault[i](property, create, entity);
+			if (val !== undefined)
+				return val;
+		}
+	}
 };
 
 /**
@@ -1273,7 +1395,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 	var tmp;
 	var entity;
 	var item = new self.CurrentSchemaInstance();
-	var defaults = self.onDefault;
+	var defaults = self.onDefault || self.$onDefault ? true : false;
 
 	for (var property in obj) {
 
@@ -1284,7 +1406,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 			val = undefined;
 
 		if (val === undefined && defaults)
-			val = defaults(property, false, self.name);
+			val = self.$ondefault(property, false, self.name);
 
 		if (val === undefined)
 			val = '';
@@ -1378,7 +1500,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 					if (framework_utils.isDate(tmp))
 						tmp = self.$onprepare(property, tmp, undefined, model);
 					else
-						tmp = (defaults ? isUndefined(defaults(property, false, self.name), null) : null);
+						tmp = (defaults ? isUndefined(self.$ondefault(property, false, self.name), null) : null);
 
 					item[property] = tmp;
 					break;
@@ -1406,7 +1528,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 				case 7:
 
 					if (!val) {
-						val = (defaults ? isUndefined(defaults(property, false, self.name), null) : null);
+						val = (defaults ? isUndefined(self.$ondefault(property, false, self.name), null) : null);
 						// val = defaults(property, false, self.name);
 						if (val === null) {
 							item[property] = null;
@@ -1435,7 +1557,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 
 		// ARRAY:
 		if (!(val instanceof Array)) {
-			item[property] = (defaults ? isUndefined(defaults(property, false, self.name), []) : []);
+			item[property] = (defaults ? isUndefined(self.$ondefault(property, false, self.name), []) : []);
 			continue;
 		}
 
@@ -2352,6 +2474,7 @@ function ErrorBuilder(onResource) {
 	this.replacer = [];
 	this.isPrepared = false;
 	this.contentType = 'application/json';
+	this.status = F.config['default-errorbuilder-status'] || 200;
 
 	// Hidden: when the .push() contains a classic Error instance
 	// this.unexpected;
@@ -2405,8 +2528,13 @@ exports.getschema = function(group, name, fn, timeout) {
 		group = DEFAULT_SCHEMA;
 	}
 
-	if (fn)
-		return framework_utils.wait(() => schemas[group], err => fn(err, schemas[group]), timeout || 20000);
+	if (fn) {
+		framework_utils.wait(function() {
+			var g = schemas[group];
+			return g && g.get(name) ? true : false;
+		}, err => fn(err, schemas[group].get(name)), timeout || 20000);
+		return;
+	}
 
 	var g = schemas[group];
 	return g ? g.get(name) : undefined;
@@ -3718,7 +3846,7 @@ RESTBuilder.prototype.exec = function(callback) {
 		if (data) {
 			var evt = new framework_utils.EventEmitter2();
 			process.nextTick(exec_removelisteners, evt);
-			callback(null, self.maketransform(this.$schema ? this.$schema.make(data.json) : data.json, data), data);
+			callback(null, self.maketransform(this.$schema ? this.$schema.make(data.value) : data.value, data), data);
 			return evt;
 		}
 	}
@@ -3728,7 +3856,7 @@ RESTBuilder.prototype.exec = function(callback) {
 		var type = err ? '' : headers['content-type'] || '';
 		var output = new RESTBuilderResponse();
 
-		output.value = type.indexOf('/xml') === -1 ? response.isJSON() ? F.onParseJSON(response) : F.onParseQuery(response) : response.parseXML();
+		output.value = type.indexOf('/xml') === -1 ? response.isJSON() ? JSON.parse(response, jsonparser) : F.onParseQuery(response) : response.parseXML();
 
 		if (output.value == null)
 			output.value = EMPTYOBJECT;
@@ -3844,6 +3972,10 @@ global.OPERATION = function(name, value, callback, param) {
 		callback(error, EMPTYOBJECT, param);
 	}
 };
+
+function jsonparser(key, value) {
+	return typeof(value) === 'string' && value.isJSONDate() ? new Date(value) : value;
+}
 
 // ======================================================
 // EXPORTS

@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkMail
- * @version 2.5.0
+ * @version 2.6.0
  */
 
 'use strict';
@@ -468,6 +468,13 @@ Mailer.prototype.send = function(smtp, options, messages, callback) {
 		obj.socket = Tls.connect(internal, () => mailer.$send(obj, options));
 	} else
 		obj.socket = Net.createConnection(options.port, smtp);
+
+	if (!smtp)  {
+		var err = new Error('No SMTP server configuration. Mail message won\'t be sent.');
+		callback && callback(err);
+		F.error(err, 'mail-smtp');
+		return self;
+	}
 
 	obj.socket.$host = smtp;
 	obj.host = smtp.substring(smtp.lastIndexOf('.', smtp.lastIndexOf('.') - 1) + 1);

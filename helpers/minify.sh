@@ -1,1 +1,0 @@
-uglifyjs debug-raw.js --quotes=1 -c -o debug.js

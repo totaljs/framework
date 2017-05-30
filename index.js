@@ -21,7 +21,7 @@
 
 /**
  * @module Framework
- * @version 2.5.0
+ * @version 2.6.0
  */
 
 'use strict';
@@ -81,6 +81,10 @@ const REPOSITORY_SITEMAP = '$sitemap';
 const ATTR_END = '"';
 const ETAG = '858';
 const CONCAT = [null, null];
+const CLUSTER_CACHE_SET = { TYPE: 'cache-set' };
+const CLUSTER_CACHE_REMOVE = { TYPE: 'cache-remove' };
+const CLUSTER_CACHE_REMOVEALL = { TYPE: 'cache-remove-all' };
+const CLUSTER_CACHE_CLEAR = { TYPE: 'cache-clear' };
 
 Object.freeze(EMPTYOBJECT);
 Object.freeze(EMPTYARRAY);
@@ -486,18 +490,18 @@ const controller_error_status = function(controller, status, problem) {
 
 	controller.precache && controller.precache(null, null, null);
 	controller.req.path = EMPTYARRAY;
-	controller.subscribe.success();
-	controller.subscribe.route = F.lookup(controller.req, '#' + status, EMPTYARRAY, 0);
-	controller.subscribe.exception = problem;
-	controller.subscribe.execute(status, true);
+	controller.req.$total_success();
+	controller.req.$total_route = F.lookup(controller.req, '#' + status, EMPTYARRAY, 0);
+	controller.req.$total_exception = problem;
+	controller.req.$total_execute(status, true);
 	return controller;
 };
 
 function Framework() {
 
-	this.id = null;
-	this.version = 2500;
-	this.version_header = '2.5.0';
+	this.$id = null; // F.id ==> property
+	this.version = 2600;
+	this.version_header = '2.6.0';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -560,6 +564,7 @@ function Framework() {
 		'default-timezone': '',
 		'default-root': '',
 		'default-response-maxage': '11111111',
+		'default-errorbuilder-status': 200,
 
 		// Seconds (2 minutes)
 		'default-cors-maxage': 120,
@@ -778,6 +783,20 @@ function Framework() {
 // ======================================================
 
 Framework.prototype = {
+	get cluster() {
+		return require('./cluster');
+	},
+	get id() {
+		return F.$id;
+	},
+	set id(value) {
+		CLUSTER_CACHE_SET.id = value;
+		CLUSTER_CACHE_REMOVE.id = value;
+		CLUSTER_CACHE_REMOVEALL.id = value;
+		CLUSTER_CACHE_CLEAR.id = value;
+		F.$id = value;
+		return F.$id;
+	},
 	get onLocate() {
 		return this.onLocale;
 	},
@@ -1033,7 +1052,7 @@ F.script = function(body, value, callback, param) {
 
 	if (err) {
 		callback && callback(err);
-		return compilation ? null : F;
+		return compilation ? err : F;
 	}
 
 	if (compilation) {
@@ -1095,7 +1114,7 @@ F.stop = F.kill = function(signal) {
 		TRY(() => process.send('stop'));
 
 	F.cache.stop();
-	F.server && F.server.close();
+	F.server && F.server.close && F.server.close();
 
 	setTimeout(() => process.exit(signal || 'SIGTERM'), TEST ? 2000 : 100);
 	return F;
@@ -1436,7 +1455,7 @@ F.group = function(flags, fn) {
  * @param {String Array} flags
  * @param {Number} length Maximum length of request data.
  * @param {String Array} middleware Loads custom middleware.
- * @param {Number timeout Response timeout.
+ * @param {Number} timeout Response timeout.
  * @return {Framework}
  */
 F.web = F.route = function(url, funcExecute, flags, length, language) {
@@ -1587,7 +1606,7 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 
 			if (first === '&') {
 				// resource (sitemap localization)
-				// doesn't used now
+				// isn't used now
 				continue;
 			}
 
@@ -1626,6 +1645,7 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 				if (index !== -1) {
 					schema[2] = schema[1].substring(index + 1).trim();
 					schema[1] = schema[1].substring(0, index).trim();
+					(schema[2] && schema[2][0] !== '*') && (schema[2] = '*' + schema[2]);
 				}
 
 				continue;
@@ -2902,7 +2922,7 @@ F.module = function(name) {
 /**
  * Add a new modificator
  * @param {Function(type, filename, content)} fn The `fn` must return modified value.
- * @return {String}
+ * @return {Framework}
  */
 F.modify = function(fn) {
 	if (!F.modificators)
@@ -4308,9 +4328,6 @@ F.uninstall = function(type, name, options, skipEmit, packageName) {
 		if (!obj)
 			return F;
 
-		if (obj.id)
-			delete require.cache[require.resolve(obj.id)];
-
 		F.$uninstall(id);
 		typeof(obj.uninstall) === 'function' && obj.uninstall(options, name);
 
@@ -4330,9 +4347,6 @@ F.uninstall = function(type, name, options, skipEmit, packageName) {
 
 		if (!obj)
 			return F;
-
-		if (obj.id)
-			delete require.cache[require.resolve(obj.id)];
 
 		F.$uninstall(id, packageName ? '' : ((isModule ? '#' : '') + name));
 		delete F.temporary.ready[type + '#' + name];
@@ -4935,6 +4949,7 @@ F.usage = function(detailed) {
 	var output = {};
 
 	output.framework = {
+		id: F.id,
 		datetime: F.datetime,
 		pid: process.pid,
 		node: process.version,
@@ -5183,7 +5198,7 @@ F.compile_merge = function(res) {
 			var output = F.compile_content(req.extension, framework_internal.parseBlock(block, buffer.toString(ENCODING)), filename);
 			if (req.extension === 'js') {
 				if (output[output.length - 1] !== ';')
-					output += ';';
+					output += ';' + NEWLINE;
 			} else if (req.extension === 'html') {
 				if (output[output.length - 1] !== NEWLINE)
 					output += NEWLINE;
@@ -5716,9 +5731,9 @@ F.load = function(debug, types, pwd) {
 		F.consoledebug('init');
 		F.cache.init();
 		F.emit('init');
-		F.isLoaded = true;
 
 		F.$load(types, directory, function() {
+			F.isLoaded = true;
 			setTimeout(function() {
 
 				try {
@@ -5762,6 +5777,7 @@ F.initialize = function(http, debug, options, restart) {
 
 	var port = options.port;
 	var ip = options.ip;
+	var listenpath = options.listenpath;
 
 	if (options.config)
 		U.copy(options.config, F.config);
@@ -5772,6 +5788,9 @@ F.initialize = function(http, debug, options, restart) {
 	F.isHTTPS = typeof(http.STATUS_CODES) === 'undefined';
 	if (isNaN(port) && typeof(port) !== 'string')
 		port = null;
+
+	if (options.id)
+		F.id = options.id;
 
 	F.config.debug = debug;
 	F.isDebug = debug;
@@ -5810,9 +5829,11 @@ F.initialize = function(http, debug, options, restart) {
 	if (F.ip == null)
 		F.ip = 'auto';
 
+	!listenpath && (listenpath = F.config['default-listenpath']);
+	F.listenpath = listenpath;
+
 	if (F.server) {
 		F.server.removeAllListeners();
-
 		Object.keys(F.connections).forEach(function(key) {
 			var item = F.connections[key];
 			if (item) {
@@ -5833,7 +5854,11 @@ F.initialize = function(http, debug, options, restart) {
 	F.config['allow-websocket'] && F.server.on('upgrade', F._upgrade);
 
 	F.consoledebug('HTTP listening');
-	F.server.listen(F.port, F.ip === 'auto' ? undefined : F.ip);
+
+	if (listenpath)
+		F.server.listen(listenpath);
+	else
+		F.server.listen(F.port, F.ip === 'auto' ? undefined : F.ip);
 
 	// clears static files
 	F.consoledebug('clear temporary');
@@ -5901,7 +5926,10 @@ F.http = function(mode, options) {
 	F.consoledebug('begin');
 	options == null && (options = {});
 	!options.port && (options.port = +process.argv[2]);
-	return F.mode(require('http'), mode, options);
+	var http = require('http');
+	extend_request(http.IncomingMessage.prototype);
+	extend_response(http.ServerResponse.prototype);
+	return F.mode(http, mode, options);
 };
 
 /**
@@ -5912,14 +5940,12 @@ F.http = function(mode, options) {
  */
 F.https = function(mode, options) {
 	F.consoledebug('begin');
+	var http = require('http');
+	extend_request(http.IncomingMessage.prototype);
+	extend_response(http.ServerResponse.prototype);
 	return F.mode(require('https'), mode, options || {});
 };
 
-/**
- * Changes the framework mode
- * @param {String} mode New mode (e.g. debug or release)
- * @return {Framework}
- */
 F.mode = function(http, name, options) {
 
 	var debug = false;
@@ -5985,6 +6011,62 @@ F.mode = function(http, name, options) {
 		F.consoledebug('startup (done)');
 		F.initialize(http, debug, options, restart);
 	});
+	return F;
+};
+
+F.custom = function(mode, http, request, response, options) {
+	var debug = false;
+
+	if (options.directory)
+		F.directory = directory = options.directory;
+
+	F.consoledebug('begin');
+
+	extend_request(request);
+	extend_response(response);
+
+	switch (mode.toLowerCase().replace(/\.|\s/g, '-')) {
+		case 'release':
+		case 'production':
+			break;
+
+		case 'debug':
+		case 'develop':
+		case 'development':
+			debug = true;
+			break;
+
+		case 'test':
+		case 'testing':
+		case 'test-debug':
+		case 'debug-test':
+		case 'testing-debug':
+			debug = true;
+			F.isTest = true;
+			break;
+
+		case 'test-release':
+		case 'release-test':
+		case 'testing-release':
+		case 'test-production':
+		case 'testing-production':
+			debug = false;
+			break;
+	}
+
+	var restart = false;
+	if (F.temporary.init)
+		restart = true;
+	else
+		F.temporary.init = { name: mode, isHTTPS: false, options: options };
+
+	F.config.trace = debug;
+	F.consoledebug('startup');
+	F.$startup(function() {
+		F.consoledebug('startup (done)');
+		F.initialize(http, debug, options, restart);
+	});
+
 	return F;
 };
 
@@ -6214,7 +6296,7 @@ F.listener = function(req, res) {
 		return res.throw400();
 
 	var headers = req.headers;
-	req.$protocol = req.connection.encrypted || headers['x-forwarded-protocol'] === 'https' ? 'https' : 'http';
+	req.$protocol = (req.connection && req.connection.encrypted) || headers['x-forwarded-protocol'] === 'https' ? 'https' : 'http';
 
 	req.uri = framework_internal.parseURI(req);
 
@@ -6276,10 +6358,10 @@ F.$requestcontinue = function(req, res, headers) {
 	if (req.isStaticFile) {
 		F.stats.request.file++;
 		if (F._length_files)
-			new Subscribe(F, req, res, 3).file();
+			req.$total_file();
 		else
 			res.continue();
-		return F;
+		return;
 	}
 
 	req.body = EMPTYOBJECT;
@@ -6396,32 +6478,32 @@ F.$requestcontinue = function(req, res, headers) {
 			if (isCORS)
 				F.$cors(req, res, cors_callback0);
 			else
-				new Subscribe(F, req, res, 0).end();
-			return F;
+				req.$total_end();
+			return;
 
 		case 'O':
 			F.stats.request.options++;
 			if (isCORS)
 				F.$cors(req, res, cors_callback0);
 			else
-				new Subscribe(framework, req, res, 0).end();
-			return F;
+				req.$total_end();
+			return;
 
 		case 'H':
 			F.stats.request.head++;
 			if (isCORS)
 				F.$cors(req, res, cors_callback0);
 			else
-				new Subscribe(F, req, res, 0).end();
-			return F;
+				req.$total_end();
+			return;
 
 		case 'D':
 			F.stats.request['delete']++;
 			if (isCORS)
 				F.$cors(req, res, cors_callback1);
 			else
-				new Subscribe(F, req, res, 1).urlencoded();
-			return F;
+				req.$total_urlencoded();
+			return;
 
 		case 'P':
 			if (F._request_check_POST) {
@@ -6432,8 +6514,7 @@ F.$requestcontinue = function(req, res, headers) {
 					else if (req.$type === 4)
 						F.$requestcontinue_mmr(req, res, multipart);
 					else
-						new Subscribe(F, req, res, 2).multipart(multipart);
-
+						req.$total_multipart(multipart);
 					return F;
 
 				} else {
@@ -6446,10 +6527,9 @@ F.$requestcontinue = function(req, res, headers) {
 					if (isCORS)
 						F.$cors(req, res, cors_callback1);
 					else
-						new Subscribe(F, req, res, 1).urlencoded();
+						req.$total_urlencoded();
 				}
-
-				return F;
+				return;
 			}
 			break;
 	}
@@ -6462,19 +6542,19 @@ F.$requestcontinue = function(req, res, headers) {
 	return F;
 };
 
-function cors_callback0(req, res) {
-	new Subscribe(F, req, res, 0).end();
+function cors_callback0(req) {
+	req.$total_end();
 }
 
-function cors_callback1(req, res) {
-	new Subscribe(framework, req, res, 1).urlencoded();
+function cors_callback1(req) {
+	req.$total_urlencoded();
 }
 
 function cors_callback_multipart(req, res, multipart) {
 	if (req.$type === 4)
 		F.$requestcontinue_mmr(req, res, multipart);
 	else
-		new Subscribe(F, req, res, 2).multipart(multipart);
+		req.$total_multipart(multipart);
 }
 
 F.$requestcontinue_mmr = function(req, res, header) {
@@ -8211,7 +8291,6 @@ F.$configure_configs = function(arr, rewrite) {
 	IMAGEMAGICK = F.config['default-image-converter'] === 'im';
 	done();
 	F.emit('configure', F.config);
-	// console.log(F.config);
 	return F;
 };
 
@@ -8862,8 +8941,9 @@ FrameworkCache.prototype.stop = function() {
 	return this;
 };
 
-FrameworkCache.prototype.clear = function() {
+FrameworkCache.prototype.clear = function(sync) {
 	this.items = {};
+	F.isCluster && sync !== false && process.send(CLUSTER_CACHE_CLEAR);
 	return this;
 };
 
@@ -8892,6 +8972,13 @@ FrameworkCache.prototype.recycle = function() {
 FrameworkCache.prototype.set = FrameworkCache.prototype.add = function(name, value, expire, sync) {
 	var type = typeof(expire);
 
+	if (F.isCluster && sync !== false) {
+		CLUSTER_CACHE_SET.key = name;
+		CLUSTER_CACHE_SET.value = value;
+		CLUSTER_CACHE_SET.expire = expire;
+		process.send(CLUSTER_CACHE_SET);
+	}
+
 	switch (type) {
 		case 'string':
 			expire = expire.parseDateExpiration();
@@ -8902,7 +8989,7 @@ FrameworkCache.prototype.set = FrameworkCache.prototype.add = function(name, val
 	}
 
 	this.items[name] = { value: value, expire: expire };
-	F.$events['cache-set'] && F.emit('cache-set', name, value, expire, sync);
+	F.$events['cache-set'] && F.emit('cache-set', name, value, expire, sync !== false);
 	return value;
 };
 
@@ -8945,14 +9032,20 @@ FrameworkCache.prototype.setExpire = function(name, expire) {
 	return this;
 };
 
-FrameworkCache.prototype.remove = function(name) {
+FrameworkCache.prototype.remove = function(name, sync) {
 	var value = this.items[name];
 	if (value)
 		this.items[name] = undefined;
+
+	if (F.isCluster && sync !== false) {
+		CLUSTER_CACHE_REMOVE.key = name;
+		process.send(CLUSTER_CACHE_REMOVE);
+	}
+
 	return value;
 };
 
-FrameworkCache.prototype.removeAll = function(search) {
+FrameworkCache.prototype.removeAll = function(search, sync) {
 	var count = 0;
 	var isReg = U.isRegExp(search);
 
@@ -8968,6 +9061,11 @@ FrameworkCache.prototype.removeAll = function(search) {
 
 		this.remove(key);
 		count++;
+	}
+
+	if (F.isCluster && sync !== false) {
+		CLUSTER_CACHE_REMOVEALL.key = search;
+		process.send(CLUSTER_CACHE_REMOVEALL);
 	}
 
 	return count;
@@ -8991,544 +9089,30 @@ FrameworkCache.prototype.fn = function(name, fnCache, fnCallback) {
 	return self;
 };
 
-// *********************************************************************************
-// =================================================================================
-// Framework.Subscribe
-// =================================================================================
-// *********************************************************************************
-
-function Subscribe(framework, req, res) {
-
-	// this.controller;
-	this.req = req;
-	this.res = res;
-	req.$subscribe = this;
-
-	// Because of performance
-	// this.route = null;
-	// this.timeout = null;
-	// this.isCanceled = false;
-	// this.isTransfer = false;
-	// this.header = '';
-	// this.error = null;
+function subscribe_parse(chunk) {
+	this.$total_parsebody(chunk);
 }
-
-Subscribe.prototype.success = function() {
-	var self = this;
-
-	self.timeout && clearTimeout(self.timeout);
-	self.timeout = null;
-	self.isCanceled = true;
-
-	if (self.controller) {
-		self.controller.res.controller = null;
-		self.controller.req.controller = null;
-		self.controller = null;
-	}
-
-	return self;
-};
-
-Subscribe.prototype.file = function() {
-	var self = this;
-	self.req.on('end', subscribe_file);
-	self.req.resume();
-	return self;
-};
 
 function subscribe_file() {
-	this.$subscribe.doEndfile(this);
+	this.$total_endfile();
 }
-
-/**
- * Process MULTIPART (uploaded files)
- * @param {String} header Content-Type header.
- * @return {FrameworkSubscribe}
- */
-Subscribe.prototype.multipart = function(header) {
-
-	var self = this;
-	var req = self.req;
-
-	F.stats.request.upload++;
-	self.route = F.lookup(req, req.uri.pathname, req.flags, 0);
-	self.header = header;
-
-	if (self.route) {
-		F.path.verify('temp');
-		framework_internal.parseMULTIPART(req, header, self.route, F.config['directory-temp'], self);
-		return self;
-	}
-
-	F.reqstats(false, false);
-	F.stats.request.blocked++;
-	self.res.writeHead(403);
-	self.res.end();
-	return self;
-};
-
-Subscribe.prototype.urlencoded = function() {
-
-	var self = this;
-	self.route = F.lookup(self.req, self.req.uri.pathname, self.req.flags, 0);
-
-	if (self.route) {
-		self.req.buffer_has = true;
-		self.req.buffer_exceeded = false;
-		self.req.on('data', subscribe_parse);
-		self.end();
-		return self;
-	}
-
-	F.stats.request.blocked++;
-	F.reqstats(false, false);
-	self.res.writeHead(403);
-	self.res.end();
-	F.$events['request-end'] && F.emit('request-end', self.req, self.res);
-	self.req.clear(true);
-
-	return self;
-};
-
-function subscribe_parse(chunk) {
-	this.$subscribe.doParsepost(chunk);
-}
-
-Subscribe.prototype.end = function() {
-	var self = this;
-	self.req.on('end', subscribe_end);
-	self.req.resume();
-};
 
 function subscribe_end() {
-	this.$subscribe.doEnd();
+	this.$total_end2();
 }
 
-/**
- * Execute controller
- * @private
- * @param {Number} status Default HTTP status.
- * @return {FrameworkSubscribe}
- */
-Subscribe.prototype.execute = function(status, isError) {
-
-	var self = this;
-	var route = self.route;
-	var req = self.req;
-	var res = self.res;
-
-	if (isError || !route) {
-		F.stats.response['error' + status]++;
-		status !== 500 && F.$events['error'] && F.emit('error' + status, req, res, self.exception);
-	}
-
-	if (!route) {
-		if (status === 400 && self.exception instanceof framework_builders.ErrorBuilder) {
-			F.stats.response.errorBuilder++;
-			req.$language && self.exception.setResource(req.$language);
-			res.options.body = self.exception.output();
-			res.options.type = self.exception.contentType;
-			res.$text();
-		} else {
-			res.options.body = U.httpStatus(status) + prepare_error(self.exception);
-			res.options.type = CT_TEXT;
-			res.options.code = status || 404;
-			res.$text();
-		}
-		return self;
-	}
-
-	var name = route.controller;
-
-	if (route.isMOBILE_VARY)
-		req.$mobile = true;
-
-	if (route.currentViewDirectory === undefined)
-		route.currentViewDirectory = name && name[0] !== '#' && name !== 'default' && name !== 'unknown' ? '/' + name + '/' : '';
-
-	var controller = new Controller(name, req, res, self, route.currentViewDirectory);
-
-	controller.isTransfer = self.isTransfer;
-	controller.exception = self.exception;
-	self.controller = controller;
-
-	if (!self.isCanceled && route.timeout) {
-		self.timeout && clearTimeout(self.timeout);
-		self.timeout = setTimeout(subscribe_timeout, route.timeout, self);
-	}
-
-	route.isDELAY && self.res.writeContinue();
-
-	if (self.isSchema)
-		req.body.$$controller = controller;
-
-	if (route.middleware)
-		async_middleware(0, req, res, route.middleware, subscribe_timeout_middleware, route.options, controller, self);
-	else
-		self.doExecute();
-};
-
-function subscribe_timeout(self) {
-	self.controller && self.controller.precache && self.controller.precache(null, null, null);
-	self.doCancel();
+function subscribe_timeout(req) {
+	req.controller && req.controller.precache && req.controller.precache(null, null, null);
+	req.$total_cancel();
 }
 
-function subscribe_timeout_middleware(req, res, self) {
-	self.doExecute();
+function subscribe_timeout_middleware(req) {
+	req.$total_execute2();
 }
 
-Subscribe.prototype.prepare = function(flags, url) {
-
-	var self = this;
-	var req = self.req;
-	var res = self.res;
-	var auth = F.onAuthorize;
-
-	if (auth) {
-		var length = flags.length;
-		auth(req, res, flags, function(isAuthorized, user) {
-
-			var hasRoles = length !== flags.length;
-			if (hasRoles)
-				req.$flags += flags.slice(length).join('');
-
-			if (typeof(isAuthorized) !== 'boolean') {
-				user = isAuthorized;
-				isAuthorized = !user;
-			}
-
-			req.isAuthorized = isAuthorized;
-			self.doAuthorize(isAuthorized, user, hasRoles);
-		});
-		return self;
-	}
-
-	if (!self.route)
-		self.route = F.lookup(req, req.buffer_exceeded ? '#431' : url || req.uri.pathname, req.flags, 0);
-
-	if (!self.route)
-		self.route = F.lookup(req, '#404', EMPTYARRAY, 0);
-
-	var code = req.buffer_exceeded ? 431 : 404;
-
-	if (!self.schema || !self.route)
-		self.execute(code);
-	else
-		self.validate(self.route, subscribe_validate_callback, code);
-
-	return self;
-};
-
-function subscribe_validate_callback(self, code) {
-	self.execute(code);
+function subscribe_validate_callback(req, code) {
+	req.$total_execute(code);
 }
-
-Subscribe.prototype.doExecute = function() {
-
-	var self = this;
-	var name = self.route.controller;
-	var controller = self.controller;
-	var req = self.req;
-
-	try {
-
-		if (F.onTheme)
-			controller.themeName = F.onTheme(controller);
-
-		if (controller.isCanceled)
-			return self;
-
-		F.$events.controller && F.emit('controller', controller, name, self.route.options);
-
-		if (controller.isCanceled)
-			return self;
-
-		if (self.route.isCACHE && !F.temporary.other[req.uri.pathname])
-			F.temporary.other[req.uri.pathname] = req.path;
-
-		if (self.route.isGENERATOR)
-			async.call(controller, self.route.execute, true)(controller, framework_internal.routeParam(self.route.param.length ? req.split : req.path, self.route));
-		else
-			self.route.execute.apply(controller, framework_internal.routeParam(self.route.param.length ? req.split : req.path, self.route));
-
-	} catch (err) {
-		controller = null;
-		F.error(err, name, req.uri);
-		self.exception = err;
-		self.route = F.lookup(req, '#500', EMPTYARRAY, 0);
-		self.execute(500, true);
-	}
-
-	return self;
-};
-
-Subscribe.prototype.doAuthorize = function(isLogged, user, roles) {
-
-	var self = this;
-	var req = self.req;
-	var membertype = isLogged ? 1 : 2;
-
-	req.$flags += membertype;
-
-	if (user)
-		req.user = user;
-
-	var code = req.buffer_exceeded ? 431 : 401;
-
-	if (self.route && self.route.isUNIQUE && !roles && (!self.route.MEMBER || self.route.MEMBER === membertype)) {
-		if (code === 401 &&self.schema)
-			self.validate(self.route, subscribe_validate_callback, code);
-		else
-			self.execute(code, true);
-		return;
-	}
-
-	var route = F.lookup(req, req.buffer_exceeded ? '#431' : req.uri.pathname, req.flags, req.buffer_exceeded ? 0 : membertype);
-	var status = req.$isAuthorized ? 404 : 401;
-	var code = req.buffer_exceeded ? 431 : status;
-
-	!route && (route = F.lookup(req, '#' + status, EMPTYARRAY, 0));
-	self.route = route;
-
-	if (self.route && self.schema)
-		self.validate(self.route, subscribe_validate_callback, code);
-	else
-		self.execute(code);
-
-	return self;
-};
-
-Subscribe.prototype.doEnd = function() {
-
-	var req = this.req;
-	var route = this.route;
-
-	if (req.buffer_exceeded) {
-		route = F.lookup(req, '#431', EMPTYARRAY, 0);
-		req.buffer_data = null;
-
-		if (route) {
-			this.route = route;
-			this.execute(431, true);
-		} else
-			this.res.throw431();
-
-		return this;
-	}
-
-	if (req.buffer_data && (!route || !route.isBINARY))
-		req.buffer_data = req.buffer_data.toString(ENCODING);
-
-	if (!req.buffer_data) {
-		if (route && route.schema)
-			this.schema = true;
-		req.buffer_data = null;
-		this.prepare(req.flags, req.uri.pathname);
-		return this;
-	}
-
-	if (route.isXML) {
-
-		if (req.$type !== 2) {
-			this.route400('Invalid "Content-Type".');
-			req.buffer_data = null;
-			return this;
-		}
-
-		try {
-			F.$onParseXML(req);
-			req.buffer_data = null;
-			this.prepare(req.flags, req.uri.pathname);
-		} catch (err) {
-			F.error(err, null, req.uri);
-			this.route500(err);
-		}
-		return this;
-	}
-
-	if (this.route.isRAW) {
-		req.body = req.buffer_data;
-		req.buffer_data = null;
-		this.prepare(req.flags, req.uri.pathname);
-		return this;
-	}
-
-	if (!req.$type) {
-		req.buffer_data = null;
-		this.route400('Invalid "Content-Type".');
-		return this;
-	}
-
-	if (req.$type === 1) {
-		try {
-			F.$onParseJSON(req);
-			req.buffer_data = null;
-		} catch (e) {
-			this.route400('Invalid JSON data.');
-			return this;
-		}
-	} else
-		F.$onParseQueryBody(req);
-
-	this.route.schema && (this.schema = true);
-	req.buffer_data = null;
-	this.prepare(req.flags, req.uri.pathname);
-	return this;
-};
-
-Subscribe.prototype.validate = function(route, next, code) {
-	var req = this.req;
-	this.schema = false;
-
-	if (!route.schema || req.method === 'DELETE')
-		return next(this, code);
-
-	var self = this;
-
-	F.onSchema(req, route.schema[0], route.schema[1], function(err, body) {
-
-		if (err) {
-			self.route400(err);
-			next = null;
-		} else {
-			F.stats.request.schema++;
-			req.body = body;
-			self.isSchema = true;
-			next(self, code);
-		}
-
-	}, route.schema[2], route.novalidate);
-};
-
-Subscribe.prototype.route400 = function(problem) {
-	var self = this;
-	self.route = F.lookup(self.req, '#400', EMPTYARRAY, 0);
-	self.exception = problem;
-	self.execute(400, true);
-	return self;
-};
-
-Subscribe.prototype.route500 = function(problem) {
-	var self = this;
-	self.route = F.lookup(self.req, '#500', EMPTYARRAY, 0);
-	self.exception = problem;
-	self.execute(500, true);
-	return self;
-};
-
-Subscribe.prototype.doEndfile = function() {
-
-	var self = this;
-	var req = self.req;
-	var res = self.res;
-
-	if (!F._length_files)
-		return res.continue();
-
-	for (var i = 0; i < F._length_files; i++) {
-
-		var file = F.routes.files[i];
-		try {
-
-			if (file.extensions && !file.extensions[self.req.extension])
-				continue;
-
-			if (file.url) {
-				var skip = false;
-				var length = file.url.length;
-
-				if (!file.wildcard && !file.fixedfile && length !== req.path.length - 1)
-					continue;
-
-				for (var j = 0; j < length; j++) {
-					if (file.url[j] === req.path[j])
-						continue;
-					skip = true;
-					break;
-				}
-
-				if (skip)
-					continue;
-
-			} else if (file.onValidate && !file.onValidate.call(framework, req, res, true))
-				continue;
-
-			if (file.middleware)
-				self.doEndfile_middleware(file);
-			else
-				file.execute.call(framework, req, res, false);
-
-			return self;
-
-		} catch (err) {
-			F.error(err, file.controller, req.uri);
-			res.throw500();
-			return self;
-		}
-	}
-
-	res.continue();
-};
-
-/**
- * Executes a file middleware
- * @param {FileRoute} file
- * @return {Subscribe}
- */
-Subscribe.prototype.doEndfile_middleware = function(file) {
-	var self = this;
-	async_middleware(0, self.req, self.res, file.middleware, function() {
-		try {
-			file.execute.call(framework, self.req, self.res, false);
-		} catch (err) {
-			F.error(err, file.controller + ' :: ' + file.name, self.req.uri);
-			self.res.throw500();
-		}
-	}, file.options);
-};
-
-/**
- * Parse data from CHUNK
- * @param {Buffer} chunk
- * @return {FrameworkSubscribe}
- */
-Subscribe.prototype.doParsepost = function(chunk) {
-
-	var self = this;
-	var req = self.req;
-
-	if (req.buffer_exceeded)
-		return self;
-
-	if (!req.buffer_exceeded) {
-		CONCAT[0] = req.buffer_data;
-		CONCAT[1] = chunk;
-		req.buffer_data = Buffer.concat(CONCAT);
-	}
-
-	if (req.buffer_data.length < self.route.length)
-		return self;
-
-	req.buffer_exceeded = true;
-	req.buffer_data = U.createBuffer();
-	return self;
-};
-
-Subscribe.prototype.doCancel = function() {
-	var self = this;
-
-	F.stats.response.timeout++;
-	clearTimeout(self.timeout);
-	self.timeout = null;
-
-	if (!self.controller)
-		return;
-
-	self.controller.isTimeout = true;
-	self.controller.isCanceled = true;
-	self.route = F.lookup(self.req, '#408', EMPTYARRAY, 0);
-	self.execute(408, true);
-};
 
 /**
  * FrameworkController
@@ -9538,9 +9122,8 @@ Subscribe.prototype.doCancel = function() {
  * @param {Response} res
  * @param {FrameworkSubscribe} subscribe
  */
-function Controller(name, req, res, subscribe, currentView) {
+function Controller(name, req, res, currentView) {
 
-	this.subscribe = subscribe;
 	this.name = name;
 	// this.exception;
 
@@ -9586,11 +9169,11 @@ function Controller(name, req, res, subscribe, currentView) {
 Controller.prototype = {
 
 	get schema() {
-		return this.route.schema[0] === 'default' ? this.route.schema[1] : this.route.schema.join('/');
+		return this.$total_route.schema[0] === 'default' ? this.$total_route.schema[1] : this.$total_route.schema.join('/');
 	},
 
 	get workflow() {
-		return this.route.schema_workflow;
+		return this.$total_route.schema_workflow;
 	},
 
 	get sseID() {
@@ -9598,15 +9181,15 @@ Controller.prototype = {
 	},
 
 	get route() {
-		return this.subscribe.route;
+		return this.req.$total_route;
 	},
 
 	get options() {
-		return this.subscribe.route.options;
+		return this.req.$total_route.options;
 	},
 
 	get flags() {
-		return this.subscribe.route.flags;
+		return this.req.$total_route.flags;
 	},
 
 	get path() {
@@ -9851,7 +9434,7 @@ Controller.prototype.$async = function(callback, index) {
 };
 
 Controller.prototype.getSchema = function() {
-	var route = this.subscribe.route;
+	var route = this.req.$total_route;
 	if (!route.schema || !route.schema[1])
 		throw new Error('The controller\'s route does not define any schema.');
 	var schema = GETSCHEMA(route.schema[0], route.schema[1]);
@@ -10036,15 +9619,11 @@ Controller.prototype.error = function(err) {
 	}
 
 	var result = F.error(typeof(err) === 'string' ? new Error(err) : err, self.name, self.uri);
-
 	if (err === undefined)
 		return result;
 
-	if (self.subscribe) {
-		self.subscribe.exception = err;
-		self.exception = err;
-	}
-
+	self.req.$total_exception = err;
+	self.exception = err;
 	return self;
 };
 
@@ -10146,10 +9725,15 @@ Controller.prototype.transfer = function(url, flags) {
 
 	self.cancel();
 	self.req.path = EMPTYARRAY;
-	self.subscribe.isTransfer = true;
-	self.subscribe.success();
-	self.subscribe.route = selected;
-	self.subscribe.execute(404);
+	self.req.$total_transfer = true;
+	self.req.$total_success();
+
+	// Because of dynamic params
+	// Hidden variable
+	self.req.$path = framework_internal.routeSplit(url, true);
+
+	self.req.$total_route = selected;
+	self.req.$total_execute(404);
 	return true;
 };
 
@@ -10572,7 +10156,7 @@ Controller.prototype.$viewToggle = function(visible, name, model, expire, key) {
 	if (!value)
 		return '';
 
-	expire && self.cache.add(cache, value, expire);
+	expire && self.cache.add(cache, value, expire, false);
 	return value;
 };
 
@@ -11182,6 +10766,11 @@ Controller.prototype.$import = function() {
 			continue;
 		}
 
+		if (filename === 'favicon.ico' || filename === 'favicon.png') {
+			builder += self.$favicon(filename);
+			continue;
+		}
+
 		var extension = filename.substring(filename.lastIndexOf('.'));
 		var tag = filename[0] !== '!';
 		if (!tag)
@@ -11200,6 +10789,12 @@ Controller.prototype.$import = function() {
 			case '.ico':
 				builder += self.$favicon(filename);
 				break;
+			case '.jpg':
+			case '.gif':
+			case '.png':
+			case '.jpeg':
+				builder += self.routeImage(filename);
+				break;
 			case '.mp4':
 			case '.avi':
 			case '.ogv':
@@ -11210,12 +10805,6 @@ Controller.prototype.$import = function() {
 			case '.mpeg':
 			case '.m4v':
 				builder += self.routeVideo(filename);
-				break;
-			case '.jpg':
-			case '.gif':
-			case '.png':
-			case '.jpeg':
-				builder += self.routeImage(filename);
 				break;
 			default:
 				builder += self.routeStatic(filename);
@@ -11342,7 +10931,7 @@ Controller.prototype.$favicon = function(name) {
 	else if (name.lastIndexOf('.gif') !== -1)
 		contentType = 'image/gif';
 
-	return F.temporary.other[key] = '<link rel="shortcut icon" href="' + F.routeStatic('/' + name) + '" type="' + contentType + '" />';
+	return F.temporary.other[key] = '<link rel="icon" href="' + F.routeStatic('/' + name) + '" type="' + contentType + '" />';
 };
 
 /**
@@ -11360,7 +10949,8 @@ Controller.prototype._routeHelper = function(name, fn) {
 /**
  * Create URL: JavaScript
  * @param {String} name
- * @param {Boolean} tag Append tag?
+ * @param {Boolean} tag Optional, default "false"
+ * @param {String} path Optional, default undefined
  * @return {String}
  */
 Controller.prototype.routeScript = function(name, tag, path) {
@@ -11368,9 +10958,16 @@ Controller.prototype.routeScript = function(name, tag, path) {
 	if (name === undefined)
 		name = 'default.js';
 
+	var async = false;
 	var url;
 
-	// isomorphic
+	// Checks "async "
+	if (tag && name[0] === 'a' && name[5] === ' ') {
+		async = true;
+		name = name.substring(6);
+	}
+
+	// Isomorphic
 	if (name[0] === '#') {
 		var tmp = F.isomorphic[name.substring(1)];
 		if (tmp)
@@ -11385,7 +10982,7 @@ Controller.prototype.routeScript = function(name, tag, path) {
 			url = F.isWindows ? U.join(path, url) : U.join(path, url).substring(1);
 	}
 
-	return tag ? '<script src="' + url + '"></script>' : url;
+	return tag ? ('<script src="' + url + '"' + (async ? ' async' : '') + '></script>') : url;
 };
 
 /**
@@ -11518,7 +11115,11 @@ Controller.prototype.json = function(obj, headers, beautify, replacer) {
 		if (obj.contentType)
 			res.options.type = obj.contentType;
 		else
-			res.options.type =
+			res.options.type = CT_JSON;
+
+		if (obj.status !== 200)
+			res.options.code = obj.status;
+
 		obj = obj.output();
 		F.stats.response.errorBuilder++;
 	} else {
@@ -11575,6 +11176,8 @@ Controller.prototype.jsonp = function(name, obj, headers, beautify, replacer) {
 	if (obj instanceof framework_builders.ErrorBuilder) {
 		self.req.$language && !obj.isResourceCustom && obj.setResource(self.req.$language);
 		obj = obj.json(beautify);
+		if (obj.status !== 200)
+			res.options.code = obj.status;
 		F.stats.response.errorBuilder++;
 	} else {
 
@@ -11649,8 +11252,8 @@ Controller.prototype.content = function(body, type, headers) {
 	var self = this;
 	var res = self.res;
 
-	res.options.code = self.status;
 	res.options.headers = headers;
+	res.options.code = self.status;
 
 	if (body instanceof ErrorBuilder) {
 		var tmp = body.output();
@@ -11658,8 +11261,13 @@ Controller.prototype.content = function(body, type, headers) {
 			res.options.type = body.contentType;
 		else
 			res.options.type = CT_JSON;
+
 		body = tmp;
 		F.stats.response.errorBuilder++;
+
+		if (body.status !== 200)
+			res.options.code = body.status;
+
 	} else
 		res.options.type = type || CT_TEXT;
 
@@ -11752,8 +11360,8 @@ Controller.prototype.destroy = function(problem) {
 	if (self.res.success || self.res.headersSent || !self.isConnected)
 		return self;
 
-	self.subscribe.success();
-	self.req.connection.destroy();
+	self.req.$total_success();
+	self.req.connection && self.req.connection.destroy();
 	F.stats.response.destroy++;
 	return self;
 };
@@ -11992,9 +11600,9 @@ Controller.prototype.sse = function(data, eventname, id, retry) {
 		self.type = 1;
 
 		if (retry === undefined)
-			retry = self.subscribe.route.timeout;
+			retry = self.req.$total_route.timeout;
 
-		self.subscribe.success();
+		self.req.$total_success();
 		self.req.on('close', () => self.close());
 		res.success = true;
 		res.writeHead(self.status, HEADERS.sse);
@@ -12046,7 +11654,7 @@ Controller.prototype.mmr = function(name, stream, callback) {
 	if (!self.type) {
 		self.type = 2;
 		self.boundary = '----totaljs' + U.GUID(10);
-		self.subscribe.success();
+		self.req.$total_success();
 		self.req.on('close', () => self.close());
 		res.success = true;
 		HEADERS.mmr[HEADER_TYPE] = 'multipart/x-mixed-replace; boundary=' + self.boundary;
@@ -12377,7 +11985,7 @@ Controller.prototype.$viewrender = function(filename, generator, model, headers,
 		if (partial)
 			return value;
 
-		self.subscribe.success();
+		self.req.$total_success();
 
 		if (!self.isConnected)
 			return self;
@@ -12429,7 +12037,7 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
 
 	self.themeName && (key += '#' + self.themeName);
 
-	var output = self.cache.read2();
+	var output = self.cache.read2(key);
 	if (!output)
 		return self.$memorize_prepare(key, expires, disabled, fnTo, fnFrom);
 
@@ -12481,7 +12089,7 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
 		self.isLayout = true;
 		self.view(self.layoutName, null);
 	} else {
-		self.subscribe.success();
+		self.req.$total_success();
 		res.$text();
 	}
 
@@ -12495,7 +12103,7 @@ Controller.prototype.$memorize_prepare = function(key, expires, disabled, fnTo, 
 
 	if (F.temporary.processing[pk]) {
 		setTimeout(function() {
-			!self.subscribe.isCanceled && self.memorize(key, expires, disabled, fnTo, fnFrom);
+			!self.req.$total_canceled && self.memorize(key, expires, disabled, fnTo, fnFrom);
 		}, 500);
 		return self;
 	}
@@ -12520,7 +12128,7 @@ Controller.prototype.$memorize_prepare = function(key, expires, disabled, fnTo, 
 			}
 		}
 
-		self.cache.add(key, options, expires);
+		self.cache.add(key, options, expires, false);
 		self.precache = null;
 		delete F.temporary.processing[pk];
 	};
@@ -12659,9 +12267,9 @@ WebSocket.prototype.removeAllListeners = function(name) {
 /**
  * Sends a message
  * @param {String} message
- * @param {String Array or Function(id, client)} id
- * @param {String Array or Function(id, client)} blacklist
- * @param {String} raw internal
+ * @param {String Array or Function(id, client)} id (optional)
+ * @param {String Array or Function(id, client)} blacklist (optional)
+ * @param {Function(key, value)} replacer for JSON (optional)
  * @return {WebSocket}
  */
 WebSocket.prototype.send = function(message, id, blacklist, replacer) {
@@ -12675,15 +12283,14 @@ WebSocket.prototype.send = function(message, id, blacklist, replacer) {
 
 	for (var i = 0, length = keys.length; i < length; i++) {
 
-		var _id = keys[i];
-		var conn = this.connections[_id];
+		var conn = this.connections[keys[i]];
 
 		if (id) {
 			if (id instanceof Array) {
-				if (!websocket_valid_array(_id, id))
+				if (!websocket_valid_array(conn.id, id))
 					continue;
 			} else if (id instanceof Function) {
-				if (!websocket_valid_fn(_id, conn, id))
+				if (!websocket_valid_fn(conn.id, conn, id))
 					continue;
 			} else
 				throw new Error('Invalid "id" argument.');
@@ -12691,10 +12298,10 @@ WebSocket.prototype.send = function(message, id, blacklist, replacer) {
 
 		if (blacklist) {
 			if (blacklist instanceof Array) {
-				if (websocket_valid_array(_id, blacklist))
+				if (websocket_valid_array(conn.id, blacklist))
 					continue;
 			} else if (blacklist instanceof Function) {
-				if (websocket_valid_fn(_id, conn, blacklist))
+				if (websocket_valid_fn(conn.id, conn, blacklist))
 					continue;
 			} else
 				throw new Error('Invalid "blacklist" argument.');
@@ -13292,6 +12899,8 @@ WebSocketClient.prototype.parseInflate = function() {
 		self.inflate.write(buf);
 		self.inflate.write(U.createBuffer(WEBSOCKET_COMPRESS));
 		self.inflate.flush(function() {
+			if (!self.inflatechunks)
+				return;
 			var data = buffer_concat(self.inflatechunks, self.inflatechunkslength);
 			self.inflatechunks = null;
 			self.inflatelock = false;
@@ -13402,6 +13011,8 @@ WebSocketClient.prototype.sendDeflate = function() {
 		self.deflatelock = true;
 		self.deflate.write(self.type === 1 ? new Int8Array(buf) : buf);
 		self.deflate.flush(function() {
+			if (!self.deflatechunks)
+				return;
 			var data = buffer_concat(self.deflatechunks, self.deflatechunkslength);
 			data = data.slice(0, data.length - 4);
 			self.deflatelock = false;
@@ -13642,607 +13253,1642 @@ Backup.prototype.createDirectory = function(p, root) {
 // =================================================================================
 // *********************************************************************************
 
-/**
- * Add a cookie into the response
- * @param {String} name
- * @param {Object} value
- * @param {Date/String} expires
- * @param {Object} options Additional options.
- * @return {Response}
- */
-http.ServerResponse.prototype.cookie = function(name, value, expires, options) {
+function extend_request(PROTO) {
 
-	var self = this;
+	Object.defineProperty(PROTO, 'ip', {
+		get: function() {
+			if (this._ip)
+				return this._ip;
 
-	if (self.headersSent || self.success)
-		return;
+			//  x-forwarded-for: client, proxy1, proxy2, ...
+			var proxy = this.headers['x-forwarded-for'];
+			if (proxy)
+				this._ip = proxy.split(',', 1)[0] || this.connection.remoteAddress;
+			else if (!this._ip)
+				this._ip = this.connection.remoteAddress;
 
-	var cookieHeaderStart = name + '=';
-	var builder = [cookieHeaderStart + value];
-	var type = typeof(expires);
+			return this._ip;
+		}
+	});
 
-	if (expires && !U.isDate(expires) && type === 'object') {
-		options = expires;
-		expires = options.expires || options.expire || null;
-	}
+	Object.defineProperty(PROTO, 'query', {
+		get: function() {
+			!this._querydata && F.$onParseQueryUrl(this);
+			return this._querydata;
+		},
+		set: function(value) {
+			this._querydata = value;
+		}
+	});
 
-	if (type === 'string')
-		expires = expires.parseDateExpiration();
+	Object.defineProperty(PROTO, 'subdomain', {
+		get: function() {
+			if (this._subdomain)
+				return this._subdomain;
+			var subdomain = this.uri.host.toLowerCase().replace(/^www\./i, '').split('.');
+			if (subdomain.length > 2)
+				this._subdomain = subdomain.slice(0, subdomain.length - 2); // example: [subdomain].domain.com
+			else
+				this._subdomain = null;
+			return this._subdomain;
+		}
+	});
 
-	if (!options)
-		options = {};
+	Object.defineProperty(PROTO, 'host', {
+		get: function() {
+			return this.headers['host'];
+		}
+	});
 
-	options.path = options.path || '/';
-	expires &&  builder.push('Expires=' + expires.toUTCString());
-	options.domain && builder.push('Domain=' + options.domain);
-	options.path && builder.push('Path=' + options.path);
-	options.secure && builder.push('Secure');
+	Object.defineProperty(PROTO, 'split', {
+		get: function() {
+			return this.$path ? this.$path : this.$path = framework_internal.routeSplit(this.uri.pathname, true);
+		}
+	});
 
-	if (options.httpOnly || options.httponly || options.HttpOnly)
-		builder.push('HttpOnly');
+	Object.defineProperty(PROTO, 'secured', {
+		get: function() {
+			return this.uri.protocol === 'https:' || this.uri.protocol === 'wss:';
+		}
+	});
 
-	var arr = self.getHeader('set-cookie') || [];
+	Object.defineProperty(PROTO, 'language', {
+		get: function() {
+			if (!this.$language)
+				this.$language = (((this.headers['accept-language'] || '').split(';')[0] || '').split(',')[0] || '').toLowerCase();
+			return this.$language;
+		},
+		set: function(value) {
+			this.$language = value;
+		}
+	});
 
-	// Cookie, already, can be in array, resulting in duplicate 'set-cookie' header
-	var idx = arr.findIndex(cookieStr => cookieStr.startsWith(cookieHeaderStart));
-	idx !== -1 && arr.splice(idx, 1);
-	arr.push(builder.join('; '));
-	self.setHeader('Set-Cookie', arr);
-	return self;
-};
+	Object.defineProperty(PROTO, 'mobile', {
+		get: function() {
+			if (this.$mobile === undefined)
+				this.$mobile = REG_MOBILE.test(this.headers['user-agent']);
+			return this.$mobile;
+		}
+	});
 
-/**
- * Disable HTTP cache for current response
- * @return {Response}
- */
-http.ServerResponse.prototype.noCache = function() {
-	var self = this;
-	self.removeHeader(HEADER_CACHE);
-	self.removeHeader('Etag');
-	self.removeHeader('Last-Modified');
-	return self;
-};
+	Object.defineProperty(PROTO, 'robot', {
+		get: function() {
+			if (this.$robot === undefined)
+				this.$robot = REG_ROBOT.test(this.headers['user-agent']);
+			return this.$robot;
+		}
+	});
 
-// For express middleware
-http.ServerResponse.prototype.status = function(code) {
-	this.options.code = code;
-	return this;
-};
+	/**
+	 * Signature request (user-agent + ip + referer + current URL + custom key)
+	 * @param {String} key Custom key.
+	 * @return {Request}
+	 */
+	PROTO.signature = function(key) {
+		return F.encrypt((this.headers['user-agent'] || '') + '#' + this.ip + '#' + this.url + '#' + (key || ''), 'request-signature', false);
+	};
 
-// For express middleware
-http.ServerResponse.prototype.send = function(code, body, type) {
+	PROTO.localize = function() {
+		F.onLocale && (this.$language = F.onLocale(this, this.res, this.isStaticFile));
+		return this.$language;
+	};
 
-	if (this.headersSent)
+	/**
+	 * Disable HTTP cache for current request
+	 * @return {Request}
+	 */
+	PROTO.noCache = function() {
+		delete this.headers['if-none-match'];
+		delete this.headers['if-modified-since'];
 		return this;
+	};
 
-	this.controller && this.controller.subscribe.success();
+	PROTO.notModified = function(compare, strict) {
+		return F.notModified(this, this.res, compare, strict);
+	};
 
-	var res = this;
-	var req = this.req;
-	var contentType = type;
-	var isHEAD = req.method === 'HEAD';
+	/**
+	 * Read a cookie from current request
+	 * @param {String} name Cookie name.
+	 * @return {String} Cookie value (default: '')
+	 */
+	PROTO.cookie = function(name) {
 
-	if (body === undefined) {
-		body = code;
-		code = res.$statuscode || 200;
-	}
+		if (this.cookies)
+			return $decodeURIComponent(this.cookies[name] || '');
 
-	switch (typeof(body)) {
-		case 'string':
-			if (!contentType)
-				contentType = 'text/html';
-			break;
+		var cookie = this.headers['cookie'];
+		if (!cookie)
+			return '';
 
-		case 'number':
-			if (!contentType)
-				contentType = 'text/plain';
-			body = U.httpStatus(body);
-			break;
+		this.cookies = {};
 
-		case 'boolean':
-		case 'object':
-			if (!isHEAD) {
-				if (body instanceof framework_builders.ErrorBuilder) {
-					body = body.output();
-					contentType = body.contentType;
-					F.stats.response.errorBuilder++;
-				} else
-					body = JSON.stringify(body);
-				!contentType && (contentType = CT_JSON);
+		var arr = cookie.split(';');
+
+		for (var i = 0, length = arr.length; i < length; i++) {
+			var line = arr[i].trim();
+			var index = line.indexOf('=');
+			if (index !== -1)
+				this.cookies[line.substring(0, index)] = line.substring(index + 1);
+		}
+
+		return $decodeURIComponent(this.cookies[name] || '');
+	};
+
+	/**
+	 * Read authorization header
+	 * @return {Object}
+	 */
+	PROTO.authorization = function() {
+
+		var authorization = this.headers['authorization'];
+		if (!authorization)
+			return HEADERS.authorization;
+
+		var result = { user: '', password: '', empty: true };
+
+		try {
+			var arr = U.createBuffer(authorization.replace('Basic ', '').trim(), 'base64').toString(ENCODING).split(':');
+			result.user = arr[0] || '';
+			result.password = arr[1] || '';
+			result.empty = !result.user || !result.password;
+		} catch (e) {}
+
+		return result;
+	};
+
+	/**
+	 * Authorization for custom delegates
+	 * @param  {Function(err, userprofile, isAuthorized)} callback
+	 * @return {Request}
+	 */
+	PROTO.authorize = function(callback) {
+
+		var auth = F.onAuthorize;
+
+		if (!auth) {
+			callback(null, null, false);
+			return this;
+		}
+
+		var req = this;
+
+		auth(req, req.res, req.flags, function(isAuthorized, user) {
+			if (typeof(isAuthorized) !== 'boolean') {
+				user = isAuthorized;
+				isAuthorized = !user;
 			}
-			break;
-	}
+			req.isAuthorized = isAuthorized;
+			callback(null, user, isAuthorized);
+		});
 
-	var accept = req.headers['accept-encoding'] || '';
-	var headers = {};
+		return this;
+	};
 
-	headers[HEADER_CACHE] = 'private';
-	headers['Vary'] = 'Accept-Encoding' + (req.$mobile ? ', User-Agent' : '');
+	/**
+	 * Clear all uplaoded files
+	 * @private
+	 * @param {Boolean} isAuto
+	 * @return {Request}
+	 */
+	PROTO.clear = function(isAuto) {
 
-	// Safari resolve
-	if (contentType === CT_JSON)
-		headers[HEADER_CACHE] = 'private, no-cache, no-store, must-revalidate';
+		var self = this;
+		var files = self.files;
 
-	if ((/text|application/).test(contentType))
-		contentType += '; charset=utf-8';
+		if (!files || (isAuto && self._manual))
+			return self;
 
-	headers[HEADER_TYPE] = contentType;
-	res.$custom();
+		self.body = null;
+		self.query = null;
+		self.cookies = null;
 
-	if (!accept && isGZIP(req))
-		accept = 'gzip';
+		var length = files.length;
+		if (!length)
+			return self;
 
-	var compress = F.config['allow-gzip'] && accept.indexOf('gzip') !== -1;
-	if (isHEAD) {
-		compress && (headers['Content-Encoding'] = 'gzip');
-		res.writeHead(200, headers);
-		res.end();
-		return res;
-	}
+		var arr = [];
+		for (var i = 0; i < length; i++)
+			files[i].rem && arr.push(files[i].path);
 
-	if (!compress) {
-		res.writeHead(code, headers);
-		res.end(body, ENCODING);
-		return res;
-	}
+		F.unlink(arr);
+		self.files = null;
+		return self;
+	};
 
-	var buffer = U.createBuffer(body);
-	Zlib.gzip(buffer, function(err, data) {
+	/**
+	 * Get host name from URL
+	 * @param {String} path Additional path.
+	 * @return {String}
+	 */
+	PROTO.hostname = function(path) {
 
-		if (err) {
-			res.writeHead(code, headers);
-			res.end(body, ENCODING);
+		var self = this;
+		var uri = self.uri;
+
+		if (path && path[0] !== '/')
+			path = '/' + path;
+
+		return uri.protocol + '//' + uri.hostname + (uri.port && uri.port !== 80 ? ':' + uri.port : '') + (path || '');
+	};
+
+	PROTO.$total_success = function() {
+		this.$total_timeout && clearTimeout(this.$total_timeout);
+		this.$total_canceled = true;
+		if (this.controller) {
+			this.controller.res.controller = null;
+			this.controller = null;
+		}
+	};
+
+	PROTO.$total_file = function() {
+		var h = this.method[0];
+		if (h === 'G' || h === 'H')
+			subscribe_file.call(this);
+		else
+			this.on('end', subscribe_file);
+			// this.req.resume();
+	};
+
+	PROTO.$total_multipart = function(header) {
+		F.stats.request.upload++;
+		this.$total_route = F.lookup(this, this.uri.pathname, this.flags, 0);
+		this.$total_header = header;
+		if (this.$total_route) {
+			F.path.verify('temp');
+			framework_internal.parseMULTIPART(this, header, this.$total_route, F.config['directory-temp']);
+		} else {
+			F.reqstats(false, false);
+			F.stats.request.blocked++;
+			this.res.writeHead(403);
+			this.res.end();
+		}
+	};
+
+	PROTO.$total_urlencoded = function() {
+		this.$total_route = F.lookup(this, this.uri.pathname, this.flags, 0);
+		if (this.$total_route) {
+			this.buffer_has = true;
+			this.buffer_exceeded = false;
+			this.on('data', subscribe_parse);
+			this.$total_end();
+		} else {
+			F.stats.request.blocked++;
+			F.reqstats(false, false);
+			this.res.writeHead(403);
+			this.res.end();
+			F.$events['request-end'] && F.emit('request-end', this, this.res);
+			this.clear(true);
+		}
+	};
+
+	PROTO.$total_end = function() {
+		var h = this.method[0];
+		if (h === 'G' || h === 'H' || h === 'O')
+			subscribe_end.call(this);
+		else
+			this.on('end', subscribe_end);
+	};
+
+	PROTO.$total_execute = function(status, isError) {
+
+		var route = this.$total_route;
+		var res = this.res;
+
+		if (isError || !route) {
+			F.stats.response['error' + status]++;
+			status !== 500 && F.$events['error'] && F.emit('error' + status, this, res, this.$total_exception);
+		}
+
+		if (!route) {
+			if (status === 400 && this.$total_exception instanceof framework_builders.ErrorBuilder) {
+				F.stats.response.errorBuilder++;
+				this.$language && this.$total_exception.setResource(this.$language);
+				res.options.code = this.$total_exception.status;
+				res.options.body = this.$total_exception.output();
+				res.options.type = this.$total_exception.contentType;
+				res.$text();
+			} else {
+				res.options.body = U.httpStatus(status) + prepare_error(this.$total_exception);
+				res.options.type = CT_TEXT;
+				res.options.code = status || 404;
+				res.$text();
+			}
 			return;
 		}
 
-		headers['Content-Encoding'] = 'gzip';
-		res.writeHead(code, headers);
-		res.end(data, ENCODING);
-	});
+		var name = route.controller;
 
-	return res;
-};
+		if (route.isMOBILE_VARY)
+			this.$mobile = true;
 
-/**
- * Response a custom content
- * @param {Number} code
- * @param {String} body
- * @param {String} type
- * @param {Boolean} compress Disallows GZIP compression. Optional, default: true.
- * @param {Object} headers Optional, additional headers.
- * @return {Response}
- */
-http.ServerResponse.prototype.content = function(code, body, type, compress, headers) {
+		if (route.currentViewDirectory === undefined)
+			route.currentViewDirectory = name && name[0] !== '#' && name !== 'default' && name !== 'unknown' ? '/' + name + '/' : '';
 
-	if (typeof(compress) === 'object') {
-		var tmp = headers;
-		headers = compress;
-		compress = tmp;
+		var controller = new Controller(name, this, res, route.currentViewDirectory);
+
+		controller.isTransfer = this.$total_transfer;
+		controller.exception = this.$total_exception;
+		this.controller = controller;
+
+		if (!this.$total_canceled && route.timeout) {
+			this.$total_timeout && clearTimeout(this.$total_timeout);
+			this.$total_timeout = setTimeout(subscribe_timeout, route.timeout, this);
+		}
+
+		route.isDELAY && res.writeContinue();
+
+		if (this.$total_schema)
+			this.body.$$controller = controller;
+
+		if (route.middleware)
+			async_middleware(0, this, res, route.middleware, subscribe_timeout_middleware, route.options, controller);
+		else
+			this.$total_execute2();
+	};
+
+	PROTO.$total_execute2 = function() {
+
+		var name = this.$total_route.controller;
+		var controller = this.controller;
+
+		try {
+
+			if (F.onTheme)
+				controller.themeName = F.onTheme(controller);
+
+			if (controller.isCanceled)
+				return;
+
+			F.$events.controller && F.emit('controller', controller, name, this.$total_route.options);
+
+			if (controller.isCanceled)
+				return;
+
+			if (this.$total_route.isCACHE && !F.temporary.other[this.uri.pathname])
+				F.temporary.other[this.uri.pathname] = this.path;
+
+			if (this.$total_route.isGENERATOR)
+				async.call(controller, this.$total_route.execute, true)(controller, framework_internal.routeParam(this.$total_route.param.length ? this.split : this.path, this.$total_route));
+			else {
+				if (this.$total_route.param.length)
+					this.$total_route.execute.apply(controller, framework_internal.routeParam(this.split, this.$total_route));
+				else
+					this.$total_route.execute.call(controller);
+			}
+
+		} catch (err) {
+			F.error(err, name, this.uri);
+			this.$total_exception = err;
+			this.$total_route = F.lookup(this, '#500', EMPTYARRAY, 0);
+			this.$total_execute(500, true);
+		}
+	};
+
+	PROTO.$total_parsebody = function(chunk) {
+
+		if (this.buffer_exceeded)
+			return;
+
+		if (!this.buffer_exceeded) {
+			CONCAT[0] = this.buffer_data;
+			CONCAT[1] = chunk;
+			this.buffer_data = Buffer.concat(CONCAT);
+		}
+
+		if (this.buffer_data.length < this.$total_route.length)
+			return;
+
+		this.buffer_exceeded = true;
+		this.buffer_data = U.createBuffer();
+	};
+
+	PROTO.$total_cancel = function() {
+		F.stats.response.timeout++;
+		clearTimeout(this.$total_timeout);
+		if (!this.controller)
+			return;
+		this.controller.isTimeout = true;
+		this.controller.isCanceled = true;
+		this.$total_route = F.lookup(this, '#408', EMPTYARRAY, 0);
+		this.$total_execute(408, true);
+	};
+
+	PROTO.$total_validate = function(route, next, code) {
+
+		this.$total_schema = false;
+
+		if (!this.$total_route.schema || this.method === 'DELETE')
+			return next(this, code);
+
+		var self = this;
+
+		F.onSchema(this, this.$total_route.schema[0], this.$total_route.schema[1], function(err, body) {
+
+			if (err) {
+				self.$total_400(err);
+				next = null;
+			} else {
+				F.stats.request.schema++;
+				self.body = body;
+				self.$total_schema = true;
+				next(self, code);
+			}
+
+		}, route.schema[2], route.novalidate);
+	};
+
+	PROTO.$total_authorize = function(isLogged, user, roles) {
+
+		var membertype = isLogged ? 1 : 2;
+		var code = this.buffer_exceeded ? 431 : 401;
+
+		this.$flags += membertype;
+		user && (this.user = user);
+
+		if (this.$total_route && this.$total_route.isUNIQUE && !roles && (!this.$total_route.MEMBER || this.$total_route.MEMBER === membertype)) {
+			if (code === 401 && this.$total_schema)
+				this.$total_validate(this.$total_route, subscribe_validate_callback, code);
+			else
+				this.$total_execute(code, true);
+		} else {
+			var route = F.lookup(this, this.buffer_exceeded ? '#431' : this.uri.pathname, this.flags, this.buffer_exceeded ? 0 : membertype);
+			var status = this.$isAuthorized ? 404 : 401;
+			var code = this.buffer_exceeded ? 431 : status;
+			!route && (route = F.lookup(this, '#' + status, EMPTYARRAY, 0));
+
+			this.$total_route = route;
+
+			if (this.$total_route && this.$total_schema)
+				this.$total_validate(this.$total_route, subscribe_validate_callback, code);
+			else
+				this.$total_execute(code);
+		}
+	};
+
+	PROTO.$total_end2 = function() {
+
+		var route = this.$total_route;
+
+		if (this.buffer_exceeded) {
+			route = F.lookup(this, '#431', EMPTYARRAY, 0);
+			this.buffer_data = null;
+			if (route) {
+				this.$total_route = route;
+				this.$total_execute(431, true);
+			} else
+				this.res.throw431();
+			return;
+		}
+
+		if (this.buffer_data && (!route || !route.isBINARY))
+			this.buffer_data = this.buffer_data.toString(ENCODING);
+
+		if (!this.buffer_data) {
+			if (route && route.schema)
+				this.$total_schema = true;
+			this.buffer_data = null;
+			this.$total_prepare(this.flags, this.uri.pathname);
+			return;
+		}
+
+		if (route.isXML) {
+
+			if (this.$type !== 2) {
+				this.$total_400('Invalid "Content-Type".');
+				this.buffer_data = null;
+				return;
+			}
+
+			try {
+				F.$onParseXML(this);
+				this.buffer_data = null;
+				this.$total_prepare(this.flags, this.uri.pathname);
+			} catch (err) {
+				F.error(err, null, this.uri);
+				this.$total_500(err);
+			}
+			return;
+		}
+
+		if (route.isRAW) {
+			this.body = this.buffer_data;
+			this.buffer_data = null;
+			this.$total_prepare(this.flags, this.uri.pathname);
+			return;
+		}
+
+		if (!this.$type) {
+			this.buffer_data = null;
+			this.$total_400('Invalid "Content-Type".');
+			return;
+		}
+
+		if (this.$type === 1) {
+			try {
+				F.$onParseJSON(this);
+				this.buffer_data = null;
+			} catch (e) {
+				this.$total_400('Invalid JSON data.');
+				return;
+			}
+		} else
+			F.$onParseQueryBody(this);
+
+		route.schema && (this.$total_schema = true);
+		this.buffer_data = null;
+		this.$total_prepare(this.flags, this.uri.pathname);
+	};
+
+	PROTO.$total_endfile = function() {
+
+		var req = this;
+		var res = this.res;
+
+		if (!F._length_files)
+			return res.continue();
+
+		for (var i = 0; i < F._length_files; i++) {
+
+			var file = F.routes.files[i];
+			try {
+
+				if (file.extensions && !file.extensions[req.extension])
+					continue;
+
+				if (file.url) {
+					var skip = false;
+					var length = file.url.length;
+
+					if (!file.wildcard && !file.fixedfile && length !== req.path.length - 1)
+						continue;
+
+					for (var j = 0; j < length; j++) {
+						if (file.url[j] === req.path[j])
+							continue;
+						skip = true;
+						break;
+					}
+
+					if (skip)
+						continue;
+
+				} else if (file.onValidate && !file.onValidate.call(F, req, res, true))
+					continue;
+
+				if (file.middleware)
+					req.$total_endfilemiddleware(file);
+				else
+					file.execute.call(F, req, res, false);
+				return;
+
+			} catch (err) {
+				F.error(err, file.controller, req.uri);
+				res.throw500();
+				return;
+			}
+		}
+
+		res.continue();
+	};
+
+	PROTO.$total_endfilemiddleware = function(file) {
+		this.$total_filemiddleware = file;
+		async_middleware(0, this, this.res, file.middleware, total_endmiddleware, file.options);
+	};
+
+	PROTO.$total_400 = function(problem) {
+		this.$total_route = F.lookup(this, '#400', EMPTYARRAY, 0);
+		this.$total_exception = problem;
+		this.$total_execute(400, true);
+	};
+
+	PROTO.$total_500 = function(problem) {
+		this.$total_route = F.lookup(this, '#500', EMPTYARRAY, 0);
+		this.$total_exception = problem;
+		this.$total_execute(500, true);
+	};
+
+	PROTO.$total_prepare = function(flags, url) {
+
+		var req = this;
+		var res = this.res;
+		var auth = F.onAuthorize;
+
+		if (auth) {
+			var length = flags.length;
+			auth(req, res, flags, function(isAuthorized, user) {
+
+				var hasRoles = length !== flags.length;
+				if (hasRoles)
+					req.$flags += flags.slice(length).join('');
+
+				if (typeof(isAuthorized) !== 'boolean') {
+					user = isAuthorized;
+					isAuthorized = !user;
+				}
+
+				req.isAuthorized = isAuthorized;
+				req.$total_authorize(isAuthorized, user, hasRoles);
+			});
+		} else {
+
+			if (!req.$total_route)
+				req.$total_route = F.lookup(req, req.buffer_exceeded ? '#431' : url || req.uri.pathname, req.flags, 0);
+
+			if (!req.$total_route)
+				req.$total_route = F.lookup(req, '#404', EMPTYARRAY, 0);
+
+			var code = req.buffer_exceeded ? 431 : 404;
+
+			if (!req.$total_schema || !req.$total_route)
+				req.$total_execute(code);
+			else
+				req.$total_validate(req.$total_route, subscribe_validate_callback, code);
+		}
+	};
+}
+
+function total_endmiddleware(req) {
+	try {
+		req.$total_filemiddleware.execute.call(F, req, req.res, false);
+	} catch (err) {
+		F.error(err, req.$total_filemiddleware.controller + ' :: ' + req.$total_filemiddleware.name, req.uri);
+		req.res.throw500();
 	}
+}
 
-	var res = this;
-	res.options.code = code;
-	res.options.compress = compress === undefined || compress === true;
-	res.options.body = body;
-	res.options.type = type;
-	headers && (res.options.headers = headers);
-	res.$text();
-	return res;
-};
+function extend_response(PROTO) {
 
-/**
- * Response redirect
- * @param {String} url
- * @param {Boolean} permanent Optional, default: false.
- * @return {Framework}
- */
-http.ServerResponse.prototype.redirect = function(url, permanent) {
-	this.options.url = url;
-	permanent && (this.options.permanent = permanent);
-	this.$redirect();
-	return this;
-};
+	/**
+	 * Add a cookie into the response
+	 * @param {String} name
+	 * @param {Object} value
+	 * @param {Date/String} expires
+	 * @param {Object} options Additional options.
+	 * @return {Response}
+	 */
+	PROTO.cookie = function(name, value, expires, options) {
 
-/**
- * Responds with a file
- * @param {String} filename
- * @param {String} download Optional, a download name.
- * @param {Object} headers Optional, additional headers.
- * @param {Function} done Optional, callback.
- * @return {Framework}
- */
-http.ServerResponse.prototype.file = function(filename, download, headers, callback) {
-	this.options.filename = filename;
-	headers && (this.options.headers = headers);
-	callback && (this.options.callback = callback);
-	download && (this.options.download = download);
-	return this.$file();
-};
+		var self = this;
 
-/**
- * Responds with a stream
- * @param {String} contentType
- * @param {Stream} stream
- * @param {String} download Optional, a download name.
- * @param {Object} headers Optional, additional headers.
- * @param {Function} done Optional, callback.
- * @return {Framework}
- */
-http.ServerResponse.prototype.stream = function(type, stream, download, headers, callback, nocompress) {
-	var res = this;
-	res.options.type = type;
-	res.options.stream = stream;
-	download && (res.options.download = download);
-	headers && (res.options.headers = headers);
-	callback && (res.options.callback = callback);
-	res.options.compress = nocompress ? false : true;
-	res.$stream();
-	return res;
-};
+		if (self.headersSent || self.success)
+			return;
 
-http.ServerResponse.prototype.binary = function(body, type, encoding, download, headers) {
-	this.options.type = type;
-	this.options.body = body;
-	this.options.encoding = encoding;
-	download && (this.options.download = download);
-	headers && (this.options.headers = headers);
-	this.$binary();
-	return this;
-};
+		var cookieHeaderStart = name + '=';
+		var builder = [cookieHeaderStart + value];
+		var type = typeof(expires);
 
-http.ServerResponse.prototype.proxy = function(url, headers, timeout, callback) {
+		if (expires && !U.isDate(expires) && type === 'object') {
+			options = expires;
+			expires = options.expires || options.expire || null;
+		}
 
-	var res = this;
+		if (type === 'string')
+			expires = expires.parseDateExpiration();
 
-	if (res.success || res.headersSent)
-		return res;
+		if (!options)
+			options = {};
 
-	callback && (res.options.callback = callback);
-	headers && (res.options.headers = headers);
-	timeout && (res.options.timeout = timeout);
+		options.path = options.path || '/';
+		expires &&  builder.push('Expires=' + expires.toUTCString());
+		options.domain && builder.push('Domain=' + options.domain);
+		options.path && builder.push('Path=' + options.path);
+		options.secure && builder.push('Secure');
 
-	U.resolve(url, function(err, uri) {
+		if (options.httpOnly || options.httponly || options.HttpOnly)
+			builder.push('HttpOnly');
 
+		var arr = self.getHeader('set-cookie') || [];
+
+		// Cookie, already, can be in array, resulting in duplicate 'set-cookie' header
+		var idx = arr.findIndex(cookieStr => cookieStr.startsWith(cookieHeaderStart));
+		idx !== -1 && arr.splice(idx, 1);
+		arr.push(builder.join('; '));
+		self.setHeader('Set-Cookie', arr);
+		return self;
+	};
+
+	/**
+	 * Disable HTTP cache for current response
+	 * @return {Response}
+	 */
+	PROTO.noCache = function() {
+		var self = this;
+		self.removeHeader(HEADER_CACHE);
+		self.removeHeader('Etag');
+		self.removeHeader('Last-Modified');
+		return self;
+	};
+
+	// For express middleware
+	PROTO.status = function(code) {
+		this.options.code = code;
+		return this;
+	};
+
+	// For express middleware
+	PROTO.send = function(code, body, type) {
+
+		if (this.headersSent)
+			return this;
+
+		this.controller && this.$total_success();
+
+		var res = this;
+		var req = this.req;
+		var contentType = type;
+		var isHEAD = req.method === 'HEAD';
+
+		if (body === undefined) {
+			body = code;
+			code = res.$statuscode || 200;
+		}
+
+		switch (typeof(body)) {
+			case 'string':
+				if (!contentType)
+					contentType = 'text/html';
+				break;
+
+			case 'number':
+				if (!contentType)
+					contentType = 'text/plain';
+				body = U.httpStatus(body);
+				break;
+
+			case 'boolean':
+			case 'object':
+				if (!isHEAD) {
+					if (body instanceof framework_builders.ErrorBuilder) {
+						body = body.output();
+						contentType = body.contentType;
+						F.stats.response.errorBuilder++;
+					} else
+						body = JSON.stringify(body);
+					!contentType && (contentType = CT_JSON);
+				}
+				break;
+		}
+
+		var accept = req.headers['accept-encoding'] || '';
 		var headers = {};
 
 		headers[HEADER_CACHE] = 'private';
-		res.options.headers && U.extend_headers2(headers, res.options.headers);
+		headers['Vary'] = 'Accept-Encoding' + (req.$mobile ? ', User-Agent' : '');
 
-		var options = { protocol: uri.protocol, auth: uri.auth, method: 'GET', hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: headers };
-		var connection = options.protocol === 'https:' ? require('https') : http;
-		var gzip = F.config['allow-gzip'] && (res.req.headers['accept-encoding'] || '').lastIndexOf('gzip') !== -1;
+		// Safari resolve
+		if (contentType === CT_JSON)
+			headers[HEADER_CACHE] = 'private, no-cache, no-store, must-revalidate';
 
-		var client = connection.get(options, function(response) {
+		if ((/text|application/).test(contentType))
+			contentType += '; charset=utf-8';
 
-			if (res.success || res.headersSent)
+		headers[HEADER_TYPE] = contentType;
+		res.$custom();
+
+		if (!accept && isGZIP(req))
+			accept = 'gzip';
+
+		var compress = F.config['allow-gzip'] && accept.indexOf('gzip') !== -1;
+		if (isHEAD) {
+			compress && (headers['Content-Encoding'] = 'gzip');
+			res.writeHead(200, headers);
+			res.end();
+			return res;
+		}
+
+		if (!compress) {
+			res.writeHead(code, headers);
+			res.end(body, ENCODING);
+			return res;
+		}
+
+		var buffer = U.createBuffer(body);
+		Zlib.gzip(buffer, function(err, data) {
+
+			if (err) {
+				res.writeHead(code, headers);
+				res.end(body, ENCODING);
 				return;
+			}
 
-			var contentType = response.headers['content-type'];
-			var isGZIP = (response.headers['content-encoding'] || '').lastIndexOf('gzip') !== -1;
-			var compress = !isGZIP && gzip && (contentType.indexOf('text/') !== -1 || contentType.lastIndexOf('javascript') !== -1 || contentType.lastIndexOf('json') !== -1);
-			var attachment = response.headers['content-disposition'] || '';
+			headers['Content-Encoding'] = 'gzip';
+			res.writeHead(code, headers);
+			res.end(data, ENCODING);
+		});
 
-			attachment && res.setHeader('Content-Disposition', attachment);
-			res.setHeader(HEADER_TYPE, contentType);
-			res.setHeader('Vary', 'Accept-Encoding' + (res.req.$mobile ? ', User-Agent' : ''));
+		return res;
+	};
 
-			res.on('error', function() {
-				response.close();
-				response_end(res);
+	/**
+	 * Response a custom content
+	 * @param {Number} code
+	 * @param {String} body
+	 * @param {String} type
+	 * @param {Boolean} compress Disallows GZIP compression. Optional, default: true.
+	 * @param {Object} headers Optional, additional headers.
+	 * @return {Response}
+	 */
+	PROTO.content = function(code, body, type, compress, headers) {
+
+		if (typeof(compress) === 'object') {
+			var tmp = headers;
+			headers = compress;
+			compress = tmp;
+		}
+
+		var res = this;
+		res.options.code = code;
+		res.options.compress = compress === undefined || compress === true;
+		res.options.body = body;
+		res.options.type = type;
+		headers && (res.options.headers = headers);
+		res.$text();
+		return res;
+	};
+
+	/**
+	 * Response redirect
+	 * @param {String} url
+	 * @param {Boolean} permanent Optional, default: false.
+	 * @return {Framework}
+	 */
+	PROTO.redirect = function(url, permanent) {
+		this.options.url = url;
+		permanent && (this.options.permanent = permanent);
+		this.$redirect();
+		return this;
+	};
+
+	/**
+	 * Responds with a file
+	 * @param {String} filename
+	 * @param {String} download Optional, a download name.
+	 * @param {Object} headers Optional, additional headers.
+	 * @param {Function} done Optional, callback.
+	 * @return {Framework}
+	 */
+	PROTO.file = function(filename, download, headers, callback) {
+		this.options.filename = filename;
+		headers && (this.options.headers = headers);
+		callback && (this.options.callback = callback);
+		download && (this.options.download = download);
+		return this.$file();
+	};
+
+	/**
+	 * Responds with a stream
+	 * @param {String} contentType
+	 * @param {Stream} stream
+	 * @param {String} download Optional, a download name.
+	 * @param {Object} headers Optional, additional headers.
+	 * @param {Function} done Optional, callback.
+	 * @return {Framework}
+	 */
+	PROTO.stream = function(type, stream, download, headers, callback, nocompress) {
+		var res = this;
+		res.options.type = type;
+		res.options.stream = stream;
+		download && (res.options.download = download);
+		headers && (res.options.headers = headers);
+		callback && (res.options.callback = callback);
+		res.options.compress = nocompress ? false : true;
+		res.$stream();
+		return res;
+	};
+
+	PROTO.binary = function(body, type, encoding, download, headers) {
+		this.options.type = type;
+		this.options.body = body;
+		this.options.encoding = encoding;
+		download && (this.options.download = download);
+		headers && (this.options.headers = headers);
+		this.$binary();
+		return this;
+	};
+
+	PROTO.proxy = function(url, headers, timeout, callback) {
+
+		var res = this;
+
+		if (res.success || res.headersSent)
+			return res;
+
+		callback && (res.options.callback = callback);
+		headers && (res.options.headers = headers);
+		timeout && (res.options.timeout = timeout);
+
+		U.resolve(url, function(err, uri) {
+
+			var headers = {};
+
+			headers[HEADER_CACHE] = 'private';
+			res.options.headers && U.extend_headers2(headers, res.options.headers);
+
+			var options = { protocol: uri.protocol, auth: uri.auth, method: 'GET', hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: headers };
+			var connection = options.protocol === 'https:' ? require('https') : http;
+			var gzip = F.config['allow-gzip'] && (res.req.headers['accept-encoding'] || '').lastIndexOf('gzip') !== -1;
+
+			var client = connection.get(options, function(response) {
+
+				if (res.success || res.headersSent)
+					return;
+
+				var contentType = response.headers['content-type'];
+				var isGZIP = (response.headers['content-encoding'] || '').lastIndexOf('gzip') !== -1;
+				var compress = !isGZIP && gzip && (contentType.indexOf('text/') !== -1 || contentType.lastIndexOf('javascript') !== -1 || contentType.lastIndexOf('json') !== -1);
+				var attachment = response.headers['content-disposition'] || '';
+
+				attachment && res.setHeader('Content-Disposition', attachment);
+				res.setHeader(HEADER_TYPE, contentType);
+				res.setHeader('Vary', 'Accept-Encoding' + (res.req.$mobile ? ', User-Agent' : ''));
+
+				res.on('error', function() {
+					response.close();
+					response_end(res);
+				});
+
+				if (compress) {
+					res.setHeader('Content-Encoding', 'gzip');
+					response.pipe(Zlib.createGzip()).pipe(res);
+					return;
+				}
+
+				if (isGZIP && !gzip)
+					response.pipe(Zlib.createGunzip()).pipe(res);
+				else
+					response.pipe(res);
 			});
 
-			if (compress) {
-				res.setHeader('Content-Encoding', 'gzip');
-				response.pipe(Zlib.createGzip()).pipe(res);
-				return;
-			}
+			timeout && client.setTimeout(timeout, function() {
+				res.throw408();
+			});
 
-			if (isGZIP && !gzip)
-				response.pipe(Zlib.createGunzip()).pipe(res);
-			else
-				response.pipe(res);
+			client.on('close', function() {
+				if (res.success)
+					return;
+				F.stats.response.pipe++;
+				response_end(res);
+			});
 		});
 
-		timeout && client.setTimeout(timeout, function() {
-			res.throw408();
-		});
-
-		client.on('close', function() {
-			if (res.success)
-				return;
-			F.stats.response.pipe++;
-			response_end(res);
-		});
-	});
-
-	return res;
-};
-
-/**
- * Responds with an image
- * @param {String or Stream} filename
- * @param {String} make
- * @param {Object} headers Optional, additional headers.
- * @param {Function} callback Optional.
- * @return {Framework}
- */
-http.ServerResponse.prototype.image = function(filename, make, headers, callback) {
-
-	var res = this;
-
-	res.options.make = make;
-
-	headers && (res.options.headers = headers);
-	callback && (res.options.callback = callback);
-
-	if (typeof(filename) === 'object')
-		res.options.stream = filename;
-	else
-		res.options.filename = filename;
-
-	res.$image();
-	return res;
-};
-
-http.ServerResponse.prototype.image_nocache = function(filename, make, headers, callback) {
-	this.options.cache = false;
-	return this.image(filename, make, headers, callback);
-};
-
-/**
- * Response JSON
- * @param {Object} obj
- * @return {Response}
- */
-http.ServerResponse.prototype.json = function(obj) {
-	var res = this;
-	F.stats.response.json++;
-	res.options.body = JSON.stringify(obj);
-	res.options.type = CT_JSON;
-	return res.$text();
-};
-
-http.ServerResponse.prototype.continue = function(callback) {
-
-	var res = this;
-	var req = res.req;
-
-	callback && (res.options.callback = callback);
-
-	if (res.success || res.headersSent)
 		return res;
+	};
 
-	if (!F.config['static-accepts'][req.extension]) {
-		res.throw404();
+	/**
+	 * Responds with an image
+	 * @param {String or Stream} filename
+	 * @param {String} make
+	 * @param {Object} headers Optional, additional headers.
+	 * @param {Function} callback Optional.
+	 * @return {Framework}
+	 */
+	PROTO.image = function(filename, make, headers, callback) {
+
+		var res = this;
+
+		res.options.make = make;
+
+		headers && (res.options.headers = headers);
+		callback && (res.options.callback = callback);
+
+		if (typeof(filename) === 'object')
+			res.options.stream = filename;
+		else
+			res.options.filename = filename;
+
+		res.$image();
 		return res;
-	}
+	};
 
-	req.$key = createTemporaryKey(req);
+	PROTO.image_nocache = function(filename, make, headers, callback) {
+		this.options.cache = false;
+		return this.image(filename, make, headers, callback);
+	};
 
-	if (F.temporary.notfound[req.$key]) {
-		res.throw404();
-		return F;
-	}
+	/**
+	 * Response JSON
+	 * @param {Object} obj
+	 * @return {Response}
+	 */
+	PROTO.json = function(obj) {
+		var res = this;
+		F.stats.response.json++;
+		res.options.body = JSON.stringify(obj);
+		res.options.type = CT_JSON;
+		return res.$text();
+	};
 
-	var name = req.uri.pathname;
-	var index = name.lastIndexOf('/');
-	var resizer = F.routes.resize[name.substring(0, index + 1)];
-	var canResize = false;
-	var filename = null;
+	PROTO.continue = function(callback) {
 
-	if (resizer) {
-		name = name.substring(index + 1);
-		canResize = resizer.extension['*'] || resizer.extension[req.extension];
-		if (canResize) {
-			name = resizer.path + $decodeURIComponent(name);
-			filename = F.onMapping(name, name, false, false);
+		var res = this;
+		var req = res.req;
+
+		callback && (res.options.callback = callback);
+
+		if (res.success || res.headersSent)
+			return res;
+
+		if (!F.config['static-accepts'][req.extension]) {
+			res.throw404();
+			return res;
+		}
+
+		req.$key = createTemporaryKey(req);
+
+		if (F.temporary.notfound[req.$key]) {
+			res.throw404();
+			return F;
+		}
+
+		var name = req.uri.pathname;
+		var index = name.lastIndexOf('/');
+		var resizer = F.routes.resize[name.substring(0, index + 1)];
+		var canResize = false;
+		var filename = null;
+
+		if (resizer) {
+			name = name.substring(index + 1);
+			canResize = resizer.extension['*'] || resizer.extension[req.extension];
+			if (canResize) {
+				name = resizer.path + $decodeURIComponent(name);
+				filename = F.onMapping(name, name, false, false);
+			} else
+				filename = F.onMapping(name, name, true, true);
 		} else
 			filename = F.onMapping(name, name, true, true);
-	} else
-		filename = F.onMapping(name, name, true, true);
 
-	if (!canResize) {
+		if (!canResize) {
 
-		if (F.components.has && F.components[req.extension] && req.uri.pathname === F.config['static-url-components'] + req.extension) {
-			res.noCompress = true;
-			filename = F.path.temp('components.' + req.extension);
-		}
-
-		res.options.filename = filename;
-		res.$file();
-		return F;
-	}
-
-	if (!resizer.ishttp) {
-		res.options.cache = resizer.cache;
-		res.options.make = resizer.fn;
-		res.options.filename = filename;
-		res.$image();
-		return;
-	}
-
-	if (F.temporary.processing[req.uri.pathname]) {
-		setTimeout($continue_timeout, 500, res);
-		return;
-	}
-
-	var tmp = F.path.temp(req.$key);
-	if (F.temporary.path[req.$key]) {
-		res.options.filename = req.uri.pathname;
-		res.$file();
-		return F;
-	}
-
-	F.temporary.processing[req.uri.pathname] = true;
-
-	U.download(name, FLAGS_DOWNLOAD, function(err, response) {
-		var writer = Fs.createWriteStream(tmp);
-		response.pipe(writer);
-		CLEANUP(writer, function() {
-
-			delete F.temporary.processing[req.uri.pathname];
-			var contentType = response.headers['content-type'];
-
-			if (response.statusCode !== 200 || !contentType || !contentType.startsWith('image/')) {
-				res.throw404();
-				return;
+			if (F.components.has && F.components[req.extension] && req.uri.pathname === F.config['static-url-components'] + req.extension) {
+				res.noCompress = true;
+				filename = F.path.temp('components.' + req.extension);
 			}
 
-			res.options.cache = resizer.cache;
-			res.options.filename = tmp;
-			res.options.maker = resizer.fn;
-			res.$image();
-		});
-	});
-
-	return res;
-};
-
-function $continue_timeout(res) {
-	res.continue();
-}
-
-http.ServerResponse.prototype.$file = function() {
-
-	// res.options.filename
-	// res.options.code
-	// res.options.callback
-	// res.options.headers
-	// res.options.download
-
-	var res = this;
-	var options = res.options;
-
-	if (res.headersSent)
-		return res;
-
-	var req = this.req;
-
-	!req.$key && (req.$key = createTemporaryKey(req));
-
-	if (F.temporary.notfound[req.$key]) {
-		DEBUG && (F.temporary.notfound[req.$key] = undefined);
-		res.throw404();
-		return F;
-	}
-
-	// Is package?
-	if (options.filename[0] === '@')
-		options.filename = F.path.package(options.filename.substring(1));
-
-	var name = F.temporary.path[req.$key];
-	var index;
-
-	if (!req.extension) {
-		req.$key && (req.extension = U.getExtension(req.$key));
-		if (!req.extension && name) {
-			req.extension = U.getExtension(name);
-			index = req.extension.lastIndexOf(';');
-			index !== -1 && (req.extension = req.extension.substring(0, index));
+			res.options.filename = filename;
+			res.$file();
+			return F;
 		}
-		!req.extension && options.filename && (req.extension = U.getExtension(options.filename));
-	}
 
-	if (name && RELEASE && req.headers['if-modified-since'] === name[2]) {
-		$file_notmodified(res, name);
+		if (!resizer.ishttp) {
+			res.options.cache = resizer.cache;
+			res.options.make = resizer.fn;
+			res.options.filename = filename;
+			res.$image();
+			return;
+		}
+
+		if (F.temporary.processing[req.uri.pathname]) {
+			setTimeout($continue_timeout, 500, res);
+			return;
+		}
+
+		var tmp = F.path.temp(req.$key);
+		if (F.temporary.path[req.$key]) {
+			res.options.filename = req.uri.pathname;
+			res.$file();
+			return F;
+		}
+
+		F.temporary.processing[req.uri.pathname] = true;
+
+		U.download(name, FLAGS_DOWNLOAD, function(err, response) {
+			var writer = Fs.createWriteStream(tmp);
+			response.pipe(writer);
+			CLEANUP(writer, function() {
+
+				delete F.temporary.processing[req.uri.pathname];
+				var contentType = response.headers['content-type'];
+
+				if (response.statusCode !== 200 || !contentType || !contentType.startsWith('image/')) {
+					res.throw404();
+					return;
+				}
+
+				res.options.cache = resizer.cache;
+				res.options.filename = tmp;
+				res.options.maker = resizer.fn;
+				res.$image();
+			});
+		});
+
+		return res;
+	};
+
+	PROTO.$file = function() {
+
+		// res.options.filename
+		// res.options.code
+		// res.options.callback
+		// res.options.headers
+		// res.options.download
+
+		var res = this;
+		var options = res.options;
+
+		if (res.headersSent)
+			return res;
+
+		var req = this.req;
+
+		!req.$key && (req.$key = createTemporaryKey(req));
+
+		if (F.temporary.notfound[req.$key]) {
+			DEBUG && (F.temporary.notfound[req.$key] = undefined);
+			res.throw404();
+			return F;
+		}
+
+		// Is package?
+		if (options.filename[0] === '@')
+			options.filename = F.path.package(options.filename.substring(1));
+
+		var name = F.temporary.path[req.$key];
+		var index;
+
+		if (!req.extension) {
+			req.$key && (req.extension = U.getExtension(req.$key));
+			if (!req.extension && name) {
+				req.extension = U.getExtension(name);
+				index = req.extension.lastIndexOf(';');
+				index !== -1 && (req.extension = req.extension.substring(0, index));
+			}
+			!req.extension && options.filename && (req.extension = U.getExtension(options.filename));
+		}
+
+		if (name && RELEASE && req.headers['if-modified-since'] === name[2]) {
+			$file_notmodified(res, name);
+			return F;
+		}
+
+		if (name === undefined) {
+
+			if (F.isProcessing(req.$key)) {
+				if (req.processing > F.config['default-request-timeout']) {
+					res.throw408();
+				} else {
+					req.processing += 500;
+					setTimeout($file_processing, 500, res);
+				}
+				return F;
+			}
+
+			// waiting
+			F.temporary.processing[req.$key] = true;
+			F.compile_check(res);
+			return F;
+		}
+
+		var contentType = U.getContentType(req.extension);
+		var accept = req.headers['accept-encoding'] || '';
+		var headers;
+
+		!accept && isGZIP(req) && (accept = 'gzip');
+
+		var compress = F.config['allow-gzip'] && COMPRESSION[contentType] && accept.indexOf('gzip') !== -1;
+		var range = req.headers.range;
+		var canCache = RELEASE && contentType !== 'text/cache-manifest';
+
+		if (canCache) {
+			if (compress)
+				headers = range ? HEADERS.file_release_compress_range : HEADERS.file_release_compress;
+			else
+				headers = range ? HEADERS.file_release_range : HEADERS.file_release;
+		} else {
+			if (compress)
+				headers = range ? HEADERS.file_debug_compress_range : HEADERS.file_debug_compress;
+			else
+				headers = range ? HEADERS.file_debug_range : HEADERS.file_debug;
+		}
+
+		if (req.$mobile)
+			headers.Vary = 'Accept-Encoding, User-Agent';
+		else
+			headers.Vary = 'Accept-Encoding';
+
+		headers[HEADER_TYPE] = contentType;
+		if (REG_TEXTAPPLICATION.test(contentType))
+			headers[HEADER_TYPE] += '; charset=utf-8';
+
+		if (canCache && !res.getHeader('Expires'))
+			headers.Expires = DATE_EXPIRES;
+		else if (headers.Expires)
+			delete headers.Expires;
+
+		if (res.options.headers)
+			headers = U.extend_headers(headers, res.options.headers);
+
+		if (res.options.download)
+			headers['Content-Disposition'] = 'attachment; filename="' + encodeURIComponent(res.options.download) + '"';
+		else if (headers['Content-Disposition'])
+			delete headers['Content-Disposition'];
+
+		if (res.getHeader('Last-Modified'))
+			delete headers['Last-Modified'];
+		else
+			headers['Last-Modified'] = name[2];
+
+		headers.Etag = ETAG + F.config['etag-version'];
+
+		if (range) {
+			$file_range(name[0], range, headers, res);
+			return F;
+		}
+
+		DEBUG && F.isProcessed(req.$key) && (F.temporary.path[req.$key] = undefined);
+
+		if (name[1] && !compress)
+			headers[HEADER_LENGTH] = name[1];
+		else if (headers[HEADER_LENGTH])
+			delete headers[HEADER_LENGTH];
+
+		F.stats.response.file++;
+
+		if (req.method === 'HEAD') {
+			res.writeHead(res.options.code || 200, headers);
+			res.end();
+			response_end(res);
+		} else if (compress) {
+			res.writeHead(res.options.code || 200, headers);
+			fsStreamRead(name[0], undefined, $file_compress, res);
+		} else {
+			res.writeHead(res.options.code || 200, headers);
+			fsStreamRead(name[0], undefined, $file_nocompress, res);
+		}
+	};
+
+	PROTO.$redirect = function() {
+
+		// res.options.permanent
+		// res.options.url
+
+		var res = this;
+
+		if (res.headersSent)
+			return res;
+
+		HEADERS.redirect.Location = res.options.url;
+		res.writeHead(res.options.permanent ? 301 : 302, HEADERS.redirect);
+		res.end();
+		response_end(res);
+		F.stats.response.redirect++;
+		return res;
+	};
+
+	PROTO.$binary = function() {
+
+		// res.options.callback
+		// res.options.code
+		// res.options.encoding
+		// res.options.download
+		// res.options.type
+		// res.options.body
+		// res.options.headers
+
+		var res = this;
+
+		if (res.headersSent)
+			return res;
+
+		var req = res.req;
+		var options = res.options;
+
+		/*
+		if (options.type.lastIndexOf('/') === -1)
+			options.type = U.getContentType(options.type);
+		*/
+
+		var accept = req.headers['accept-encoding'] || '';
+		!accept && isGZIP(req) && (accept = 'gzip');
+
+		var compress = F.config['allow-gzip'] && COMPRESSION[options.type] && accept.indexOf('gzip') !== -1;
+		var headers = compress ? HEADERS.binary_compress : HEADERS.binary;
+
+		headers['Vary'] = 'Accept-Encoding' + (req.$mobile ? ', User-Agent' : '');
+
+		if (options.download)
+			headers['Content-Disposition'] = 'attachment; filename=' + encodeURIComponent(options.download);
+		else if (headers['Content-Disposition'])
+			delete headers['Content-Disposition'];
+
+		headers[HEADER_TYPE] = options.type;
+
+		if (options.headers)
+			headers = U.extend_headers(headers, options.headers);
+
+		F.stats.response.binary++;
+
+		if (req.method === 'HEAD') {
+			res.writeHead(options.code || 200, headers);
+			res.end();
+			response_end(res);
+		} else if (compress) {
+			res.writeHead(options.code || 200, headers);
+			Zlib.gzip(!options.encoding || options.encoding === 'binary' ? options.body : options.body.toString(options.encoding), (err, buffer) => res.end(buffer));
+			response_end(res);
+		} else {
+			res.writeHead(options.code || 200, headers);
+			res.end(!options.encoding || options.encoding === 'binary' ? options.body : options.body.toString(options.encoding));
+			response_end(res);
+		}
+
 		return F;
-	}
+	};
 
-	if (name === undefined) {
+	PROTO.$stream = function() {
+
+		// res.options.filename
+		// res.options.options
+		// res.options.callback
+		// res.options.code
+		// res.options.stream
+		// res.options.type
+		// res.options.compress
+
+		var res = this;
+		var req = res.req;
+		var options = res.options;
+
+		if (res.headersSent)
+			return res;
+
+		/*
+		if (options.type.lastIndexOf('/') === -1)
+			options.type = U.getContentType(options.type);
+		*/
+
+		var accept = req.headers['accept-encoding'] || '';
+		!accept && isGZIP(req) && (accept = 'gzip');
+
+		var compress = (options.compress === undefined || options.compress) && F.config['allow-gzip'] && COMPRESSION[options.type] && accept.indexOf('gzip') !== -1;
+		var headers;
+
+		if (RELEASE) {
+			if (compress)
+				headers = HEADERS.stream_release_compress;
+			else
+				headers = HEADERS.stream_release;
+		} else {
+			if (compress)
+				headers = HEADERS.stream_debug_compress;
+			else
+				headers = HEADERS.stream_debug;
+		}
+
+		headers.Vary = 'Accept-Encoding' + (req.$mobile ? ', User-Agent' : '');
+
+		if (RELEASE) {
+			headers.Expires = DATE_EXPIRES;
+			headers['Last-Modified'] = 'Mon, 01 Jan 2001 08:00:00 GMT';
+		}
+
+		if (options.download)
+			headers['Content-Disposition'] = 'attachment; filename=' + encodeURIComponent(options.download);
+		else if (headers['Content-Disposition'])
+			delete headers['Content-Disposition'];
+
+		headers[HEADER_TYPE] = options.type;
+
+		if (options.headers)
+			headers = U.extend_headers(headers, options.headers);
+
+		F.stats.response.stream++;
+		F.reqstats(false, req.isStaticFile);
+
+		if (req.method === 'HEAD') {
+			res.writeHead(options.code || 200, headers);
+			res.end();
+			response_end(res);
+			return F;
+		}
+
+		if (compress) {
+			res.writeHead(options.code || 200, headers);
+			res.on('error', () => options.stream.close());
+			options.stream.pipe(Zlib.createGzip()).pipe(res);
+			framework_internal.onFinished(res, () => framework_internal.destroyStream(options.stream));
+			response_end(res);
+			return F;
+		}
+
+		res.writeHead(options.code || 200, headers);
+		framework_internal.onFinished(res, () => framework_internal.destroyStream(options.stream));
+		options.stream.pipe(res);
+		response_end(res);
+		return F;
+	};
+
+	PROTO.$image = function() {
+
+		// res.options.filename
+		// res.options.stream
+		// res.options.options
+		// res.options.callback
+		// res.options.code
+		// res.options.cache
+		// res.options.headers
+		// res.options.make = function(image, res)
+
+		var res = this;
+		var options = res.options;
+
+		if (options.cache === false)
+			return $image_nocache(res);
+
+		var req = this.req;
+		!req.$key && (req.$key = createTemporaryKey(req));
+
+		if (F.temporary.notfound[req.$key]) {
+			DEBUG && (F.temporary.notfound[req.$key] = undefined);
+			res.throw404();
+			return F;
+		}
+
+		var key = req.$key || createTemporaryKey(req);
+		if (F.temporary.notfound[key]) {
+			res.throw404();
+			return res;
+		}
+
+		var name = F.temporary.path[key];
+
+		if (options.filename && options.filename[0] === '@')
+			options.filename = F.path.package(options.filename.substring(1));
+
+		if (name !== undefined) {
+			res.$file();
+			return F;
+		}
 
 		if (F.isProcessing(req.$key)) {
 			if (req.processing > F.config['default-request-timeout']) {
 				res.throw408();
 			} else {
 				req.processing += 500;
-				setTimeout($file_processing, 500, res);
+				setTimeout($image_processing, 500, res);
 			}
 			return F;
 		}
 
-		// waiting
-		F.temporary.processing[req.$key] = true;
-		F.compile_check(res);
-		return F;
-	}
+		var plus = F.id ? 'i-' + F.id + '_' : '';
 
-	var contentType = U.getContentType(req.extension);
-	var accept = req.headers['accept-encoding'] || '';
-	var headers;
+		options.name = F.path.temp(plus + key);
+		F.temporary.processing[key] = true;
 
-	!accept && isGZIP(req) && (accept = 'gzip');
-
-	var compress = F.config['allow-gzip'] && COMPRESSION[contentType] && accept.indexOf('gzip') !== -1;
-	var range = req.headers.range;
-	var canCache = RELEASE && contentType !== 'text/cache-manifest';
-
-	if (canCache) {
-		if (compress)
-			headers = range ? HEADERS.file_release_compress_range : HEADERS.file_release_compress;
+		if (options.stream)
+			fsFileExists(options.name, $image_stream, res);
 		else
-			headers = range ? HEADERS.file_release_range : HEADERS.file_release;
-	} else {
-		if (compress)
-			headers = range ? HEADERS.file_debug_compress_range : HEADERS.file_debug_compress;
-		else
-			headers = range ? HEADERS.file_debug_range : HEADERS.file_debug;
-	}
+			fsFileExists(options.filename, $image_filename, res);
 
-	if (req.$mobile)
-		headers.Vary = 'Accept-Encoding, User-Agent';
-	else
-		headers.Vary = 'Accept-Encoding';
-
-	headers[HEADER_TYPE] = contentType;
-	if (REG_TEXTAPPLICATION.test(contentType))
-		headers[HEADER_TYPE] += '; charset=utf-8';
-
-	if (canCache && !res.getHeader('Expires'))
-		headers.Expires = DATE_EXPIRES;
-	else if (headers.Expires)
-		delete headers.Expires;
-
-	if (res.options.headers)
-		headers = U.extend_headers(headers, res.options.headers);
-
-	if (res.options.download)
-		headers['Content-Disposition'] = 'attachment; filename="' + encodeURIComponent(res.options.download) + '"';
-	else if (headers['Content-Disposition'])
-		delete headers['Content-Disposition'];
-
-	if (res.getHeader('Last-Modified'))
-		delete headers['Last-Modified'];
-	else
-		headers['Last-Modified'] = name[2];
-
-	headers.Etag = ETAG + F.config['etag-version'];
-
-	if (range) {
-		$file_range(name[0], range, headers, res);
 		return F;
-	}
+	};
 
-	DEBUG && F.isProcessed(req.$key) && (F.temporary.path[req.$key] = undefined);
+	PROTO.$custom = function() {
+		F.stats.response.custom++;
+		response_end(this);
+		return this;
+	};
 
-	if (name[1] && !compress)
-		headers[HEADER_LENGTH] = name[1];
-	else if (headers[HEADER_LENGTH])
-		delete headers[HEADER_LENGTH];
+	PROTO.$text = function() {
 
-	F.stats.response.file++;
+		// res.options.type
+		// res.options.body
+		// res.options.code
+		// res.options.headers
+		// res.options.callback
+		// res.options.compress
+		// res.options.encoding
 
-	if (req.method === 'HEAD') {
-		res.writeHead(res.options.code || 200, headers);
-		res.end();
+		var res = this;
+		var req = res.req;
+		var options = res.options;
+
+		if (res.headersSent)
+			return res;
+
+		var accept = req.headers['accept-encoding'] || '';
+		!accept && isGZIP(req) && (accept = 'gzip');
+
+		var gzip = F.config['allow-gzip'] && (options.compress === undefined || options.compress) ? accept.indexOf('gzip') !== -1 : false;
+		var headers;
+
+		if (req.$mobile)
+			headers = gzip ? HEADERS.content_mobile_release : HEADERS.content_mobile;
+		else
+			headers = gzip ? HEADERS.content_compress : HEADERS.content;
+
+		// Safari resolve
+		if (options.type === CT_JSON)
+			headers[HEADER_CACHE] = 'private, no-cache, no-store, must-revalidate';
+		else
+			headers[HEADER_CACHE] = 'private';
+
+		if (REG_TEXTAPPLICATION.test(options.type))
+			options.type += '; charset=utf-8';
+
+		headers[HEADER_TYPE] = options.type;
+
+		if (options.headers)
+			headers = U.extend_headers(headers, options.headers);
+
+		if (req.method === 'HEAD') {
+			res.writeHead(options.code || 200, headers);
+			res.end();
+		} else {
+			if (gzip) {
+				res.writeHead(options.code || 200, headers);
+				Zlib.gzip(options.body instanceof Buffer ? options.body : U.createBuffer(options.body), (err, data) => res.end(data, res.options.encoding || ENCODING));
+			} else {
+				res.writeHead(options.code || 200, headers);
+				res.end(options.body, res.options.encoding || ENCODING);
+			}
+		}
+
 		response_end(res);
-	} else if (compress) {
-		res.writeHead(res.options.code || 200, headers);
-		fsStreamRead(name[0], undefined, $file_compress, res);
-	} else {
-		res.writeHead(res.options.code || 200, headers);
-		fsStreamRead(name[0], undefined, $file_nocompress, res);
-	}
-};
+		return res;
+	};
+
+	PROTO.throw400 = function(problem) {
+		this.options.code = 400;
+		problem && (this.options.problem = problem);
+		return this.$throw();
+	};
+
+	PROTO.throw401 = function(problem) {
+		this.options.code = 401;
+		problem && (this.options.problem = problem);
+		return this.$throw();
+	};
+
+	PROTO.throw403 = function(problem) {
+		this.options.code = 403;
+		problem && (this.options.problem = problem);
+		return this.$throw();
+	};
+
+	PROTO.throw404 = function(problem) {
+		this.options.code = 404;
+		problem && (this.options.problem = problem);
+		return this.$throw();
+	};
+
+	PROTO.throw408 = function(problem) {
+		this.options.code = 408;
+		problem && (this.options.problem = problem);
+		return this.$throw();
+	};
+
+	PROTO.throw431 = function(problem) {
+		this.options.code = 431;
+		problem && (this.options.problem = problem);
+		return this.$throw();
+	};
+
+	PROTO.throw500 = function(error) {
+		error && F.error(error, null, this.req.uri);
+		this.options.code = 500;
+		this.options.body = U.httpStatus(500) + error ? prepare_error(error) : '';
+		return this.$throw();
+	};
+
+	PROTO.throw501 = function(problem) {
+		this.options.code = 501;
+		problem && (this.options.problem = problem);
+		return this.$throw();
+	};
+
+	PROTO.$throw = function() {
+
+		// res.options.code
+		// res.options.body
+		// res.options.problem
+
+		var res = this;
+
+		if (res.success || res.headersSent)
+			return res;
+
+		var req = res.req;
+		res.options.problem && F.problem(res.options.problem, 'response' + res.options.code + '()', req.uri, req.ip);
+		res.writeHead(res.options.code || 501, res.options.headers || HEADERS.responseCode);
+
+		if (req.method === 'HEAD')
+			res.end();
+		else
+			res.end(res.options.body || U.httpStatus(res.options.code));
+
+		var key = 'error' + res.options.code;
+		F.$events[key] && F.emit(key, req, res, res.options.problem);
+		F.stats.response[key]++;
+		response_end(res);
+		return res;
+	};
+}
+
+function $continue_timeout(res) {
+	res.continue();
+}
 
 function $file_processing(res) {
 	res.$file();
@@ -14344,232 +14990,6 @@ function $file_range_callback(stream, next, res) {
 	stream.pipe(res);
 	response_end(res);
 }
-
-http.ServerResponse.prototype.$redirect = function() {
-
-	// res.options.permanent
-	// res.options.url
-
-	var res = this;
-
-	if (res.headersSent)
-		return res;
-
-	HEADERS.redirect.Location = res.options.url;
-	res.writeHead(res.options.permanent ? 301 : 302, HEADERS.redirect);
-	res.end();
-	response_end(res);
-	F.stats.response.redirect++;
-	return res;
-};
-
-http.ServerResponse.prototype.$binary = function() {
-
-	// res.options.callback
-	// res.options.code
-	// res.options.encoding
-	// res.options.download
-	// res.options.type
-	// res.options.body
-	// res.options.headers
-
-	var res = this;
-
-	if (res.headersSent)
-		return res;
-
-	var req = res.req;
-	var options = res.options;
-
-	/*
-	if (options.type.lastIndexOf('/') === -1)
-		options.type = U.getContentType(options.type);
-	*/
-
-	var accept = req.headers['accept-encoding'] || '';
-	!accept && isGZIP(req) && (accept = 'gzip');
-
-	var compress = F.config['allow-gzip'] && COMPRESSION[options.type] && accept.indexOf('gzip') !== -1;
-	var headers = compress ? HEADERS.binary_compress : HEADERS.binary;
-
-	headers['Vary'] = 'Accept-Encoding' + (req.$mobile ? ', User-Agent' : '');
-
-	if (options.download)
-		headers['Content-Disposition'] = 'attachment; filename=' + encodeURIComponent(options.download);
-	else if (headers['Content-Disposition'])
-		delete headers['Content-Disposition'];
-
-	headers[HEADER_TYPE] = options.type;
-
-	if (options.headers)
-		headers = U.extend_headers(headers, options.headers);
-
-	F.stats.response.binary++;
-
-	if (req.method === 'HEAD') {
-		res.writeHead(options.code || 200, headers);
-		res.end();
-		response_end(res);
-	} else if (compress) {
-		res.writeHead(options.code || 200, headers);
-		Zlib.gzip(!options.encoding || options.encoding === 'binary' ? options.body : options.body.toString(options.encoding), (err, buffer) => res.end(buffer));
-		response_end(res);
-	} else {
-		res.writeHead(options.code || 200, headers);
-		res.end(!options.encoding || options.encoding === 'binary' ? options.body : options.body.toString(options.encoding));
-		response_end(res);
-	}
-
-	return F;
-};
-
-http.ServerResponse.prototype.$stream = function() {
-
-	// res.options.filename
-	// res.options.options
-	// res.options.callback
-	// res.options.code
-	// res.options.stream
-	// res.options.type
-	// res.options.compress
-
-	var res = this;
-	var req = res.req;
-	var options = res.options;
-
-	if (res.headersSent)
-		return res;
-
-	/*
-	if (options.type.lastIndexOf('/') === -1)
-		options.type = U.getContentType(options.type);
-	*/
-
-	var accept = req.headers['accept-encoding'] || '';
-	!accept && isGZIP(req) && (accept = 'gzip');
-
-	var compress = (options.compress === undefined || options.compress) && F.config['allow-gzip'] && COMPRESSION[options.type] && accept.indexOf('gzip') !== -1;
-	var headers;
-
-	if (RELEASE) {
-		if (compress)
-			headers = HEADERS.stream_release_compress;
-		else
-			headers = HEADERS.stream_release;
-	} else {
-		if (compress)
-			headers = HEADERS.stream_debug_compress;
-		else
-			headers = HEADERS.stream_debug;
-	}
-
-	headers.Vary = 'Accept-Encoding' + (req.$mobile ? ', User-Agent' : '');
-
-	if (RELEASE) {
-		headers.Expires = DATE_EXPIRES;
-		headers['Last-Modified'] = 'Mon, 01 Jan 2001 08:00:00 GMT';
-	}
-
-	if (options.download)
-		headers['Content-Disposition'] = 'attachment; filename=' + encodeURIComponent(options.download);
-	else if (headers['Content-Disposition'])
-		delete headers['Content-Disposition'];
-
-	headers[HEADER_TYPE] = options.type;
-
-	if (options.headers)
-		headers = U.extend_headers(headers, options.headers);
-
-	F.stats.response.stream++;
-	F.reqstats(false, req.isStaticFile);
-
-	if (req.method === 'HEAD') {
-		res.writeHead(options.code || 200, headers);
-		res.end();
-		response_end(res);
-		return F;
-	}
-
-	if (compress) {
-		res.writeHead(options.code || 200, headers);
-		res.on('error', () => options.stream.close());
-		options.stream.pipe(Zlib.createGzip()).pipe(res);
-		framework_internal.onFinished(res, () => framework_internal.destroyStream(options.stream));
-		response_end(res);
-		return F;
-	}
-
-	res.writeHead(options.code || 200, headers);
-	framework_internal.onFinished(res, () => framework_internal.destroyStream(options.stream));
-	options.stream.pipe(res);
-	response_end(res);
-	return F;
-};
-
-http.ServerResponse.prototype.$image = function() {
-
-	// res.options.filename
-	// res.options.stream
-	// res.options.options
-	// res.options.callback
-	// res.options.code
-	// res.options.cache
-	// res.options.headers
-	// res.options.make = function(image, res)
-
-	var res = this;
-	var options = res.options;
-
-	if (options.cache === false)
-		return $image_nocache(res);
-
-	var req = this.req;
-	!req.$key && (req.$key = createTemporaryKey(req));
-
-	if (F.temporary.notfound[req.$key]) {
-		DEBUG && (F.temporary.notfound[req.$key] = undefined);
-		res.throw404();
-		return F;
-	}
-
-	var key = req.$key || createTemporaryKey(req);
-	if (F.temporary.notfound[key]) {
-		res.throw404();
-		return res;
-	}
-
-	var name = F.temporary.path[key];
-
-	if (options.filename && options.filename[0] === '@')
-		options.filename = F.path.package(options.filename.substring(1));
-
-	if (name !== undefined) {
-		res.$file();
-		return F;
-	}
-
-	if (F.isProcessing(req.$key)) {
-		if (req.processing > F.config['default-request-timeout']) {
-			res.throw408();
-		} else {
-			req.processing += 500;
-			setTimeout($image_processing, 500, res);
-		}
-		return F;
-	}
-
-	var plus = F.id ? 'i-' + F.id + '_' : '';
-
-	options.name = F.path.temp(plus + key);
-	F.temporary.processing[key] = true;
-
-	if (options.stream)
-		fsFileExists(options.name, $image_stream, res);
-	else
-		fsFileExists(options.filename, $image_filename, res);
-
-	return F;
-};
 
 function $image_nocache(res) {
 
@@ -14698,236 +15118,12 @@ function $image_filename(exists, size, isFile, stats, res) {
 	});
 }
 
-http.ServerResponse.prototype.$custom = function() {
-	F.stats.response.custom++;
-	response_end(this);
-	return this;
-};
-
-http.ServerResponse.prototype.$text = function() {
-
-	// res.options.type
-	// res.options.body
-	// res.options.code
-	// res.options.headers
-	// res.options.callback
-	// res.options.compress
-	// res.options.encoding
-
-	var res = this;
-	var req = res.req;
-	var options = res.options;
-
-	if (res.headersSent)
-		return res;
-
-	var accept = req.headers['accept-encoding'] || '';
-	!accept && isGZIP(req) && (accept = 'gzip');
-
-	var gzip = F.config['allow-gzip'] && (options.compress === undefined || options.compress) ? accept.indexOf('gzip') !== -1 : false;
-	var headers;
-
-	if (req.$mobile)
-		headers = gzip ? HEADERS.content_mobile_release : HEADERS.content_mobile;
-	else
-		headers = gzip ? HEADERS.content_compress : HEADERS.content;
-
-	// Safari resolve
-	if (options.type === CT_JSON)
-		headers[HEADER_CACHE] = 'private, no-cache, no-store, must-revalidate';
-	else
-		headers[HEADER_CACHE] = 'private';
-
-	if (REG_TEXTAPPLICATION.test(options.type))
-		options.type += '; charset=utf-8';
-
-	headers[HEADER_TYPE] = options.type;
-
-	if (options.headers)
-		headers = U.extend_headers(headers, options.headers);
-
-	if (req.method === 'HEAD') {
-		res.writeHead(options.code || 200, headers);
-		res.end();
-	} else {
-		if (gzip) {
-			res.writeHead(options.code || 200, headers);
-			Zlib.gzip(options.body instanceof Buffer ? options.body : U.createBuffer(options.body), (err, data) => res.end(data, res.options.encoding || ENCODING));
-		} else {
-			res.writeHead(options.code || 200, headers);
-			res.end(options.body, res.options.encoding || ENCODING);
-		}
-	}
-
-	response_end(res);
-	return res;
-};
-
-http.ServerResponse.prototype.throw400 = function(problem) {
-	this.options.code = 400;
-	problem && (this.options.problem = problem);
-	return this.$throw();
-};
-
-http.ServerResponse.prototype.throw401 = function(problem) {
-	this.options.code = 401;
-	problem && (this.options.problem = problem);
-	return this.$throw();
-};
-
-http.ServerResponse.prototype.throw403 = function(problem) {
-	this.options.code = 403;
-	problem && (this.options.problem = problem);
-	return this.$throw();
-};
-
-http.ServerResponse.prototype.throw404 = function(problem) {
-	this.options.code = 404;
-	problem && (this.options.problem = problem);
-	return this.$throw();
-};
-
-http.ServerResponse.prototype.throw408 = function(problem) {
-	this.options.code = 408;
-	problem && (this.options.problem = problem);
-	return this.$throw();
-};
-
-http.ServerResponse.prototype.throw431 = function(problem) {
-	this.options.code = 431;
-	problem && (this.options.problem = problem);
-	return this.$throw();
-};
-
-http.ServerResponse.prototype.throw500 = function(error) {
-	error && F.error(error, null, this.req.uri);
-	this.options.code = 500;
-	this.options.body = U.httpStatus(500) + error ? prepare_error(error) : '';
-	return this.$throw();
-};
-
-http.ServerResponse.prototype.throw501 = function(problem) {
-	this.options.code = 501;
-	problem && (this.options.problem = problem);
-	return this.$throw();
-};
-
-http.ServerResponse.prototype.$throw = function() {
-
-	// res.options.code
-	// res.options.body
-	// res.options.problem
-
-	var res = this;
-
-	if (res.success || res.headersSent)
-		return res;
-
-	var req = res.req;
-	res.options.problem && F.problem(res.options.problem, 'response' + res.options.code + '()', req.uri, req.ip);
-	res.writeHead(res.options.code || 501, res.options.headers || HEADERS.responseCode);
-
-	if (req.method === 'HEAD')
-		res.end();
-	else
-		res.end(res.options.body || U.httpStatus(res.options.code));
-
-	var key = 'error' + res.options.code;
-	F.$events[key] && F.emit(key, req, res, res.options.problem);
-	F.stats.response[key]++;
-	response_end(res);
-	return res;
-};
-
-var _tmp = http.IncomingMessage.prototype;
-
-http.IncomingMessage.prototype = {
-
-	get ip() {
-
-		var self = this;
-		if (self._ip)
-			return self._ip;
-
-		//  x-forwarded-for: client, proxy1, proxy2, ...
-		var proxy = self.headers['x-forwarded-for'];
-		if (proxy)
-			self._ip = proxy.split(',', 1)[0] || self.connection.remoteAddress;
-		else if (!self._ip)
-			self._ip = self.connection.remoteAddress;
-
-		return self._ip;
-	},
-
-	get query() {
-		var self = this;
-		!self._querydata && F.$onParseQueryUrl(self);
-		return self._querydata;
-	},
-
-	set query(value) {
-		this._querydata = value;
-	},
-
-	get subdomain() {
-
-		var self = this;
-
-		if (self._subdomain)
-			return self._subdomain;
-
-		var subdomain = self.uri.host.toLowerCase().replace(/^www\./i, '').split('.');
-		if (subdomain.length > 2)
-			self._subdomain = subdomain.slice(0, subdomain.length - 2); // example: [subdomain].domain.com
-		else
-			self._subdomain = null;
-
-		return self._subdomain;
-	},
-
-	get host() {
-		return this.headers['host'];
-	},
-
-	get split() {
-		if (this.$path)
-			return this.$path;
-		return this.$path = framework_internal.routeSplit(this.uri.pathname, true);
-	},
-
-	get secured() {
-		return this.uri.protocol === 'https:' || this.uri.protocol === 'wss:';
-	},
-
-	get language() {
-		if (!this.$language)
-			this.$language = (((this.headers['accept-language'] || '').split(';')[0] || '').split(',')[0] || '').toLowerCase();
-		return this.$language;
-	},
-
-	get mobile() {
-		if (this.$mobile === undefined)
-			this.$mobile = REG_MOBILE.test(this.headers['user-agent']);
-		return this.$mobile;
-	},
-
-	get robot() {
-		if (this.$robot === undefined)
-			this.$robot = REG_ROBOT.test(this.headers['user-agent']);
-		return this.$robot;
-	},
-
-	set language(value) {
-		this.$language = value;
-	}
-};
-
 function response_end(res) {
 	F.reqstats(false, res.req.isStaticFile);
 	res.success = true;
 	!res.req.isStaticFile && F.$events['request-end'] && F.emit('request-end', res.req, res);
 	res.req.clear(true);
-	res.controller && res.controller.subscribe.success();
+	res.controller && res.req.$total_success();
 	res.options.callback && res.options.callback();
 	// res.options = EMPTYOBJECT;
 	res.controller = null;
@@ -14942,161 +15138,6 @@ function $decodeURIComponent(value) {
 		return value;
 	}
 }
-
-http.IncomingMessage.prototype.__proto__ = _tmp;
-
-/**
- * Signature request (user-agent + ip + referer + current URL + custom key)
- * @param {String} key Custom key.
- * @return {Request}
- */
-http.IncomingMessage.prototype.signature = function(key) {
-	return F.encrypt((this.headers['user-agent'] || '') + '#' + this.ip + '#' + this.url + '#' + (key || ''), 'request-signature', false);
-};
-
-http.IncomingMessage.prototype.localize = function() {
-	F.onLocale && (this.$language = F.onLocale(this, this.res, this.isStaticFile));
-	return this.$language;
-};
-
-/**
- * Disable HTTP cache for current request
- * @return {Request}
- */
-http.IncomingMessage.prototype.noCache = function() {
-	delete this.headers['if-none-match'];
-	delete this.headers['if-modified-since'];
-	return this;
-};
-
-http.IncomingMessage.prototype.notModified = function(compare, strict) {
-	return F.notModified(this, this.res, compare, strict);
-};
-
-/**
- * Read a cookie from current request
- * @param {String} name Cookie name.
- * @return {String} Cookie value (default: '')
- */
-http.IncomingMessage.prototype.cookie = function(name) {
-
-	if (this.cookies)
-		return $decodeURIComponent(this.cookies[name] || '');
-
-	var cookie = this.headers['cookie'];
-	if (!cookie)
-		return '';
-
-	this.cookies = {};
-
-	var arr = cookie.split(';');
-
-	for (var i = 0, length = arr.length; i < length; i++) {
-		var line = arr[i].trim();
-		var index = line.indexOf('=');
-		if (index !== -1)
-			this.cookies[line.substring(0, index)] = line.substring(index + 1);
-	}
-
-	return $decodeURIComponent(this.cookies[name] || '');
-};
-
-/**
- * Read authorization header
- * @return {Object}
- */
-http.IncomingMessage.prototype.authorization = function() {
-
-	var authorization = this.headers['authorization'];
-	if (!authorization)
-		return HEADERS.authorization;
-
-	var result = { user: '', password: '', empty: true };
-
-	try {
-		var arr = U.createBuffer(authorization.replace('Basic ', '').trim(), 'base64').toString(ENCODING).split(':');
-		result.user = arr[0] || '';
-		result.password = arr[1] || '';
-		result.empty = !result.user || !result.password;
-	} catch (e) {}
-
-	return result;
-};
-
-/**
- * Authorization for custom delegates
- * @param  {Function(err, userprofile, isAuthorized)} callback
- * @return {Request}
- */
-http.IncomingMessage.prototype.authorize = function(callback) {
-
-	var auth = F.onAuthorize;
-
-	if (!auth) {
-		callback(null, null, false);
-		return this;
-	}
-
-	var req = this;
-
-	auth(req, req.res, req.flags, function(isAuthorized, user) {
-		if (typeof(isAuthorized) !== 'boolean') {
-			user = isAuthorized;
-			isAuthorized = !user;
-		}
-		req.isAuthorized = isAuthorized;
-		callback(null, user, isAuthorized);
-	});
-
-	return this;
-};
-
-/**
- * Clear all uplaoded files
- * @private
- * @param {Boolean} isAuto
- * @return {Request}
- */
-http.IncomingMessage.prototype.clear = function(isAuto) {
-
-	var self = this;
-	var files = self.files;
-
-	if (!files || (isAuto && self._manual))
-		return self;
-
-	self.body = null;
-	self.query = null;
-	self.cookies = null;
-
-	var length = files.length;
-	if (!length)
-		return self;
-
-	var arr = [];
-	for (var i = 0; i < length; i++)
-		files[i].rem && arr.push(files[i].path);
-
-	F.unlink(arr);
-	self.files = null;
-	return self;
-};
-
-/**
- * Get host name from URL
- * @param {String} path Additional path.
- * @return {String}
- */
-http.IncomingMessage.prototype.hostname = function(path) {
-
-	var self = this;
-	var uri = self.uri;
-
-	if (path && path[0] !== '/')
-		path = '/' + path;
-
-	return uri.protocol + '//' + uri.hostname + (uri.port && uri.port !== 80 ? ':' + uri.port : '') + (path || '');
-};
 
 global.Controller = Controller;
 
@@ -15174,45 +15215,31 @@ process.on('SIGINT', () => F.stop());
 process.on('exit', () => F.stop());
 
 process.on('message', function(msg, h) {
-
-	if (typeof(msg) !== 'string') {
-		F.$events.message && F.emit('message', msg, h);
-		return;
-	}
-
 	if (msg === 'debugging') {
 		U.wait(() => F.isLoaded, function() {
 			F.isLoaded = undefined;
 			F.console();
 		}, 10000, 500);
-		return;
-	}
-
-	if (msg === 'reconnect') {
+	} else if (msg === 'reconnect')
 		F.reconnect();
-		return;
-	}
-
-	if (msg === 'reconfigure') {
-		F.$configure_configs();
-		F.$configure_versions();
-		F.$configure_workflows();
-		F.$cofnigure_sitemap();
-		F.emit(msg);
-		return;
-	}
-
-	if (msg === 'reset') {
-		// F.clear();
+	else if (msg === 'reset')
 		F.cache.clear();
-		return;
-	}
-
-	if (msg === 'stop' || msg === 'exit') {
+	else if (msg === 'stop' || msg === 'exit' || msg === 'kill')
 		F.stop();
-		return;
+	else if (msg && msg.TYPE && msg.id !== F.id) {
+		msg.TYPE === 'cache-set' && F.cache.set(msg.key, msg.value, msg.expire, false);
+		msg.TYPE === 'cache-remove' && F.cache.remove(msg.key, false);
+		msg.TYPE === 'cache-remove-all' && F.cache.removeAll(msg.key, false);
+		msg.TYPE === 'cache-clear' && F.cache.clear(false);
+		msg.TYPE === 'nosql-lock' && F.databases[msg.name] && F.databases[msg.name].lock();
+		msg.TYPE === 'nosql-unlock' && F.databases[msg.name] && F.databases[msg.name].unlock();
+		msg.TYPE === 'nosql-meta' && F.databases[msg.name] && F.databases[msg.name].$meta();
+		msg.TYPE === 'nosql-counter-lock' && F.databases[msg.name] && (F.databases[msg.name].counter.locked = true);
+		msg.TYPE === 'nosql-counter-unlock' && F.databases[msg.name] && (F.databases[msg.name].counter.locked = false);
+		msg.TYPE === 'req' && F.cluster.req(msg);
+		msg.TYPE === 'res' && msg.target === F.id && F.cluster.res(msg);
+		msg.TYPE === 'emit' && F.$events[msg.name] && F.emit(msg.name, msg.data);
 	}
-
 	F.$events.message && F.emit('message', msg, h);
 });
 
@@ -15258,29 +15285,28 @@ function existsSync(filename, file) {
 	}
 }
 
-function async_middleware(index, req, res, middleware, callback, options, controller, subscribe) {
+function async_middleware(index, req, res, middleware, callback, options, controller) {
 
 	if (res.success || res.headersSent) {
-		// Prevents timeout
-		controller && controller.subscribe.success();
+		req.$total_route && req.$total_success();
 		callback = null;
 		return;
 	}
 
 	var name = middleware[index++];
 	if (!name)
-		return callback && callback(req, res, subscribe);
+		return callback && callback(req, res);
 
 	var item = F.routes.middleware[name];
 	if (!item) {
 		F.error('Middleware not found: ' + name, null, req.uri);
-		return async_middleware(index, req, res, middleware, callback, options, controller, subscribe);
+		return async_middleware(index, req, res, middleware, callback, options, controller);
 	}
 
 	var output = item.call(framework, req, res, function(err) {
 
 		if (err === false) {
-			controller && controller.subscribe.success();
+			req.$total_route && req.$total_success();
 			callback = null;
 			return;
 		}
@@ -15291,13 +15317,13 @@ function async_middleware(index, req, res, middleware, callback, options, contro
 			return;
 		}
 
-		async_middleware(index, req, res, middleware, callback, options, controller, subscribe);
+		async_middleware(index, req, res, middleware, callback, options, controller);
 	}, options, controller);
 
 	if (output !== false)
 		return;
 
-	controller && controller.subscribe.success();
+	req.$total_route && req.$total_success();
 	callback = null;
 }
 
@@ -15472,7 +15498,7 @@ function parseDeferFile(type, filename) {
 
 // Because of controller prototypes
 // It's used in F.view() and F.viewCompile()
-const EMPTYCONTROLLER = new Controller('', null, null, null, '');
+const EMPTYCONTROLLER = new Controller('', null, null, '');
 EMPTYCONTROLLER.isConnected = false;
 EMPTYCONTROLLER.req = {};
 EMPTYCONTROLLER.req.url = '';
