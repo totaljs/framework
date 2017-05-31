@@ -2058,13 +2058,13 @@ F.merge = function(url) {
 		url = '/' + url;
 
 	var filename = F.path.temp((F.id ? 'i-' + F.id + '_' : '') + 'merged_' + createTemporaryKey(url));
-	F.routes.merge[url] = { filename: filename.replace(/\.(js|css)/g, ext => '.min' + ext), files: arr };
+	F.routes.merge[url] = { filename: filename.replace(/\.(js|css)$/g, ext => '.min' + ext), files: arr };
 	Fs.unlink(F.routes.merge[url].filename, NOOP);
 	F.owners.push({ type: 'merge', owner: _owner, id: url });
 	return F;
 };
 
-F.mapping = function(url, path) {
+F.mapping = function() {
 	return F.map.apply(F, arguments);
 };
 

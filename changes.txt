@@ -1,6 +1,7 @@
 ======= 2.6.1 (HOTFIX)
 
 - fixed: timeout in `RESTBuilder` and `U.request()`
+- fixed: `F.merge()` a problem with `.js` or `.css` extension in some directory
 
 ======= 2.6.0
 
