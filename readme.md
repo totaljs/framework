@@ -14,6 +14,7 @@ $ npm install -g total.js
 [![Support](https://www.totaljs.com/img/button-support.png?v=3)](https://www.totaljs.com/support/)
 
 - [Total.js Flow](https://www.totaljs.com/flow/)
+- [Total.js Flowboard](https://www.totaljs.com/flowboard/)
 - [Total.js Messenger](https://www.totaljs.com/messenger/)
 - [Total.js Dashboard](https://www.totaljs.com/dashboard/)
 - [Total.js BlogEngine](https://www.totaljs.com/blogengine/)
