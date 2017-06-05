@@ -48,9 +48,9 @@ function runwatching() {
 	!options && (options = {});
 	require('./index');
 
-	const FILENAME = U.getName(process.argv.last());
+	const FILENAME = U.getName(process.argv[1]);
 	const directory = process.cwd();
-	const VERSION = '2.6.0';
+	const VERSION = '2.6.2';
 	const TIME = 2000;
 	const REG_CONFIGS = /configs\//g;
 	const REG_FILES = /config\-debug|config\-release|config|versions|sitemap|dependencies|\.js|\.resource/i;
