@@ -1,3 +1,7 @@
+======= 2.6.2 (HOTFIX)
+
+- fixed: a critical bug with `debug.js`
+
 ======= 2.6.1 (HOTFIX)
 
 - fixed: timeout in `RESTBuilder` and `U.request()`
