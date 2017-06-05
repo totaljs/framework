@@ -21,7 +21,7 @@
 
 /**
  * @module Framework
- * @version 2.6.2
+ * @version 2.6.4
  */
 
 'use strict';
@@ -500,8 +500,8 @@ const controller_error_status = function(controller, status, problem) {
 function Framework() {
 
 	this.$id = null; // F.id ==> property
-	this.version = 2620;
-	this.version_header = '2.6.2';
+	this.version = 2630;
+	this.version_header = '2.6.3-1';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -13993,7 +13993,7 @@ function extend_response(PROTO) {
 		if (this.headersSent)
 			return this;
 
-		this.controller && this.$total_success();
+		this.controller && this.req.$total_success();
 
 		var res = this;
 		var req = this.req;
