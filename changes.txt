@@ -1,3 +1,8 @@
+======= 2.6.1 (HOTFIX)
+
+- fixed: timeout in `RESTBuilder` and `U.request()`
+- fixed: `F.merge()` a problem with `.js` or `.css` extension in some directory
+
 ======= 2.6.0
 
 - added: `F.config['default-errorbuilder-status']` a default HTTP status for all error builders default `200`

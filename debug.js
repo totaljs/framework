@@ -17,7 +17,6 @@ module.exports = function(opt) {
 };
 
 process.on('uncaughtException', e => e.toString().indexOf('ESRCH') == -1 && console.log(e));
-
 process.title = 'total: debug';
 
 function runapp() {
