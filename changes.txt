@@ -1,3 +1,7 @@
+======= 2.6.3 (HOTFIX)
+
+- update: `F.cluster` each operation checks whether cluster is activated
+
 ======= 2.6.2 (HOTFIX)
 
 - fixed: a critical bug with `debug.js`

@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkCluster
- * @version 2.6.0
+ * @version 2.6.3
  */
 
 const Cluster = require('cluster');
@@ -36,13 +36,18 @@ var OPTIONS = {};
 var THREADS = 0;
 
 exports.emit = function(name, data) {
-	CLUSTER_EMIT.name = name;
-	CLUSTER_EMIT.data = data;
-	process.send(CLUSTER_EMIT);
+	if (F.isCluster) {
+		CLUSTER_EMIT.name = name;
+		CLUSTER_EMIT.data = data;
+		process.send(CLUSTER_EMIT);
+	}
 	return F;
 };
 
 exports.request = function(name, data, callback, timeout) {
+
+	if (!F.isCluster)
+		return F;
 
 	if (typeof(data) === 'function') {
 		timeout = callback;
@@ -70,6 +75,9 @@ exports.response = function(name, callback) {
 };
 
 exports.req = function(message) {
+
+	if (!F.isCluster)
+		return F;
 
 	// message.id
 	// message.name
@@ -114,9 +122,11 @@ exports.restart = function(index) {
 			exports.restart(i);
 	} else {
 		var fork = FORKS[index];
-		fork.removeAllListeners();
-		fork.disconnect();
-		exec(index);
+		if (fork) {
+			fork.removeAllListeners();
+			fork.disconnect();
+			exec(index);
+		}
 	}
 };
 
