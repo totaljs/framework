@@ -12915,15 +12915,8 @@ WebSocketClient.prototype._decode = function(data) {
 	if (this.type !== 1) {
 		// JSON
 		if (this.type === 3) {
-			try {
-				this.container.config['default-websocket-encodedecode'] === true && (data = $decodeURIComponent(data));
-				data.isJSON() && this.container.emit('message', this, F.onParseJSON(data, this.req));
-			} catch (ex) {
-				if (DEBUG) {
-					this.errors++;
-					this.container.$events.error && this.container.emit('error', new Error('JSON parser: ' + ex.toString()), this);
-				}
-			}
+			this.container.config['default-websocket-encodedecode'] === true && (data = $decodeURIComponent(data));
+			data.isJSON() && this.container.emit('message', this, F.onParseJSON(data, this.req));
 		} else
 			this.container.emit('message', this, this.container.config['default-websocket-encodedecode'] === true ? $decodeURIComponent(data) : data);
 	} else
