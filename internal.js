@@ -751,7 +751,7 @@ function HttpFile() {
 	this.rem = true;
 }
 
-HttpFile.prototype.rename = function(filename, callback) {
+HttpFile.prototype.rename = HttpFile.prototype.move = function(filename, callback) {
 	var self = this;
 	Fs.rename(self.path, filename, function(err) {
 
@@ -782,7 +782,7 @@ HttpFile.prototype.copy = function(filename, callback) {
 	return self;
 };
 
-HttpFile.prototype.$$rename = function(filename) {
+HttpFile.prototype.$$rename = HttpFile.prototype.$$move = function(filename) {
 	var self = this;
 	return function(callback) {
 		return self.rename(filename, callback);
