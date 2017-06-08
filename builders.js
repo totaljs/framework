@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkBuilders
- * @version 2.6.0
+ * @version 2.6.3
  */
 
 'use strict';
@@ -31,7 +31,7 @@ const DEFAULT_SCHEMA = 'default';
 const SKIP = { $$schema: true, $$result: true, $$callback: true, $$async: true, $$index: true, $$repository: true, $$can: true, $$controller: true };
 const REGEXP_CLEAN_EMAIL = /\s/g;
 const REGEXP_CLEAN_PHONE = /\s|\.|\-|\(|\)/g;
-const REGEXP_NEWOPERATION = /^function(\s)?\([a-zA-Z0-9\$]+\)/g;
+const REGEXP_NEWOPERATION = /^function(\s)?\([a-zA-Z0-9\$]+\)/;
 const hasOwnProperty = Object.prototype.hasOwnProperty;
 const Qs = require('querystring');
 
