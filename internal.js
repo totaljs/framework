@@ -3174,6 +3174,7 @@ exports.restart = function() {
 	INDEXFILE = 0;
 };
 
+global.HttpFile = HttpFile;
 exports.viewEngineCompile = viewengine_dynamic;
 exports.viewEngine = viewengine_load;
 exports.parseLocalization = view_parse_localization;
