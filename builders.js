@@ -3988,6 +3988,7 @@ exports.Pagination = Pagination;
 exports.Page = Page;
 exports.UrlBuilder = UrlBuilder;
 exports.TransformBuilder = TransformBuilder;
+exports.SchemaOptions = SchemaOptions;
 global.RESTBuilder = RESTBuilder;
 global.ErrorBuilder = ErrorBuilder;
 global.TransformBuilder = TransformBuilder;

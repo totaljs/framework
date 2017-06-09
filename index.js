@@ -825,6 +825,7 @@ F.prototypes = function(fn) {
 	proto.Pagination = framework_builders.Pagination.prototype;
 	proto.RESTBuilder = framework_builders.RESTBuilder.prototype;
 	proto.SchemaBuilder = framework_builders.SchemaBuilder.prototype;
+	proto.SchemaOptions = framework_builders.SchemaOptions.prototype;
 	proto.TransformBuilder = framework_builders.TransformBuilder.prototype;
 	proto.UrlBuilder = framework_builders.UrlBuilder.prototype;
 	proto.WebSocket = WebSocket.prototype;
