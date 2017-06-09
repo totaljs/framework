@@ -146,6 +146,12 @@ Database.prototype.removeAllListeners = function(name) {
 	return this;
 };
 
+exports.Database = Database;
+exports.DatabaseBuilder = DatabaseBuilder;
+exports.DatabaseBuilder2 = DatabaseBuilder2;
+exports.DatabaseCounter = Counter;
+exports.DatabaseBinary = Binary;
+
 exports.load = function(name, filename) {
 	CLUSTER_LOCK.id = F.id;
 	CLUSTER_UNLOCK.id = F.id;

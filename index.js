@@ -809,6 +809,30 @@ Framework.prototype = {
 var framework = new Framework();
 global.framework = global.F = module.exports = framework;
 
+F.prototypes = function(fn) {
+	var proto = {};
+	proto.Chunker = framework_utils.Chunker.prototype;
+	proto.Controller = Controller.prototype;
+	proto.Database = framework_nosql.Database.prototype;
+	proto.DatabaseBinary = framework_nosql.DatabaseBinary.prototype;
+	proto.DatabaseBuilder = framework_nosql.DatabaseBuilder.prototype;
+	proto.DatabaseBuilder2 = framework_nosql.DatabaseBuilder2.prototype;
+	proto.DatabaseCounter = framework_nosql.DatabaseCounter.prototype;
+	proto.ErrorBuilder = framework_builders.ErrorBuilder.prototype;
+	proto.Image = framework_image.Image.prototype;
+	proto.Message = Mail.Message.prototype;
+	proto.Page = framework_builders.Page.prototype;
+	proto.Pagination = framework_builders.Pagination.prototype;
+	proto.RESTBuilder = framework_builders.RESTBuilder.prototype;
+	proto.SchemaBuilder = framework_builders.SchemaBuilder.prototype;
+	proto.TransformBuilder = framework_builders.TransformBuilder.prototype;
+	proto.UrlBuilder = framework_builders.UrlBuilder.prototype;
+	proto.WebSocket = WebSocket.prototype;
+	proto.WebSocketClient = WebSocketClient.prototype;
+	fn.call(proto, proto);
+	return F;
+};
+
 F.on = function(name, fn) {
 
 	if (name === 'init' || name === 'ready' || name === 'load') {

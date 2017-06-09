@@ -5552,6 +5552,8 @@ exports.chunker = function(name, max) {
 	return new Chunker(name, max);
 };
 
+exports.Chunker = Chunker;
+
 exports.ObjectToArray = function(obj) {
 	if (obj == null)
 		return EMPTYARRAY;
