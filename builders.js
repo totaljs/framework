@@ -2345,6 +2345,11 @@ SchemaInstance.prototype.$exec = function(name, helper, callback) {
 	return this;
 };
 
+SchemaInstance.prototype.$controller = function(controller) {
+	this.$$controller = controller;
+	return this;
+};
+
 SchemaInstance.prototype.$save = function(helper, callback) {
 	if (this.$$can && this.$$async)
 		this.$push('save', helper);

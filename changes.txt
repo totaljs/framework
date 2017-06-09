@@ -3,6 +3,8 @@
 - added: `HttpFile` is set in `global` for extending of prototype
 - added: `file.move()` a new alias for `file.rename()`
 - added: `F.prototypes(function(proto) {})` for extending all internal prototypes
+- added: `SchemaBuilderEntity.$$controller(new_controller)`
+- added: `EMPTYCONTROLLER` is a global variable
 
 - updated: `F.cluster` each operation checks whether cluster is activated
 

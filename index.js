@@ -92,6 +92,7 @@ Object.freeze(EMPTYREQUEST);
 
 global.EMPTYOBJECT = EMPTYOBJECT;
 global.EMPTYARRAY = EMPTYARRAY;
+var PROTORES, PROTOREQ;
 
 var RANGE = { start: 0, end: 0 };
 var HEADERS = {};
@@ -819,6 +820,9 @@ F.prototypes = function(fn) {
 	proto.DatabaseBuilder2 = framework_nosql.DatabaseBuilder2.prototype;
 	proto.DatabaseCounter = framework_nosql.DatabaseCounter.prototype;
 	proto.ErrorBuilder = framework_builders.ErrorBuilder.prototype;
+	proto.HttpFile = framework_internal.HttpFile.prototype;
+	proto.HttpRequest = PROTOREQ;
+	proto.HttpResponse = PROTORES;
 	proto.Image = framework_image.Image.prototype;
 	proto.Message = Mail.Message.prototype;
 	proto.Page = framework_builders.Page.prototype;
@@ -1070,7 +1074,7 @@ F.script = function(body, value, callback, param) {
 	var err;
 
 	try {
-		fn = new Function('next', 'value', 'now', 'var model=value;var global,require,process,GLOBAL,root,clearImmediate,clearInterval,clearTimeout,setImmediate,setInterval,setTimeout,console,$STRING,$VIEWCACHE,framework_internal,TransformBuilder,Pagination,Page,URLBuilder,UrlBuilder,SchemaBuilder,framework_builders,framework_utils,framework_mail,Image,framework_image,framework_nosql,Builders,U,utils,Utils,Mail,WTF,SOURCE,INCLUDE,MODULE,NOSQL,NOBIN,NOCOUNTER,NOSQLMEMORY,NOMEM,DATABASE,DB,CONFIG,INSTALL,UNINSTALL,RESOURCE,TRANSLATOR,LOG,LOGGER,MODEL,GETSCHEMA,CREATE,UID,TRANSFORM,MAKE,SINGLETON,NEWTRANSFORM,NEWSCHEMA,EACHSCHEMA,FUNCTION,ROUTING,SCHEDULE,OBSOLETE,DEBUG,TEST,RELEASE,is_client,is_server,F,framework,Controller,setTimeout2,clearTimeout2,String,Number,Boolean,Object,Function,Date,isomorphic,I,eval;UPTODATE,NEWOPERATION,OPERATION,$$$,EMIT,ON,$QUERY,$GET,$WORKFLOW,$TRANSFORM,$OPERATION,$MAKE,$CREATE,HttpFile;try{' + body + '}catch(e){next(e)}');
+		fn = new Function('next', 'value', 'now', 'var model=value;var global,require,process,GLOBAL,root,clearImmediate,clearInterval,clearTimeout,setImmediate,setInterval,setTimeout,console,$STRING,$VIEWCACHE,framework_internal,TransformBuilder,Pagination,Page,URLBuilder,UrlBuilder,SchemaBuilder,framework_builders,framework_utils,framework_mail,Image,framework_image,framework_nosql,Builders,U,utils,Utils,Mail,WTF,SOURCE,INCLUDE,MODULE,NOSQL,NOBIN,NOCOUNTER,NOSQLMEMORY,NOMEM,DATABASE,DB,CONFIG,INSTALL,UNINSTALL,RESOURCE,TRANSLATOR,LOG,LOGGER,MODEL,GETSCHEMA,CREATE,UID,TRANSFORM,MAKE,SINGLETON,NEWTRANSFORM,NEWSCHEMA,EACHSCHEMA,FUNCTION,ROUTING,SCHEDULE,OBSOLETE,DEBUG,TEST,RELEASE,is_client,is_server,F,framework,Controller,setTimeout2,clearTimeout2,String,Number,Boolean,Object,Function,Date,isomorphic,I,eval;UPTODATE,NEWOPERATION,OPERATION,$$$,EMIT,ON,$QUERY,$GET,$WORKFLOW,$TRANSFORM,$OPERATION,$MAKE,$CREATE,HttpFile;EMPTYCONTROLLER;try{' + body + '}catch(e){next(e)}');
 	} catch(e) {
 		err = e;
 	}
@@ -13273,6 +13277,8 @@ Backup.prototype.createDirectory = function(p, root) {
 
 function extend_request(PROTO) {
 
+	PROTOREQ = PROTO;
+
 	Object.defineProperty(PROTO, 'ip', {
 		get: function() {
 			if (this._ip)
@@ -13937,6 +13943,8 @@ function total_endmiddleware(req) {
 }
 
 function extend_response(PROTO) {
+
+	PROTORES = PROTO;
 
 	/**
 	 * Add a cookie into the response
@@ -15524,3 +15532,4 @@ EMPTYCONTROLLER.req.uri = EMPTYOBJECT;
 EMPTYCONTROLLER.req.query = EMPTYOBJECT;
 EMPTYCONTROLLER.req.body = EMPTYOBJECT;
 EMPTYCONTROLLER.req.files = EMPTYARRAY;
+global.EMPTYCONTROLLER = EMPTYCONTROLLER;
