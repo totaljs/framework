@@ -4637,6 +4637,7 @@ F.onMapping = function(url, def, ispublic, encode) {
 
 	return def;
 };
+
 F.download = F.snapshot = function(url, filename, callback) {
 
 	url = framework_internal.preparePath(url);
