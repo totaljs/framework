@@ -167,6 +167,14 @@ exports.memory = exports.inmemory = function(name, view) {
 	return INMEMORY[name] = true;
 };
 
+Database.prototype.get = function(name) {
+	return this.meta(name);
+};
+
+Database.prototype.set = function(name, value) {
+	return this.meta(name, value);
+};
+
 Database.prototype.meta = function(name, value) {
 	var self = this;
 	if (value === undefined)

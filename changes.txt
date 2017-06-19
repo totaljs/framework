@@ -5,6 +5,7 @@
 - added: `F.prototypes(function(proto) {})` for extending all internal prototypes
 - added: `SchemaBuilderEntity.$$controller(new_controller)`
 - added: `EMPTYCONTROLLER` is a global variable
+- added: new alias `NOSQL.set()` and `NOSQL.get()` for `NOSQL.meta()`
 
 - updated: `F.cluster` each operation checks whether cluster is activated
 - updated: default IP to `0.0.0.0`
