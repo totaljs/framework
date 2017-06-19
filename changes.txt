@@ -7,6 +7,7 @@
 - added: `EMPTYCONTROLLER` is a global variable
 
 - updated: `F.cluster` each operation checks whether cluster is activated
+- updated: default IP to `0.0.0.0`
 
 - fixed: new schemas with defined callback `function($)`
 

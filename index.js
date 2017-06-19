@@ -5850,7 +5850,7 @@ F.initialize = function(http, debug, options, restart) {
 	F.port = port || 8000;
 
 	if (ip !== null) {
-		F.ip = ip || F.config['default-ip'] || '127.0.0.1';
+		F.ip = ip || F.config['default-ip'] || '0.0.0.0';
 		if (F.ip === 'null' || F.ip === 'undefined' || F.ip === 'auto')
 			F.ip = undefined;
 	} else
