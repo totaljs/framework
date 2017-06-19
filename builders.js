@@ -180,9 +180,10 @@ SchemaBuilderEntity.prototype.define = function(name, type, required, custom) {
 
 	switch (this.schema[name].type) {
 		case 7:
-			if (!this.dependencies)
-				this.dependencies = [];
-			this.dependencies.push(name);
+			if (this.dependencies)
+				this.dependencies.push(name);
+			else
+				this.dependencies = [name];
 			break;
 	}
 
