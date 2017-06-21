@@ -502,7 +502,7 @@ function Framework() {
 
 	this.$id = null; // F.id ==> property
 	this.version = 2630;
-	this.version_header = '2.6.3-2';
+	this.version_header = '2.6.3-3';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -14021,6 +14021,14 @@ function extend_response(PROTO) {
 			return this;
 
 		this.controller && this.req.$total_success();
+
+		if (code instanceof Buffer) {
+			// express.js static file
+			if (!body && !type) {
+				this.end(code);
+				return this;
+			}
+		}
 
 		var res = this;
 		var req = this.req;
