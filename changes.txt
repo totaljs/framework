@@ -11,6 +11,7 @@
 - updated: default IP to `0.0.0.0`
 
 - fixed: new schemas with defined callback `function($)`
+- fixed: loading of `config-test` file (added rewriting of existing values)
 
 ======= 2.6.2 (HOTFIX)
 

@@ -5833,7 +5833,7 @@ F.initialize = function(http, debug, options, restart) {
 	F.$configure_versions();
 	F.$configure_workflows();
 	F.$cofnigure_sitemap();
-	F.isTest && F.$configure_configs('config-test', false);
+	F.isTest && F.$configure_configs('config-test', true);
 	F.cache.init();
 	F.consoledebug('init');
 	F.emit('init');
