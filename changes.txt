@@ -1,9 +1,9 @@
-======= 2.6.3 (HOTFIX)
+======= 2.6.3
 
 - added: `HttpFile` is set in `global` for extending of prototype
 - added: `file.move()` a new alias for `file.rename()`
 - added: `F.prototypes(function(proto) {})` for extending all internal prototypes
-- added: `SchemaBuilderEntity.$$controller(new_controller)`
+- added: `SchemaBuilderEntity.$controller(new_controller)`
 - added: `EMPTYCONTROLLER` is a global variable
 - added: new alias `NOSQL.set()` and `NOSQL.get()` for `NOSQL.meta()`
 
