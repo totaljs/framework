@@ -1349,6 +1349,7 @@ F.restful = function(url, flags, onQuery, onGet, onSave, onDelete) {
 		flags && tmp.push.apply(tmp, flags);
 		F.route(url, tmp, onSave);
 		tmp = ['put'];
+		cors['put'] = true;
 		flags && tmp.push.apply(tmp, flags);
 		F.route(restful, tmp, onSave);
 	}
