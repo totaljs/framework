@@ -1361,7 +1361,7 @@ F.restful = function(url, flags, onQuery, onGet, onSave, onDelete) {
 	}
 
 	if (index !== -1)
-		F.cors(url, Object.keys(cors), flags.indexOf('authorize') === -1);
+		F.cors(U.path(url) + '*', Object.keys(cors), flags.indexOf('authorize') === -1);
 
 	return F;
 };
@@ -1370,30 +1370,42 @@ F.restful = function(url, flags, onQuery, onGet, onSave, onDelete) {
 F.restful2 = function(url, flags, onQuery, onGet, onSave, onDelete) {
 
 	var tmp;
+	var index = flags ? flags.indexOf('cors') : -1;
+	var cors = {};
+
+	if (index !== -1)
+		flags.splice(index, 1);
 
 	if (onQuery) {
 		tmp = [];
+		cors['get'] = true;
 		flags && tmp.push.apply(tmp, flags);
 		F.route(url, tmp, onQuery);
 	}
 
 	if (onGet) {
 		tmp = [];
+		cors['get'] = true;
 		flags && tmp.push.apply(tmp, flags);
 		F.route(U.path(url) + '{id}', tmp, onGet);
 	}
 
 	if (onSave) {
 		tmp = ['post'];
+		cors['post'] = true;
 		flags && tmp.push.apply(tmp, flags);
 		F.route(url, tmp, onSave);
 	}
 
 	if (onDelete) {
 		tmp = ['delete'];
+		cors['delete'] = true;
 		flags && tmp.push.apply(tmp, flags);
 		F.route(url, tmp, onDelete);
 	}
+
+	if (index !== -1)
+		F.cors(U.path(url) + '*', Object.keys(cors), flags.indexOf('authorize') === -1);
 
 	return F;
 };
