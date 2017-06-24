@@ -13,6 +13,8 @@
 - fixed: new schemas with defined callback `function($)`
 - fixed: loading of `config-test` file (added rewriting of existing values)
 
+- improved: `cors` in `F.restful()` and `F.restful2()`
+
 ======= 2.6.2 (HOTFIX)
 
 - fixed: a critical bug with `debug.js`

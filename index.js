@@ -1321,22 +1321,30 @@ F.resize = function(url, fn, flags) {
 F.restful = function(url, flags, onQuery, onGet, onSave, onDelete) {
 
 	var tmp;
+	var index = flags ? flags.indexOf('cors') : -1;
+	var cors = {};
+
+	if (index !== -1)
+		flags.splice(index, 1);
 
 	if (onQuery) {
 		tmp = [];
 		flags && tmp.push.apply(tmp, flags);
 		F.route(url, tmp, onQuery);
+		cors['get'] = true;
 	}
 
 	var restful = U.path(url) + '{id}';
 
 	if (onGet) {
+		cors['get'] = true;
 		tmp = [];
 		flags && tmp.push.apply(tmp, flags);
 		F.route(restful, tmp, onGet);
 	}
 
 	if (onSave) {
+		cors['post'] = true;
 		tmp = ['post'];
 		flags && tmp.push.apply(tmp, flags);
 		F.route(url, tmp, onSave);
@@ -1346,10 +1354,14 @@ F.restful = function(url, flags, onQuery, onGet, onSave, onDelete) {
 	}
 
 	if (onDelete) {
+		cors['delete'] = true;
 		tmp = ['delete'];
 		flags && tmp.push.apply(tmp, flags);
 		F.route(restful, tmp, onDelete);
 	}
+
+	if (index !== -1)
+		F.cors(url, Object.keys(cors), flags.indexOf('authorize') === -1);
 
 	return F;
 };
