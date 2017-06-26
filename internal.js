@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkInternal
- * @version 2.6.0
+ * @version 2.7.0
  */
 
 'use strict';
@@ -54,6 +54,7 @@ const REG_SKIP_1 = /\(\'|\"/;
 const REG_SKIP_2 = /\,(\s)?\w+/;
 const REG_HEAD = /\<\/head\>/i;
 const REG_COMPONENTS = /\@{(\s)?(component|components)(\s)?\(/i;
+const REG_COMPONENTS_GROUP = /(\'|\")[a-z0-9]+(\'|\")/i;
 const HTTPVERBS = { 'get': true, 'post': true, 'options': true, 'put': true, 'delete': true, 'patch': true, 'upload': true, 'head': true, 'trace': true, 'propfind': true };
 const RENDERNOW = ['self.$import(', 'self.route', 'self.$js(', 'self.$css(', 'self.$favicon(', 'self.$script(', '$STRING(self.resource(', '$STRING(self.RESOURCE(', 'self.translate(', 'language', 'self.sitemap_url(', 'self.sitemap_name(', '$STRING(CONFIG(', '$STRING(config.', '$STRING(config[', '$STRING(config('];
 const REG_NOTRANSLATE = /@\{notranslate\}/gi;
@@ -1641,7 +1642,9 @@ function view_parse(content, minify, filename, controller) {
 	var index = 0;
 
 	if ((controller.$hasComponents || REG_COMPONENTS.test(content)) && REG_HEAD.test(content)) {
+
 		index = content.indexOf('@{import(');
+
 		var add = true;
 		while (index !== -1) {
 			var str = content.substring(index, content.indexOf(')', index));
@@ -1651,8 +1654,21 @@ function view_parse(content, minify, filename, controller) {
 			} else
 				index = content.indexOf('@{import(', index + str.length);
 		}
-		if (add)
-			content = content.replace(REG_HEAD, text => F.components.links + text);
+
+		if (add && controller.$hasComponents) {
+			if (controller.$hasComponents instanceof Array) {
+				content = content.replace(REG_HEAD, function(text) {
+					var str = '';
+					for (var i = 0; i < controller.$hasComponents.length; i++) {
+						var group = F.components.groups[controller.$hasComponents[i]];
+						if (group)
+							str += group.links;
+					}
+					return str + text;
+				});
+			} else
+				content = content.replace(REG_HEAD, text => F.components.links + text);
+		}
 	}
 
 	function escaper(value) {
@@ -2074,7 +2090,18 @@ function view_prepare(command, dynamicCommand, functions, controller) {
 			return 'self.$' + command + (command.indexOf('(') === -1 ? '()' : '');
 
 		case 'components':
-			controller.$hasComponents = true;
+
+			if (!controller.$hasComponents)
+				controller.$hasComponents = [];
+
+			if (controller.$hasComponents instanceof Array) {
+				var group = command.match(REG_COMPONENTS_GROUP);
+				if (group && group.length) {
+					group = group[0].toString().replace(/\'|\"'/g, '');
+					controller.$hasComponents.indexOf(group) === -1 && controller.$hasComponents.push(group);
+				}
+			}
+
 			return 'self.$' + command + (command.indexOf('(') === -1 ? '()' : '');
 
 		case 'index':

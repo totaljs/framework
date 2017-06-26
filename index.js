@@ -21,7 +21,7 @@
 
 /**
  * @module Framework
- * @version 2.6.3
+ * @version 2.7.0
  */
 
 'use strict';
@@ -501,8 +501,8 @@ const controller_error_status = function(controller, status, problem) {
 function Framework() {
 
 	this.$id = null; // F.id ==> property
-	this.version = 2630;
-	this.version_header = '2.6.3-3';
+	this.version = 2700;
+	this.version_header = '2.7.0-1';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -648,7 +648,7 @@ function Framework() {
 	this.controllers = {};
 	this.dependencies = {};
 	this.isomorphic = {};
-	this.components = { has: false, css: false, js: false, views: {}, instances: {}, version: null, links: '' };
+	this.components = { has: false, css: false, js: false, views: {}, instances: {}, version: null, links: '', groups: {} };
 	this.convertors = [];
 	this.tests = [];
 	this.errors = [];
@@ -3469,6 +3469,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 
 		var hash = '\n/*' + name.hash() + '*/\n';
 		var temporary = (F.id ? 'i-' + F.id + '_' : '') + 'components';
+
 		content = parseComponent(internal ? declaration : Fs.readFileSync(declaration).toString(ENCODING), name);
 		content.js && Fs.appendFileSync(F.path.temp(temporary + '.js'), hash + (F.config.debug ? component_debug(name, content.js, 'js') : content.js) + hash.substring(0, hash.length - 1));
 		content.css && Fs.appendFileSync(F.path.temp(temporary + '.css'), hash + (F.config.debug ? component_debug(name, content.css, 'css') : content.css) + hash.substring(0, hash.length - 1));
@@ -3497,18 +3498,16 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 				_owner = (packageName ? packageName + '@' : '') + type + '#' + name;
 				Fs.writeFileSync(filecomponent, parseDefer(content.install.trim()));
 				obj = require(filecomponent);
-
 				(function(name) {
 					setTimeout(function() {
 						delete require.cache[name];
 					}, 1000);
 				})(require.resolve(filecomponent));
-
 				obj.$owner = _owner;
 				F.temporary.owners[_owner] = true;
 				_controller = '';
 				F.components.instances[name] = obj;
-				obj = typeof(obj.install) === 'function' && obj.install(options || F.config[_owner], name);
+				obj && typeof(obj.install) === 'function' && obj.install(options || F.config[_owner], name);
 			} catch(e) {
 				F.error(e, 'F.install(\'component\', \'{0}\')'.format(name));
 			}
@@ -3528,6 +3527,27 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 					}, 1000);
 				})(require.resolve(declaration));
 			}
+		}
+
+		if (obj && obj.group) {
+			key = obj.group.hash();
+			temporary += '_g' + key;
+			tmp = F.components.groups[obj.group];
+			if (!tmp)
+				tmp = F.components.groups[obj.group] = {};
+
+			if (content.js) {
+				Fs.appendFileSync(F.path.temp(temporary + '.js'), hash + (F.config.debug ? component_debug(name, content.js, 'js') : content.js) + hash.substring(0, hash.length - 1));
+				tmp.js = true;
+			}
+
+			if (content.css) {
+				Fs.appendFileSync(F.path.temp(temporary + '.css'), hash + (F.config.debug ? component_debug(name, content.css, 'css') : content.css) + hash.substring(0, hash.length - 1));
+				tmp.css = true;
+			}
+
+			tmp.version = F.datetime.getTime();
+			tmp.links = (tmp.js ? '<script src="{0}js?group={2}&version={1}"></script>'.format(link, tmp.version, key) : '') + (tmp.css ? '<link type="text/css" rel="stylesheet" href="{0}css?group={2}&version={1}" />'.format(link, tmp.version, key) : '');
 		}
 
 		!skipEmit && setTimeout(function() {
@@ -4079,7 +4099,7 @@ F.$restart = function() {
 		F.schedules = [];
 		F.isLoaded = false;
 		F.isRestarted = false;
-		F.components = { has: false, css: false, js: false, views: {}, instances: {}, version: null, links: '' };
+		F.components = { has: false, css: false, js: false, views: {}, instances: {}, version: null, links: '', groups: {} };
 
 		F.routes = {
 			sitemap: null,
@@ -4452,14 +4472,44 @@ F.uninstall = function(type, name, options, skipEmit, packageName) {
 			data = Fs.readFileSync(F.path.temp(temporary + '.css')).toString('utf-8');
 			index = data.indexOf(beg);
 			if (index !== -1) {
-				data = data.substring(0, index) + data.substring(data.indexOf(end, index +end.length) + end.length);
+				data = data.substring(0, index) + data.substring(data.indexOf(end, index + end.length) + end.length);
 				Fs.writeFileSync(F.path.temp(temporary + '.css'), data);
 				is = true;
 			}
 		}
 
+		if (obj.group) {
+			temporary += '_g' + obj.group.hash();
+			tmp = F.components.groups[obj.group];
+			if (tmp) {
+
+				if (tmp.js) {
+					data = Fs.readFileSync(F.path.temp(temporary + '.js')).toString('utf-8');
+					index = data.indexOf(beg);
+					if (index !== -1) {
+						data = data.substring(0, index) + data.substring(data.indexOf(end, index + end.length) + end.length);
+						Fs.writeFileSync(F.path.temp(temporary + '.js'), data);
+						is = true;
+					}
+				}
+
+				if (tmp.css) {
+					data = Fs.readFileSync(F.path.temp(temporary + '.css')).toString('utf-8');
+					index = data.indexOf(beg);
+					if (index !== -1) {
+						data = data.substring(0, index) + data.substring(data.indexOf(end, index + end.length) + end.length);
+						Fs.writeFileSync(F.path.temp(temporary + '.css'), data);
+						is = true;
+					}
+				}
+
+				tmp.version = F.datetime.getTime();
+			}
+		}
+
 		if (is)
-			F.components.version = U.GUID(5);
+			F.components.version = F.datetime.getTime();
+
 		F.consoledebug('uninstall', type + '#' + name);
 	}
 
@@ -9514,10 +9564,6 @@ Controller.prototype.component = function(name, settings) {
 	return '';
 };
 
-Controller.prototype.components = function() {
-	return this;
-};
-
 Controller.prototype.$components = function(group, settings) {
 
 	if (group) {
@@ -14383,7 +14429,7 @@ function extend_response(PROTO) {
 
 			if (F.components.has && F.components[req.extension] && req.uri.pathname === F.config['static-url-components'] + req.extension) {
 				res.noCompress = true;
-				filename = F.path.temp('components.' + req.extension);
+				filename = F.path.temp('components' + (req.query.group ? '_g' + req.query.group : '') + '.' + req.extension);
 			}
 
 			res.options.filename = filename;
