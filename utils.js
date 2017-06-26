@@ -2616,7 +2616,7 @@ Date.prototype.format = function(format, resource) {
 				return (self.getMonth() + 1);
 			case 'ddd':
 				var m = DAYS[self.getDay()];
-				return (F.resource(resource, m) || m).substring(0, 3);
+				return (F.resource(resource, m) || m).substring(0, 2).toUpperCase();
 			case 'dddd':
 				var m = DAYS[self.getDay()];
 				return (F.resource(resource, m) || m);
