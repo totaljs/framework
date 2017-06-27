@@ -16,6 +16,7 @@
 - fixed: loading of `config-test` file (added rewriting of existing values)
 
 - improved: `cors` in `F.restful()` and `F.restful2()`
+- improved: `auto-vendor-prefixes`
 
 ======= 2.6.2 (HOTFIX)
 

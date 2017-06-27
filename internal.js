@@ -952,6 +952,15 @@ function autoprefixer(value) {
 			continue;
 		}
 
+		if (name === 'font-smoothing') {
+			updated = plus + delimiter;
+			updated += plus.replacer('font-smoothing', '-webkit-font-smoothing') + delimiter;
+			updated += plus.replacer('font-smoothing', '-moz-osx-font-smoothing');
+			value = value.replacer(property, '@[[' + output.length + ']]');
+			output.push(updated);
+			continue;
+		}
+
 		if (name === 'background' || name === 'background-image') {
 			if (property.indexOf('linear-gradient') === -1)
 				continue;
