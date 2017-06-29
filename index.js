@@ -11363,12 +11363,11 @@ Controller.prototype.content = function(body, type, headers) {
 		else
 			res.options.type = CT_JSON;
 
-		body = tmp;
-		F.stats.response.errorBuilder++;
-
 		if (body.status !== 200)
 			res.options.code = body.status;
 
+		body = tmp;
+		F.stats.response.errorBuilder++;
 	} else
 		res.options.type = type || CT_TEXT;
 
