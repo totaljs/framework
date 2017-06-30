@@ -72,6 +72,7 @@ const ALPHA_INDEX = { '&lt': '<', '&gt': '>', '&quot': '"', '&apos': '\'', '&amp
 const EMPTYARRAY = [];
 const EMPTYOBJECT = [];
 const NODEVERSION = parseFloat(process.version.toString().replace('v', '').replace(/\./g, ''));
+const STREAMPIPE = { end: false };
 
 Object.freeze(EMPTYARRAY);
 Object.freeze(EMPTYOBJECT);
@@ -411,7 +412,7 @@ exports.keywords = function(content, forSearch, alternative, max_count, max_leng
  * @param  {Number} timeout Request timeout.
  * return {Boolean}
  */
-exports.request = function(url, flags, data, callback, cookies, headers, encoding, timeout) {
+exports.request = function(url, flags, data, callback, cookies, headers, encoding, timeout, files) {
 
 	// No data (data is optional argument)
 	if (typeof(data) === 'function') {
@@ -492,7 +493,11 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 					break;
 
 				case 'upload':
-					headers['Content-Type'] = 'multipart/form-data';
+					type = 4;
+					options.upload = true;
+					options.files = files || EMPTYARRAY;
+					options.boundary = '----totaljs' + Math.random().toString(16).substring(2);
+					headers['Content-Type'] = 'multipart/form-data; boundary=' + options.boundary;
 					break;
 
 				case 'post':
@@ -514,7 +519,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 	else
 		method = 'GET';
 
-	if (type !== 3) {
+	if (type < 3) {
 		if (typeof(data) !== 'string')
 			data = type === 1 ? JSON.stringify(data) : Qs.stringify(data);
 		else if (data[0] === '?')
@@ -526,10 +531,11 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 		}
 	}
 
-	if (data) {
+	if (data && type !== 4) {
 		options.data = data instanceof Buffer ? data : exports.createBuffer(data, ENCODING);
 		headers['Content-Length'] = options.data.length;
-	}
+	} else
+		options.data = data;
 
 	if (cookies) {
 		var builder = '';
@@ -584,8 +590,48 @@ function request_call(uri, options) {
 	});
 
 	req.on('response', (response) => response.req = req);
-	req.end(options.data);
+
+	if (options.upload) {
+		options.first = true;
+		options.files.wait(function(file, next) {
+			// next();
+			request_writefile(req, options, file, next);
+		}, function() {
+
+			var keys = Object.keys(options.data);
+			for (var i = 0, length = keys.length; i < length; i++) {
+				var value = options.data[keys[i]];
+				if (value != null) {
+					req.write((options.first ? '' : NEWLINE) + '--' + options.boundary + NEWLINE + 'Content-Disposition: form-data; name="' + keys[i] + '"' + NEWLINE + NEWLINE + encodeURIComponent(value.toString()));
+					if (options.first)
+						options.first = false;
+				}
+			}
+
+			req.end(NEWLINE + '--' + options.boundary + '--');
+		});
+	} else
+		req.end(options.data);
 }
+
+function request_writefile(req, options, file, next) {
+
+	req.write((options.first ? '' : NEWLINE) + '--' + options.boundary + NEWLINE + 'Content-Disposition: form-data; name="' + file.name + '"; filename="' + exports.getName(file.filename) + '"' + NEWLINE + 'Content-Type: ' + exports.getContentType(exports.getExtension(file.filename)) + NEWLINE + NEWLINE);
+
+	if (options.first)
+		options.first = false;
+
+	// Is Buffer
+	if (file.buffer) {
+		req.write(file.buffer);
+		next();
+	} else {
+		var stream = Fs.createReadStream(file.filename);
+		stream.once('close', next);
+		stream.pipe(req, STREAMPIPE);
+	}
+}
+
 
 function request_response(res, uri, options) {
 
