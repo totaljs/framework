@@ -107,6 +107,9 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory) {
 	var tmp;
 	var close = 0;
 	var rm;
+	var fn_close = function() {
+		close--;
+	};
 
 	// Replaces the EMPTYARRAY and EMPTYOBJECT in index.js
 	req.files = [];
@@ -124,6 +127,10 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory) {
 	parser.initWithBoundary(boundary);
 
 	parser.onPartBegin = function() {
+
+		if (req.buffer_exceeded)
+			return;
+
 		// Temporary data
 		tmp = new HttpFile();
 		tmp.$data = framework_utils.createBufferSize();
@@ -153,6 +160,13 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory) {
 		if (tmp.$step !== 0)
 			return;
 
+		// UNKNOWN ERROR, maybe attack
+		if (header.indexOf('form-data; ') === -1) {
+			req.buffer_exceeded = true;
+			!tmp.$is && destroyStream(stream);
+			return;
+		}
+
 		header = parse_multipart_header(header);
 
 		tmp.$step = 1;
@@ -166,11 +180,6 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory) {
 
 		tmp.filename = header[1];
 		tmp.path = path + (INDEXFILE++) + '.bin';
-
-		stream = Fs.createWriteStream(tmp.path, WRITESTREAM);
-		stream.once('close', () => close--);
-		stream.once('error', () => close--);
-		close++;
 	};
 
 	parser.onPartData = function(buffer, start, end) {
@@ -185,7 +194,6 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory) {
 
 		if (size >= maximumSize) {
 			req.buffer_exceeded = true;
-
 			if (rm)
 				rm.push(tmp.path);
 			else
@@ -233,6 +241,10 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory) {
 
 		req.files.push(tmp);
 		F.$events['upload-begin'] && F.emit('upload-begin', req, tmp);
+		close++;
+		stream = Fs.createWriteStream(tmp.path, WRITESTREAM);
+		stream.once('close', fn_close);
+		stream.once('error', fn_close);
 		stream.write(data);
 		tmp.length += length;
 	};
@@ -270,6 +282,7 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory) {
 	};
 
 	parser.onEnd = function() {
+
 		if (close) {
 			setImmediate(parser.onEnd);
 		} else {
