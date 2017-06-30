@@ -6,11 +6,13 @@
 - added: `SchemaBuilderEntity.$controller(new_controller)`
 - added: `EMPTYCONTROLLER` is a global variable
 - added: new alias `NOSQL.set()` and `NOSQL.get()` for `NOSQL.meta()`
+- added: `RESTBuilder.file(name, filename, [buffer])` supports uploading files
+- added: a small protection for multipart data
 
 - updated: __IMPORTANT__ components (framework can render css/js from specific group)
 - updated: `F.cluster` each operation checks whether cluster is activated
 - updated: default IP to `0.0.0.0`
-- updated: `Date.prototype.format()` with `ddd` renders name of day with 2 capital letters
+- updated: `Date.prototype.format()` with `ddd` renders name of day with 2 capital letter
 
 - fixed: new schemas with defined callback `function($)`
 - fixed: loading of `config-test` file (added rewriting of existing values)
@@ -18,6 +20,7 @@
 
 - improved: `cors` in `F.restful()` and `F.restful2()`
 - improved: `auto-vendor-prefixes`
+- improved: parsing files from multipart data
 
 ======= 2.6.2 (HOTFIX)
 
