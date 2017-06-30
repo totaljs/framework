@@ -12,7 +12,7 @@
 - updated: __IMPORTANT__ components (framework can render css/js from specific group)
 - updated: `F.cluster` each operation checks whether cluster is activated
 - updated: default IP to `0.0.0.0`
-- updated: `Date.prototype.format()` with `ddd` renders name of day with 2 capital letter
+- updated: `Date.prototype.format()` with `ddd` renders name of day with 2 capital letters
 
 - fixed: new schemas with defined callback `function($)`
 - fixed: loading of `config-test` file (added rewriting of existing values)
