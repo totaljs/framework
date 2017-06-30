@@ -828,6 +828,7 @@ F.prototypes = function(fn) {
 	proto.Page = framework_builders.Page.prototype;
 	proto.Pagination = framework_builders.Pagination.prototype;
 	proto.RESTBuilder = framework_builders.RESTBuilder.prototype;
+	proto.RESTBuilderResponse = framework_builders.RESTBuilderResponse.prototype;
 	proto.SchemaBuilder = framework_builders.SchemaBuilder.prototype;
 	proto.SchemaOptions = framework_builders.SchemaOptions.prototype;
 	proto.TransformBuilder = framework_builders.TransformBuilder.prototype;
