@@ -1,9 +1,13 @@
-var assert = require('assert');
+TEST('plain get', '/get', function(builder) {
+	builder.exec(function(err, response) {
+		FAIL(JSON.stringify(response) !== '{}');
+		FAIL(JSON.stringify(response) !== '{OK}', 'NEVIEM');
+	});
+});
 
-exports.run = function(framework) {
-
-  framework.assert('plain get', '/get', ['GET', 'JSON'], function(error, data, code, headers, cookies, name) {
-    assert.ok(code === 200, name);
-  });
-
-};
+TEST('upload', '/upload', function(builder) {
+	builder.file('file1', '/users/petersirka/desktop/aaa.txt');
+	builder.exec(function(err, response) {
+		OK(response.name === 'aaa.txt');
+	});
+});
