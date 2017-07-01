@@ -3674,6 +3674,22 @@ RESTBuilder.prototype.origin = function(value) {
 	return this;
 };
 
+RESTBuilder.prototype.robot = function() {
+	if (this.$headers['User-Agent'])
+		this.$headers['User-Agent'] += ' Bot';
+	else
+		this.$headers['User-Agent'] = 'Bot';
+	return this;
+};
+
+RESTBuilder.prototype.mobile = function() {
+	if (this.$headers['User-Agent'])
+		this.$headers['User-Agent'] += ' iPhone';
+	else
+		this.$headers['User-Agent'] = 'iPhone';
+	return this;
+};
+
 RESTBuilder.prototype.put = function(data) {
 	if (this.$method !== 'put') {
 		this.$flags = null;
