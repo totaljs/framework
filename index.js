@@ -6088,8 +6088,6 @@ F.mode = function(http, name, options) {
 			debug = true;
 			break;
 
-		case 'test':
-		case 'testing':
 		case 'test-debug':
 		case 'debug-test':
 		case 'testing-debug':
@@ -6097,12 +6095,15 @@ F.mode = function(http, name, options) {
 			F.isTest = true;
 			break;
 
+		case 'test':
+		case 'testing':
 		case 'test-release':
 		case 'release-test':
 		case 'testing-release':
 		case 'test-production':
 		case 'testing-production':
 			debug = false;
+			F.isTest = true;
 			break;
 	}
 
