@@ -14864,12 +14864,6 @@ process.on('uncaughtException', function(e) {
 		return;
 	}
 
-	if (F.isTest) {
-		// HACK: this method is created dynamically in F.testing();
-		F.testContinue && F.testContinue(e);
-		return;
-	}
-
 	F.error(e, '', null);
 });
 

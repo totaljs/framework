@@ -8,6 +8,52 @@ T.results = [];
 T.running = false;
 T.immediate = null;
 
+function NEXT() {
+
+	T.immediate && clearImmediate(T.immediate);
+	T.immediate = null;
+
+	var fn = T.current ? T.current.items.shift() : null;
+
+	if (fn != null) {
+		fn();
+		return;
+	}
+
+	if (T.current) {
+		T.results.push(T.current);
+		console.log('');
+	}
+
+	var test = F.tests.tests.shift();
+	if (test == null) {
+
+		console.log('===================== RESULTS ======================');
+		console.log('');
+		console.log('> Passed .........', T.countok + '/' + T.count);
+		console.log('> Failed ' + (T.countno ? '[x] .....' : '.........'), T.countno + '/' + T.count);
+		console.log('');
+
+		F.isTest = false;
+		F.emit('test-end', T);
+
+		// DONE
+		setTimeout(function() {
+			F.kill(T.countno ? 1 : 0);
+		}, 1000);
+
+	} else {
+
+		T.current = test;
+		T.current.results = [];
+
+		console.log('[ TEST: ' + test.filename.substring(F.path.root('/tests/').length) + (T.current.priority ? ' ({0}) ]'.format(T.current.priority) : ' ]'));
+		console.log('');
+
+		NEXT();
+	}
+}
+
 global.TEST = function(name, url, scope) {
 
 	if (typeof(url) === 'function') {
@@ -57,52 +103,6 @@ global.OK = function(is, description) {
 	logger(is ? false : true, T.currentname, description);
 	T.immediate && clearImmediate(T.immediate);
 	T.immediate = setImmediate(NEXT);
-};
-
-global.NEXT = function() {
-
-	T.immediate && clearImmediate(T.immediate);
-	T.immediate = null;
-
-	var fn = T.current ? T.current.items.shift() : null;
-
-	if (fn != null) {
-		fn();
-		return;
-	}
-
-	if (T.current) {
-		T.results.push(T.current);
-		console.log('');
-	}
-
-	var test = F.tests.tests.shift();
-	if (test == null) {
-
-		console.log('===================== RESULTS ======================');
-		console.log('');
-		console.log('> Passed .........', T.countok + '/' + T.count);
-		console.log('> Failed ' + (T.countno ? '[x] .....' : '.........'), T.countno + '/' + T.count);
-		console.log('');
-
-		F.isTest = false;
-		F.emit('test-end', T);
-
-		// DONE
-		setTimeout(function() {
-			F.kill(T.countno ? 1 : 0);
-		}, 1000);
-
-	} else {
-
-		T.current = test;
-		T.current.results = [];
-
-		console.log('[ TEST: ' + test.filename.substring(F.path.root('/tests/').length) + (T.current.priority ? ' ({0}) ]'.format(T.current.priority) : ' ]'));
-		console.log('');
-
-		NEXT();
-	}
 };
 
 exports.load = function() {
