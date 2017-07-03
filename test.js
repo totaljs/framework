@@ -139,6 +139,6 @@ function logger(fail, name, description) {
 	} else {
 		T.countok++;
 		T.current.countok++;
-		console.info('Passed '.padRight(20, '.') + ' ' + name + ' [' + time + ']');
+		console.info('Passed '.padRight(20, '.') + ' ' + name + (description ? (' <' + description + '>') : '') + ' [' + time + ']');
 	}
-};
+}
