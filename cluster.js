@@ -178,23 +178,26 @@ function exec(index) {
 	(function(fork) {
 		setTimeout(function() {
 			OPTIONS.options.id = fork.$id;
-			fork.send({ type: 'init', id: fork.$id, mode: OPTIONS.mode, options: OPTIONS.options, threads: OPTIONS.count, index: index });
+			fork.send({ TYPE: 'init', id: fork.$id, mode: OPTIONS.mode, options: OPTIONS.options, threads: OPTIONS.count, index: index });
 		}, fork.$id * 500);
 	})(fork);
 }
 
 function fork() {
 	require('./index');
-	F.once('message', function(msg) {
-		switch (msg.type) {
-			case 'init':
-				CLUSTER_EMIT.id = msg.id;
-				CLUSTER_REQ.id = msg.id;
-				CLUSTER_RES.id = msg.id;
-				THREADS = msg.threads;
-				F.http(msg.mode, msg.options);
-				F.isCluster = true;
-				break;
-		}
-	});
+	F.on('message', on_init);
+}
+
+function on_init(msg) {
+	switch (msg.TYPE) {
+		case 'init':
+			CLUSTER_EMIT.id = msg.id;
+			CLUSTER_REQ.id = msg.id;
+			CLUSTER_RES.id = msg.id;
+			THREADS = msg.threads;
+			F.http(msg.mode, msg.options);
+			F.isCluster = true;
+			F.removeListener(msg.TYPE, on_init);
+			break;
+	}
 }
