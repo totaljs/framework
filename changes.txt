@@ -21,6 +21,7 @@
 - fixed: new schemas with defined callback `function($)`
 - fixed: loading of `config-test` file (added rewriting of existing values)
 - fixed: Total.js version in `debug.js`
+- fixed: cluster initialization
 
 - improved: `cors` in `F.restful()` and `F.restful2()`
 - improved: `auto-vendor-prefixes`
