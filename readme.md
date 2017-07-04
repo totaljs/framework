@@ -18,7 +18,6 @@ $ npm install -g total.js
 - [Total.js Messenger](https://www.totaljs.com/messenger/)
 - [Total.js Dashboard](https://www.totaljs.com/dashboard/)
 - [Total.js BlogEngine](https://www.totaljs.com/blogengine/)
-- [NoSQL embedded database explorer](https://www.totaljs.com/nosql/)
 - [Total.js SuperAdmin](https://www.totaljs.com/superadmin/)
 - [Total.js Eshop](http://www.totaljs.com/eshop/)
 - [Total.js CMS](http://www.totaljs.com/cms/)
@@ -28,6 +27,7 @@ $ npm install -g total.js
 - [Total.js AppDesigner](https://www.totaljs.com/designer/)
 - [Total.js modules and packages](https://modules.totaljs.com)
 - [Total.js +100 examples](https://github.com/totaljs/examples)
+- [NoSQL embedded database explorer](https://www.totaljs.com/nosql/)
 - [Download +89 client-side components (jComponent) for free](https://componentator.com)
 
 ---

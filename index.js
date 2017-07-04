@@ -21,7 +21,7 @@
 
 /**
  * @module Framework
- * @version 2.6.2
+ * @version 2.7.0
  */
 
 'use strict';
@@ -92,6 +92,7 @@ Object.freeze(EMPTYREQUEST);
 
 global.EMPTYOBJECT = EMPTYOBJECT;
 global.EMPTYARRAY = EMPTYARRAY;
+var PROTORES, PROTOREQ;
 
 var RANGE = { start: 0, end: 0 };
 var HEADERS = {};
@@ -297,6 +298,9 @@ global.SCHEDULE = (date, each, fn, param) => F.schedule(date, each, fn, param);
 global.FINISHED = (stream, callback) => framework_internal.onFinished(stream, callback);
 global.DESTROY = (stream) => framework_internal.destroyStream(stream);
 global.UID = () => UIDGENERATOR.date + (++UIDGENERATOR.index).padLeft(4, '0') + UIDGENERATOR.instance + (UIDGENERATOR.index % 2 ? 1 : 0);
+global.ROUTE = (a, b, c, d, e) => F.route(a, b, c, d, e);
+global.WEBSOCKET = (a, b, c, d) => F.websocket(a, b, c, d);
+global.FILE = (a, b, c) => F.file(a, b, c);
 
 global.$CREATE = function(schema) {
 	schema = parseSchema(schema);
@@ -500,8 +504,8 @@ const controller_error_status = function(controller, status, problem) {
 function Framework() {
 
 	this.$id = null; // F.id ==> property
-	this.version = 2620;
-	this.version_header = '2.6.2';
+	this.version = 2700;
+	this.version_header = '2.7.0';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -647,7 +651,7 @@ function Framework() {
 	this.controllers = {};
 	this.dependencies = {};
 	this.isomorphic = {};
-	this.components = { has: false, css: false, js: false, views: {}, instances: {}, version: null, links: '' };
+	this.components = { has: false, css: false, js: false, views: {}, instances: {}, version: null, links: '', groups: {} };
 	this.convertors = [];
 	this.tests = [];
 	this.errors = [];
@@ -808,6 +812,35 @@ Framework.prototype = {
 
 var framework = new Framework();
 global.framework = global.F = module.exports = framework;
+
+F.prototypes = function(fn) {
+	var proto = {};
+	proto.Chunker = framework_utils.Chunker.prototype;
+	proto.Controller = Controller.prototype;
+	proto.Database = framework_nosql.Database.prototype;
+	proto.DatabaseBinary = framework_nosql.DatabaseBinary.prototype;
+	proto.DatabaseBuilder = framework_nosql.DatabaseBuilder.prototype;
+	proto.DatabaseBuilder2 = framework_nosql.DatabaseBuilder2.prototype;
+	proto.DatabaseCounter = framework_nosql.DatabaseCounter.prototype;
+	proto.ErrorBuilder = framework_builders.ErrorBuilder.prototype;
+	proto.HttpFile = framework_internal.HttpFile.prototype;
+	proto.HttpRequest = PROTOREQ;
+	proto.HttpResponse = PROTORES;
+	proto.Image = framework_image.Image.prototype;
+	proto.Message = Mail.Message.prototype;
+	proto.Page = framework_builders.Page.prototype;
+	proto.Pagination = framework_builders.Pagination.prototype;
+	proto.RESTBuilder = framework_builders.RESTBuilder.prototype;
+	proto.RESTBuilderResponse = framework_builders.RESTBuilderResponse.prototype;
+	proto.SchemaBuilder = framework_builders.SchemaBuilder.prototype;
+	proto.SchemaOptions = framework_builders.SchemaOptions.prototype;
+	proto.TransformBuilder = framework_builders.TransformBuilder.prototype;
+	proto.UrlBuilder = framework_builders.UrlBuilder.prototype;
+	proto.WebSocket = WebSocket.prototype;
+	proto.WebSocketClient = WebSocketClient.prototype;
+	fn.call(proto, proto);
+	return F;
+};
 
 F.on = function(name, fn) {
 
@@ -1045,7 +1078,7 @@ F.script = function(body, value, callback, param) {
 	var err;
 
 	try {
-		fn = new Function('next', 'value', 'now', 'var model=value;var global,require,process,GLOBAL,root,clearImmediate,clearInterval,clearTimeout,setImmediate,setInterval,setTimeout,console,$STRING,$VIEWCACHE,framework_internal,TransformBuilder,Pagination,Page,URLBuilder,UrlBuilder,SchemaBuilder,framework_builders,framework_utils,framework_mail,Image,framework_image,framework_nosql,Builders,U,utils,Utils,Mail,WTF,SOURCE,INCLUDE,MODULE,NOSQL,NOBIN,NOCOUNTER,NOSQLMEMORY,NOMEM,DATABASE,DB,CONFIG,INSTALL,UNINSTALL,RESOURCE,TRANSLATOR,LOG,LOGGER,MODEL,GETSCHEMA,CREATE,UID,TRANSFORM,MAKE,SINGLETON,NEWTRANSFORM,NEWSCHEMA,EACHSCHEMA,FUNCTION,ROUTING,SCHEDULE,OBSOLETE,DEBUG,TEST,RELEASE,is_client,is_server,F,framework,Controller,setTimeout2,clearTimeout2,String,Number,Boolean,Object,Function,Date,isomorphic,I,eval;UPTODATE,NEWOPERATION,OPERATION,$$$,EMIT,ON,$QUERY,$GET,$WORKFLOW,$TRANSFORM,$OPERATION,$MAKE,$CREATE;try{' + body + '}catch(e){next(e)}');
+		fn = new Function('next', 'value', 'now', 'var model=value;var global,require,process,GLOBAL,root,clearImmediate,clearInterval,clearTimeout,setImmediate,setInterval,setTimeout,console,$STRING,$VIEWCACHE,framework_internal,TransformBuilder,Pagination,Page,URLBuilder,UrlBuilder,SchemaBuilder,framework_builders,framework_utils,framework_mail,Image,framework_image,framework_nosql,Builders,U,utils,Utils,Mail,WTF,SOURCE,INCLUDE,MODULE,NOSQL,NOBIN,NOCOUNTER,NOSQLMEMORY,NOMEM,DATABASE,DB,CONFIG,INSTALL,UNINSTALL,RESOURCE,TRANSLATOR,LOG,LOGGER,MODEL,GETSCHEMA,CREATE,UID,TRANSFORM,MAKE,SINGLETON,NEWTRANSFORM,NEWSCHEMA,EACHSCHEMA,FUNCTION,ROUTING,SCHEDULE,OBSOLETE,DEBUG,TEST,RELEASE,is_client,is_server,F,framework,Controller,setTimeout2,clearTimeout2,String,Number,Boolean,Object,Function,Date,isomorphic,I,eval;UPTODATE,NEWOPERATION,OPERATION,$$$,EMIT,ON,$QUERY,$GET,$WORKFLOW,$TRANSFORM,$OPERATION,$MAKE,$CREATE,HttpFile;EMPTYCONTROLLER,ROUTE,FILE,TEST,WEBSOCKET;try{' + body + '}catch(e){next(e)}');
 	} catch(e) {
 		err = e;
 	}
@@ -1292,35 +1325,48 @@ F.resize = function(url, fn, flags) {
 F.restful = function(url, flags, onQuery, onGet, onSave, onDelete) {
 
 	var tmp;
+	var index = flags ? flags.indexOf('cors') : -1;
+	var cors = {};
+
+	if (index !== -1)
+		flags.splice(index, 1);
 
 	if (onQuery) {
 		tmp = [];
 		flags && tmp.push.apply(tmp, flags);
 		F.route(url, tmp, onQuery);
+		cors['get'] = true;
 	}
 
 	var restful = U.path(url) + '{id}';
 
 	if (onGet) {
+		cors['get'] = true;
 		tmp = [];
 		flags && tmp.push.apply(tmp, flags);
 		F.route(restful, tmp, onGet);
 	}
 
 	if (onSave) {
+		cors['post'] = true;
 		tmp = ['post'];
 		flags && tmp.push.apply(tmp, flags);
 		F.route(url, tmp, onSave);
 		tmp = ['put'];
+		cors['put'] = true;
 		flags && tmp.push.apply(tmp, flags);
 		F.route(restful, tmp, onSave);
 	}
 
 	if (onDelete) {
+		cors['delete'] = true;
 		tmp = ['delete'];
 		flags && tmp.push.apply(tmp, flags);
 		F.route(restful, tmp, onDelete);
 	}
+
+	if (index !== -1)
+		F.cors(U.path(url) + '*', Object.keys(cors), flags.indexOf('authorize') === -1);
 
 	return F;
 };
@@ -1329,30 +1375,42 @@ F.restful = function(url, flags, onQuery, onGet, onSave, onDelete) {
 F.restful2 = function(url, flags, onQuery, onGet, onSave, onDelete) {
 
 	var tmp;
+	var index = flags ? flags.indexOf('cors') : -1;
+	var cors = {};
+
+	if (index !== -1)
+		flags.splice(index, 1);
 
 	if (onQuery) {
 		tmp = [];
+		cors['get'] = true;
 		flags && tmp.push.apply(tmp, flags);
 		F.route(url, tmp, onQuery);
 	}
 
 	if (onGet) {
 		tmp = [];
+		cors['get'] = true;
 		flags && tmp.push.apply(tmp, flags);
 		F.route(U.path(url) + '{id}', tmp, onGet);
 	}
 
 	if (onSave) {
 		tmp = ['post'];
+		cors['post'] = true;
 		flags && tmp.push.apply(tmp, flags);
 		F.route(url, tmp, onSave);
 	}
 
 	if (onDelete) {
 		tmp = ['delete'];
+		cors['delete'] = true;
 		flags && tmp.push.apply(tmp, flags);
 		F.route(url, tmp, onDelete);
 	}
+
+	if (index !== -1)
+		F.cors(U.path(url) + '*', Object.keys(cors), flags.indexOf('authorize') === -1);
 
 	return F;
 };
@@ -3415,6 +3473,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 
 		var hash = '\n/*' + name.hash() + '*/\n';
 		var temporary = (F.id ? 'i-' + F.id + '_' : '') + 'components';
+
 		content = parseComponent(internal ? declaration : Fs.readFileSync(declaration).toString(ENCODING), name);
 		content.js && Fs.appendFileSync(F.path.temp(temporary + '.js'), hash + (F.config.debug ? component_debug(name, content.js, 'js') : content.js) + hash.substring(0, hash.length - 1));
 		content.css && Fs.appendFileSync(F.path.temp(temporary + '.css'), hash + (F.config.debug ? component_debug(name, content.css, 'css') : content.css) + hash.substring(0, hash.length - 1));
@@ -3443,18 +3502,16 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 				_owner = (packageName ? packageName + '@' : '') + type + '#' + name;
 				Fs.writeFileSync(filecomponent, parseDefer(content.install.trim()));
 				obj = require(filecomponent);
-
 				(function(name) {
 					setTimeout(function() {
 						delete require.cache[name];
 					}, 1000);
 				})(require.resolve(filecomponent));
-
 				obj.$owner = _owner;
 				F.temporary.owners[_owner] = true;
 				_controller = '';
 				F.components.instances[name] = obj;
-				obj = typeof(obj.install) === 'function' && obj.install(options || F.config[_owner], name);
+				obj && typeof(obj.install) === 'function' && obj.install(options || F.config[_owner], name);
 			} catch(e) {
 				F.error(e, 'F.install(\'component\', \'{0}\')'.format(name));
 			}
@@ -3474,6 +3531,27 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 					}, 1000);
 				})(require.resolve(declaration));
 			}
+		}
+
+		if (obj && obj.group) {
+			key = obj.group.hash();
+			temporary += '_g' + key;
+			tmp = F.components.groups[obj.group];
+			if (!tmp)
+				tmp = F.components.groups[obj.group] = {};
+
+			if (content.js) {
+				Fs.appendFileSync(F.path.temp(temporary + '.js'), hash + (F.config.debug ? component_debug(name, content.js, 'js') : content.js) + hash.substring(0, hash.length - 1));
+				tmp.js = true;
+			}
+
+			if (content.css) {
+				Fs.appendFileSync(F.path.temp(temporary + '.css'), hash + (F.config.debug ? component_debug(name, content.css, 'css') : content.css) + hash.substring(0, hash.length - 1));
+				tmp.css = true;
+			}
+
+			tmp.version = F.datetime.getTime();
+			tmp.links = (tmp.js ? '<script src="{0}js?group={2}&version={1}"></script>'.format(link, tmp.version, key) : '') + (tmp.css ? '<link type="text/css" rel="stylesheet" href="{0}css?group={2}&version={1}" />'.format(link, tmp.version, key) : '');
 		}
 
 		!skipEmit && setTimeout(function() {
@@ -4025,7 +4103,7 @@ F.$restart = function() {
 		F.schedules = [];
 		F.isLoaded = false;
 		F.isRestarted = false;
-		F.components = { has: false, css: false, js: false, views: {}, instances: {}, version: null, links: '' };
+		F.components = { has: false, css: false, js: false, views: {}, instances: {}, version: null, links: '', groups: {} };
 
 		F.routes = {
 			sitemap: null,
@@ -4398,14 +4476,44 @@ F.uninstall = function(type, name, options, skipEmit, packageName) {
 			data = Fs.readFileSync(F.path.temp(temporary + '.css')).toString('utf-8');
 			index = data.indexOf(beg);
 			if (index !== -1) {
-				data = data.substring(0, index) + data.substring(data.indexOf(end, index +end.length) + end.length);
+				data = data.substring(0, index) + data.substring(data.indexOf(end, index + end.length) + end.length);
 				Fs.writeFileSync(F.path.temp(temporary + '.css'), data);
 				is = true;
 			}
 		}
 
+		if (obj.group) {
+			temporary += '_g' + obj.group.hash();
+			tmp = F.components.groups[obj.group];
+			if (tmp) {
+
+				if (tmp.js) {
+					data = Fs.readFileSync(F.path.temp(temporary + '.js')).toString('utf-8');
+					index = data.indexOf(beg);
+					if (index !== -1) {
+						data = data.substring(0, index) + data.substring(data.indexOf(end, index + end.length) + end.length);
+						Fs.writeFileSync(F.path.temp(temporary + '.js'), data);
+						is = true;
+					}
+				}
+
+				if (tmp.css) {
+					data = Fs.readFileSync(F.path.temp(temporary + '.css')).toString('utf-8');
+					index = data.indexOf(beg);
+					if (index !== -1) {
+						data = data.substring(0, index) + data.substring(data.indexOf(end, index + end.length) + end.length);
+						Fs.writeFileSync(F.path.temp(temporary + '.css'), data);
+						is = true;
+					}
+				}
+
+				tmp.version = F.datetime.getTime();
+			}
+		}
+
 		if (is)
-			F.components.version = U.GUID(5);
+			F.components.version = F.datetime.getTime();
+
 		F.consoledebug('uninstall', type + '#' + name);
 	}
 
@@ -4608,6 +4716,7 @@ F.onMapping = function(url, def, ispublic, encode) {
 
 	return def;
 };
+
 F.download = F.snapshot = function(url, filename, callback) {
 
 	url = framework_internal.preparePath(url);
@@ -5803,7 +5912,7 @@ F.initialize = function(http, debug, options, restart) {
 	F.$configure_versions();
 	F.$configure_workflows();
 	F.$cofnigure_sitemap();
-	F.isTest && F.$configure_configs('config-test', false);
+	F.isTest && F.$configure_configs('config-test', true);
 	F.cache.init();
 	F.consoledebug('init');
 	F.emit('init');
@@ -5820,7 +5929,7 @@ F.initialize = function(http, debug, options, restart) {
 	F.port = port || 8000;
 
 	if (ip !== null) {
-		F.ip = ip || F.config['default-ip'] || '127.0.0.1';
+		F.ip = ip || F.config['default-ip'] || '0.0.0.0';
 		if (F.ip === 'null' || F.ip === 'undefined' || F.ip === 'auto')
 			F.ip = undefined;
 	} else
@@ -5891,8 +6000,6 @@ F.initialize = function(http, debug, options, restart) {
 
 			if (F.isTest) {
 				var sleep = options.sleep || options.delay || 1000;
-				global.TEST = true;
-				global.assert = require('assert');
 				setTimeout(() => F.test(true, options.tests || options.test), sleep);
 				return F;
 			}
@@ -5981,8 +6088,6 @@ F.mode = function(http, name, options) {
 			debug = true;
 			break;
 
-		case 'test':
-		case 'testing':
 		case 'test-debug':
 		case 'debug-test':
 		case 'testing-debug':
@@ -5990,12 +6095,15 @@ F.mode = function(http, name, options) {
 			F.isTest = true;
 			break;
 
+		case 'test':
+		case 'testing':
 		case 'test-release':
 		case 'release-test':
 		case 'testing-release':
 		case 'test-production':
 		case 'testing-production':
 			debug = false;
+			F.isTest = true;
 			break;
 	}
 
@@ -6959,269 +7067,6 @@ F.viewCompile = function(body, model, layout, repository, language) {
 };
 
 /**
- * Add a test function or test request
- * @param {String} name Test name.
- * @param {Url or Function} url Url or Callback function(next, name) {}.
- * @param {Array} flags Routed flags (GET, POST, PUT, XHR, JSON ...).
- * @param {Function} callback Callback.
- * @param {Object or String} data Request data.
- * @param {Object} cookies Request cookies.
- * @param {Object} headers Additional headers.
- * @return {Framework}
- */
-F.assert = function(name, url, flags, callback, data, cookies, headers) {
-
-	// !IMPORTANT! F.testsPriority is created dynamically in F.test()
-	if (typeof(url) === 'function') {
-		F.tests.push({ name: _test + ': ' + name, priority: F.testsPriority, index: F.tests.length, run: url });
-		return F;
-	}
-
-	var method = 'GET';
-	var length = 0;
-
-	if (headers)
-		headers = U.extend({}, headers);
-	else
-		headers = {};
-
-	if (flags instanceof Array) {
-		length = flags.length;
-		for (var i = 0; i < length; i++) {
-
-			switch (flags[i].toLowerCase()) {
-
-				case 'xhr':
-					headers['X-Requested-With'] = 'XMLHttpRequest';
-					break;
-
-				case 'referer':
-				case 'referrer':
-					headers['Referer'] = url;
-					break;
-
-				case 'json':
-					headers['Content-Type'] = CT_JSON;
-					break;
-
-				case 'xml':
-					headers['Content-Type'] = 'text/xml';
-					break;
-
-				case 'get':
-				case 'head':
-				case 'options':
-					method = flags[i].toUpperCase();
-
-					if (data) {
-						if (typeof(data) === 'object')
-							url += '?' + Qs.stringify(data);
-						else
-							url += data[0] === '?' ? data : '?' + data;
-						data = '';
-					}
-
-					break;
-
-				case 'upload':
-					headers['Content-Type'] = 'multipart/form-data';
-					break;
-
-				case 'robot':
-					if (headers['User-Agent'])
-						headers['User-Agent'] += ' Bot';
-					else
-						headers['User-Agent'] = 'Bot';
-					break;
-
-				case 'mobile':
-					if (headers['User-Agent'])
-						headers['User-Agent'] += ' iPhone';
-					else
-						headers['User-Agent'] = 'iPhone';
-					break;
-
-				case 'post':
-				case 'put':
-				case 'delete':
-
-					method = flags[i].toUpperCase();
-
-					if (!headers['Content-Type'])
-						headers['Content-Type'] = 'application/x-www-form-urlencoded';
-
-					break;
-
-				case 'raw':
-					headers['Content-Type'] = 'application/octet-stream';
-					break;
-
-			}
-		}
-	}
-
-	headers['X-Assertion-Testing'] = '1';
-
-	if (cookies) {
-		var builder = [];
-		var keys = Object.keys(cookies);
-
-		length = keys.length;
-
-		for (var i = 0; i < length; i++)
-			builder.push(keys[i] + '=' + encodeURIComponent(cookies[keys[i]]));
-
-		if (builder.length)
-			headers['Cookie'] = builder.join('; ');
-	}
-
-	var obj = { name: _test + ': ' + name, priority: F.testsPriority, index: F.tests.length, url: url, callback: callback, method: method, data: data, headers: headers };
-	F.tests.push(obj);
-	return F;
-};
-
-/**
- * Test in progress
- * @private
- * @param {Boolean} stop Stop application.
- * @param {Function} callback Callback.
- * @return {Framework}
- */
-F.testing = function(stop, callback) {
-
-	if (stop === undefined)
-		stop = true;
-
-
-	// !IMPORTANT! F.isTestError is created dynamically
-	//             F.testsFiles too
-
-	if (!F.tests.length) {
-
-		if (!F.testsFiles.length) {
-			callback && callback(F.isTestError === true);
-			stop && F.stop(F.isTestError ? 1 : 0);
-			return F;
-		}
-
-		var file = F.testsFiles.shift();
-		file && file.fn.call(F, F);
-		F.testing(stop, callback);
-		return F;
-	}
-
-	var logger = function(name, start, err) {
-
-		var time = Math.floor(new Date() - start) + ' ms';
-
-		if (err) {
-			F.isTestError = true;
-			console.error('Failed [x] '.padRight(20, '.') + ' ' + name + ' <' + (err.name.toLowerCase().indexOf('assert') !== -1 ? err.toString() : err.stack) + '> [' + time + ']');
-		} else
-			console.info('Passed '.padRight(20, '.') + ' ' + name + ' [' + time + ']');
-	};
-
-	var test = F.tests.shift();
-	var key = test.name;
-	var beg = new Date();
-
-	if (test.run) {
-
-		// Is used in: process.on('uncaughtException')
-		F.testContinue = function(err) {
-			logger(key, beg, err);
-			if (err)
-				F.testsNO++;
-			else
-				F.testsOK++;
-			F.testing(stop, callback);
-		};
-
-		test.run.call(F, function() {
-			logger(key, beg);
-			F.testsOK++;
-			F.testing(stop, callback);
-		}, key);
-
-		return F;
-	}
-
-	var response = function(res) {
-
-		res.on('data', function(chunk) {
-			if (this._buffer) {
-				CONCAT[0] = this._buffer;
-				CONCAT[1] = chunk;
-				this._buffer = Buffer.concat(CONCAT);
-			} else
-				this._buffer = chunk;
-		});
-
-		res.on('end', function() {
-
-			res.removeAllListeners();
-
-			var cookie = res.headers['cookie'] || '';
-			var cookies = {};
-
-			if (cookie.length) {
-
-				var arr = cookie.split(';');
-				var length = arr.length;
-
-				for (var i = 0; i < length; i++) {
-					var c = arr[i].trim().split('=');
-					cookies[c.shift()] = unescape(c.join('='));
-				}
-			}
-
-			try {
-				test.callback(null, this._buffer ? this._buffer.toString(ENCODING) : '', res.statusCode, res.headers, cookies, key);
-				logger(key, beg);
-				F.testsOK++;
-			} catch (e) {
-				F.testsNO++;
-				logger(key, beg, e);
-			}
-
-			F.testing(stop, callback);
-		});
-
-		res.resume();
-	};
-
-	var options = Parser.parse((test.url.startsWith('http://', true) || test.url.startsWith('https://', true) ? '' : 'http://' + F.ip + ':' + F.port) + test.url);
-	if (typeof(test.data) === 'function')
-		test.data = test.data();
-
-	if (typeof(test.data) !== 'string')
-		test.data = (test.headers[HEADER_TYPE] || '').indexOf('json') !== -1 ? JSON.stringify(test.data) : Qs.stringify(test.data);
-
-	var buf;
-
-	if (test.data && test.data.length) {
-		buf = U.createBuffer(test.data);
-		test.headers[HEADER_LENGTH] = buf.length;
-	}
-
-	options.method = test.method;
-	options.headers = test.headers;
-
-	var con = options.protocol === 'https:' ? require('https') : http;
-	var req = test.method === 'POST' || test.method === 'PUT' || test.method === 'DELETE' || test.method === 'PATCH' ? con.request(options, response) : con.get(options, response);
-
-	req.on('error', function(e) {
-		req.removeAllListeners();
-		logger(key, beg, e);
-		F.testsNO++;
-		F.testing(stop, callback);
-	});
-
-	req.end(buf);
-	return F;
-};
-
-/**
  * Load tests
  * @private
  * @param {Boolean} stop Stop framework after end.
@@ -7229,141 +7074,10 @@ F.testing = function(stop, callback) {
  * @param {Function()} cb
  * @return {Framework}
  */
-F.test = function(stop, names, cb) {
-
-	if (stop === undefined)
-		stop = true;
-
-	if (typeof(names) === 'function') {
-		cb = names;
-		names = [];
-	} else
-		names = names || [];
-
-	var counter = 0;
-	var dir = F.config['directory-tests'];
+F.test = function() {
 	F.isTest = true;
 	F.$configure_configs('config-test', true);
-
-	var logger = function(name, start, err) {
-		var time = Math.floor(new Date() - start) + ' ms';
-		if (err) {
-			F.isTestError = true;
-			console.error('Failed [x] '.padRight(20, '.') + ' ' + name + ' <' + (err.name.toLowerCase().indexOf('assert') !== -1 ? err.toString() : err.stack) + '> [' + time + ']');
-		} else
-			console.info('Passed '.padRight(20, '.') + ' ' + name + ' [' + time + ']');
-	};
-
-	var results = function() {
-		if (!F.testsResults.length)
-			return;
-		console.log('');
-		console.log('===================== RESULTS ======================');
-		console.log('');
-		F.testsResults.forEach((fn) => fn());
-	};
-
-	F.testsFiles = [];
-
-	if (!F.testsResults)
-		F.testsResults = [];
-
-	if (!F.testsOK)
-		F.testsOK = 0;
-
-	if (!F.testsNO)
-		F.testsNO = 0;
-
-	U.ls(U.combine(dir), function(files) {
-		files.forEach(function(filePath) {
-			var name = Path.relative(U.combine(dir), filePath);
-			var filename = filePath;
-			var ext = U.getExtension(filename).toLowerCase();
-			if (ext !== 'js')
-				return;
-
-			if (names.length && names.indexOf(name.substring(0, name.length - 3)) === -1)
-				return;
-
-			var test = require(filename);
-			var beg = new Date();
-
-			try {
-				var isRun = test.run !== undefined;
-				var isInstall = test.isInstall !== undefined;
-				var isInit = test.init !== undefined;
-				var isLoad = test.load !== undefined;
-
-				_test = name;
-
-				if (test.disabled === true)
-					return;
-
-				F.testsPriority = test.priority === undefined ? F.testsFiles.length : test.priority;
-				var fn = null;
-
-				if (isRun)
-					fn = test.run;
-				else if (isInstall)
-					fn = test.install;
-				else if (isInit)
-					fn = test.init;
-				else if (isLoad)
-					fn = test.loadname;
-
-				if (fn === null)
-					return;
-
-				F.testsFiles.push({ name: name, index: F.testsFiles.length, fn: fn, priority: F.testsPriority });
-
-				test.usage && (function(test) {
-					F.testsResults.push(() => test.usage(name));
-				})(test);
-
-				counter++;
-
-			} catch (ex) {
-				logger('Failed', beg, ex);
-			}
-		});
-
-		_test = '';
-
-		F.testsFiles.sort(function(a, b) {
-
-			if (a.priority > b.priority)
-				return 1;
-
-			if (a.priority < b.priority)
-				return -1;
-
-			if (a.index > b.index)
-				return 1;
-
-			if (a.index < b.index)
-				return -1;
-
-			return 0;
-		});
-
-		setTimeout(function() {
-			console.log('===================== TESTING ======================');
-			counter && console.log('');
-			F.testing(stop, function() {
-
-				console.log('');
-				console.log('Passed ...', F.testsOK);
-				console.log('Failed ...', F.testsNO);
-				console.log('');
-
-				results();
-				F.isTest = false;
-				console.log('');
-				cb && cb();
-			});
-		}, 100);
-	});
-
+	require('./test').load();
 	return F;
 };
 
@@ -9459,10 +9173,6 @@ Controller.prototype.component = function(name, settings) {
 	return '';
 };
 
-Controller.prototype.components = function() {
-	return this;
-};
-
 Controller.prototype.$components = function(group, settings) {
 
 	if (group) {
@@ -11262,12 +10972,11 @@ Controller.prototype.content = function(body, type, headers) {
 		else
 			res.options.type = CT_JSON;
 
-		body = tmp;
-		F.stats.response.errorBuilder++;
-
 		if (body.status !== 200)
 			res.options.code = body.status;
 
+		body = tmp;
+		F.stats.response.errorBuilder++;
 	} else
 		res.options.type = type || CT_TEXT;
 
@@ -12915,15 +12624,8 @@ WebSocketClient.prototype._decode = function(data) {
 	if (this.type !== 1) {
 		// JSON
 		if (this.type === 3) {
-			try {
-				this.container.config['default-websocket-encodedecode'] === true && (data = $decodeURIComponent(data));
-				data.isJSON() && this.container.emit('message', this, F.onParseJSON(data, this.req));
-			} catch (ex) {
-				if (DEBUG) {
-					this.errors++;
-					this.container.$events.error && this.container.emit('error', new Error('JSON parser: ' + ex.toString()), this);
-				}
-			}
+			this.container.config['default-websocket-encodedecode'] === true && (data = $decodeURIComponent(data));
+			data.isJSON() && this.container.emit('message', this, F.onParseJSON(data, this.req));
 		} else
 			this.container.emit('message', this, this.container.config['default-websocket-encodedecode'] === true ? $decodeURIComponent(data) : data);
 	} else
@@ -13254,6 +12956,8 @@ Backup.prototype.createDirectory = function(p, root) {
 // *********************************************************************************
 
 function extend_request(PROTO) {
+
+	PROTOREQ = PROTO;
 
 	Object.defineProperty(PROTO, 'ip', {
 		get: function() {
@@ -13920,6 +13624,8 @@ function total_endmiddleware(req) {
 
 function extend_response(PROTO) {
 
+	PROTORES = PROTO;
+
 	/**
 	 * Add a cookie into the response
 	 * @param {String} name
@@ -13993,7 +13699,15 @@ function extend_response(PROTO) {
 		if (this.headersSent)
 			return this;
 
-		this.controller && this.$total_success();
+		this.controller && this.req.$total_success();
+
+		if (code instanceof Buffer) {
+			// express.js static file
+			if (!body && !type) {
+				this.end(code);
+				return this;
+			}
+		}
 
 		var res = this;
 		var req = this.req;
@@ -14323,7 +14037,7 @@ function extend_response(PROTO) {
 
 			if (F.components.has && F.components[req.extension] && req.uri.pathname === F.config['static-url-components'] + req.extension) {
 				res.noCompress = true;
-				filename = F.path.temp('components.' + req.extension);
+				filename = F.path.temp('components' + (req.query.group ? '_g' + req.query.group : '') + '.' + req.extension);
 			}
 
 			res.options.filename = filename;
@@ -15151,12 +14865,6 @@ process.on('uncaughtException', function(e) {
 		return;
 	}
 
-	if (F.isTest) {
-		// HACK: this method is created dynamically in F.testing();
-		F.testContinue && F.testContinue(e);
-		return;
-	}
-
 	F.error(e, '', null);
 });
 
@@ -15506,3 +15214,4 @@ EMPTYCONTROLLER.req.uri = EMPTYOBJECT;
 EMPTYCONTROLLER.req.query = EMPTYOBJECT;
 EMPTYCONTROLLER.req.body = EMPTYOBJECT;
 EMPTYCONTROLLER.req.files = EMPTYARRAY;
+global.EMPTYCONTROLLER = EMPTYCONTROLLER;

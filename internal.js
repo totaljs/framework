@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkInternal
- * @version 2.6.0
+ * @version 2.7.0
  */
 
 'use strict';
@@ -54,6 +54,7 @@ const REG_SKIP_1 = /\(\'|\"/;
 const REG_SKIP_2 = /\,(\s)?\w+/;
 const REG_HEAD = /\<\/head\>/i;
 const REG_COMPONENTS = /\@{(\s)?(component|components)(\s)?\(/i;
+const REG_COMPONENTS_GROUP = /(\'|\")[a-z0-9]+(\'|\")/i;
 const HTTPVERBS = { 'get': true, 'post': true, 'options': true, 'put': true, 'delete': true, 'patch': true, 'upload': true, 'head': true, 'trace': true, 'propfind': true };
 const RENDERNOW = ['self.$import(', 'self.route', 'self.$js(', 'self.$css(', 'self.$favicon(', 'self.$script(', '$STRING(self.resource(', '$STRING(self.RESOURCE(', 'self.translate(', 'language', 'self.sitemap_url(', 'self.sitemap_name(', '$STRING(CONFIG(', '$STRING(config.', '$STRING(config[', '$STRING(config('];
 const REG_NOTRANSLATE = /@\{notranslate\}/gi;
@@ -106,6 +107,9 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory) {
 	var tmp;
 	var close = 0;
 	var rm;
+	var fn_close = function() {
+		close--;
+	};
 
 	// Replaces the EMPTYARRAY and EMPTYOBJECT in index.js
 	req.files = [];
@@ -123,6 +127,10 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory) {
 	parser.initWithBoundary(boundary);
 
 	parser.onPartBegin = function() {
+
+		if (req.buffer_exceeded)
+			return;
+
 		// Temporary data
 		tmp = new HttpFile();
 		tmp.$data = framework_utils.createBufferSize();
@@ -152,6 +160,13 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory) {
 		if (tmp.$step !== 0)
 			return;
 
+		// UNKNOWN ERROR, maybe attack
+		if (header.indexOf('form-data; ') === -1) {
+			req.buffer_exceeded = true;
+			!tmp.$is && destroyStream(stream);
+			return;
+		}
+
 		header = parse_multipart_header(header);
 
 		tmp.$step = 1;
@@ -165,11 +180,6 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory) {
 
 		tmp.filename = header[1];
 		tmp.path = path + (INDEXFILE++) + '.bin';
-
-		stream = Fs.createWriteStream(tmp.path, WRITESTREAM);
-		stream.once('close', () => close--);
-		stream.once('error', () => close--);
-		close++;
 	};
 
 	parser.onPartData = function(buffer, start, end) {
@@ -184,7 +194,6 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory) {
 
 		if (size >= maximumSize) {
 			req.buffer_exceeded = true;
-
 			if (rm)
 				rm.push(tmp.path);
 			else
@@ -232,6 +241,10 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory) {
 
 		req.files.push(tmp);
 		F.$events['upload-begin'] && F.emit('upload-begin', req, tmp);
+		close++;
+		stream = Fs.createWriteStream(tmp.path, WRITESTREAM);
+		stream.once('close', fn_close);
+		stream.once('error', fn_close);
 		stream.write(data);
 		tmp.length += length;
 	};
@@ -269,6 +282,7 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory) {
 	};
 
 	parser.onEnd = function() {
+
 		if (close) {
 			setImmediate(parser.onEnd);
 		} else {
@@ -751,7 +765,7 @@ function HttpFile() {
 	this.rem = true;
 }
 
-HttpFile.prototype.rename = function(filename, callback) {
+HttpFile.prototype.rename = HttpFile.prototype.move = function(filename, callback) {
 	var self = this;
 	Fs.rename(self.path, filename, function(err) {
 
@@ -782,7 +796,7 @@ HttpFile.prototype.copy = function(filename, callback) {
 	return self;
 };
 
-HttpFile.prototype.$$rename = function(filename) {
+HttpFile.prototype.$$rename = HttpFile.prototype.$$move = function(filename) {
 	var self = this;
 	return function(callback) {
 		return self.rename(filename, callback);
@@ -946,6 +960,15 @@ function autoprefixer(value) {
 			if (isNaN(opacity))
 				continue;
 			updated += 'filter:alpha(opacity=' + Math.floor(opacity * 100) + ')';
+			value = value.replacer(property, '@[[' + output.length + ']]');
+			output.push(updated);
+			continue;
+		}
+
+		if (name === 'font-smoothing') {
+			updated = plus + delimiter;
+			updated += plus.replacer('font-smoothing', '-webkit-font-smoothing') + delimiter;
+			updated += plus.replacer('font-smoothing', '-moz-osx-font-smoothing');
 			value = value.replacer(property, '@[[' + output.length + ']]');
 			output.push(updated);
 			continue;
@@ -1641,7 +1664,9 @@ function view_parse(content, minify, filename, controller) {
 	var index = 0;
 
 	if ((controller.$hasComponents || REG_COMPONENTS.test(content)) && REG_HEAD.test(content)) {
+
 		index = content.indexOf('@{import(');
+
 		var add = true;
 		while (index !== -1) {
 			var str = content.substring(index, content.indexOf(')', index));
@@ -1651,8 +1676,21 @@ function view_parse(content, minify, filename, controller) {
 			} else
 				index = content.indexOf('@{import(', index + str.length);
 		}
-		if (add)
-			content = content.replace(REG_HEAD, text => F.components.links + text);
+
+		if (add && controller.$hasComponents) {
+			if (controller.$hasComponents instanceof Array) {
+				content = content.replace(REG_HEAD, function(text) {
+					var str = '';
+					for (var i = 0; i < controller.$hasComponents.length; i++) {
+						var group = F.components.groups[controller.$hasComponents[i]];
+						if (group)
+							str += group.links;
+					}
+					return str + text;
+				});
+			} else
+				content = content.replace(REG_HEAD, text => F.components.links + text);
+		}
 	}
 
 	function escaper(value) {
@@ -2074,7 +2112,18 @@ function view_prepare(command, dynamicCommand, functions, controller) {
 			return 'self.$' + command + (command.indexOf('(') === -1 ? '()' : '');
 
 		case 'components':
-			controller.$hasComponents = true;
+
+			if (!controller.$hasComponents)
+				controller.$hasComponents = [];
+
+			if (controller.$hasComponents instanceof Array) {
+				var group = command.match(REG_COMPONENTS_GROUP);
+				if (group && group.length) {
+					group = group[0].toString().replace(/\'|\"'/g, '');
+					controller.$hasComponents.indexOf(group) === -1 && controller.$hasComponents.push(group);
+				}
+			}
+
 			return 'self.$' + command + (command.indexOf('(') === -1 ? '()' : '');
 
 		case 'index':
@@ -3174,6 +3223,8 @@ exports.restart = function() {
 	INDEXFILE = 0;
 };
 
+global.HttpFile = HttpFile;
+exports.HttpFile = HttpFile;
 exports.viewEngineCompile = viewengine_dynamic;
 exports.viewEngine = viewengine_load;
 exports.parseLocalization = view_parse_localization;

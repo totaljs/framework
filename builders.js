@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkBuilders
- * @version 2.6.0
+ * @version 2.7.0
  */
 
 'use strict';
@@ -31,7 +31,7 @@ const DEFAULT_SCHEMA = 'default';
 const SKIP = { $$schema: true, $$result: true, $$callback: true, $$async: true, $$index: true, $$repository: true, $$can: true, $$controller: true };
 const REGEXP_CLEAN_EMAIL = /\s/g;
 const REGEXP_CLEAN_PHONE = /\s|\.|\-|\(|\)/g;
-const REGEXP_NEWOPERATION = /^function(\s)?\([a-zA-Z0-9\$]+\)/g;
+const REGEXP_NEWOPERATION = /^function(\s)?\([a-zA-Z0-9\$]+\)/;
 const hasOwnProperty = Object.prototype.hasOwnProperty;
 const Qs = require('querystring');
 
@@ -180,9 +180,10 @@ SchemaBuilderEntity.prototype.define = function(name, type, required, custom) {
 
 	switch (this.schema[name].type) {
 		case 7:
-			if (!this.dependencies)
-				this.dependencies = [];
-			this.dependencies.push(name);
+			if (this.dependencies)
+				this.dependencies.push(name);
+			else
+				this.dependencies = [name];
 			break;
 	}
 
@@ -2345,6 +2346,11 @@ SchemaInstance.prototype.$exec = function(name, helper, callback) {
 	return this;
 };
 
+SchemaInstance.prototype.$controller = function(controller) {
+	this.$$controller = controller;
+	return this;
+};
+
 SchemaInstance.prototype.$save = function(helper, callback) {
 	if (this.$$can && this.$$async)
 		this.$push('save', helper);
@@ -3538,6 +3544,7 @@ function async_wait(arr, onItem, onCallback, index) {
 }
 
 function RESTBuilder(url) {
+
 	this.$url = url;
 	this.$headers = { 'User-Agent': 'Total.js/v' + F.version_header, Accept: 'application/json, text/plain, text/plain, text/xml' };
 	this.$method = 'get';
@@ -3546,6 +3553,7 @@ function RESTBuilder(url) {
 	this.$schema;
 	this.$length = 0;
 	this.$transform = transforms['restbuilder_default'];
+	this.$files = null;
 
 	// this.$flags;
 	// this.$data = {};
@@ -3588,6 +3596,15 @@ RESTBuilder.prototype.url = function(url) {
 	if (url === undefined)
 		return this.$url;
 	this.$url = url;
+	return this;
+};
+
+RESTBuilder.prototype.file = function(name, filename, buffer) {
+	var obj = { name: name, filename: filename, buffer: buffer };
+	if (this.$files)
+		this.$files.push(obj);
+	else
+		this.$files = [obj];
 	return this;
 };
 
@@ -3654,6 +3671,22 @@ RESTBuilder.prototype.referer = RESTBuilder.prototype.referrer = function(value)
 
 RESTBuilder.prototype.origin = function(value) {
 	this.$headers['Origin'] = value;
+	return this;
+};
+
+RESTBuilder.prototype.robot = function() {
+	if (this.$headers['User-Agent'])
+		this.$headers['User-Agent'] += ' Bot';
+	else
+		this.$headers['User-Agent'] = 'Bot';
+	return this;
+};
+
+RESTBuilder.prototype.mobile = function() {
+	if (this.$headers['User-Agent'])
+		this.$headers['User-Agent'] += ' iPhone';
+	else
+		this.$headers['User-Agent'] = 'iPhone';
 	return this;
 };
 
@@ -3814,12 +3847,26 @@ RESTBuilder.prototype.stream = function(callback) {
 	return U.download(self.$url, flags, self.$data, callback, self.$cookies, self.$headers, undefined, self.$timeout);
 };
 
+RESTBuilder.prototype.file = function(name, filename) {
+	var self = this;
+	var obj = { name: name, filename: filename };
+	if (self.$files)
+		self.$files.push(obj);
+	else
+		self.$files = [obj];
+	return self;
+};
+
 RESTBuilder.prototype.exec = function(callback) {
 
 	if (!callback)
 		callback = NOOP;
 
 	var self = this;
+
+	if (self.$files && self.$method === 'get')
+		self.$method = 'post';
+
 	var flags = self.$flags ? self.$flags : [self.$method];
 	var key;
 
@@ -3829,14 +3876,19 @@ RESTBuilder.prototype.exec = function(callback) {
 		self.$length && flags.push('<' + self.$length);
 		self.$redirect === false && flags.push('noredirect');
 
-		switch (self.$type) {
-			case 1:
-				flags.push('json');
-				break;
-			case 3:
-				flags.push('xml');
-				break;
+		if (self.$files) {
+			flags.push('upload');
+		} else {
+			switch (self.$type) {
+				case 1:
+					flags.push('json');
+					break;
+				case 3:
+					flags.push('xml');
+					break;
+			}
 		}
+
 		self.$flags = flags;
 	}
 
@@ -3886,7 +3938,7 @@ RESTBuilder.prototype.exec = function(callback) {
 		callback(err, self.maketransform(output.value, output), output);
 		output.cache = true;
 
-	}, self.$cookies, self.$headers, undefined, self.$timeout);
+	}, self.$cookies, self.$headers, undefined, self.$timeout, self.$files);
 };
 
 function exec_removelisteners(evt) {
@@ -3988,7 +4040,9 @@ exports.Pagination = Pagination;
 exports.Page = Page;
 exports.UrlBuilder = UrlBuilder;
 exports.TransformBuilder = TransformBuilder;
+exports.SchemaOptions = SchemaOptions;
 global.RESTBuilder = RESTBuilder;
+global.RESTBuilderResponse = RESTBuilderResponse;
 global.ErrorBuilder = ErrorBuilder;
 global.TransformBuilder = TransformBuilder;
 global.Pagination = Pagination;

@@ -21,7 +21,7 @@
 
 /**
  * @module NoSQL
- * @version 2.6.0
+ * @version 2.7.0
  */
 
 'use strict';
@@ -146,6 +146,12 @@ Database.prototype.removeAllListeners = function(name) {
 	return this;
 };
 
+exports.Database = Database;
+exports.DatabaseBuilder = DatabaseBuilder;
+exports.DatabaseBuilder2 = DatabaseBuilder2;
+exports.DatabaseCounter = Counter;
+exports.DatabaseBinary = Binary;
+
 exports.load = function(name, filename) {
 	CLUSTER_LOCK.id = F.id;
 	CLUSTER_UNLOCK.id = F.id;
@@ -159,6 +165,14 @@ exports.memory = exports.inmemory = function(name, view) {
 	if (view)
 		name += '#' + view;
 	return INMEMORY[name] = true;
+};
+
+Database.prototype.get = function(name) {
+	return this.meta(name);
+};
+
+Database.prototype.set = function(name, value) {
+	return this.meta(name, value);
 };
 
 Database.prototype.meta = function(name, value) {
@@ -279,7 +293,7 @@ Database.prototype.free = function(force) {
 	self.counter.removeAllListeners(true);
 	self.binary.removeAllListeners(true);
 	self.removeAllListeners(true);
-	delete framework.databases[self.name];
+	delete F.databases[self.name];
 	return self;
 };
 
@@ -511,7 +525,7 @@ Database.prototype.$inmemory = function(view, callback) {
 	var self = this;
 
 	// Last usage
-	self.inmemorylastusage = global.framework ? global.framework.datetime : undefined;
+	self.inmemorylastusage = global.F ? global.F.datetime : undefined;
 
 	if (self.inmemory[view])
 		return callback();
@@ -2585,7 +2599,7 @@ Binary.prototype.insert = function(name, buffer, callback) {
 	header.fill(' ');
 	header.write(JSON.stringify(h));
 
-	var id = framework.datetime.format('yyMMddHHmm') + 'T' + framework_utils.GUID(5);
+	var id = F.datetime.format('yyMMddHHmm') + 'T' + framework_utils.GUID(5);
 	var key = self.db.name + '#' + id;
 	var stream = Fs.createWriteStream(Path.join(self.directory, key + EXTENSION_BINARY));
 
@@ -2608,7 +2622,7 @@ Binary.prototype.insert_stream = function(id, name, type, stream, callback) {
 	header.write(JSON.stringify(h));
 
 	if (!id)
-		id = framework.datetime.format('yyMMddHHmm') + 'T' + framework_utils.GUID(5);
+		id = F.datetime.format('yyMMddHHmm') + 'T' + framework_utils.GUID(5);
 
 	var key = self.db.name + '#' + id;
 	var writer = Fs.createWriteStream(framework_utils.join(self.directory, key + EXTENSION_BINARY));
@@ -2755,7 +2769,7 @@ Binary.prototype.clear = function(callback) {
 			response[i].substring(0, l) === key && pending.push(target + '/' + response[i]);
 
 		self.$events.clear && self.emit('clear', pending.length);
-		framework.unlink(pending, callback);
+		F.unlink(pending, callback);
 	});
 
 	return self;

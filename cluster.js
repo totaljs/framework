@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkCluster
- * @version 2.6.0
+ * @version 2.7.0
  */
 
 const Cluster = require('cluster');
@@ -36,13 +36,18 @@ var OPTIONS = {};
 var THREADS = 0;
 
 exports.emit = function(name, data) {
-	CLUSTER_EMIT.name = name;
-	CLUSTER_EMIT.data = data;
-	process.send(CLUSTER_EMIT);
+	if (F.isCluster) {
+		CLUSTER_EMIT.name = name;
+		CLUSTER_EMIT.data = data;
+		process.send(CLUSTER_EMIT);
+	}
 	return F;
 };
 
 exports.request = function(name, data, callback, timeout) {
+
+	if (!F.isCluster)
+		return F;
 
 	if (typeof(data) === 'function') {
 		timeout = callback;
@@ -70,6 +75,9 @@ exports.response = function(name, callback) {
 };
 
 exports.req = function(message) {
+
+	if (!F.isCluster)
+		return F;
 
 	// message.id
 	// message.name
@@ -114,9 +122,11 @@ exports.restart = function(index) {
 			exports.restart(i);
 	} else {
 		var fork = FORKS[index];
-		fork.removeAllListeners();
-		fork.disconnect();
-		exec(index);
+		if (fork) {
+			fork.removeAllListeners();
+			fork.disconnect();
+			exec(index);
+		}
 	}
 };
 
@@ -168,23 +178,26 @@ function exec(index) {
 	(function(fork) {
 		setTimeout(function() {
 			OPTIONS.options.id = fork.$id;
-			fork.send({ type: 'init', id: fork.$id, mode: OPTIONS.mode, options: OPTIONS.options, threads: OPTIONS.count, index: index });
+			fork.send({ TYPE: 'init', id: fork.$id, mode: OPTIONS.mode, options: OPTIONS.options, threads: OPTIONS.count, index: index });
 		}, fork.$id * 500);
 	})(fork);
 }
 
 function fork() {
 	require('./index');
-	F.once('message', function(msg) {
-		switch (msg.type) {
-			case 'init':
-				CLUSTER_EMIT.id = msg.id;
-				CLUSTER_REQ.id = msg.id;
-				CLUSTER_RES.id = msg.id;
-				THREADS = msg.threads;
-				F.http(msg.mode, msg.options);
-				F.isCluster = true;
-				break;
-		}
-	});
+	F.on('message', on_init);
+}
+
+function on_init(msg) {
+	switch (msg.TYPE) {
+		case 'init':
+			CLUSTER_EMIT.id = msg.id;
+			CLUSTER_REQ.id = msg.id;
+			CLUSTER_RES.id = msg.id;
+			THREADS = msg.threads;
+			F.http(msg.mode, msg.options);
+			F.isCluster = true;
+			F.removeListener(msg.TYPE, on_init);
+			break;
+	}
 }
