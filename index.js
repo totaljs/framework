@@ -5894,6 +5894,9 @@ F.initialize = function(http, debug, options, restart) {
 	if (options.debug || options['allow-debug'])
 		F.config['allow-debug'] = true;
 
+	if (!F.config['directory-temp'])
+		F.config['directory-temp'] = '~' + U.path(Path.join(Os.tmpdir(), 'totaljs' + F.directory.hash()));
+
 	F.isHTTPS = typeof(http.STATUS_CODES) === 'undefined';
 	if (isNaN(port) && typeof(port) !== 'string')
 		port = null;
