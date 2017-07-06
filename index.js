@@ -21,7 +21,7 @@
 
 /**
  * @module Framework
- * @version 2.7.0
+ * @version 2.8.0
  */
 
 'use strict';
@@ -504,8 +504,8 @@ const controller_error_status = function(controller, status, problem) {
 function Framework() {
 
 	this.$id = null; // F.id ==> property
-	this.version = 2700;
-	this.version_header = '2.7.0';
+	this.version = 2800;
+	this.version_header = '2.8.0';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -4720,7 +4720,7 @@ F.onMapping = function(url, def, ispublic, encode) {
 F.download = F.snapshot = function(url, filename, callback) {
 
 	url = framework_internal.preparePath(url);
-	if (!url.match(/^http:|https:/gi)) {
+	if (!REG_HTTPHTTPS.test(url)) {
 		if (url[0] !== '/')
 			url = '/' + url;
 		url = 'http://' + (F.ip === 'auto' ? '0.0.0.0' : F.ip) + ':' + F.port + url;
@@ -11585,6 +11585,9 @@ Controller.prototype.view = function(name, model, headers, partial) {
 		var skip = c === '/' ? 1 : c === '~' && name[1] === '~' ? 4 : c === '~' ? 2 : c === '@' ? 3 : c === '.' ? 5 : c === '=' ? 6 : 0;
 		var isTheme = false;
 
+		if (REG_HTTPHTTPS.test(name))
+			skip = 7;
+
 		filename = name;
 
 		if (self.themeName && skip < 3) {
@@ -11613,7 +11616,29 @@ Controller.prototype.view = function(name, model, headers, partial) {
 			filename = '.' + F.path.themes(c + '/views/' + name).replace(REG_SANITIZE_BACKSLASH, '/');
 		}
 
-		F.temporary.other[key] = filename;
+		if (skip === 7) {
+
+			if (F.temporary.other[key] === 0) {
+				setTimeout(function() {
+					self.view(name, model, headers, partial);
+				}, 100, self);
+				return;
+			}
+
+			filename = F.path.temp('view' + name.hash() + '.html');
+			F.temporary.other[key] = 0;
+
+			F.download(name, filename, function(err) {
+				if (err) {
+					F.temporary.other[key] = undefined;
+					return F.throw500(err);
+				}
+				F.temporary.other[key] = '.' + filename.substring(0, filename.length - 5);
+				self.view(name, model, headers, partial);
+			});
+
+			return self;
+		}
 	}
 
 	return self.$viewrender(filename, framework_internal.viewEngine(name, filename, self), model, headers, partial, isLayout);

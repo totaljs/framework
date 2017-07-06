@@ -1,3 +1,7 @@
+======= 2.8.0
+
+- updated: `controller.view()` can render a view from URL address
+
 ======= 2.7.0
 
 - added: __IMPORTANT__ new unit-testing mechanism
