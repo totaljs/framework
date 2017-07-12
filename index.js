@@ -5478,7 +5478,7 @@ F.restore = function(filename, target, callback, filter) {
 		if (data[0] === buffer_dir[0]) {
 			if (!cache[path]) {
 				cache[path] = true;
-				if (!filter || filter(path, true))
+				if (!filter || filter(item, true) !== false)
 					F.path.mkdir(path);
 			}
 			type = 3;
@@ -5490,7 +5490,7 @@ F.restore = function(filename, target, callback, filter) {
 			cache[path] = true;
 
 			var npath = path.substring(0, path.lastIndexOf('/'));
-			if (!filter || filter(npath, false))
+			if (!filter || filter(item, false) !== false)
 				F.path.mkdir(npath);
 			else {
 				type = 5; // skip
@@ -5577,8 +5577,13 @@ F.restore = function(filename, target, callback, filter) {
 				break;
 			case 5:
 				index = data.indexOf(buffer_new);
-				if (index !== -1)
+				if (index === -1)
+					data = null;
+				else {
 					data = data.slice(index + 1);
+					type = 0;
+					parser.next();
+				}
 				break;
 		}
 		end && !data.length && callback && callback(null, count);
