@@ -3568,12 +3568,11 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 
 	if (type === 'package') {
 
-		var backup = new Backup();
 		var id = Path.basename(declaration, '.' + U.getExtension(declaration));
 		var dir = F.config['directory-temp'][0] === '~' ? Path.join(F.config['directory-temp'].substring(1), id + '.package') : Path.join(F.path.root(), F.config['directory-temp'], id + '.package');
 
 		F.routes.packages[id] = dir;
-		backup.restore(declaration, dir, function() {
+		F.restore(declaration, dir, function() {
 
 			var filename = Path.join(dir, 'index.js');
 			if (!existsSync(filename)) {
@@ -5444,8 +5443,164 @@ F.responseStatic = function(req, res, done) {
 };
 
 F.restore = function(filename, target, callback, filter) {
-	var backup = new Backup();
-	backup.restore(filename, target, callback, filter);
+
+	var buffer_key = U.createBuffer(':');
+	var buffer_new = U.createBuffer('\n');
+	var buffer_dir = U.createBuffer('#');
+	var cache = {};
+	var data = null;
+	var type = 0;
+	var item = null;
+	var stream = Fs.createReadStream(filename);
+	var index = 0;
+	var parser = {};
+	var open = {};
+	var count = 0;
+	var end = false;
+
+	parser.parse_key = function() {
+
+		index = data.indexOf(buffer_key);
+		if (index === -1)
+			return;
+
+		index++;
+		item = data.slice(0, index - 1).toString('utf8').trim();
+		data = data.slice(index);
+		type = 1;
+		parser.next();
+	};
+
+	parser.parse_meta = function() {
+		var path = Path.join(target, item);
+
+		// Is directory?
+		if (data[0] === buffer_dir[0]) {
+			if (!cache[path]) {
+				cache[path] = true;
+				if (!filter || filter(path, true))
+					F.path.mkdir(path);
+			}
+			type = 3;
+			parser.next();
+			return;
+		}
+
+		if (!cache[path]) {
+			cache[path] = true;
+
+			var npath = path.substring(0, path.lastIndexOf('/'));
+			if (!filter || filter(npath, false))
+				F.path.mkdir(npath);
+			else {
+				type = 5; // skip
+				parser.next();
+				return;
+			}
+		}
+
+		// File
+		type = 2;
+		var tmp = open[item] = {};
+		tmp.path = path;
+		tmp.name = item;
+		tmp.writer = Fs.createWriteStream(path);
+		tmp.zlib = Zlib.createGunzip();
+		tmp.zlib.$self = tmp;
+
+		count++;
+
+		tmp.zlib.on('data', function(chunk) {
+			this.$self.writer.write(chunk);
+		});
+
+		tmp.zlib.on('end', function() {
+			var tmp = this.$self;
+			tmp.writer.end();
+			tmp.writer = null;
+			tmp.zlib = null;
+			delete open[tmp.name];
+		});
+
+		parser.next();
+	};
+
+	parser.parse_dir = function() {
+		index = data.indexOf(buffer_new);
+		if (index !== -1) {
+			data = data.slice(index + 1);
+			type = 0;
+		}
+		parser.next();
+	};
+
+	parser.parse_data = function() {
+
+		index = data.indexOf(buffer_new);
+
+		var skip = false;
+
+		if (index !== -1)
+			type = 0;
+
+		if (type) {
+			var remaining = data.length % 4;
+			if (remaining) {
+				open[item].zlib.write(U.createBuffer(data.slice(0, data.length - remaining).toString('ascii'), 'base64'));
+				data = data.slice(data.length - remaining);
+				skip = true;
+			} else {
+				open[item].zlib.write(U.createBuffer(data.toString('ascii'), 'base64'));
+				data = null;
+			}
+		} else {
+			open[item].zlib.end(U.createBuffer(data.slice(0, index).toString('ascii'), 'base64'));
+			data = data.slice(index + 1);
+		}
+
+		!skip && data && data.length && parser.next();
+	};
+
+	parser.next = function() {
+		switch (type) {
+			case 0:
+				parser.parse_key();
+				break;
+			case 1:
+				parser.parse_meta();
+				break;
+			case 2:
+				parser.parse_data();
+				break;
+			case 3:
+				parser.parse_dir();
+				break;
+			case 5:
+				index = data.indexOf(buffer_new);
+				if (index !== -1)
+					data = data.slice(index + 1);
+				break;
+		}
+		end && !data.length && callback && callback(null, count);
+	};
+
+	stream.on('data', function(chunk) {
+
+		if (data) {
+			CONCAT[0] = data;
+			CONCAT[1] = chunk;
+			data = Buffer.concat(CONCAT);
+		} else
+			data = chunk;
+
+		parser.next();
+	});
+
+	CLEANUP(stream, function() {
+		end = true;
+		!data.length && callback && callback(null, count);
+	});
+
 	return F;
 };
 
@@ -5502,17 +5657,16 @@ F.backup = function(filename, filelist, callback, filter) {
 					return;
 				}
 
-				var gzip = Zlib.createGzip();
 				var data = U.createBufferSize(0);
 
 				writer.write(item.padRight(padding) + ':');
-				CLEANUP(Fs.createReadStream(file).pipe(gzip).on('data', function(chunk) {
+				CLEANUP(Fs.createReadStream(file).pipe(Zlib.createGzip()).on('data', function(chunk) {
+
 					CONCAT[0] = data;
 					CONCAT[1] = chunk;
 					data = Buffer.concat(CONCAT);
 
 					var remaining = data.length % 3;
-
 					if (remaining) {
 						writer.write(data.slice(0, data.length - remaining).toString('base64'));
 						data = data.slice(data.length - remaining);
@@ -8546,6 +8700,35 @@ FrameworkPath.prototype.verify = function(name) {
 	!existsSync(dir) && Fs.mkdirSync(dir);
 	F.temporary.path[prop] = true;
 	return F;
+};
+
+FrameworkPath.prototype.mkdir = function(p) {
+
+	if (p[0] === '/')
+		p = p.substring(1);
+
+	var is = F.isWindows;
+	var l = p.length - 1;
+
+	if (is) {
+		if (p[l] === '\\')
+			p = p.substring(0, l);
+	} else {
+		if (p[l] === '/')
+			p = p.substring(0, l);
+	}
+
+	var arr = is ? p.replace(/\//g, '\\').split('\\') : p.split('/');
+	var directory = '/';
+
+	for (var i = 0, length = arr.length; i < length; i++) {
+		var name = arr[i];
+		if (is)
+			directory += (directory ? '\\' : '') + name;
+		else
+			directory += (directory ? '/' : '') + name;
+		!existsSync(directory) && Fs.mkdirSync(directory);
+	}
 };
 
 FrameworkPath.prototype.exists = function(path, callback) {
@@ -11695,14 +11878,21 @@ Controller.prototype.view = function(name, model, headers, partial) {
 	return self.$viewrender(filename, framework_internal.viewEngine(name, filename, self), model, headers, partial, isLayout);
 };
 
-Controller.prototype.viewCompile = function(body, model, headers, partial) {
+Controller.prototype.viewCompile = function(body, model, headers, partial, key) {
 
 	if (headers === true) {
+		key = partial;
 		partial = true;
 		headers = undefined;
+	} else if (typeof(headers) === 'string') {
+		key = headers;
+		headers = undefined;
+	} else if (typeof(partial) === 'string') {
+		key = partial;
+		partial = undefined;
 	}
 
-	return this.$viewrender('[dynamic view]', framework_internal.viewEngineCompile(body, this.language, this), model, headers, partial);
+	return this.$viewrender('[dynamic view]', framework_internal.viewEngineCompile(body, this.language, this, key), model, headers, partial);
 };
 
 Controller.prototype.$viewrender = function(filename, generator, model, headers, partial, isLayout) {
@@ -12836,193 +13026,6 @@ WebSocketClient.prototype.$weboscket_key = function(req) {
 	var sha1 = Crypto.createHash('sha1');
 	sha1.update((req.headers['sec-websocket-key'] || '') + SOCKET_HASH);
 	return sha1.digest('base64');
-};
-
-function Backup() {
-	this.file = [];
-	this.directory = [];
-	this.path = '';
-	this.read = { key: U.createBufferSize(), value: U.createBufferSize(), status: 0 };
-	this.pending = 0;
-	this.cache = {};
-	this.complete = NOOP;
-	this.filter = () => true;
-	this.bufKey = U.createBuffer(':');
-	this.bufNew = U.createBuffer('\n');
-}
-
-Backup.prototype.restoreKey = function(data) {
-
-	var self = this;
-	var read = self.read;
-
-	if (read.status === 1) {
-		self.restoreValue(data);
-		return;
-	}
-
-	var index = -1;
-	var tmp = data;
-
-	if (read.status === 2) {
-		CONCAT[0] = read.key;
-		CONCAT[1] = tmp;
-		tmp = Buffer.concat(CONCAT);
-		index = tmp.indexOf(self.bufKey);
-	} else
-		index = tmp.indexOf(self.bufKey);
-
-	if (index === -1) {
-		CONCAT[0] = read.key;
-		CONCAT[1] = data;
-		read.key = Buffer.concat(CONCAT);
-		read.status = 2;
-		return;
-	}
-
-	read.status = 1;
-	read.key = tmp.slice(0, index);
-	self.restoreValue(tmp.slice(index + 1));
-	tmp = null;
-};
-
-Backup.prototype.restoreValue = function(data) {
-
-	var self = this;
-	var read = self.read;
-
-	if (read.status !== 1) {
-		self.restoreKey(data);
-		return;
-	}
-
-	var index = data.indexOf(self.bufNew);
-	if (index === -1) {
-		CONCAT[0] = read.value;
-		CONCAT[1] = data;
-		read.value = Buffer.concat(CONCAT);
-		return;
-	}
-
-	CONCAT[0] = read.value;
-	CONCAT[1] = data.slice(0, index);
-	read.value = Buffer.concat(CONCAT);
-	self.restoreFile(read.key.toString('utf8').replace(REG_EMPTY, ''), read.value.toString('utf8').replace(REG_EMPTY, ''));
-
-	read.status = 0;
-	read.value = U.createBufferSize();
-	read.key = U.createBufferSize();
-
-	self.restoreKey(data.slice(index + 1));
-};
-
-Backup.prototype.restore = function(filename, path, callback, filter) {
-
-	if (!existsSync(filename)) {
-		callback && callback(new Error('Package not found.'), path);
-		return;
-	}
-
-	var self = this;
-
-	self.filter = filter;
-	self.cache = {};
-	self.createDirectory(path, true);
-	self.path = path;
-
-	var stream = Fs.createReadStream(filename);
-	stream.on('data', buffer => self.restoreKey(buffer));
-
-	if (!callback) {
-		stream.resume();
-		return;
-	}
-
-	callback.path = path;
-
-	stream.on('end', function() {
-		self.callback(callback);
-		stream = null;
-	});
-
-	stream.resume();
-};
-
-Backup.prototype.callback = function(cb) {
-	var self = this;
-	if (self.pending <= 0)
-		return cb(null, cb.path);
-	setTimeout(() => self.callback(cb), 100);
-};
-
-Backup.prototype.restoreFile = function(key, value) {
-	var self = this;
-
-	if (typeof(self.filter) === 'function' && !self.filter(key))
-		return;
-
-	if (value === '#') {
-		self.createDirectory(key);
-		return;
-	}
-
-	var p = key;
-	var index = key.lastIndexOf('/');
-
-	if (index !== -1) {
-		p = key.substring(0, index).trim();
-		p && self.createDirectory(p);
-	}
-
-	var buffer = U.createBuffer(value, 'base64');
-	self.pending++;
-
-	Zlib.gunzip(buffer, function(err, data) {
-		Fs.writeFile(Path.join(self.path, key), data, () => self.pending--);
-		buffer = null;
-	});
-};
-
-Backup.prototype.createDirectory = function(p, root) {
-
-	var self = this;
-	if (self.cache[p])
-		return;
-
-	self.cache[p] = true;
-
-	if (p[0] === '/')
-		p = p.substring(1);
-
-	var is = F.isWindows;
-
-	if (is) {
-		if (p[p.length - 1] === '\\')
-			p = p.substring(0, p.length - 1);
-	} else {
-		if (p[p.length - 1] === '/')
-			p = p.substring(0, p.length - 1);
-	}
-
-	var arr = is ? p.replace(/\//g, '\\').split('\\') : p.split('/');
-	var directory = '';
-
-	if (is && arr[0].indexOf(':') !== -1)
-		arr.shift();
-
-	for (var i = 0, length = arr.length; i < length; i++) {
-		var name = arr[i];
-		if (is)
-			directory += (directory ? '\\' : '') + name;
-		else
-			directory += (directory ? '/' : '') + name;
-
-		var dir = Path.join(self.path, directory);
-		if (root)
-			dir = (is ? '\\' : '/') + dir;
-
-		!existsSync(dir) && Fs.mkdirSync(dir);
-	}
 };
 
 // *********************************************************************************
