@@ -4,6 +4,7 @@
 - updated: `controller.view(name/url, [model], [headers], [partial])` can render a view from URL address
 - updated: `F.backup()` argument `path` can contain `String Array` file list
 - updated: `controller.viewCompile(body, model, [headers], [partial], [cacheKey])` add a cache key
+- updated: `image.command(arg, value, [priority], [escape])` a `priority` argument can be `escape` when it contains `boolean` value
 
 ======= 2.7.0
 
