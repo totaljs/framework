@@ -5456,6 +5456,7 @@ F.restore = function(filename, target, callback, filter) {
 	var parser = {};
 	var open = {};
 	var count = 0;
+	var pending = 0;
 	var end = false;
 
 	parser.parse_key = function() {
@@ -5507,6 +5508,7 @@ F.restore = function(filename, target, callback, filter) {
 		tmp.writer = Fs.createWriteStream(path);
 		tmp.zlib = Zlib.createGunzip();
 		tmp.zlib.$self = tmp;
+		pending++;
 
 		count++;
 
@@ -5515,6 +5517,7 @@ F.restore = function(filename, target, callback, filter) {
 		});
 
 		tmp.zlib.on('end', function() {
+			pending--;
 			var tmp = this.$self;
 			tmp.writer.end();
 			tmp.writer = null;
@@ -5586,7 +5589,20 @@ F.restore = function(filename, target, callback, filter) {
 				}
 				break;
 		}
+
+		if (end && !data.length)
+			console.log('callback 1');
+
 		end && !data.length && callback && callback(null, count);
+	};
+
+	parser.end = function() {
+		if (callback) {
+			if (pending)
+				setTimeout(parser.end, 100);
+			else if (end && !data.length)
+				callback(null, count);
+		}
 	};
 
 	stream.on('data', function(chunk) {
@@ -5603,7 +5619,7 @@ F.restore = function(filename, target, callback, filter) {
 
 	CLEANUP(stream, function() {
 		end = true;
-		!data.length && callback && callback(null, count);
+		parser.end();
 	});
 
 	return F;
