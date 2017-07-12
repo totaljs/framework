@@ -5446,38 +5446,89 @@ F.responseStatic = function(req, res, done) {
 F.restore = function(filename, target, callback, filter) {
 	var backup = new Backup();
 	backup.restore(filename, target, callback, filter);
+	return F;
 };
 
-F.backup = function(filename, path, callback, filter) {
+F.backup = function(filename, filelist, callback, filter) {
 
-	var length = path.length;
-	var padding = 120;
+	var padding = 100;
+	var path = filelist instanceof Array ? F.path.root() : filelist;
 
-	U.ls(path, function(files, directories) {
-		directories.wait(function(item, next) {
-			var dir = item.substring(length).replace(/\\/g, '/') + '/';
-			if (filter && !filter(dir))
-				return next();
-			Fs.appendFile(filename, dir.padRight(padding) + ':#\n', next);
-		}, function() {
-			files.wait(function(item, next) {
-				var fil = item.substring(length).replace(/\\/g, '/');
-				if (filter && !filter(fil))
-					return next();
-				Fs.readFile(item, function(err, data) {
-					Zlib.gzip(data, function(err, data) {
-						if (err) {
-							F.error(err, 'F.backup()', filename);
-							return next();
-						}
-						Fs.appendFile(filename, fil.padRight(padding) + ':' + data.toString('base64') + '\n', next);
-					});
-				});
-			}, callback);
+	if (!(filelist instanceof Array))
+		filelist = [''];
+
+	Fs.unlink(filename, function() {
+
+		filelist.sort(function(a, b) {
+			var ac = a.split('/');
+			var bc = b.split('/');
+			if (ac.length < bc.length)
+				return -1;
+			else if (ac.length > bc.length)
+				return 1;
+			return a.localeCompare(b);
 		});
+
+		var writer = Fs.createWriteStream(filename);
+
+		filelist.wait(function(item, next) {
+
+			if (item[0] !== '/')
+				item = '/' + item;
+
+			var file = Path.join(path, item);
+			Fs.stat(file, function(err, stats) {
+
+				if (err) {
+					F.error(err, 'F.backup()', filename);
+					return next();
+				}
+
+				if (stats.isDirectory()) {
+					var dir = item.replace(/\\/g, '/') + '/';
+					if (filter && !filter(dir, true))
+						return next();
+					U.ls(file, function(f, d) {
+						var length = path.length;
+						d.wait(function(item, next) {
+							writer.write(item.substring(length).padRight(padding) + ':#\n', 'utf8');
+							next();
+						}, function() {
+							for (var i = 0; i < f.length; i++)
+								filelist.push(f[i].substring(length));
+							next();
+						});
+					});
+					return;
+				}
+
+				var gzip = Zlib.createGzip();
+				var data = U.createBufferSize(0);
+
+				writer.write(item.padRight(padding) + ':');
+				CLEANUP(Fs.createReadStream(file).pipe(gzip).on('data', function(chunk) {
+					CONCAT[0] = data;
+					CONCAT[1] = chunk;
+					data = Buffer.concat(CONCAT);
+
+					var remaining = data.length % 3;
+
+					if (remaining) {
+						writer.write(data.slice(0, data.length - remaining).toString('base64'));
+						data = data.slice(data.length - remaining);
+					}
+
+				}), function() {
+					data.length && writer.write(data.toString('base64'));
+					writer.write('\n', 'utf8');
+					next();
+				});
+
+			});
+		}, () => callback(null, filename));
 	});
 
-	return this;
+	return F;
 };
 
 F.exists = function(req, res, max, callback) {
