@@ -1,6 +1,7 @@
 ======= 2.8.0
 
-- added: `NOSQL().restore()` restores database
+- added: `NOSQL().restore()` restores a database
+- added: `F.path.mkdir(path)` creates all directories according to the path
 
 - updated: (IMPORTANT) packages compress/decompress function supports streaming data
 - updated: (IMPORTANT) `NOSQL().backup()` !!! was changed !!!!
