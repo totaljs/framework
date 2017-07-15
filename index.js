@@ -5455,9 +5455,12 @@ F.restore = function(filename, target, callback, filter) {
 	var index = 0;
 	var parser = {};
 	var open = {};
-	var count = 0;
 	var pending = 0;
 	var end = false;
+	var output = {};
+
+	output.count = 0;
+	output.path = target;
 
 	parser.parse_key = function() {
 
@@ -5510,7 +5513,7 @@ F.restore = function(filename, target, callback, filter) {
 		tmp.zlib.$self = tmp;
 		pending++;
 
-		count++;
+		output.count++;
 
 		tmp.zlib.on('data', function(chunk) {
 			this.$self.writer.write(chunk);
@@ -5590,10 +5593,7 @@ F.restore = function(filename, target, callback, filter) {
 				break;
 		}
 
-		if (end && !data.length)
-			console.log('callback 1');
-
-		end && !data.length && callback && callback(null, count);
+		end && !data.length && callback && callback(null, output);
 	};
 
 	parser.end = function() {
@@ -5601,7 +5601,7 @@ F.restore = function(filename, target, callback, filter) {
 			if (pending)
 				setTimeout(parser.end, 100);
 			else if (end && !data.length)
-				callback(null, count);
+				callback(null, output);
 		}
 	};
 
@@ -5632,6 +5632,8 @@ F.backup = function(filename, filelist, callback, filter) {
 
 	if (!(filelist instanceof Array))
 		filelist = [''];
+
+	var counter = 0;
 
 	Fs.unlink(filename, function() {
 
@@ -5696,11 +5698,14 @@ F.backup = function(filename, filelist, callback, filter) {
 				}), function() {
 					data.length && writer.write(data.toString('base64'));
 					writer.write('\n', 'utf8');
+					counter++;
 					next();
 				});
 
 			});
-		}, () => callback(null, filename));
+		}, function() {
+			callback && Fs.stat(filename, (e, stat) => callback(null, { filename: filename, files: counter, size: stat.size }));
+		});
 	});
 
 	return F;

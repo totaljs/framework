@@ -250,7 +250,70 @@ Database.prototype.modify = function(doc, insert) {
 	return builder;
 };
 
-Database.prototype.backup = function(filename, remove) {
+Database.prototype.restore = function(filename, callback) {
+	var self = this;
+
+	U.wait(() => !self.type, function(err) {
+
+		if (err)
+			throw new Error('Database can\'t be restored because it\'s busy.');
+
+		self.type = 9;
+		F.restore(filename, F.path.root(), function(err, response) {
+			self.type = 0;
+			!err && self.refresh();
+			callback && callback(err, response);
+		});
+	});
+	return self;
+};
+
+Database.prototype.backup = function(filename, callback) {
+
+	var self = this;
+	var list = [];
+	var pending = [];
+
+	pending.push(function(next) {
+		F.path.exists(self.filename, function(e) {
+			e && list.push(Path.join(F.config['directory-databases'], self.name + EXTENSION));
+			next();
+		});
+	});
+
+	pending.push(function(next) {
+		F.path.exists(F.path.databases(self.name + EXTENSION_META), function(e) {
+			e && list.push(Path.join(F.config['directory-databases'], self.name + EXTENSION_META));
+			next();
+		});
+	});
+
+	pending.push(function(next) {
+		F.path.exists(F.path.databases(self.name + EXTENSION + '-counter'), function(e) {
+			e && list.push(Path.join(F.config['directory-databases'], self.name + EXTENSION + '-counter'));
+			next();
+		});
+	});
+
+	pending.push(function(next) {
+		F.path.exists(F.path.databases(self.name + '-binary'), function(e, size, file) {
+			e && !file && list.push(Path.join(F.config['directory-databases'], self.name + '-binary'));
+			next();
+		});
+	});
+
+	pending.async(function() {
+		if (list.length)
+			F.backup(filename, list, callback);
+		else
+			callback(new Error('No files for backuping.'));
+	});
+
+
+	return self;
+};
+
+Database.prototype.backup2 = function(filename, remove) {
 
 	if (typeof(filename) === 'boolean') {
 		remove = filename;
