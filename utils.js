@@ -5247,15 +5247,34 @@ exports.async = function(fn, isApply) {
 
 // MIT
 // Written by Jozef Gula
+// Optimized by Peter Sirka
+const CACHE_GML1 = [null, null, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+const CACHE_GML2 = [null, null, null, null, null, null, null, null];
 exports.getMessageLength = function(data, isLE) {
 
 	var length = data[1] & 0x7f;
 
-	if (length === 126)
-		return data.length < 4 ? -1 : converBytesToInt64([data[3], data[2], 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], 0, isLE);
+	if (length === 126) {
+		if (data.length < 4)
+			return -1;
+		CACHE_GML1[0] = data[3];
+		CACHE_GML1[1] = data[2];
+		return converBytesToInt64(CACHE_GML1, 0, isLE);
+	}
 
-	if (length === 127)
-		return data.Length < 10 ? -1 : converBytesToInt64([data[9], data[8], data[7], data[6], data[5], data[4], data[3], data[2]], 0, isLE);
+	if (length === 127) {
+		if (data.Length < 10)
+			return -1;
+		CACHE_GML2[0] = data[9];
+		CACHE_GML2[1] = data[8];
+		CACHE_GML2[2] = data[7];
+		CACHE_GML2[3] = data[6];
+		CACHE_GML2[4] = data[5];
+		CACHE_GML2[5] = data[4];
+		CACHE_GML2[6] = data[3];
+		CACHE_GML2[7] = data[2];
+		return converBytesToInt64(CACHE_GML2, 0, isLE);
+	}
 
 	return length;
 };

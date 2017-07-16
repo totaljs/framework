@@ -11,6 +11,7 @@
 - updated: `image.command(arg, value, [priority], [escape])` a `priority` argument can be `escape` when it contains `boolean` value
 - updated: `U.getExtension()` returns lower-case extensions
 
+- fixed: (IMPORTANT) long messages in WebSocket
 - fixed: mail auth when `options.user` and `options.password` are blank
 
 ======= 2.7.0
