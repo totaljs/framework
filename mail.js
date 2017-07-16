@@ -33,15 +33,19 @@ const Fs = require('fs');
 const CRLF = '\r\n';
 const REG_ESMTP = /\besmtp\b/i;
 const REG_STATE = /\d+/;
-const EMPTYARRAY = [];
 const REG_WINLINE = /\r\n/g;
 const REG_NEWLINE = /\n/g;
+const REG_AUTH = /(AUTH LOGIN|AUTH PLAIN)/i;
+const EMPTYARRAY = [];
 
 var INDEXSENDER = 0;
 var INDEXATTACHMENT = 0;
 
 if (!global.framework_utils)
 	global.framework_utils = require('./utils');
+
+const BUF_CRLF = framework_utils.createBuffer(CRLF);
+const CONCAT = [null, null];
 
 /**
  * Mailer
@@ -618,13 +622,13 @@ Mailer.prototype.$send = function(obj, options, autosend) {
 
 	var self = this;
 	var buffer = [];
-	var isAuthenticated = false;
+	var isAuthorized = false;
 	var isAuthorization = false;
 	var command = '';
 	var auth = [];
-	var response = '';
 	var socket = obj.socket2 ? obj.socket2 : obj.socket;
 	var host = obj.host;
+	var line = null;
 
 	var isAttach = !options.tls || (obj.tls && options.tls);
 
@@ -635,6 +639,7 @@ Mailer.prototype.$send = function(obj, options, autosend) {
 		mailer.destroy(obj);
 		obj.callback && obj.callback(err);
 		obj.callback = null;
+		line = null;
 		mailer.$events.error && !obj.try && mailer.emit('error', err, obj);
 	});
 
@@ -642,6 +647,7 @@ Mailer.prototype.$send = function(obj, options, autosend) {
 		mailer.destroy(obj);
 		obj.callback && obj.callback();
 		obj.callback = null;
+		line = null;
 	});
 
 	socket.on('data', function(data) {
@@ -649,21 +655,22 @@ Mailer.prototype.$send = function(obj, options, autosend) {
 		if (obj.closed)
 			return;
 
-		data = data.toString('utf8');
+		while (true) {
 
-		if (!data.endsWith(CRLF)) {
-			response += data;
-			return;
-		}
+			var index = data.indexOf(BUF_CRLF);
+			if (index === -1) {
+				if (line) {
+					CONCAT[0] = line;
+					CONCAT[1] = data;
+					line = Buffer.concat(CONCAT);
+				} else
+					line = data;
+				break;
+			}
 
-		var res = (response + data).split(CRLF);
-
-		if (response)
-			response = '';
-
-		for (var i = 0, length = res.length; i < length; i++) {
-			var line = res[i];
-			line && socket && socket.emit('line', line);
+			var tmp = data.slice(0, index).toString('utf8');
+			data = data.slice(index + BUF_CRLF.length);
+			tmp && socket && socket.emit('line', tmp);
 		}
 	});
 
@@ -675,10 +682,11 @@ Mailer.prototype.$send = function(obj, options, autosend) {
 		var code = +line.match(REG_STATE)[0];
 
 		if (code === 250 && !isAuthorization) {
-			// OR was replaced to AND --> https://github.com/totaljs/framework/issues/522
-			if ((line.indexOf('AUTH LOGIN PLAIN') !== -1 || line.indexOf('AUTH PLAIN LOGIN') !== -1) && (options.user && options.password)) {
+			if (REG_AUTH.test(line) && ((options.user && options.password) || options.xoauth2)) {
 				isAuthorization = true;
-				if (line.indexOf('XOAUTH') === -1) {
+				if (options.xoauth2 && line.indexOf('XOAUTH2') !== -1)
+					auth.push('AUTH XOAUTH2 ' + options.xoauth2);
+				else if (line.lastIndexOf('XOAUTH') === -1) {
 					auth.push('AUTH LOGIN');
 					auth.push(framework_utils.createBuffer(options.user).toString('base64'));
 					auth.push(framework_utils.createBuffer(options.password).toString('base64'));
@@ -691,8 +699,8 @@ Mailer.prototype.$send = function(obj, options, autosend) {
 		if (line.substring(3, 4) === '-')
 			return;
 
-		if (!isAuthenticated && isAuthorization) {
-			isAuthenticated = true;
+		if (!isAuthorized && isAuthorization) {
+			isAuthorized = true;
 			code = 334;
 		}
 
