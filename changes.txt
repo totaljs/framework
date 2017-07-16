@@ -10,6 +10,8 @@
 - updated: `controller.viewCompile(body, model, [headers], [partial], [cacheKey])` add a cache key
 - updated: `image.command(arg, value, [priority], [escape])` a `priority` argument can be `escape` when it contains `boolean` value
 
+- fixed: mail auth when `options.user` and `options.password` are blank
+
 ======= 2.7.0
 
 - added: __IMPORTANT__ new unit-testing mechanism

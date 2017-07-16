@@ -675,7 +675,8 @@ Mailer.prototype.$send = function(obj, options, autosend) {
 		var code = +line.match(REG_STATE)[0];
 
 		if (code === 250 && !isAuthorization) {
-			if ((line.indexOf('AUTH LOGIN PLAIN') !== -1 || line.indexOf('AUTH PLAIN LOGIN') !== -1) || (options.user && options.password)) {
+			// OR was replaced to AND --> https://github.com/totaljs/framework/issues/522
+			if ((line.indexOf('AUTH LOGIN PLAIN') !== -1 || line.indexOf('AUTH PLAIN LOGIN') !== -1) && (options.user && options.password)) {
 				isAuthorization = true;
 				if (line.indexOf('XOAUTH') === -1) {
 					auth.push('AUTH LOGIN');
@@ -710,7 +711,7 @@ Mailer.prototype.$send = function(obj, options, autosend) {
 			case 250: // OPERATION
 			case 251: // FORWARD
 			case 235: // VERIFY
-			case 999: // total.js again
+			case 999: // Total.js again
 
 				obj.messagecallback && obj.messagecallback(null, obj.instance);
 				obj.messagecallback = null;
