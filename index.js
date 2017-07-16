@@ -2250,7 +2250,7 @@ F.map = function(url, filename, filter) {
 						if (!filter(file))
 							continue;
 					} else {
-						if (filter.indexOf(U.getExtension(file).toLowerCase()) === -1)
+						if (filter.indexOf(U.getExtension(file)) === -1)
 							continue;
 					}
 				}
@@ -3029,7 +3029,7 @@ F.$load = function(types, targetdirectory, callback, packageName) {
 				return;
 			}
 
-			var ext = U.getExtension(o).toLowerCase();
+			var ext = U.getExtension(o);
 			if (ext)
 				ext = '.' + ext;
 			if (ext !== extension)
@@ -3195,7 +3195,7 @@ F.$startup = function(callback) {
 	var run = [];
 
 	Fs.readdirSync(dir).forEach(function(o) {
-		var extension = U.getExtension(o).toLowerCase();
+		var extension = U.getExtension(o);
 		if (extension === 'js')
 			run.push(o);
 	});

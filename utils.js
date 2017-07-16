@@ -1794,14 +1794,16 @@ exports.getContentType = function(ext) {
  * @param {String} filename
  * @return {String}
  */
-exports.getExtension = function(filename) {
+exports.getExtension = function(filename, raw) {
 	var end = filename.length;
 	for (var i = filename.length; i > 1; i--) {
 		var c = filename[i];
 		if (c === ' ' || c === '?')
 			end = i;
-		else if (c === '.')
-			return filename.substring(i + 1, end);
+		else if (c === '.') {
+			c = filename.substring(i + 1, end);
+			return raw ? c : c.toLowerCase();
+		}
 		else if (c === '/')
 			return '';
 	}
