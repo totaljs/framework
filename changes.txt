@@ -12,6 +12,7 @@
 - updated: `U.getExtension()` returns lower-case extensions
 
 - fixed: (IMPORTANT) long messages in WebSocket
+- fixed: moved executing of `MailMessage.callback()` to better place
 - fixed: mail auth when `options.user` and `options.password` are blank
 
 ======= 2.7.0

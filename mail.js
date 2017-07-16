@@ -345,16 +345,19 @@ Mailer.prototype.destroy = function(obj) {
 	return this;
 };
 
+const ATTACHMENT_SO = { encoding: 'base64' };
 Mailer.prototype.$writeattachment = function(obj) {
 
 	var attachment = obj.files ? obj.files.shift() : false;
 	if (!attachment) {
 		mailer.$writeline(obj, '--' + obj.boundary + '--', '', '.');
+		obj.messagecallback && obj.messagecallback(null, obj.instance);
+		obj.messagecallback = null;
 		return this;
 	}
 
 	var name = attachment.name;
-	var stream = Fs.createReadStream(attachment.filename, { encoding: 'base64' });
+	var stream = Fs.createReadStream(attachment.filename, ATTACHMENT_SO);
 	var message = [];
 	var extension = attachment.extension;
 	var isCalendar = extension === 'ics';
@@ -721,8 +724,6 @@ Mailer.prototype.$send = function(obj, options, autosend) {
 			case 235: // VERIFY
 			case 999: // Total.js again
 
-				obj.messagecallback && obj.messagecallback(null, obj.instance);
-				obj.messagecallback = null;
 				mailer.$writeline(obj, buffer.shift());
 
 				if (buffer.length)
