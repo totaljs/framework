@@ -12883,11 +12883,10 @@ WebSocketClient.prototype.$ondata = function(data) {
 			break;
 	}
 
-	current.buffer = current.buffer.slice(current.length, current.buffer.length);
-
-	// @TODO: Maybe problem a problem with unhandled count of recursion
-	if (current.buffer.length)
-		this.$ondata();
+	if (current.buffer) {
+		current.buffer = current.buffer.slice(current.length, current.buffer.length);
+		current.buffer.length && this.$ondata();
+	}
 };
 
 function buffer_concat(buffers, length) {
