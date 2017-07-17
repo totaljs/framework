@@ -48,8 +48,8 @@ const REG_5 = />\n\s{1,}</g;
 const REG_6 = /[\<\w\"\u0080-\u07ff\u0400-\u04FF]+\s{2,}[\w\u0080-\u07ff\u0400-\u04FF\>]+/;
 const REG_7 = /\\/g;
 const REG_8 = /\'/g;
-const REG_BLOCK_BEG = /\@\{block.*?\}/gi;
-const REG_BLOCK_END = /\@\{end\}/gi;
+const REG_BLOCK_BEG = /\@\{block.*?\}/i;
+const REG_BLOCK_END = /\@\{end\}/i;
 const REG_SKIP_1 = /\(\'|\"/;
 const REG_SKIP_2 = /\,(\s)?\w+/;
 const REG_HEAD = /\<\/head\>/i;
@@ -3155,7 +3155,7 @@ exports.parseBlock = function(name, content) {
 	//
 	// @{end}
 
-	if (content.search(REG_BLOCK_BEG) === -1)
+	if (!REG_BLOCK_BEG.test(content))
 		return content;
 
 	var newline = '\n';
@@ -3173,7 +3173,7 @@ exports.parseBlock = function(name, content) {
 		if (!line)
 			continue;
 
-		if (line.search(REG_BLOCK_END) !== -1) {
+		if (REG_BLOCK_END.test(line)) {
 			is = false;
 			skip = false;
 			continue;
@@ -3187,9 +3187,6 @@ exports.parseBlock = function(name, content) {
 		}
 
 		var index = line.search(REG_BLOCK_BEG);
-		if (!index)
-			continue;
-
 		if (index === -1) {
 			builder += line + newline;
 			continue;

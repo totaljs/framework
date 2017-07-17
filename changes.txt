@@ -15,6 +15,7 @@
 - fixed: (IMPORTANT) long messages in WebSocket
 - fixed: moved executing of `MailMessage.callback()` to better place
 - fixed: mail auth when `options.user` and `options.password` are blank
+- fixed: JS/CSS/HTML blocks
 
 ======= 2.7.0
 
