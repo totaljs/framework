@@ -53,7 +53,7 @@ function runwatching() {
 	const VERSION = F.version_header;
 	const TIME = 2000;
 	const REG_CONFIGS = /configs\//g;
-	const REG_FILES = /config\-debug|config\-release|config|versions|sitemap|dependencies|\.js|\.resource/i;
+	const REG_FILES = /config\-debug|config\-release|config|versions|workflows|sitemap|dependencies|\.js|\.resource/i;
 	const REG_THEMES = /\/themes\//i;
 	const REG_COMPONENTS = /components\/.*?\.html/i;
 	const REG_THEMES_INDEX = /themes(\/|\\)?[a-z0-9_.-]+(\/|\\)?index\.js/i;

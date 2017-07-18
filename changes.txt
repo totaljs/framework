@@ -11,6 +11,7 @@
 - updated: `controller.viewCompile(body, model, [headers], [partial], [cacheKey])` add a cache key
 - updated: `image.command(arg, value, [priority], [escape])` a `priority` argument can be `escape` when it contains `boolean` value
 - updated: `U.getExtension()` returns lower-case extensions
+- updated: `total.js/debug` watchs `/workflows` file
 
 - fixed: (IMPORTANT) long messages in WebSocket
 - fixed: (IMPORTANT) `controller` param in schemas
