@@ -862,6 +862,9 @@ SchemaBuilderEntity.prototype.save = function(model, options, callback, controll
 			return;
 		}
 
+		if (model && !controller && model.$$controller)
+			controller = model.$$controller;
+
 		var builder = new ErrorBuilder();
 		self.resourceName && builder.setResource(self.resourceName);
 		self.resourcePrefix && builder.setPrefix(self.resourcePrefix);
@@ -1794,6 +1797,9 @@ SchemaBuilderEntity.prototype.hook = function(name, model, options, callback, sk
 		return self;
 	}
 
+	if (model && !controller && model.$$controller)
+		controller = model.$$controller;
+
 	var $type = 'hook';
 
 	if (skip === true) {
@@ -1923,6 +1929,9 @@ SchemaBuilderEntity.prototype.$execute = function(type, name, model, options, ca
 		callback(new ErrorBuilder().push('', type.capitalize() + ' "{0}" not found.'.format(name)));
 		return self;
 	}
+
+	if (model && !controller && model.$$controller)
+		controller = model.$$controller;
 
 	if (skip === true) {
 		var builder = new ErrorBuilder();
@@ -2055,6 +2064,9 @@ SchemaBuilderEntity.prototype.operation = function(name, model, options, callbac
 
 	self.resourceName && builder.setResource(self.resourceName);
 	self.resourcePrefix && builder.setPrefix(self.resourcePrefix);
+
+	if (model && !controller && model.$$controller)
+		controller = model.$$controller;
 
 	if (!isGenerator(self, 'operation.' + name, operation)) {
 		if (operation.$newversion) {

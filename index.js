@@ -15345,7 +15345,7 @@ function parseComponent(body, filename) {
 function controller_json_workflow(id) {
 	var self = this;
 	self.id = id;
-	self.$exec(self.route.workflow, self, self.callback());
+	self.$exec(self.route.workflow, null, self.callback());
 }
 
 // Parses schema group and schema name from string e.g. "User" or "Company/User"
