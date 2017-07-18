@@ -6164,12 +6164,12 @@ F.initialize = function(http, debug, options, restart) {
 	if (ip !== null) {
 		F.ip = ip || F.config['default-ip'] || '0.0.0.0';
 		if (F.ip === 'null' || F.ip === 'undefined' || F.ip === 'auto')
-			F.ip = undefined;
+			F.ip = null;
 	} else
 		F.ip = undefined;
 
 	if (F.ip == null)
-		F.ip = 'auto';
+		F.ip = '0.0.0.0';
 
 	!listenpath && (listenpath = F.config['default-listenpath']);
 	F.listenpath = listenpath;
@@ -6200,7 +6200,7 @@ F.initialize = function(http, debug, options, restart) {
 	if (listenpath)
 		F.server.listen(listenpath);
 	else
-		F.server.listen(F.port, F.ip === 'auto' ? undefined : F.ip);
+		F.server.listen(F.port, F.ip);
 
 	// clears static files
 	F.consoledebug('clear temporary');
