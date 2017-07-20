@@ -2351,7 +2351,7 @@ SchemaInstance.prototype.$exec = function(name, helper, callback) {
 	var workflow = F.workflows[key + '#' + name] || F.workflows[name];
 
 	if (workflow)
-		workflow(this, helper || EMPTYOBJECT, callback || NOOP);
+		workflow(this, helper, callback || NOOP);
 	else
 		callback && callback(new ErrorBuilder().push('Workflow "' + name + '" not found in workflows.'));
 
@@ -2372,12 +2372,10 @@ SchemaInstance.prototype.$save = function(helper, callback) {
 };
 
 SchemaInstance.prototype.$query = function(helper, callback) {
-
 	if (this.$$can && this.$$async)
 		this.$push('query', helper);
 	else
 		this.$$schema.query(this, helper, callback, this.$$controller);
-
 	return this;
 };
 

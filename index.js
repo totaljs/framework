@@ -1841,7 +1841,7 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 				if (!this.route.workflow)
 					return this.view(name);
 				var self = this;
-				this.$exec(this.route.workflow, this, function(err, response) {
+				this.$exec(this.route.workflow, null, function(err, response) {
 					if (err)
 						self.content(err);
 					else
@@ -1873,7 +1873,7 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 					if (!this.route.workflow)
 						return this.view(name);
 					var self = this;
-					this.$exec(this.route.workflow, this, function(err, response) {
+					this.$exec(this.route.workflow, null, function(err, response) {
 						if (err)
 							self.content(err);
 						else
@@ -7924,8 +7924,18 @@ F.$configure_workflows = function(arr, clean) {
 			key = type + '#' + key;
 		}
 
+
 		line.substring(index + 1).split('-->').forEach(function(operation, index) {
+
+			var options = 'options||EMPTYOBJECT';
 			operation = operation.trim().replace(/\"/g, '\'');
+
+			var oindex = operation.indexOf('{');
+			if (oindex !== -1) {
+				options = operation.substring(oindex, operation.lastIndexOf('}') + 1);
+				operation = operation.replace(options, '').trim();
+				options = 'options||' + options;
+			}
 
 			if (operation.endsWith('(response)')) {
 				response = index;
@@ -7934,9 +7944,9 @@ F.$configure_workflows = function(arr, clean) {
 
 			var what = operation.split(':');
 			if (what.length === 2)
-				builder.push('$' + what[0].trim() + '(' + what[1].trim() + ', options)');
+				builder.push('$' + what[0].trim() + '(' + what[1].trim() + ', {0})'.format(options));
 			else
-				builder.push('$' + what[0] + '(options)');
+				builder.push('$' + what[0] + '({0})'.format(options));
 		});
 
 		F.workflows[key] = new Function('model', 'options', 'callback', 'return model.$async(callback' + (response === -1 ? '' : ', ' + response) + ').' + builder.join('.') + ';');

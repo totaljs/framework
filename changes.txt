@@ -13,6 +13,7 @@
 - updated: `image.command(arg, value, [priority], [escape])` a `priority` argument can be `escape` when it contains `boolean` value
 - updated: `U.getExtension()` returns lower-case extensions
 - updated: `total.js/debug` watchs `/workflows` file
+- updated: file `/workflows` supports custom `options`, more in docs
 
 - fixed: (IMPORTANT) long messages in WebSocket
 - fixed: (IMPORTANT) `controller` param in schemas
