@@ -4930,15 +4930,7 @@ F.onMail = function(address, subject, body, callback, replyTo) {
 	tmp = F.config['mail-address-copy'];
 	tmp && tmp.length > 3 && message.bcc(tmp);
 
-	var opt = F.temporary['mail-settings'];
-
-	if (!opt) {
-		var config = F.config['mail-smtp-options'];
-		config && (opt = config);
-		F.temporary['mail-settings'] = opt || {};
-	}
-
-	message.$sending = setTimeout(() => message.send(F.config['mail-smtp'], opt, callback), 5);
+	message.$sending = setImmediate(cb => message.send2(cb), callback);
 	return message;
 };
 
@@ -10043,8 +10035,22 @@ Controller.prototype.mail = function(address, subject, view, model, callback) {
 	// Backup layout
 	var layoutName = self.layoutName;
 	var body = self.view(view, model, true);
-	self.layoutName = layoutName;
-	return F.onMail(address, subject, body, callback);
+
+	var message;
+
+	if (body instanceof Function) {
+		message = F.onMail(address, subject, '');
+		message.manually();
+		body(function(err, body) {
+			message.body = body;
+			message.send2(callback);
+		});
+	} else {
+		message = F.onMail(address, subject, body, callback);
+		self.layoutName = layoutName;
+	}
+
+	return message;
 };
 
 /*
@@ -10096,11 +10102,11 @@ Controller.prototype.$view = function(name, model, expire, key) {
 	return this.$viewToggle(true, name, model, expire, key);
 };
 
-Controller.prototype.$viewCompile = function(body, model) {
+Controller.prototype.$viewCompile = function(body, model, key) {
 	var self = this;
 	var layout = self.layoutName;
 	self.layoutName = '';
-	var value = self.viewCompile(body, model, null, true);
+	var value = self.viewCompile(body, model, null, true, key);
 	self.layoutName = layout;
 	return value || '';
 };
@@ -11890,16 +11896,24 @@ Controller.prototype.view = function(name, model, headers, partial) {
 			filename = F.path.temp('view' + name.hash() + '.html');
 			F.temporary.other[key] = 0;
 
+			var done = { callback: NOOP };
+
 			F.download(name, filename, function(err) {
 				if (err) {
 					F.temporary.other[key] = undefined;
-					return F.throw500(err);
+					if (done.callback === NOOP)
+						F.throw500(err);
+					else
+						done.callback(err);
+				} else {
+					F.temporary.other[key] = '.' + filename.substring(0, filename.length - 5);
+					done.callback(null, self.view(name, model, headers, partial));
 				}
-				F.temporary.other[key] = '.' + filename.substring(0, filename.length - 5);
-				self.view(name, model, headers, partial);
 			});
 
-			return self;
+			return function(cb) {
+				done.callback = cb;
+			};
 		}
 	}
 

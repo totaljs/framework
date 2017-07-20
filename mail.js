@@ -284,6 +284,17 @@ Message.prototype.attachmentInline = function(filename, name, contentId) {
 	return this;
 };
 
+Message.prototype.send2 = function(callback) {
+	var opt = F.temporary['mail-settings'];
+	if (!opt) {
+		var config = F.config['mail-smtp-options'];
+		config && (opt = config);
+		F.temporary['mail-settings'] = opt || {};
+	}
+	mailer.send(F.config['mail-smtp'], opt, this, callback);
+	return this;
+};
+
 Message.prototype.send = function(smtp, options, callback) {
 	mailer.send(smtp, options, this, callback);
 	return this;
