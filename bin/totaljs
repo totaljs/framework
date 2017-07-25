@@ -585,7 +585,7 @@ function main() {
 
 			fs.writeFileSync('translate.resource', '// Total.js translation file\n// Created: ' + new Date().format('yyyy-MM-dd HH:mm') + '\n' + builder.join('\n'));
 			console.log('Total.js: the translation was created (' + count + ' texts)');
-		}, (path, dir) => dir ? (path.endsWith('/node_modules') && path.endsWith('/tmp') && path.endsWith('/.git')) ? false : true : true);
+		}, (path, dir) => dir ? (path.endsWith('/node_modules') || path.endsWith('/tmp') || path.endsWith('/.git')) ? false : true : true);
 		return;
 	}
 
