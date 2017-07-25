@@ -74,6 +74,12 @@
     },{
         "name": "Peter Štolc",
         "email": "stolcp@gmail.com"
+    },{
+        "name": "Denis Granec",
+        "email": "danis1999@gmail.com"
+    },{
+        "name": "Chao Tang Chang",
+        "email": "mrgmp2004@hotmail.com"
     }],
     "version": "2.8.0-3",
     "homepage": "http://www.totaljs.com",

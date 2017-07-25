@@ -104,6 +104,8 @@ $ npm install -g total.js
 | [Андрей Владимирович](https://github.com/anddesigner) | contributor | <and.designer93@gmail.com> |
 | [Guy Fraser](https://github.com/aubergine10) | contributor | <guy.fraser1@gmail.com> |
 | [Peter Štolc](https://github.com/fokinko) | contributor | <stolcp@gmail.com> |
+| [Denis Granec](https://github.com/PatchwerkQWER) | contributor | <danis1999@gmail.com> |
+| [Chao Tang Chang](https://github.com/ckpiggy) | contributor | <mrgmp2004@hotmail.com> |
 
 ## Useful modules
 
