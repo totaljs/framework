@@ -642,3 +642,8 @@ console.log('================================================');
 console.log('');
 
 setTimeout(function() {}, 1000);
+
+process.on('uncaughtException', (err)=>{
+	console.error(err)
+	process.exit(1)
+})
