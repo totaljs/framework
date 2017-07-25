@@ -2,9 +2,9 @@ language: node_js
 cache:
   - npm
 node_js:
-  - "4.0"
+  - "6.11"
 install:
   - npm install
 script:
   - cd test
-  - sh run.sh
+  - bash run.sh
