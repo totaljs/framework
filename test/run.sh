@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 pwd
 
 export TZ=CET-1CEST
