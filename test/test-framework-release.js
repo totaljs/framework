@@ -900,3 +900,8 @@ framework.on('load', function() {
 });
 
 framework.useConfig('my-config.txt').useConfig('/configs/my-config.config').http('release', { port: 8001 });
+
+process.on('uncaughtException', (err)=>{
+  console.error(err)
+  process.exit(1)
+})
