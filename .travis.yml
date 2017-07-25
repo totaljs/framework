@@ -7,4 +7,4 @@ install:
   - npm install
 script:
   - cd test
-  - sh run.sh
+  - bash run.sh
