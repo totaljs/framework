@@ -3857,16 +3857,6 @@ RESTBuilder.prototype.stream = function(callback) {
 	return U.download(self.$url, flags, self.$data, callback, self.$cookies, self.$headers, undefined, self.$timeout);
 };
 
-RESTBuilder.prototype.file = function(name, filename) {
-	var self = this;
-	var obj = { name: name, filename: filename };
-	if (self.$files)
-		self.$files.push(obj);
-	else
-		self.$files = [obj];
-	return self;
-};
-
 RESTBuilder.prototype.exec = function(callback) {
 
 	if (!callback)

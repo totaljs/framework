@@ -617,7 +617,9 @@ function request_call(uri, options) {
 function request_writefile(req, options, file, next) {
 
 	var type = typeof(file.buffer);
-	req.write((options.first ? '' : NEWLINE) + '--' + options.boundary + NEWLINE + 'Content-Disposition: form-data; name="' + file.name + '"; filename="' + (type === 'string' ? file.buffer : exports.getName(file.filename)) + '"' + NEWLINE + 'Content-Type: ' + exports.getContentType(exports.getExtension(file.filename)) + NEWLINE + NEWLINE);
+	var filename = (type === 'string' ? file.buffer : exports.getName(file.filename));
+
+	req.write((options.first ? '' : NEWLINE) + '--' + options.boundary + NEWLINE + 'Content-Disposition: form-data; name="' + file.name + '"; filename="' + filename + '"' + NEWLINE + 'Content-Type: ' + exports.getContentType(exports.getExtension(filename)) + NEWLINE + NEWLINE);
 
 	if (options.first)
 		options.first = false;
