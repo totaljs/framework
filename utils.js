@@ -616,13 +616,14 @@ function request_call(uri, options) {
 
 function request_writefile(req, options, file, next) {
 
-	req.write((options.first ? '' : NEWLINE) + '--' + options.boundary + NEWLINE + 'Content-Disposition: form-data; name="' + file.name + '"; filename="' + exports.getName(file.filename) + '"' + NEWLINE + 'Content-Type: ' + exports.getContentType(exports.getExtension(file.filename)) + NEWLINE + NEWLINE);
+	var type = typeof(file.buffer);
+	req.write((options.first ? '' : NEWLINE) + '--' + options.boundary + NEWLINE + 'Content-Disposition: form-data; name="' + file.name + '"; filename="' + (type === 'string' ? file.buffer : exports.getName(file.filename)) + '"' + NEWLINE + 'Content-Type: ' + exports.getContentType(exports.getExtension(file.filename)) + NEWLINE + NEWLINE);
 
 	if (options.first)
 		options.first = false;
 
 	// Is Buffer
-	if (file.buffer) {
+	if (file.buffer && type === 'object') {
 		req.write(file.buffer);
 		next();
 	} else {
