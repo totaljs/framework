@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkInternal
- * @version 2.7.0
+ * @version 2.8.0
  */
 
 'use strict';
@@ -1655,6 +1655,9 @@ function view_parse(content, minify, filename, controller) {
 
 	content = F.$versionprepare(content);
 
+	if (!nocompressHTML)
+		content = compressView(content, minify, filename);
+
 	var DELIMITER = '\'';
 	var SPACE = ' ';
 	var builder = 'var $EMPTY=\'\';var $length=0;var $source=null;var $tmp=index;var $output=$EMPTY';
@@ -1697,9 +1700,9 @@ function view_parse(content, minify, filename, controller) {
 
 		var is = REG_TAGREMOVE.test(value);
 
-		if (!nocompressHTML)
-			value = compressHTML(value, minify, true);
-		else if (!isFirst) {
+		if (!nocompressHTML) {
+		//	value = compressHTML(value, minify, true);
+		} else if (!isFirst) {
 			isFirst = true;
 			value = value.replace(/^\s+/, '');
 		}
@@ -2370,6 +2373,28 @@ function removeComments(html) {
 	}
 
 	return html;
+}
+
+function compressView(html, minify) {
+
+	var cache = [];
+
+	while (true) {
+		var beg = html.indexOf('@{');
+		if (beg === -1)
+			break;
+		var end = html.indexOf('}', beg + 2);
+		if (end === -1)
+			break;
+		cache.push(html.substring(beg, end + 1));
+		html = html.substring(0, beg) + '#@' + (cache.length - 1) + '#' + html.substring(end + 1);
+	}
+
+	html = compressHTML(html, minify, false);
+
+	return html.replace(/\#\@\d+\#/g, function(text) {
+		return cache[+text.substring(2, text.length - 1)];
+	});
 }
 
 /**

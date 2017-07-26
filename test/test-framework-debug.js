@@ -163,7 +163,7 @@ function test_routing(next) {
 		utils.request(url + 'html-compressor/', ['get'], function(error, data, code, headers) {
 			if (error)
 				throw error;
-			assert(data === '<div><p>a b c d</p><div>Price 30 &euro;</div></div><div>Name: Peter</div><div>Name: Peter</div><div>Price: 1000 1 000.00</div><div>13</div><div>Name: Peter</div>', 'HTML compressor');
+			assert(data === '<div><p>a b c d</p><div>Price 30 &euro;</div></div><div>Name: Peter</div><div>Name: Peter</div><div>Price: 1000 1 000.00</div><div>1  3</div><div>Name: Peter</div>', 'HTML compressor');
 			complete();
 		});
 	});
