@@ -12789,6 +12789,7 @@ function websocket_deflate(data) {
  */
 WebSocketClient.prototype.upgrade = function(container) {
 	var self = this;
+	self.req.on('error', websocket_onerror);
 	self.container = container;
 	self.socket.$websocket = this;
 	self.socket.on('data', websocket_ondata);

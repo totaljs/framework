@@ -23,6 +23,8 @@
 - fixed: mail auth when `options.user` and `options.password` are blank
 - fixed: JS/CSS/HTML blocks
 
+- improved: Date formatting (+50%)
+
 ======= 2.7.0
 
 - added: __IMPORTANT__ new unit-testing mechanism

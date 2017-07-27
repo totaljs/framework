@@ -63,8 +63,6 @@ const SOUNDEX = { a: '', e: '', i: '', o: '', u: '', b: 1, f: 1, p: 1, v: 1, c: 
 const ENCODING = 'utf8';
 const NEWLINE = '\r\n';
 const isWindows = require('os').platform().substring(0, 3).toLowerCase() === 'win';
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const DIACRITICSMAP = {};
 const STREAM_READONLY = { flags: 'r' };
 const STREAM_END = { end: false };
@@ -73,6 +71,9 @@ const EMPTYARRAY = [];
 const EMPTYOBJECT = [];
 const NODEVERSION = parseFloat(process.version.toString().replace('v', '').replace(/\./g, ''));
 const STREAMPIPE = { end: false };
+
+exports.MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+exports.DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 Object.freeze(EMPTYARRAY);
 Object.freeze(EMPTYOBJECT);
@@ -169,6 +170,7 @@ var CONTENTTYPES = {
 };
 
 var dnscache = {};
+var datetimeformat = {};
 const hasOwnProperty = Object.prototype.hasOwnProperty;
 
 /**
@@ -2397,7 +2399,7 @@ Date.prototype.add = function(type, value) {
 	var self = this;
 
 	if (type.constructor === Number)
-		return new Date(self.getTime() + (type - type%1));
+		return new Date(self.getTime() + (type - type % 1));
 
 	if (value === undefined) {
 		var arr = type.split(' ');
@@ -2631,6 +2633,13 @@ Date.compare = function(d1, d2) {
  */
 Date.prototype.format = function(format, resource) {
 
+	if (!format)
+		return this.getFullYear() + '-' + (this.getMonth() + 1).toString().padLeft(2, '0') + '-' + this.getDate().toString().padLeft(2, '0') + 'T' + this.getHours().toString().padLeft(2, '0') + ':' + this.getMinutes().toString().padLeft(2, '0') + ':' + this.getSeconds().toString().padLeft(2, '0') + '.' + this.getMilliseconds().toString().padLeft(3, '0') + 'Z';
+
+	if (datetimeformat[format])
+		return datetimeformat[format](this, resource);
+
+	var key = format;
 	var self = this;
 	var half = false;
 
@@ -2639,9 +2648,6 @@ Date.prototype.format = function(format, resource) {
 		format = format.substring(1);
 	}
 
-	if (!format)
-		return self.getFullYear() + '-' + (self.getMonth() + 1).toString().padLeft(2, '0') + '-' + self.getDate().toString().padLeft(2, '0') + 'T' + self.getHours().toString().padLeft(2, '0') + ':' + self.getMinutes().toString().padLeft(2, '0') + ':' + self.getSeconds().toString().padLeft(2, '0') + '.' + self.getMilliseconds().toString().padLeft(3, '0') + 'Z';
-
 	var h = self.getHours();
 
 	if (half) {
@@ -2649,57 +2655,70 @@ Date.prototype.format = function(format, resource) {
 			h -= 12;
 	}
 
-	return format.replace(regexpDATEFORMAT, function(key) {
+	var beg = '\'+';
+	var end = '+\'';
+	var before = [];
+
+	var ismm = false;
+	var isdd = false;
+	var isww = false;
+
+	format = format.replace(regexpDATEFORMAT, function(key) {
 		switch (key) {
 			case 'yyyy':
-				return self.getFullYear();
+				return beg + 'd.getFullYear()' + end;
 			case 'yy':
-				return self.getFullYear().toString().substring(2);
+				return beg + 'd.getFullYear().toString().substring(2)' + end;
 			case 'MMM':
-				var m = MONTHS[self.getMonth()];
-				return (F.resource(resource, m) || m).substring(0, 3);
+				ismm = true;
+				return beg + '(F.resource(resource, mm) || mm).substring(0, 3)' + end;
 			case 'MMMM':
-				var m = MONTHS[self.getMonth()];
-				return (F.resource(resource, m) || m);
+				ismm = true;
+				return beg + '(F.resource(resource, mm) || mm)' + end;
 			case 'MM':
-				return (self.getMonth() + 1).toString().padLeft(2, '0');
+				return beg + '(d.getMonth() + 1).toString().padLeft(2, \'0\')' + end;
 			case 'M':
-				return (self.getMonth() + 1);
+				return beg + '(d.getMonth() + 1)' + end;
 			case 'ddd':
-				var m = DAYS[self.getDay()];
-				return (F.resource(resource, m) || m).substring(0, 2).toUpperCase();
+				isdd = true;
+				return beg + '(F.resource(resource, dd) || dd).substring(0, 2).toUpperCase()' + end;
 			case 'dddd':
-				var m = DAYS[self.getDay()];
-				return (F.resource(resource, m) || m);
+				isdd = true;
+				return beg + '(F.resource(resource, dd) || dd)' + end;
 			case 'dd':
-				return self.getDate().toString().padLeft(2, '0');
+				return beg + 'd.getDate().toString().padLeft(2, \'0\')' + end;
 			case 'd':
-				return self.getDate();
+				return beg + 'd.getDate()' + end;
 			case 'HH':
 			case 'hh':
-				return h.toString().padLeft(2, '0');
+				return beg + 'd.toString().padLeft(2, \'0\')' + end;
 			case 'H':
 			case 'h':
-				return self.getHours();
+				return beg + 'd.getHours()' + end;
 			case 'mm':
-				return self.getMinutes().toString().padLeft(2, '0');
+				return beg + 'd.getMinutes().toString().padLeft(2, \'0\')' + end;
 			case 'm':
-				return self.getMinutes();
+				return beg + 'd.getMinutes()' + end;
 			case 'ss':
-				return self.getSeconds().toString().padLeft(2, '0');
+				return beg + 'd.getSeconds().toString().padLeft(2, \'0\')' + end;
 			case 's':
-				return self.getSeconds();
+				return beg + 'd.getSeconds()' + end;
 			case 'w':
 			case 'ww':
-				var tmp = new Date(+self);
-				tmp.setHours(0, 0, 0);
-				tmp.setDate(tmp.getDate() + 4 - (tmp.getDay() || 7));
-				tmp = Math.ceil((((tmp - new Date(tmp.getFullYear(), 0, 1)) / 8.64e7) + 1) / 7);
-				return key === 'ww' ? tmp.toString().padLeft(2, '0') : tmp;
+				isww = true;
+				return beg + (key === 'ww' ? 'ww.toString().padLeft(2, \'0\')' : 'ww') + end;
 			case 'a':
-				return self.getHours() >= 12 ? 'PM' : 'AM';
+				var b = "'PM':'AM'";
+				return beg + '(d.getHours() >= 12 ? ' + b + end;
 		}
 	});
+
+	ismm && before.push('var mm = framework_utils.MONTHS[d.getMonth()];');
+	isdd && before.push('var dd = framework_utils.DAYS[d.getDay()];');
+	isww && before.push('var ww = new Date(+d);ww.setHours(0, 0, 0);ww.setDate(ww.getDate() + 4 - (ww.getDay() || 7));ww = Math.ceil((((ww - new Date(ww.getFullYear(), 0, 1)) / 8.64e7) + 1) / 7);');
+
+	datetimeformat[key] = new Function('d', 'resource', before.join('\n') + 'return \'' + format + '\';');
+	return datetimeformat[key](this, resource);
 };
 
 Date.prototype.toUTC = function(ticks) {
