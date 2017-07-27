@@ -2691,7 +2691,7 @@ Date.prototype.format = function(format, resource) {
 				return beg + 'd.getDate()' + end;
 			case 'HH':
 			case 'hh':
-				return beg + 'd.toString().padLeft(2, \'0\')' + end;
+				return beg + 'd.getHours().toString().padLeft(2, \'0\')' + end;
 			case 'H':
 			case 'h':
 				return beg + 'd.getHours()' + end;
