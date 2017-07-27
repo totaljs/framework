@@ -15195,7 +15195,13 @@ process.on('message', function(msg, h) {
 });
 
 function prepare_error(e) {
-	return (RELEASE || !e) ? '' : ' :: ' + (e instanceof ErrorBuilder ? e.plain() : e.stack ? e.stack.toString() : e.toString());
+	if (!e)
+		return '';
+	else if (e instanceof ErrorBuilder)
+		return ' :: ' + e.plain();
+	else if (e.stack)
+		return RELEASE ? '' : e.stack;
+	return e.toString();
 }
 
 function prepare_filename(name) {
