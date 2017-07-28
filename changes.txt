@@ -16,6 +16,7 @@
 - updated: file `/workflows` supports custom `options`, more in docs
 - updated: `Array.random()` algorithm (+70% faster than older)
 - updated: `RESTBuilder.file(name, filetarget, [filename])` can contain `filename` instead of buffer
+- updated: `U.streamer(beg, [end], onItem(item, index), [skip], [stream])` added a new argument `stream` for flushing buffer
 
 - fixed: (IMPORTANT) long messages in WebSocket
 - fixed: (IMPORTANT) `controller` param in schemas

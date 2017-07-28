@@ -1562,16 +1562,23 @@ exports.isRelative = function(url) {
  * @param {String} end
  * @param {Function(value, index)} callback
  */
-exports.streamer = function(beg, end, callback, skip) {
+exports.streamer = function(beg, end, callback, skip, stream) {
 
 	if (typeof(end) === 'function') {
+		stream = skip;
 		skip = callback;
 		callback = end;
 		end = undefined;
 	}
 
+	if (typeof(skip) === 'object') {
+		stream = skip;
+		skip = 0;
+	}
+
 	var indexer = 0;
 	var buffer = exports.createBufferSize();
+	var fn;
 
 	if (skip === undefined)
 		skip = 0;
@@ -1582,7 +1589,7 @@ exports.streamer = function(beg, end, callback, skip) {
 
 	if (!end) {
 		var length = beg.length;
-		return function(chunk) {
+		fn = function(chunk) {
 
 			if (!chunk)
 				return;
@@ -1608,6 +1615,9 @@ exports.streamer = function(beg, end, callback, skip) {
 					return;
 			}
 		};
+
+		stream && stream.on('end', () => fn(beg));
+		return fn;
 	}
 
 	var blength = beg.length;
@@ -1616,7 +1626,7 @@ exports.streamer = function(beg, end, callback, skip) {
 	var ei = -1;
 	var is = false;
 
-	return function(chunk) {
+	fn = function(chunk) {
 
 		if (!chunk)
 			return;
@@ -1656,6 +1666,9 @@ exports.streamer = function(beg, end, callback, skip) {
 				return;
 		}
 	};
+
+	stream && stream.on('end', () => fn(end));
+	return fn;
 };
 
 /**
