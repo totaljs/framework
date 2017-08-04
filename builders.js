@@ -1281,11 +1281,12 @@ SchemaBuilderEntity.prototype.default = function() {
 					item[property] = [];
 				} else {
 					var tmp = this.find(type.raw);
-					if (!tmp) {
+					if (tmp) {
+						item[property] = tmp.default();
+					} else {
 						F.error(new Error('Schema: "' + property + '.' + type.raw + '" not found in "' + this.parent.name + '".'));
 						item[property] = null;
-					} else
-						item[property] = tmp.default();
+					}
 				}
 				break;
 			// enum + keyvalue
