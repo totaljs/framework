@@ -1775,6 +1775,16 @@ DatabaseBuilder.prototype.scalar = function(type, name) {
 	return this;
 };
 
+DatabaseBuilder.prototype.contains = function(name) {
+	this.$filter.push({ scope: this.$scope, filter: compare_notempty, name: name });
+	return this;
+};
+
+DatabaseBuilder.prototype.empty = function(name) {
+	this.$filter.push({ scope: this.$scope, filter: compare_empty, name: name });
+	return this;
+};
+
 DatabaseBuilder.prototype.where = function(name, operator, value) {
 
 	var fn;
@@ -3023,6 +3033,16 @@ function compare_notin(doc, index, item) {
 		return true;
 	}
 	return item.value.indexOf(val) === -1;
+}
+
+function compare_notempty(doc, index, item) {
+	var val = doc[item.name];
+	return val instanceof Array ? (val.length ? true : false) : (val ? true : false);
+}
+
+function compare_empty(doc, index, item) {
+	var val = doc[item.name];
+	return val instanceof Array ? (val.length ? false : true) : (val ? false : true);
 }
 
 function compare_datetype(type, eqtype, val, doc) {
