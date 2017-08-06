@@ -6,6 +6,7 @@
 - added: `MailMessage.send2([callback])` sends a message according to the framework configuration
 - added: a new filter for NoSQL embedded `DatabaseBuilder.contains(name)`
 - added: a new filter for NoSQL embedded `DatabaseBuilder.empty(name)`
+- added: NoSQL counter `db.counter.clear()` for clearing stats
 
 - updated: (IMPORTANT) packages compress/decompress function supports streaming data
 - updated: (IMPORTANT) `NOSQL().backup()` !!! was changed !!!!
