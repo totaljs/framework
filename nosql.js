@@ -2089,6 +2089,7 @@ function Counter(db) {
 Counter.prototype.convert2 = function(filename) {
 	var reader = Fs.createReadStream(filename);
 	var writer = Fs.createWriteStream(filename + '2');
+	var self = this;
 	reader.on('data', framework_utils.streamer(NEWLINE, function(value) {
 		var arr = value.split(';');
 		var years = {};
@@ -2107,8 +2108,9 @@ Counter.prototype.convert2 = function(filename) {
 	}));
 
 	reader.on('end', function() {
+		console.log(F.datetime.format('yyyy-MM-dd HH:mm:ss') + ' :: CONVERTING NOSQL "{0}" COUNTER TO VERSION 2'.format(self.db.name));
 		writer.end();
-		Fs.unlink(filename, NOOP);
+		Fs.rename(filename, filename + '-backup', NOOP);
 	});
 };
 
