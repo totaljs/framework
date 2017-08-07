@@ -21,7 +21,7 @@
 
 /**
  * @module NoSQL
- * @version 2.7.0
+ * @version 2.8.0
  */
 
 'use strict';
@@ -289,8 +289,8 @@ Database.prototype.backup = function(filename, callback) {
 	});
 
 	pending.push(function(next) {
-		F.path.exists(F.path.databases(self.name + EXTENSION + '-counter'), function(e) {
-			e && list.push(Path.join(F.config['directory-databases'], self.name + EXTENSION + '-counter'));
+		F.path.exists(F.path.databases(self.name + EXTENSION + '-counter2'), function(e) {
+			e && list.push(Path.join(F.config['directory-databases'], self.name + EXTENSION + '-counter2'));
 			next();
 		});
 	});
@@ -2071,14 +2071,46 @@ DatabaseBuilder.prototype.prepare = function(fn) {
 };
 
 function Counter(db) {
-	this.TIMEOUT = 30000;
-	this.db = db;
-	this.cache;
-	this.key = 'nosql' + db.name.hash();
-	this.type = 0; // 1 === saving, 2 === reading
-	this.$events = {};
-	this.locked = false;
+	var self = this;
+	self.TIMEOUT = 5000; // @TODO: 30000
+	self.db = db;
+	self.cache;
+	self.key = 'nosql' + db.name.hash();
+	self.type = 0; // 1 === saving, 2 === reading
+	self.$events = {};
+	self.locked = false;
+
+	var filename = self.db.filename + '-counter';
+	F.path.exists(filename, function(e) {
+		e && self.convert2(filename);
+	});
 }
+
+Counter.prototype.convert2 = function(filename) {
+	var reader = Fs.createReadStream(filename);
+	var writer = Fs.createWriteStream(filename + '2');
+	reader.on('data', framework_utils.streamer(NEWLINE, function(value) {
+		var arr = value.split(';');
+		var years = {};
+		for (var i = 1, length = arr.length; i < length; i++) {
+			var item = arr[i];
+			var year = item.substring(0, 4);
+			!years[year] && (years[year] = ['sum' + year + arr[0]]);
+			years[year].push(item.substring(4, 6) + '01' + item.substring(6).trim());
+		}
+		arr = Object.keys(years);
+		for (var i = 1, length = arr.length; i < length; i++) {
+			var year = arr[i];
+			var item = years[year];
+			writer.write(item.join(';') + NEWLINE);
+		}
+	}));
+
+	reader.on('end', function() {
+		writer.end();
+		Fs.unlink(filename, NOOP);
+	});
+};
 
 Counter.prototype.emit = function(name, a, b, c, d, e, f, g) {
 	var evt = this.$events[name];
@@ -2140,24 +2172,74 @@ Counter.prototype.removeAllListeners = function(name) {
 	return this;
 };
 
+Counter.prototype.empty = function(key, value) {
+	var self = this;
+	!self.cache && (self.cache = {});
+	self.cache[key] = value;
+	return self;
+};
+
+Counter.prototype.min = function(id, count) {
+
+	var self = this;
+
+	if (id instanceof Array) {
+		for (var i = 0, length = id.length; i < length; i++)
+			self.min(id[i], count);
+		return self;
+	}
+
+	var key = 'min' + F.datetime.getFullYear() + '' + id;
+	if (!self.cache || !self.cache[key])
+		self.empty(key, count);
+	else
+		self.cache[key] = Math.min(self.cache[key], count);
+
+	setTimeout2(self.key, () => self.save(), self.TIMEOUT, 5);
+	this.$events.min && self.emit('min', id, count || 1);
+	return self;
+};
+
+Counter.prototype.max = function(id, count) {
+
+	var self = this;
+
+	if (id instanceof Array) {
+		for (var i = 0, length = id.length; i < length; i++)
+			self.min(id[i], count);
+		return self;
+	}
+
+	var key = 'max' + F.datetime.getFullYear() + '' + id;
+	if (!self.cache || !self.cache[key])
+		self.empty(key, count);
+	else
+		self.cache[key] = Math.max(self.cache[key], count);
+
+	setTimeout2(self.key, () => self.save(), self.TIMEOUT, 5);
+	this.$events.max && self.emit('max', id, count || 1);
+	return self;
+};
+
 Counter.prototype.inc = Counter.prototype.hit = function(id, count) {
 
 	var self = this;
 
 	if (id instanceof Array) {
-		id.forEach(n => self.hit(n, count));
+		for (var i = 0, length = id.length; i < length; i++)
+			self.min(id[i], count);
 		return self;
 	}
 
-	!self.cache && (self.cache = {});
-
-	if (self.cache[id])
-		self.cache[id] += count || 1;
+	var key = 'sum' + F.datetime.getFullYear() + '' + id;
+	if (!self.cache || !self.cache[key])
+		self.empty(key, count || 1);
 	else
-		self.cache[id] = count || 1;
+		self.cache[key] += count || 1;
 
 	setTimeout2(self.key, () => self.save(), self.TIMEOUT, 5);
-	self.emit('hit', id, count || 1);
+	this.$events.sum && self.emit('sum', id, count || 1);
+	this.$events.hits && self.emit('hit', id, count || 1);
 	return self;
 };
 
@@ -2183,7 +2265,39 @@ Counter.prototype.count = function(id, callback) {
 		id = null;
 	}
 
-	return this.read(id, 0, callback);
+	var options = {};
+	options.subtype = 0;
+	options.id = id;
+	options.type = 'sum';
+	return this.read(options, callback);
+};
+
+Counter.prototype.maximum = function(id, callback) {
+
+	if (typeof(id) === 'function') {
+		callback = id;
+		id = null;
+	}
+
+	var options = {};
+	options.subtype = 0;
+	options.id = id;
+	options.type = 'max';
+	return this.read(options, callback);
+};
+
+Counter.prototype.minimum = function(id, callback) {
+
+	if (typeof(id) === 'function') {
+		callback = id;
+		id = null;
+	}
+
+	var options = {};
+	options.subtype = 0;
+	options.id = id;
+	options.type = 'min';
+	return this.read(options, callback);
 };
 
 Counter.prototype.clear = function(callback) {
@@ -2195,7 +2309,7 @@ Counter.prototype.clear = function(callback) {
 	}
 
 	self.type = 3;
-	Fs.unlink(self.db.filename + '-counter', function() {
+	Fs.unlink(self.db.filename + '-counter2', function() {
 		self.type = 0;
 		callback && callback();
 	});
@@ -2203,113 +2317,300 @@ Counter.prototype.clear = function(callback) {
 	return self;
 };
 
-Counter.prototype.yearly = function(id, callback) {
+Counter.prototype.yearly = Counter.prototype.yearly_sum = function(id, callback) {
 
 	if (typeof(id) === 'function') {
 		callback = id;
 		id = null;
 	}
 
-	return this.read(id, 1, callback);
+	var options = {};
+	options.subtype = 1;
+	options.id = id;
+	options.type = 'sum';
+	return this.read(options, callback);
 };
 
-Counter.prototype.monthly = function(id, callback) {
+Counter.prototype.monthly= Counter.prototype.monthly_sum = function(id, callback) {
 
 	if (typeof(id) === 'function') {
 		callback = id;
 		id = null;
 	}
 
-	return this.read(id, 2, callback);
+	var options = {};
+	options.subtype = 2;
+	options.id = id;
+	options.type = 'sum';
+	return this.read(options, callback);
 };
 
-Counter.prototype.read = function(id, type, callback) {
+Counter.prototype.daily = Counter.prototype.daily_sum = function(id, callback) {
+
+	if (typeof(id) === 'function') {
+		callback = id;
+		id = null;
+	}
+
+	var options = {};
+	options.subtype = 3;
+	options.id = id;
+	options.type = 'sum';
+	return this.read(options, callback);
+};
+
+Counter.prototype.yearly_max = function(id, callback) {
+
+	if (typeof(id) === 'function') {
+		callback = id;
+		id = null;
+	}
+
+	var options = {};
+	options.subtype = 1;
+	options.id = id;
+	options.type = 'max';
+	return this.read(options, callback);
+};
+
+Counter.prototype.monthly_max = function(id, callback) {
+
+	if (typeof(id) === 'function') {
+		callback = id;
+		id = null;
+	}
+
+	var options = {};
+	options.subtype = 2;
+	options.id = id;
+	options.type = 'max';
+	return this.read(options, callback);
+};
+
+Counter.prototype.daily_max = function(id, callback) {
+
+	if (typeof(id) === 'function') {
+		callback = id;
+		id = null;
+	}
+
+	var options = {};
+	options.subtype = 3;
+	options.id = id;
+	options.type = 'max';
+	return this.read(options, callback);
+};
+
+Counter.prototype.yearly_min = function(id, callback) {
+
+	if (typeof(id) === 'function') {
+		callback = id;
+		id = null;
+	}
+
+	var options = {};
+	options.subtype = 1;
+	options.id = id;
+	options.type = 'min';
+	return this.read(options, callback);
+};
+
+Counter.prototype.monthly_min = function(id, callback) {
+
+	if (typeof(id) === 'function') {
+		callback = id;
+		id = null;
+	}
+
+	var options = {};
+	options.subtype = 2;
+	options.id = id;
+	options.type = 'min';
+	return this.read(options, callback);
+};
+
+Counter.prototype.daily_min = function(id, callback) {
+
+	if (typeof(id) === 'function') {
+		callback = id;
+		id = null;
+	}
+
+	var options = {};
+	options.subtype = 3;
+	options.id = id;
+	options.type = 'min';
+	return this.read(options, callback);
+};
+
+Counter.prototype.read = function(options, callback) {
 
 	var self = this;
 
 	if (self.type) {
-		setTimeout(() => self.read(id, type, callback), 200);
+		setTimeout(() => self.read(options, callback), 200);
 		return self;
 	}
 
-	// 0 == type: summarize
-	// 1 == type: full
+	// 0 == options.subtype: summarize
+	// 1 == options.subtype: full
 
-	var filename = self.db.filename + '-counter';
+	var filename = self.db.filename + '-counter2';
 	var reader = Fs.createReadStream(filename);
 	var keys = {};
 	var single = false;
-	var all = id ? false : true;
-	var output = all && !type ? 0 : {};
+	var all = options.id ? false : true;
+	var output = all && !options.subtype ? null : {};
 
-	if (typeof(id) === 'string') {
-		id = [id];
+	if (typeof(options.id) === 'string') {
+		options.id = [options.id];
 		single = true;
 	}
 
-	id instanceof Array && id.forEach(id => keys[id] = true);
+	if (options.id) {
+		for (var i = 0, length = options.id.length; i < length; i++)
+			keys[options.type + options.id[i]] = true;
+	}
+
 	self.type = 2;
 
 	reader.on('error', function() {
 		self.type = 0;
-		callback(null, single ? (type ? output : 0) : (all ? EMPTYARRAY : output));
+		callback(null, single ? (options.subtype ? output : 0) : (all ? EMPTYARRAY : output));
 	});
 
 	reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
+
 		var index = value.indexOf('=');
-		var key = value.substring(0, index);
-		if (all || id === true || keys[key])
-			switch (type) {
+		var key = value.substring(7, index);
+		var type = value.substring(0, 3);
+
+		if (options.type !== type)
+			return;
+
+		var tmp;
+		var year = value.substring(3, 7);
+		if (all || options.id === true || keys[type + key]) {
+			switch (options.subtype) {
 				case 0:
-					if (all)
-						output += +value.substring(index + 1, value.indexOf(';'));
-					else
-						output[key] = +value.substring(index + 1, value.indexOf(';'));
+					var val = +value.substring(index + 1, value.indexOf(';'));
+					switch (options.type) {
+						case 'max':
+							if (all)
+								output = output == null ? val : Math.max(output, val);
+							else
+								output[key] = val;
+							break;
+						case 'min':
+							if (all)
+								output = output == null ? val : Math.min(output, val);
+							else
+								output[key] = val;
+							break;
+						case 'sum':
+							if (all)
+								output = (output || 0) + val;
+							else
+								output[key] = val;
+							break;
+					}
 					break;
 				case 1:
 					if (all)
-						counter_parse_years_all(output, value);
-					else
-						output[key] = counter_parse_years(value);
+						counter_parse_years_all(output, value, year, options.type);
+					else {
+						tmp = counter_parse_years(value, year, options.type);
+						if (output[key])
+							output[key].push.apply(output[key], tmp);
+						else
+							output[key] = tmp;
+					}
 					break;
 				case 2:
 					if (all)
-						counter_parse_months_all(output, value);
-					else
-						output[key] = counter_parse_months(value);
+						counter_parse_months_all(output, value, year, options.type);
+					else {
+						tmp = counter_parse_months(value, year, options.type);
+						if (output[key])
+							output[key].push.apply(output[key], tmp);
+						else
+							output[key] = tmp;
+					}
+					break;
+				case 3:
+					if (all)
+						counter_parse_days_all(output, value, year, options.type);
+					else {
+						tmp = counter_parse_days(value, year, options.type);
+						if (output[key])
+							output[key].push.apply(output[key], tmp);
+						else
+							output[key] = tmp;
+					}
 					break;
 			}
+		}
 	}));
 
 	reader.on('end', function() {
 		self.type = 0;
-
 		// Array conversation
-		if (all && type) {
+		if (all && options.subtype) {
 			var tmp = [];
-			if (type === 2)
-				Object.keys(output).forEach(key => tmp.push({ id: key, year: +key.substring(0, 4), month: +key.substring(4, 6), value: output[key] }));
-			else
-				Object.keys(output).forEach(key => tmp.push({ year: +key, value: output[key] }));
+			var keys;
+			switch (options.subtype) {
+				case 3: // daily
+					keys = Object.keys(output);
+					for (var i = 0, length = keys.length; i < length; i++) {
+						var key = keys[i];
+						tmp.push({ id: key, year: +key.substring(0, 4), month: +key.substring(4, 6), day: +key.substring(6, 8), value: output[key] });
+					}
+					break;
+				case 2: // monthly
+					keys = Object.keys(output);
+					for (var i = 0, length = keys.length; i < length; i++) {
+						var key = keys[i];
+						tmp.push({ id: key, year: +key.substring(0, 4), month: +key.substring(4, 6), value: output[key] });
+					}
+					break;
+				case 1: // yearly
+					keys = Object.keys(output);
+					for (var i = 0, length = keys.length; i < length; i++) {
+						var key = keys[i];
+						tmp.push({ id: key, year: +key.substring(0, 4), value: output[key] });
+					}
+					break;
+			}
 			output = tmp;
 		}
 
-		callback(null, single ? (type ? output[id[0]] || EMPTYOBJECT : output[id[0]] || 0) : output);
+		callback(null, single ? (options.subtype ? output[options.id[0]] || EMPTYOBJECT : output[options.id[0]] || 0) : output);
 	});
 
 	return self;
 };
 
-Counter.prototype.stats = function(top, year, month, callback) {
+Counter.prototype.stats_max = function(top, year, month, day, callback) {
+	return this.stats(top, year, month, day, callback, 'max');
+};
+
+Counter.prototype.stats_min = function(top, year, month, day, callback) {
+	return this.stats(top, year, month, day, callback, 'min');
+};
+
+Counter.prototype.stats = Counter.prototype.stats_sum = function(top, year, month, day, callback, type) {
 
 	var self = this;
 
 	if (self.type) {
-		setTimeout(() => self.stats(top, year, month, callback), 200);
+		setTimeout(() => self.stats(top, year, month, day, callback, type), 200);
 		return self;
 	}
 
-	if (typeof(month) == 'function') {
+	if (typeof(day) == 'function') {
+		callback = day;
+		day = null;
+	} else if (typeof(month) == 'function') {
 		callback = month;
 		month = null;
 	} else if (typeof(year) === 'function') {
@@ -2317,20 +2618,24 @@ Counter.prototype.stats = function(top, year, month, callback) {
 		year = month = null;
 	}
 
-	var filename = self.db.filename + '-counter';
+	var filename = self.db.filename + '-counter2';
 	var reader = Fs.createReadStream(filename);
-	var date;
+	var date = null;
 	var output = [];
+
+	if (!type)
+		type = 'sum';
 
 	self.type = 3;
 
-	if (year != null) {
-		date = year.toString();
-		if (month != null) {
-			date += month.padLeft(2, '0');
+	if (year) {
+		if (month) {
+			date = month.padLeft(2, '0') + '\\d{2}';
 			date = new RegExp(';' + date + '=\\d+', 'g');
-		} else
-			date = new RegExp(';' + date + '\\d+=\\d+', 'g');
+		} else if (day) {
+			date = month.padLeft(2, '0') + day.padLeft(2, '0');
+			date = new RegExp(';' + date + '=\\d+', 'g');
+		}
 	}
 
 	reader.on('error', function() {
@@ -2338,17 +2643,26 @@ Counter.prototype.stats = function(top, year, month, callback) {
 		callback && callback(null, output);
 	});
 
+	if (year > 0)
+		year = year.toString();
+
 	reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
+
 		var index = value.indexOf('=');
-		var count;
+		if (value.substring(0, 3) !== type || (year && value.substring(3, 7) !== year))
+			return;
+
+		var count = null;
+
 		if (date) {
 			var matches = value.match(date);
 			if (!matches)
 				return;
-			count = counter_parse_stats(matches);
+			count = counter_parse_stats(matches, type);
 		} else
 			count = +value.substring(index + 1, value.indexOf(';', index));
-		counter_parse_stats_avg(output, top, value.substring(0, index), count);
+
+		count != null && counter_parse_stats_avg(output, top, value.substring(7, index), count, type);
 	}));
 
 	reader.on('end', function() {
@@ -2359,17 +2673,39 @@ Counter.prototype.stats = function(top, year, month, callback) {
 	return self;
 };
 
-function counter_parse_stats_avg(group, top, key, count) {
+function counter_sort_sum(a, b) {
+	return a.count > b.count ? -1 : a.count === b.count ? 0 : 1;
+}
+
+function counter_sort_min(a, b) {
+	return a.count > b.count ? 1 : a.count === b.count ? 0 : -1;
+}
+
+function counter_parse_stats_avg(group, top, key, count, type) {
 
 	if (group.length < top) {
 		group.push({ id: key, count: count });
-		group.length === top && group.sort((a, b) => a.count > b.count ? -1 : a.count === b.count ? 0 : 1);
+		if (group.length === top) {
+			switch (type) {
+				case 'max':
+				case 'sum':
+					group.sort(counter_sort_sum);
+					break;
+				case 'min':
+					group.sort(counter_sort_min);
+					break;
+			}
+		}
 		return;
 	}
 
 	for (var i = 0, length = group.length; i < length; i++) {
 		var item = group[i];
-		if (item.count > count)
+
+		if (type === 'min') {
+			if (item.count < count)
+				continue;
+		} else if (item.count > count)
 			continue;
 
 		for (var j = length - 1; j > i; j--) {
@@ -2383,74 +2719,198 @@ function counter_parse_stats_avg(group, top, key, count) {
 	}
 }
 
-function counter_parse_stats(matches) {
+function counter_parse_stats(matches, type) {
 
-	var value = 0;
+	var value = null;
 
 	for (var i = 0, length = matches.length; i < length; i++) {
 		var item = matches[i];
-		var val = +item.substring(item.indexOf('=', 5) + 1);
-		if (val > 0)
-			value += val;
+		var val = +item.substring(item.indexOf('=', 3) + 1);
+
+		switch (type) {
+			case 'max':
+				value = value == null ? val : Math.max(value, val);
+				break;
+			case 'min':
+				value = value == null ? val : Math.min(value, val);
+				break;
+			case 'sum':
+				value += val;
+				break;
+		}
 	}
 
 	return value;
 }
 
-function counter_parse_years(value) {
+function counter_parse_years(value, year, type) {
 
 	var arr = value.trim().split(';');
 	var tmp = {};
-	var output = [];
 
 	for (var i = 1, length = arr.length; i < length; i++) {
-		var val = +arr[i].substring(7);
-		var key = arr[i].substring(0, 4);
-		tmp[key] = val;
+		var val = +arr[i].substring(5);
+		if (tmp[year]) {
+			switch (type) {
+				case 'max':
+					tmp[year].value = Math.max(tmp[year].value, val);
+					break;
+				case 'min':
+					tmp[year].value = Math.min(tmp[year].value, val);
+					break;
+				case 'sum':
+					tmp[year].value += val;
+					break;
+			}
+		} else
+			tmp[year] = { id: year, year: +year, value: val };
 	}
 
+	var output = [];
 	var keys = Object.keys(tmp);
 	for (var i = 0, length = keys.length; i < length; i++)
-		output.push({ year: +keys[i], value: tmp[keys[i]] });
+		output.push(tmp[keys[i]]);
 
 	return output;
 }
 
-function counter_parse_months(value) {
+function counter_parse_months(value, year, type) {
 
 	var arr = value.trim().split(';');
-	var tmp = [];
+	var tmp = {};
 
 	for (var i = 1, length = arr.length; i < length; i++) {
-		var val = +arr[i].substring(7);
-		var key = arr[i].substring(0, 6);
-		tmp.push({ id: key, year: +arr[i].substring(0, 4), month: +arr[i].substring(4, 6), value: val });
+		var val = +arr[i].substring(5);
+		var key = year + arr[i].substring(0, 2);
+
+		if (tmp[key]) {
+			switch (type) {
+				case 'max':
+					tmp[key].value = Math.max(tmp[key].value, val);
+					break;
+				case 'min':
+					tmp[key].value = Math.min(tmp[key].value, val);
+					break;
+				case 'sum':
+					tmp[key].value += val;
+					break;
+			}
+		} else
+			tmp[key] = { id: key, year: +year, month: +key.substring(4), value: val };
 	}
 
-	return tmp;
+	var output = [];
+	var keys = Object.keys(tmp);
+	for (var i = 0, length = keys.length; i < length; i++)
+		output.push(tmp[keys[i]]);
+
+	return output;
 }
 
-function counter_parse_years_all(output, value) {
+function counter_parse_days(value, year, type) {
+
+	var arr = value.trim().split(';');
+	var tmp = {};
+
+	for (var i = 1, length = arr.length; i < length; i++) {
+		var val = +arr[i].substring(5);
+		var key = year + arr[i].substring(0, 4);
+
+		if (tmp[key]) {
+			switch (type) {
+				case 'max':
+					tmp[key].value = Math.max(tmp[key].value, val);
+					break;
+				case 'min':
+					tmp[key].value = Math.min(tmp[key].value, val);
+					break;
+				case 'sum':
+					tmp[key].value += val;
+					break;
+			}
+		} else
+			tmp[key] = { id: key, year: +year, month: +key.substring(4, 6), day: +key.substring(6), value: val };
+	}
+
+	var output = [];
+	var keys = Object.keys(tmp);
+	for (var i = 0, length = keys.length; i < length; i++)
+		output.push(tmp[keys[i]]);
+	return output;
+}
+
+function counter_parse_years_all(output, value, year, type) {
 	var arr = value.trim().split(';');
 	for (var i = 1, length = arr.length; i < length; i++) {
-		var val = +arr[i].substring(7);
-		var key = arr[i].substring(0, 4);
-		if (output[key])
-			output[key] += val;
-		else
-			output[key] = val;
+
+		var val = +arr[i].substring(5);
+
+		if (!output[year]) {
+			output[year] = val;
+			continue;
+		}
+
+		switch (type) {
+			case 'max':
+				output[year] = Math.max(output[year], val);
+				break;
+			case 'min':
+				output[year] = Math.min(output[year], val);
+				break;
+			case 'sum':
+				output[year] += val;
+				break;
+		}
 	}
 }
 
-function counter_parse_months_all(output, value) {
+function counter_parse_months_all(output, value, year, type) {
 	var arr = value.trim().split(';');
 	for (var i = 1, length = arr.length; i < length; i++) {
-		var val = +arr[i].substring(7);
-		var key = arr[i].substring(0, 6);
-		if (output[key])
-			output[key] += val;
-		else
+		var val = +arr[i].substring(5);
+		var key = year + arr[i].substring(0, 2);
+
+		if (!output[key]) {
 			output[key] = val;
+			continue;
+		}
+
+		switch (type) {
+			case 'max':
+				output[key] = Math.max(output[key], val);
+				break;
+			case 'min':
+				output[key] = Math.min(output[key], val);
+				break;
+			case 'sum':
+				output[key] += val;
+				break;
+		}
+	}
+}
+
+function counter_parse_days_all(output, value, year, type) {
+	var arr = value.trim().split(';');
+	for (var i = 1, length = arr.length; i < length; i++) {
+		var val = +arr[i].substring(5);
+		var key = year + arr[i].substring(0, 4);
+
+		if (!output[key]) {
+			output[key] = val;
+			continue;
+		}
+
+		switch (type) {
+			case 'max':
+				output[key] = Math.max(output[key], val);
+				break;
+			case 'min':
+				output[key] = Math.min(output[key], val);
+				break;
+			case 'sum':
+				output[key] += val;
+				break;
+		}
 	}
 }
 
@@ -2462,10 +2922,10 @@ Counter.prototype.save = function() {
 		return self;
 	}
 
-	var filename = self.db.filename + '-counter';
+	var filename = self.db.filename + '-counter2';
 	var reader = Fs.createReadStream(filename);
 	var writer = Fs.createWriteStream(filename + '-tmp');
-	var dt = F.datetime.format('yyyyMM') + '=';
+	var dt = F.datetime.format('MMdd') + '=';
 	var cache = self.cache;
 
 	self.cache = null;
@@ -2480,7 +2940,7 @@ Counter.prototype.save = function() {
 		var keys = Object.keys(cache);
 		for (var i = 0, length = keys.length; i < length; i++) {
 			var item = cache[keys[i]];
-			item && writer.write(keys[i] + '=' + item + ';' + dt + item + NEWLINE);
+			item != null && writer.write(keys[i] + '=' + item + ';' + dt + item + NEWLINE);
 		}
 		writer.end();
 	};
@@ -2488,37 +2948,61 @@ Counter.prototype.save = function() {
 	reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
 
 		var id = value.substring(0, value.indexOf('='));
+		var count = cache[id];
 
-		if (!cache[id]) {
-			cache[id] !== null && writer.write(value);
+		if (count === null)
+			return;
+
+		if (count === undefined) {
+			writer.write(value);
 			return;
 		}
 
-		// 0 === id=COUNT
-		// N === yyyyMM=COUNT
-		var hits = cache[id];
+		// 0 === typeYEARid=COUNT
+		// N === MMdd=COUNT
+
 		var arr = value.trim().split(';');
 		var is = false;
 		var index = arr[0].indexOf('=');
+		var type = id.substring(0, 3);
 
-		// Update summarize
-		arr[0] = arr[0].substring(0, index + 1) + (+arr[0].substring(index + 1) + hits);
+		// Update summarization
+		switch (type) {
+			case 'max':
+				arr[0] = arr[0].substring(0, index + 1) + Math.max(+arr[0].substring(index + 1), count);
+				break;
+			case 'min':
+				arr[0] = arr[0].substring(0, index + 1) + Math.min(+arr[0].substring(index + 1), count);
+				break;
+			case 'sum':
+				arr[0] = arr[0].substring(0, index + 1) + (+arr[0].substring(index + 1) + count);
+				break;
+		}
 
 		for (var i = 1, length = arr.length; i < length; i++) {
 
 			var item = arr[i];
-			var curr = item.substring(0, 7);
+			var curr = item.substring(0, 5); // MMdd
 
 			if (curr === dt) {
 				is = true;
-				arr[i] = curr + (+item.substring(7) + hits);
+				switch (type) {
+					case 'max':
+						arr[i] = curr + Math.max(+item.substring(5), count);
+						break;
+					case 'min':
+						arr[i] = curr + Math.min(+item.substring(5), count);
+						break;
+					case 'sum':
+						arr[i] = curr + (+item.substring(5) + count);
+						break;
+				}
 				break;
 			}
 		}
 
 		cache[id] = undefined;
-
-		!is && arr.push(dt + hits);
+		!is && arr.push(dt + count);
 		writer.write(arr.join(';') + NEWLINE);
 	}));
 
@@ -2555,7 +3039,7 @@ Counter.prototype.clear = function(callback) {
 
 	self.type = 3;
 
-	Fs.unlink(self.db.filename + '-counter', function() {
+	Fs.unlink(self.db.filename + '-counter2', function() {
 
 		if (F.isCluster) {
 			CLUSTER_UNLOCK_COUNTER.name = self.name;
