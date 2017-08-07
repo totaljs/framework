@@ -22,6 +22,7 @@ function display_help() {
 	console.log('-clean source          : cleans a resource file "-clean source"');
 	console.log('-minify filename       : minifies .js, .css or .html file into filename.min.[extension]');
 	console.log('-v or -version         : Total.js version');
+	console.log('-install               : run "totaljs -install help" to see what can be installed');
 	console.log('8000                   : starts a server');
 	console.log('');
 }
@@ -427,6 +428,54 @@ function main() {
 			console.log('');
 			console.log('output   : ' + tt);
 			console.log('');
+			return;
+		}
+
+		if (cmd === '-i' || cmd === '-install') {
+
+			var libs = ['jc', 'jc.min', 'jcta', 'jcta.min', 'jctajr', 'jctajr.min', 'ta', 'jr', 'jr.jc'];
+			var tmp = process.argv[i + 1] || '';
+
+			if (tmp === 'help') {
+				return console.log('Following libs can be installed: jc, jc.min, jcta.min, jctajr.min, ta, jr, jr.jc');
+			}
+
+			if (!tmp || libs.indexOf(tmp) < 0) 
+				return console.log('Unknown library: "' + tmp + '"');
+				
+			console.log('');
+			console.log('Installing: ' + tmp);
+
+			var url = '';
+			switch(tmp) {
+				case 'jc': 
+					url = 'https://rawgit.com/totaljs/jComponent/master/jc.js';
+					break;
+				case 'jc.min': 
+					url = 'https://rawgit.com/totaljs/jComponent/master/jc.min.js';
+					break;
+				case 'jcta.min': 
+					url = 'https://rawgit.com/totaljs/jComponent/master/jcta.min.js';
+					break;
+				case 'jctajr.min': 
+					url = 'https://rawgit.com/totaljs/jComponent/master/jctajr.min.js';
+					break;
+				case 'ta': 
+					url = 'https://rawgit.com/totaljs/Tangular/master/Tangular.js';
+					break;
+				case 'jr': 
+					url = 'https://rawgit.com/totaljs/jRouting/master/jrouting.js';
+					break;
+				case 'jr.jc': 
+					url = 'https://rawgit.com/totaljs/jRouting/master/jrouting.jcomponent.js';
+					break;
+			}
+
+			U.download(url, [], function callback(err,response) {
+				var target = fs.createWriteStream(path.join(dir, './' + tmp + '.js'));
+				response.pipe(target);
+				console.log('Done!');
+			});
 			return;
 		}
 
