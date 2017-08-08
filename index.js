@@ -1130,8 +1130,15 @@ F.nosql = function(name) {
 	var db = F.databases[name];
 	if (db)
 		return db;
-	F.path.verify('databases');
-	db = framework_nosql.load(name, F.path.databases(name));
+
+	var is = name.substring(0, 6);
+	if (is === 'http:/' || is === 'https:')
+		db = framework_nosql.load(U.getName(name), name);
+	else {
+		F.path.verify('databases');
+		db = framework_nosql.load(name, F.path.databases(name));
+	}
+
 	F.databases[name] = db;
 	return db;
 };

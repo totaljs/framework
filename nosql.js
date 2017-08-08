@@ -45,6 +45,7 @@ const EXTENSION = '.nosql';
 const EXTENSION_BINARY = '.nosql-binary';
 const EXTENSION_TMP = '.nosql-tmp';
 const EXTENSION_META = '.meta';
+const EXTENSION_COUNTER = '-counter2';
 const BINARY_HEADER_LENGTH = 2000;
 const NEWLINE = '\n';
 const EMPTYARRAY = [];
@@ -56,35 +57,40 @@ const CLUSTER_UNLOCK = { TYPE: 'nosql-unlock' };
 const CLUSTER_META = { TYPE: 'nosql-meta' };
 const CLUSTER_LOCK_COUNTER = { TYPE: 'nosql-counter-lock' };
 const CLUSTER_UNLOCK_COUNTER = { TYPE: 'nosql-counter-unlock' };
+const FLAGS_READ = ['get'];
 
 Object.freeze(EMPTYARRAY);
 
 function Database(name, filename) {
-	this.filename = filename + EXTENSION;
-	this.filenameTemp = filename + EXTENSION_TMP;
-	this.filenameMeta = filename + EXTENSION_META;
-	this.directory = Path.dirname(filename);
-	this.filenameBackup = framework_utils.join(this.directory, name + '_backup' + EXTENSION);
-	this.name = name;
-	this.pending_update = [];
-	this.pending_append = [];
-	this.pending_reader = [];
-	this.pending_reader_view = [];
-	this.pending_remove = [];
-	this.views = {};
-	this.step = 0;
-	this.pending_drops = false;
-	this.pending_views = false;
-	this.binary = new Binary(this, this.directory + '/' + this.name + '-binary/');
-	this.counter = new Counter(this);
-	this.inmemory = {};
-	this.inmemorylastusage;
-	this.metadata;
-	this.$meta();
-	this.$timeoutmeta;
-	this.$events = {};
-	this.$free = true;
-	this.locked = false;
+	var self = this;
+	var http = filename.substring(0, 6);
+	self.readonly = http === 'http:/' || http === 'https:';
+	self.filename = self.readonly ? filename.format('') : filename + EXTENSION;
+	self.filenameCounter = self.readonly ? filename.format('counter') : filename + EXTENSION_COUNTER;
+	self.filenameTemp = filename + EXTENSION_TMP;
+	self.filenameMeta = filename + EXTENSION_META;
+	self.directory = Path.dirname(filename);
+	self.filenameBackup = framework_utils.join(self.directory, name + '_backup' + EXTENSION);
+	self.name = name;
+	self.pending_update = [];
+	self.pending_append = [];
+	self.pending_reader = [];
+	self.pending_reader_view = [];
+	self.pending_remove = [];
+	self.views = {};
+	self.step = 0;
+	self.pending_drops = false;
+	self.pending_views = false;
+	self.binary = self.readonly ? null : new Binary(self, self.directory + '/' + self.name + '-binary/');
+	self.counter = new Counter(self);
+	self.inmemory = {};
+	self.inmemorylastusage;
+	self.metadata;
+	self.$meta();
+	self.$timeoutmeta;
+	self.$events = {};
+	self.$free = true;
+	self.locked = false;
 }
 
 Database.prototype.emit = function(name, a, b, c, d, e, f, g) {
@@ -193,8 +199,11 @@ function next_operation(self, type, builder) {
 }
 
 Database.prototype.insert = function(doc, unique) {
+
 	var self = this;
 	var builder;
+
+	self.readonly && self.throwReadonly();
 
 	if (unique) {
 		builder = self.one();
@@ -229,6 +238,7 @@ Database.prototype.upsert = function(doc) {
 
 Database.prototype.update = function(doc, insert) {
 	var self = this;
+	self.readonly && self.throwReadonly();
 	var builder = new DatabaseBuilder();
 	var data = framework_builders.isSchema(doc) ? doc.$clean() : doc;
 	self.pending_update.push({ builder: builder, doc: data, count: 0, insert: insert === true ? data : insert });
@@ -238,6 +248,7 @@ Database.prototype.update = function(doc, insert) {
 
 Database.prototype.modify = function(doc, insert) {
 	var self = this;
+	self.readonly && self.throwReadonly();
 	var builder = new DatabaseBuilder();
 	var data = framework_builders.isSchema(doc) ? doc.$clean() : doc;
 	var keys = Object.keys(data);
@@ -252,7 +263,7 @@ Database.prototype.modify = function(doc, insert) {
 
 Database.prototype.restore = function(filename, callback) {
 	var self = this;
-
+	self.readonly && self.throwReadonly();
 	U.wait(() => !self.type, function(err) {
 
 		if (err)
@@ -271,6 +282,8 @@ Database.prototype.restore = function(filename, callback) {
 Database.prototype.backup = function(filename, callback) {
 
 	var self = this;
+	self.readonly && self.throwReadonly();
+
 	var list = [];
 	var pending = [];
 
@@ -289,8 +302,8 @@ Database.prototype.backup = function(filename, callback) {
 	});
 
 	pending.push(function(next) {
-		F.path.exists(F.path.databases(self.name + EXTENSION + '-counter2'), function(e) {
-			e && list.push(Path.join(F.config['directory-databases'], self.name + EXTENSION + '-counter2'));
+		F.path.exists(F.path.databases(self.name + EXTENSION + EXTENSION_COUNTER), function(e) {
+			e && list.push(Path.join(F.config['directory-databases'], self.name + EXTENSION + EXTENSION_COUNTER));
 			next();
 		});
 	});
@@ -321,6 +334,8 @@ Database.prototype.backup2 = function(filename, remove) {
 	}
 
 	var self = this;
+	self.readonly && self.throwReadonly();
+
 	if (remove)
 		return self.remove(filename || '');
 
@@ -344,6 +359,7 @@ Database.prototype.backup2 = function(filename, remove) {
 
 Database.prototype.drop = function() {
 	var self = this;
+	self.readonly && self.throwReadonly();
 	self.pending_drops = true;
 	setImmediate(next_operation, self, 7);
 	return self;
@@ -369,6 +385,7 @@ Database.prototype.release = function() {
 
 Database.prototype.clear = Database.prototype.remove = function(filename) {
 	var self = this;
+	self.readonly && self.throwReadonly();
 	var builder = new DatabaseBuilder();
 	var backup = filename === undefined ? undefined : filename || self.filenameBackup;
 
@@ -393,6 +410,10 @@ Database.prototype.find = function(view) {
 	}
 
 	return builder;
+};
+
+Database.prototype.throwReadonly = function() {
+	throw new Error('Database "{0}" is readonly.'.format(this.name));
 };
 
 Database.prototype.scalar = function(type, field, view) {
@@ -585,7 +606,9 @@ Database.prototype.$save = function(view) {
 };
 
 Database.prototype.$inmemory = function(view, callback) {
+
 	var self = this;
+	self.readonly && self.throwReadonly();
 
 	// Last usage
 	self.inmemorylastusage = global.F ? global.F.datetime : undefined;
@@ -624,6 +647,7 @@ Database.prototype.$meta = function(write) {
 	var self = this;
 
 	if (write) {
+		self.readonly && self.throwReadonly();
 		Fs.writeFile(self.filenameMeta, JSON.stringify(self.metadata), function() {
 			if (F.isCluster) {
 				CLUSTER_META.name = self.name;
@@ -632,6 +656,9 @@ Database.prototype.$meta = function(write) {
 		});
 		return self;
 	}
+
+	if (self.readonly)
+		return self;
 
 	try {
 		self.metadata = JSON.parse(Fs.readFileSync(self.filenameMeta).toString('utf8'), jsonparser);
@@ -905,14 +932,24 @@ Database.prototype.$readerview = function() {
 	return self;
 };
 
-Database.prototype.$reader2 = function(filename, items, callback) {
+Database.prototype.$reader2 = function(filename, items, callback, reader) {
 
 	var self = this;
-	var reader = Fs.createReadStream(filename);
+
+	if (self.readonly) {
+		if (reader === undefined) {
+			U.download(filename, FLAGS_READ, function(err, response) {
+				self.$reader2(filename, items, callback, err ? null : response);
+			});
+			return self;
+		}
+	} else
+		reader = Fs.createReadStream(filename);
+
 	var filter = items;
 	var length = filter.length;
 
-	reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
+	reader && reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
 		var json = JSON.parse(value.trim(), jsonparser);
 		var val;
 		for (var i = 0; i < length; i++) {
@@ -975,8 +1012,7 @@ Database.prototype.$reader2 = function(filename, items, callback) {
 		}
 	}));
 
-	CLEANUP(reader, function() {
-
+	var finish = function() {
 		for (var i = 0; i < length; i++) {
 			var item = filter[i];
 			var builder = item.builder;
@@ -1020,9 +1056,13 @@ Database.prototype.$reader2 = function(filename, items, callback) {
 			builder.$callback2(errorhandling(null, builder, output), item.type === 1 ? item.count : output, item.count);
 			builder.done();
 		}
-
 		callback();
-	});
+	};
+
+	if (reader)
+		CLEANUP(reader, finish);
+	else
+		finish();
 
 	return self;
 };
@@ -1083,7 +1123,6 @@ function nosqlresort(arr, builder, doc) {
 		arr[i] = doc;
 		return;
 	}
-
 }
 
 Database.prototype.$reader2_inmemory = function(name, items, callback) {
@@ -2072,16 +2111,15 @@ DatabaseBuilder.prototype.prepare = function(fn) {
 
 function Counter(db) {
 	var self = this;
-	self.TIMEOUT = 5000; // @TODO: 30000
+	self.TIMEOUT = 30000;
 	self.db = db;
 	self.cache;
 	self.key = 'nosql' + db.name.hash();
 	self.type = 0; // 1 === saving, 2 === reading
 	self.$events = {};
 	self.locked = false;
-
 	var filename = self.db.filename + '-counter';
-	F.path.exists(filename, function(e) {
+	!self.db.readonly && F.path.exists(filename, function(e) {
 		e && self.convert2(filename);
 	});
 }
@@ -2108,7 +2146,7 @@ Counter.prototype.convert2 = function(filename) {
 	}));
 
 	reader.on('end', function() {
-		console.log(F.datetime.format('yyyy-MM-dd HH:mm:ss') + ' :: CONVERTING NOSQL "{0}" COUNTER TO VERSION 2'.format(self.db.name));
+		console.log(F.datetime.format('yyyy-MM-dd HH:mm:ss') + ' :: Converted NoSQL embedded counter for database "{0}" to version "2" (IMPORTANT: backwards incompatible)'.format(self.db.name));
 		writer.end();
 		Fs.rename(filename, filename + '-backup', NOOP);
 	});
@@ -2311,7 +2349,7 @@ Counter.prototype.clear = function(callback) {
 	}
 
 	self.type = 3;
-	Fs.unlink(self.db.filename + '-counter2', function() {
+	Fs.unlink(self.db.filename + EXTENSION_COUNTER, function() {
 		self.type = 0;
 		callback && callback();
 	});
@@ -2445,20 +2483,30 @@ Counter.prototype.daily_min = function(id, callback) {
 	return this.read(options, callback);
 };
 
-Counter.prototype.read = function(options, callback) {
+Counter.prototype.read = function(options, callback, reader) {
 
 	var self = this;
 
-	if (self.type) {
+	if (self.type && reader === undefined) {
 		setTimeout(() => self.read(options, callback), 200);
 		return self;
 	}
 
+	self.type = 2;
+
+	if (self.db.readonly) {
+		if (reader === undefined) {
+			U.download(self.db.filenameCounter, FLAGS_READ, function(err, response) {
+				self.read(options, callback, err ? null : response);
+			});
+			return self;
+		}
+	} else
+		reader = Fs.createReadStream(self.db.filenameCounter);
+
 	// 0 == options.subtype: summarize
 	// 1 == options.subtype: full
 
-	var filename = self.db.filename + '-counter2';
-	var reader = Fs.createReadStream(filename);
 	var keys = {};
 	var single = false;
 	var all = options.id ? false : true;
@@ -2474,87 +2522,88 @@ Counter.prototype.read = function(options, callback) {
 			keys[options.type + options.id[i]] = true;
 	}
 
-	self.type = 2;
+	if (reader) {
 
-	reader.on('error', function() {
-		self.type = 0;
-		callback(null, single ? (options.subtype ? output : 0) : (all ? EMPTYARRAY : output));
-	});
+		reader.on('error', function() {
+			self.type = 0;
+			callback(null, single ? (options.subtype ? output : 0) : (all ? EMPTYARRAY : output));
+		});
 
-	reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
+		reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
 
-		var index = value.indexOf('=');
-		var key = value.substring(7, index);
-		var type = value.substring(0, 3);
+			var index = value.indexOf('=');
+			var key = value.substring(7, index);
+			var type = value.substring(0, 3);
 
-		if (options.type !== type)
-			return;
+			if (options.type !== type)
+				return;
 
-		var tmp;
-		var year = value.substring(3, 7);
-		if (all || options.id === true || keys[type + key]) {
-			switch (options.subtype) {
-				case 0:
-					var val = +value.substring(index + 1, value.indexOf(';'));
-					switch (options.type) {
-						case 'max':
-							if (all)
-								output = output == null ? val : Math.max(output, val);
+			var tmp;
+			var year = value.substring(3, 7);
+			if (all || options.id === true || keys[type + key]) {
+				switch (options.subtype) {
+					case 0:
+						var val = +value.substring(index + 1, value.indexOf(';'));
+						switch (options.type) {
+							case 'max':
+								if (all)
+									output = output == null ? val : Math.max(output, val);
+								else
+									output[key] = val;
+								break;
+							case 'min':
+								if (all)
+									output = output == null ? val : Math.min(output, val);
+								else
+									output[key] = val;
+								break;
+							case 'sum':
+								if (all)
+									output = (output || 0) + val;
+								else
+									output[key] = val;
+								break;
+						}
+						break;
+					case 1:
+						if (all)
+							counter_parse_years_all(output, value, year, options.type);
+						else {
+							tmp = counter_parse_years(value, year, options.type);
+							if (output[key])
+								output[key].push.apply(output[key], tmp);
 							else
-								output[key] = val;
-							break;
-						case 'min':
-							if (all)
-								output = output == null ? val : Math.min(output, val);
+								output[key] = tmp;
+						}
+						break;
+					case 2:
+						if (all)
+							counter_parse_months_all(output, value, year, options.type);
+						else {
+							tmp = counter_parse_months(value, year, options.type);
+							if (output[key])
+								output[key].push.apply(output[key], tmp);
 							else
-								output[key] = val;
-							break;
-						case 'sum':
-							if (all)
-								output = (output || 0) + val;
+								output[key] = tmp;
+						}
+						break;
+					case 3:
+						if (all)
+							counter_parse_days_all(output, value, year, options.type);
+						else {
+							tmp = counter_parse_days(value, year, options.type);
+							if (output[key])
+								output[key].push.apply(output[key], tmp);
 							else
-								output[key] = val;
-							break;
-					}
-					break;
-				case 1:
-					if (all)
-						counter_parse_years_all(output, value, year, options.type);
-					else {
-						tmp = counter_parse_years(value, year, options.type);
-						if (output[key])
-							output[key].push.apply(output[key], tmp);
-						else
-							output[key] = tmp;
-					}
-					break;
-				case 2:
-					if (all)
-						counter_parse_months_all(output, value, year, options.type);
-					else {
-						tmp = counter_parse_months(value, year, options.type);
-						if (output[key])
-							output[key].push.apply(output[key], tmp);
-						else
-							output[key] = tmp;
-					}
-					break;
-				case 3:
-					if (all)
-						counter_parse_days_all(output, value, year, options.type);
-					else {
-						tmp = counter_parse_days(value, year, options.type);
-						if (output[key])
-							output[key].push.apply(output[key], tmp);
-						else
-							output[key] = tmp;
-					}
-					break;
+								output[key] = tmp;
+						}
+						break;
+				}
 			}
-		}
-	}));
+		}));
+	}
 
-	reader.on('end', function() {
+	var finish = function() {
 		self.type = 0;
 		// Array conversation
 		if (all && options.subtype) {
@@ -2587,7 +2636,12 @@ Counter.prototype.read = function(options, callback) {
 		}
 
 		callback(null, single ? (options.subtype ? output[options.id[0]] || EMPTYOBJECT : output[options.id[0]] || 0) : output);
-	});
+	};
+
+	if (reader)
+		reader.on('end', finish);
+	else
+		finish();
 
 	return self;
 };
@@ -2600,14 +2654,30 @@ Counter.prototype.stats_min = function(top, year, month, day, callback) {
 	return this.stats(top, year, month, day, callback, 'min');
 };
 
-Counter.prototype.stats = Counter.prototype.stats_sum = function(top, year, month, day, callback, type) {
+Counter.prototype.stats = Counter.prototype.stats_sum = function(top, year, month, day, callback, type, reader) {
 
 	var self = this;
 
-	if (self.type) {
+	if (self.type && reader === undefined) {
 		setTimeout(() => self.stats(top, year, month, day, callback, type), 200);
 		return self;
 	}
+
+	self.type = 3;
+
+	if (self.db.readonly) {
+		if (reader === undefined) {
+			U.download(self.db.filenameCounter, FLAGS_READ, function(err, response) {
+				if (err) {
+					self.type = 0;
+					callback && callback(err, []);
+				} else
+					self.stats(top, year, month, day, callback, type, response);
+			});
+			return self;
+		}
+	} else
+		reader = Fs.createReadStream(self.db.filenameCounter);
 
 	if (typeof(day) == 'function') {
 		callback = day;
@@ -2620,15 +2690,11 @@ Counter.prototype.stats = Counter.prototype.stats_sum = function(top, year, mont
 		year = month = null;
 	}
 
-	var filename = self.db.filename + '-counter2';
-	var reader = Fs.createReadStream(filename);
 	var date = null;
 	var output = [];
 
 	if (!type)
 		type = 'sum';
-
-	self.type = 3;
 
 	if (year) {
 		if (month) {
@@ -2917,18 +2983,21 @@ function counter_parse_days_all(output, value, year, type) {
 }
 
 Counter.prototype.save = function() {
+
 	var self = this;
+	self.db.readonly && self.db.throwReadonly();
 
 	if (self.type || self.locked) {
 		setTimeout(() => self.save(), 200);
 		return self;
 	}
 
-	var filename = self.db.filename + '-counter2';
+	var filename = self.db.filename + EXTENSION_COUNTER;
 	var reader = Fs.createReadStream(filename);
 	var writer = Fs.createWriteStream(filename + '-tmp');
 	var dt = F.datetime.format('MMdd') + '=';
 	var cache = self.cache;
+	var counter = 0;
 
 	self.cache = null;
 	self.type = 1;
@@ -2942,7 +3011,10 @@ Counter.prototype.save = function() {
 		var keys = Object.keys(cache);
 		for (var i = 0, length = keys.length; i < length; i++) {
 			var item = cache[keys[i]];
-			item != null && writer.write(keys[i] + '=' + item + ';' + dt + item + NEWLINE);
+			if (item != null) {
+				writer.write(keys[i] + '=' + item + ';' + dt + item + NEWLINE);
+				counter++;
+			}
 		}
 		writer.end();
 	};
@@ -3006,6 +3078,7 @@ Counter.prototype.save = function() {
 		cache[id] = undefined;
 		!is && arr.push(dt + count);
 		writer.write(arr.join(';') + NEWLINE);
+		counter++;
 	}));
 
 	reader.on('error', flush);
@@ -3020,6 +3093,7 @@ Counter.prototype.save = function() {
 				CLUSTER_UNLOCK_COUNTER.name = self.name;
 				process.send(CLUSTER_UNLOCK_COUNTER);
 			}
+			counter && self.$events.stats && setImmediate(() => self.emit('stats', counter));
 		});
 	});
 
@@ -3041,7 +3115,7 @@ Counter.prototype.clear = function(callback) {
 
 	self.type = 3;
 
-	Fs.unlink(self.db.filename + '-counter2', function() {
+	Fs.unlink(self.db.filename + EXTENSION_COUNTER, function() {
 
 		if (F.isCluster) {
 			CLUSTER_UNLOCK_COUNTER.name = self.name;

@@ -6,7 +6,8 @@
 - added: `MailMessage.send2([callback])` sends a message according to the framework configuration
 - added: a new filter for NoSQL embedded `DatabaseBuilder.contains(name)`
 - added: a new filter for NoSQL embedded `DatabaseBuilder.empty(name)`
-- added: NoSQL counter supports daily stats (NoSQL counter files will be upgraded automatically and backwards incompatible)
+- added: (IMPORTANT) NoSQL counter supports daily stats (NoSQL counter files will be upgraded automatically and backwards incompatible)
+- added: (IMPORTANT) NoSQL database and counter can read data from URL
 - added: NoSQL counter `db.counter.clear()` for clearing stats
 - added: NoSQL counter `db.counter.daily_sum()` for reading stats
 - added: NoSQL counter `db.counter.daily_max()` for reading stats
@@ -25,6 +26,7 @@
 - added: NoSQL counter `db.counter.min(id, value)` for writing stats
 - added: NoSQL counter `db.counter.max(id, value)` for writing stats
 - added: NoSQL counter `db.counter.sum(id, value)` for writing stats (alias for `db.counter.hit()`)
+- added: NoSQL counter: a new event `stats` when the stats are changed
 
 - updated: (IMPORTANT) packages compress/decompress function supports streaming data
 - updated: (IMPORTANT) `NOSQL().backup()` !!! was changed !!!!

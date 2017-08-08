@@ -924,8 +924,7 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 
 	if (options.resolve) {
 		exports.resolve(url, function(err, u) {
-			if (!err)
-				uri.host = u.host;
+			!err && (uri.host = u.host);
 			download_call(uri, options);
 		});
 	} else
