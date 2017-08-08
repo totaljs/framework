@@ -2138,7 +2138,7 @@ Counter.prototype.convert2 = function(filename) {
 			years[year].push(item.substring(4, 6) + '01' + item.substring(6).trim());
 		}
 		arr = Object.keys(years);
-		for (var i = 1, length = arr.length; i < length; i++) {
+		for (var i = 0, length = arr.length; i < length; i++) {
 			var year = arr[i];
 			var item = years[year];
 			writer.write(item.join(';') + NEWLINE);
@@ -2146,10 +2146,12 @@ Counter.prototype.convert2 = function(filename) {
 	}));
 
 	reader.on('end', function() {
-		console.log(F.datetime.format('yyyy-MM-dd HH:mm:ss') + ' :: Converted NoSQL embedded counter for database "{0}" to version "2" (IMPORTANT: backwards incompatible)'.format(self.db.name));
 		writer.end();
-		Fs.rename(filename, filename + '-backup', NOOP);
+		console.log(F.datetime.format('yyyy-MM-dd HH:mm:ss') + ' :: Converted NoSQL embedded counter for database "{0}" to version "2" (IMPORTANT: backwards incompatible)'.format(self.db.name));
 	});
+
+	writer.on('finish', () => Fs.rename(filename, filename + '-backup', NOOP));
+	return self;
 };
 
 Counter.prototype.emit = function(name, a, b, c, d, e, f, g) {
