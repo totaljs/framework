@@ -66,7 +66,7 @@ function Database(name, filename) {
 	var http = filename.substring(0, 6);
 	self.readonly = http === 'http:/' || http === 'https:';
 	self.filename = self.readonly ? filename.format('') : filename + EXTENSION;
-	self.filenameCounter = self.readonly ? filename.format('counter') : filename + EXTENSION_COUNTER;
+	self.filenameCounter = self.readonly ? filename.format('counter') : filename + EXTENSION + EXTENSION_COUNTER;
 	self.filenameTemp = filename + EXTENSION_TMP;
 	self.filenameMeta = filename + EXTENSION_META;
 	self.directory = Path.dirname(filename);
@@ -2526,7 +2526,8 @@ Counter.prototype.read = function(options, callback, reader) {
 
 	if (reader) {
 
-		reader.on('error', function() {
+		reader.on('error', function(err) {
+			console.log('err', err);
 			self.type = 0;
 			callback(null, single ? (options.subtype ? output : 0) : (all ? EMPTYARRAY : output));
 		});
