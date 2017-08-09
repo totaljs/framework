@@ -2535,8 +2535,7 @@ Counter.prototype.read = function(options, callback, reader) {
 
 	if (reader) {
 
-		reader.on('error', function(err) {
-			console.log('err', err);
+		reader.on('error', function() {
 			self.type = 0;
 			callback(null, single ? (options.subtype ? output : 0) : (all ? EMPTYARRAY : output));
 		});
