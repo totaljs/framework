@@ -2119,15 +2119,19 @@ function Counter(db) {
 	self.$events = {};
 	self.locked = false;
 	var filename = self.db.filename + '-counter';
-	!self.db.readonly && F.path.exists(filename, function(e) {
-		e && self.convert2(filename);
-	});
+	if (!self.db.readonly) {
+		try {
+			var val = Fs.statSync(filename);
+			val && val.isFile() && self.convert2(filename);
+		} catch (e) {}
+	}
 }
 
 Counter.prototype.convert2 = function(filename) {
 	var reader = Fs.createReadStream(filename);
 	var writer = Fs.createWriteStream(filename + '2');
 	var self = this;
+	self.type = 100;
 	reader.on('data', framework_utils.streamer(NEWLINE, function(value) {
 		var arr = value.split(';');
 		var years = {};
@@ -2150,7 +2154,12 @@ Counter.prototype.convert2 = function(filename) {
 		console.log(F.datetime.format('yyyy-MM-dd HH:mm:ss') + ' :: Converted NoSQL embedded counter for database "{0}" to version "2" (IMPORTANT: backwards incompatible)'.format(self.db.name));
 	});
 
-	writer.on('finish', () => Fs.rename(filename, filename + '-backup', NOOP));
+	writer.on('finish', function() {
+		Fs.rename(filename, filename + '-backup', function() {
+			self.type = 0;
+		});
+	});
+
 	return self;
 };
 
