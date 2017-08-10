@@ -61,7 +61,7 @@ function runwatching() {
 
 	function app() {
 		const fork = require('child_process').fork;
-		const directories = [directory + '/components', directory + '/controllers', directory + '/definitions', directory + '/isomorphic', directory + '/modules', directory + '/resources', directory + '/models', directory + '/source', directory + '/workers', directory + '/packages', directory + '/themes', directory + '/configs', directory + '/startup'];
+		const directories = [directory + '/components', directory + '/controllers', directory + '/definitions', directory + '/isomorphic', directory + '/modules', directory + '/resources', directory + '/models', directory + '/source', directory + '/workers', directory + '/packages', directory + '/themes', directory + '/configs', directory + '/startup', directory + '/schema'];
 		const async = new U.Async();
 		const prefix = '---------------------------------> ';
 
@@ -169,7 +169,6 @@ function runwatching() {
 				changes = [];
 				force = false;
 			});
-
 		}
 
 		function refresh_directory() {
