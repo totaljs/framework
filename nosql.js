@@ -2351,23 +2351,6 @@ Counter.prototype.minimum = function(id, callback) {
 	return this.read(options, callback);
 };
 
-Counter.prototype.clear = function(callback) {
-	var self = this;
-
-	if (self.type) {
-		setTimeout(() => self.clear(callback), 200);
-		return self;
-	}
-
-	self.type = 3;
-	Fs.unlink(self.db.filename + EXTENSION_COUNTER, function() {
-		self.type = 0;
-		callback && callback();
-	});
-
-	return self;
-};
-
 Counter.prototype.yearly = Counter.prototype.yearly_sum = function(id, callback) {
 
 	if (typeof(id) === 'function') {

@@ -8,7 +8,6 @@
 - added: a new filter for NoSQL embedded `DatabaseBuilder.empty(name)`
 - added: (IMPORTANT) NoSQL counter supports daily stats (NoSQL counter files will be upgraded automatically and backwards incompatible)
 - added: (IMPORTANT) NoSQL database and counter can read data from URL
-- added: NoSQL counter `db.counter.clear([callback])` for clearing stats
 - added: NoSQL counter `db.counter.daily_sum([id], callback)` for reading stats
 - added: NoSQL counter `db.counter.daily_max([id], callback)` for reading stats
 - added: NoSQL counter `db.counter.daily_min([id], callback)` for reading stats
