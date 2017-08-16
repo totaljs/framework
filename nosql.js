@@ -58,6 +58,7 @@ const CLUSTER_META = { TYPE: 'nosql-meta' };
 const CLUSTER_LOCK_COUNTER = { TYPE: 'nosql-counter-lock' };
 const CLUSTER_UNLOCK_COUNTER = { TYPE: 'nosql-counter-unlock' };
 const FLAGS_READ = ['get'];
+const COUNTER_MMA = [0, 0];
 
 Object.freeze(EMPTYARRAY);
 
@@ -2226,7 +2227,7 @@ Counter.prototype.removeAllListeners = function(name) {
 Counter.prototype.empty = function(key, value) {
 	var self = this;
 	!self.cache && (self.cache = {});
-	self.cache[key] = value;
+	self.cache[key] = key === 'sum' ? value : [value, value];
 	return self;
 };
 
@@ -2240,11 +2241,17 @@ Counter.prototype.min = function(id, count) {
 		return self;
 	}
 
-	var key = 'min' + F.datetime.getFullYear() + '' + id;
+	var key = 'mma' + F.datetime.getFullYear() + '' + id;
+
 	if (!self.cache || !self.cache[key])
 		self.empty(key, count);
-	else
-		self.cache[key] = Math.min(self.cache[key], count);
+	else {
+		var arr = self.cache[key];
+		if (arr[0] > count) // min
+			arr[0] = count;
+		if (arr[1] < count) // max
+			arr[1] = count;
+	}
 
 	setTimeout2(self.key, () => self.save(), self.TIMEOUT, 5);
 	this.$events.min && self.emit('min', id, count || 1);
@@ -2261,11 +2268,16 @@ Counter.prototype.max = function(id, count) {
 		return self;
 	}
 
-	var key = 'max' + F.datetime.getFullYear() + '' + id;
+	var key = 'mma' + F.datetime.getFullYear() + '' + id;
 	if (!self.cache || !self.cache[key])
 		self.empty(key, count);
-	else
-		self.cache[key] = Math.max(self.cache[key], count);
+	else {
+		var arr = self.cache[key];
+		if (arr[0] > count) // min
+			arr[0] = count;
+		if (arr[1] < count) // max
+			arr[1] = count;
+	}
 
 	setTimeout2(self.key, () => self.save(), self.TIMEOUT, 5);
 	this.$events.max && self.emit('max', id, count || 1);
@@ -2333,7 +2345,8 @@ Counter.prototype.maximum = function(id, callback) {
 	var options = {};
 	options.subtype = 0;
 	options.id = id;
-	options.type = 'max';
+	options.type = 'mma';
+	options.type2 = 'max';
 	return this.read(options, callback);
 };
 
@@ -2347,7 +2360,8 @@ Counter.prototype.minimum = function(id, callback) {
 	var options = {};
 	options.subtype = 0;
 	options.id = id;
-	options.type = 'min';
+	options.type = 'mma';
+	options.type2 = 'min';
 	return this.read(options, callback);
 };
 
@@ -2403,7 +2417,8 @@ Counter.prototype.yearly_max = function(id, callback) {
 	var options = {};
 	options.subtype = 1;
 	options.id = id;
-	options.type = 'max';
+	options.type = 'mma';
+	options.type2 = 'max';
 	return this.read(options, callback);
 };
 
@@ -2417,7 +2432,8 @@ Counter.prototype.monthly_max = function(id, callback) {
 	var options = {};
 	options.subtype = 2;
 	options.id = id;
-	options.type = 'max';
+	options.type = 'mma';
+	options.type2 = 'max';
 	return this.read(options, callback);
 };
 
@@ -2431,7 +2447,8 @@ Counter.prototype.daily_max = function(id, callback) {
 	var options = {};
 	options.subtype = 3;
 	options.id = id;
-	options.type = 'max';
+	options.type = 'mma';
+	options.type2 = 'max';
 	return this.read(options, callback);
 };
 
@@ -2445,7 +2462,8 @@ Counter.prototype.yearly_min = function(id, callback) {
 	var options = {};
 	options.subtype = 1;
 	options.id = id;
-	options.type = 'min';
+	options.type = 'mma';
+	options.type2 = 'min';
 	return this.read(options, callback);
 };
 
@@ -2459,7 +2477,8 @@ Counter.prototype.monthly_min = function(id, callback) {
 	var options = {};
 	options.subtype = 2;
 	options.id = id;
-	options.type = 'min';
+	options.type = 'mma';
+	options.type2 = 'min';
 	return this.read(options, callback);
 };
 
@@ -2473,7 +2492,8 @@ Counter.prototype.daily_min = function(id, callback) {
 	var options = {};
 	options.subtype = 3;
 	options.id = id;
-	options.type = 'min';
+	options.type = 'mma';
+	options.type2 = 'min';
 	return this.read(options, callback);
 };
 
@@ -2534,36 +2554,45 @@ Counter.prototype.read = function(options, callback, reader) {
 
 			var tmp;
 			var year = value.substring(3, 7);
+
 			if (all || options.id === true || keys[type + key]) {
 				switch (options.subtype) {
 					case 0:
-						var val = +value.substring(index + 1, value.indexOf(';'));
-						switch (options.type) {
+						var val = value.substring(index + 1, value.indexOf(';'));
+						switch (options.type2 || options.type) {
 							case 'max':
-								if (all)
-									output = output == null ? val : Math.max(output, val);
-								else
-									output[key] = val;
+								var a = counter_minmax(options, val);
+								if (all) {
+									if (output == null)
+										output = a;
+									else if (output < a)
+										output = a;
+								} else
+									output[key] = a;
 								break;
 							case 'min':
-								if (all)
-									output = output == null ? val : Math.min(output, val);
-								else
-									output[key] = val;
+								var a = counter_minmax(options, val);
+								if (all) {
+									if (output == null)
+										output = a;
+									else if (output > a)
+										output = a;
+								} else
+									output[key] = a;
 								break;
 							case 'sum':
 								if (all)
-									output = (output || 0) + val;
+									output = (output || 0) + (+val);
 								else
-									output[key] = val;
+									output[key] = +val;
 								break;
 						}
 						break;
 					case 1:
 						if (all)
-							counter_parse_years_all(output, value, year, options.type);
+							counter_parse_years_all(output, value, year, options);
 						else {
-							tmp = counter_parse_years(value, year, options.type);
+							tmp = counter_parse_years(value, year, options);
 							if (output[key])
 								output[key].push.apply(output[key], tmp);
 							else
@@ -2572,9 +2601,9 @@ Counter.prototype.read = function(options, callback, reader) {
 						break;
 					case 2:
 						if (all)
-							counter_parse_months_all(output, value, year, options.type);
+							counter_parse_months_all(output, value, year, options);
 						else {
-							tmp = counter_parse_months(value, year, options.type);
+							tmp = counter_parse_months(value, year, options);
 							if (output[key])
 								output[key].push.apply(output[key], tmp);
 							else
@@ -2583,9 +2612,9 @@ Counter.prototype.read = function(options, callback, reader) {
 						break;
 					case 3:
 						if (all)
-							counter_parse_days_all(output, value, year, options.type);
+							counter_parse_days_all(output, value, year, options);
 						else {
-							tmp = counter_parse_days(value, year, options.type);
+							tmp = counter_parse_days(value, year, options);
 							if (output[key])
 								output[key].push.apply(output[key], tmp);
 							else
@@ -2629,7 +2658,7 @@ Counter.prototype.read = function(options, callback, reader) {
 			output = tmp;
 		}
 
-		callback(null, single ? (options.subtype ? output[options.id[0]] || EMPTYOBJECT : output[options.id[0]] || 0) : output);
+		callback(null, single ? (options.subtype ? output[options.id[0]] || null : output[options.id[0]] || 0) : output);
 	};
 
 	if (reader)
@@ -2691,12 +2720,12 @@ Counter.prototype.stats = Counter.prototype.stats_sum = function(top, year, mont
 		type = 'sum';
 
 	if (year) {
-		if (month) {
-			date = month.padLeft(2, '0') + '\\d{2}';
-			date = new RegExp(';' + date + '=\\d+', 'g');
-		} else if (day) {
+		if (day) {
 			date = month.padLeft(2, '0') + day.padLeft(2, '0');
-			date = new RegExp(';' + date + '=\\d+', 'g');
+			date = new RegExp(';' + date + '=[0-9X\\.]+', 'g');
+		} else if (month) {
+			date = month.padLeft(2, '0') + '\\d{2}';
+			date = new RegExp(';' + date + '=[0-9X\\.]+', 'g');
 		}
 	}
 
@@ -2708,10 +2737,18 @@ Counter.prototype.stats = Counter.prototype.stats_sum = function(top, year, mont
 	if (year > 0)
 		year = year.toString();
 
+	var opt = {};
+
+	if (type !== 'sum') {
+		opt.type = 'mma';
+		opt.type2 = type;
+	} else
+		opt.type = type;
+
 	reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
 
 		var index = value.indexOf('=');
-		if (value.substring(0, 3) !== type || (year && value.substring(3, 7) !== year))
+		if (value.substring(0, 3) !== opt.type || (year && value.substring(3, 7) !== year))
 			return;
 
 		var count = null;
@@ -2720,9 +2757,11 @@ Counter.prototype.stats = Counter.prototype.stats_sum = function(top, year, mont
 			var matches = value.match(date);
 			if (!matches)
 				return;
-			count = counter_parse_stats(matches, type);
-		} else
-			count = +value.substring(index + 1, value.indexOf(';', index));
+			count = counter_parse_stats(matches, opt);
+		} else {
+			var val = value.substring(index + 1, value.indexOf(';', index));
+			count = opt.type2 ? counter_minmax(opt, val) : +val;
+		}
 
 		count != null && counter_parse_stats_avg(output, top, value.substring(7, index), count, type);
 	}));
@@ -2743,12 +2782,12 @@ function counter_sort_min(a, b) {
 	return a.count > b.count ? 1 : a.count === b.count ? 0 : -1;
 }
 
-function counter_parse_stats_avg(group, top, key, count, type) {
+function counter_parse_stats_avg(group, top, key, count, opt) {
 
 	if (group.length < top) {
 		group.push({ id: key, count: count });
 		if (group.length === top) {
-			switch (type) {
+			switch (opt.type2 || opt.type) {
 				case 'max':
 				case 'sum':
 					group.sort(counter_sort_sum);
@@ -2764,7 +2803,7 @@ function counter_parse_stats_avg(group, top, key, count, type) {
 	for (var i = 0, length = group.length; i < length; i++) {
 		var item = group[i];
 
-		if (type === 'min') {
+		if (opt.type === 'min') {
 			if (item.count < count)
 				continue;
 		} else if (item.count > count)
@@ -2781,23 +2820,31 @@ function counter_parse_stats_avg(group, top, key, count, type) {
 	}
 }
 
-function counter_parse_stats(matches, type) {
+function counter_parse_stats(matches, opt) {
 
 	var value = null;
 
 	for (var i = 0, length = matches.length; i < length; i++) {
 		var item = matches[i];
-		var val = +item.substring(item.indexOf('=', 3) + 1);
+		var val = item.substring(item.indexOf('=', 3) + 1);
 
-		switch (type) {
+		switch (opt.type2 || opt.type) {
 			case 'max':
-				value = value == null ? val : Math.max(value, val);
+				var a = counter_minmax(opt, val);
+				if (value == null)
+					value = a;
+				else if (value < a)
+					value = a;
 				break;
 			case 'min':
-				value = value == null ? val : Math.min(value, val);
+				var a = counter_minmax(opt, val);
+				if (value == null)
+					value = a;
+				else if (value > a)
+					value = a;
 				break;
 			case 'sum':
-				value += val;
+				value += +val;
 				break;
 		}
 	}
@@ -2805,27 +2852,43 @@ function counter_parse_stats(matches, type) {
 	return value;
 }
 
-function counter_parse_years(value, year, type) {
+function counter_minmax(opt, val) {
+	var index = val.indexOf('X');
+	switch (opt.type2) {
+		case 'min':
+			return +val.substring(0, index);
+		case 'max':
+			return +val.substring(index + 1);
+		case 'avg':
+			return ((+val.substring(0, index)) + (+val.substring(index + 1))) / 2;
+	}
+}
+
+function counter_parse_years(value, year, opt) {
 
 	var arr = value.trim().split(';');
 	var tmp = {};
 
 	for (var i = 1, length = arr.length; i < length; i++) {
-		var val = +arr[i].substring(5);
+		var val = arr[i].substring(5);
 		if (tmp[year]) {
-			switch (type) {
+			switch (opt.type2 || opt.type) {
 				case 'max':
-					tmp[year].value = Math.max(tmp[year].value, val);
+					var a = counter_minmax(opt, val);
+					if (tmp[year].value < a)
+						tmp[year].value = a;
 					break;
 				case 'min':
-					tmp[year].value = Math.min(tmp[year].value, val);
+					var a = counter_minmax(opt, val);
+					if (tmp[year].value > a)
+						tmp[year].value = a;
 					break;
 				case 'sum':
-					tmp[year].value += val;
+					tmp[year].value += +val;
 					break;
 			}
 		} else
-			tmp[year] = { id: year, year: +year, value: val };
+			tmp[year] = { id: year, year: +year, value: opt.type2 ? counter_minmax(opt, val) : +val };
 	}
 
 	var output = [];
@@ -2836,29 +2899,33 @@ function counter_parse_years(value, year, type) {
 	return output;
 }
 
-function counter_parse_months(value, year, type) {
+function counter_parse_months(value, year, opt) {
 
 	var arr = value.trim().split(';');
 	var tmp = {};
 
 	for (var i = 1, length = arr.length; i < length; i++) {
-		var val = +arr[i].substring(5);
+		var val = arr[i].substring(5);
 		var key = year + arr[i].substring(0, 2);
 
 		if (tmp[key]) {
-			switch (type) {
+			switch (opt.type2 || opt.type) {
 				case 'max':
-					tmp[key].value = Math.max(tmp[key].value, val);
+					var a = counter_minmax(opt, val);
+					if (tmp[key].value < a)
+						tmp[key].value = a;
 					break;
 				case 'min':
-					tmp[key].value = Math.min(tmp[key].value, val);
+					var a = counter_minmax(opt, val);
+					if (tmp[key].value > a)
+						tmp[key].value = a;
 					break;
 				case 'sum':
 					tmp[key].value += val;
 					break;
 			}
 		} else
-			tmp[key] = { id: key, year: +year, month: +key.substring(4), value: val };
+			tmp[key] = { id: key, year: +year, month: +key.substring(4), value: opt.type2 ? counter_minmax(opt, val) : +val };
 	}
 
 	var output = [];
@@ -2869,29 +2936,33 @@ function counter_parse_months(value, year, type) {
 	return output;
 }
 
-function counter_parse_days(value, year, type) {
+function counter_parse_days(value, year, opt) {
 
 	var arr = value.trim().split(';');
 	var tmp = {};
 
 	for (var i = 1, length = arr.length; i < length; i++) {
-		var val = +arr[i].substring(5);
+		var val = arr[i].substring(5);
 		var key = year + arr[i].substring(0, 4);
 
 		if (tmp[key]) {
-			switch (type) {
+			switch (opt.type2 || opt.type) {
 				case 'max':
-					tmp[key].value = Math.max(tmp[key].value, val);
+					var a = counter_minmax(opt, val);
+					if (tmp[key].value < a)
+						tmp[key].value = a;
 					break;
 				case 'min':
-					tmp[key].value = Math.min(tmp[key].value, val);
+					var a = counter_minmax(opt, val);
+					if (tmp[key].value > a)
+						tmp[key].value = a;
 					break;
 				case 'sum':
 					tmp[key].value += val;
 					break;
 			}
 		} else
-			tmp[key] = { id: key, year: +year, month: +key.substring(4, 6), day: +key.substring(6), value: val };
+			tmp[key] = { id: key, year: +year, month: +key.substring(4, 6), day: +key.substring(6), value: opt.type2 ? counter_minmax(opt, val) : +val };
 	}
 
 	var output = [];
@@ -2901,76 +2972,89 @@ function counter_parse_days(value, year, type) {
 	return output;
 }
 
-function counter_parse_years_all(output, value, year, type) {
+function counter_parse_years_all(output, value, year, opt) {
 	var arr = value.trim().split(';');
 	for (var i = 1, length = arr.length; i < length; i++) {
 
-		var val = +arr[i].substring(5);
+		var val = arr[i].substring(5);
 
 		if (!output[year]) {
-			output[year] = val;
+			output[year] = opt.type2 ? counter_minmax(opt, val) : +val;
 			continue;
 		}
 
-		switch (type) {
+		switch (opt.type2 || opt.type) {
 			case 'max':
-				output[year] = Math.max(output[year], val);
+				var a = counter_minmax(opt, val);
+				if (output[year] < a)
+					output[year] = a;
 				break;
 			case 'min':
-				output[year] = Math.min(output[year], val);
+				var a = counter_minmax(opt, val);
+				if (output[year] > a)
+					output[year] = a;
 				break;
 			case 'sum':
-				output[year] += val;
+				output[year] += +val;
 				break;
 		}
 	}
 }
 
-function counter_parse_months_all(output, value, year, type) {
+function counter_parse_months_all(output, value, year, opt) {
 	var arr = value.trim().split(';');
+
 	for (var i = 1, length = arr.length; i < length; i++) {
-		var val = +arr[i].substring(5);
+		var val = arr[i].substring(5);
 		var key = year + arr[i].substring(0, 2);
 
 		if (!output[key]) {
-			output[key] = val;
+			output[key] = opt.type2 ? counter_minmax(opt, val) : +val;
 			continue;
 		}
 
-		switch (type) {
+		switch (opt.type2 || opt.type) {
 			case 'max':
-				output[key] = Math.max(output[key], val);
+				var a = counter_minmax(opt, val);
+				if (output[year] < a)
+					output[year] = a;
 				break;
 			case 'min':
-				output[key] = Math.min(output[key], val);
+				var a = counter_minmax(opt, val);
+				if (output[year] > a)
+					output[year] = a;
 				break;
 			case 'sum':
-				output[key] += val;
+				output[key] += +val;
 				break;
 		}
 	}
 }
 
-function counter_parse_days_all(output, value, year, type) {
+function counter_parse_days_all(output, value, year, opt) {
 	var arr = value.trim().split(';');
 	for (var i = 1, length = arr.length; i < length; i++) {
-		var val = +arr[i].substring(5);
+		var val = arr[i].substring(5);
 		var key = year + arr[i].substring(0, 4);
 
 		if (!output[key]) {
-			output[key] = val;
+			output[key] = opt.type2 ? counter_minmax(opt, val) : +val;
 			continue;
 		}
 
-		switch (type) {
+		switch (opt.type2 || opt.type) {
 			case 'max':
-				output[key] = Math.max(output[key], val);
+				var a = counter_minmax(opt, val);
+				if (output[year] < a)
+					output[year] = a;
 				break;
 			case 'min':
-				output[key] = Math.min(output[key], val);
+				var a = counter_minmax(opt, val);
+				if (output[year] > a)
+					output[year] = a;
 				break;
 			case 'sum':
-				output[key] += val;
+				output[key] += +val;
 				break;
 		}
 	}
@@ -3006,7 +3090,8 @@ Counter.prototype.save = function() {
 		for (var i = 0, length = keys.length; i < length; i++) {
 			var item = cache[keys[i]];
 			if (item != null) {
-				writer.write(keys[i] + '=' + item + ';' + dt + item + NEWLINE);
+				var val = (item instanceof Array ? (item[0] + 'X' + item[1]) : item);
+				writer.write(keys[i] + '=' + val + ';' + dt + val + NEWLINE);
 				counter++;
 			}
 		}
@@ -3036,6 +3121,17 @@ Counter.prototype.save = function() {
 
 		// Update summarization
 		switch (type) {
+			case 'mma': // min, max, avg
+				var tmp = arr[0].substring(index + 1);
+				var tmpi = tmp.indexOf('X');
+				COUNTER_MMA[0] = +tmp.substring(0, tmpi);
+				COUNTER_MMA[1] = +tmp.substring(tmpi + 1);
+				if (COUNTER_MMA[0] > count[0]) // min
+					COUNTER_MMA[0] = count[0];
+				if (COUNTER_MMA[1] < count[1]) // max
+					COUNTER_MMA[1] = count[1];
+				arr[0] = arr[0].substring(0, index + 1) + COUNTER_MMA[0] + 'X' + COUNTER_MMA[1];
+				break;
 			case 'max':
 				arr[0] = arr[0].substring(0, index + 1) + Math.max(+arr[0].substring(index + 1), count);
 				break;
@@ -3055,11 +3151,16 @@ Counter.prototype.save = function() {
 			if (curr === dt) {
 				is = true;
 				switch (type) {
-					case 'max':
-						arr[i] = curr + Math.max(+item.substring(5), count);
-						break;
-					case 'min':
-						arr[i] = curr + Math.min(+item.substring(5), count);
+					case 'mma':
+						var tmp = item.substring(5);
+						var tmpi = tmp.indexOf('X');
+						COUNTER_MMA[0] = +tmp.substring(0, tmpi);
+						COUNTER_MMA[1] = +tmp.substring(tmpi + 1);
+						if (COUNTER_MMA[0] > count[0]) // min
+							COUNTER_MMA[0] = count[0];
+						if (COUNTER_MMA[1] < count[1]) // max
+							COUNTER_MMA[1] = count[1];
+						arr[i] = curr + COUNTER_MMA[0] + 'X' + COUNTER_MMA[1];
 						break;
 					case 'sum':
 						arr[i] = curr + (+item.substring(5) + count);
@@ -3070,7 +3171,7 @@ Counter.prototype.save = function() {
 		}
 
 		cache[id] = undefined;
-		!is && arr.push(dt + count);
+		!is && arr.push(dt + (count instanceof Array ? (count[0] + 'X' + count[1]) : count));
 		writer.write(arr.join(';') + NEWLINE);
 		counter++;
 	}));
