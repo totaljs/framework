@@ -2468,7 +2468,14 @@ Counter.prototype.removeAllListeners = function(name) {
 Counter.prototype.empty = function(key, value) {
 	var self = this;
 	!self.cache && (self.cache = {});
-	self.cache[key] = key === 'sum' ? value : [value, value];
+
+	// key[2] = su[m]
+	// max
+	// min
+	// mma
+	// avg
+
+	self.cache[key] = key[2] === 'm' ? value : [value, value];
 	return self;
 };
 
