@@ -3169,7 +3169,7 @@ function counter_parse_months(value, year, opt) {
 						tmp[key].value = a;
 					break;
 				case 'sum':
-					tmp[key].value += val;
+					tmp[key].value += +val;
 					break;
 			}
 		} else
@@ -3206,7 +3206,7 @@ function counter_parse_days(value, year, opt) {
 						tmp[key].value = a;
 					break;
 				case 'sum':
-					tmp[key].value += val;
+					tmp[key].value += +val;
 					break;
 			}
 		} else
