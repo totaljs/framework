@@ -47,6 +47,7 @@
 - fixed: JS/CSS/HTML blocks
 
 - improved: Date formatting (+50%)
+- improved: NoSQL performance (around 60% in some cases)
 
 ======= 2.7.0
 

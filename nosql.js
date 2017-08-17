@@ -92,6 +92,7 @@ function Database(name, filename) {
 	self.$events = {};
 	self.$free = true;
 	self.locked = false;
+	self.renaming = false;
 }
 
 Database.prototype.emit = function(name, a, b, c, d, e, f, g) {
@@ -489,17 +490,41 @@ Database.prototype.unlock = function() {
 
 Database.prototype.next = function(type) {
 
-	if (this.locked || (type && this.step))
-		return this;
+	// 9: renaming file (by updating/removing)
+	if (this.locked || (type && this.step === 9))
+		return;
+
+	if (this.renaming) {
+		!type && (this.step = 0);
+		return;
+	}
+
+	if (this.step < 2) {
+		if (this.step !== 2 && this.pending_update.length) {
+			if (INMEMORY[this.name])
+				this.$update_inmemory();
+			else
+				this.$update();
+			return;
+		}
+
+		if (this.step !== 3 && this.pending_remove.length) {
+			if (INMEMORY[this.name])
+				this.$remove_inmemory();
+			else
+				this.$remove();
+			return;
+		}
+	}
 
 	if (this.step !== 6 && this.pending_reader_view.length) {
 		this.$readerview();
-		return this;
+		return;
 	}
 
 	if (this.step !== 4 && this.pending_reader.length) {
 		this.$reader();
-		return this;
+		return;
 	}
 
 	if (this.step !== 1 && this.pending_append.length) {
@@ -507,23 +532,12 @@ Database.prototype.next = function(type) {
 			this.$append_inmemory();
 		else
 			this.$append();
-		return this;
+		return;
 	}
 
-	if (this.step !== 2 && this.pending_update.length) {
-		if (INMEMORY[this.name])
-			this.$update_inmemory();
-		else
-			this.$update();
-		return this;
-	}
-
-	if (this.step !== 3 && this.pending_remove.length) {
-		if (INMEMORY[this.name])
-			this.$remove_inmemory();
-		else
-			this.$remove();
-		return this;
+	if (this.step !== 7 && this.pending_drops) {
+		this.$drop();
+		return;
 	}
 
 	if (this.step !== 5 && this.pending_views) {
@@ -531,20 +545,13 @@ Database.prototype.next = function(type) {
 			this.$views_inmemory();
 		else
 			this.$views();
-		return this;
-	}
-
-	if (this.step !== 7 && this.pending_drops) {
-		this.$drop();
-		return this;
+		return;
 	}
 
 	if (this.step !== type) {
 		this.step = 0;
 		setImmediate(next_operation, this, 0);
 	}
-
-	return this;
 };
 
 Database.prototype.refresh = function() {
@@ -553,7 +560,6 @@ Database.prototype.refresh = function() {
 		setImmediate(next_operation, this, 5);
 	} else if (F.cluster)
 		this.$unlock();
-
 	return this;
 };
 
@@ -746,15 +752,25 @@ Database.prototype.$update = function() {
 	var filter = self.pending_update.splice(0);
 	var length = filter.length;
 	var change = false;
+	var noconvert = true;
+
+	for (var i = 0; i < length; i++) {
+		var item = filter[i].builder;
+		for (var j = 0; j < item.$filter.length; j++) {
+			if (!item.$filter[j].noconvert)
+				noconvert = false;
+		}
+	}
 
 	reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
-		var doc = JSON.parse(value.trim());
-		for (var i = 0; i < length; i++) {
 
+		var doc = noconvert ? value.substring(0, value.length - 1) : JSON.parse(value.substring(0, value.length - 1), jsonparser);
+		var is = false;
+
+		for (var i = 0; i < length; i++) {
 			var item = filter[i];
 			var builder = item.builder;
-			var output = builder.compare(doc, index);
-
+			var output = noconvert ? builder.compare_string(doc, index, true) : builder.compare(doc, index, true);
 			if (output) {
 				if (item.keys) {
 					for (var j = 0, jl = item.keys.length; j < jl; j++) {
@@ -762,22 +778,46 @@ Database.prototype.$update = function() {
 						if (val === undefined)
 							continue;
 						if (typeof(val) === 'function')
-							doc[item.keys[j]] = val(doc[item.keys[j]], doc);
+							output[item.keys[j]] = val(output[item.keys[j]], output);
 						else
-							doc[item.keys[j]] = val;
+							output[item.keys[j]] = val;
 					}
 				} else
-					doc = typeof(item.doc) === 'function' ? item.doc(doc) : item.doc;
-				self.emit(item.keys ? 'modify' : 'update', doc);
+					output = typeof(item.doc) === 'function' ? item.doc(output) : item.doc;
+				self.emit(item.keys ? 'modify' : 'update', output);
 				item.count++;
 				change = true;
+				is = true;
 			}
 		}
 
-		writer.write(JSON.stringify(doc) + NEWLINE);
+		if (is)
+			writer.write(JSON.stringify(output) + NEWLINE);
+		else
+			writer.write((noconvert ? doc : JSON.stringify(doc)) + NEWLINE);
 	}));
 
-	CLEANUP(writer, function() {
+	var finish = function() {
+
+		// No change
+		if (!change) {
+			Fs.unlink(self.filenameTemp, function() {
+				self.next(0);
+				F.cluster && self.$unlock();
+			});
+			return;
+		}
+
+		self.renaming = true;
+
+		// Maybe is reading?
+		if (self.step && self.step !== 9) {
+			self.next(0);
+			return setTimeout(finish, 100);
+		}
+
+		self.step = 9;
+
 		Fs.rename(self.filenameTemp, self.filename, function(err) {
 
 			for (var i = 0; i < length; i++) {
@@ -789,6 +829,7 @@ Database.prototype.$update = function() {
 			}
 
 			setImmediate(function() {
+				self.renaming = false;
 				self.next(0);
 				if (change)
 					setImmediate(views_refresh, self);
@@ -796,8 +837,10 @@ Database.prototype.$update = function() {
 					self.$unlock();
 			});
 		});
-	});
+	};
 
+
+	CLEANUP(writer, finish);
 	CLEANUP(reader, () => writer.end());
 	return self;
 };
@@ -949,16 +992,29 @@ Database.prototype.$reader2 = function(filename, items, callback, reader) {
 
 	var filter = items;
 	var length = filter.length;
+	var noconvert = true;
+	var first = true;
+
+	for (var i = 0; i < length; i++) {
+		var item = filter[i].builder;
+		if (!item.$first)
+			first = false;
+		for (var j = 0; j < item.$filter.length; j++) {
+			if (!item.$filter[j].noconvert)
+				noconvert = false;
+		}
+		filter[i].scalarcount = 0;
+	}
 
 	reader && reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
-		var json = JSON.parse(value.trim(), jsonparser);
-		var val;
-		for (var i = 0; i < length; i++) {
 
+		var json = noconvert ? value.substring(0, value.length - 1) : JSON.parse(value.substring(0, value.length - 1), jsonparser);
+		var val;
+
+		for (var i = 0; i < length; i++) {
 			var item = filter[i];
 			var builder = item.builder;
-			var output = builder.compare(json, index);
-
+			var output = noconvert ? builder.compare_string(json, index) : builder.compare(json, index);
 			if (!output)
 				continue;
 
@@ -977,29 +1033,45 @@ Database.prototype.$reader2 = function(filename, items, callback, reader) {
 					item.scalar = item.scalar ? item.scalar + 1 : 1;
 					break;
 				case 'sum':
-					val = json[builder.$scalarfield] || 0;
+					val = output[builder.$scalarfield] || 0;
 					item.scalar = item.scalar ? item.scalar + val : val;
 					break;
 				case 'min':
-					val = json[builder.$scalarfield] || 0;
-					item.scalar = item.scalar ? Math.min(item.scalar, val) : val;
+					val = output[builder.$scalarfield] || 0;
+					if (val != null) {
+						if (item.scalar) {
+							if (item.scalar > val)
+								item.scalar = val;
+						} else
+							item.scalar = val;
+					}
 					break;
 				case 'max':
-					val = json[builder.$scalarfield] || 0;
-					item.scalar = item.scalar ? Math.max(item.scalar, val) : val;
+					val = output[builder.$scalarfield];
+					if (val != null) {
+						if (item.scalar) {
+							if (item.scalar < val)
+								item.scalar = val;
+						} else
+							item.scalar = val;
+					}
 					break;
 				case 'avg':
-					val = json[builder.$scalarfield] || 0;
-					item.scalar = item.scalar ? item.scalar + val : val;
+					val = output[builder.$scalarfield];
+					if (val != null) {
+						item.scalar = item.scalar ? item.scalar + val : val;
+						item.scalarcount++;
+					}
 					break;
 				case 'group':
-					val = json[builder.$scalarfield];
-					if (!item.scalar)
-						item.scalar = {};
-					if (item.scalar[val])
-						item.scalar[val]++;
-					else
-						item.scalar[val] = 1;
+					!item.scalar && (item.scalar = {});
+					val = output[builder.$scalarfield];
+					if (val != null) {
+						if (item.scalar[val])
+							item.scalar[val]++;
+						else
+							item.scalar[val] = 1;
+					}
 					break;
 				default:
 					if (builder.$inlinesort)
@@ -1009,6 +1081,11 @@ Database.prototype.$reader2 = function(filename, items, callback, reader) {
 					else
 						item.response = [output];
 					break;
+			}
+
+			if (first && reader.destroy) {
+				reader.destroy();
+				finish();
 			}
 		}
 	}));
@@ -1022,7 +1099,7 @@ Database.prototype.$reader2 = function(filename, items, callback, reader) {
 			if (builder.$scalar || !builder.$sort) {
 
 				if (builder.$scalar)
-					output = builder.$scalar === 'avg' ? item.scalar / item.counter : item.scalar;
+					output = builder.$scalar === 'avg' ? item.scalar / item.scalarcount : item.scalar;
 				else if (builder.$first)
 					output = item.response ? item.response[0] : undefined;
 				else
@@ -1166,24 +1243,43 @@ Database.prototype.$reader2_inmemory = function(name, items, callback) {
 						break;
 					case 'min':
 						val = json[builder.$scalarfield] || 0;
-						item.scalar = item.scalar ? Math.min(item.scalar, val) : val;
+						if (val != null) {
+							if (item.scalar) {
+								if (item.scalar > val)
+									item.scalar = val;
+							} else
+								item.scalar = val;
+						}
 						break;
 					case 'max':
-						val = json[builder.$scalarfield] || 0;
-						item.scalar = item.scalar ? Math.max(item.scalar, val) : val;
+						val = json[builder.$scalarfield];
+						if (val != null) {
+							if (item.scalar) {
+								if (item.scalar < val)
+									item.scalar = val;
+							} else
+								item.scalar = val;
+						}
 						break;
 					case 'avg':
-						val = json[builder.$scalarfield] || 0;
-						item.scalar = item.scalar ? item.scalar + val : 0;
+						val = json[builder.$scalarfield];
+						if (val != null) {
+							item.scalar = item.scalar ? item.scalar + val : 0;
+							if (item.scalarcount)
+								item.scalarcount++;
+							else
+								item.scalarcount = 1;
+						}
 						break;
 					case 'group':
-						val = json[builder.$scalarfield];
-						if (!item.scalar)
-							item.scalar = {};
-						if (item.scalar[val])
-							item.scalar[val]++;
-						else
-							item.scalar[val] = 1;
+						!item.scalar && (item.scalar = {});
+						val = output[builder.$scalarfield];
+						if (val != null) {
+							if (item.scalar[val])
+								item.scalar[val]++;
+							else
+								item.scalar[val] = 1;
+						}
 						break;
 
 					default:
@@ -1269,17 +1365,26 @@ Database.prototype.$views = function() {
 		return;
 
 	var response = [];
+	var noconvert = true;
 
-	for (var i = 0; i < length; i++)
+	for (var i = 0; i < length; i++) {
+
+		for (var j = 0; j < self.views[views[i]].$filter.length; j++) {
+			if (!self.views[views[i]].$filter[j].noconvert)
+				noconvert = false;
+		}
+
 		response.push({ response: [], name: views[i], builder: self.views[views[i]], count: 0, counter: 0 });
+	}
 
 	var reader = Fs.createReadStream(self.filename);
 
 	reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
-		var json = JSON.parse(value.trim());
+
+		var json = noconvert ? value.substring(0, value.length - 1) : JSON.parse(value.substring(0, value.length - 1), jsonparser);
 		for (var j = 0; j < length; j++) {
 			var item = self.views[views[j]];
-			var output = item.compare(json, index);
+			var output = noconvert ? item.compare_string(json, index) : item.compare(json, index);
 
 			if (!output)
 				continue;
@@ -1425,16 +1530,28 @@ Database.prototype.$remove = function() {
 	if (F.isCluster && self.$lock())
 		return;
 
-	reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
+	var noconvert = true;
 
-		var json = JSON.parse(value.trim());
+	for (var i = 0; i < length; i++) {
+		var item = filter[i].builder;
+		for (var j = 0; j < item.$filter.length; j++) {
+			if (!item.$filter[j].noconvert)
+				noconvert = false;
+		}
+	}
+
+	reader && reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
+
+		var json = noconvert ? value.substring(0, value.length - 1) : JSON.parse(value.substring(0, value.length - 1), jsonparser);
 		var removed = false;
 
 		for (var i = 0; i < length; i++) {
 			var item = filter[i];
 			var builder = item.builder;
-			if (builder.compare(json, index)) {
+			var output = noconvert ? builder.compare_string(json, index) : builder.compare(json, index);
+			if (output) {
 				removed = true;
+				json = output;
 				break;
 			}
 		}
@@ -1451,7 +1568,26 @@ Database.prototype.$remove = function() {
 			writer.write(value);
 	}));
 
-	CLEANUP(writer, function() {
+	var finish = function() {
+
+		// No change
+		if (!change) {
+			Fs.unlink(self.filenameTemp, function() {
+				self.next(0);
+				F.cluster && self.$unlock();
+			});
+			return;
+		}
+
+		self.renaming = true;
+
+		// Maybe is reading?
+		if (self.step && self.step !== 9) {
+			self.next(0);
+			return setTimeout(finish, 100);
+		}
+
+		self.step = 9;
 		Fs.rename(self.filenameTemp, self.filename, function() {
 
 			for (var i = 0; i < length; i++) {
@@ -1460,6 +1596,7 @@ Database.prototype.$remove = function() {
 			}
 
 			setImmediate(function() {
+				self.renaming = false;
 				self.next(0);
 				if (change)
 					setImmediate(views_refresh, self);
@@ -1467,8 +1604,9 @@ Database.prototype.$remove = function() {
 					self.$unlock();
 			});
 		});
-	});
+	};
 
+	CLEANUP(writer, finish);
 	CLEANUP(reader, () => writer.end());
 };
 
@@ -1655,7 +1793,7 @@ function scalar(items, type, field, where, value) {
 				count++;
 				break;
 			case 'min':
-				val = val === null ? item[field] : Math.min(val, item[field]);
+				val = val === null ? item[field] : (val > item[field] ? item[field] : val);
 				break;
 			case 'group':
 				if (val[item[field]])
@@ -1664,7 +1802,7 @@ function scalar(items, type, field, where, value) {
 					val[item[field]] = 1;
 				break;
 			case 'max':
-				val = val === null ? item[field] : Math.max(val, item[field]);
+				val = val === null ? item[field] : (val < item[field] ? item[field] : val);
 				break;
 		}
 	}
@@ -1752,6 +1890,93 @@ DatabaseBuilder.prototype.make = function(fn) {
 	return this;
 };
 
+DatabaseBuilder.prototype.compare_string = function(json, index) {
+
+	for (var i = 0, length = this.$filter.length; i < length; i++) {
+		var filter = this.$filter[i];
+		var path = '"' + filter.name + '":';
+		var beg = json.indexOf(path);
+
+		// Property not found
+		if (beg === -1)
+			return;
+
+		beg = beg + path.length;
+
+		var value = '';
+		var indexer = beg;
+		var str = json[indexer] === '"';
+		var skip = false;
+
+		if (str)
+			indexer++;
+
+		while (true) {
+			var c = json[indexer++];
+
+			if (!c)
+				break;
+
+			if (skip) {
+				skip = false;
+				value += c;
+				continue;
+			}
+
+			if (c === '\\') {
+				skip = true;
+				value += c;
+				continue;
+			}
+
+			if ((str && c === '"') || (!str && (c === ',' || c === '}')))
+				break;
+
+			value += c;
+		}
+
+		switch (filter.noconvert) {
+			case 1: // string
+				if (filter.value !== value)
+					return false;
+				break;
+			case 2: // number
+				if (filter.value.toString() !== value)
+					return false;
+				break;
+			case 3: // boolean
+				if (filter.value) {
+					if (value !== 'true')
+						return;
+				} else {
+					if (value !== 'false')
+						return;
+				}
+				break;
+			case 4: // date
+				if (new Date(value).getTime() !== filter.value.getTime())
+					return;
+				break;
+		}
+	}
+
+	var doc = JSON.parse(json, jsonparser);
+	if (this.$prepare)
+		return this.$prepare(doc, index);
+
+	if (!this.$fields)
+		return doc;
+
+	var obj = {};
+
+	for (var i = 0, length = this.$fields.length; i < length; i++) {
+		var prop = this.$fields[i];
+		obj[prop] = doc[prop];
+	}
+
+	return obj;
+};
+
 DatabaseBuilder.prototype.compare = function(doc, index) {
 
 	var can = true;
@@ -1835,10 +2060,26 @@ DatabaseBuilder.prototype.where = function(name, operator, value) {
 	}
 
 	var date = framework_utils.isDate(value);
+	var noconvert = false;
 
 	switch (operator) {
 		case '=':
 			fn = date ? compare_eq_date : compare_eq;
+			if (date) {
+				noconvert = 4;
+			} else {
+				switch (typeof(value)) {
+					case 'string':
+						noconvert = 1;
+						break;
+					case 'number':
+						noconvert = 2;
+						break;
+					case 'boolean':
+						noconvert = 3;
+						break;
+				}
+			}
 			break;
 		case '<':
 			fn = date ? compare_gt_date : compare_gt;
@@ -1858,7 +2099,7 @@ DatabaseBuilder.prototype.where = function(name, operator, value) {
 			break;
 	}
 
-	this.$filter.push({ scope: this.$scope, filter: fn, name: name, value: value });
+	this.$filter.push({ scope: this.$scope, filter: fn, name: name, value: value, noconvert: noconvert });
 	return this;
 };
 
