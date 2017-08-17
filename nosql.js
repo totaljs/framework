@@ -305,8 +305,8 @@ Database.prototype.backup = function(filename, callback) {
 	});
 
 	pending.push(function(next) {
-		F.path.exists(F.path.databases(self.name + EXTENSION + EXTENSION_COUNTER), function(e) {
-			e && list.push(Path.join(F.config['directory-databases'], self.name + EXTENSION + EXTENSION_COUNTER));
+		F.path.exists(self.filenameCounter, function(e) {
+			e && list.push(self.filenameCounter);
 			next();
 		});
 	});
@@ -984,6 +984,8 @@ Database.prototype.$reader2 = function(filename, items, callback, reader) {
 	if (self.readonly) {
 		if (reader === undefined) {
 			U.download(filename, FLAGS_READ, function(err, response) {
+				if (err)
+					F.error(err, 'NoSQL database: ' + self.name);
 				self.$reader2(filename, items, callback, err ? null : response);
 			});
 			return self;
