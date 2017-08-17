@@ -59,6 +59,7 @@ const CLUSTER_LOCK_COUNTER = { TYPE: 'nosql-counter-lock' };
 const CLUSTER_UNLOCK_COUNTER = { TYPE: 'nosql-counter-unlock' };
 const FLAGS_READ = ['get'];
 const COUNTER_MMA = [0, 0];
+const NOSQL_STR_END = { '"': true, ',': true, '}': true };
 
 Object.freeze(EMPTYARRAY);
 
@@ -1892,69 +1893,167 @@ DatabaseBuilder.prototype.make = function(fn) {
 
 DatabaseBuilder.prototype.compare_string = function(json, index) {
 
+	var b = null;
+	var e = null;
+
 	for (var i = 0, length = this.$filter.length; i < length; i++) {
 		var filter = this.$filter[i];
 		var path = '"' + filter.name + '":';
 		var beg = json.indexOf(path);
-
-		// Property not found
-		if (beg === -1)
-			return;
-
-		beg = beg + path.length;
-
 		var value = '';
-		var indexer = beg;
-		var str = json[indexer] === '"';
-		var skip = false;
 
-		if (str)
-			indexer++;
+		if (beg !== -1) {
+			beg = beg + path.length;
 
-		while (true) {
-			var c = json[indexer++];
+			var indexer = beg;
+			var c = json[indexer];
+			var is = false;
+			var type = 0; // number, boolean
+			var counter = 0;
 
-			if (!c)
-				break;
-
-			if (skip) {
-				skip = false;
-				value += c;
-				continue;
+			switch (c) {
+				case '[': // array
+					type = 1;
+					indexer++;
+					b = '[';
+					e = ']';
+					break;
+				case '{': // object
+					type = 2;
+					indexer++;
+					b = '{';
+					e = '}';
+					break;
+				case '"': // string, date
+					type = 3;
+					indexer++;
+					break;
 			}
 
-			if (c === '\\') {
-				skip = true;
-				value += c;
-				continue;
+			while (true) {
+
+				c = json[indexer++];
+				if (!c)
+					break;
+
+				if (c === '\\') {
+					value += c;
+					c = json[indexer++];
+					value += c;
+					continue;
+				}
+
+				if (is) {
+					if (c === '"')
+						is = false;
+					value += c;
+					continue;
+				}
+
+				if (type === 1 || type === 2) {
+					// Array
+					if (c === '"') {
+						is = true;
+					} else if (c === b) {
+						counter++;
+					} else if (c === e) {
+						if (counter) {
+							counter--;
+							value += c;
+							continue;
+						}
+						break;
+					}
+					value += c;
+				} else {
+					if (NOSQL_STR_END[c])
+						break;
+					value += c;
+				}
 			}
-
-			if ((str && c === '"') || (!str && (c === ',' || c === '}')))
-				break;
-
-			value += c;
 		}
 
 		switch (filter.noconvert) {
 			case 1: // string
-				if (filter.value !== value)
-					return false;
+				if (filter.operator === '=') {
+					if (filter.value !== value)
+						return;
+				} else if (filter.operator === '!=') {
+					if (filter.value === value)
+						return;
+				} else if (filter.operator === 10) { // beg
+					if (!value.startsWith(filter.value))
+						return;
+				} else if (filter.operator === 11) { // end
+					if (!value.endsWith(filter.value))
+						return;
+				} else if (filter.operator === 12) { // *
+					if (value.toLowerCase().indexOf(filter.value) === -1)
+						return;
+				} else
+					return; // >, < is not supported for strings
 				break;
 			case 2: // number
-				if (filter.value.toString() !== value)
-					return false;
+				if (filter.operator === '=') {
+					if (filter.value.toString() !== value)
+						return;
+				} else if (filter.operator === '!=') {
+					if (filter.value.toString() === value)
+						return;
+				} else if (filter.operator === '>') {
+					if (filter.value < +value)
+						return;
+				} else if (filter.operator === '<') {
+					if (filter.value > +value)
+						return;
+				} else if (filter.operator === '>=') {
+					if (filter.value <= +value)
+						return;
+				} else if (filter.operator === '<=') {
+					if (filter.value >= +value)
+						return;
+				} else
+					return; // >, < is not supported for strings
 				break;
 			case 3: // boolean
-				if (filter.value) {
-					if (value !== 'true')
+				if (filter.operator === '=') {
+					if (filter.value.toString() !== value)
 						return;
-				} else {
-					if (value !== 'false')
+				} else if (filter.operator === '!=') {
+					if (filter.value.toString() === value)
 						return;
-				}
+				} else
+					return;
 				break;
 			case 4: // date
-				if (new Date(value).getTime() !== filter.value.getTime())
+				var ticks = new Date(value).getTime();
+				if (filter.operator === '=') {
+					if (filter.value.getTime() !== ticks)
+						return;
+				} else if (filter.operator === '!=') {
+					if (filter.value.getTime() === ticks)
+						return;
+				} else if (filter.operator === '>') {
+					if (filter.value.getTime() <= ticks)
+						return;
+				} else if (filter.operator === '<') {
+					if (filter.value.getTime() >= ticks)
+						return;
+				} else if (filter.operator === '>=') {
+					if (filter.value.getTime() < ticks)
+						return;
+				} else if (filter.operator === '<=') {
+					if (filter.value.getTime() > ticks)
+						return;
+				} else
+					return;
+				break;
+			case 5: // contains
+				if (!value || value === 'null')
+					return;
+				break;
+			case 6: // empty
+				if (value && value !== 'null')
 					return;
 				break;
 		}
@@ -2041,12 +2140,12 @@ DatabaseBuilder.prototype.scalar = function(type, name) {
 };
 
 DatabaseBuilder.prototype.contains = function(name) {
-	this.$filter.push({ scope: this.$scope, filter: compare_notempty, name: name });
+	this.$filter.push({ scope: this.$scope, filter: compare_notempty, name: name, noconvert: 5 });
 	return this;
 };
 
 DatabaseBuilder.prototype.empty = function(name) {
-	this.$filter.push({ scope: this.$scope, filter: compare_empty, name: name });
+	this.$filter.push({ scope: this.$scope, filter: compare_empty, name: name, noconvert: 6 });
 	return this;
 };
 
@@ -2060,26 +2159,11 @@ DatabaseBuilder.prototype.where = function(name, operator, value) {
 	}
 
 	var date = framework_utils.isDate(value);
-	var noconvert = false;
+	var noconvert = 0;
 
 	switch (operator) {
 		case '=':
 			fn = date ? compare_eq_date : compare_eq;
-			if (date) {
-				noconvert = 4;
-			} else {
-				switch (typeof(value)) {
-					case 'string':
-						noconvert = 1;
-						break;
-					case 'number':
-						noconvert = 2;
-						break;
-					case 'boolean':
-						noconvert = 3;
-						break;
-				}
-			}
 			break;
 		case '<':
 			fn = date ? compare_gt_date : compare_gt;
@@ -2096,10 +2180,27 @@ DatabaseBuilder.prototype.where = function(name, operator, value) {
 		case '<>':
 		case '!=':
 			fn = date ? compare_not_date : compare_not;
+			operator = '!=';
 			break;
 	}
 
-	this.$filter.push({ scope: this.$scope, filter: fn, name: name, value: value, noconvert: noconvert });
+	if (date) {
+		noconvert = 4;
+	} else {
+		switch (typeof(value)) {
+			case 'string':
+				noconvert = 1;
+				break;
+			case 'number':
+				noconvert = 2;
+				break;
+			case 'boolean':
+				noconvert = 3;
+				break;
+		}
+	}
+
+	this.$filter.push({ scope: this.$scope, filter: fn, name: name, value: value, noconvert: noconvert, operator: operator });
 	return this;
 };
 
@@ -2232,7 +2333,7 @@ DatabaseBuilder.prototype.like = DatabaseBuilder.prototype.search = function(nam
 			break;
 	}
 
-	this.$filter.push({ scope: this.$scope, name: name, filter: fn, value: value });
+	this.$filter.push({ scope: this.$scope, name: name, filter: fn, value: value, noconvert: 1, operator: where === 'beg' ? 10 : where === 'end' ? 11 : 12 });
 	return this;
 };
 
