@@ -60,6 +60,7 @@ const CLUSTER_UNLOCK_COUNTER = { TYPE: 'nosql-counter-unlock' };
 const FLAGS_READ = ['get'];
 const COUNTER_MMA = [0, 0];
 const NOSQL_STR_END = { '"': true, ',': true, '}': true };
+const COMPARER = Intl.Collator().compare;
 
 Object.freeze(EMPTYARRAY);
 
@@ -1168,8 +1169,8 @@ function nosqlsortvalue(a, b, sorter) {
 	if (type === 'number')
 		return sorter.asc ? a > b : a < b;
 	else if (type === 'string') {
-		a = (a.length > 5 ? a.substring(0, 5) : a).toLowerCase().removeDiacritics();
-		var c = a.localeCompare(b);
+		a = (a.length > 5 ? a.substring(0, 5) : a);
+		var c = COMPARER(a, b);
 		return sorter.asc ? c === 1 : c === -1;
 	} else if (a instanceof Date)
 		return sorter.asc ? a > b : a < b;

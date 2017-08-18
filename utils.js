@@ -36,6 +36,7 @@ const Fs = require('fs');
 const Events = require('events');
 const Crypto = require('crypto');
 const CONCAT = [null, null];
+const COMPARER = Intl.Collator().compare;
 
 if (!global.framework_utils)
 	global.framework_utils = exports;
@@ -3130,7 +3131,7 @@ String.prototype.contains = function(value, mustAll) {
  * @return {Number}
  */
 String.prototype.localeCompare2 = function(value) {
-	return this.removeDiacritics().localeCompare(value.removeDiacritics());
+	return COMPARER(this, value);
 };
 
 /**
@@ -4377,7 +4378,7 @@ Array.prototype.quicksort = Array.prototype.orderBy = function(name, asc, maxlen
 
 		// String
 		if (type === 1) {
-			return va && vb ? (asc ? (va.length > maxlength ? va.substring(0, maxlength) : va).removeDiacritics().localeCompare((vb.length > maxlength ? vb.substring(0, maxlength) : vb).removeDiacritics()) : (vb.length > maxlength ? vb.substring(0, maxlength) : vb).removeDiacritics().localeCompare((va.length > maxlength ? va.substring(0, maxlength) : va).removeDiacritics())) : 0;
+			return va && vb ? (asc ? COMPARER(va.length > maxlength ? va.substring(0, maxlength) : va, vb.length > maxlength ? vb.substring(0, maxlength) : vb) : COMPARER(vb.length > maxlength ? vb.substring(0, maxlength) : vb, va.length > maxlength ? va.substring(0, maxlength) : va)) : 0;
 		} else if (type === 2) {
 			return va > vb ? (asc ? 1 : -1) : va < vb ? (asc ? -1 : 1) : 0;
 		} else if (type === 3) {
