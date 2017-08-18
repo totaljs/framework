@@ -11107,6 +11107,9 @@ Controller.prototype.json = function(obj, headers, beautify, replacer) {
 
 	if (obj instanceof framework_builders.ErrorBuilder) {
 		self.req.$language && !obj.isResourceCustom && obj.setResource(self.req.$language);
+
+		var json = obj.output(true);
+
 		if (obj.contentType)
 			res.options.type = obj.contentType;
 		else
@@ -11115,7 +11118,7 @@ Controller.prototype.json = function(obj, headers, beautify, replacer) {
 		if (obj.status !== 200)
 			res.options.code = obj.status;
 
-		obj = obj.output();
+		obj = json;
 		F.stats.response.errorBuilder++;
 	} else {
 
@@ -11251,7 +11254,7 @@ Controller.prototype.content = function(body, type, headers) {
 	res.options.code = self.status;
 
 	if (body instanceof ErrorBuilder) {
-		var tmp = body.output();
+		var tmp = body.output(true);
 		if (body.contentType)
 			res.options.type = body.contentType;
 		else
@@ -13519,8 +13522,8 @@ function extend_request(PROTO) {
 			if (status === 400 && this.$total_exception instanceof framework_builders.ErrorBuilder) {
 				F.stats.response.errorBuilder++;
 				this.$language && this.$total_exception.setResource(this.$language);
+				res.options.body = this.$total_exception.output(true);
 				res.options.code = this.$total_exception.status;
-				res.options.body = this.$total_exception.output();
 				res.options.type = this.$total_exception.contentType;
 				res.$text();
 			} else {
@@ -13986,8 +13989,14 @@ function extend_response(PROTO) {
 			case 'object':
 				if (!isHEAD) {
 					if (body instanceof framework_builders.ErrorBuilder) {
-						body = body.output();
-						contentType = body.contentType;
+						var json = body.output(true);
+						if (body.status !== 200)
+							res.options.code = body.status;
+						if (body.contentType)
+							contentType = body.contentType;
+						else
+							contentType = CT_JSON;
+						body = json;
 						F.stats.response.errorBuilder++;
 					} else
 						body = JSON.stringify(body);
@@ -14035,12 +14044,11 @@ function extend_response(PROTO) {
 			if (err) {
 				res.writeHead(code, headers);
 				res.end(body, ENCODING);
-				return;
+			} else {
+				headers['Content-Encoding'] = 'gzip';
+				res.writeHead(code, headers);
+				res.end(data, ENCODING);
 			}
-
-			headers['Content-Encoding'] = 'gzip';
-			res.writeHead(code, headers);
-			res.end(data, ENCODING);
 		});
 
 		return res;

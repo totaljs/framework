@@ -2956,15 +2956,18 @@ ErrorBuilder.prototype._transform = function(name) {
 	return this.items;
 };
 
-ErrorBuilder.prototype.output = function() {
+ErrorBuilder.prototype.output = function(isResponse) {
+
 	if (!this.transformName)
-		return this.json();
+		return isResponse ? this.json() : this.items;
+
 	var current = transforms['error'][this.transformName];
 	if (current) {
 		this.prepare();
-		return current.call(this);
+		return current.call(this, isResponse);
 	}
-	return this.json();
+
+	return isResponse ? this.json() : this.items;
 };
 
 /**
