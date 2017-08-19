@@ -41,6 +41,7 @@
 - updated: `U.streamer(beg, [end], onItem(item, index), [skip], [stream])` added a new argument `stream` for flushing buffer
 - updated: `ErrorBuilder.addTransform(name, callback(isResponse))` by adding new argument `isresponse`
 - updated: `sorting` (framework + NoSQL embedded), now supports `internationalization`
+- updated: `total.js/debugger` by adding a new option `options.watch = ['directory']`
 
 - fixed: (IMPORTANT) long messages in WebSocket
 - fixed: (IMPORTANT) `controller` param in schemas

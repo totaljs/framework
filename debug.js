@@ -14,6 +14,7 @@ module.exports = function(opt) {
 	// options.sleep = 3000;
 	// options.inspector = 9229;
 	// options.debugger = 40894;
+	// options.watch = ['adminer'];
 };
 
 process.on('uncaughtException', e => e.toString().indexOf('ESRCH') == -1 && console.log(e));
@@ -61,9 +62,17 @@ function runwatching() {
 
 	function app() {
 		const fork = require('child_process').fork;
-		const directories = [directory + '/components', directory + '/controllers', directory + '/definitions', directory + '/isomorphic', directory + '/modules', directory + '/resources', directory + '/models', directory + '/source', directory + '/workers', directory + '/packages', directory + '/themes', directory + '/configs', directory + '/startup', directory + '/schema'];
+		var directories = [directory + '/components', directory + '/controllers', directory + '/definitions', directory + '/isomorphic', directory + '/modules', directory + '/resources', directory + '/models', directory + '/source', directory + '/workers', directory + '/packages', directory + '/themes', directory + '/configs', directory + '/startup', directory + '/schema'];
 		const async = new U.Async();
 		const prefix = '---------------------------------> ';
+
+		options.watch && options.watch.forEach(function(item) {
+			if (item[0] === '/')
+				item = item.substring(1);
+			if (item[item.length - 1] === '/')
+				item = item.substring(0, item.length - 1);
+			directories.push(directory + '/' + item);
+		});
 
 		var files = {};
 		var force = false;
