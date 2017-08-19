@@ -2919,7 +2919,7 @@ F.problem = F.wtf = function(message, name, uri, ip) {
 /**
  * Registers a new change
  * @param {String} message
- * @param {String} name A controller name.
+ * @param {String} name A source name.
  * @param {String} uri
  * @param {String} ip
  * @return {Framework}
