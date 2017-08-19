@@ -36,7 +36,9 @@ const Fs = require('fs');
 const Events = require('events');
 const Crypto = require('crypto');
 const CONCAT = [null, null];
-const COMPARER = Intl.Collator().compare;
+const COMPARER = global.Intl ? global.Intl.Collator().compare : function(a, b) {
+	return a.removeDiacritics().localeCompare(b.removeDiacritics());
+};
 
 if (!global.framework_utils)
 	global.framework_utils = exports;

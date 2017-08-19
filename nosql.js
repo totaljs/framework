@@ -60,7 +60,9 @@ const CLUSTER_UNLOCK_COUNTER = { TYPE: 'nosql-counter-unlock' };
 const FLAGS_READ = ['get'];
 const COUNTER_MMA = [0, 0];
 const NOSQL_STR_END = { '"': true, ',': true, '}': true };
-const COMPARER = Intl.Collator().compare;
+const COMPARER = global.Intl ? global.Intl.Collator().compare : function(a, b) {
+	return a.removeDiacritics().localeCompare(b.removeDiacritics());
+};
 
 Object.freeze(EMPTYARRAY);
 
