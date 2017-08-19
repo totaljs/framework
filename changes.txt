@@ -47,6 +47,7 @@
 - fixed: moved executing of `MailMessage.callback()` to better place
 - fixed: mail auth when `options.user` and `options.password` are blank
 - fixed: JS/CSS/HTML blocks
+- fixed: `F.prototypes()`
 
 - improved: Date formatting (+50%)
 - improved: NoSQL performance (around 60% in some cases)

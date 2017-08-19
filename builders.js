@@ -4045,6 +4045,7 @@ exports.Page = Page;
 exports.UrlBuilder = UrlBuilder;
 exports.TransformBuilder = TransformBuilder;
 exports.SchemaOptions = SchemaOptions;
+exports.RESTBuilderResponse = RESTBuilderResponse;
 global.RESTBuilder = RESTBuilder;
 global.RESTBuilderResponse = RESTBuilderResponse;
 global.ErrorBuilder = ErrorBuilder;
