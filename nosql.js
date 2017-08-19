@@ -44,6 +44,7 @@ if (!global.framework_builders)
 const EXTENSION = '.nosql';
 const EXTENSION_BINARY = '.nosql-binary';
 const EXTENSION_TMP = '.nosql-tmp';
+const EXTENSION_LOG = '.nosql-log';
 const EXTENSION_META = '.meta';
 const EXTENSION_COUNTER = '-counter2';
 const BINARY_HEADER_LENGTH = 2000;
@@ -73,6 +74,7 @@ function Database(name, filename) {
 	self.filename = self.readonly ? filename.format('') : filename + EXTENSION;
 	self.filenameCounter = self.readonly ? filename.format('counter') : filename + EXTENSION + EXTENSION_COUNTER;
 	self.filenameTemp = filename + EXTENSION_TMP;
+	self.filenameLog = self.readonly ? '' : filename + EXTENSION_LOG;
 	self.filenameMeta = filename + EXTENSION_META;
 	self.directory = Path.dirname(filename);
 	self.filenameBackup = framework_utils.join(self.directory, name + '_backup' + EXTENSION);
@@ -230,7 +232,7 @@ Database.prototype.insert = function(doc, unique) {
 		return builder;
 	}
 
-	builder = new DatabaseBuilder2();
+	builder = new DatabaseBuilder2(self);
 	var json = framework_builders.isSchema(doc) ? doc.$clean() : doc;
 	self.pending_append.push({ doc: JSON.stringify(json), builder: builder });
 	setImmediate(next_operation, self, 1);
@@ -245,7 +247,7 @@ Database.prototype.upsert = function(doc) {
 Database.prototype.update = function(doc, insert) {
 	var self = this;
 	self.readonly && self.throwReadonly();
-	var builder = new DatabaseBuilder();
+	var builder = new DatabaseBuilder(self);
 	var data = framework_builders.isSchema(doc) ? doc.$clean() : doc;
 	self.pending_update.push({ builder: builder, doc: data, count: 0, insert: insert === true ? data : insert });
 	setImmediate(next_operation, self, 2);
@@ -255,7 +257,7 @@ Database.prototype.update = function(doc, insert) {
 Database.prototype.modify = function(doc, insert) {
 	var self = this;
 	self.readonly && self.throwReadonly();
-	var builder = new DatabaseBuilder();
+	var builder = new DatabaseBuilder(self);
 	var data = framework_builders.isSchema(doc) ? doc.$clean() : doc;
 	var keys = Object.keys(data);
 
@@ -345,17 +347,19 @@ Database.prototype.backup2 = function(filename, remove) {
 	if (remove)
 		return self.remove(filename || '');
 
-	var builder = new DatabaseBuilder2();
+	var builder = new DatabaseBuilder2(self);
 	var stream = Fs.createReadStream(self.filename);
 
 	stream.pipe(Fs.createWriteStream(filename || self.filenameBackup));
 
 	stream.on('error', function(err) {
+		builder.$log && builder.$log();
 		builder.$callback && builder.$callback(errorhandling(err, builder));
 		builder.$callback = null;
 	});
 
 	stream.on('end', function() {
+		builder.$log && builder.$log();
 		builder.$callback && builder.$callback(errorhandling(null, builder, true), true);
 		builder.$callback = null;
 	});
@@ -392,7 +396,7 @@ Database.prototype.release = function() {
 Database.prototype.clear = Database.prototype.remove = function(filename) {
 	var self = this;
 	self.readonly && self.throwReadonly();
-	var builder = new DatabaseBuilder();
+	var builder = new DatabaseBuilder(self);
 	var backup = filename === undefined ? undefined : filename || self.filenameBackup;
 
 	if (backup)
@@ -405,7 +409,7 @@ Database.prototype.clear = Database.prototype.remove = function(filename) {
 
 Database.prototype.find = function(view) {
 	var self = this;
-	var builder = new DatabaseBuilder();
+	var builder = new DatabaseBuilder(self);
 
 	if (view) {
 		self.pending_reader_view.push({ builder: builder, count: 0, counter: 0, view: view });
@@ -428,7 +432,7 @@ Database.prototype.scalar = function(type, field, view) {
 
 Database.prototype.count = function(view) {
 	var self = this;
-	var builder = new DatabaseBuilder();
+	var builder = new DatabaseBuilder(self);
 
 	if (view) {
 		self.pending_reader_view.push({ builder: builder, count: 0, view: view, type: 1 });
@@ -443,7 +447,7 @@ Database.prototype.count = function(view) {
 
 Database.prototype.one = function(view) {
 	var self = this;
-	var builder = new DatabaseBuilder();
+	var builder = new DatabaseBuilder(self);
 	builder.first();
 
 	if (view) {
@@ -459,7 +463,7 @@ Database.prototype.one = function(view) {
 
 Database.prototype.top = function(max, view) {
 	var self = this;
-	var builder = new DatabaseBuilder();
+	var builder = new DatabaseBuilder(self);
 	builder.take(max);
 
 	if (view) {
@@ -474,7 +478,7 @@ Database.prototype.top = function(max, view) {
 };
 
 Database.prototype.view = function(name) {
-	var builder = new DatabaseBuilder();
+	var builder = new DatabaseBuilder(this);
 	this.views[name] = {};
 	this.views[name] = builder;
 	this.views[name].$filename = this.filename.replace(/\.nosql/, '#' + name + '.nosql');
@@ -698,6 +702,7 @@ Database.prototype.$append = function() {
 
 		Fs.appendFile(self.filename, json.join(NEWLINE) + NEWLINE, function(err) {
 			for (var i = 0, length = items.length; i < length; i++) {
+				items[i].builder.$log && items[i].builder.log();
 				var callback = items[i].builder.$callback;
 				callback && callback(err, 1);
 			}
@@ -728,6 +733,7 @@ Database.prototype.$append_inmemory = function() {
 
 		for (var i = 0, length = items.length; i < length; i++) {
 			self.inmemory['#'].push(JSON.parse(items[i].doc, jsonparser));
+			items[i].builder.$log && items[i].builder.log();
 			var callback = items[i].builder.$callback;
 			callback && callback(null, 1);
 		}
@@ -828,8 +834,10 @@ Database.prototype.$update = function() {
 				var item = filter[i];
 				if (item.insert && !item.count)
 					self.insert(item.insert).$callback = item.builder.$callback;
-				else
+				else {
+					item.builder.$log && item.builder.log();
 					item.builder.$callback && item.builder.$callback(errorhandling(err, item.builder, item.count), item.count);
+				}
 			}
 
 			setImmediate(function() {
@@ -908,6 +916,7 @@ Database.prototype.$update_inmemory = function() {
 				self.insert(item.insert).$callback = item.builder.$callback;
 			else {
 				item.count && self.emit(item.keys ? 'modify' : 'update', item.doc);
+				item.builder.$log && item.builder.log();
 				item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count);
 			}
 		}
@@ -1598,6 +1607,7 @@ Database.prototype.$remove = function() {
 
 			for (var i = 0; i < length; i++) {
 				var item = filter[i];
+				item.builder.$log && item.builder.log();
 				item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count);
 			}
 
@@ -1667,6 +1677,7 @@ Database.prototype.$remove_inmemory = function() {
 
 		for (var i = 0; i < length; i++) {
 			var item = filter[i];
+			item.builder.$log && item.builder.log();
 			item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count);
 		}
 
@@ -1708,9 +1719,23 @@ Database.prototype.$drop = function() {
 	});
 };
 
-function DatabaseBuilder2() {
+function DatabaseBuilder2(db) {
 	this.$callback = NOOP;
+	this.db = db;
+	// this.$log;
 }
+
+DatabaseBuilder2.prototype.log = function(msg, user) {
+	var self = this;
+	if (msg) {
+		F.datetime = new Date();
+		self.$log = (self.$log ? self.$log : '') + F.datetime.format('yyyy-MM-dd HH:mm:ss') + ' | ' + (user ? user.padRight(20) + ' | ' : '') + msg + NEWLINE;
+	} else if (self.$log) {
+		self.db.filenameLog && Fs.appendFile(self.db.filenameLog, self.$log, NOOP);
+		self.$log = '';
+	}
+	return self;
+};
 
 DatabaseBuilder2.prototype.callback = function(fn, emptyerror) {
 
@@ -1725,26 +1750,42 @@ DatabaseBuilder2.prototype.callback = function(fn, emptyerror) {
 	return this;
 };
 
-function DatabaseBuilder() {
+function DatabaseBuilder(db) {
+	this.db = db;
 	this.$take = 0;
 	this.$skip = 0;
 	this.$filter = [];
-	this.$sort;
+	// this.$sort;
 	this.$first = false;
 	this.$scope = 0;
-	this.$fields;
-	this.$join;
-	this.$joincount;
+	// this.$fields;
+	// this.$join;
+	// this.$joincount;
 	this.$callback = NOOP;
-	this.$scalar;
-	this.$scalarfield;
+	// this.$scalar;
+	// this.$scalarfield;
+	// this.$log;
 }
+
+DatabaseBuilder.prototype.log = function(msg, user) {
+	var self = this;
+	if (msg) {
+		F.datetime = new Date();
+		self.$log = (self.$log ? self.$log : '') + F.datetime.format('yyyy-MM-dd HH:mm:ss') + ' | ' + (user ? user.padRight(20) + ' | ' : '') + msg + NEWLINE;
+	} else if (self.$log) {
+		self.db.filenameLog && Fs.appendFile(self.db.filenameLog, self.$log, NOOP);
+		self.$log = '';
+	}
+	return self;
+};
 
 DatabaseBuilder.prototype.$callback2 = function(err, response, count) {
 	var self = this;
 
-	if (err || !self.$join)
+	if (err || !self.$join) {
+		self.$log && self.log();
 		return self.$callback(err, response, count);
+	}
 
 	if (self.$joincount) {
 		setImmediate(() => self.$callback2(err, response, count));
@@ -1769,6 +1810,7 @@ DatabaseBuilder.prototype.$callback2 = function(err, response, count) {
 		}
 	}
 
+	self.$log && self.log();
 	self.$callback(err, response, count);
 	return self;
 };
