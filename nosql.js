@@ -2119,6 +2119,18 @@ DatabaseBuilder.prototype.compare_string = function(json, index) {
 				if (value && value !== 'null')
 					return;
 				break;
+			case 21: // number in
+				if (filter.value.indexOf(+value) === -1)
+					return;
+				break;
+			case 22: // string in
+				if (filter.value.indexOf(value) === -1)
+					return;
+				break;
+			case 23: // boolean in
+				if (filter.value.indexOf(value === 'true') === -1)
+					return;
+				break;
 		}
 	}
 
@@ -2458,7 +2470,23 @@ DatabaseBuilder.prototype.$sortinline = function() {
 DatabaseBuilder.prototype.in = function(name, value) {
 	if (!(value instanceof Array))
 		value = [value];
-	this.$filter.push({ scope: this.$scope, name: name, filter: compare_in, value: value });
+
+	var type = typeof(value[0]);
+	var noconvert = 0;
+
+	switch (type) {
+		case 'number':
+			noconvert = 21;
+			break;
+		case 'string':
+			noconvert = 22;
+			break;
+		case 'boolean':
+			noconvert = 23;
+			break;
+	}
+
+	this.$filter.push({ scope: this.$scope, name: name, filter: compare_in, value: value, noconvert: noconvert });
 	return this;
 };
 
