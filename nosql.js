@@ -812,6 +812,17 @@ Database.prototype.$update = function() {
 		// No change
 		if (!change) {
 			Fs.unlink(self.filenameTemp, function() {
+
+				for (var i = 0; i < length; i++) {
+					var item = filter[i];
+					if (item.insert && !item.count)
+						self.insert(item.insert).$callback = item.builder.$callback;
+					else {
+						item.builder.$log && item.builder.log();
+						item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count);
+					}
+				}
+
 				self.next(0);
 				F.cluster && self.$unlock();
 			});
@@ -1588,6 +1599,11 @@ Database.prototype.$remove = function() {
 		// No change
 		if (!change) {
 			Fs.unlink(self.filenameTemp, function() {
+				for (var i = 0; i < length; i++) {
+					var item = filter[i];
+					item.builder.$log && item.builder.log();
+					item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count);
+				}
 				self.next(0);
 				F.cluster && self.$unlock();
 			});
