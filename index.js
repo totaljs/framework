@@ -7931,7 +7931,6 @@ F.$configure_workflows = function(arr, clean) {
 			key = type + '#' + key;
 		}
 
-
 		line.substring(index + 1).split('-->').forEach(function(operation, index) {
 
 			var options = 'options||EMPTYOBJECT';
@@ -7954,6 +7953,7 @@ F.$configure_workflows = function(arr, clean) {
 				builder.push('$' + what[0].trim() + '(' + what[1].trim() + ', {0})'.format(options));
 			else
 				builder.push('$' + what[0] + '({0})'.format(options));
+
 		});
 
 		F.workflows[key] = new Function('model', 'options', 'callback', 'return model.$async(callback' + (response === -1 ? '' : ', ' + response) + ').' + builder.join('.') + ';');
@@ -8239,7 +8239,6 @@ F.$configure_configs = function(arr, rewrite) {
 					HEADERS[key][subkey] = xpowered;
 				else
 					delete HEADERS[key][subkey];
-
 			}
 		});
 	});

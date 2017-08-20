@@ -2278,7 +2278,7 @@ SchemaInstance.prototype.$push = function(type, name, helper, first) {
 	var self = this;
 	var fn;
 
-	if (type === 'save' || type === 'remove') {
+	if (type === 'save') {
 
 		helper = name;
 		name = undefined;
@@ -2295,7 +2295,7 @@ SchemaInstance.prototype.$push = function(type, name, helper, first) {
 			}, self.$$controller);
 		};
 
-	} else if (type === 'query' || type === 'get' || type === 'read') {
+	} else if (type === 'query' || type === 'get' || type === 'read' || type === 'remove') {
 
 		helper = name;
 		name = undefined;
@@ -2313,7 +2313,6 @@ SchemaInstance.prototype.$push = function(type, name, helper, first) {
 		};
 
 	} else {
-
 		fn = function(next) {
 			self.$$schema[type](name, self, helper, function(err, result) {
 				self.$$result && self.$$result.push(err ? null : copy(result));
@@ -2325,7 +2324,6 @@ SchemaInstance.prototype.$push = function(type, name, helper, first) {
 				self.$$callback = null;
 			}, self.$$controller);
 		};
-
 	}
 
 	if (first)
@@ -2390,7 +2388,7 @@ SchemaInstance.prototype.$read = SchemaInstance.prototype.$get = function(helper
 	return this;
 };
 
-SchemaInstance.prototype.$remove = function(helper, callback) {
+SchemaInstance.prototype.$delete = SchemaInstance.prototype.$remove = function(helper, callback) {
 
 	if (this.$$can && this.$$async)
 		this.$push('remove', helper);
