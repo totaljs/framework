@@ -1580,6 +1580,7 @@ exports.streamer = function(beg, end, callback, skip, stream) {
 
 	var indexer = 0;
 	var buffer = exports.createBufferSize();
+	var canceled = false;
 	var fn;
 
 	if (skip === undefined)
@@ -1593,7 +1594,7 @@ exports.streamer = function(beg, end, callback, skip, stream) {
 		var length = beg.length;
 		fn = function(chunk) {
 
-			if (!chunk)
+			if (!chunk || canceled)
 				return;
 
 			CONCAT[0] = buffer;
@@ -1608,8 +1609,13 @@ exports.streamer = function(beg, end, callback, skip, stream) {
 
 				if (skip)
 					skip--;
-				else
-					callback(buffer.toString('utf8', 0, index + length), indexer++);
+				else {
+					if (callback(buffer.toString('utf8', 0, index + length), indexer++) === false)
+						canceled = true;
+				}
+
+				if (canceled)
+					return;
 
 				buffer = buffer.slice(index + length);
 				index = buffer.indexOf(beg);
@@ -1630,7 +1636,7 @@ exports.streamer = function(beg, end, callback, skip, stream) {
 
 	fn = function(chunk) {
 
-		if (!chunk)
+		if (!chunk || canceled)
 			return;
 
 		CONCAT[0] = buffer;
@@ -1654,8 +1660,13 @@ exports.streamer = function(beg, end, callback, skip, stream) {
 
 			if (skip)
 				skip--;
-			else
-				callback(buffer.toString('utf8', bi, ei + elength), indexer++);
+			else {
+				if (callback(buffer.toString('utf8', bi, ei + elength), indexer++) === false)
+					canceled = true;
+			}
+
+			if (canceled)
+				return;
 
 			buffer = buffer.slice(ei + elength);
 			is = false;
