@@ -29,6 +29,7 @@
 - added: NoSQL logging in `DatabaseBuilder.log(msg, [user])`
 - added: NoSQL backuping documents while they are updating/removing in `DatabaseBuilder.backup([user])`
 - added: `CLONE(obj)` alias for `U.clone()`
+- added: `GROUP(flags, fn)` alias for `F.group()`
 
 - updated: (IMPORTANT) packages compress/decompress function supports streaming data
 - updated: (IMPORTANT) `NOSQL().backup()` !!! was changed !!!!

@@ -299,6 +299,7 @@ global.FINISHED = (stream, callback) => framework_internal.onFinished(stream, ca
 global.DESTROY = (stream) => framework_internal.destroyStream(stream);
 global.UID = () => UIDGENERATOR.date + (++UIDGENERATOR.index).padLeft(4, '0') + UIDGENERATOR.instance + (UIDGENERATOR.index % 2 ? 1 : 0);
 global.ROUTE = (a, b, c, d, e) => F.route(a, b, c, d, e);
+global.GROUP = (a, b) => F.group(a, b);
 global.WEBSOCKET = (a, b, c, d) => F.websocket(a, b, c, d);
 global.FILE = (a, b, c) => F.file(a, b, c);
 
