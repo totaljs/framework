@@ -45,6 +45,7 @@ const EXTENSION = '.nosql';
 const EXTENSION_BINARY = '.nosql-binary';
 const EXTENSION_TMP = '.nosql-tmp';
 const EXTENSION_LOG = '.nosql-log';
+const EXTENSION_BACKUP = '.nosql-backup';
 const EXTENSION_META = '.meta';
 const EXTENSION_COUNTER = '-counter2';
 const BINARY_HEADER_LENGTH = 2000;
@@ -75,9 +76,10 @@ function Database(name, filename) {
 	self.filenameCounter = self.readonly ? filename.format('counter') : filename + EXTENSION + EXTENSION_COUNTER;
 	self.filenameTemp = filename + EXTENSION_TMP;
 	self.filenameLog = self.readonly ? '' : filename + EXTENSION_LOG;
+	self.filenameBackup = self.readonly ? '' : filename + EXTENSION_BACKUP;
 	self.filenameMeta = filename + EXTENSION_META;
 	self.directory = Path.dirname(filename);
-	self.filenameBackup = framework_utils.join(self.directory, name + '_backup' + EXTENSION);
+	self.filenameBackup2 = framework_utils.join(self.directory, name + '_backup' + EXTENSION);
 	self.name = name;
 	self.pending_update = [];
 	self.pending_append = [];
@@ -350,7 +352,7 @@ Database.prototype.backup2 = function(filename, remove) {
 	var builder = new DatabaseBuilder2(self);
 	var stream = Fs.createReadStream(self.filename);
 
-	stream.pipe(Fs.createWriteStream(filename || self.filenameBackup));
+	stream.pipe(Fs.createWriteStream(filename || self.filenameBackup2));
 
 	stream.on('error', function(err) {
 		builder.$log && builder.$log();
@@ -397,7 +399,7 @@ Database.prototype.clear = Database.prototype.remove = function(filename) {
 	var self = this;
 	self.readonly && self.throwReadonly();
 	var builder = new DatabaseBuilder(self);
-	var backup = filename === undefined ? undefined : filename || self.filenameBackup;
+	var backup = filename === undefined ? undefined : filename || self.filenameBackup2;
 
 	if (backup)
 		backup = new Backuper(backup);
@@ -782,6 +784,9 @@ Database.prototype.$update = function() {
 			var builder = item.builder;
 			var output = noconvert ? builder.compare_string(doc, index, true) : builder.compare(doc, index, true);
 			if (output) {
+
+				builder.$backup && builder.$backupdoc(output);
+
 				if (item.keys) {
 					for (var j = 0, jl = item.keys.length; j < jl; j++) {
 						var val = item.doc[item.keys[j]];
@@ -899,6 +904,9 @@ Database.prototype.$update_inmemory = function() {
 				var output = builder.compare(doc, j);
 
 				if (output) {
+
+					builder.$backup && builder.$backupdoc(doc);
+
 					if (item.keys) {
 						for (var j = 0, jl = item.keys.length; j < jl; j++) {
 							var val = item.doc[item.keys[j]];
@@ -1577,6 +1585,7 @@ Database.prototype.$remove = function() {
 			var builder = item.builder;
 			var output = noconvert ? builder.compare_string(json, index) : builder.compare(json, index);
 			if (output) {
+				builder.$backup && builder.$backupdoc(output);
 				removed = true;
 				json = output;
 				break;
@@ -2222,6 +2231,19 @@ DatabaseBuilder.prototype.contains = function(name) {
 
 DatabaseBuilder.prototype.empty = function(name) {
 	this.$filter.push({ scope: this.$scope, filter: compare_empty, name: name, noconvert: 6 });
+	return this;
+};
+
+DatabaseBuilder.prototype.backup = function(user) {
+	if (this.db.filenameBackup)
+		this.$backup = typeof(user) === 'string' ? user : 'unknown';
+	else
+		this.$backup = null;
+	return this;
+};
+
+DatabaseBuilder.prototype.$backupdoc = function(doc) {
+	this.db.filenameBackup && Fs.appendFile(this.db.filenameBackup, F.datetime.format('yyyy-MM-dd HH:mm') + ' | ' + this.$backup.padRight(20) + ' | ' + JSON.stringify(doc) + NEWLINE, NOOP);
 	return this;
 };
 

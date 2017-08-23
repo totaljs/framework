@@ -27,6 +27,7 @@
 - added: NoSQL counter `db.counter.sum(id, value)` for writing stats (alias for `db.counter.hit()`)
 - added: NoSQL counter: a new event `stats` when the stats are changed
 - added: NoSQL logging in `DatabaseBuilder.log(msg, [user])`
+- added: NoSQL backuping documents while they are updating/removing in `DatabaseBuilder.backup([user])`
 - added: `CLONE(obj)` alias for `U.clone()`
 
 - updated: (IMPORTANT) packages compress/decompress function supports streaming data
