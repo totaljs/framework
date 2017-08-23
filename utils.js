@@ -1405,7 +1405,7 @@ exports.extend_headers2 = function(first, second) {
  * @param {Boolean} skipFunctions It doesn't clone functions, optional --> default false.
  * @return {Object}
  */
-exports.clone = function(obj, skip, skipFunctions) {
+global.CLONE = exports.clone = function(obj, skip, skipFunctions) {
 
 	if (!obj)
 		return obj;
