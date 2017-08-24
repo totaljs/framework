@@ -481,10 +481,10 @@ function test_ErrorBuilder() {
 
 	builder.clear();
 	builder.add('name');
-	assert.ok(builder.output() === '[{"name":"name","error":"name"}]', name + 'json');
+	assert.ok(builder.output(true) === '[{"name":"name","error":"name"}]', name + 'json');
 
 	builder.add(new builders.ErrorBuilder().add('age'));
-	assert.ok(builder.output() === '[{"name":"name","error":"name"},{"name":"age","error":"age"}]', name + 'add(ErrorBuilder)');
+	assert.ok(builder.output(true) === '[{"name":"name","error":"name"},{"name":"age","error":"age"}]', name + 'add(ErrorBuilder)');
 	assert.ok(builder.read('name') === 'name', name + 'read()');
 	assert.ok(builder.hasError('name'), name + 'hasError(name)');
 

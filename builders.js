@@ -3910,7 +3910,20 @@ RESTBuilder.prototype.exec = function(callback) {
 		var type = err ? '' : headers['content-type'] || '';
 		var output = new RESTBuilderResponse();
 
-		output.value = type.indexOf('/xml') === -1 ? response.isJSON() ? JSON.parse(response, jsonparser) : F.onParseQuery(response) : response.parseXML();
+		switch (type.toLowerCase()) {
+			case 'text/xml':
+				output.value = response.parseXML();
+				break;
+			case 'application/x-www-form-urlencoded':
+				output.value = F.onParseQuery(response);
+				break;
+			case 'application/json':
+				output.value = response.parseJSON();
+				break;
+			default:
+				output.value = response.isJSON() ? response.parseJSON() : null;
+				break;
+		}
 
 		if (output.value == null)
 			output.value = EMPTYOBJECT;
