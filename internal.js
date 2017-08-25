@@ -1771,7 +1771,8 @@ function view_parse(content, minify, filename, controller) {
 			continue;
 		}
 
-		cmd = cmd.replace(REG_HELPERS, function(text) {
+		// cmd = cmd.replace
+		command.command = command.command.replace(REG_HELPERS, function(text) {
 			var index = text.indexOf('(');
 			return index === - 1 ? text : text.substring(0, index) + '.call(self' + (text.endsWith('()') ? ')' : ',' + text.substring(index + 1));
 		});
