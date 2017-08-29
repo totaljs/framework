@@ -47,6 +47,7 @@
 - updated: `sorting` (framework + NoSQL embedded), now supports `internationalization`
 - updated: `total.js/debugger` by adding a new option `options.watch = ['directory']`
 - updated: `U.streamer()` supports "cancelation", just return `false`
+- updated: CSS auto-prefixer, added: `repeating-linear-gradient`, `radial-gradient`, `repeating-radial-gradient` and removed `-o` prefix
 
 - fixed: (IMPORTANT) long messages in WebSocket
 - fixed: (IMPORTANT) `controller` param in schemas

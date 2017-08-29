@@ -975,15 +975,36 @@ function autoprefixer(value) {
 		}
 
 		if (name === 'background' || name === 'background-image') {
-			if (property.indexOf('linear-gradient') === -1)
-				continue;
-			updated = plus.replacer('linear-', '-webkit-linear-') + delimiter;
-			updated += plus.replacer('linear-', '-moz-linear-') + delimiter;
-			updated += plus.replacer('linear-', '-o-linear-') + delimiter;
-			updated += plus.replacer('linear-', '-ms-linear-') + delimiter;
-			updated += plus;
-			value = value.replacer(property, '@[[' + output.length + ']]');
-			output.push(updated);
+			if (property.indexOf('repeating-linear-gradient') !== -1) {
+				updated = plus.replacer('repeating-linear-', '-webkit-repeating-linear-') + delimiter;
+				updated += plus.replacer('repeating-linear-', '-moz-repeating-linear-') + delimiter;
+				updated += plus.replacer('repeating-linear-', '-ms-repeating-linear-') + delimiter;
+				updated += plus;
+				value = value.replacer(property, '@[[' + output.length + ']]');
+				output.push(updated);
+			} else if (property.indexOf('repeating-radial-gradient') !== -1) {
+				updated = plus.replacer('repeating-radial-', '-webkit-repeating-radial-') + delimiter;
+				updated += plus.replacer('repeating-radial-', '-moz-repeating-radial-') + delimiter;
+				updated += plus.replacer('repeating-radial-', '-ms-repeating-radial-') + delimiter;
+				updated += plus;
+				value = value.replacer(property, '@[[' + output.length + ']]');
+				output.push(updated);
+			} else if (property.indexOf('linear-gradient') !== -1) {
+				updated = plus.replacer('linear-', '-webkit-linear-') + delimiter;
+				updated += plus.replacer('linear-', '-moz-linear-') + delimiter;
+				updated += plus.replacer('linear-', '-ms-linear-') + delimiter;
+				updated += plus;
+				value = value.replacer(property, '@[[' + output.length + ']]');
+				output.push(updated);
+			} else if (property.indexOf('radial-gradient') !== -1) {
+				updated = plus.replacer('radial-', '-webkit-radial-') + delimiter;
+				updated += plus.replacer('radial-', '-moz-radial-') + delimiter;
+				updated += plus.replacer('radial-', '-ms-radial-') + delimiter;
+				updated += plus;
+				value = value.replacer(property, '@[[' + output.length + ']]');
+				output.push(updated);
+			}
+
 			continue;
 		}
 
@@ -1012,7 +1033,6 @@ function autoprefixer(value) {
 		if (name.indexOf('animation') === -1)
 			updated += delimiter + '-ms-' + plus;
 
-		updated += delimiter + '-o-' + plus;
 		value = value.replacer(property, '@[[' + output.length + ']]');
 		output.push(updated);
 	}
