@@ -576,7 +576,7 @@ function Framework() {
 		'default-cors-maxage': 120,
 
 		// in milliseconds
-		'default-request-timeout': 5000,
+		'default-request-timeout': 3000,
 
 		// otherwise is used ImageMagick (Heroku supports ImageMagick)
 		// gm = graphicsmagick or im = imagemagick
