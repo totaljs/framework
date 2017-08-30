@@ -3918,10 +3918,10 @@ RESTBuilder.prototype.exec = function(callback) {
 				output.value = F.onParseQuery(response);
 				break;
 			case 'application/json':
-				output.value = response.parseJSON();
+				output.value = response.parseJSON(true);
 				break;
 			default:
-				output.value = response.isJSON() ? response.parseJSON() : null;
+				output.value = response.isJSON() ? response.parseJSON(true) : null;
 				break;
 		}
 
