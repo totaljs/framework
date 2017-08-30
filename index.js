@@ -8897,26 +8897,68 @@ function FrameworkCache() {
 }
 
 FrameworkCache.prototype.init = function() {
-	clearInterval(this.interval);
-	this.interval = setInterval(() => F.cache.recycle(), 1000 * 60);
-	F.config['allow-cache-snapshot'] && this.load();
-	return this;
+	var self = this;
+	clearInterval(self.interval);
+	self.interval = setInterval(() => F.cache.recycle(), 1000 * 60);
+	if (F.config['allow-cache-snapshot'])
+		self.load(() => self.loadPersist());
+	else
+		self.loadPersist();
+	return self;
 };
 
 FrameworkCache.prototype.save = function() {
-	Fs.writeFile(F.path.temp((F.id ? 'i-' + F.id + '_' : '') + 'F.jsoncache'), JSON.stringify(this.items), NOOP);
+	Fs.writeFile(F.path.temp((F.id ? 'i-' + F.id + '_' : '') + 'framework_cachesnapshot.jsoncache'), JSON.stringify(this.items), NOOP);
 	return this;
 };
 
-FrameworkCache.prototype.load = function() {
+FrameworkCache.prototype.load = function(callback) {
 	var self = this;
-	Fs.readFile(F.path.temp((F.id ? 'i-' + F.id + '_' : '') + 'F.jsoncache'), function(err, data) {
-		if (err)
-			return;
-		try {
-			data = JSON.parse(data.toString('utf8'), (key, value) => typeof(value) === 'string' && value.isJSONDate() ? new Date(value) : value);
-			self.items = data;
-		} catch (e) {}
+	Fs.readFile(F.path.temp((F.id ? 'i-' + F.id + '_' : '') + 'framework_cachesnapshot.jsoncache'), function(err, data) {
+		if (!err) {
+			try {
+				data = JSON.parse(data.toString('utf8'), (key, value) => typeof(value) === 'string' && value.isJSONDate() ? new Date(value) : value);
+				self.items = data;
+			} catch (e) {}
+		}
+		callback && callback();
+	});
+	return self;
+};
+
+FrameworkCache.prototype.savePersist = function() {
+	setTimeout2('framework_cachepersist', function(self) {
+		var keys = Object.keys(self.items);
+		var obj = {};
+
+		for (var i = 0, length = keys.length; i < length; i++) {
+			var key = keys[i];
+			var item = self.items[key];
+			if (item.persist)
+				obj[key] = item;
+		}
+
+		Fs.writeFile(F.path.temp((F.id ? 'i-' + F.id + '_' : '') + 'framework_cachepersist.jsoncache'), JSON.stringify(obj), NOOP);
+	}, 1000, 50, this);
+	return this;
+};
+
+FrameworkCache.prototype.loadPersist = function(callback) {
+	var self = this;
+	Fs.readFile(F.path.temp((F.id ? 'i-' + F.id + '_' : '') + 'framework_cachepersist.jsoncache'), function(err, data) {
+		if (!err) {
+			try {
+				data = JSON.parse(data.toString('utf8'), (key, value) => typeof(value) === 'string' && value.isJSONDate() ? new Date(value) : value);
+				var keys = Object.keys(data);
+				for (var i = 0, length = keys.length; i < length; i++) {
+					var key = keys[i];
+					var item = data[key];
+					if (item.expire >= F.datetime)
+						self.items[key] = item;
+				}
+			} catch (e) {}
+		}
+		callback && callback();
 	});
 	return self;
 };
@@ -8929,12 +8971,14 @@ FrameworkCache.prototype.stop = function() {
 FrameworkCache.prototype.clear = function(sync) {
 	this.items = {};
 	F.isCluster && sync !== false && process.send(CLUSTER_CACHE_CLEAR);
+	this.savePersist();
 	return this;
 };
 
 FrameworkCache.prototype.recycle = function() {
 
 	var items = this.items;
+	var isPersist = false;
 	F.datetime = new Date();
 
 	this.count++;
@@ -8944,17 +8988,24 @@ FrameworkCache.prototype.recycle = function() {
 		if (!value)
 			delete items[o];
 		else if (value.expire < F.datetime) {
+			if (value.persist)
+				isPersist = true;
 			F.emit('cache-expire', o, value.value);
 			delete items[o];
 		}
 	}
 
+	isPersist && this.savePersist();
 	F.config['allow-cache-snapshot'] && this.save();
 	F.service(this.count);
 	return this;
 };
 
-FrameworkCache.prototype.set = FrameworkCache.prototype.add = function(name, value, expire, sync) {
+FrameworkCache.prototype.set2 = function(name, value, expire, sync) {
+	return this.set(name, value, expire, sync, true);
+};
+
+FrameworkCache.prototype.set = FrameworkCache.prototype.add = function(name, value, expire, sync, persist) {
 	var type = typeof(expire);
 
 	if (F.isCluster && sync !== false) {
@@ -8973,7 +9024,14 @@ FrameworkCache.prototype.set = FrameworkCache.prototype.add = function(name, val
 			break;
 	}
 
-	this.items[name] = { value: value, expire: expire };
+	var obj = { value: value, expire: expire };
+
+	if (persist) {
+		obj.persist = true;
+		this.savePersist();
+	}
+
+	this.items[name] = obj;
 	F.$events['cache-set'] && F.emit('cache-set', name, value, expire, sync !== false);
 	return value;
 };
@@ -9019,8 +9077,11 @@ FrameworkCache.prototype.setExpire = function(name, expire) {
 
 FrameworkCache.prototype.remove = function(name, sync) {
 	var value = this.items[name];
-	if (value)
+
+	if (value) {
+		this.items[name].persist && this.savePersist();
 		this.items[name] = undefined;
+	}
 
 	if (F.isCluster && sync !== false) {
 		CLUSTER_CACHE_REMOVE.key = name;
@@ -15308,9 +15369,9 @@ global.setTimeout2 = function(name, fn, timeout, limit, param) {
 			return;
 		F.temporary.internal[key2] = (F.temporary.internal[key2] || 0) + 1;
 		F.temporary.internal[key] && clearTimeout(F.temporary.internal[key]);
-		return F.temporary.internal[key] = setTimeout(function() {
+		return F.temporary.internal[key] = setTimeout(function(param) {
 			F.temporary.internal[key2] = undefined;
-			fn && fn();
+			fn && fn(param);
 		}, timeout, param);
 	}
 
