@@ -73,7 +73,7 @@ function Database(name, filename) {
 	var http = filename.substring(0, 6);
 	self.readonly = http === 'http:/' || http === 'https:';
 	self.filename = self.readonly ? filename.format('') : filename + EXTENSION;
-	self.filenameCounter = self.readonly ? filename.format('counter') : filename + EXTENSION + EXTENSION_COUNTER;
+	self.filenameCounter = self.readonly ? filename.format('counter', '-') : filename + EXTENSION + EXTENSION_COUNTER;
 	self.filenameTemp = filename + EXTENSION_TMP;
 	self.filenameLog = self.readonly ? '' : filename + EXTENSION_LOG;
 	self.filenameBackup = self.readonly ? '' : filename + EXTENSION_BACKUP;
@@ -314,6 +314,13 @@ Database.prototype.backup = function(filename, callback) {
 	pending.push(function(next) {
 		F.path.exists(self.filenameCounter, function(e) {
 			e && list.push(self.filenameCounter);
+			next();
+		});
+	});
+
+	pending.push(function(next) {
+		F.path.exists(self.filenameLog, function(e) {
+			e && list.push(self.filenameLog);
 			next();
 		});
 	});
