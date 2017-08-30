@@ -312,15 +312,22 @@ Database.prototype.backup = function(filename, callback) {
 	});
 
 	pending.push(function(next) {
+		F.path.exists(self.filenameBackup, function(e) {
+			e && list.push(Path.join(F.config['directory-databases'], self.name + EXTENSION_BACKUP));
+			next();
+		});
+	});
+
+	pending.push(function(next) {
 		F.path.exists(self.filenameCounter, function(e) {
-			e && list.push(self.filenameCounter);
+			e && list.push(Path.join(F.config['directory-databases'], self.name + EXTENSION + EXTENSION_COUNTER));
 			next();
 		});
 	});
 
 	pending.push(function(next) {
 		F.path.exists(self.filenameLog, function(e) {
-			e && list.push(self.filenameLog);
+			e && list.push(Path.join(F.config['directory-databases'], self.name + EXTENSION_LOG));
 			next();
 		});
 	});
@@ -333,6 +340,7 @@ Database.prototype.backup = function(filename, callback) {
 	});
 
 	pending.async(function() {
+
 		if (list.length)
 			F.backup(filename, list, callback);
 		else
