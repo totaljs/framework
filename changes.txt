@@ -30,7 +30,8 @@
 - added: NoSQL backuping documents while they are updating/removing in `DatabaseBuilder.backup([user])`
 - added: `CLONE(obj)` alias for `U.clone()`
 - added: `GROUP(flags, fn)` alias for `F.group()`
-- addeD: `F.cache.set2()` it creates a persistent cache (persistent items are stored in a file)
+- added: `F.cache.set2()` it creates a persistent cache (persistent items are stored in a file)
+- added: new View Engine command `@{'%config'}` which reads a value from config directly
 
 - updated: (IMPORTANT) packages compress/decompress function supports streaming data
 - updated: (IMPORTANT) `NOSQL().backup()` !!! was changed !!!!

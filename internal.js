@@ -1798,7 +1798,12 @@ function view_parse(content, minify, filename, controller) {
 		});
 
 		if (cmd[0] === '\'' || cmd[0] === '"') {
-			builder += '+' + DELIMITER + (new Function('self', 'return self.$import(' + cmd[0] + '!' + cmd.substring(1) + ')'))(controller) + DELIMITER;
+			if (cmd[1] === '%') {
+				var t = F.config[cmd.substring(2, cmd.length - 1)];
+				if (t != null)
+					builder += '+' + DELIMITER + t + DELIMITER;
+			} else
+				builder += '+' + DELIMITER + (new Function('self', 'return self.$import(' + cmd[0] + '!' + cmd.substring(1) + ')'))(controller) + DELIMITER;
 		} else if (cmd7 === 'compile' && cmd.lastIndexOf(')') === -1) {
 
 			builderTMP = builder + '+(F.onCompileView.call(self,\'' + (cmd8[7] === ' ' ? cmd.substring(8) : '') + '\',';
