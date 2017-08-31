@@ -597,6 +597,7 @@ function Framework() {
 		'allow-defer': false,
 		'allow-debug': false,
 		'allow-head': false,
+		'allow-filter-errors': true,
 		'disable-strict-server-certificate-validation': true,
 		'disable-clear-temporary-directory': false,
 
@@ -15177,13 +15178,16 @@ global.Controller = Controller;
 
 process.on('uncaughtException', function(e) {
 
-	if (e.toString().indexOf('listen EADDRINUSE') !== -1) {
+	var err = e.toString();
+
+	if (err.indexOf('listen EADDRINUSE') !== -1) {
 		if (typeof(process.send) === 'function')
 			process.send('eaddrinuse');
 		console.log('\nThe IP address and the PORT is already in use.\nYou must change the PORT\'s number or IP address.\n');
 		process.exit('SIGTERM');
 		return;
-	}
+	} else if (F.config['allow-filter-errors'] && err.lastIndexOf('EPIPE') !== -1)
+		return;
 
 	F.error(e, '', null);
 });
