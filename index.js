@@ -62,6 +62,7 @@ const REG_HTTPHTTPS = /^(\/)?(http|https)\:\/\//i;
 const REG_NOCOMPRESS = /[\.|-]+min\.(css|js)$/i;
 const REG_TEXTAPPLICATION = /text|application/;
 const REG_ENCODINGCLEANER = /[\;\s]charset=utf\-8/g;
+const REG_SKIPERROR = /epipe|invalid\sdistance/i;
 const FLAGS_PROXY = ['post', 'json'];
 const FLAGS_INSTALL = ['get'];
 const FLAGS_DOWNLOAD = ['get', 'dnscache'];
@@ -15186,7 +15187,7 @@ process.on('uncaughtException', function(e) {
 		console.log('\nThe IP address and the PORT is already in use.\nYou must change the PORT\'s number or IP address.\n');
 		process.exit('SIGTERM');
 		return;
-	} else if (F.config['allow-filter-errors'] && err.lastIndexOf('EPIPE') !== -1)
+	} else if (F.config['allow-filter-errors'] && REG_SKIPERROR.test(err))
 		return;
 
 	F.error(e, '', null);
