@@ -512,6 +512,14 @@ Mailer.prototype.send = function(smtp, options, messages, callback) {
 		mailer.$events.error && !obj.try && mailer.emit('error', err, obj);
 	});
 
+	obj.socket.setTimeout(options.timeout || 8000, function() {
+		var err = new Error(framework_utils.httpStatus(408));
+		mailer.destroy(obj);
+		obj.callback && obj.callback(err);
+		obj.callback = null;
+		mailer.$events.error && !obj.try && mailer.emit('error', err, obj);
+	});
+
 	obj.socket.on('connect', () => !options.secure && mailer.$send(obj, options));
 	return self;
 };
@@ -648,14 +656,6 @@ Mailer.prototype.$send = function(obj, options, autosend) {
 
 	isAttach && mailer.$events.send && mailer.emit('send', obj);
 	socket.setEncoding('utf8');
-	socket.setTimeout(options.timeout || 8000, function() {
-		var err = new Error(framework_utils.httpStatus(408));
-		mailer.destroy(obj);
-		obj.callback && obj.callback(err);
-		obj.callback = null;
-		line = null;
-		mailer.$events.error && !obj.try && mailer.emit('error', err, obj);
-	});
 
 	socket.on('end', function() {
 		mailer.destroy(obj);
