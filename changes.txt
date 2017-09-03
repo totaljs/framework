@@ -59,6 +59,7 @@
 - fixed: mail auth when `options.user` and `options.password` are blank
 - fixed: JS/CSS/HTML blocks
 - fixed: `F.prototypes()`
+- fixed: `F.decrypt()` a problem with parsing JSON and date formats
 
 - improved: Date formatting (+50%)
 - improved: NoSQL performance (around 60% in some cases)

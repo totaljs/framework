@@ -7484,7 +7484,7 @@ F.decrypt = function(value, key, jsonConvert) {
 	if (jsonConvert) {
 		if (response.isJSON()) {
 			try {
-				return JSON.parse(response);
+				return response.parseJSON(true);
 			} catch (ex) {}
 		}
 		return null;
@@ -7813,7 +7813,7 @@ F.$configure_dependencies = function(arr, callback) {
 		if (index !== -1) {
 			var opt = url.substring(index + 3).trim();
 			if (opt.isJSON())
-				options = JSON.parse(opt);
+				options = opt.parseJSON(true);
 			url = url.substring(0, index).trim();
 		}
 
