@@ -1,6 +1,6 @@
 ======= 2.8.0
 
-- added: `NOSQL().restore()` restores a database
+- added: `NOSQL().restore()` restores a database (its package)
 - added: Mail options support a new property `xoauth2` (it needs to contain a `BASE64` value) for sending emails via OAuth 2.0 tokens (more in docs)
 - added: `F.path.mkdir(path)` creates all directories according to the path
 - added: `MailMessage.send2([callback])` sends a message according to the framework configuration
