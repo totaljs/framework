@@ -4040,10 +4040,6 @@ global.OPERATION = function(name, value, callback, param) {
 	}
 };
 
-function jsonparser(key, value) {
-	return typeof(value) === 'string' && value.isJSONDate() ? new Date(value) : value;
-}
-
 // ======================================================
 // EXPORTS
 // ======================================================
