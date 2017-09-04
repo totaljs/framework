@@ -52,7 +52,7 @@ console.log('success - OK');
 console.log('================================================');
 console.log('');
 
-process.on('uncaughtException', (err)=>{
-  console.error(err)
-  process.exit(1)
-})
+process.on('uncaughtException', function(err) {
+	console.error(err);
+	process.exit(1);
+});

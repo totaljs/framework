@@ -553,7 +553,7 @@ function test_ErrorBuilder() {
 		var model = schema.create();
 		model.name = 'Peter';
 
-		var async = model.$async(function(err, response) {
+		var async = model.$async(function() {
 			assert.ok(arr.indexOf('workflow2') === 1, 'SchemaBuilderEntit.$next()');
 			assert.ok(arr.indexOf('transform2') === 4, 'SchemaBuilderEntit.$next()');
 			assert.ok(arr.pop() === 'transform4', 'SchemaBuilderEntit.$push()');
@@ -578,7 +578,7 @@ function test_ErrorBuilder() {
 
 		var model = schema.create();
 
-		model.$async(function(err, response) {
+		model.$async(function(err) {
 			assert.ok(model.$repository('valid') === true, 'SchemaBuilder.$repository()');
 		}).$workflow('1').$workflow('2');
 	});
@@ -606,7 +606,7 @@ function test_ErrorBuilder() {
 		}).$workflow('1').$workflow('2').$workflow('3');
 	});
 
-};
+}
 
 function test_Operations() {
 
@@ -643,7 +643,7 @@ console.log('');
 
 setTimeout(function() {}, 1000);
 
-process.on('uncaughtException', (err)=>{
-	console.error(err)
-	process.exit(1)
-})
+process.on('uncaughtException', function(err) {
+	console.error(err);
+	process.exit(1);
+});

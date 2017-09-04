@@ -651,17 +651,6 @@ function other() {
 
 }
 
-function onValidation(name, value, path) {
-	switch (name) {
-		case 'firstName':
-			return value.length > 0;
-		case 'lastName':
-			return 'lastName-error';
-		case 'age':
-			return utils.isValid(utils.parseInt(value) > 0, 'age-error');
-	}
-}
-
 prototypeDate();
 prototypeNumber();
 prototypeString();
@@ -674,7 +663,7 @@ console.log('success - OK');
 console.log('================================================');
 console.log('');
 
-process.on('uncaughtException', (err)=>{
-  console.error(err)
-  process.exit(1)
-})
+process.on('uncaughtException', function(err) {
+	console.error(err);
+	process.exit(1);
+});
