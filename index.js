@@ -1156,8 +1156,8 @@ F.stop = F.kill = function(signal) {
 
 	F.emit('exit', signal);
 
-	if (!F.isWorker && typeof(process.send) === 'function')
-		TRY(() => process.send('stop'));
+	if (!F.isWorker && process.send)
+		TRY(() => process.send('total:stop'));
 
 	F.cache.stop();
 	F.server && F.server.close && F.server.close();
@@ -6078,7 +6078,10 @@ F.load = function(debug, types, pwd) {
 		F.emit('init');
 
 		F.$load(types, directory, function() {
+
 			F.isLoaded = true;
+			process.send && process.send('total:ready');
+
 			setTimeout(function() {
 
 				try {
@@ -6212,6 +6215,7 @@ F.initialize = function(http, debug, options, restart) {
 		F.$load(undefined, directory, function() {
 
 			F.isLoaded = true;
+			process.send && process.send('total:ready');
 
 			if (F.config['allow-debug']) {
 				F.consoledebug('done');
@@ -15183,8 +15187,7 @@ process.on('uncaughtException', function(e) {
 	var err = e.toString();
 
 	if (err.indexOf('listen EADDRINUSE') !== -1) {
-		if (typeof(process.send) === 'function')
-			process.send('eaddrinuse');
+		process.send && process.send('total:eaddrinuse');
 		console.log('\nThe IP address and the PORT is already in use.\nYou must change the PORT\'s number or IP address.\n');
 		process.exit('SIGTERM');
 		return;
@@ -15249,7 +15252,7 @@ process.on('SIGINT', () => F.stop());
 process.on('exit', () => F.stop());
 
 process.on('message', function(msg, h) {
-	if (msg === 'debugging') {
+	if (msg === 'total:debug') {
 		U.wait(() => F.isLoaded, function() {
 			F.isLoaded = undefined;
 			F.console();

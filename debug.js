@@ -245,7 +245,17 @@ function runwatching() {
 			app = fork(Path.join(directory, FILENAME), arr);
 
 			app.on('message', function(msg) {
-				msg === 'eaddrinuse' && process.exit(1);
+				switch (msg) {
+					case 'total:eaddrinuse':
+						process.exit(1);
+						break;
+					case 'total:ready':
+						if (status === 0) {
+							app.send('total:debug');
+							status = 1;
+						}
+						break;
+				}
 			});
 
 			app.on('exit', function() {
@@ -261,9 +271,6 @@ function runwatching() {
 				if (status === 255)
 					app = null;
 			});
-
-			status === 0 && setTimeout(() => app.send('debugging'), 500);
-			status = 1;
 		}
 
 		process.on('SIGTERM', end);
