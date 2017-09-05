@@ -60,6 +60,7 @@
 - fixed: JS/CSS/HTML blocks
 - fixed: `F.prototypes()`
 - fixed: `F.decrypt()` a problem with parsing JSON and date formats
+- fided: `debug.js` sometimes was created a problem with output informations
 
 - improved: Date formatting (+50%)
 - improved: NoSQL performance (around 60% in some cases)
