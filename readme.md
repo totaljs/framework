@@ -13,6 +13,7 @@ $ npm install -g total.js
 
 [![Support](https://www.totaljs.com/img/button-support.png?v=3)](https://www.totaljs.com/support/)
 
+- [__NEW__: Total.js Wiki](https://www.totaljs.com/wiki/)
 - [Total.js Flow](https://www.totaljs.com/flow/)
 - [Total.js Flowboard](https://www.totaljs.com/flowboard/)
 - [Total.js Messenger](https://www.totaljs.com/messenger/)
@@ -35,6 +36,7 @@ $ npm install -g total.js
 - [Homepage](http://www.totaljs.com)
 - [__Get Started__](http://www.totaljs.com/get-started/)
 - [__Documentation__](http://docs.totaljs.com)
+- [__Wiki for Total.js products__](http://wiki.totaljs.com)
 - [__Live chat with professional support__](https://messenger.totaljs.com)
 - [__HelpDesk with professional support__](https://helpdesk.totaljs.com)
 - [__Blogs__](https://blog.totaljs.com)
