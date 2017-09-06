@@ -259,7 +259,7 @@ function prototypeString() {
 	str = '// Configuration\nname   : total.js\nage    : 29\n// comment1    : comment1\n# comment2     : comment2\ndebug  : false';
 	assert.ok(JSON.stringify(str.parseConfig({ comment3: 'comment3' })) === '{"comment3":"comment3","name":"total.js","age":"29","debug":"false"}', 'String.parseConfig()');
 
-	assert.ok('á'.localeCompare2('a') === 0, 'localeCompare2 - 1');
+	assert.ok('á'.localeCompare2('a') === 1, 'localeCompare2 - 1');
 	assert.ok('á'.localeCompare2('b') === -1, 'localeCompare2 - 2');
 	assert.ok('č'.localeCompare2('b') === 1, 'localeCompare2 - 3');
 }
@@ -651,17 +651,6 @@ function other() {
 
 }
 
-function onValidation(name, value, path) {
-	switch (name) {
-		case 'firstName':
-			return value.length > 0;
-		case 'lastName':
-			return 'lastName-error';
-		case 'age':
-			return utils.isValid(utils.parseInt(value) > 0, 'age-error');
-	}
-}
-
 prototypeDate();
 prototypeNumber();
 prototypeString();
@@ -673,3 +662,8 @@ console.log('================================================');
 console.log('success - OK');
 console.log('================================================');
 console.log('');
+
+process.on('uncaughtException', function(err) {
+	console.error(err);
+	process.exit(1);
+});

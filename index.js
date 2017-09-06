@@ -21,7 +21,7 @@
 
 /**
  * @module Framework
- * @version 2.7.0
+ * @version 2.8.0
  */
 
 'use strict';
@@ -62,6 +62,7 @@ const REG_HTTPHTTPS = /^(\/)?(http|https)\:\/\//i;
 const REG_NOCOMPRESS = /[\.|-]+min\.(css|js)$/i;
 const REG_TEXTAPPLICATION = /text|application/;
 const REG_ENCODINGCLEANER = /[\;\s]charset=utf\-8/g;
+const REG_SKIPERROR = /epipe|invalid\sdistance/i;
 const FLAGS_PROXY = ['post', 'json'];
 const FLAGS_INSTALL = ['get'];
 const FLAGS_DOWNLOAD = ['get', 'dnscache'];
@@ -299,8 +300,10 @@ global.FINISHED = (stream, callback) => framework_internal.onFinished(stream, ca
 global.DESTROY = (stream) => framework_internal.destroyStream(stream);
 global.UID = () => UIDGENERATOR.date + (++UIDGENERATOR.index).padLeft(4, '0') + UIDGENERATOR.instance + (UIDGENERATOR.index % 2 ? 1 : 0);
 global.ROUTE = (a, b, c, d, e) => F.route(a, b, c, d, e);
+global.GROUP = (a, b) => F.group(a, b);
 global.WEBSOCKET = (a, b, c, d) => F.websocket(a, b, c, d);
 global.FILE = (a, b, c) => F.file(a, b, c);
+global.REDIRECT = (a, b, c, d) => F.redirect(a, b, c, d);
 
 global.$CREATE = function(schema) {
 	schema = parseSchema(schema);
@@ -480,6 +483,7 @@ var directory = U.$normalize(require.main ? Path.dirname(require.main.filename) 
 var DATE_EXPIRES = new Date().add('y', 1).toUTCString();
 
 const WEBSOCKET_COMPRESS = U.createBuffer([0x00, 0x00, 0xFF, 0xFF]);
+const WEBSOCKET_COMPRESS_OPTIONS = { windowBits: Zlib.Z_DEFAULT_WINDOWBITS };
 const UIDGENERATOR = { date: new Date().format('yyMMddHHmm'), instance: 'abcdefghijklmnoprstuwxy'.split('').random().join('').substring(0, 3), index: 1 };
 const EMPTYBUFFER = U.createBufferSize(0);
 global.EMPTYBUFFER = EMPTYBUFFER;
@@ -504,8 +508,8 @@ const controller_error_status = function(controller, status, problem) {
 function Framework() {
 
 	this.$id = null; // F.id ==> property
-	this.version = 2700;
-	this.version_header = '2.7.0';
+	this.version = 2800;
+	this.version_header = '2.8.0';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -574,7 +578,7 @@ function Framework() {
 		'default-cors-maxage': 120,
 
 		// in milliseconds
-		'default-request-timeout': 5000,
+		'default-request-timeout': 3000,
 
 		// otherwise is used ImageMagick (Heroku supports ImageMagick)
 		// gm = graphicsmagick or im = imagemagick
@@ -585,6 +589,7 @@ function Framework() {
 		'allow-handle-static-files': true,
 		'allow-gzip': true,
 		'allow-websocket': true,
+		'allow-websocket-compression': true,
 		'allow-compile-script': true,
 		'allow-compile-style': true,
 		'allow-compile-html': true,
@@ -594,6 +599,7 @@ function Framework() {
 		'allow-defer': false,
 		'allow-debug': false,
 		'allow-head': false,
+		'allow-filter-errors': true,
 		'disable-strict-server-certificate-validation': true,
 		'disable-clear-temporary-directory': false,
 
@@ -1128,8 +1134,15 @@ F.nosql = function(name) {
 	var db = F.databases[name];
 	if (db)
 		return db;
-	F.path.verify('databases');
-	db = framework_nosql.load(name, F.path.databases(name));
+
+	var is = name.substring(0, 6);
+	if (is === 'http:/' || is === 'https:')
+		db = framework_nosql.load(U.getName(name), name);
+	else {
+		F.path.verify('databases');
+		db = framework_nosql.load(name, F.path.databases(name));
+	}
+
 	F.databases[name] = db;
 	return db;
 };
@@ -1143,8 +1156,8 @@ F.stop = F.kill = function(signal) {
 
 	F.emit('exit', signal);
 
-	if (!F.isWorker && typeof(process.send) === 'function')
-		TRY(() => process.send('stop'));
+	if (!F.isWorker && process.send)
+		TRY(() => process.send('total:stop'));
 
 	F.cache.stop();
 	F.server && F.server.close && F.server.close();
@@ -1839,7 +1852,7 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 				if (!this.route.workflow)
 					return this.view(name);
 				var self = this;
-				this.$exec(this.route.workflow, this, function(err, response) {
+				this.$exec(this.route.workflow, null, function(err, response) {
 					if (err)
 						self.content(err);
 					else
@@ -1871,7 +1884,7 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 					if (!this.route.workflow)
 						return this.view(name);
 					var self = this;
-					this.$exec(this.route.workflow, this, function(err, response) {
+					this.$exec(this.route.workflow, null, function(err, response) {
 						if (err)
 							self.content(err);
 						else
@@ -2250,7 +2263,7 @@ F.map = function(url, filename, filter) {
 						if (!filter(file))
 							continue;
 					} else {
-						if (filter.indexOf(U.getExtension(file).toLowerCase()) === -1)
+						if (filter.indexOf(U.getExtension(file)) === -1)
 							continue;
 					}
 				}
@@ -2910,7 +2923,7 @@ F.problem = F.wtf = function(message, name, uri, ip) {
 /**
  * Registers a new change
  * @param {String} message
- * @param {String} name A controller name.
+ * @param {String} name A source name.
  * @param {String} uri
  * @param {String} ip
  * @return {Framework}
@@ -3029,7 +3042,7 @@ F.$load = function(types, targetdirectory, callback, packageName) {
 				return;
 			}
 
-			var ext = U.getExtension(o).toLowerCase();
+			var ext = U.getExtension(o);
 			if (ext)
 				ext = '.' + ext;
 			if (ext !== extension)
@@ -3195,7 +3208,7 @@ F.$startup = function(callback) {
 	var run = [];
 
 	Fs.readdirSync(dir).forEach(function(o) {
-		var extension = U.getExtension(o).toLowerCase();
+		var extension = U.getExtension(o);
 		if (extension === 'js')
 			run.push(o);
 	});
@@ -3568,12 +3581,11 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 
 	if (type === 'package') {
 
-		var backup = new Backup();
 		var id = Path.basename(declaration, '.' + U.getExtension(declaration));
 		var dir = F.config['directory-temp'][0] === '~' ? Path.join(F.config['directory-temp'].substring(1), id + '.package') : Path.join(F.path.root(), F.config['directory-temp'], id + '.package');
 
 		F.routes.packages[id] = dir;
-		backup.restore(declaration, dir, function() {
+		F.restore(declaration, dir, function() {
 
 			var filename = Path.join(dir, 'index.js');
 			if (!existsSync(filename)) {
@@ -4720,7 +4732,7 @@ F.onMapping = function(url, def, ispublic, encode) {
 F.download = F.snapshot = function(url, filename, callback) {
 
 	url = framework_internal.preparePath(url);
-	if (!url.match(/^http:|https:/gi)) {
+	if (!REG_HTTPHTTPS.test(url)) {
 		if (url[0] !== '/')
 			url = '/' + url;
 		url = 'http://' + (F.ip === 'auto' ? '0.0.0.0' : F.ip) + ':' + F.port + url;
@@ -4929,15 +4941,7 @@ F.onMail = function(address, subject, body, callback, replyTo) {
 	tmp = F.config['mail-address-copy'];
 	tmp && tmp.length > 3 && message.bcc(tmp);
 
-	var opt = F.temporary['mail-settings'];
-
-	if (!opt) {
-		var config = F.config['mail-smtp-options'];
-		config && (opt = config);
-		F.temporary['mail-settings'] = opt || {};
-	}
-
-	message.$sending = setTimeout(() => message.send(F.config['mail-smtp'], opt, callback), 5);
+	message.$sending = setImmediate(cb => message.send2(cb), callback);
 	return message;
 };
 
@@ -5444,40 +5448,272 @@ F.responseStatic = function(req, res, done) {
 };
 
 F.restore = function(filename, target, callback, filter) {
-	var backup = new Backup();
-	backup.restore(filename, target, callback, filter);
+
+	var buffer_key = U.createBuffer(':');
+	var buffer_new = U.createBuffer('\n');
+	var buffer_dir = U.createBuffer('#');
+	var cache = {};
+	var data = null;
+	var type = 0;
+	var item = null;
+	var stream = Fs.createReadStream(filename);
+	var index = 0;
+	var parser = {};
+	var open = {};
+	var pending = 0;
+	var end = false;
+	var output = {};
+
+	output.count = 0;
+	output.path = target;
+
+	parser.parse_key = function() {
+
+		index = data.indexOf(buffer_key);
+		if (index === -1)
+			return;
+
+		index++;
+		item = data.slice(0, index - 1).toString('utf8').trim();
+		data = data.slice(index);
+		type = 1;
+		parser.next();
+	};
+
+	parser.parse_meta = function() {
+		var path = Path.join(target, item);
+
+		// Is directory?
+		if (data[0] === buffer_dir[0]) {
+			if (!cache[path]) {
+				cache[path] = true;
+				if (!filter || filter(item, true) !== false)
+					F.path.mkdir(path);
+			}
+			type = 3;
+			parser.next();
+			return;
+		}
+
+		if (!cache[path]) {
+			cache[path] = true;
+
+			var npath = path.substring(0, path.lastIndexOf('/'));
+			if (!filter || filter(item, false) !== false)
+				F.path.mkdir(npath);
+			else {
+				type = 5; // skip
+				parser.next();
+				return;
+			}
+		}
+
+		// File
+		type = 2;
+		var tmp = open[item] = {};
+		tmp.path = path;
+		tmp.name = item;
+		tmp.writer = Fs.createWriteStream(path);
+		tmp.zlib = Zlib.createGunzip();
+		tmp.zlib.$self = tmp;
+		pending++;
+
+		output.count++;
+
+		tmp.zlib.on('data', function(chunk) {
+			this.$self.writer.write(chunk);
+		});
+
+		tmp.zlib.on('end', function() {
+			pending--;
+			var tmp = this.$self;
+			tmp.writer.end();
+			tmp.writer = null;
+			tmp.zlib = null;
+			delete open[tmp.name];
+		});
+
+		parser.next();
+	};
+
+	parser.parse_dir = function() {
+		index = data.indexOf(buffer_new);
+		if (index !== -1) {
+			data = data.slice(index + 1);
+			type = 0;
+		}
+		parser.next();
+	};
+
+	parser.parse_data = function() {
+
+		index = data.indexOf(buffer_new);
+
+		var skip = false;
+
+		if (index !== -1)
+			type = 0;
+
+		if (type) {
+			var remaining = data.length % 4;
+			if (remaining) {
+				open[item].zlib.write(U.createBuffer(data.slice(0, data.length - remaining).toString('ascii'), 'base64'));
+				data = data.slice(data.length - remaining);
+				skip = true;
+			} else {
+				open[item].zlib.write(U.createBuffer(data.toString('ascii'), 'base64'));
+				data = null;
+			}
+		} else {
+			open[item].zlib.end(U.createBuffer(data.slice(0, index).toString('ascii'), 'base64'));
+			data = data.slice(index + 1);
+		}
+
+		!skip && data && data.length && parser.next();
+	};
+
+	parser.next = function() {
+		switch (type) {
+			case 0:
+				parser.parse_key();
+				break;
+			case 1:
+				parser.parse_meta();
+				break;
+			case 2:
+				parser.parse_data();
+				break;
+			case 3:
+				parser.parse_dir();
+				break;
+			case 5:
+				index = data.indexOf(buffer_new);
+				if (index === -1)
+					data = null;
+				else {
+					data = data.slice(index + 1);
+					type = 0;
+					parser.next();
+				}
+				break;
+		}
+
+		end && !data.length && callback && callback(null, output);
+	};
+
+	parser.end = function() {
+		if (callback) {
+			if (pending)
+				setTimeout(parser.end, 100);
+			else if (end && !data.length)
+				callback(null, output);
+		}
+	};
+
+	stream.on('data', function(chunk) {
+
+		if (data) {
+			CONCAT[0] = data;
+			CONCAT[1] = chunk;
+			data = Buffer.concat(CONCAT);
+		} else
+			data = chunk;
+
+		parser.next();
+	});
+
+	CLEANUP(stream, function() {
+		end = true;
+		parser.end();
+	});
+
+	return F;
 };
 
-F.backup = function(filename, path, callback, filter) {
+F.backup = function(filename, filelist, callback, filter) {
 
-	var length = path.length;
-	var padding = 120;
+	var padding = 100;
+	var path = filelist instanceof Array ? F.path.root() : filelist;
 
-	U.ls(path, function(files, directories) {
-		directories.wait(function(item, next) {
-			var dir = item.substring(length).replace(/\\/g, '/') + '/';
-			if (filter && !filter(dir))
-				return next();
-			Fs.appendFile(filename, dir.padRight(padding) + ':#\n', next);
-		}, function() {
-			files.wait(function(item, next) {
-				var fil = item.substring(length).replace(/\\/g, '/');
-				if (filter && !filter(fil))
+	if (!(filelist instanceof Array))
+		filelist = [''];
+
+	var counter = 0;
+
+	Fs.unlink(filename, function() {
+
+		filelist.sort(function(a, b) {
+			var ac = a.split('/');
+			var bc = b.split('/');
+			if (ac.length < bc.length)
+				return -1;
+			else if (ac.length > bc.length)
+				return 1;
+			return a.localeCompare(b);
+		});
+
+		var writer = Fs.createWriteStream(filename);
+
+		filelist.wait(function(item, next) {
+
+			if (item[0] !== '/')
+				item = '/' + item;
+
+			var file = Path.join(path, item);
+			Fs.stat(file, function(err, stats) {
+
+				if (err) {
+					F.error(err, 'F.backup()', filename);
 					return next();
-				Fs.readFile(item, function(err, data) {
-					Zlib.gzip(data, function(err, data) {
-						if (err) {
-							F.error(err, 'F.backup()', filename);
-							return next();
-						}
-						Fs.appendFile(filename, fil.padRight(padding) + ':' + data.toString('base64') + '\n', next);
+				}
+
+				if (stats.isDirectory()) {
+					var dir = item.replace(/\\/g, '/') + '/';
+					if (filter && !filter(dir, true))
+						return next();
+					U.ls(file, function(f, d) {
+						var length = path.length;
+						d.wait(function(item, next) {
+							writer.write(item.substring(length).padRight(padding) + ':#\n', 'utf8');
+							next();
+						}, function() {
+							for (var i = 0; i < f.length; i++)
+								filelist.push(f[i].substring(length));
+							next();
+						});
 					});
+					return;
+				}
+
+				var data = U.createBufferSize(0);
+
+				writer.write(item.padRight(padding) + ':');
+				CLEANUP(Fs.createReadStream(file).pipe(Zlib.createGzip()).on('data', function(chunk) {
+
+					CONCAT[0] = data;
+					CONCAT[1] = chunk;
+					data = Buffer.concat(CONCAT);
+
+					var remaining = data.length % 3;
+					if (remaining) {
+						writer.write(data.slice(0, data.length - remaining).toString('base64'));
+						data = data.slice(data.length - remaining);
+					}
+
+				}), function() {
+					data.length && writer.write(data.toString('base64'));
+					writer.write('\n', 'utf8');
+					counter++;
+					next();
 				});
-			}, callback);
+
+			});
+		}, function() {
+			callback && Fs.stat(filename, (e, stat) => callback(null, { filename: filename, files: counter, size: stat.size }));
 		});
 	});
 
-	return this;
+	return F;
 };
 
 F.exists = function(req, res, max, callback) {
@@ -5842,7 +6078,10 @@ F.load = function(debug, types, pwd) {
 		F.emit('init');
 
 		F.$load(types, directory, function() {
+
 			F.isLoaded = true;
+			process.send && process.send('total:ready');
+
 			setTimeout(function() {
 
 				try {
@@ -5934,12 +6173,12 @@ F.initialize = function(http, debug, options, restart) {
 	if (ip !== null) {
 		F.ip = ip || F.config['default-ip'] || '0.0.0.0';
 		if (F.ip === 'null' || F.ip === 'undefined' || F.ip === 'auto')
-			F.ip = undefined;
+			F.ip = null;
 	} else
 		F.ip = undefined;
 
 	if (F.ip == null)
-		F.ip = 'auto';
+		F.ip = '0.0.0.0';
 
 	!listenpath && (listenpath = F.config['default-listenpath']);
 	F.listenpath = listenpath;
@@ -5970,7 +6209,7 @@ F.initialize = function(http, debug, options, restart) {
 	if (listenpath)
 		F.server.listen(listenpath);
 	else
-		F.server.listen(F.port, F.ip === 'auto' ? undefined : F.ip);
+		F.server.listen(F.port, F.ip);
 
 	// clears static files
 	F.consoledebug('clear temporary');
@@ -5979,6 +6218,7 @@ F.initialize = function(http, debug, options, restart) {
 		F.$load(undefined, directory, function() {
 
 			F.isLoaded = true;
+			process.send && process.send('total:ready');
 
 			if (F.config['allow-debug']) {
 				F.consoledebug('done');
@@ -7251,7 +7491,7 @@ F.decrypt = function(value, key, jsonConvert) {
 	if (jsonConvert) {
 		if (response.isJSON()) {
 			try {
-				return JSON.parse(response);
+				return response.parseJSON(true);
 			} catch (ex) {}
 		}
 		return null;
@@ -7580,7 +7820,7 @@ F.$configure_dependencies = function(arr, callback) {
 		if (index !== -1) {
 			var opt = url.substring(index + 3).trim();
 			if (opt.isJSON())
-				options = JSON.parse(opt);
+				options = opt.parseJSON(true);
 			url = url.substring(0, index).trim();
 		}
 
@@ -7703,7 +7943,16 @@ F.$configure_workflows = function(arr, clean) {
 		}
 
 		line.substring(index + 1).split('-->').forEach(function(operation, index) {
+
+			var options = 'options||EMPTYOBJECT';
 			operation = operation.trim().replace(/\"/g, '\'');
+
+			var oindex = operation.indexOf('{');
+			if (oindex !== -1) {
+				options = operation.substring(oindex, operation.lastIndexOf('}') + 1);
+				operation = operation.replace(options, '').trim();
+				options = 'options||' + options;
+			}
 
 			if (operation.endsWith('(response)')) {
 				response = index;
@@ -7712,9 +7961,10 @@ F.$configure_workflows = function(arr, clean) {
 
 			var what = operation.split(':');
 			if (what.length === 2)
-				builder.push('$' + what[0].trim() + '(' + what[1].trim() + ', options)');
+				builder.push('$' + what[0].trim() + '(' + what[1].trim() + ', {0})'.format(options));
 			else
-				builder.push('$' + what[0] + '(options)');
+				builder.push('$' + what[0] + '({0})'.format(options));
+
 		});
 
 		F.workflows[key] = new Function('model', 'options', 'callback', 'return model.$async(callback' + (response === -1 ? '' : ', ' + response) + ').' + builder.join('.') + ';');
@@ -8000,7 +8250,6 @@ F.$configure_configs = function(arr, rewrite) {
 					HEADERS[key][subkey] = xpowered;
 				else
 					delete HEADERS[key][subkey];
-
 			}
 		});
 	});
@@ -8500,6 +8749,35 @@ FrameworkPath.prototype.verify = function(name) {
 	return F;
 };
 
+FrameworkPath.prototype.mkdir = function(p) {
+
+	if (p[0] === '/')
+		p = p.substring(1);
+
+	var is = F.isWindows;
+	var l = p.length - 1;
+
+	if (is) {
+		if (p[l] === '\\')
+			p = p.substring(0, l);
+	} else {
+		if (p[l] === '/')
+			p = p.substring(0, l);
+	}
+
+	var arr = is ? p.replace(/\//g, '\\').split('\\') : p.split('/');
+	var directory = '/';
+
+	for (var i = 0, length = arr.length; i < length; i++) {
+		var name = arr[i];
+		if (is)
+			directory += (directory ? '\\' : '') + name;
+		else
+			directory += (directory ? '/' : '') + name;
+		!existsSync(directory) && Fs.mkdirSync(directory);
+	}
+};
+
 FrameworkPath.prototype.exists = function(path, callback) {
 	Fs.lstat(path, (err, stats) => callback(err ? false : true, stats ? stats.size : 0, stats ? stats.isFile() : false));
 	return F;
@@ -8629,26 +8907,68 @@ function FrameworkCache() {
 }
 
 FrameworkCache.prototype.init = function() {
-	clearInterval(this.interval);
-	this.interval = setInterval(() => F.cache.recycle(), 1000 * 60);
-	F.config['allow-cache-snapshot'] && this.load();
-	return this;
+	var self = this;
+	clearInterval(self.interval);
+	self.interval = setInterval(() => F.cache.recycle(), 1000 * 60);
+	if (F.config['allow-cache-snapshot'])
+		self.load(() => self.loadPersist());
+	else
+		self.loadPersist();
+	return self;
 };
 
 FrameworkCache.prototype.save = function() {
-	Fs.writeFile(F.path.temp((F.id ? 'i-' + F.id + '_' : '') + 'F.jsoncache'), JSON.stringify(this.items), NOOP);
+	Fs.writeFile(F.path.temp((F.id ? 'i-' + F.id + '_' : '') + 'framework_cachesnapshot.jsoncache'), JSON.stringify(this.items), NOOP);
 	return this;
 };
 
-FrameworkCache.prototype.load = function() {
+FrameworkCache.prototype.load = function(callback) {
 	var self = this;
-	Fs.readFile(F.path.temp((F.id ? 'i-' + F.id + '_' : '') + 'F.jsoncache'), function(err, data) {
-		if (err)
-			return;
-		try {
-			data = JSON.parse(data.toString('utf8'), (key, value) => typeof(value) === 'string' && value.isJSONDate() ? new Date(value) : value);
-			self.items = data;
-		} catch (e) {}
+	Fs.readFile(F.path.temp((F.id ? 'i-' + F.id + '_' : '') + 'framework_cachesnapshot.jsoncache'), function(err, data) {
+		if (!err) {
+			try {
+				data = JSON.parse(data.toString('utf8'), (key, value) => typeof(value) === 'string' && value.isJSONDate() ? new Date(value) : value);
+				self.items = data;
+			} catch (e) {}
+		}
+		callback && callback();
+	});
+	return self;
+};
+
+FrameworkCache.prototype.savePersist = function() {
+	setTimeout2('framework_cachepersist', function(self) {
+		var keys = Object.keys(self.items);
+		var obj = {};
+
+		for (var i = 0, length = keys.length; i < length; i++) {
+			var key = keys[i];
+			var item = self.items[key];
+			if (item.persist)
+				obj[key] = item;
+		}
+
+		Fs.writeFile(F.path.temp((F.id ? 'i-' + F.id + '_' : '') + 'framework_cachepersist.jsoncache'), JSON.stringify(obj), NOOP);
+	}, 1000, 50, this);
+	return this;
+};
+
+FrameworkCache.prototype.loadPersist = function(callback) {
+	var self = this;
+	Fs.readFile(F.path.temp((F.id ? 'i-' + F.id + '_' : '') + 'framework_cachepersist.jsoncache'), function(err, data) {
+		if (!err) {
+			try {
+				data = JSON.parse(data.toString('utf8'), (key, value) => typeof(value) === 'string' && value.isJSONDate() ? new Date(value) : value);
+				var keys = Object.keys(data);
+				for (var i = 0, length = keys.length; i < length; i++) {
+					var key = keys[i];
+					var item = data[key];
+					if (item.expire >= F.datetime)
+						self.items[key] = item;
+				}
+			} catch (e) {}
+		}
+		callback && callback();
 	});
 	return self;
 };
@@ -8661,12 +8981,14 @@ FrameworkCache.prototype.stop = function() {
 FrameworkCache.prototype.clear = function(sync) {
 	this.items = {};
 	F.isCluster && sync !== false && process.send(CLUSTER_CACHE_CLEAR);
+	this.savePersist();
 	return this;
 };
 
 FrameworkCache.prototype.recycle = function() {
 
 	var items = this.items;
+	var isPersist = false;
 	F.datetime = new Date();
 
 	this.count++;
@@ -8676,17 +8998,24 @@ FrameworkCache.prototype.recycle = function() {
 		if (!value)
 			delete items[o];
 		else if (value.expire < F.datetime) {
+			if (value.persist)
+				isPersist = true;
 			F.emit('cache-expire', o, value.value);
 			delete items[o];
 		}
 	}
 
+	isPersist && this.savePersist();
 	F.config['allow-cache-snapshot'] && this.save();
 	F.service(this.count);
 	return this;
 };
 
-FrameworkCache.prototype.set = FrameworkCache.prototype.add = function(name, value, expire, sync) {
+FrameworkCache.prototype.set2 = function(name, value, expire, sync) {
+	return this.set(name, value, expire, sync, true);
+};
+
+FrameworkCache.prototype.set = FrameworkCache.prototype.add = function(name, value, expire, sync, persist) {
 	var type = typeof(expire);
 
 	if (F.isCluster && sync !== false) {
@@ -8705,7 +9034,14 @@ FrameworkCache.prototype.set = FrameworkCache.prototype.add = function(name, val
 			break;
 	}
 
-	this.items[name] = { value: value, expire: expire };
+	var obj = { value: value, expire: expire };
+
+	if (persist) {
+		obj.persist = true;
+		this.savePersist();
+	}
+
+	this.items[name] = obj;
 	F.$events['cache-set'] && F.emit('cache-set', name, value, expire, sync !== false);
 	return value;
 };
@@ -8751,8 +9087,11 @@ FrameworkCache.prototype.setExpire = function(name, expire) {
 
 FrameworkCache.prototype.remove = function(name, sync) {
 	var value = this.items[name];
-	if (value)
+
+	if (value) {
+		this.items[name].persist && this.savePersist();
 		this.items[name] = undefined;
+	}
 
 	if (F.isCluster && sync !== false) {
 		CLUSTER_CACHE_REMOVE.key = name;
@@ -9784,8 +10123,22 @@ Controller.prototype.mail = function(address, subject, view, model, callback) {
 	// Backup layout
 	var layoutName = self.layoutName;
 	var body = self.view(view, model, true);
-	self.layoutName = layoutName;
-	return F.onMail(address, subject, body, callback);
+
+	var message;
+
+	if (body instanceof Function) {
+		message = F.onMail(address, subject, '');
+		message.manually();
+		body(function(err, body) {
+			message.body = body;
+			message.send2(callback);
+		});
+	} else {
+		message = F.onMail(address, subject, body, callback);
+		self.layoutName = layoutName;
+	}
+
+	return message;
 };
 
 /*
@@ -9837,11 +10190,11 @@ Controller.prototype.$view = function(name, model, expire, key) {
 	return this.$viewToggle(true, name, model, expire, key);
 };
 
-Controller.prototype.$viewCompile = function(body, model) {
+Controller.prototype.$viewCompile = function(body, model, key) {
 	var self = this;
 	var layout = self.layoutName;
 	self.layoutName = '';
-	var value = self.viewCompile(body, model, null, true);
+	var value = self.viewCompile(body, model, null, true, key);
 	self.layoutName = layout;
 	return value || '';
 };
@@ -10825,6 +11178,9 @@ Controller.prototype.json = function(obj, headers, beautify, replacer) {
 
 	if (obj instanceof framework_builders.ErrorBuilder) {
 		self.req.$language && !obj.isResourceCustom && obj.setResource(self.req.$language);
+
+		var json = obj.output(true);
+
 		if (obj.contentType)
 			res.options.type = obj.contentType;
 		else
@@ -10833,7 +11189,7 @@ Controller.prototype.json = function(obj, headers, beautify, replacer) {
 		if (obj.status !== 200)
 			res.options.code = obj.status;
 
-		obj = obj.output();
+		obj = json;
 		F.stats.response.errorBuilder++;
 	} else {
 
@@ -10969,7 +11325,7 @@ Controller.prototype.content = function(body, type, headers) {
 	res.options.code = self.status;
 
 	if (body instanceof ErrorBuilder) {
-		var tmp = body.output();
+		var tmp = body.output(true);
 		if (body.contentType)
 			res.options.type = body.contentType;
 		else
@@ -11588,6 +11944,9 @@ Controller.prototype.view = function(name, model, headers, partial) {
 		var skip = c === '/' ? 1 : c === '~' && name[1] === '~' ? 4 : c === '~' ? 2 : c === '@' ? 3 : c === '.' ? 5 : c === '=' ? 6 : 0;
 		var isTheme = false;
 
+		if (REG_HTTPHTTPS.test(name))
+			skip = 7;
+
 		filename = name;
 
 		if (self.themeName && skip < 3) {
@@ -11616,20 +11975,57 @@ Controller.prototype.view = function(name, model, headers, partial) {
 			filename = '.' + F.path.themes(c + '/views/' + name).replace(REG_SANITIZE_BACKSLASH, '/');
 		}
 
-		F.temporary.other[key] = filename;
+		if (skip === 7) {
+
+			if (F.temporary.other[key] === 0) {
+				setTimeout(function() {
+					self.view(name, model, headers, partial);
+				}, 100, self);
+				return;
+			}
+
+			filename = F.path.temp('view' + name.hash() + '.html');
+			F.temporary.other[key] = 0;
+
+			var done = { callback: NOOP };
+
+			F.download(name, filename, function(err) {
+				if (err) {
+					F.temporary.other[key] = undefined;
+					if (done.callback === NOOP)
+						F.throw500(err);
+					else
+						done.callback(err);
+				} else {
+					F.temporary.other[key] = '.' + filename.substring(0, filename.length - 5);
+					done.callback(null, self.view(name, model, headers, partial));
+				}
+			});
+
+			return function(cb) {
+				done.callback = cb;
+			};
+		}
 	}
 
 	return self.$viewrender(filename, framework_internal.viewEngine(name, filename, self), model, headers, partial, isLayout);
 };
 
-Controller.prototype.viewCompile = function(body, model, headers, partial) {
+Controller.prototype.viewCompile = function(body, model, headers, partial, key) {
 
 	if (headers === true) {
+		key = partial;
 		partial = true;
 		headers = undefined;
+	} else if (typeof(headers) === 'string') {
+		key = headers;
+		headers = undefined;
+	} else if (typeof(partial) === 'string') {
+		key = partial;
+		partial = undefined;
 	}
 
-	return this.$viewrender('[dynamic view]', framework_internal.viewEngineCompile(body, this.language, this), model, headers, partial);
+	return this.$viewrender('[dynamic view]', framework_internal.viewEngineCompile(body, this.language, this, key), model, headers, partial);
 };
 
 Controller.prototype.$viewrender = function(filename, generator, model, headers, partial, isLayout) {
@@ -12093,9 +12489,9 @@ WebSocket.prototype.close = function(id, message, code) {
 		for (var i = 0; i < length; i++) {
 			var _id = keys[i];
 			this.connections[_id].close(message, code);
-			this._remove(_id);
+			this.$remove(_id);
 		}
-		this._refresh();
+		this.$refresh();
 		return this;
 	}
 
@@ -12113,10 +12509,10 @@ WebSocket.prototype.close = function(id, message, code) {
 			continue;
 
 		conn.close(message, code);
-		this._remove(_id);
+		this.$remove(_id);
 	}
 
-	this._refresh();
+	this.$refresh();
 	return this;
 };
 
@@ -12251,7 +12647,7 @@ WebSocket.prototype.autodestroy = function(callback) {
  * Internal function
  * @return {WebSocket}
  */
-WebSocket.prototype._refresh = function() {
+WebSocket.prototype.$refresh = function() {
 	if (this.connections) {
 		this._keys = Object.keys(this.connections);
 		this.online = this._keys.length;
@@ -12265,7 +12661,7 @@ WebSocket.prototype._refresh = function() {
  * @param {String} id
  * @return {WebSocket}
  */
-WebSocket.prototype._remove = function(id) {
+WebSocket.prototype.$remove = function(id) {
 	if (this.connections)
 		delete this.connections[id];
 	return this;
@@ -12276,7 +12672,7 @@ WebSocket.prototype._remove = function(id) {
  * @param {WebSocketClient} client
  * @return {WebSocket}
  */
-WebSocket.prototype._add = function(client) {
+WebSocket.prototype.$add = function(client) {
 	this.connections[client._id] = client;
 	return this;
 };
@@ -12328,10 +12724,11 @@ function WebSocketClient(req, socket) {
 	this.id = '';
 	this.socket = socket;
 	this.req = req;
+
 	// this.isClosed = false;
 	this.errors = 0;
-	this.buffer = U.createBufferSize();
 	this.length = 0;
+	this.current = {};
 
 	// 1 = raw - not implemented
 	// 2 = plain
@@ -12430,22 +12827,22 @@ WebSocketClient.prototype.prepare = function(flags, protocols, allow, length) {
 	if (SOCKET_ALLOW_VERSION.indexOf(U.parseInt(self.req.headers['sec-websocket-version'])) === -1)
 		return false;
 
-	var compress = (self.req.headers['sec-websocket-extensions'] || '').indexOf('permessage-deflate') !== -1;
-	var header = protocols.length ? (compress ? SOCKET_RESPONSE_PROTOCOL_COMPRESS : SOCKET_RESPONSE_PROTOCOL).format(self.$weboscket_key(self.req), protocols.join(', ')) : (compress ? SOCKET_RESPONSE_COMPRESS : SOCKET_RESPONSE).format(self.$weboscket_key(self.req));
+	var compress = (F.config['allow-websocket-compression'] && self.req.headers['sec-websocket-extensions'] || '').indexOf('permessage-deflate') !== -1;
+	var header = protocols.length ? (compress ? SOCKET_RESPONSE_PROTOCOL_COMPRESS : SOCKET_RESPONSE_PROTOCOL).format(self.$websocket_key(self.req), protocols.join(', ')) : (compress ? SOCKET_RESPONSE_COMPRESS : SOCKET_RESPONSE).format(self.$websocket_key(self.req));
 
 	self.socket.write(U.createBuffer(header, 'binary'));
 
 	if (compress) {
 		self.inflatepending = [];
 		self.inflatelock = false;
-		self.inflate = Zlib.createInflateRaw();
+		self.inflate = Zlib.createInflateRaw(WEBSOCKET_COMPRESS_OPTIONS);
 		self.inflate.$websocket = self;
 		self.inflate.on('error', F.error());
 		self.inflate.on('data', websocket_inflate);
 
 		self.deflatepending = [];
 		self.deflatelock = false;
-		self.deflate = Zlib.createDeflateRaw();
+		self.deflate = Zlib.createDeflateRaw(WEBSOCKET_COMPRESS_OPTIONS);
 		self.deflate.$websocket = self;
 		self.deflate.on('error', F.error());
 		self.deflate.on('data', websocket_deflate);
@@ -12472,31 +12869,31 @@ function websocket_deflate(data) {
  * @return {WebSocketClient}
  */
 WebSocketClient.prototype.upgrade = function(container) {
-
 	var self = this;
+	self.req.on('error', websocket_onerror);
 	self.container = container;
 	self.socket.$websocket = this;
 	self.socket.on('data', websocket_ondata);
 	self.socket.on('error', websocket_onerror);
 	self.socket.on('close', websocket_close);
 	self.socket.on('end', websocket_close);
-	self.container._add(self);
-	self.container._refresh();
+	self.container.$add(self);
+	self.container.$refresh();
 	F.$events['websocket-begin'] && F.emit('websocket-begin', self.container, self);
 	self.container.$events.open && self.container.emit('open', self);
 	return self;
 };
 
 function websocket_ondata(chunk) {
-	this.$websocket._ondata(chunk);
+	this.$websocket.$ondata(chunk);
 }
 
 function websocket_onerror(e) {
-	this.$websocket._onerror(e);
+	this.$websocket.$onerror(e);
 }
 
 function websocket_close() {
-	this.$websocket._onclose();
+	this.$websocket.$onclose();
 }
 
 /**
@@ -12504,44 +12901,97 @@ function websocket_close() {
  * @param {Buffer} data
  * @return {Framework}
  */
-WebSocketClient.prototype._ondata = function(data) {
+WebSocketClient.prototype.$ondata = function(data) {
+
+	if (this.isClosed)
+		return;
+
+	var current = this.current;
 
 	if (data) {
-		CONCAT[0] = this.buffer;
-		CONCAT[1] = data;
-		this.buffer = Buffer.concat(CONCAT);
+		if (current.buffer) {
+			CONCAT[0] = current.buffer;
+			CONCAT[1] = data;
+			current.buffer = Buffer.concat(CONCAT);
+		} else
+			current.buffer = data;
 	}
 
-	if (this.buffer.length > this.length) {
-		this.errors++;
-		this.container.$events.error && this.container.emit('error', new Error('Maximum request length exceeded.'), this);
+	if (!this.$parse())
 		return;
-	}
 
-	switch (this.buffer[0] & 0x0f) {
+	if (!current.final && current.type !== 0x00)
+		current.type2 = current.type;
+
+	var tmp;
+
+	// @TODO: add a check for mixin types (text/binary)
+	switch (current.type === 0x00 ? current.type2 : current.type) {
 		case 0x01:
-			// text message or JSON message
-			this.type !== 1 && this.parse();
+
+			if (this.type === 1) {
+				this.close('Invalid data type.');
+				return;
+			}
+
+			// text
+			if (this.inflate) {
+				current.final && this.parseInflate();
+			} else {
+				tmp = this.$readbody();
+				if (current.body)
+					current.body += tmp;
+				else
+					current.body = tmp;
+				current.final && this.$decode();
+			}
+
 			break;
+
 		case 0x02:
-			// binary message
-			this.type === 1 && this.parse();
+			// binary
+
+			if (this.type !== 1) {
+				this.close('Invalid data type.');
+				return;
+			}
+
+			tmp = this.$readbody();
+
+			if (current.body) {
+				CONCAT[0] = current.body;
+				CONCAT[1] = tmp;
+				current.body = Buffer.concat(CONCAT);
+			} else
+				current.body = tmp;
+
+			current.final && this.$decode();
 			break;
+
 		case 0x08:
 			// close
 			this.close();
 			break;
+
 		case 0x09:
 			// ping, response pong
 			this.socket.write(U.getWebSocketFrame(0, '', 0x0A));
-			this.buffer = U.createBufferSize();
+			this.current.buffer = null;
+			this.current.inflatedata = null;
 			this.$ping = true;
 			break;
+
 		case 0x0a:
 			// pong
 			this.$ping = true;
-			this.buffer = U.createBufferSize();
+			this.current.buffer = null;
+			this.current.inflatedata = null;
 			break;
+	}
+
+	if (current.buffer) {
+		current.buffer = current.buffer.slice(current.length, current.buffer.length);
+		current.buffer.length && this.$ondata();
 	}
 };
 
@@ -12557,44 +13007,100 @@ function buffer_concat(buffers, length) {
 
 // MIT
 // Written by Jozef Gula
-WebSocketClient.prototype.parse = function() {
+// Optimized by Peter Sirka
+WebSocketClient.prototype.$parse = function() {
 
-	var bLength = this.buffer[1];
-	if (((bLength & 0x80) >> 7) !== 1)
-		return this;
+	var self = this;
+	var current = self.current;
 
-	var length = U.getMessageLength(this.buffer, F.isLE);
-	var index = (this.buffer[1] & 0x7f);
+	if (!current.buffer || current.buffer.length <= 2 || ((current.buffer[1] & 0x80) >> 7) !== 1)
+		return;
 
-	index = (index == 126) ? 4 : (index == 127 ? 10 : 2);
-	if ((index + length + 4) > (this.buffer.length))
-		return this;
+	var length = U.getMessageLength(current.buffer, F.isLE);
+	var index = (current.buffer[1] & 0x7f);
 
-	var mask = U.createBufferSize(4);
-	this.buffer.copy(mask, 0, index, index + 4);
+	index = (index === 126) ? 4 : (index === 127 ? 10 : 2);
 
-	if (this.inflate) {
-		var buf = U.createBufferSize(length);
-		for (var i = 0; i < length; i++)
-			buf[i] = this.buffer[index + 4 + i] ^ mask[i % 4];
-		this.inflatepending.push(buf);
-		this.parseInflate();
-	} else {
-		if (this.type !== 1) {
-			var output = '';
+	var mlength = index + 4 + length;
+	if (mlength > this.length) {
+		this.close('Maximum request length exceeded.');
+		return;
+	}
+
+	// Check length of data
+	if (current.buffer.length < mlength)
+		return;
+
+	current.length = mlength;
+	current.type = current.buffer[0] & 0x0f;
+	current.final = ((current.buffer[0] & 0x80) >> 7) === 0x01;
+
+	// Ping & Pong
+	if (current.type !== 0x09 && current.type !== 0x0A) {
+		current.mask = U.createBufferSize(4);
+		current.buffer.copy(current.mask, 0, index, index + 4);
+
+		if (this.inflate) {
+			var buf = U.createBufferSize(length);
+			current.buffer.copy(buf, 0, index + 4, index + 4 + length);
+
 			for (var i = 0; i < length; i++)
-				output += String.fromCharCode(this.buffer[index + 4 + i] ^ mask[i % 4]);
-			this._decode(output);
+				buf[i] = buf[i] ^ this.current.mask[i % 4];
+
+			// Does the buffer continue?
+			buf.$continue = current.final === false;
+			this.inflatepending.push(buf);
 		} else {
-			var binary = U.createBufferSize(length);
-			for (var i = 0; i < length; i++)
-				binary[i] = this.buffer[index + 4 + i] ^ mask[i % 4];
+			current.data = U.createBufferSize(length);
+			current.buffer.copy(current.data, 0, index + 4, index + 4 + length);
 		}
 	}
 
-	this.buffer = this.buffer.slice(index + length + 4, this.buffer.length);
-	this.buffer.length >= 2 && U.getMessageLength(this.buffer, F.isLE) && this.parse();
-	return this;
+	return true;
+};
+
+WebSocketClient.prototype.$readbody = function() {
+	var length = this.current.data.length;
+	if (this.current.type === 1) {
+		var binary = U.createBufferSize(length);
+		for (var i = 0; i < length; i++)
+			binary[i] = this.current.data[i] ^ this.current.mask[i % 4];
+		return binary;
+	} else {
+		var output = '';
+		for (var i = 0; i < length; i++)
+			output += String.fromCharCode(this.current.data[i] ^ this.current.mask[i % 4]);
+		return output;
+	}
+};
+
+WebSocketClient.prototype.$decode = function() {
+	var data = this.current.body;
+	switch (this.type) {
+
+		case 1: // BINARY
+			this.container.emit('message', this, new Uint8Array(data).buffer);
+			break;
+
+		case 3: // JSON
+
+			if (data instanceof Buffer)
+				data = data.toString(ENCODING);
+
+			F.config['default-websocket-encodedecode'] === true && (data = $decodeURIComponent(data));
+			data.isJSON() && this.container.emit('message', this, F.onParseJSON(data, this.req));
+			break;
+
+		default: // TEXT
+
+			if (data instanceof Buffer)
+				data = data.toString(ENCODING);
+
+			this.container.emit('message', this, F.config['default-websocket-encodedecode'] === true ? $decodeURIComponent(data) : data);
+			break;
+	}
+
+	this.current.body = null;
 };
 
 WebSocketClient.prototype.parseInflate = function() {
@@ -12609,45 +13115,48 @@ WebSocketClient.prototype.parseInflate = function() {
 		self.inflatechunkslength = 0;
 		self.inflatelock = true;
 		self.inflate.write(buf);
-		self.inflate.write(U.createBuffer(WEBSOCKET_COMPRESS));
+		!buf.$continue && self.inflate.write(U.createBuffer(WEBSOCKET_COMPRESS));
 		self.inflate.flush(function() {
+
 			if (!self.inflatechunks)
 				return;
+
 			var data = buffer_concat(self.inflatechunks, self.inflatechunkslength);
+
 			self.inflatechunks = null;
 			self.inflatelock = false;
-			self._decode(self.type === 1 ? data : data.toString(ENCODING));
+
+			if (data.length > self.length) {
+				self.close('Maximum request length exceeded.');
+				return;
+			}
+
+			if (self.current.body) {
+				CONCAT[0] = self.current.body;
+				CONCAT[1] = data;
+				self.current.body = Buffer.concat(CONCAT);
+			} else
+				self.current.body = data;
+
+			!buf.$continue && self.$decode();
 			self.parseInflate();
 		});
 	}
 };
 
-WebSocketClient.prototype._decode = function(data) {
-	// TEXT
-	if (this.type !== 1) {
-		// JSON
-		if (this.type === 3) {
-			this.container.config['default-websocket-encodedecode'] === true && (data = $decodeURIComponent(data));
-			data.isJSON() && this.container.emit('message', this, F.onParseJSON(data, this.req));
-		} else
-			this.container.emit('message', this, this.container.config['default-websocket-encodedecode'] === true ? $decodeURIComponent(data) : data);
-	} else
-		this.container.emit('message', this, new Uint8Array(data).buffer);
-};
-
-WebSocketClient.prototype._onerror = function(err) {
+WebSocketClient.prototype.$onerror = function(err) {
 
 	if (this.isClosed)
 		return;
 
 	if (REG_WEBSOCKET_ERROR.test(err.stack)) {
 		this.isClosed = true;
-		this._onclose();
+		this.$onclose();
 	} else
 		this.container.$events.error && this.container.emit('error', err, this);
 };
 
-WebSocketClient.prototype._onclose = function() {
+WebSocketClient.prototype.$onclose = function() {
 	if (this._isClosed)
 		return;
 
@@ -12666,8 +13175,8 @@ WebSocketClient.prototype._onclose = function() {
 		this.deflatechunks = null;
 	}
 
-	this.container._remove(this._id);
-	this.container._refresh();
+	this.container.$remove(this._id);
+	this.container.$refresh();
 	this.container.$events.close && this.container.emit('close', this);
 	this.socket.removeAllListeners();
 	F.$events['websocket-end'] && F.emit('websocket-end', this.container, this);
@@ -12759,197 +13268,10 @@ WebSocketClient.prototype.close = function(message, code) {
  * @param {Request} req
  * @return {String}
  */
-WebSocketClient.prototype.$weboscket_key = function(req) {
+WebSocketClient.prototype.$websocket_key = function(req) {
 	var sha1 = Crypto.createHash('sha1');
 	sha1.update((req.headers['sec-websocket-key'] || '') + SOCKET_HASH);
 	return sha1.digest('base64');
-};
-
-function Backup() {
-	this.file = [];
-	this.directory = [];
-	this.path = '';
-	this.read = { key: U.createBufferSize(), value: U.createBufferSize(), status: 0 };
-	this.pending = 0;
-	this.cache = {};
-	this.complete = NOOP;
-	this.filter = () => true;
-	this.bufKey = U.createBuffer(':');
-	this.bufNew = U.createBuffer('\n');
-}
-
-Backup.prototype.restoreKey = function(data) {
-
-	var self = this;
-	var read = self.read;
-
-	if (read.status === 1) {
-		self.restoreValue(data);
-		return;
-	}
-
-	var index = -1;
-	var tmp = data;
-
-	if (read.status === 2) {
-		CONCAT[0] = read.key;
-		CONCAT[1] = tmp;
-		tmp = Buffer.concat(CONCAT);
-		index = tmp.indexOf(self.bufKey);
-	} else
-		index = tmp.indexOf(self.bufKey);
-
-	if (index === -1) {
-		CONCAT[0] = read.key;
-		CONCAT[1] = data;
-		read.key = Buffer.concat(CONCAT);
-		read.status = 2;
-		return;
-	}
-
-	read.status = 1;
-	read.key = tmp.slice(0, index);
-	self.restoreValue(tmp.slice(index + 1));
-	tmp = null;
-};
-
-Backup.prototype.restoreValue = function(data) {
-
-	var self = this;
-	var read = self.read;
-
-	if (read.status !== 1) {
-		self.restoreKey(data);
-		return;
-	}
-
-	var index = data.indexOf(self.bufNew);
-	if (index === -1) {
-		CONCAT[0] = read.value;
-		CONCAT[1] = data;
-		read.value = Buffer.concat(CONCAT);
-		return;
-	}
-
-	CONCAT[0] = read.value;
-	CONCAT[1] = data.slice(0, index);
-	read.value = Buffer.concat(CONCAT);
-	self.restoreFile(read.key.toString('utf8').replace(REG_EMPTY, ''), read.value.toString('utf8').replace(REG_EMPTY, ''));
-
-	read.status = 0;
-	read.value = U.createBufferSize();
-	read.key = U.createBufferSize();
-
-	self.restoreKey(data.slice(index + 1));
-};
-
-Backup.prototype.restore = function(filename, path, callback, filter) {
-
-	if (!existsSync(filename)) {
-		callback && callback(new Error('Package not found.'), path);
-		return;
-	}
-
-	var self = this;
-
-	self.filter = filter;
-	self.cache = {};
-	self.createDirectory(path, true);
-	self.path = path;
-
-	var stream = Fs.createReadStream(filename);
-	stream.on('data', buffer => self.restoreKey(buffer));
-
-	if (!callback) {
-		stream.resume();
-		return;
-	}
-
-	callback.path = path;
-
-	stream.on('end', function() {
-		self.callback(callback);
-		stream = null;
-	});
-
-	stream.resume();
-};
-
-Backup.prototype.callback = function(cb) {
-	var self = this;
-	if (self.pending <= 0)
-		return cb(null, cb.path);
-	setTimeout(() => self.callback(cb), 100);
-};
-
-Backup.prototype.restoreFile = function(key, value) {
-	var self = this;
-
-	if (typeof(self.filter) === 'function' && !self.filter(key))
-		return;
-
-	if (value === '#') {
-		self.createDirectory(key);
-		return;
-	}
-
-	var p = key;
-	var index = key.lastIndexOf('/');
-
-	if (index !== -1) {
-		p = key.substring(0, index).trim();
-		p && self.createDirectory(p);
-	}
-
-	var buffer = U.createBuffer(value, 'base64');
-	self.pending++;
-
-	Zlib.gunzip(buffer, function(err, data) {
-		Fs.writeFile(Path.join(self.path, key), data, () => self.pending--);
-		buffer = null;
-	});
-};
-
-Backup.prototype.createDirectory = function(p, root) {
-
-	var self = this;
-	if (self.cache[p])
-		return;
-
-	self.cache[p] = true;
-
-	if (p[0] === '/')
-		p = p.substring(1);
-
-	var is = F.isWindows;
-
-	if (is) {
-		if (p[p.length - 1] === '\\')
-			p = p.substring(0, p.length - 1);
-	} else {
-		if (p[p.length - 1] === '/')
-			p = p.substring(0, p.length - 1);
-	}
-
-	var arr = is ? p.replace(/\//g, '\\').split('\\') : p.split('/');
-	var directory = '';
-
-	if (is && arr[0].indexOf(':') !== -1)
-		arr.shift();
-
-	for (var i = 0, length = arr.length; i < length; i++) {
-		var name = arr[i];
-		if (is)
-			directory += (directory ? '\\' : '') + name;
-		else
-			directory += (directory ? '/' : '') + name;
-
-		var dir = Path.join(self.path, directory);
-		if (root)
-			dir = (is ? '\\' : '/') + dir;
-
-		!existsSync(dir) && Fs.mkdirSync(dir);
-	}
 };
 
 // *********************************************************************************
@@ -13271,8 +13593,8 @@ function extend_request(PROTO) {
 			if (status === 400 && this.$total_exception instanceof framework_builders.ErrorBuilder) {
 				F.stats.response.errorBuilder++;
 				this.$language && this.$total_exception.setResource(this.$language);
+				res.options.body = this.$total_exception.output(true);
 				res.options.code = this.$total_exception.status;
-				res.options.body = this.$total_exception.output();
 				res.options.type = this.$total_exception.contentType;
 				res.$text();
 			} else {
@@ -13738,8 +14060,14 @@ function extend_response(PROTO) {
 			case 'object':
 				if (!isHEAD) {
 					if (body instanceof framework_builders.ErrorBuilder) {
-						body = body.output();
-						contentType = body.contentType;
+						var json = body.output(true);
+						if (body.status !== 200)
+							res.options.code = body.status;
+						if (body.contentType)
+							contentType = body.contentType;
+						else
+							contentType = CT_JSON;
+						body = json;
 						F.stats.response.errorBuilder++;
 					} else
 						body = JSON.stringify(body);
@@ -13787,12 +14115,11 @@ function extend_response(PROTO) {
 			if (err) {
 				res.writeHead(code, headers);
 				res.end(body, ENCODING);
-				return;
+			} else {
+				headers['Content-Encoding'] = 'gzip';
+				res.writeHead(code, headers);
+				res.end(data, ENCODING);
 			}
-
-			headers['Content-Encoding'] = 'gzip';
-			res.writeHead(code, headers);
-			res.end(data, ENCODING);
 		});
 
 		return res;
@@ -14860,13 +15187,15 @@ global.Controller = Controller;
 
 process.on('uncaughtException', function(e) {
 
-	if (e.toString().indexOf('listen EADDRINUSE') !== -1) {
-		if (typeof(process.send) === 'function')
-			process.send('eaddrinuse');
+	var err = e.toString();
+
+	if (err.indexOf('listen EADDRINUSE') !== -1) {
+		process.send && process.send('total:eaddrinuse');
 		console.log('\nThe IP address and the PORT is already in use.\nYou must change the PORT\'s number or IP address.\n');
 		process.exit('SIGTERM');
 		return;
-	}
+	} else if (F.config['allow-filter-errors'] && REG_SKIPERROR.test(err))
+		return;
 
 	F.error(e, '', null);
 });
@@ -14926,7 +15255,7 @@ process.on('SIGINT', () => F.stop());
 process.on('exit', () => F.stop());
 
 process.on('message', function(msg, h) {
-	if (msg === 'debugging') {
+	if (msg === 'total:debug') {
 		U.wait(() => F.isLoaded, function() {
 			F.isLoaded = undefined;
 			F.console();
@@ -14955,7 +15284,13 @@ process.on('message', function(msg, h) {
 });
 
 function prepare_error(e) {
-	return (RELEASE || !e) ? '' : ' :: ' + (e instanceof ErrorBuilder ? e.plain() : e.stack ? e.stack.toString() : e.toString());
+	if (!e)
+		return '';
+	else if (e instanceof ErrorBuilder)
+		return ' :: ' + e.plain();
+	else if (e.stack)
+		return RELEASE ? '' : e.stack;
+	return e.toString();
 }
 
 function prepare_filename(name) {
@@ -15046,9 +15381,9 @@ global.setTimeout2 = function(name, fn, timeout, limit, param) {
 			return;
 		F.temporary.internal[key2] = (F.temporary.internal[key2] || 0) + 1;
 		F.temporary.internal[key] && clearTimeout(F.temporary.internal[key]);
-		return F.temporary.internal[key] = setTimeout(function() {
+		return F.temporary.internal[key] = setTimeout(function(param) {
 			F.temporary.internal[key2] = undefined;
-			fn && fn();
+			fn && fn(param);
 		}, timeout, param);
 	}
 
@@ -15129,7 +15464,7 @@ function parseComponent(body, filename) {
 function controller_json_workflow(id) {
 	var self = this;
 	self.id = id;
-	self.$exec(self.route.workflow, self, self.callback());
+	self.$exec(self.route.workflow, null, self.callback());
 }
 
 // Parses schema group and schema name from string e.g. "User" or "Company/User"

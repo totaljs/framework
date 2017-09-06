@@ -11,6 +11,6 @@ const options = {};
 // options.config = { name: 'Total.js' };
 // options.sleep = 3000;
 // options.inspector = 9229;
-// options.debugger = 40894;
+// options.watch = ['private'];
 
 require('total.js/debug')(options);

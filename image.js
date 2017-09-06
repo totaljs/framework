@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkImage
- * @version 2.6.0
+ * @version 2.8.0
  */
 
 'use strict';
@@ -203,6 +203,7 @@ Image.prototype.save = function(filename, callback, writer) {
 	filename = filename || self.filename || '';
 
 	var command = self.cmd(self.filename ? self.filename : '-', filename);
+
 	if (F.isWindows)
 		command = command.replace(REGEXP_PATH, '\\');
 
@@ -683,11 +684,17 @@ Image.prototype.make = function(fn) {
 };
 
 Image.prototype.command = function(key, value, priority, esc) {
+
+	if (priority === true) {
+		priority = 0;
+		esc = true;
+	}
+
 	return this.push(key, value, priority || 10, esc);
 };
 
 function wrap(command, empty) {
-	return (empty ? ' ' : '') + D + command.replace(REGEXP_ESCAPE, '') + D;
+	return (empty ? ' ' : '') + (command === '-' ? command : (D + command.replace(REGEXP_ESCAPE, '') + D));
 }
 
 exports.Image = Image;

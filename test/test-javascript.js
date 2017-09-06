@@ -20,3 +20,8 @@ console.log('================================================');
 console.log('success - OK');
 console.log('================================================');
 console.log('');
+
+process.on('uncaughtException', function(err) {
+	console.error(err);
+	process.exit(1);
+});

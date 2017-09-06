@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkBuilders
- * @version 2.7.0
+ * @version 2.8.0
  */
 
 'use strict';
@@ -862,6 +862,9 @@ SchemaBuilderEntity.prototype.save = function(model, options, callback, controll
 			return;
 		}
 
+		if (model && !controller && model.$$controller)
+			controller = model.$$controller;
+
 		var builder = new ErrorBuilder();
 		self.resourceName && builder.setResource(self.resourceName);
 		self.resourcePrefix && builder.setPrefix(self.resourcePrefix);
@@ -1278,11 +1281,12 @@ SchemaBuilderEntity.prototype.default = function() {
 					item[property] = [];
 				} else {
 					var tmp = this.find(type.raw);
-					if (!tmp) {
+					if (tmp) {
+						item[property] = tmp.default();
+					} else {
 						F.error(new Error('Schema: "' + property + '.' + type.raw + '" not found in "' + this.parent.name + '".'));
 						item[property] = null;
-					} else
-						item[property] = tmp.default();
+					}
 				}
 				break;
 			// enum + keyvalue
@@ -1794,6 +1798,9 @@ SchemaBuilderEntity.prototype.hook = function(name, model, options, callback, sk
 		return self;
 	}
 
+	if (model && !controller && model.$$controller)
+		controller = model.$$controller;
+
 	var $type = 'hook';
 
 	if (skip === true) {
@@ -1923,6 +1930,9 @@ SchemaBuilderEntity.prototype.$execute = function(type, name, model, options, ca
 		callback(new ErrorBuilder().push('', type.capitalize() + ' "{0}" not found.'.format(name)));
 		return self;
 	}
+
+	if (model && !controller && model.$$controller)
+		controller = model.$$controller;
 
 	if (skip === true) {
 		var builder = new ErrorBuilder();
@@ -2055,6 +2065,9 @@ SchemaBuilderEntity.prototype.operation = function(name, model, options, callbac
 
 	self.resourceName && builder.setResource(self.resourceName);
 	self.resourcePrefix && builder.setPrefix(self.resourcePrefix);
+
+	if (model && !controller && model.$$controller)
+		controller = model.$$controller;
 
 	if (!isGenerator(self, 'operation.' + name, operation)) {
 		if (operation.$newversion) {
@@ -2265,7 +2278,7 @@ SchemaInstance.prototype.$push = function(type, name, helper, first) {
 	var self = this;
 	var fn;
 
-	if (type === 'save' || type === 'remove') {
+	if (type === 'save') {
 
 		helper = name;
 		name = undefined;
@@ -2282,7 +2295,7 @@ SchemaInstance.prototype.$push = function(type, name, helper, first) {
 			}, self.$$controller);
 		};
 
-	} else if (type === 'query' || type === 'get' || type === 'read') {
+	} else if (type === 'query' || type === 'get' || type === 'read' || type === 'remove') {
 
 		helper = name;
 		name = undefined;
@@ -2300,7 +2313,6 @@ SchemaInstance.prototype.$push = function(type, name, helper, first) {
 		};
 
 	} else {
-
 		fn = function(next) {
 			self.$$schema[type](name, self, helper, function(err, result) {
 				self.$$result && self.$$result.push(err ? null : copy(result));
@@ -2312,7 +2324,6 @@ SchemaInstance.prototype.$push = function(type, name, helper, first) {
 				self.$$callback = null;
 			}, self.$$controller);
 		};
-
 	}
 
 	if (first)
@@ -2339,7 +2350,7 @@ SchemaInstance.prototype.$exec = function(name, helper, callback) {
 	var workflow = F.workflows[key + '#' + name] || F.workflows[name];
 
 	if (workflow)
-		workflow(this, helper || EMPTYOBJECT, callback || NOOP);
+		workflow(this, helper, callback || NOOP);
 	else
 		callback && callback(new ErrorBuilder().push('Workflow "' + name + '" not found in workflows.'));
 
@@ -2360,12 +2371,10 @@ SchemaInstance.prototype.$save = function(helper, callback) {
 };
 
 SchemaInstance.prototype.$query = function(helper, callback) {
-
 	if (this.$$can && this.$$async)
 		this.$push('query', helper);
 	else
 		this.$$schema.query(this, helper, callback, this.$$controller);
-
 	return this;
 };
 
@@ -2379,7 +2388,7 @@ SchemaInstance.prototype.$read = SchemaInstance.prototype.$get = function(helper
 	return this;
 };
 
-SchemaInstance.prototype.$remove = function(helper, callback) {
+SchemaInstance.prototype.$delete = SchemaInstance.prototype.$remove = function(helper, callback) {
 
 	if (this.$$can && this.$$async)
 		this.$push('remove', helper);
@@ -2945,15 +2954,18 @@ ErrorBuilder.prototype._transform = function(name) {
 	return this.items;
 };
 
-ErrorBuilder.prototype.output = function() {
+ErrorBuilder.prototype.output = function(isResponse) {
+
 	if (!this.transformName)
-		return this.json();
+		return isResponse ? this.json() : this.items;
+
 	var current = transforms['error'][this.transformName];
 	if (current) {
 		this.prepare();
-		return current.call(this);
+		return current.call(this, isResponse);
 	}
-	return this.json();
+
+	return isResponse ? this.json() : this.items;
 };
 
 /**
@@ -3847,16 +3859,6 @@ RESTBuilder.prototype.stream = function(callback) {
 	return U.download(self.$url, flags, self.$data, callback, self.$cookies, self.$headers, undefined, self.$timeout);
 };
 
-RESTBuilder.prototype.file = function(name, filename) {
-	var self = this;
-	var obj = { name: name, filename: filename };
-	if (self.$files)
-		self.$files.push(obj);
-	else
-		self.$files = [obj];
-	return self;
-};
-
 RESTBuilder.prototype.exec = function(callback) {
 
 	if (!callback)
@@ -3908,7 +3910,20 @@ RESTBuilder.prototype.exec = function(callback) {
 		var type = err ? '' : headers['content-type'] || '';
 		var output = new RESTBuilderResponse();
 
-		output.value = type.indexOf('/xml') === -1 ? response.isJSON() ? JSON.parse(response, jsonparser) : F.onParseQuery(response) : response.parseXML();
+		switch (type.toLowerCase()) {
+			case 'text/xml':
+				output.value = response.parseXML();
+				break;
+			case 'application/x-www-form-urlencoded':
+				output.value = F.onParseQuery(response);
+				break;
+			case 'application/json':
+				output.value = response.parseJSON(true);
+				break;
+			default:
+				output.value = response.isJSON() ? response.parseJSON(true) : null;
+				break;
+		}
 
 		if (output.value == null)
 			output.value = EMPTYOBJECT;
@@ -4025,10 +4040,6 @@ global.OPERATION = function(name, value, callback, param) {
 	}
 };
 
-function jsonparser(key, value) {
-	return typeof(value) === 'string' && value.isJSONDate() ? new Date(value) : value;
-}
-
 // ======================================================
 // EXPORTS
 // ======================================================
@@ -4041,6 +4052,7 @@ exports.Page = Page;
 exports.UrlBuilder = UrlBuilder;
 exports.TransformBuilder = TransformBuilder;
 exports.SchemaOptions = SchemaOptions;
+exports.RESTBuilderResponse = RESTBuilderResponse;
 global.RESTBuilder = RESTBuilder;
 global.RESTBuilderResponse = RESTBuilderResponse;
 global.ErrorBuilder = ErrorBuilder;

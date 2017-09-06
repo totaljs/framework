@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkMail
- * @version 2.6.0
+ * @version 2.8.0
  */
 
 'use strict';
@@ -33,15 +33,19 @@ const Fs = require('fs');
 const CRLF = '\r\n';
 const REG_ESMTP = /\besmtp\b/i;
 const REG_STATE = /\d+/;
-const EMPTYARRAY = [];
 const REG_WINLINE = /\r\n/g;
 const REG_NEWLINE = /\n/g;
+const REG_AUTH = /(AUTH LOGIN|AUTH PLAIN)/i;
+const EMPTYARRAY = [];
 
 var INDEXSENDER = 0;
 var INDEXATTACHMENT = 0;
 
 if (!global.framework_utils)
 	global.framework_utils = require('./utils');
+
+const BUF_CRLF = framework_utils.createBuffer(CRLF);
+const CONCAT = [null, null];
 
 /**
  * Mailer
@@ -280,6 +284,17 @@ Message.prototype.attachmentInline = function(filename, name, contentId) {
 	return this;
 };
 
+Message.prototype.send2 = function(callback) {
+	var opt = F.temporary['mail-settings'];
+	if (!opt) {
+		var config = F.config['mail-smtp-options'];
+		config && (opt = config);
+		F.temporary['mail-settings'] = opt || {};
+	}
+	mailer.send(F.config['mail-smtp'], opt, this, callback);
+	return this;
+};
+
 Message.prototype.send = function(smtp, options, callback) {
 	mailer.send(smtp, options, this, callback);
 	return this;
@@ -341,16 +356,19 @@ Mailer.prototype.destroy = function(obj) {
 	return this;
 };
 
+const ATTACHMENT_SO = { encoding: 'base64' };
 Mailer.prototype.$writeattachment = function(obj) {
 
 	var attachment = obj.files ? obj.files.shift() : false;
 	if (!attachment) {
 		mailer.$writeline(obj, '--' + obj.boundary + '--', '', '.');
+		obj.messagecallback && obj.messagecallback(null, obj.instance);
+		obj.messagecallback = null;
 		return this;
 	}
 
 	var name = attachment.name;
-	var stream = Fs.createReadStream(attachment.filename, { encoding: 'base64' });
+	var stream = Fs.createReadStream(attachment.filename, ATTACHMENT_SO);
 	var message = [];
 	var extension = attachment.extension;
 	var isCalendar = extension === 'ics';
@@ -494,6 +512,14 @@ Mailer.prototype.send = function(smtp, options, messages, callback) {
 		mailer.$events.error && !obj.try && mailer.emit('error', err, obj);
 	});
 
+	obj.socket.setTimeout(options.timeout || 8000, function() {
+		var err = new Error(framework_utils.httpStatus(408));
+		mailer.destroy(obj);
+		obj.callback && obj.callback(err);
+		obj.callback = null;
+		mailer.$events.error && !obj.try && mailer.emit('error', err, obj);
+	});
+
 	obj.socket.on('connect', () => !options.secure && mailer.$send(obj, options));
 	return self;
 };
@@ -618,30 +644,24 @@ Mailer.prototype.$send = function(obj, options, autosend) {
 
 	var self = this;
 	var buffer = [];
-	var isAuthenticated = false;
+	var isAuthorized = false;
 	var isAuthorization = false;
 	var command = '';
 	var auth = [];
-	var response = '';
 	var socket = obj.socket2 ? obj.socket2 : obj.socket;
 	var host = obj.host;
+	var line = null;
 
 	var isAttach = !options.tls || (obj.tls && options.tls);
 
 	isAttach && mailer.$events.send && mailer.emit('send', obj);
 	socket.setEncoding('utf8');
-	socket.setTimeout(options.timeout || 8000, function() {
-		var err = new Error(framework_utils.httpStatus(408));
-		mailer.destroy(obj);
-		obj.callback && obj.callback(err);
-		obj.callback = null;
-		mailer.$events.error && !obj.try && mailer.emit('error', err, obj);
-	});
 
 	socket.on('end', function() {
 		mailer.destroy(obj);
 		obj.callback && obj.callback();
 		obj.callback = null;
+		line = null;
 	});
 
 	socket.on('data', function(data) {
@@ -649,21 +669,22 @@ Mailer.prototype.$send = function(obj, options, autosend) {
 		if (obj.closed)
 			return;
 
-		data = data.toString('utf8');
+		while (true) {
 
-		if (!data.endsWith(CRLF)) {
-			response += data;
-			return;
-		}
+			var index = data.indexOf(BUF_CRLF);
+			if (index === -1) {
+				if (line) {
+					CONCAT[0] = line;
+					CONCAT[1] = data;
+					line = Buffer.concat(CONCAT);
+				} else
+					line = data;
+				break;
+			}
 
-		var res = (response + data).split(CRLF);
-
-		if (response)
-			response = '';
-
-		for (var i = 0, length = res.length; i < length; i++) {
-			var line = res[i];
-			line && socket && socket.emit('line', line);
+			var tmp = data.slice(0, index).toString('utf8');
+			data = data.slice(index + BUF_CRLF.length);
+			tmp && socket && socket.emit('line', tmp);
 		}
 	});
 
@@ -675,9 +696,11 @@ Mailer.prototype.$send = function(obj, options, autosend) {
 		var code = +line.match(REG_STATE)[0];
 
 		if (code === 250 && !isAuthorization) {
-			if ((line.indexOf('AUTH LOGIN PLAIN') !== -1 || line.indexOf('AUTH PLAIN LOGIN') !== -1) || (options.user && options.password)) {
+			if (REG_AUTH.test(line) && ((options.user && options.password) || options.xoauth2)) {
 				isAuthorization = true;
-				if (line.indexOf('XOAUTH') === -1) {
+				if (options.xoauth2 && line.indexOf('XOAUTH2') !== -1)
+					auth.push('AUTH XOAUTH2 ' + options.xoauth2);
+				else if (line.lastIndexOf('XOAUTH') === -1) {
 					auth.push('AUTH LOGIN');
 					auth.push(framework_utils.createBuffer(options.user).toString('base64'));
 					auth.push(framework_utils.createBuffer(options.password).toString('base64'));
@@ -690,8 +713,8 @@ Mailer.prototype.$send = function(obj, options, autosend) {
 		if (line.substring(3, 4) === '-')
 			return;
 
-		if (!isAuthenticated && isAuthorization) {
-			isAuthenticated = true;
+		if (!isAuthorized && isAuthorization) {
+			isAuthorized = true;
 			code = 334;
 		}
 
@@ -710,10 +733,8 @@ Mailer.prototype.$send = function(obj, options, autosend) {
 			case 250: // OPERATION
 			case 251: // FORWARD
 			case 235: // VERIFY
-			case 999: // total.js again
+			case 999: // Total.js again
 
-				obj.messagecallback && obj.messagecallback(null, obj.instance);
-				obj.messagecallback = null;
 				mailer.$writeline(obj, buffer.shift());
 
 				if (buffer.length)

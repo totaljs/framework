@@ -1,3 +1,29 @@
+// Copyright 2012-2017 (c) Peter Širka <petersirka@gmail.com>
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+/**
+ * @module FrameworkDebug
+ * @version 2.8.0
+ */
+
 const Path = require('path');
 const Fs = require('fs');
 const debugging = process.argv.indexOf('debugging') !== -1;
@@ -14,6 +40,7 @@ module.exports = function(opt) {
 	// options.sleep = 3000;
 	// options.inspector = 9229;
 	// options.debugger = 40894;
+	// options.watch = ['adminer'];
 };
 
 process.on('uncaughtException', e => e.toString().indexOf('ESRCH') == -1 && console.log(e));
@@ -53,7 +80,7 @@ function runwatching() {
 	const VERSION = F.version_header;
 	const TIME = 2000;
 	const REG_CONFIGS = /configs\//g;
-	const REG_FILES = /config\-debug|config\-release|config|versions|sitemap|dependencies|\.js|\.resource/i;
+	const REG_FILES = /config\-debug|config\-release|config|versions|workflows|sitemap|dependencies|\.js|\.resource/i;
 	const REG_THEMES = /\/themes\//i;
 	const REG_COMPONENTS = /components\/.*?\.html/i;
 	const REG_THEMES_INDEX = /themes(\/|\\)?[a-z0-9_.-]+(\/|\\)?index\.js/i;
@@ -61,9 +88,17 @@ function runwatching() {
 
 	function app() {
 		const fork = require('child_process').fork;
-		const directories = [directory + '/components', directory + '/controllers', directory + '/definitions', directory + '/isomorphic', directory + '/modules', directory + '/resources', directory + '/models', directory + '/source', directory + '/workers', directory + '/packages', directory + '/themes', directory + '/configs', directory + '/startup'];
+		var directories = [directory + '/components', directory + '/controllers', directory + '/definitions', directory + '/isomorphic', directory + '/modules', directory + '/resources', directory + '/models', directory + '/source', directory + '/workers', directory + '/packages', directory + '/themes', directory + '/configs', directory + '/startup', directory + '/schema'];
 		const async = new U.Async();
 		const prefix = '---------------------------------> ';
+
+		options.watch && options.watch.forEach(function(item) {
+			if (item[0] === '/')
+				item = item.substring(1);
+			if (item[item.length - 1] === '/')
+				item = item.substring(0, item.length - 1);
+			directories.push(directory + '/' + item);
+		});
 
 		var files = {};
 		var force = false;
@@ -169,7 +204,6 @@ function runwatching() {
 				changes = [];
 				force = false;
 			});
-
 		}
 
 		function refresh_directory() {
@@ -211,7 +245,17 @@ function runwatching() {
 			app = fork(Path.join(directory, FILENAME), arr);
 
 			app.on('message', function(msg) {
-				msg === 'eaddrinuse' && process.exit(1);
+				switch (msg) {
+					case 'total:eaddrinuse':
+						process.exit(1);
+						break;
+					case 'total:ready':
+						if (status === 0) {
+							app.send('total:debug');
+							status = 1;
+						}
+						break;
+				}
 			});
 
 			app.on('exit', function() {
@@ -227,9 +271,6 @@ function runwatching() {
 				if (status === 255)
 					app = null;
 			});
-
-			status === 0 && setTimeout(() => app.send('debugging'), 500);
-			status = 1;
 		}
 
 		process.on('SIGTERM', end);

@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkInternal
- * @version 2.7.0
+ * @version 2.8.0
  */
 
 'use strict';
@@ -48,8 +48,8 @@ const REG_5 = />\n\s{1,}</g;
 const REG_6 = /[\<\w\"\u0080-\u07ff\u0400-\u04FF]+\s{2,}[\w\u0080-\u07ff\u0400-\u04FF\>]+/;
 const REG_7 = /\\/g;
 const REG_8 = /\'/g;
-const REG_BLOCK_BEG = /\@\{block.*?\}/gi;
-const REG_BLOCK_END = /\@\{end\}/gi;
+const REG_BLOCK_BEG = /\@\{block.*?\}/i;
+const REG_BLOCK_END = /\@\{end\}/i;
 const REG_SKIP_1 = /\(\'|\"/;
 const REG_SKIP_2 = /\,(\s)?\w+/;
 const REG_HEAD = /\<\/head\>/i;
@@ -975,15 +975,36 @@ function autoprefixer(value) {
 		}
 
 		if (name === 'background' || name === 'background-image') {
-			if (property.indexOf('linear-gradient') === -1)
-				continue;
-			updated = plus.replacer('linear-', '-webkit-linear-') + delimiter;
-			updated += plus.replacer('linear-', '-moz-linear-') + delimiter;
-			updated += plus.replacer('linear-', '-o-linear-') + delimiter;
-			updated += plus.replacer('linear-', '-ms-linear-') + delimiter;
-			updated += plus;
-			value = value.replacer(property, '@[[' + output.length + ']]');
-			output.push(updated);
+			if (property.indexOf('repeating-linear-gradient') !== -1) {
+				updated = plus.replacer('repeating-linear-', '-webkit-repeating-linear-') + delimiter;
+				updated += plus.replacer('repeating-linear-', '-moz-repeating-linear-') + delimiter;
+				updated += plus.replacer('repeating-linear-', '-ms-repeating-linear-') + delimiter;
+				updated += plus;
+				value = value.replacer(property, '@[[' + output.length + ']]');
+				output.push(updated);
+			} else if (property.indexOf('repeating-radial-gradient') !== -1) {
+				updated = plus.replacer('repeating-radial-', '-webkit-repeating-radial-') + delimiter;
+				updated += plus.replacer('repeating-radial-', '-moz-repeating-radial-') + delimiter;
+				updated += plus.replacer('repeating-radial-', '-ms-repeating-radial-') + delimiter;
+				updated += plus;
+				value = value.replacer(property, '@[[' + output.length + ']]');
+				output.push(updated);
+			} else if (property.indexOf('linear-gradient') !== -1) {
+				updated = plus.replacer('linear-', '-webkit-linear-') + delimiter;
+				updated += plus.replacer('linear-', '-moz-linear-') + delimiter;
+				updated += plus.replacer('linear-', '-ms-linear-') + delimiter;
+				updated += plus;
+				value = value.replacer(property, '@[[' + output.length + ']]');
+				output.push(updated);
+			} else if (property.indexOf('radial-gradient') !== -1) {
+				updated = plus.replacer('radial-', '-webkit-radial-') + delimiter;
+				updated += plus.replacer('radial-', '-moz-radial-') + delimiter;
+				updated += plus.replacer('radial-', '-ms-radial-') + delimiter;
+				updated += plus;
+				value = value.replacer(property, '@[[' + output.length + ']]');
+				output.push(updated);
+			}
+
 			continue;
 		}
 
@@ -1012,7 +1033,6 @@ function autoprefixer(value) {
 		if (name.indexOf('animation') === -1)
 			updated += delimiter + '-ms-' + plus;
 
-		updated += delimiter + '-o-' + plus;
 		value = value.replacer(property, '@[[' + output.length + ']]');
 		output.push(updated);
 	}
@@ -1655,6 +1675,9 @@ function view_parse(content, minify, filename, controller) {
 
 	content = F.$versionprepare(content);
 
+	if (!nocompressHTML)
+		content = compressView(content, minify, filename);
+
 	var DELIMITER = '\'';
 	var SPACE = ' ';
 	var builder = 'var $EMPTY=\'\';var $length=0;var $source=null;var $tmp=index;var $output=$EMPTY';
@@ -1697,9 +1720,9 @@ function view_parse(content, minify, filename, controller) {
 
 		var is = REG_TAGREMOVE.test(value);
 
-		if (!nocompressHTML)
-			value = compressHTML(value, minify, true);
-		else if (!isFirst) {
+		if (!nocompressHTML) {
+		//	value = compressHTML(value, minify, true);
+		} else if (!isFirst) {
 			isFirst = true;
 			value = value.replace(/^\s+/, '');
 		}
@@ -1768,13 +1791,19 @@ function view_parse(content, minify, filename, controller) {
 			continue;
 		}
 
-		cmd = cmd.replace(REG_HELPERS, function(text) {
+		// cmd = cmd.replace
+		command.command = command.command.replace(REG_HELPERS, function(text) {
 			var index = text.indexOf('(');
 			return index === - 1 ? text : text.substring(0, index) + '.call(self' + (text.endsWith('()') ? ')' : ',' + text.substring(index + 1));
 		});
 
 		if (cmd[0] === '\'' || cmd[0] === '"') {
-			builder += '+' + DELIMITER + (new Function('self', 'return self.$import(' + cmd[0] + '!' + cmd.substring(1) + ')'))(controller) + DELIMITER;
+			if (cmd[1] === '%') {
+				var t = F.config[cmd.substring(2, cmd.length - 1)];
+				if (t != null)
+					builder += '+' + DELIMITER + t + DELIMITER;
+			} else
+				builder += '+' + DELIMITER + (new Function('self', 'return self.$import(' + cmd[0] + '!' + cmd.substring(1) + ')'))(controller) + DELIMITER;
 		} else if (cmd7 === 'compile' && cmd.lastIndexOf(')') === -1) {
 
 			builderTMP = builder + '+(F.onCompileView.call(self,\'' + (cmd8[7] === ' ' ? cmd.substring(8) : '') + '\',';
@@ -2370,6 +2399,28 @@ function removeComments(html) {
 	}
 
 	return html;
+}
+
+function compressView(html, minify) {
+
+	var cache = [];
+
+	while (true) {
+		var beg = html.indexOf('@{');
+		if (beg === -1)
+			break;
+		var end = html.indexOf('}', beg + 2);
+		if (end === -1)
+			break;
+		cache.push(html.substring(beg, end + 1));
+		html = html.substring(0, beg) + '#@' + (cache.length - 1) + '#' + html.substring(end + 1);
+	}
+
+	html = compressHTML(html, minify, false);
+
+	return html.replace(/\#\@\d+\#/g, function(text) {
+		return cache[+text.substring(2, text.length - 1)];
+	});
 }
 
 /**
@@ -3155,7 +3206,7 @@ exports.parseBlock = function(name, content) {
 	//
 	// @{end}
 
-	if (content.search(REG_BLOCK_BEG) === -1)
+	if (!REG_BLOCK_BEG.test(content))
 		return content;
 
 	var newline = '\n';
@@ -3173,7 +3224,7 @@ exports.parseBlock = function(name, content) {
 		if (!line)
 			continue;
 
-		if (line.search(REG_BLOCK_END) !== -1) {
+		if (REG_BLOCK_END.test(line)) {
 			is = false;
 			skip = false;
 			continue;
@@ -3187,9 +3238,6 @@ exports.parseBlock = function(name, content) {
 		}
 
 		var index = line.search(REG_BLOCK_BEG);
-		if (!index)
-			continue;
-
 		if (index === -1) {
 			builder += line + newline;
 			continue;

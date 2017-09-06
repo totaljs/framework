@@ -163,7 +163,7 @@ function test_routing(next) {
 		utils.request(url + 'html-compressor/', ['get'], function(error, data, code, headers) {
 			if (error)
 				throw error;
-			assert(data === '<div><p>a b c d</p><div>Price 30 &euro;</div></div><div>Name: Peter</div><div>Name: Peter</div><div>Price: 1000 1 000.00</div><div>13</div><div>Name: Peter</div>', 'HTML compressor');
+			assert(data === '<div><p>a b c d</p><div>Price 30 &euro;</div></div><div>Name: Peter</div><div>Name: Peter</div><div>Price: 1000 1 000.00</div><div>1  3</div><div>Name: Peter</div>', 'HTML compressor');
 			complete();
 		});
 	});
@@ -900,3 +900,8 @@ framework.on('load', function() {
 });
 
 framework.useConfig('my-config.txt').useConfig('/configs/my-config.config').http('release', { port: 8001 });
+
+process.on('uncaughtException', (err)=>{
+  console.error(err)
+  process.exit(1)
+})

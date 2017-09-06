@@ -74,8 +74,14 @@
     },{
         "name": "Peter Štolc",
         "email": "stolcp@gmail.com"
+    },{
+        "name": "Denis Granec",
+        "email": "danis1999@gmail.com"
+    },{
+        "name": "Chao Tang Chang",
+        "email": "mrgmp2004@hotmail.com"
     }],
-    "version": "2.7.0",
+    "version": "2.8.0",
     "homepage": "http://www.totaljs.com",
     "bugs": {
         "url": "https://github.com/totaljs/framework/issues",

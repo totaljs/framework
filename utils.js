@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkUtils
- * @version 2.5.0
+ * @version 2.8.0
  */
 
 'use strict';
@@ -36,6 +36,9 @@ const Fs = require('fs');
 const Events = require('events');
 const Crypto = require('crypto');
 const CONCAT = [null, null];
+const COMPARER = global.Intl ? global.Intl.Collator().compare : function(a, b) {
+	return a.removeDiacritics().localeCompare(b.removeDiacritics());
+};
 
 if (!global.framework_utils)
 	global.framework_utils = exports;
@@ -63,8 +66,6 @@ const SOUNDEX = { a: '', e: '', i: '', o: '', u: '', b: 1, f: 1, p: 1, v: 1, c: 
 const ENCODING = 'utf8';
 const NEWLINE = '\r\n';
 const isWindows = require('os').platform().substring(0, 3).toLowerCase() === 'win';
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const DIACRITICSMAP = {};
 const STREAM_READONLY = { flags: 'r' };
 const STREAM_END = { end: false };
@@ -73,6 +74,9 @@ const EMPTYARRAY = [];
 const EMPTYOBJECT = [];
 const NODEVERSION = parseFloat(process.version.toString().replace('v', '').replace(/\./g, ''));
 const STREAMPIPE = { end: false };
+
+exports.MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+exports.DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 Object.freeze(EMPTYARRAY);
 Object.freeze(EMPTYOBJECT);
@@ -169,6 +173,7 @@ var CONTENTTYPES = {
 };
 
 var dnscache = {};
+var datetimeformat = {};
 const hasOwnProperty = Object.prototype.hasOwnProperty;
 
 /**
@@ -616,13 +621,16 @@ function request_call(uri, options) {
 
 function request_writefile(req, options, file, next) {
 
-	req.write((options.first ? '' : NEWLINE) + '--' + options.boundary + NEWLINE + 'Content-Disposition: form-data; name="' + file.name + '"; filename="' + exports.getName(file.filename) + '"' + NEWLINE + 'Content-Type: ' + exports.getContentType(exports.getExtension(file.filename)) + NEWLINE + NEWLINE);
+	var type = typeof(file.buffer);
+	var filename = (type === 'string' ? file.buffer : exports.getName(file.filename));
+
+	req.write((options.first ? '' : NEWLINE) + '--' + options.boundary + NEWLINE + 'Content-Disposition: form-data; name="' + file.name + '"; filename="' + filename + '"' + NEWLINE + 'Content-Type: ' + exports.getContentType(exports.getExtension(filename)) + NEWLINE + NEWLINE);
 
 	if (options.first)
 		options.first = false;
 
 	// Is Buffer
-	if (file.buffer) {
+	if (file.buffer && type === 'object') {
 		req.write(file.buffer);
 		next();
 	} else {
@@ -919,8 +927,7 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 
 	if (options.resolve) {
 		exports.resolve(url, function(err, u) {
-			if (!err)
-				uri.host = u.host;
+			!err && (uri.host = u.host);
 			download_call(uri, options);
 		});
 	} else
@@ -1398,7 +1405,7 @@ exports.extend_headers2 = function(first, second) {
  * @param {Boolean} skipFunctions It doesn't clone functions, optional --> default false.
  * @return {Object}
  */
-exports.clone = function(obj, skip, skipFunctions) {
+global.CLONE = exports.clone = function(obj, skip, skipFunctions) {
 
 	if (!obj)
 		return obj;
@@ -1557,16 +1564,24 @@ exports.isRelative = function(url) {
  * @param {String} end
  * @param {Function(value, index)} callback
  */
-exports.streamer = function(beg, end, callback, skip) {
+exports.streamer = function(beg, end, callback, skip, stream) {
 
 	if (typeof(end) === 'function') {
+		stream = skip;
 		skip = callback;
 		callback = end;
 		end = undefined;
 	}
 
+	if (typeof(skip) === 'object') {
+		stream = skip;
+		skip = 0;
+	}
+
 	var indexer = 0;
 	var buffer = exports.createBufferSize();
+	var canceled = false;
+	var fn;
 
 	if (skip === undefined)
 		skip = 0;
@@ -1577,9 +1592,9 @@ exports.streamer = function(beg, end, callback, skip) {
 
 	if (!end) {
 		var length = beg.length;
-		return function(chunk) {
+		fn = function(chunk) {
 
-			if (!chunk)
+			if (!chunk || canceled)
 				return;
 
 			CONCAT[0] = buffer;
@@ -1594,8 +1609,13 @@ exports.streamer = function(beg, end, callback, skip) {
 
 				if (skip)
 					skip--;
-				else
-					callback(buffer.toString('utf8', 0, index + length), indexer++);
+				else {
+					if (callback(buffer.toString('utf8', 0, index + length), indexer++) === false)
+						canceled = true;
+				}
+
+				if (canceled)
+					return;
 
 				buffer = buffer.slice(index + length);
 				index = buffer.indexOf(beg);
@@ -1603,6 +1623,9 @@ exports.streamer = function(beg, end, callback, skip) {
 					return;
 			}
 		};
+
+		stream && stream.on('end', () => fn(beg));
+		return fn;
 	}
 
 	var blength = beg.length;
@@ -1611,9 +1634,9 @@ exports.streamer = function(beg, end, callback, skip) {
 	var ei = -1;
 	var is = false;
 
-	return function(chunk) {
+	fn = function(chunk) {
 
-		if (!chunk)
+		if (!chunk || canceled)
 			return;
 
 		CONCAT[0] = buffer;
@@ -1637,8 +1660,13 @@ exports.streamer = function(beg, end, callback, skip) {
 
 			if (skip)
 				skip--;
-			else
-				callback(buffer.toString('utf8', bi, ei + elength), indexer++);
+			else {
+				if (callback(buffer.toString('utf8', bi, ei + elength), indexer++) === false)
+					canceled = true;
+			}
+
+			if (canceled)
+				return;
 
 			buffer = buffer.slice(ei + elength);
 			is = false;
@@ -1651,6 +1679,9 @@ exports.streamer = function(beg, end, callback, skip) {
 				return;
 		}
 	};
+
+	stream && stream.on('end', () => fn(end));
+	return fn;
 };
 
 /**
@@ -1794,14 +1825,16 @@ exports.getContentType = function(ext) {
  * @param {String} filename
  * @return {String}
  */
-exports.getExtension = function(filename) {
+exports.getExtension = function(filename, raw) {
 	var end = filename.length;
 	for (var i = filename.length; i > 1; i--) {
 		var c = filename[i];
 		if (c === ' ' || c === '?')
 			end = i;
-		else if (c === '.')
-			return filename.substring(i + 1, end);
+		else if (c === '.') {
+			c = filename.substring(i + 1, end);
+			return raw ? c : c.toLowerCase();
+		}
 		else if (c === '/')
 			return '';
 	}
@@ -2392,7 +2425,7 @@ Date.prototype.add = function(type, value) {
 	var self = this;
 
 	if (type.constructor === Number)
-		return new Date(self.getTime() + (type - type%1));
+		return new Date(self.getTime() + (type - type % 1));
 
 	if (value === undefined) {
 		var arr = type.split(' ');
@@ -2626,6 +2659,13 @@ Date.compare = function(d1, d2) {
  */
 Date.prototype.format = function(format, resource) {
 
+	if (!format)
+		return this.getFullYear() + '-' + (this.getMonth() + 1).toString().padLeft(2, '0') + '-' + this.getDate().toString().padLeft(2, '0') + 'T' + this.getHours().toString().padLeft(2, '0') + ':' + this.getMinutes().toString().padLeft(2, '0') + ':' + this.getSeconds().toString().padLeft(2, '0') + '.' + this.getMilliseconds().toString().padLeft(3, '0') + 'Z';
+
+	if (datetimeformat[format])
+		return datetimeformat[format](this, resource);
+
+	var key = format;
 	var self = this;
 	var half = false;
 
@@ -2634,9 +2674,6 @@ Date.prototype.format = function(format, resource) {
 		format = format.substring(1);
 	}
 
-	if (!format)
-		return self.getFullYear() + '-' + (self.getMonth() + 1).toString().padLeft(2, '0') + '-' + self.getDate().toString().padLeft(2, '0') + 'T' + self.getHours().toString().padLeft(2, '0') + ':' + self.getMinutes().toString().padLeft(2, '0') + ':' + self.getSeconds().toString().padLeft(2, '0') + '.' + self.getMilliseconds().toString().padLeft(3, '0') + 'Z';
-
 	var h = self.getHours();
 
 	if (half) {
@@ -2644,57 +2681,70 @@ Date.prototype.format = function(format, resource) {
 			h -= 12;
 	}
 
-	return format.replace(regexpDATEFORMAT, function(key) {
+	var beg = '\'+';
+	var end = '+\'';
+	var before = [];
+
+	var ismm = false;
+	var isdd = false;
+	var isww = false;
+
+	format = format.replace(regexpDATEFORMAT, function(key) {
 		switch (key) {
 			case 'yyyy':
-				return self.getFullYear();
+				return beg + 'd.getFullYear()' + end;
 			case 'yy':
-				return self.getFullYear().toString().substring(2);
+				return beg + 'd.getFullYear().toString().substring(2)' + end;
 			case 'MMM':
-				var m = MONTHS[self.getMonth()];
-				return (F.resource(resource, m) || m).substring(0, 3);
+				ismm = true;
+				return beg + '(F.resource(resource, mm) || mm).substring(0, 3)' + end;
 			case 'MMMM':
-				var m = MONTHS[self.getMonth()];
-				return (F.resource(resource, m) || m);
+				ismm = true;
+				return beg + '(F.resource(resource, mm) || mm)' + end;
 			case 'MM':
-				return (self.getMonth() + 1).toString().padLeft(2, '0');
+				return beg + '(d.getMonth() + 1).toString().padLeft(2, \'0\')' + end;
 			case 'M':
-				return (self.getMonth() + 1);
+				return beg + '(d.getMonth() + 1)' + end;
 			case 'ddd':
-				var m = DAYS[self.getDay()];
-				return (F.resource(resource, m) || m).substring(0, 2).toUpperCase();
+				isdd = true;
+				return beg + '(F.resource(resource, dd) || dd).substring(0, 2).toUpperCase()' + end;
 			case 'dddd':
-				var m = DAYS[self.getDay()];
-				return (F.resource(resource, m) || m);
+				isdd = true;
+				return beg + '(F.resource(resource, dd) || dd)' + end;
 			case 'dd':
-				return self.getDate().toString().padLeft(2, '0');
+				return beg + 'd.getDate().toString().padLeft(2, \'0\')' + end;
 			case 'd':
-				return self.getDate();
+				return beg + 'd.getDate()' + end;
 			case 'HH':
 			case 'hh':
-				return h.toString().padLeft(2, '0');
+				return beg + 'd.getHours().toString().padLeft(2, \'0\')' + end;
 			case 'H':
 			case 'h':
-				return self.getHours();
+				return beg + 'd.getHours()' + end;
 			case 'mm':
-				return self.getMinutes().toString().padLeft(2, '0');
+				return beg + 'd.getMinutes().toString().padLeft(2, \'0\')' + end;
 			case 'm':
-				return self.getMinutes();
+				return beg + 'd.getMinutes()' + end;
 			case 'ss':
-				return self.getSeconds().toString().padLeft(2, '0');
+				return beg + 'd.getSeconds().toString().padLeft(2, \'0\')' + end;
 			case 's':
-				return self.getSeconds();
+				return beg + 'd.getSeconds()' + end;
 			case 'w':
 			case 'ww':
-				var tmp = new Date(+self);
-				tmp.setHours(0, 0, 0);
-				tmp.setDate(tmp.getDate() + 4 - (tmp.getDay() || 7));
-				tmp = Math.ceil((((tmp - new Date(tmp.getFullYear(), 0, 1)) / 8.64e7) + 1) / 7);
-				return key === 'ww' ? tmp.toString().padLeft(2, '0') : tmp;
+				isww = true;
+				return beg + (key === 'ww' ? 'ww.toString().padLeft(2, \'0\')' : 'ww') + end;
 			case 'a':
-				return self.getHours() >= 12 ? 'PM' : 'AM';
+				var b = "'PM':'AM'";
+				return beg + '(d.getHours() >= 12 ? ' + b + end;
 		}
 	});
+
+	ismm && before.push('var mm = framework_utils.MONTHS[d.getMonth()];');
+	isdd && before.push('var dd = framework_utils.DAYS[d.getDay()];');
+	isww && before.push('var ww = new Date(+d);ww.setHours(0, 0, 0);ww.setDate(ww.getDate() + 4 - (ww.getDay() || 7));ww = Math.ceil((((ww - new Date(ww.getFullYear(), 0, 1)) / 8.64e7) + 1) / 7);');
+
+	datetimeformat[key] = new Function('d', 'resource', before.join('\n') + 'return \'' + format + '\';');
+	return datetimeformat[key](this, resource);
 };
 
 Date.prototype.toUTC = function(ticks) {
@@ -3094,7 +3144,7 @@ String.prototype.contains = function(value, mustAll) {
  * @return {Number}
  */
 String.prototype.localeCompare2 = function(value) {
-	return this.removeDiacritics().localeCompare(value.removeDiacritics());
+	return COMPARER(this, value);
 };
 
 /**
@@ -4341,7 +4391,7 @@ Array.prototype.quicksort = Array.prototype.orderBy = function(name, asc, maxlen
 
 		// String
 		if (type === 1) {
-			return va && vb ? (asc ? (va.length > maxlength ? va.substring(0, maxlength) : va).removeDiacritics().localeCompare((vb.length > maxlength ? vb.substring(0, maxlength) : vb).removeDiacritics()) : (vb.length > maxlength ? vb.substring(0, maxlength) : vb).removeDiacritics().localeCompare((va.length > maxlength ? va.substring(0, maxlength) : va).removeDiacritics())) : 0;
+			return va && vb ? (asc ? COMPARER(va.length > maxlength ? va.substring(0, maxlength) : va, vb.length > maxlength ? vb.substring(0, maxlength) : vb) : COMPARER(vb.length > maxlength ? vb.substring(0, maxlength) : vb, va.length > maxlength ? va.substring(0, maxlength) : va)) : 0;
 		} else if (type === 2) {
 			return va > vb ? (asc ? 1 : -1) : va < vb ? (asc ? -1 : 1) : 0;
 		} else if (type === 3) {
@@ -4587,37 +4637,15 @@ Array.prototype.randomize = function() {
 	return this.random();
 };
 
+// Fisher-Yates shuffle
 Array.prototype.random = function() {
-
-	var self = this;
-	var random = (Math.floor(Math.random() * 100000000) * 10).toString();
-	var index = 0;
-	var old = 0;
-
-	self.sort(function() {
-
-		var c = random[index++];
-
-		if (c === undefined) {
-			c = random[0];
-			index = 0;
-		}
-
-		if (old > c) {
-			old = c;
-			return -1;
-		}
-
-		if (old === c) {
-			old = c;
-			return 0;
-		}
-
-		old = c;
-		return 1;
-	});
-
-	return self;
+	for (var i = this.length - 1; i > 0; i--) {
+		var j = Math.floor(Math.random() * (i + 1));
+		var temp = this[i];
+		this[i] = this[j];
+		this[j] = temp;
+	}
+	return this;
 };
 
 Array.prototype.limit = function(max, fn, callback, index) {
@@ -5245,15 +5273,34 @@ exports.async = function(fn, isApply) {
 
 // MIT
 // Written by Jozef Gula
+// Optimized by Peter Sirka
+const CACHE_GML1 = [null, null, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+const CACHE_GML2 = [null, null, null, null, null, null, null, null];
 exports.getMessageLength = function(data, isLE) {
 
 	var length = data[1] & 0x7f;
 
-	if (length === 126)
-		return data.length < 4 ? -1 : converBytesToInt64([data[3], data[2], 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], 0, isLE);
+	if (length === 126) {
+		if (data.length < 4)
+			return -1;
+		CACHE_GML1[0] = data[3];
+		CACHE_GML1[1] = data[2];
+		return converBytesToInt64(CACHE_GML1, 0, isLE);
+	}
 
-	if (length === 127)
-		return data.Length < 10 ? -1 : converBytesToInt64([data[9], data[8], data[7], data[6], data[5], data[4], data[3], data[2]], 0, isLE);
+	if (length === 127) {
+		if (data.Length < 10)
+			return -1;
+		CACHE_GML2[0] = data[9];
+		CACHE_GML2[1] = data[8];
+		CACHE_GML2[2] = data[7];
+		CACHE_GML2[3] = data[6];
+		CACHE_GML2[4] = data[5];
+		CACHE_GML2[5] = data[4];
+		CACHE_GML2[6] = data[3];
+		CACHE_GML2[7] = data[2];
+		return converBytesToInt64(CACHE_GML2, 0, isLE);
+	}
 
 	return length;
 };
