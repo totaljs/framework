@@ -1423,6 +1423,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 			val = val();
 
 		if (!type.isArray) {
+
 			switch (type.type) {
 				// undefined
 				case 0:
@@ -1438,7 +1439,16 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 
 				// string
 				case 3:
-					tmp = val == null ? '' : autotrim(self, val.toString());
+
+					var tv = typeof(val);
+
+					if (val == null || tv === 'object')
+						tmp = '';
+					else if (tv === 'string')
+						tmp = autotrim(self, val);
+					else
+						tmp = autotrim(self, val.toString());
+
 					if (type.length && type.length < tmp.length)
 						tmp = tmp.substring(0, type.length);
 

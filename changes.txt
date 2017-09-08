@@ -1,3 +1,7 @@
+======= 2.8.1
+
+- fixed: `JSON` type in Total.js schemas
+
 ======= 2.8.0
 
 - added: `NOSQL().restore()` restores a database (its package)
