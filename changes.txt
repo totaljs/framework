@@ -1,6 +1,7 @@
 ======= 2.8.1
 
 - fixed: `JSON` type in Total.js schemas
+- fixed: responding on `range` header
 
 ======= 2.8.0
 

@@ -14999,6 +14999,9 @@ function $file_range(name, range, headers, res) {
 		end = total - 1;
 	}
 
+	if (end > total)
+		end = total - 1;
+
 	var length = (end - beg) + 1;
 
 	headers[HEADER_LENGTH] = length;
