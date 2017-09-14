@@ -21,7 +21,7 @@
 
 /**
  * @module Framework
- * @version 2.8.0
+ * @version 2.8.1
  */
 
 'use strict';
@@ -257,7 +257,6 @@ Object.freeze(HEADERS.authorization);
 var IMAGEMAGICK = false;
 var _controller = '';
 var _owner = '';
-var _test;
 var _flags;
 
 // GO ONLINE MODE
@@ -508,8 +507,8 @@ const controller_error_status = function(controller, status, problem) {
 function Framework() {
 
 	this.$id = null; // F.id ==> property
-	this.version = 2800;
-	this.version_header = '2.8.0';
+	this.version = 2810;
+	this.version_header = '2.8.1';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
