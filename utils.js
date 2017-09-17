@@ -5110,8 +5110,8 @@ FileList.prototype.stat = function(path) {
 		if (err)
 			return self.next();
 
-		if (stats.isDirectory() && (!self.onFilter || self.onFilter(path, true, path.substring(self.$path.length)))) {
-			self.directory.push(path);
+		if (stats.isDirectory() && (!self.onFilter || self.onFilter(path + '/', true, path.substring(self.$path.length)))) {
+			self.directory.push(path + '/');
 			self.pendingDirectory.push(path);
 			self.next();
 			return;
