@@ -1,7 +1,10 @@
 ======= 2.8.1
 
+- updated: `U.ls()` and `U.ls2()` by adding new argument into the filter `relative`
+
 - fixed: `JSON` type in Total.js schemas
 - fixed: responding on `range` header
+- fixed: (IMPORTANT) `U.ls2()`
 
 ======= 2.8.0
 

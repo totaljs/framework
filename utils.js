@@ -2376,20 +2376,31 @@ exports.distance = function(lat1, lon1, lat2, lon2) {
  * @param {Function(filename),isDirectory or String or RegExp} filter Custom filter (optional).
  */
 exports.ls = function(path, callback, filter) {
+
 	var filelist = new FileList();
+	var tmp;
+
 	filelist.onComplete = callback;
 
 	if (typeof(filter) === 'string') {
-		filter = filter.toLowerCase();
-		filter.onFilter = function(filename, is) {
-			return is ? true : filename.toLowerCase().indexOf(filter);
+		tmp = filter.toLowerCase();
+		filter.onFilter = function(filename, is, relative) {
+			return is ? true : relative.toLowerCase().indexOf(tmp);
 		};
 	} else if (exports.isRegExp(filter)) {
+		tmp = filter;
 		filter.onFilter = function(filename, is) {
-			return is ? true : filter.test(filename);
+			return is ? true : tmp.test(filename);
 		};
 	} else
 		filelist.onFilter = filter || null;
+
+	if (path[path.length - 1] === '/')
+		filelist.$path = path.substring(0, path.length - 1);
+	else {
+		filelist.$path = path;
+		path += '/';
+	}
 
 	filelist.walk(path);
 };
@@ -2402,20 +2413,30 @@ exports.ls = function(path, callback, filter) {
  */
 exports.ls2 = function(path, callback, filter) {
 	var filelist = new FileList();
+	var tmp;
+
 	filelist.advanced = true;
 	filelist.onComplete = callback;
 
 	if (typeof(filter) === 'string') {
-		filter = filter.toLowerCase();
-		filter.onFilter = function(filename, is) {
-			return is ? true : filename.toLowerCase().indexOf(filter);
+		tmp = filter.toLowerCase();
+		filter.onFilter = function(filename, is, relative) {
+			return is ? true : relative.toLowerCase().indexOf(tmp);
 		};
 	} else if (exports.isRegExp(filter)) {
+		tmp = filter;
 		filter.onFilter = function(filename, is) {
-			return is ? true : filter.test(filename);
+			return is ? true : tmp.test(filename);
 		};
 	} else
 		filelist.onFilter = filter || null;
+
+	if (path[path.length - 1] === '/')
+		filelist.$path = path.substring(0, path.length - 1);
+	else {
+		filelist.$path = path;
+		path += '/';
+	}
 
 	filelist.walk(path);
 };
@@ -5089,14 +5110,14 @@ FileList.prototype.stat = function(path) {
 		if (err)
 			return self.next();
 
-		if (stats.isDirectory() && (!self.onFilter || self.onFilter(path, true))) {
+		if (stats.isDirectory() && (!self.onFilter || self.onFilter(path, true, path.substring(self.$path.length)))) {
 			self.directory.push(path);
 			self.pendingDirectory.push(path);
 			self.next();
 			return;
 		}
 
-		if (!self.onFilter || self.onFilter(path, false))
+		if (!self.onFilter || self.onFilter(path, false, path.substring(self.$path.length)))
 			self.file.push(self.advanced ? { filename: path, stats: stats } : path);
 
 		self.next();
@@ -5118,7 +5139,7 @@ FileList.prototype.next = function() {
 		return;
 	}
 
-	self.onComplete(self.advanced ? self.file.filename : self.file, self.directory);
+	self.onComplete(self.file, self.directory);
 };
 
 exports.Async = Async;
