@@ -5110,14 +5110,12 @@ FileList.prototype.stat = function(path) {
 		if (err)
 			return self.next();
 
-		if (stats.isDirectory() && (!self.onFilter || self.onFilter(path + '/', true, path.substring(self.$path.length)))) {
-			self.directory.push(path + '/');
-			self.pendingDirectory.push(path);
-			self.next();
-			return;
-		}
-
-		if (!self.onFilter || self.onFilter(path, false, path.substring(self.$path.length)))
+		if (stats.isDirectory()) {
+			if (!self.onFilter || self.onFilter(path + '/', true, path.substring(self.$path.length))) {
+				self.directory.push(path + '/');
+				self.pendingDirectory.push(path);
+			}
+		} else if (!self.onFilter || self.onFilter(path, false, path.substring(self.$path.length)))
 			self.file.push(self.advanced ? { filename: path, stats: stats } : path);
 
 		self.next();
