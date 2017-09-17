@@ -2395,13 +2395,6 @@ exports.ls = function(path, callback, filter) {
 	} else
 		filelist.onFilter = filter || null;
 
-	if (path[path.length - 1] === '/')
-		filelist.$path = path.substring(0, path.length - 1);
-	else {
-		filelist.$path = path;
-		path += '/';
-	}
-
 	filelist.walk(path);
 };
 
@@ -2420,8 +2413,8 @@ exports.ls2 = function(path, callback, filter) {
 
 	if (typeof(filter) === 'string') {
 		tmp = filter.toLowerCase();
-		filter.onFilter = function(filename, is, relative) {
-			return is ? true : relative.toLowerCase().indexOf(tmp);
+		filter.onFilter = function(filename, is) {
+			return is ? true : filename.toLowerCase().indexOf(tmp);
 		};
 	} else if (exports.isRegExp(filter)) {
 		tmp = filter;
@@ -2430,13 +2423,6 @@ exports.ls2 = function(path, callback, filter) {
 		};
 	} else
 		filelist.onFilter = filter || null;
-
-	if (path[path.length - 1] === '/')
-		filelist.$path = path.substring(0, path.length - 1);
-	else {
-		filelist.$path = path;
-		path += '/';
-	}
 
 	filelist.walk(path);
 };
@@ -5111,15 +5097,20 @@ FileList.prototype.stat = function(path) {
 			return self.next();
 
 		if (stats.isDirectory()) {
-			if (!self.onFilter || self.onFilter(path + '/', true, path.substring(self.$path.length))) {
-				self.directory.push(path + '/');
+			path = self.clean(path);
+			if (!self.onFilter || self.onFilter(path, true)) {
+				self.directory.push(path);
 				self.pendingDirectory.push(path);
 			}
-		} else if (!self.onFilter || self.onFilter(path, false, path.substring(self.$path.length)))
+		} else if (!self.onFilter || self.onFilter(path, false))
 			self.file.push(self.advanced ? { filename: path, stats: stats } : path);
 
 		self.next();
 	});
+};
+
+FileList.prototype.clean = function(path) {
+	return path[path.length - 1] === '/' ? path : path + '/';
 };
 
 FileList.prototype.next = function() {
