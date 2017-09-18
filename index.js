@@ -2764,7 +2764,7 @@ F.file = function(fnValidation, fnExecute, flags) {
 	return F;
 };
 
-F.localize = function(url, flags, minify) {
+global.LOCALIZE = F.localize = function(url, flags, minify) {
 
 	url = url.replace('*', '');
 

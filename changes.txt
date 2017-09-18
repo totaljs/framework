@@ -1,5 +1,7 @@
 ======= 2.8.1
 
+- added: `LOCALIZE()` a new global alias to `F.localize()`.
+
 - fixed: `JSON` type in Total.js schemas
 - fixed: responding on `range` header
 - fixed: (IMPORTANT) `U.ls2()`
