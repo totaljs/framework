@@ -7389,7 +7389,7 @@ F.clear = function(callback, isInit) {
  * @param {Function} callback
  * @return {Framework}
  */
-F.unlink = function(arr, callback) {
+F.unlink = F.path.unlink = function(arr, callback) {
 
 	if (typeof(arr) === 'string')
 		arr = [arr];
@@ -7414,7 +7414,7 @@ F.unlink = function(arr, callback) {
  * @param {Function} callback
  * @return {Framework}
  */
-F.rmdir = function(arr, callback) {
+F.rmdir = F.path.rmdir = function(arr, callback) {
 	if (typeof(arr) === 'string')
 		arr = [arr];
 
@@ -7424,9 +7424,17 @@ F.rmdir = function(arr, callback) {
 	}
 
 	var path = arr.shift();
-	if (path)
-		Fs.rmdir(path, () => F.rmdir(arr, callback));
-	else
+	if (path) {
+		U.ls(path, function(files, directories) {
+			directories.reverse();
+			directories.push(path);
+			files.wait((item, next) => Fs.unlink(item, next), function() {
+				directories.wait(function(item, next) {
+					Fs.rmdir(item, next);
+				}, () => F.rmdir(arr, callback));
+			});
+		});
+	} else
 		callback && callback();
 
 	return F;

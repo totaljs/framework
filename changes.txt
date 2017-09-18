@@ -1,10 +1,13 @@
 ======= 2.8.1
 
-- added: `LOCALIZE()` a new global alias to `F.localize()`.
+- added: `LOCALIZE()` a new global alias to `F.localize()`
+- added: `F.path.rmdir(directory/directories, callback)`
+- added: `F.path.unlink(file/files, callback)`
 
 - fixed: `JSON` type in Total.js schemas
 - fixed: responding on `range` header
 - fixed: (IMPORTANT) `U.ls2()`
+- fixed: `F.rmdir` removes all files and directories
 
 ======= 2.8.0
 
