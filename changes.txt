@@ -4,6 +4,8 @@
 - added: `F.path.rmdir(directory/directories, callback)`
 - added: `F.path.unlink(file/files, callback)`
 
+- updated: `F.http(mode, [options], [middleware(listen)])` added a new argument `middleware`
+
 - fixed: `JSON` type in Total.js schemas
 - fixed: responding on `range` header
 - fixed: (IMPORTANT) `U.ls2()`

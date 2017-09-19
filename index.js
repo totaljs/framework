@@ -6132,7 +6132,7 @@ F.initialize = function(http, debug, options, restart) {
 	if (options.debug || options['allow-debug'])
 		F.config['allow-debug'] = true;
 
-	F.isHTTPS = typeof(http.STATUS_CODES) === 'undefined';
+	F.isHTTPS = http.STATUS_CODES === undefined;
 	if (isNaN(port) && typeof(port) !== 'string')
 		port = null;
 
@@ -6192,67 +6192,75 @@ F.initialize = function(http, debug, options, restart) {
 		F.server.close();
 	}
 
-	if (options.https)
-		F.server = http.createServer(options.https, F.listener);
-	else
-		F.server = http.createServer(F.listener);
+	var listen = function() {
 
-	F.config['allow-performance'] && F.server.on('connection', connection_tunning);
-	F.config['allow-websocket'] && F.server.on('upgrade', F._upgrade);
+		if (options.https)
+			F.server = http.createServer(options.https, F.listener);
+		else
+			F.server = http.createServer(F.listener);
 
-	F.consoledebug('HTTP listening');
+		F.config['allow-performance'] && F.server.on('connection', connection_tunning);
+		F.config['allow-websocket'] && F.server.on('upgrade', F._upgrade);
 
-	if (listenpath)
-		F.server.listen(listenpath);
-	else
-		F.server.listen(F.port, F.ip);
+		F.consoledebug('HTTP listening');
 
-	// clears static files
-	F.consoledebug('clear temporary');
-	F.clear(function() {
-		F.consoledebug('clear temporary (done)');
-		F.$load(undefined, directory, function() {
+		if (listenpath)
+			F.server.listen(listenpath);
+		else
+			F.server.listen(F.port, F.ip);
 
-			F.isLoaded = true;
-			process.send && process.send('total:ready');
+		// clears static files
+		F.consoledebug('clear temporary');
+		F.clear(function() {
+			F.consoledebug('clear temporary (done)');
+			F.$load(undefined, directory, function() {
 
-			if (F.config['allow-debug']) {
-				F.consoledebug('done');
-				F.usagesnapshot();
-			}
+				F.isLoaded = true;
+				process.send && process.send('total:ready');
 
-			if (!process.connected || restart)
-				F.console();
-
-			setTimeout(function() {
-				try {
-					F.emit('load', F);
-					F.emit('ready', F);
-				} catch (err) {
-					F.error(err, 'F.on("load/ready")');
+				if (F.config['allow-debug']) {
+					F.consoledebug('done');
+					F.usagesnapshot();
 				}
 
-				F.removeAllListeners('load');
-				F.removeAllListeners('ready');
-				options.package && INSTALL('package', options.package);
-			}, 500);
+				if (!process.connected || restart)
+					F.console();
 
-			if (F.isTest) {
-				var sleep = options.sleep || options.delay || 1000;
-				setTimeout(() => F.test(true, options.tests || options.test), sleep);
-				return F;
-			}
+				setTimeout(function() {
+					try {
+						F.emit('load', F);
+						F.emit('ready', F);
+					} catch (err) {
+						F.error(err, 'F.on("load/ready")');
+					}
 
-			setTimeout(function() {
-				if (F.isTest)
-					return;
-				delete F.tests;
-				delete F.test;
-				delete F.testing;
-				delete F.assert;
-			}, 5000);
-		});
-	}, true);
+					F.removeAllListeners('load');
+					F.removeAllListeners('ready');
+					options.package && INSTALL('package', options.package);
+				}, 500);
+
+				if (F.isTest) {
+					var sleep = options.sleep || options.delay || 1000;
+					setTimeout(() => F.test(true, options.tests || options.test), sleep);
+					return F;
+				}
+
+				setTimeout(function() {
+					if (F.isTest)
+						return;
+					delete F.tests;
+					delete F.test;
+					delete F.testing;
+					delete F.assert;
+				}, 5000);
+			});
+		}, true);
+	};
+
+	if (options.middleware)
+		options.middleware(listen);
+	else
+		listen();
 
 	return F;
 };
@@ -6266,12 +6274,23 @@ function connection_tunning(socket) {
  * Run framework –> HTTP
  * @param  {String} mode Framework mode.
  * @param  {Object} options Framework settings.
+ * @param {Function(listen)} middleware A middleware for manual calling of HTTP listener
  * @return {Framework}
  */
-F.http = function(mode, options) {
+F.http = function(mode, options, middleware) {
 	F.consoledebug('begin');
+
+	if (typeof(options) === 'function') {
+		middleware = options;
+		options = null;
+	}
+
 	options == null && (options = {});
 	!options.port && (options.port = +process.argv[2]);
+
+	if (typeof(middleware) === 'function')
+		options.middleware = middleware;
+
 	var http = require('http');
 	extend_request(http.IncomingMessage.prototype);
 	extend_response(http.ServerResponse.prototype);
@@ -6282,14 +6301,27 @@ F.http = function(mode, options) {
  * Run framework –> HTTPS
  * @param {String} mode Framework mode.
  * @param {Object} options Framework settings.
+ * @param {Function(listen)} middleware A middleware for manual calling of HTTP listener
  * @return {Framework}
  */
-F.https = function(mode, options) {
+F.https = function(mode, options, middleware) {
 	F.consoledebug('begin');
 	var http = require('http');
+
+	if (typeof(options) === 'function') {
+		middleware = options;
+		options = null;
+	}
+
+	options == null && (options = {});
+	!options.port && (options.port = +process.argv[2]);
+
+	if (typeof(middleware) === 'function')
+		options.middleware = middleware;
+
 	extend_request(http.IncomingMessage.prototype);
 	extend_response(http.ServerResponse.prototype);
-	return F.mode(require('https'), mode, options || {});
+	return F.mode(require('https'), mode, options);
 };
 
 F.mode = function(http, name, options) {
