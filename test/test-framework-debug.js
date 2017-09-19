@@ -295,7 +295,7 @@ function test_routing(next) {
 
 	async.await('rest HEAD', function(complete) {
 		utils.request(url + 'rest/', ['head'], null, function(error, data, code, headers) {
- 			if (error)
+			if (error)
 				throw error;
 			assert(data.connection === 'close', 'REST - HEAD');
 			complete();
@@ -901,7 +901,7 @@ framework.on('load', function() {
 
 framework.useConfig('my-config.txt').useConfig('/configs/my-config.config').http('debug', { port: 8001 });
 
-process.on('uncaughtException', (err)=>{
-  console.error(err)
-  process.exit(1)
-})
+process.on('uncaughtException', function(err) {
+	console.error(err);
+	process.exit(1);
+});
