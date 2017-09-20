@@ -10,6 +10,7 @@
 - fixed: responding on `range` header
 - fixed: (IMPORTANT) `U.ls2()`
 - fixed: `F.rmdir` removes all files and directories
+- fixed: content type for `.js`
 
 ======= 2.8.0
 

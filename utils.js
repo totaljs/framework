@@ -116,7 +116,7 @@ var CONTENTTYPES = {
 	'jpe': 'image/jpeg',
 	'jpeg': 'image/jpeg',
 	'jpg': 'image/jpeg',
-	'js': 'text/javascript',
+	'js': 'application/javascript',
 	'json': 'application/json',
 	'jsx': 'text/jsx',
 	'less': 'text/css',
