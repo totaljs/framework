@@ -87,8 +87,26 @@ function runwatching() {
 	const REG_EXTENSION = /\.(js|resource|package)/i;
 
 	function app() {
+		F.$configure_configs();
+
 		const fork = require('child_process').fork;
-		var directories = [directory + '/components', directory + '/controllers', directory + '/definitions', directory + '/isomorphic', directory + '/modules', directory + '/resources', directory + '/models', directory + '/source', directory + '/workers', directory + '/packages', directory + '/themes', directory + '/configs', directory + '/startup', directory + '/schema'];
+		const directories = [
+			directory + CONFIG('directory-components'),
+			directory + CONFIG('directory-controllers'),
+			directory + CONFIG('directory-definitions'),
+			directory + CONFIG('directory-isomorphic'),
+			directory + CONFIG('directory-modules'),
+			directory + CONFIG('directory-resources'),
+			directory + CONFIG('directory-models'),
+			directory + CONFIG('directory-source'),
+			directory + CONFIG('directory-workers'),
+			directory + CONFIG('directory-packages'),
+			directory + CONFIG('directory-themes'),
+			directory + CONFIG('directory-configs'),
+			directory + '/startup',
+			directory + '/schema'
+		];
+
 		const async = new U.Async();
 		const prefix = '---------------------------------> ';
 

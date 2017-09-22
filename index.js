@@ -514,7 +514,7 @@ function Framework() {
 
 	this.config = {
 
-		debug: false,
+		debug: true,
 		trace: true,
 		'trace-console': true,
 
