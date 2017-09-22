@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkDebug
- * @version 2.8.0
+ * @version 2.8.1
  */
 
 const Path = require('path');
@@ -87,24 +87,25 @@ function runwatching() {
 	const REG_EXTENSION = /\.(js|resource|package)/i;
 
 	function app() {
+
 		F.$configure_configs();
+		F.directory = directory;
 
 		const fork = require('child_process').fork;
 		const directories = [
-			directory + CONFIG('directory-components'),
-			directory + CONFIG('directory-controllers'),
-			directory + CONFIG('directory-definitions'),
-			directory + CONFIG('directory-isomorphic'),
-			directory + CONFIG('directory-modules'),
-			directory + CONFIG('directory-resources'),
-			directory + CONFIG('directory-models'),
-			directory + CONFIG('directory-source'),
-			directory + CONFIG('directory-workers'),
-			directory + CONFIG('directory-packages'),
-			directory + CONFIG('directory-themes'),
-			directory + CONFIG('directory-configs'),
-			directory + '/startup',
-			directory + '/schema'
+			U.combine(F.config['directory-components']),
+			U.combine(F.config['directory-controllers']),
+			U.combine(F.config['directory-definitions']),
+			U.combine(F.config['directory-isomorphic']),
+			U.combine(F.config['directory-modules']),
+			U.combine(F.config['directory-resources']),
+			U.combine(F.config['directory-source']),
+			U.combine(F.config['directory-workers']),
+			U.combine(F.config['directory-packages']),
+			U.combine(F.config['directory-themes']),
+			U.combine(F.config['directory-configs']),
+			U.combine('/startup/'),
+			U.combine('/schema/')
 		];
 
 		const async = new U.Async();
@@ -115,7 +116,7 @@ function runwatching() {
 				item = item.substring(1);
 			if (item[item.length - 1] === '/')
 				item = item.substring(0, item.length - 1);
-			directories.push(directory + '/' + item);
+			directories.push(U.combine(item));
 		});
 
 		var files = {};
