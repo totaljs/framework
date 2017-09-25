@@ -2681,13 +2681,6 @@ Date.prototype.format = function(format, resource) {
 		format = format.substring(1);
 	}
 
-	var h = self.getHours();
-
-	if (half) {
-		if (h >= 12)
-			h -= 12;
-	}
-
 	var beg = '\'+';
 	var end = '+\'';
 	var before = [];
@@ -2724,10 +2717,10 @@ Date.prototype.format = function(format, resource) {
 				return beg + 'd.getDate()' + end;
 			case 'HH':
 			case 'hh':
-				return beg + 'd.getHours().toString().padLeft(2, \'0\')' + end;
+				return beg + (half ? 'framework_utils.$pmam(d.getHours()).toString().padLeft(2, \'0\')' : 'd.getHours().toString().padLeft(2, \'0\')') + end;
 			case 'H':
 			case 'h':
-				return beg + 'd.getHours()' + end;
+				return beg + (half ? 'framework_utils(d.getHours())' : 'd.getHours()') + end;
 			case 'mm':
 				return beg + 'd.getMinutes().toString().padLeft(2, \'0\')' + end;
 			case 'm':
@@ -2752,6 +2745,10 @@ Date.prototype.format = function(format, resource) {
 
 	datetimeformat[key] = new Function('d', 'resource', before.join('\n') + 'return \'' + format + '\';');
 	return datetimeformat[key](this, resource);
+};
+
+exports.$pmam = function(value) {
+	return value >= 12 ? value - 12 : value;
 };
 
 Date.prototype.toUTC = function(ticks) {
@@ -5677,3 +5674,5 @@ if (NODEVERSION > 699) {
 
 global.WAIT = exports.wait;
 !global.F && require('./index');
+
+console.log(new Date().format('!HH:mm a'));
