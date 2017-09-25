@@ -12,6 +12,7 @@
 - fixed: (IMPORTANT) `U.ls2()`
 - fixed: `F.rmdir` removes all files and directories
 - fixed: content type for `.js`
+- fixed: Date formatting with `a` value
 
 ======= 2.8.0
 

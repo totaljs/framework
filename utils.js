@@ -2742,7 +2742,7 @@ Date.prototype.format = function(format, resource) {
 				return beg + (key === 'ww' ? 'ww.toString().padLeft(2, \'0\')' : 'ww') + end;
 			case 'a':
 				var b = "'PM':'AM'";
-				return beg + '(d.getHours() >= 12 ? ' + b + end;
+				return beg + '(d.getHours() >= 12 ? ' + b + ')' + end;
 		}
 	});
 
