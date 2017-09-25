@@ -5674,5 +5674,3 @@ if (NODEVERSION > 699) {
 
 global.WAIT = exports.wait;
 !global.F && require('./index');
-
-console.log(new Date().format('!HH:mm a'));
