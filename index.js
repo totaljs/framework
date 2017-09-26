@@ -8802,7 +8802,7 @@ FrameworkPath.prototype.mkdir = function(p) {
 	}
 
 	var arr = is ? p.replace(/\//g, '\\').split('\\') : p.split('/');
-	var directory = '/';
+	var directory = is ? '' : '/';
 
 	for (var i = 0, length = arr.length; i < length; i++) {
 		var name = arr[i];
