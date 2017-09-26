@@ -5497,7 +5497,7 @@ F.restore = function(filename, target, callback, filter) {
 		if (!cache[path]) {
 			cache[path] = true;
 
-			var npath = path.substring(0, path.lastIndexOf('/'));
+			var npath = path.substring(0, path.lastIndexOf(F.isWindows ? '\\' : '/'));
 			if (!filter || filter(item, false) !== false)
 				F.path.mkdir(npath);
 			else {
