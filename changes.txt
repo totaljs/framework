@@ -13,6 +13,8 @@
 - fixed: `F.rmdir` removes all files and directories
 - fixed: content type for `.js`
 - fixed: Date formatting with `a` value
+- fixed: `F.path.mkdir()` in Windows (author: @molda)
+- fixed: `F.restore()` in Windows (author: @molda)
 
 ======= 2.8.0
 
