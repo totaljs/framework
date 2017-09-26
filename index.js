@@ -272,8 +272,6 @@ var U = global.Utils = global.utils = global.U = global.framework_utils;
 global.Mail = framework_mail;
 
 global.WTF = (message, name, uri) => F.problem(message, name, uri);
-global.INCLUDE = global.SOURCE = (name, options) => F.source(name, options);
-global.MODULE = (name) => F.module(name);
 global.NOSQL = (name) => F.nosql(name);
 global.NOBIN = (name) => F.nosql(name).binary;
 global.NOCOUNTER = (name) => F.nosql(name).counter;
@@ -286,7 +284,6 @@ global.RESOURCE = (name, key) => F.resource(name, key);
 global.TRANSLATE = (name, key) => F.translate(name, key);
 global.TRANSLATOR = (name, text) => F.translator(name, text);
 global.TRACE = (message, name, uri, ip) => F.trace(message, name, uri, ip);
-global.MODEL = (name) => F.model(name);
 global.$$$ = global.GETSCHEMA = (group, name, fn, timeout) => framework_builders.getschema(group, name, fn, timeout);
 global.CREATE = (group, name) => framework_builders.getschema(group, name).default();
 global.SCRIPT = (body, value, callback, param) => F.script(body, value, callback, param);
@@ -2985,7 +2982,7 @@ F.trace = function(message, name, uri, ip) {
  * @param {String} name
  * @return {Object}
  */
-F.module = function(name) {
+global.MODULE = F.module = function(name) {
 	return F.modules[name] || null;
 };
 
@@ -7201,7 +7198,7 @@ F.reqstats = function(beg) {
  * @param {String} name
  * @return {Object}
  */
-F.model = function(name) {
+global.MODEL = F.model = function(name) {
 	var obj = F.models[name];
 	if (obj || obj === null)
 		return obj;
@@ -7216,7 +7213,7 @@ F.model = function(name) {
  * @param {Object} options Custom initial options, optional.
  * @return {Object}
  */
-F.source = function(name, options, callback) {
+global.INCLUDE = global.SOURCE = F.source = function(name, options, callback) {
 	var obj = F.sources[name];
 	if (obj || obj === null)
 		return obj;

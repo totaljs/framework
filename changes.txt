@@ -15,6 +15,7 @@
 - fixed: Date formatting with `a` value
 - fixed: `F.path.mkdir()` in Windows (author: @molda)
 - fixed: `F.restore()` in Windows (author: @molda)
+- fixed: `MODEL()`, `MODULE()`, `INCLUDE()` now are direct aliases
 
 ======= 2.8.0
 
