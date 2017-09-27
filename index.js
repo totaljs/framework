@@ -14953,7 +14953,7 @@ function extend_response(PROTO) {
 		if (req.method === 'HEAD')
 			res.end();
 		else
-			res.end(res.options.body || U.httpStatus(res.options.code));
+			res.end(res.options.body || U.httpStatus(res.options.code) + prepare_error(res.options && res.options.problem));
 
 		var key = 'error' + res.options.code;
 		F.$events[key] && F.emit(key, req, res, res.options.problem);
