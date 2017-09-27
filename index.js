@@ -15326,7 +15326,7 @@ function prepare_error(e) {
 		return ' :: ' + e.plain();
 	else if (e.stack)
 		return RELEASE ? '' : e.stack;
-	return ' :: ' + e.toString();
+	return RELEASE ? '' : ' :: ' + e.toString();
 }
 
 function prepare_filename(name) {
