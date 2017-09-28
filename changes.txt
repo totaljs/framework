@@ -16,6 +16,7 @@
 - fixed: `F.path.mkdir()` in Windows (author: @molda)
 - fixed: `F.restore()` in Windows (author: @molda)
 - fixed: `MODEL()`, `MODULE()`, `INCLUDE()` now are direct aliases
+- fixed: unit testing (author: @ckpiggy)
 
 ======= 2.8.0
 
