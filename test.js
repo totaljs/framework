@@ -87,7 +87,6 @@ global.TEST = function(name, url, scope) {
 		var fn = function() {
 			T.now = Date.now();
 			T.currentname = name;
-			T.count++;
 			T.current.count++;
 			url(NEXT);
 		};
@@ -106,7 +105,6 @@ global.TEST = function(name, url, scope) {
 	var fn = function() {
 		T.now = Date.now();
 		T.currentname = name;
-		T.count++;
 		T.current.count++;
 		var builder = new RESTBuilder(url);
 		builder.header('X-Assertion-Testing', '1');
@@ -158,6 +156,7 @@ exports.load = function() {
 
 function logger(fail, name, description) {
 	var time = Math.floor(Date.now() - T.now) + ' ms';
+	T.count++
 	if (fail) {
 		T.countno++;
 		T.current.countno++;
