@@ -13718,7 +13718,7 @@ function extend_request(PROTO) {
 			this.buffer_data = Buffer.concat(CONCAT);
 		}
 
-		if (this.buffer_data.length < this.$total_route.length)
+		if ((this.buffer_data.length / 1024) < this.$total_route.length)
 			return;
 
 		this.buffer_exceeded = true;

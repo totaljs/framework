@@ -17,6 +17,7 @@
 - fixed: `F.restore()` in Windows (author: @molda)
 - fixed: `MODEL()`, `MODULE()`, `INCLUDE()` now are direct aliases
 - fixed: unit testing (author: @ckpiggy)
+- fixed: a check for maximum length of request data
 
 ======= 2.8.0
 
