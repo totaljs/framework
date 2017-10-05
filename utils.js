@@ -4737,6 +4737,14 @@ Array.prototype.unique = function(property) {
 	return result;
 };
 
+ArrayBuffer.prototype.toBuffer = function() {
+	var buf = new Buffer(this.byteLength);
+	var view = new Uint8Array(this);
+	for (var i = 0, length = buf.length; i < length; ++i)
+		buf[i] = view[i];
+	return buf;
+};
+
 function AsyncTask(owner, name, fn, cb, waiting) {
 	this.isRunning = 0;
 	this.owner = owner;
