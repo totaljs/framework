@@ -12982,6 +12982,7 @@ WebSocketClient.prototype.$ondata = function(data) {
 			break;
 
 		case 0x02:
+
 			// binary
 
 			if (this.type !== 1) {
@@ -12989,16 +12990,19 @@ WebSocketClient.prototype.$ondata = function(data) {
 				return;
 			}
 
-			tmp = this.$readbody();
+			if (this.inflate) {
+				current.final && this.parseInflate();
+			} else {
+				tmp = this.$readbody();
+				if (current.body) {
+					CONCAT[0] = current.body;
+					CONCAT[1] = tmp;
+					current.body = Buffer.concat(CONCAT);
+				} else
+					current.body = tmp;
+				current.final && this.$decode();
+			}
 
-			if (current.body) {
-				CONCAT[0] = current.body;
-				CONCAT[1] = tmp;
-				current.body = Buffer.concat(CONCAT);
-			} else
-				current.body = tmp;
-
-			current.final && this.$decode();
 			break;
 
 		case 0x08:
@@ -13093,6 +13097,7 @@ WebSocketClient.prototype.$parse = function() {
 };
 
 WebSocketClient.prototype.$readbody = function() {
+
 	var length = this.current.data.length;
 	if (this.current.type === 1) {
 		var binary = U.createBufferSize(length);
