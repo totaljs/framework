@@ -3,6 +3,7 @@
 - added: `LOCALIZE()` a new global alias to `F.localize()`
 - added: `F.path.rmdir(directory/directories, callback)`
 - added: `F.path.unlink(file/files, callback)`
+- added: `ArrayBuffer.prototype.toBuffer()`
 
 - updated: `F.http(mode, [options], [middleware(listen)])` added a new argument `middleware`
 - updated: `debug.js` now reads directories according to the config (author: @luoage)
@@ -18,6 +19,7 @@
 - fixed: `MODEL()`, `MODULE()`, `INCLUDE()` now are direct aliases
 - fixed: unit testing (author: @ckpiggy)
 - fixed: a check for maximum length of request data
+- fixed: `ArrayBuffer` in weboskcet
 
 ======= 2.8.0
 
