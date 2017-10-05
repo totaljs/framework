@@ -6,6 +6,7 @@
 
 - updated: `F.http(mode, [options], [middleware(listen)])` added a new argument `middleware`
 - updated: `debug.js` now reads directories according to the config (author: @luoage)
+- updated: config parser supports `config` sub-type
 
 - fixed: `JSON` type in Total.js schemas
 - fixed: responding on `range` header

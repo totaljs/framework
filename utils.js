@@ -3202,6 +3202,9 @@ String.prototype.parseConfig = function(def) {
 			case 'bool':
 				obj[name] = value.parseBoolean();
 				break;
+			case 'config':
+				obj[name] = F.config[value];
+				break;
 			case 'eval':
 			case 'object':
 			case 'array':
