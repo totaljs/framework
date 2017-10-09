@@ -50,6 +50,18 @@ function SchemaOptions(error, model, options, callback, controller) {
 	this.options = options;
 	this.callback = this.next = callback;
 	this.controller = controller;
+
+	if (controller) {
+
+		if (controller.user)
+			this.user = controller.user;
+
+		if (controller.session)
+			this.session = controller.session;
+
+		this.ip = controller.ip;
+		this.query = controller.query;
+	}
 }
 
 SchemaOptions.prototype.throw = function(name, error, path, index) {
