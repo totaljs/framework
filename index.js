@@ -13097,9 +13097,8 @@ WebSocketClient.prototype.$parse = function() {
 };
 
 WebSocketClient.prototype.$readbody = function() {
-
 	var length = this.current.data.length;
-	if (this.current.type === 1) {
+	if (this.type === 1) {
 		var binary = U.createBufferSize(length);
 		for (var i = 0; i < length; i++)
 			binary[i] = this.current.data[i] ^ this.current.mask[i % 4];
@@ -13253,6 +13252,7 @@ WebSocketClient.prototype.send = function(message, raw, replacer) {
 
 WebSocketClient.prototype.sendDeflate = function() {
 	var self = this;
+
 	if (self.deflatelock)
 		return;
 
@@ -13261,7 +13261,7 @@ WebSocketClient.prototype.sendDeflate = function() {
 		self.deflatechunks = [];
 		self.deflatechunkslength = 0;
 		self.deflatelock = true;
-		self.deflate.write(self.type === 1 ? new Int8Array(buf) : buf);
+		self.deflate.write(buf);
 		self.deflate.flush(function() {
 			if (!self.deflatechunks)
 				return;
