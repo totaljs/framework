@@ -59,9 +59,11 @@ function SchemaOptions(error, model, options, callback, controller) {
 		if (controller.session)
 			this.session = controller.session;
 
+		this.language = controller.language || '';
 		this.ip = controller.ip;
 		this.query = controller.query;
-	}
+	} else
+		this.language = '';
 }
 
 SchemaOptions.prototype.throw = function(name, error, path, index) {
