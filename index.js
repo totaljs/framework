@@ -586,6 +586,7 @@ function Framework() {
 		'allow-gzip': true,
 		'allow-websocket': true,
 		'allow-websocket-compression': true,
+		'allow-compile': true,
 		'allow-compile-script': true,
 		'allow-compile-style': true,
 		'allow-compile-html': true,
@@ -5369,7 +5370,7 @@ F.compile_virtual = function(res) {
 			return;
 		}
 
-		if (!res.noCompress && (req.extension === 'js' || req.extension === 'css') && !REG_NOCOMPRESS.test(res.options.filename)) {
+		if (!res.noCompress && (req.extension === 'js' || req.extension === 'css') && F.config['allow-compile'] && !REG_NOCOMPRESS.test(res.options.filename)) {
 			res.options.filename = tmpname;
 			F.compile_file(res);
 		} else {
@@ -5394,7 +5395,7 @@ F.compile_check = function(res) {
 
 	fsFileExists(res.options.filename, function(e, size, sfile, stats) {
 		if (e) {
-			if (!res.noCompress && (req.extension === 'js' || req.extension === 'css') && !REG_NOCOMPRESS.test(res.options.filename))
+			if (!res.noCompress && (req.extension === 'js' || req.extension === 'css') && F.config['allow-compile'] && !REG_NOCOMPRESS.test(res.options.filename))
 				return F.compile_file(res);
 			F.temporary.path[req.$key] = [res.options.filename, size, stats.mtime.toUTCString()];
 			delete F.temporary.processing[req.$key];
@@ -14381,7 +14382,7 @@ function extend_response(PROTO) {
 
 		if (F.temporary.notfound[req.$key]) {
 			res.throw404();
-			return F;
+			return res;
 		}
 
 		var name = req.uri.pathname;
@@ -14410,7 +14411,7 @@ function extend_response(PROTO) {
 
 			res.options.filename = filename;
 			res.$file();
-			return F;
+			return res;
 		}
 
 		if (!resizer.ishttp) {
@@ -14418,19 +14419,19 @@ function extend_response(PROTO) {
 			res.options.make = resizer.fn;
 			res.options.filename = filename;
 			res.$image();
-			return;
+			return res;
 		}
 
 		if (F.temporary.processing[req.uri.pathname]) {
 			setTimeout($continue_timeout, 500, res);
-			return;
+			return res;
 		}
 
 		var tmp = F.path.temp(req.$key);
 		if (F.temporary.path[req.$key]) {
 			res.options.filename = req.uri.pathname;
 			res.$file();
-			return F;
+			return res;
 		}
 
 		F.temporary.processing[req.uri.pathname] = true;
@@ -14479,7 +14480,7 @@ function extend_response(PROTO) {
 		if (F.temporary.notfound[req.$key]) {
 			DEBUG && (F.temporary.notfound[req.$key] = undefined);
 			res.throw404();
-			return F;
+			return res;
 		}
 
 		// Is package?
@@ -14501,7 +14502,7 @@ function extend_response(PROTO) {
 
 		if (name && RELEASE && req.headers['if-modified-since'] === name[2]) {
 			$file_notmodified(res, name);
-			return F;
+			return res;
 		}
 
 		if (name === undefined) {
@@ -14513,13 +14514,13 @@ function extend_response(PROTO) {
 					req.processing += 500;
 					setTimeout($file_processing, 500, res);
 				}
-				return F;
+				return res;
 			}
 
 			// waiting
 			F.temporary.processing[req.$key] = true;
 			F.compile_check(res);
-			return F;
+			return res;
 		}
 
 		var contentType = U.getContentType(req.extension);
@@ -14575,7 +14576,7 @@ function extend_response(PROTO) {
 
 		if (range) {
 			$file_range(name[0], range, headers, res);
-			return F;
+			return res;
 		}
 
 		DEBUG && F.isProcessed(req.$key) && (F.temporary.path[req.$key] = undefined);
@@ -14675,7 +14676,7 @@ function extend_response(PROTO) {
 			response_end(res);
 		}
 
-		return F;
+		return res;
 	};
 
 	PROTO.$stream = function() {
@@ -14742,7 +14743,7 @@ function extend_response(PROTO) {
 			res.writeHead(options.code || 200, headers);
 			res.end();
 			response_end(res);
-			return F;
+			return res;
 		}
 
 		if (compress) {
@@ -14751,14 +14752,14 @@ function extend_response(PROTO) {
 			options.stream.pipe(Zlib.createGzip()).pipe(res);
 			framework_internal.onFinished(res, () => framework_internal.destroyStream(options.stream));
 			response_end(res);
-			return F;
+			return res;
 		}
 
 		res.writeHead(options.code || 200, headers);
 		framework_internal.onFinished(res, () => framework_internal.destroyStream(options.stream));
 		options.stream.pipe(res);
 		response_end(res);
-		return F;
+		return res;
 	};
 
 	PROTO.$image = function() {
@@ -14784,7 +14785,7 @@ function extend_response(PROTO) {
 		if (F.temporary.notfound[req.$key]) {
 			DEBUG && (F.temporary.notfound[req.$key] = undefined);
 			res.throw404();
-			return F;
+			return res;
 		}
 
 		var key = req.$key || createTemporaryKey(req);
@@ -14800,7 +14801,7 @@ function extend_response(PROTO) {
 
 		if (name !== undefined) {
 			res.$file();
-			return F;
+			return res;
 		}
 
 		if (F.isProcessing(req.$key)) {
@@ -14810,7 +14811,7 @@ function extend_response(PROTO) {
 				req.processing += 500;
 				setTimeout($image_processing, 500, res);
 			}
-			return F;
+			return res;
 		}
 
 		var plus = F.id ? 'i-' + F.id + '_' : '';
@@ -14823,7 +14824,7 @@ function extend_response(PROTO) {
 		else
 			fsFileExists(options.filename, $image_filename, res);
 
-		return F;
+		return res;
 	};
 
 	PROTO.$custom = function() {

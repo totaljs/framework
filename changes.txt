@@ -4,6 +4,7 @@
 - added: `F.path.rmdir(directory/directories, callback)`
 - added: `F.path.unlink(file/files, callback)`
 - added: `ArrayBuffer.prototype.toBuffer()`
+- added: `F.config['allow-compile']` can disable the whole compilation of static files
 
 - updated: `F.http(mode, [options], [middleware(listen)])` added a new argument `middleware`
 - updated: `debug.js` now reads directories according to the config (author: @luoage)
