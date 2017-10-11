@@ -66,8 +66,14 @@ function SchemaOptions(error, model, options, callback, controller) {
 		this.language = '';
 }
 
+SchemaOptions.prototype.success = function(a, b) {
+	this.callback(SUCCESS(a, b));
+	return this;
+};
+
 SchemaOptions.prototype.throw = function(name, error, path, index) {
 	this.error.push(name, error, path, index);
+	this.callback();
 	return this;
 };
 
