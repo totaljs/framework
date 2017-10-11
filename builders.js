@@ -67,7 +67,7 @@ function SchemaOptions(error, model, options, callback, controller) {
 }
 
 SchemaOptions.prototype.success = function(a, b) {
-	this.callback(SUCCESS(a, b));
+	this.callback(SUCCESS(a === undefined ? true : a, b));
 	return this;
 };
 
