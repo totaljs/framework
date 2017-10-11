@@ -5,7 +5,7 @@
 - added: `F.path.unlink(file/files, callback)`
 - added: `ArrayBuffer.prototype.toBuffer()`
 - added: `F.config['allow-compile']` can disable the whole compilation of static files
-- added: `SchemaOptions.throw(name, [value], [path], [index])` alias to `$.errors.push() + callback()`
+- added: `SchemaOptions.invalid(name, [value], [path], [index])` alias to `$.errors.push() + callback()`
 - added: `SchemaOptions.success()` alias to `callback(SUCCESS(value))`
 
 - updated: `F.http(mode, [options], [middleware(listen)])` added a new argument `middleware`

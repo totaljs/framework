@@ -71,7 +71,7 @@ SchemaOptions.prototype.success = function(a, b) {
 	return this;
 };
 
-SchemaOptions.prototype.throw = function(name, error, path, index) {
+SchemaOptions.prototype.invalid = function(name, error, path, index) {
 	this.error.push(name, error, path, index);
 	this.callback();
 	return this;
