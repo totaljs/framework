@@ -1,14 +1,18 @@
 ======= 2.8.1
 
 - added: `LOCALIZE()` a new global alias to `F.localize()`
+- added: `MERGE()` a new global alias to `F.merge()`
 - added: `F.path.rmdir(directory/directories, callback)`
 - added: `F.path.unlink(file/files, callback)`
 - added: `ArrayBuffer.prototype.toBuffer()`
 - added: `F.config['allow-compile']` can disable the whole compilation of static files
 - added: `SchemaOptions.invalid(name, [value], [path], [index])` alias to `$.errors.push() + callback()`
 - added: `SchemaOptions.success()` alias to `callback(SUCCESS(value))`
-- added: `MERGE()` alias to `F.merge()`
 
+- updated: `sitemap` routing can contain an additional path, e.g. `#sitemapid/path/`
+- updated: `F.localize()` supports sitemap routing
+- updated: `F.merge()` supports sitemap routing
+- updated: `F.map()` supports sitemap routing
 - updated: `F.http(mode, [options], [middleware(listen)])` added a new argument `middleware`
 - updated: `debug.js` now reads directories according to the config (author: @luoage)
 - updated: config parser supports `config` sub-type

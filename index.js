@@ -1550,11 +1550,18 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 			if (!(sitemapflags instanceof Array))
 				sitemapflags = EMPTYARRAY;
 
+			var index = url.indexOf('/');
+			if (index !== -1) {
+				tmp = url.substring(index);
+				url = url.substring(0, index);
+			}
+
 			sitemap = F.sitemap(url, true, language);
 			if (sitemap) {
 
 				name = url;
 				url = sitemap.url;
+
 				if (sitemap.wildcard)
 					url += '*';
 
@@ -1566,9 +1573,15 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 							if (item.url && item.url !== url)
 								sitemaproutes[item.url] = { name: sitemap.id, language: language };
 						});
-
 						Object.keys(sitemaproutes).forEach(key => F.route('#' + sitemap.id, funcExecute, flags, length, sitemaproutes[key].language));
 					}
+				}
+
+				if (tmp) {
+					if (url[url.length - 1] === '/')
+						url += tmp.substring(1);
+					else
+						url += tmp;
 				}
 
 			} else
@@ -2099,6 +2112,9 @@ F.routing = function(name) {
  */
 global.MERGE = F.merge = function(url) {
 
+	if (url[0] === '#')
+		url = sitemapurl(url.substring(1));
+
 	var arr = [];
 
 	for (var i = 1, length = arguments.length; i < length; i++) {
@@ -2155,6 +2171,9 @@ F.send = function(message, handle) {
  * @return {Framework}
  */
 F.map = function(url, filename, filter) {
+
+	if (url[0] === '#')
+		url = sitemapurl(url.substring(1));
 
 	if (url[0] !== '/')
 		url = '/' + url;
@@ -2762,7 +2781,34 @@ F.file = function(fnValidation, fnExecute, flags) {
 	return F;
 };
 
+function sitemapurl(url) {
+
+	var index = url.indexOf('/');
+	var tmp;
+
+	if (index !== -1) {
+		tmp = url.substring(index);
+		url = url.substring(0, index);
+	}
+
+	var sitemap = F.sitemap(url, true, '');
+	if (sitemap) {
+		url = sitemap.url;
+		if (tmp) {
+			if (url[url.length - 1] === '/')
+				url += tmp.substring(1);
+			else
+				url += tmp;
+		}
+	}
+
+	return url;
+}
+
 global.LOCALIZE = F.localize = function(url, flags, minify) {
+
+	if (url[0] === '#')
+		url = sitemapurl(url.substring(1));
 
 	url = url.replace('*', '');
 
