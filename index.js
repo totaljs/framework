@@ -2097,7 +2097,7 @@ F.routing = function(name) {
  * @param {String/String Array} fileN Filename or URL.
  * @return {Framework}
  */
-F.merge = function(url) {
+global.MERGE = F.merge = function(url) {
 
 	var arr = [];
 
