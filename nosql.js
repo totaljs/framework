@@ -2145,11 +2145,31 @@ DatabaseBuilder.prototype.compare_string = function(json, index) {
 					return;
 				break;
 			case 21: // number in
-				if (filter.value.indexOf(+value) === -1)
+				// Array
+				var is = false;
+				value = ' ' + value + ',';
+				for (var j = 0, jl = filter.value.length; j < jl; j++) {
+					if (value.indexOf(' ' + filter.value[j] + ',') !== -1) {
+						is = true;
+						break;
+					}
+				}
+				if (!is)
 					return;
 				break;
 			case 22: // string in
-				if (filter.value.indexOf(value) === -1)
+				// Array
+				if (value[0] === '"') {
+					var is = false;
+					for (var j = 0, jl = filter.value.length; j < jl; j++) {
+						if (value.indexOf('"' + filter.value[j] + '"') !== -1) {
+							is = true;
+							break;
+						}
+					}
+					if (!is)
+						return;
+				} else if (filter.value.indexOf(value) === -1)
 					return;
 				break;
 			case 23: // boolean in

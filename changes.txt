@@ -22,7 +22,8 @@
 - fixed: `MODEL()`, `MODULE()`, `INCLUDE()` now are direct aliases
 - fixed: unit testing (author: @ckpiggy)
 - fixed: a check for maximum length of request data
-- fixed: `ArrayBuffer` in weboskcet
+- fixed: `ArrayBuffer` in webosocket
+- fixed: (IMPORTANT) `DatabaseBuilder.in()`
 
 ======= 2.8.0
 
