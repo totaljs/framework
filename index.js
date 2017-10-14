@@ -1578,6 +1578,10 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 				}
 
 				if (tmp) {
+
+					if (url[url.length - 1] === '*')
+						url = url.substring(0, url.length - 1);
+
 					if (url[url.length - 1] === '/')
 						url += tmp.substring(1);
 					else
