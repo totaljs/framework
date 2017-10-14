@@ -9548,6 +9548,14 @@ Controller.prototype.$operation2 = function(name, helper, callback) {
 Controller.prototype.$exec = function(name, helper, callback) {
 	var self = this;
 
+	if (typeof(helper) === 'function') {
+		callback = helper;
+		helper = EMPTYOBJECT;
+	}
+
+	if (callback == null)
+		callback = self.callback();
+
 	if (framework_builders.isSchema(self.body)) {
 		self.body.$$controller = self;
 		self.body.$exec(name, helper, callback);
