@@ -17,6 +17,7 @@
 - updated: `debug.js` now reads directories according to the config (author: @luoage)
 - updated: config parser supports `config` sub-type
 - updated: `controller.$exec()` --> `callback` is by default `controller.callback()`
+- updated: `F.localize()` has enabled `compression` by default
 
 - fixed: `JSON` type in Total.js schemas
 - fixed: responding on `range` header

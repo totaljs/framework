@@ -2816,6 +2816,9 @@ global.LOCALIZE = F.localize = function(url, flags, minify) {
 
 	url = url.replace('*', '');
 
+	if (minify == null)
+		minify = true;
+
 	if (flags === true) {
 		flags = [];
 		minify = true;
@@ -2824,12 +2827,12 @@ global.LOCALIZE = F.localize = function(url, flags, minify) {
 
 	var index;
 
-	if (!minify) {
-		index = flags.indexOf('minify');
-		index === -1 && (index = flags.indexOf('compress'));
-		minify = index !== -1;
-		index !== -1 && flags.splice(index, 1);
-	}
+	flags = flags.remove(function(item) {
+		item = item.toLowerCase();
+		if (item === 'nocompress')
+			minify = false;
+		return item === 'compress' || item === 'nocompress' || item === 'minify';
+	});
 
 	var index = url.lastIndexOf('.');
 
