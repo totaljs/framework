@@ -3676,6 +3676,8 @@ RESTBuilder.prototype.auth = function(user, password) {
 
 RESTBuilder.prototype.schema = function(group, name) {
 	this.$schema = exports.getschema(group, name);
+	if (!this.$schema)
+		throw Error('RESTBuilder: Schema "{0}" not found.'.format(name ? (group + '/' + name) : group));
 	return this;
 };
 
