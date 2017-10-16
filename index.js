@@ -4781,10 +4781,20 @@ F.onMapping = function(url, def, ispublic, encode) {
 
 F.download = F.snapshot = function(url, filename, callback) {
 
+	if (!F.isLoaded) {
+		setTimeout(function(url, filename, callback) {
+			F.snapshot(url, filename, callback);
+		}, 200, url, filename, callback);
+		return F;
+	}
+
 	url = framework_internal.preparePath(url);
+
 	if (!REG_HTTPHTTPS.test(url)) {
 		if (url[0] !== '/')
 			url = '/' + url;
+		if (F.isWorker)
+			throw new Error('Worker can\'t create a snapshot from relative URL address "{0}".'.format(url));
 		url = 'http://' + (F.ip === 'auto' ? '0.0.0.0' : F.ip) + ':' + F.port + url;
 	}
 
@@ -6259,59 +6269,60 @@ F.initialize = function(http, debug, options, restart) {
 			F.server.listen(listenpath);
 		else
 			F.server.listen(F.port, F.ip);
-
-		// clears static files
-		F.consoledebug('clear temporary');
-		F.clear(function() {
-			F.consoledebug('clear temporary (done)');
-			F.$load(undefined, directory, function() {
-
-				F.isLoaded = true;
-				process.send && process.send('total:ready');
-
-				if (F.config['allow-debug']) {
-					F.consoledebug('done');
-					F.usagesnapshot();
-				}
-
-				if (!process.connected || restart)
-					F.console();
-
-				setTimeout(function() {
-					try {
-						F.emit('load', F);
-						F.emit('ready', F);
-					} catch (err) {
-						F.error(err, 'F.on("load/ready")');
-					}
-
-					F.removeAllListeners('load');
-					F.removeAllListeners('ready');
-					options.package && INSTALL('package', options.package);
-				}, 500);
-
-				if (F.isTest) {
-					var sleep = options.sleep || options.delay || 1000;
-					setTimeout(() => F.test(true, options.tests || options.test), sleep);
-					return F;
-				}
-
-				setTimeout(function() {
-					if (F.isTest)
-						return;
-					delete F.tests;
-					delete F.test;
-					delete F.testing;
-					delete F.assert;
-				}, 5000);
-			});
-		}, true);
 	};
 
-	if (options.middleware)
-		options.middleware(listen);
-	else
-		listen();
+	// clears static files
+	F.consoledebug('clear temporary');
+	F.clear(function() {
+		F.consoledebug('clear temporary (done)');
+		F.$load(undefined, directory, function() {
+
+			F.isLoaded = true;
+			process.send && process.send('total:ready');
+
+			if (options.middleware)
+				options.middleware(listen);
+			else
+				listen();
+
+			if (F.config['allow-debug']) {
+				F.consoledebug('done');
+				F.usagesnapshot();
+			}
+
+			if (!process.connected || restart)
+				F.console();
+
+			setTimeout(function() {
+
+				try {
+					F.emit('load', F);
+					F.emit('ready', F);
+				} catch (err) {
+					F.error(err, 'F.on("load/ready")');
+				}
+
+				F.removeAllListeners('load');
+				F.removeAllListeners('ready');
+				options.package && INSTALL('package', options.package);
+			}, 500);
+
+			if (F.isTest) {
+				var sleep = options.sleep || options.delay || 1000;
+				setTimeout(() => F.test(true, options.tests || options.test), sleep);
+				return F;
+			}
+
+			setTimeout(function() {
+				if (F.isTest)
+					return;
+				delete F.tests;
+				delete F.test;
+				delete F.testing;
+				delete F.assert;
+			}, 5000);
+		});
+	}, true);
 
 	return F;
 };
