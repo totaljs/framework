@@ -4040,18 +4040,26 @@ Binary.prototype.all = function(callback) {
 		var le = EXTENSION_BINARY.length;
 
 		pending.wait(function(item, next) {
+			Fs.stat(target + '/' + item, function(err, stat) {
 
-			var stream = Fs.createReadStream(target + '/' + item, { start: 0, end: BINARY_HEADER_LENGTH - 1, encoding: 'binary' });
+				if (err)
+					return next();
 
-			stream.on('data', function(buffer) {
-				var json = framework_utils.createBuffer(buffer, 'binary').toString('utf8').replace(REG_CLEAN, '').parseJSON(true);
-				if (json) {
-					json.id = item.substring(l, item.length - le);
-					output.push(json);
-				}
+				var stream = Fs.createReadStream(target + '/' + item, { start: 0, end: BINARY_HEADER_LENGTH - 1, encoding: 'binary' });
+
+				stream.on('data', function(buffer) {
+					var json = framework_utils.createBuffer(buffer, 'binary').toString('utf8').replace(REG_CLEAN, '').parseJSON(true);
+					if (json) {
+						json.id = item.substring(l, item.length - le);
+						json.ctime = stat.ctime;
+						json.mtime = stat.mtime;
+						output.push(json);
+					}
+				});
+
+				CLEANUP(stream, next);
+
 			});
-
-			CLEANUP(stream, next);
 		}, () => callback(null, output), 2);
 	});
 
