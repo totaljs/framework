@@ -8,6 +8,7 @@
 - added: `F.config['allow-compile']` can disable the whole compilation of static files
 - added: `SchemaOptions.invalid(name, [value], [path], [index])` alias to `$.errors.push() + callback()`
 - added: `SchemaOptions.success()` alias to `callback(SUCCESS(value))`
+- added: `controller.success()` alias to `controller.json(SUCCESS(value))`
 
 - updated: `sitemap` routing can contain an additional path, e.g. `#sitemapid/path/`
 - updated: `F.localize()` supports sitemap routing

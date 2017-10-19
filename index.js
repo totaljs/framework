@@ -11315,6 +11315,12 @@ Controller.prototype.json = function(obj, headers, beautify, replacer) {
 	return self;
 };
 
+Controller.prototype.success = function(is, value) {
+	if (is === undefined)
+		is = true;
+	return this.json(SUCCESS(is, value))
+};
+
 /**
  * Responds with JSONP
  * @param {String} name A method name.
