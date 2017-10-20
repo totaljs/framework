@@ -203,41 +203,25 @@ Database.prototype.meta = function(name, value) {
 	return self;
 };
 
-Database.prototype.backups = function(date, callback) {
+Database.prototype.backups = function(filter, callback) {
 
-	if (typeof(date) === 'function') {
-		callback = date;
-		date = null;
+	if (callback === undefined) {
+		callback = filter;
+		filter = null;
 	}
 
 	var self = this;
 	var stream = Fs.createReadStream(self.filenameBackup);
 	var output = [];
-	var is = typeof(date) === 'string';
 
 	stream.on('data', U.streamer('\n', function(item, index) {
-
-		if (!is && date > 0) {
-			if (date > index)
-				return;
-			else if (date < index)
-				return false;
-		}
-
 		var end = item.indexOf('|', item.indexOf('|') + 2);
 		var meta = item.substring(0, end);
 		var arr = meta.split('|');
 		var dv = arr[0].trim().replace(' ', 'T') + ':00.000Z';
-
-		if (is && !dv.startsWith(date))
-			return;
-
-		var dt = dv.parseDate();
-		if (date == null)
-			output.push({ id: index + 1, date: dt, user: arr[1].trim() });
-		else
-			output.push({ id: index + 1, date: dt, user: arr[1].trim(), data: item.substring(end + 1).trim().parseJSON(true) });
-
+		var obj = { id: index + 1, date: dv.parseDate(), user: arr[1].trim(), data: item.substring(end + 1).trim().parseJSON(true) };
+		if (!filter || filter(obj))
+			output.push(obj);
 	}), stream);
 
 	CLEANUP(stream, () => callback(null, output));
