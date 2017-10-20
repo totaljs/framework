@@ -5,6 +5,8 @@ var url = 'http://127.0.0.1:8001/';
 var errorStatus = 0;
 var max = 100;
 
+//F.snapshot('/templates/localization.html', '/users/petersirka/desktop/localization.html');
+
 // INSTALL('module', 'https://www.totaljs.com/framework/include.js', { test: true });
 
 //framework.map('/minify/', '@testpackage', ['.html', 'js']);
