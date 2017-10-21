@@ -14021,7 +14021,12 @@ function extend_request(PROTO) {
 		var res = this.res;
 		var auth = F.onAuthorize;
 
-		if (auth) {
+		if (!req.$total_route)
+			req.$total_route = F.lookup(req, req.buffer_exceeded ? '#431' : url || req.uri.pathname, req.flags, 0);
+
+		var routeFlags = (req.$total_route || {}).flags || [];
+
+		if (auth && routeFlags.indexOf('authorize') > -1) {
 			var length = flags.length;
 			auth(req, res, flags, function(isAuthorized, user) {
 
@@ -14038,10 +14043,6 @@ function extend_request(PROTO) {
 				req.$total_authorize(isAuthorized, user, hasRoles);
 			});
 		} else {
-
-			if (!req.$total_route)
-				req.$total_route = F.lookup(req, req.buffer_exceeded ? '#431' : url || req.uri.pathname, req.flags, 0);
-
 			if (!req.$total_route)
 				req.$total_route = F.lookup(req, '#404', EMPTYARRAY, 0);
 
