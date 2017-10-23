@@ -62,6 +62,8 @@ function SchemaOptions(error, model, options, callback, controller) {
 		this.language = controller.language || '';
 		this.ip = controller.ip;
 		this.query = controller.query;
+		this.body = controller.body;
+		this.files = controller.files;
 	} else
 		this.language = '';
 }
