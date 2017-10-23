@@ -126,6 +126,7 @@ Please support the framework on social networks.
 
 ## Contact
 
+- Peter Širka - <petersirka@gmail.com>
 - contact form <https://www.totaljs.com/contact/>
 - <info@totaljs.com>
 
