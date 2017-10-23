@@ -4547,15 +4547,16 @@ Array.prototype.remove = function(cb, value) {
 	return arr;
 };
 
-Array.prototype.wait = Array.prototype.waitFor = function(onItem, callback, thread) {
+Array.prototype.wait = Array.prototype.waitFor = function(onItem, callback, thread, tmp) {
 
 	var self = this;
 	var init = false;
 
 	// INIT
-	if (!onItem.$index) {
-		onItem.$pending = 0;
-		onItem.$index = 0;
+	if (!tmp) {
+		tmp = {};
+		tmp.pending = 0;
+		tmp.index = 0;
 		init = true;
 		if (typeof(callback) === 'number') {
 			var tmp = thread;
@@ -4567,32 +4568,32 @@ Array.prototype.wait = Array.prototype.waitFor = function(onItem, callback, thre
 	if (thread === undefined)
 		thread = 1;
 
-	var item = thread === true ? self.shift() : self[onItem.$index];
-	onItem.$index++;
+	var item = thread === true ? self.shift() : self[tmp.index];
+	tmp.index++;
 
 	if (item === undefined) {
-		if (onItem.$pending)
-			return self;
-		callback && callback();
-		onItem.$index = 0;
+		if (!tmp.pending) {
+			callback && callback();
+			tmp.index = 0;
+		}
 		return self;
 	}
 
-	onItem.$pending++;
-	onItem.call(self, item, () => setImmediate(next_wait, self, onItem, callback, thread));
+	tmp.pending++;
+	onItem.call(self, item, () => setImmediate(next_wait, self, onItem, callback, thread, tmp), tmp.index);
 
 	if (!init || thread === true)
 		return self;
 
 	for (var i = 1; i < thread; i++)
-		self.wait(onItem, callback, 0);
+		self.wait(onItem, callback, 0, tmp);
 
 	return self;
 };
 
-function next_wait(self, onItem, callback, thread) {
-	onItem.$pending--;
-	self.wait(onItem, callback, thread);
+function next_wait(self, onItem, callback, thread, tmp) {
+	tmp.pending--;
+	self.wait(onItem, callback, thread, tmp);
 }
 
 /**
