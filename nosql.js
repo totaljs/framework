@@ -819,36 +819,39 @@ Database.prototype.$update = function() {
 
 		var doc = noconvert ? value.substring(0, value.length - 1) : JSON.parse(value.substring(0, value.length - 1), jsonparser);
 		var is = false;
+		var nc = noconvert;
 
 		for (var i = 0; i < length; i++) {
 			var item = filter[i];
 			var builder = item.builder;
-			var output = noconvert ? builder.compare_string(doc, index, true) : builder.compare(doc, index, true);
+			var output = nc ? builder.compare_string(doc, index, true) : builder.compare(doc, index, true);
+
 			if (output) {
-
 				builder.$backup && builder.$backupdoc(output);
-
 				if (item.keys) {
 					for (var j = 0, jl = item.keys.length; j < jl; j++) {
 						var val = item.doc[item.keys[j]];
-						if (val === undefined)
-							continue;
-						if (typeof(val) === 'function')
-							output[item.keys[j]] = val(output[item.keys[j]], output);
-						else
-							output[item.keys[j]] = val;
+						if (val !== undefined) {
+							if (typeof(val) === 'function')
+								output[item.keys[j]] = val(output[item.keys[j]], output);
+							else
+								output[item.keys[j]] = val;
+						}
 					}
 				} else
 					output = typeof(item.doc) === 'function' ? item.doc(output) : item.doc;
+
 				self.emit(item.keys ? 'modify' : 'update', output);
 				item.count++;
 				change = true;
 				is = true;
+				nc = false;
+				doc = output;
 			}
 		}
 
 		if (is)
-			writer.write(JSON.stringify(output) + NEWLINE);
+			writer.write(JSON.stringify(doc) + NEWLINE);
 		else
 			writer.write((noconvert ? doc : JSON.stringify(doc)) + NEWLINE);
 	}));
