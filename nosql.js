@@ -1254,7 +1254,10 @@ function nosqlsortvalue(a, b, sorter) {
 		a = (a.length > 5 ? a.substring(0, 5) : a);
 		var c = COMPARER(a, b);
 		return sorter.asc ? c === 1 : c === -1;
-	} else if (a instanceof Date)
+	} else if (type === 'boolean')
+		// return sorter.asc ? a > b : a < b;
+		return sorter.asc ? (a && !b) : (!a && b);
+	else if (a instanceof Date)
 		return sorter.asc ? a > b : a < b;
 	return false;
 }

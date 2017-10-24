@@ -36,6 +36,7 @@
 - fixed: `ArrayBuffer` in webosocket
 - fixed: (IMPORTANT) `DatabaseBuilder.in()`
 - fixed: NoSQL multiple updates
+- fixed: NoSQL sorting of boolean values in larger dataset
 
 ======= 2.8.0
 
