@@ -817,7 +817,11 @@ Database.prototype.$update = function() {
 
 	reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
 
+		if (value[0] !== '{')
+			return;
+
 		var doc = noconvert ? value.substring(0, value.length - 1) : JSON.parse(value.substring(0, value.length - 1), jsonparser);
+
 		var is = false;
 		var nc = noconvert;
 
@@ -1085,6 +1089,9 @@ Database.prototype.$reader2 = function(filename, items, callback, reader) {
 	}
 
 	reader && reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
+
+		if (value[0] !== '{')
+			return;
 
 		var json = noconvert ? value.substring(0, value.length - 1) : JSON.parse(value.substring(0, value.length - 1), jsonparser);
 		var val;
@@ -1460,7 +1467,11 @@ Database.prototype.$views = function() {
 
 	reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
 
+		if (value[0] !== '{')
+			return;
+
 		var json = noconvert ? value.substring(0, value.length - 1) : JSON.parse(value.substring(0, value.length - 1), jsonparser);
+
 		for (var j = 0; j < length; j++) {
 			var item = self.views[views[j]];
 			var output = noconvert ? item.compare_string(json, index) : item.compare(json, index);
@@ -1620,6 +1631,9 @@ Database.prototype.$remove = function() {
 	}
 
 	reader && reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
+
+		if (value[0] !== '{')
+			return;
 
 		var json = noconvert ? value.substring(0, value.length - 1) : JSON.parse(value.substring(0, value.length - 1), jsonparser);
 		var removed = false;
@@ -2209,6 +2223,7 @@ DatabaseBuilder.prototype.compare_string = function(json, index) {
 	}
 
 	var doc = JSON.parse(json, jsonparser);
+
 	if (this.$prepare)
 		return this.$prepare(doc, index);
 
