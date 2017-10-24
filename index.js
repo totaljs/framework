@@ -107,15 +107,15 @@ HEADERS.redirect = {};
 HEADERS.redirect[HEADER_TYPE] = CT_HTML + '; charset=utf-8';
 HEADERS.redirect[HEADER_LENGTH] = '0';
 HEADERS.sse = {};
-HEADERS.sse[HEADER_CACHE] = 'no-cache, no-store, must-revalidate';
+HEADERS.sse[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
 HEADERS.sse['Pragma'] = 'no-cache';
-HEADERS.sse['Expires'] = '0';
+HEADERS.sse['Expires'] = '-1';
 HEADERS.sse[HEADER_TYPE] = 'text/event-stream';
 HEADERS.sse['X-Powered-By'] = 'Total.js';
 HEADERS.mmr = {};
-HEADERS.mmr[HEADER_CACHE] = 'no-cache, no-store, must-revalidate';
+HEADERS.mmr[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
 HEADERS.mmr['Pragma'] = 'no-cache';
-HEADERS.mmr['Expires'] = '0';
+HEADERS.mmr['Expires'] = '-1';
 HEADERS.mmr['X-Powered-By'] = 'Total.js';
 HEADERS.proxy = {};
 HEADERS.proxy['X-Proxy'] = 'total.js';
@@ -156,38 +156,38 @@ HEADERS.file_release_range[HEADER_LENGTH] = '0';
 HEADERS.file_release_range['Content-Range'] = '';
 HEADERS.file_release_range['X-Powered-By'] = 'Total.js';
 HEADERS.file_debug_compress = {};
-HEADERS.file_debug_compress[HEADER_CACHE] = 'private, no-cache, no-store, must-revalidate';
+HEADERS.file_debug_compress[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
 HEADERS.file_debug_compress['Vary'] = 'Accept-Encoding';
 HEADERS.file_debug_compress['Access-Control-Allow-Origin'] = '*';
 HEADERS.file_debug_compress['Pragma'] = 'no-cache';
-HEADERS.file_debug_compress['Expires'] = '0';
+HEADERS.file_debug_compress['Expires'] = '-1';
 HEADERS.file_debug_compress['Content-Encoding'] = 'gzip';
 HEADERS.file_debug_compress['X-Powered-By'] = 'Total.js';
 HEADERS.file_debug_compress_range = {};
 HEADERS.file_debug_compress_range['Accept-Ranges'] = 'bytes';
-HEADERS.file_debug_compress_range[HEADER_CACHE] = 'private, no-cache, no-store, must-revalidate';
+HEADERS.file_debug_compress_range[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
 HEADERS.file_debug_compress_range['Vary'] = 'Accept-Encoding';
 HEADERS.file_debug_compress_range['Access-Control-Allow-Origin'] = '*';
 HEADERS.file_debug_compress_range['Content-Encoding'] = 'gzip';
 HEADERS.file_debug_compress_range['Pragma'] = 'no-cache';
-HEADERS.file_debug_compress_range['Expires'] = '0';
+HEADERS.file_debug_compress_range['Expires'] = '-1';
 HEADERS.file_debug_compress_range[HEADER_LENGTH] = '0';
 HEADERS.file_debug_compress_range['Content-Range'] = '';
 HEADERS.file_debug_compress_range['X-Powered-By'] = 'Total.js';
 HEADERS.file_debug = {};
-HEADERS.file_debug[HEADER_CACHE] = 'private, no-cache, no-store, must-revalidate';
+HEADERS.file_debug[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
 HEADERS.file_debug['Vary'] = 'Accept-Encoding';
 HEADERS.file_debug['Pragma'] = 'no-cache';
-HEADERS.file_debug['Expires'] = '0';
+HEADERS.file_debug['Expires'] = '-1';
 HEADERS.file_debug['Access-Control-Allow-Origin'] = '*';
 HEADERS.file_debug['X-Powered-By'] = 'Total.js';
 HEADERS.file_debug_range = {};
 HEADERS.file_debug_range['Accept-Ranges'] = 'bytes';
-HEADERS.file_debug_range[HEADER_CACHE] = 'private, no-cache, no-store, must-revalidate';
+HEADERS.file_debug_range[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
 HEADERS.file_debug_range['Vary'] = 'Accept-Encoding';
 HEADERS.file_debug_range['Access-Control-Allow-Origin'] = '*';
 HEADERS.file_debug_range['Pragma'] = 'no-cache';
-HEADERS.file_debug_range['Expires'] = '0';
+HEADERS.file_debug_range['Expires'] = '-1';
 HEADERS.file_debug_range[HEADER_LENGTH] = '0';
 HEADERS.file_debug_range['Content-Range'] = '';
 HEADERS.file_debug_range['X-Powered-By'] = 'Total.js';
@@ -198,7 +198,7 @@ HEADERS.content_mobile = {};
 HEADERS.content_mobile['Vary'] = 'Accept-Encoding, User-Agent';
 HEADERS.content_mobile['X-Powered-By'] = 'Total.js';
 HEADERS.content_compress = {};
-HEADERS.content_compress[HEADER_CACHE] = 'private';
+HEADERS.content_compress[HEADER_CACHE] = 'private, no-cache, no-store, must-revalidate';
 HEADERS.content_compress['Vary'] = 'Accept-Encoding';
 HEADERS.content_compress['Content-Encoding'] = 'gzip';
 HEADERS.content_compress['X-Powered-By'] = 'Total.js';
@@ -215,16 +215,16 @@ HEADERS.stream_release[HEADER_CACHE] = 'public, max-age=11111111';
 HEADERS.stream_release['Access-Control-Allow-Origin'] = '*';
 HEADERS.stream_release['X-Powered-By'] = 'Total.js';
 HEADERS.stream_debug_compress = {};
-HEADERS.stream_debug_compress[HEADER_CACHE] = 'private, no-cache, no-store, must-revalidate';
+HEADERS.stream_debug_compress[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
 HEADERS.stream_debug_compress['Pragma'] = 'no-cache';
-HEADERS.stream_debug_compress['Expires'] = '0';
+HEADERS.stream_debug_compress['Expires'] = '-1';
 HEADERS.stream_debug_compress['Access-Control-Allow-Origin'] = '*';
 HEADERS.stream_debug_compress['Content-Encoding'] = 'gzip';
 HEADERS.stream_debug_compress['X-Powered-By'] = 'Total.js';
 HEADERS.stream_debug = {};
-HEADERS.stream_debug[HEADER_CACHE] = 'private, no-cache, no-store, must-revalidate';
+HEADERS.stream_debug[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
 HEADERS.stream_debug['Pragma'] = 'no-cache';
-HEADERS.stream_debug['Expires'] = '0';
+HEADERS.stream_debug['Expires'] = '-1';
 HEADERS.stream_debug['Access-Control-Allow-Origin'] = '*';
 HEADERS.stream_debug['X-Powered-By'] = 'Total.js';
 HEADERS.binary_compress = {};
@@ -244,7 +244,7 @@ HEADERS.responseNotModified = {};
 HEADERS.responseNotModified[HEADER_CACHE] = 'public, max-age=11111111';
 HEADERS.responseNotModified['X-Powered-By'] = 'Total.js';
 HEADERS.response503 = {};
-HEADERS.response503[HEADER_CACHE] = 'private, no-cache, no-store, must-revalidate';
+HEADERS.response503[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
 HEADERS.response503[HEADER_TYPE] = CT_HTML;
 HEADERS.response503['X-Powered-By'] = 'Total.js';
 HEADERS.notModifiedEtag = {};
@@ -8341,7 +8341,7 @@ F.$configure_configs = function(arr, rewrite) {
 
 	Object.keys(HEADERS).forEach(function(key) {
 		Object.keys(HEADERS[key]).forEach(function(subkey) {
-			if (subkey === 'Cache-Control')
+			if (RELEASE && subkey === 'Cache-Control')
 				HEADERS[key][subkey] = HEADERS[key][subkey].replace(/max-age=\d+/, 'max-age=' + F.config['default-response-maxage']);
 			if (subkey === 'X-Powered-By') {
 				if (xpowered)
@@ -14196,12 +14196,8 @@ function extend_response(PROTO) {
 		var accept = req.headers['accept-encoding'] || '';
 		var headers = {};
 
-		headers[HEADER_CACHE] = 'private';
+		headers[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
 		headers['Vary'] = 'Accept-Encoding' + (req.$mobile ? ', User-Agent' : '');
-
-		// Safari resolve
-		if (contentType === CT_JSON)
-			headers[HEADER_CACHE] = 'private, no-cache, no-store, must-revalidate';
 
 		if ((/text|application/).test(contentType))
 			contentType += '; charset=utf-8';
@@ -14344,7 +14340,7 @@ function extend_response(PROTO) {
 
 			var headers = {};
 
-			headers[HEADER_CACHE] = 'private';
+			headers[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
 			res.options.headers && U.extend_headers2(headers, res.options.headers);
 
 			var options = { protocol: uri.protocol, auth: uri.auth, method: 'GET', hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: headers };
@@ -14623,6 +14619,7 @@ function extend_response(PROTO) {
 				headers = range ? HEADERS.file_debug_range : HEADERS.file_debug;
 		}
 
+
 		if (req.$mobile)
 			headers.Vary = 'Accept-Encoding, User-Agent';
 		else
@@ -14632,9 +14629,9 @@ function extend_response(PROTO) {
 		if (REG_TEXTAPPLICATION.test(contentType))
 			headers[HEADER_TYPE] += '; charset=utf-8';
 
-		if (canCache && !res.getHeader('Expires'))
-			headers.Expires = DATE_EXPIRES;
-		else if (headers.Expires)
+		if (canCache && !res.getHeader('Expires')) {
+ 			headers.Expires = DATE_EXPIRES;
+		} else if (headers.Expires && RELEASE)
 			delete headers.Expires;
 
 		if (res.options.headers)
@@ -14939,11 +14936,7 @@ function extend_response(PROTO) {
 		else
 			headers = gzip ? HEADERS.content_compress : HEADERS.content;
 
-		// Safari resolve
-		if (options.type === CT_JSON)
-			headers[HEADER_CACHE] = 'private, no-cache, no-store, must-revalidate';
-		else
-			headers[HEADER_CACHE] = 'private';
+		headers[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
 
 		if (REG_TEXTAPPLICATION.test(options.type))
 			options.type += '; charset=utf-8';

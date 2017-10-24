@@ -22,6 +22,7 @@
 - updated: `controller.$exec()` --> `callback` is by default `controller.callback()`
 - updated: `F.localize()` has enabled `compression` by default
 - updated: HTTP server is listening after the framework is completely loaded
+- updated: (IMPORTANT) HTTP cache in dynamic content and static files
 
 - fixed: `JSON` type in Total.js schemas
 - fixed: responding on `range` header
