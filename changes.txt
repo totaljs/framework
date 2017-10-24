@@ -2,6 +2,7 @@
 
 - added: `LOCALIZE()` a new global alias to `F.localize()`
 - added: `MERGE()` a new global alias to `F.merge()`
+- added: `MAP()` a new global alias to `F.map()`
 - added: `F.path.rmdir(directory/directories, callback)`
 - added: `F.path.unlink(file/files, callback)`
 - added: `ArrayBuffer.prototype.toBuffer()`

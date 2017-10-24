@@ -2174,7 +2174,7 @@ F.send = function(message, handle) {
  * @param {Function(filename) or String Array} filter
  * @return {Framework}
  */
-F.map = function(url, filename, filter) {
+global.MAP = F.map = function(url, filename, filter) {
 
 	if (url[0] === '#')
 		url = sitemapurl(url.substring(1));
