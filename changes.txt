@@ -35,6 +35,7 @@
 - fixed: a check for maximum length of request data
 - fixed: `ArrayBuffer` in webosocket
 - fixed: (IMPORTANT) `DatabaseBuilder.in()`
+- fixed: NoSQL multiple updates
 
 ======= 2.8.0
 
