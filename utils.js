@@ -4563,6 +4563,13 @@ Array.prototype.wait = Array.prototype.waitFor = function(onItem, callback, thre
 		tmp = {};
 		tmp.pending = 0;
 		tmp.index = 0;
+		tmp.thread = thread;
+
+		if (thread)
+			thread = true;
+		else
+			thread = 1;
+
 		init = true;
 		if (typeof(callback) === 'number') {
 			var tmp = thread;
@@ -4571,16 +4578,12 @@ Array.prototype.wait = Array.prototype.waitFor = function(onItem, callback, thre
 		}
 	}
 
-	if (thread === undefined)
-		thread = 1;
-
-	var item = thread === true ? self.shift() : self[tmp.index];
-	tmp.index++;
+	var item = thread === true ? self.shift() : self[tmp.index++];
 
 	if (item === undefined) {
 		if (!tmp.pending) {
 			callback && callback();
-			tmp.index = 0;
+			tmp.cancel = true;
 		}
 		return self;
 	}
@@ -4588,11 +4591,12 @@ Array.prototype.wait = Array.prototype.waitFor = function(onItem, callback, thre
 	tmp.pending++;
 	onItem.call(self, item, () => setImmediate(next_wait, self, onItem, callback, thread, tmp), tmp.index);
 
-	if (!init || thread === true)
+	if (!init || tmp.thread === 1)
 		return self;
 
-	for (var i = 1; i < thread; i++)
+	for (var i = 1; i < tmp.thread; i++) {
 		self.wait(onItem, callback, true, tmp);
+	}
 
 	return self;
 };
