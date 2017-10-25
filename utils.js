@@ -4554,6 +4554,12 @@ Array.prototype.wait = Array.prototype.waitFor = function(onItem, callback, thre
 
 	// INIT
 	if (!tmp) {
+
+		if (typeof(callback) === 'number') {
+			thread = callback;
+			callback = null;
+		}
+
 		tmp = {};
 		tmp.pending = 0;
 		tmp.index = 0;
@@ -4586,7 +4592,7 @@ Array.prototype.wait = Array.prototype.waitFor = function(onItem, callback, thre
 		return self;
 
 	for (var i = 1; i < thread; i++)
-		self.wait(onItem, callback, 0, tmp);
+		self.wait(onItem, callback, true, tmp);
 
 	return self;
 };
