@@ -575,6 +575,7 @@ function Framework() {
 
 		// in milliseconds
 		'default-request-timeout': 3000,
+		'default-dependency-timeout': 1500,
 
 		// otherwise is used ImageMagick (Heroku supports ImageMagick)
 		// gm = graphicsmagick or im = imagemagick
@@ -4290,7 +4291,7 @@ F.install_prepare = function(noRecursive) {
 		if (keys.length)
 			throw new Error('Dependency exception (module): missing dependencies for: ' + keys.join(', ').trim());
 		delete F.temporary.other.dependencies;
-	}, 1500);
+	}, F.config['default-dependency-timeout']);
 
 	if (!keys.length || noRecursive)
 		return F;
@@ -8224,6 +8225,7 @@ F.$configure_configs = function(arr, rewrite) {
 			case 'default-interval-websocket-ping':
 			case 'default-maximum-file-descriptors':
 			case 'default-interval-clear-dnscache':
+			case 'default-dependency-timeout':
 				obj[name] = U.parseInt(value);
 				break;
 			case 'default-image-consumption':
