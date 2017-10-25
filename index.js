@@ -8425,14 +8425,14 @@ F.$routeStatic = function(name, directory, theme) {
 	if (REG_ROUTESTATIC.test(name))
 		filename = name;
 	else if (name[0] === '/')
-		filename = U.join(theme, this.$version(name));
+		filename = U.join(theme, F.$version(name));
 	else {
-		filename = U.join(theme, directory, this.$version(name));
-		if (REG_HTTPHTTPS.test(filename))
+		filename = U.join(theme, directory, F.$version(name));
+		if (REG_HTTPHTTPS.test(filename) && filename[0] === '/')
 			filename = filename.substring(1);
 	}
 
-	return F.temporary.other[key] = framework_internal.preparePath(this.$version(filename));
+	return F.temporary.other[key] = framework_internal.preparePath(F.$version(filename));
 };
 
 F.$version = function(name) {
