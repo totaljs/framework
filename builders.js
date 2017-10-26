@@ -30,8 +30,8 @@ const REQUIRED = 'The field "@" is invalid.';
 const DEFAULT_SCHEMA = 'default';
 const SKIP = { $$schema: true, $$result: true, $$callback: true, $$async: true, $$index: true, $$repository: true, $$can: true, $$controller: true };
 const REGEXP_CLEAN_EMAIL = /\s/g;
-const REGEXP_CLEAN_PHONE = /\s|\.|\-|\(|\)/g;
-const REGEXP_NEWOPERATION = /^function(\s)?\([a-zA-Z0-9\$]+\)/;
+const REGEXP_CLEAN_PHONE = /\s|\.|-|\(|\)/g;
+const REGEXP_NEWOPERATION = /^function(\s)?\([a-zA-Z0-9$]+\)/;
 const hasOwnProperty = Object.prototype.hasOwnProperty;
 const Qs = require('querystring');
 
@@ -61,6 +61,7 @@ function SchemaOptions(error, model, options, callback, controller) {
 
 		this.language = controller.language || '';
 		this.ip = controller.ip;
+		this.id = controller.id;
 		this.query = controller.query;
 		this.body = controller.body;
 		this.files = controller.files;
