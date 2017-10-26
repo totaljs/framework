@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkInternal
- * @version 2.8.0
+ * @version 2.8.1
  */
 
 'use strict';
@@ -45,33 +45,33 @@ const REG_1 = /[\n\r\t]+/g;
 const REG_2 = /\s{2,}/g;
 const REG_4 = /\n\s{2,}./g;
 const REG_5 = />\n\s{1,}</g;
-const REG_6 = /[\<\w\"\u0080-\u07ff\u0400-\u04FF]+\s{2,}[\w\u0080-\u07ff\u0400-\u04FF\>]+/;
+const REG_6 = /[<\w"\u0080-\u07ff\u0400-\u04FF]+\s{2,}[\w\u0080-\u07ff\u0400-\u04FF>]+/;
 const REG_7 = /\\/g;
-const REG_8 = /\'/g;
-const REG_BLOCK_BEG = /\@\{block.*?\}/i;
-const REG_BLOCK_END = /\@\{end\}/i;
-const REG_SKIP_1 = /\(\'|\"/;
-const REG_SKIP_2 = /\,(\s)?\w+/;
-const REG_HEAD = /\<\/head\>/i;
-const REG_COMPONENTS = /\@{(\s)?(component|components)(\s)?\(/i;
-const REG_COMPONENTS_GROUP = /(\'|\")[a-z0-9]+(\'|\")/i;
+const REG_8 = /'/g;
+const REG_BLOCK_BEG = /@\{block.*?\}/i;
+const REG_BLOCK_END = /@\{end\}/i;
+const REG_SKIP_1 = /\('|"/;
+const REG_SKIP_2 = /,(\s)?\w+/;
+const REG_HEAD = /<\/head>/i;
+const REG_COMPONENTS = /@{(\s)?(component|components)(\s)?\(/i;
+const REG_COMPONENTS_GROUP = /('|")[a-z0-9]+('|")/i;
 const HTTPVERBS = { 'get': true, 'post': true, 'options': true, 'put': true, 'delete': true, 'patch': true, 'upload': true, 'head': true, 'trace': true, 'propfind': true };
 const RENDERNOW = ['self.$import(', 'self.route', 'self.$js(', 'self.$css(', 'self.$favicon(', 'self.$script(', '$STRING(self.resource(', '$STRING(self.RESOURCE(', 'self.translate(', 'language', 'self.sitemap_url(', 'self.sitemap_name(', '$STRING(CONFIG(', '$STRING(config.', '$STRING(config[', '$STRING(config('];
 const REG_NOTRANSLATE = /@\{notranslate\}/gi;
 const REG_NOCOMPRESS = /@\{nocompress\s\w+}/gi;
-const REG_TAGREMOVE = /[^\>]\n\s{1,}$/;
+const REG_TAGREMOVE = /[^>]\n\s{1,}$/;
 const REG_HELPERS = /helpers\.[a-z0-9A-Z_$]+\(.*?\)+/g;
 const REG_SITEMAP = /\s+(sitemap_navigation\(|sitemap\()+/g;
 const REG_CSS_1 = /\n|\s{2,}/g;
 const REG_CSS_2 = /\s?\{\s{1,}/g;
 const REG_CSS_3 = /\s?\}\s{1,}/g;
-const REG_CSS_4 = /\s?\:\s{1,}/g;
-const REG_CSS_5 = /\s?\;\s{1,}/g;
-const REG_CSS_6 = /\,\s{1,}/g;
+const REG_CSS_4 = /\s?:\s{1,}/g;
+const REG_CSS_5 = /\s?;\s{1,}/g;
+const REG_CSS_6 = /,\s{1,}/g;
 const REG_CSS_7 = /\s\}/g;
 const REG_CSS_8 = /\s\{/g;
-const REG_CSS_9 = /\;\}/g;
-const REG_CSS_10 = /\$[a-z0-9-_]+\:.*?;/gi;
+const REG_CSS_9 = /;\}/g;
+const REG_CSS_10 = /\$[a-z0-9-_]+:.*?;/gi;
 const REG_CSS_11 = /\$[a-z0-9-_]+/gi;
 const AUTOVENDOR = ['filter', 'appearance', 'column-count', 'column-gap', 'column-rule', 'display', 'transform', 'transform-style', 'transform-origin', 'transition', 'user-select', 'animation', 'perspective', 'animation-name', 'animation-duration', 'animation-timing-function', 'animation-delay', 'animation-iteration-count', 'animation-direction', 'animation-play-state', 'opacity', 'background', 'background-image', 'font-smoothing', 'text-size-adjust', 'backface-visibility', 'box-sizing', 'overflow-scrolling'];
 const WRITESTREAM = { flags: 'w' };
@@ -1619,8 +1619,10 @@ function view_parse_localization(content, language) {
 		return content;
 
 	while (command) {
+
 		if (command)
-			output += content.substring(end ? end + 1 : 0, command.beg) + F.translate(language, command.command);
+			output += content.substring(end ? end + 1 : 0, command.beg) + (command.command ? F.translate(language, command.command) : '');
+
 		end = command.end;
 		command = view_find_localization(content, command.end);
 	}

@@ -40,6 +40,7 @@
 - fixed: NoSQL multiple updates
 - fixed: NoSQL sorting of boolean values in larger dataset
 - fixed: external static routing in view engine on Windows
+- fixed: empty localization in view engine e.g. `@()`
 
 ======= 2.8.0
 
