@@ -4555,7 +4555,7 @@ Array.prototype.wait = Array.prototype.waitFor = function(onItem, callback, thre
 	// INIT
 	if (!tmp) {
 
-		if (typeof(callback) === 'number') {
+		if (typeof(callback) !== 'function') {
 			thread = callback;
 			callback = null;
 		}
@@ -4565,21 +4565,12 @@ Array.prototype.wait = Array.prototype.waitFor = function(onItem, callback, thre
 		tmp.index = 0;
 		tmp.thread = thread;
 
-		if (thread)
-			thread = true;
-		else
-			thread = 1;
+		// thread === Boolean then array has to be removed item by item
 
 		init = true;
-		if (typeof(callback) === 'number') {
-			var tmp = thread;
-			thread = callback;
-			callback = tmp;
-		}
 	}
 
 	var item = thread === true ? self.shift() : self[tmp.index++];
-
 	if (item === undefined) {
 		if (!tmp.pending) {
 			callback && callback();
@@ -4594,9 +4585,8 @@ Array.prototype.wait = Array.prototype.waitFor = function(onItem, callback, thre
 	if (!init || tmp.thread === 1)
 		return self;
 
-	for (var i = 1; i < tmp.thread; i++) {
-		self.wait(onItem, callback, true, tmp);
-	}
+	for (var i = 1; i < tmp.thread; i++)
+		self.wait(onItem, callback, 1, tmp);
 
 	return self;
 };
