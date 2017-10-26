@@ -30,8 +30,8 @@
 - fixed: (IMPORTANT) `U.ls2()`
 - fixed: `F.rmdir` removes all files and directories
 - fixed: Date formatting with `a` value
-- fixed: `F.path.mkdir()` in Windows (author: @molda)
-- fixed: `F.restore()` in Windows (author: @molda)
+- fixed: `F.path.mkdir()` on Windows (author: @molda)
+- fixed: `F.restore()` on Windows (author: @molda)
 - fixed: `MODEL()`, `MODULE()`, `INCLUDE()` now are direct aliases
 - fixed: unit testing (author: @ckpiggy)
 - fixed: a check for maximum length of request data
@@ -39,6 +39,7 @@
 - fixed: (IMPORTANT) `DatabaseBuilder.in()`
 - fixed: NoSQL multiple updates
 - fixed: NoSQL sorting of boolean values in larger dataset
+- fixed: external static routing in view engine on Windows
 
 ======= 2.8.0
 
