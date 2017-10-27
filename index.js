@@ -504,6 +504,8 @@ const controller_error_status = function(controller, status, problem) {
 	return controller;
 };
 
+var PERF = {};
+
 function Framework() {
 
 	this.$id = null; // F.id ==> property
@@ -586,7 +588,7 @@ function Framework() {
 		'default-image-quality': 93,
 		'default-image-consumption': 30,
 
-		'allow-handle-static-files': true,
+		'allow-static-files': true,
 		'allow-gzip': true,
 		'allow-websocket': true,
 		'allow-websocket-compression': true,
@@ -1510,6 +1512,7 @@ F.cors = function(url, flags, credentials) {
 		return al > bl ? - 1 : al < bl ? 1 : a.isASTERIX && b.isASTERIX ? 1 : 0;
 	});
 
+	PERF.OPTIONS = true;
 	return F;
 };
 
@@ -2067,6 +2070,25 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 	r.regexpIndexer = regIndex;
 	r.type = 'web';
 
+	if (r.isUPLOAD)
+		PERF.upload = true;
+	if (r.isJSON)
+		PERF.json = true;
+	if (r.isXML)
+		PERF.xml = true;
+	if (r.isBINARY)
+		PERF.binary = true;
+	if (r.MEMBER === 1)
+		PERF.auth = true;
+	if (r.MEMBER === 2)
+		PERF.unauth = true;
+
+	var arr = method ? method.split(',') : EMPTYARRAY;
+	for (var i = 0; i < arr.length; i++) {
+		PERF[arr[i]] = true;
+		PERF[arr[i].toLowerCase()] = true;
+	}
+
 	F.routes.web.push(r);
 	F.emit('route', 'web', instance);
 
@@ -2549,8 +2571,7 @@ F.websocket = function(url, funcInitialize, flags, length) {
 
 		// Middleware
 		if (flag[0] === '#') {
-			if (!middleware)
-				middleware = [];
+			!middleware && (middleware = []);
 			middleware.push(flags[i].substring(1));
 			continue;
 		}
@@ -2559,8 +2580,7 @@ F.websocket = function(url, funcInitialize, flags, length) {
 
 		// Origins
 		if (flag.startsWith('http://') || flag.startsWith('https://')) {
-			if (!allow)
-				allow = [];
+			!allow && (allow = []);
 			allow.push(flag);
 			continue;
 		}
@@ -2660,9 +2680,17 @@ F.websocket = function(url, funcInitialize, flags, length) {
 	r.regexpIndexer = regIndex;
 	r.type = 'websocket';
 	F.routes.websockets.push(r);
+	F.initwebsocket && F.initwebsocket();
 	F.emit('route', 'websocket', r);
 	!_controller && F.$routesSort(2);
 	return instance;
+};
+
+F.initwebsocket = function() {
+	if (F.routes.websockets.length && F.config['allow-websocket'] && F.server) {
+		F.server.on('upgrade', F._upgrade);
+		F.initwebsocket = null;
+	}
 };
 
 /**
@@ -6265,8 +6293,7 @@ F.initialize = function(http, debug, options, restart) {
 			F.server = http.createServer(F.listener);
 
 		F.config['allow-performance'] && F.server.on('connection', connection_tunning);
-		F.config['allow-websocket'] && F.server.on('upgrade', F._upgrade);
-
+		F.initwebsocket && F.initwebsocket();
 		F.consoledebug('HTTP listening');
 
 		if (listenpath)
@@ -6764,9 +6791,8 @@ F.listener = function(req, res) {
 	req.isAuthorized = true;
 	req.xhr = headers['x-requested-with'] === 'XMLHttpRequest';
 	res.success = false;
-	req.session = null;
-	req.user = null;
-	req.isStaticFile = F.config['allow-handle-static-files'] && U.isStaticFile(req.uri.pathname);
+	req.user = req.session = null;
+	req.isStaticFile = F.config['allow-static-files'] && U.isStaticFile(req.uri.pathname);
 
 	if (req.isStaticFile)
 		req.extension = U.getExtension(req.uri.pathname);
@@ -6809,6 +6835,11 @@ F.$requestcontinue = function(req, res, headers) {
 		return;
 	}
 
+	if (!PERF[req.method]) {
+		req.$total_403();
+		return;
+	}
+
 	req.body = EMPTYOBJECT;
 	req.files = EMPTYARRAY;
 	req.isProxy = headers['x-proxy'] === 'total.js';
@@ -6834,6 +6865,7 @@ F.$requestcontinue = function(req, res, headers) {
 
 	var method = req.method;
 	var first = method[0];
+
 	if (first === 'P' || first === 'D') {
 		req.buffer_data = U.createBuffer();
 		var index = multipart.lastIndexOf(';');
@@ -6953,15 +6985,12 @@ F.$requestcontinue = function(req, res, headers) {
 		case 'P':
 			if (F._request_check_POST) {
 				if (multipart) {
-
 					if (isCORS)
 						F.$cors(req, res, cors_callback_multipart, multipart);
 					else if (req.$type === 4)
 						F.$requestcontinue_mmr(req, res, multipart);
 					else
 						req.$total_multipart(multipart);
-					return F;
-
 				} else {
 					if (method === 'PUT')
 						F.stats.request.put++;
@@ -6979,12 +7008,7 @@ F.$requestcontinue = function(req, res, headers) {
 			break;
 	}
 
-	F.$events['request-end'] && F.emit('request-end', req, res);
-	F.reqstats(false, false);
-	F.stats.request.blocked++;
-	res.writeHead(403);
-	res.end();
-	return F;
+	req.$total_403();
 };
 
 function cors_callback0(req) {
@@ -7005,18 +7029,11 @@ function cors_callback_multipart(req, res, multipart) {
 F.$requestcontinue_mmr = function(req, res, header) {
 	var route = F.routes.mmr[req.url];
 	F.stats.request.mmr++;
-
 	if (route) {
 		F.path.verify('temp');
 		framework_internal.parseMULTIPART_MIXED(req, header, F.config['directory-temp'], route.exec);
-		return;
-	}
-
-	F.$events['request-end'] && F.emit('request-end', req, res);
-	F.reqstats(false, false);
-	F.stats.request.blocked++;
-	res.writeHead(403);
-	res.end();
+	} else
+		req.$total_403();
 };
 
 F.$cors = function(req, res, fn, arg) {
@@ -8268,14 +8285,20 @@ F.$configure_configs = function(arr, rewrite) {
 				obj[tmp] = value;
 				break;
 
-			case 'allow-gzip':
-			case 'allow-websocket':
-			case 'allow-performance':
+			case 'allow-handle-static-files':
+				OBSOLETE('config["allow-handle-static-files"]', 'The key has been renamed to "allow-static-files"');
+				obj['allow-static-files'] = true;
+				break;
+
 			case 'allow-compile-html':
-			case 'allow-compile-style':
 			case 'allow-compile-script':
-			case 'allow-defer':
+			case 'allow-compile-style':
 			case 'allow-debug':
+			case 'allow-defer':
+			case 'allow-gzip':
+			case 'allow-performance':
+			case 'allow-static-files':
+			case 'allow-websocket':
 			case 'disable-strict-server-certificate-validation':
 			case 'disable-clear-temporary-directory':
 			case 'trace':
@@ -13668,12 +13691,8 @@ function extend_request(PROTO) {
 		if (this.$total_route) {
 			F.path.verify('temp');
 			framework_internal.parseMULTIPART(this, header, this.$total_route, F.config['directory-temp']);
-		} else {
-			F.reqstats(false, false);
-			F.stats.request.blocked++;
-			this.res.writeHead(403);
-			this.res.end();
-		}
+		} else
+			this.$total_403();
 	};
 
 	PROTO.$total_urlencoded = function() {
@@ -13683,21 +13702,27 @@ function extend_request(PROTO) {
 			this.buffer_exceeded = false;
 			this.on('data', subscribe_parse);
 			this.$total_end();
-		} else {
-			F.stats.request.blocked++;
-			F.reqstats(false, false);
-			this.res.writeHead(403);
-			this.res.end();
-			F.$events['request-end'] && F.emit('request-end', this, this.res);
-			this.clear(true);
-		}
+		} else
+			this.$total_403();
+	};
+
+	PROTO.$total_403 = function() {
+		F.stats.request.blocked++;
+		F.reqstats(false, false);
+		this.res.writeHead(403);
+		this.res.end();
+		F.$events['request-end'] && F.emit('request-end', this, this.res);
+		this.clear(true);
 	};
 
 	PROTO.$total_end = function() {
 		var h = this.method[0];
-		if (h === 'G' || h === 'H' || h === 'O')
-			subscribe_end.call(this);
-		else
+		if (h === 'G' || h === 'H' || h === 'O') {
+			if (this.$total_route && this.$total_route.schema)
+				this.$total_schema = true;
+			this.buffer_data = null;
+			this.$total_prepare();
+		} else
 			this.on('end', subscribe_end);
 	};
 
@@ -13899,7 +13924,7 @@ function extend_request(PROTO) {
 			if (route && route.schema)
 				this.$total_schema = true;
 			this.buffer_data = null;
-			this.$total_prepare(this.flags, this.uri.pathname);
+			this.$total_prepare();
 			return;
 		}
 
@@ -13914,18 +13939,19 @@ function extend_request(PROTO) {
 			try {
 				F.$onParseXML(this);
 				this.buffer_data = null;
-				this.$total_prepare(this.flags, this.uri.pathname);
+				this.$total_prepare();
 			} catch (err) {
 				F.error(err, null, this.uri);
 				this.$total_500(err);
 			}
+
 			return;
 		}
 
 		if (route.isRAW) {
 			this.body = this.buffer_data;
 			this.buffer_data = null;
-			this.$total_prepare(this.flags, this.uri.pathname);
+			this.$total_prepare();
 			return;
 		}
 
@@ -13948,7 +13974,7 @@ function extend_request(PROTO) {
 
 		route.schema && (this.$total_schema = true);
 		this.buffer_data = null;
-		this.$total_prepare(this.flags, this.uri.pathname);
+		this.$total_prepare();
 	};
 
 	PROTO.$total_endfile = function() {
@@ -14020,38 +14046,29 @@ function extend_request(PROTO) {
 		this.$total_execute(500, true);
 	};
 
-	PROTO.$total_prepare = function(flags, url) {
+	PROTO.$total_prepare = function() {
 
 		var req = this;
-		var res = this.res;
-		var auth = F.onAuthorize;
+		var length = req.flags.length;
 
-		if (auth) {
-			var length = flags.length;
-			auth(req, res, flags, function(isAuthorized, user) {
-
-				var hasRoles = length !== flags.length;
+		if (F.onAuthorize) {
+			F.onAuthorize(req, req.res, req.flags, function(isAuthorized, user) {
+				var hasRoles = length !== req.flags.length;
 				if (hasRoles)
 					req.$flags += flags.slice(length).join('');
-
 				if (typeof(isAuthorized) !== 'boolean') {
 					user = isAuthorized;
 					isAuthorized = !user;
 				}
-
 				req.isAuthorized = isAuthorized;
 				req.$total_authorize(isAuthorized, user, hasRoles);
 			});
 		} else {
-
 			if (!req.$total_route)
-				req.$total_route = F.lookup(req, req.buffer_exceeded ? '#431' : url || req.uri.pathname, req.flags, 0);
-
+				req.$total_route = F.lookup(req, req.buffer_exceeded ? '#431' : req.uri.pathname, req.flags, 0);
 			if (!req.$total_route)
 				req.$total_route = F.lookup(req, '#404', EMPTYARRAY, 0);
-
 			var code = req.buffer_exceeded ? 431 : 404;
-
 			if (!req.$total_schema || !req.$total_route)
 				req.$total_execute(code);
 			else
