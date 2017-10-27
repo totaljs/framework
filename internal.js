@@ -56,7 +56,7 @@ const REG_HEAD = /<\/head>/i;
 const REG_COMPONENTS = /@{(\s)?(component|components)(\s)?\(/i;
 const REG_COMPONENTS_GROUP = /('|")[a-z0-9]+('|")/i;
 const HTTPVERBS = { 'get': true, 'post': true, 'options': true, 'put': true, 'delete': true, 'patch': true, 'upload': true, 'head': true, 'trace': true, 'propfind': true };
-const RENDERNOW = ['self.$import(', 'self.route', 'self.$js(', 'self.$css(', 'self.$favicon(', 'self.$script(', '$STRING(self.resource(', '$STRING(self.RESOURCE(', 'self.translate(', 'language', 'self.sitemap_url(', 'self.sitemap_name(', '$STRING(CONFIG(', '$STRING(config.', '$STRING(config[', '$STRING(config('];
+const RENDERNOW = ['self.$import(', 'self.route', 'self.$js(', 'self.$css(', 'self.$favicon(', 'self.$script(', '$STRING(self.resource(', '$STRING(RESOURCE(', 'self.translate(', 'language', 'self.sitemap_url(', 'self.sitemap_name(', '$STRING(CONFIG(', '$STRING(config.', '$STRING(config[', '$STRING(config('];
 const REG_NOTRANSLATE = /@\{notranslate\}/gi;
 const REG_NOCOMPRESS = /@\{nocompress\s\w+}/gi;
 const REG_TAGREMOVE = /[^>]\n\s{1,}$/;
@@ -2088,11 +2088,12 @@ function view_prepare(command, dynamicCommand, functions, controller) {
 		case 'resource':
 			return '$STRING(self.' + command + ').encode()';
 		case 'RESOURCE':
-			return '$STRING(self.' + command.toLowerCase() + ').encode()';
+			return '$STRING(' + command + ').encode()';
 
 		case '!resource':
+			return '$STRING(self.' + command + ')';
 		case '!RESOURCE':
-			return '$STRING(self.' + command.substring(1) + ')';
+			return '$STRING(' + command.substring(1) + ')';
 
 		case 'host':
 		case 'hostname':
