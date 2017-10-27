@@ -12,6 +12,7 @@
 - added: `SchemaOptions.success()` alias to `callback(SUCCESS(value))`
 - added: `controller.success()` alias to `controller.json(SUCCESS(value))`
 - added: `NOSQL('users').backups([filter(doc)], callback(err, response))` returns all backups
+- added: `AUTH(fn)` is an alias to `F.onAuthorize = fn`
 
 - updated: `sitemap` routing can contain an additional path, e.g. `#sitemapid/path/`
 - updated: `F.localize()` supports sitemap routing

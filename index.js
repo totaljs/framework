@@ -300,6 +300,9 @@ global.GROUP = (a, b) => F.group(a, b);
 global.WEBSOCKET = (a, b, c, d) => F.websocket(a, b, c, d);
 global.FILE = (a, b, c) => F.file(a, b, c);
 global.REDIRECT = (a, b, c, d) => F.redirect(a, b, c, d);
+global.AUTH = function(fn) {
+	F.onAuthorize = fn;
+};
 
 global.$CREATE = function(schema) {
 	schema = parseSchema(schema);
