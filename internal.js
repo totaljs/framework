@@ -2091,7 +2091,7 @@ function view_prepare(command, dynamicCommand, functions, controller) {
 			return '$STRING(' + command + ').encode()';
 
 		case '!resource':
-			return '$STRING(self.' + command + ')';
+			return '$STRING(self.' + command.substring(1) + ')';
 		case '!RESOURCE':
 			return '$STRING(' + command.substring(1) + ')';
 
