@@ -192,18 +192,26 @@ HEADERS.file_debug_range[HEADER_LENGTH] = '0';
 HEADERS.file_debug_range['Content-Range'] = '';
 HEADERS.file_debug_range['X-Powered-By'] = 'Total.js';
 HEADERS.content_mobile_release = {};
+HEADERS.content_mobile_release[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
 HEADERS.content_mobile_release['Vary'] = 'Accept-Encoding, User-Agent';
 HEADERS.content_mobile_release['Content-Encoding'] = 'gzip';
+HEADERS.content_mobile_release['Expires'] = '-1';
+HEADERS.content_mobile_release['X-Powered-By'] = 'Total.js';
 HEADERS.content_mobile = {};
+HEADERS.content_mobile[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
 HEADERS.content_mobile['Vary'] = 'Accept-Encoding, User-Agent';
+HEADERS.content_mobile['Expires'] = '-1';
 HEADERS.content_mobile['X-Powered-By'] = 'Total.js';
 HEADERS.content_compress = {};
-HEADERS.content_compress[HEADER_CACHE] = 'private, no-cache, no-store, must-revalidate';
+HEADERS.content_compress[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
 HEADERS.content_compress['Vary'] = 'Accept-Encoding';
 HEADERS.content_compress['Content-Encoding'] = 'gzip';
+HEADERS.content_compress['Expires'] = '-1';
 HEADERS.content_compress['X-Powered-By'] = 'Total.js';
 HEADERS.content = {};
+HEADERS.content[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
 HEADERS.content['Vary'] = 'Accept-Encoding';
+HEADERS.content['Expires'] = '-1';
 HEADERS.content['X-Powered-By'] = 'Total.js';
 HEADERS.stream_release_compress = {};
 HEADERS.stream_release_compress[HEADER_CACHE] = 'public, max-age=11111111';
@@ -228,7 +236,7 @@ HEADERS.stream_debug['Expires'] = '-1';
 HEADERS.stream_debug['Access-Control-Allow-Origin'] = '*';
 HEADERS.stream_debug['X-Powered-By'] = 'Total.js';
 HEADERS.binary_compress = {};
-HEADERS.binary_compress[HEADER_CACHE] = 'public';
+HEADERS.binary_compress[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
 HEADERS.binary_compress['Content-Encoding'] = 'gzip';
 HEADERS.binary_compress['X-Powered-By'] = 'Total.js';
 HEADERS.binary = {};
@@ -2090,6 +2098,7 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 	}
 
 	F.routes.web.push(r);
+
 	F.emit('route', 'web', instance);
 
 	// Appends cors route
@@ -6857,9 +6866,7 @@ F.$requestcontinue = function(req, res, headers) {
 	} else
 		F.stats.request.desktop++;
 
-	if (req.$protocol[5])
-		req.$flags += req.$protocol[5];
-
+	req.$protocol[5] && (req.$flags += req.$protocol[5]);
 	req.$type = 0;
 	flags.push(req.$protocol);
 
@@ -8505,13 +8512,13 @@ F.lookup = function(req, url, flags, membertype) {
 	if (isSystem)
 		req.path = [url];
 
+	var key;
+
 	// helper for 401 http status
 	req.$isAuthorized = true;
 
-	var key;
-
 	if (!isSystem) {
-		key = '#' + url + '$' + membertype + req.$flags + (subdomain ? '$' + subdomain : '');
+		key = '1' + url + '$' + membertype + req.$flags + (subdomain ? '$' + subdomain : '');
 		if (F.temporary.other[key])
 			return F.temporary.other[key];
 	}
@@ -9270,18 +9277,6 @@ FrameworkCache.prototype.fn = function(name, fnCache, fnCallback) {
 
 	return self;
 };
-
-function subscribe_parse(chunk) {
-	this.$total_parsebody(chunk);
-}
-
-function subscribe_file() {
-	this.$total_endfile();
-}
-
-function subscribe_end() {
-	this.$total_end2();
-}
 
 function subscribe_timeout(req) {
 	req.controller && req.controller.precache && req.controller.precache(null, null, null);
@@ -13677,10 +13672,9 @@ function extend_request(PROTO) {
 	PROTO.$total_file = function() {
 		var h = this.method[0];
 		if (h === 'G' || h === 'H')
-			subscribe_file.call(this);
+			this.$total_endfile();
 		else
-			this.on('end', subscribe_file);
-			// this.req.resume();
+			this.on('end', this.$total_endfile);
 	};
 
 	PROTO.$total_multipart = function(header) {
@@ -13699,7 +13693,7 @@ function extend_request(PROTO) {
 		if (this.$total_route) {
 			this.buffer_has = true;
 			this.buffer_exceeded = false;
-			this.on('data', subscribe_parse);
+			this.on('data', this.$total_parsebody);
 			this.$total_end();
 		} else
 			this.$total_status(404);
@@ -13722,7 +13716,7 @@ function extend_request(PROTO) {
 			this.buffer_data = null;
 			this.$total_prepare();
 		} else
-			this.on('end', subscribe_end);
+			this.on('end', this.$total_end2);
 	};
 
 	PROTO.$total_execute = function(status, isError) {
@@ -14956,8 +14950,6 @@ function extend_response(PROTO) {
 			headers = gzip ? HEADERS.content_mobile_release : HEADERS.content_mobile;
 		else
 			headers = gzip ? HEADERS.content_compress : HEADERS.content;
-
-		headers[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
 
 		if (REG_TEXTAPPLICATION.test(options.type))
 			options.type += '; charset=utf-8';
