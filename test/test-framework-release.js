@@ -5,6 +5,8 @@ var url = 'http://127.0.0.1:8001/';
 var errorStatus = 0;
 var max = 100;
 
+//F.snapshot('/templates/localization.html', '/users/petersirka/desktop/localization.html');
+
 // INSTALL('module', 'https://www.totaljs.com/framework/include.js', { test: true });
 
 //framework.map('/minify/', '@testpackage', ['.html', 'js']);
@@ -295,7 +297,7 @@ function test_routing(next) {
 
 	async.await('rest HEAD', function(complete) {
 		utils.request(url + 'rest/', ['head'], null, function(error, data, code, headers) {
- 			if (error)
+			if (error)
 				throw error;
 			assert(data.connection === 'close', 'REST - HEAD');
 			complete();
@@ -478,7 +480,7 @@ function test_routing(next) {
 		utils.request(url + 'schema-filter/', ['post'], 'EMPTY', function(error, data, code, headers) {
 			if (error)
 				throw error;
-			assert(data === '[{"name":"age","error":"The field \\"age\\" is invalid.","path":"filter.age"}]', 'schema filter');
+			assert(data === '[{"name":"age","error":"The field \\"age\\" is invalid.","path":"filter.age","prefix":"age"}]', 'schema filter');
 			complete();
 		});
 	});
@@ -496,7 +498,7 @@ function test_routing(next) {
 		utils.request(url + 'post/schema/', ['post'], 'age=Peter123456789012345678901234567890#', function(error, data, code, headers) {
 			if (error)
 				throw error;
-			assert(data === '[{"name":"name","error":"default","path":"User.name"}]', 'post-schema 2');
+			assert(data === '[{"name":"name","error":"default","path":"User.name","prefix":"name"}]', 'post-schema 2');
 			complete();
 		});
 	});
@@ -901,7 +903,7 @@ framework.on('load', function() {
 
 framework.useConfig('my-config.txt').useConfig('/configs/my-config.config').http('release', { port: 8001 });
 
-process.on('uncaughtException', (err)=>{
-  console.error(err)
-  process.exit(1)
-})
+process.on('uncaughtException', function(err) {
+	console.error(err);
+	process.exit(1);
+});

@@ -1987,16 +1987,17 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 
 	for (var i = 0; i < properties.length; i++) {
 
-		var name = properties[i].toString();
+		var name = properties[i];
 		if (fields && fields.indexOf(name) === -1)
 			continue;
 
 		var value = model[name];
 		var type = typeof(value);
 		var TYPE = collection[schema].schema[name];
+		var prefix = entity.resourcePrefix ? (entity.resourcePrefix + name) : name;
 
 		if (value === undefined) {
-			error.add(pluspath + name, '@', current + name);
+			error.push(pluspath + name, '@', current + name, undefined, prefix);
 			continue;
 		} else if (type === 'function')
 			value = model[name]();
@@ -2026,7 +2027,7 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 					entity = entity.substring(1, entity.length - 1).trim();
 
 					if (!(value instanceof Array)) {
-						error.add(pluspath + name, (pluspath ? '@' + name : '@'), current + name, index);
+						error.push(pluspath + name, '@', current + name, index, prefix);
 						continue;
 					}
 
@@ -2043,17 +2044,21 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 						type = typeof(result2);
 
 						if (type === 'string') {
-							error.add(pluspath + name, result2, current + name, index);
+							if (result2[0] === '@')
+								error.push(pluspath + name, '@', current + name, index, entity.resourcePrefix + result2.substring(1));
+							else
+								error.push(pluspath + name, result2, current + name, index, prefix);
 							continue;
 						}
 
 						if (type === 'boolean' && !result2) {
-							error.add(pluspath + name, (pluspath ? '@' + name : '@'), current + name, index);
+
+							error.push(pluspath + name, '@', current + name, index, prefix);
 							continue;
 						}
 
 						if (result2.isValid === false)
-							error.add(pluspath + name, result2.error, current + name, index);
+							error.push(pluspath + name, result2.error, current + name, index, prefix);
 
 						continue;
 					}
@@ -2070,17 +2075,20 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 						type = typeof(result3);
 
 						if (type === 'string') {
-							error.add(pluspath + name, result3, current + name, index);
+							if (result3[0] === '@')
+								error.push(pluspath + name, '@', current + name, index, entity.resourcePrefix + result3.substring(1));
+							else
+								error.push(pluspath + name, result3, current + name, index, prefix);
 							continue;
 						}
 
 						if (type === 'boolean' && !result3) {
-							error.add(pluspath + name, (pluspath ? '@' + name : '@'), current + name, index);
+							error.push(pluspath + name, '@', current + name, index, prefix);
 							continue;
 						}
 
 						if (result3.isValid === false) {
-							error.add(pluspath + name, result3.error, current + name, index);
+							error.push(pluspath + name, result3.error, current + name, index, prefix);
 							continue;
 						}
 					}
@@ -2103,18 +2111,20 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 		type = typeof(result);
 
 		if (type === 'string') {
-			error.add(pluspath + name, result, current + name, index);
+			if (result[0] === '@')
+				error.push(pluspath + name, '@', current + name, index, entity.resourcePrefix + result.substring(1));
+			else
+				error.push(pluspath + name, result, current + name, index, prefix);
 			continue;
 		}
 
 		if (type === 'boolean') {
-			if (!result)
-				error.add(pluspath + name, (pluspath ? '@' + name : '@'), current + name, index);
+			!result && error.push(pluspath + name, '@', current + name, index, prefix);
 			continue;
 		}
 
 		if (result.isValid === false)
-			error.add(pluspath + name, result.error, current + name, index);
+			error.push(pluspath + name, result.error, current + name, index, prefix);
 	}
 
 	return error;

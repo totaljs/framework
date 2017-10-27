@@ -41,6 +41,7 @@
 - fixed: NoSQL sorting of boolean values in larger dataset
 - fixed: external static routing in view engine on Windows
 - fixed: empty localization in view engine e.g. `@()`
+- fixed: `schema.setPrefix()` in nested schemas
 
 ======= 2.8.0
 

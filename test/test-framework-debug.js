@@ -480,7 +480,7 @@ function test_routing(next) {
 		utils.request(url + 'schema-filter/', ['post'], 'EMPTY', function(error, data, code, headers) {
 			if (error)
 				throw error;
-			assert(data === '[{"name":"age","error":"The field \\"age\\" is invalid.","path":"filter.age"}]', 'schema filter');
+			assert(data === '[{"name":"age","error":"The field \\"age\\" is invalid.","path":"filter.age","prefix":"age"}]', 'schema filter');
 			complete();
 		});
 	});
@@ -498,7 +498,7 @@ function test_routing(next) {
 		utils.request(url + 'post/schema/', ['post'], 'age=Peter123456789012345678901234567890#', function(error, data, code, headers) {
 			if (error)
 				throw error;
-			assert(data === '[{"name":"name","error":"default","path":"User.name"}]', 'post-schema 2');
+			assert(data === '[{"name":"name","error":"default","path":"User.name","prefix":"name"}]', 'post-schema 2');
 			complete();
 		});
 	});

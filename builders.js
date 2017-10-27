@@ -1201,18 +1201,16 @@ SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourc
 		var s = self.parent.collection[schema.raw];
 
 		if (!s) {
-			F.error(new Error('Schema "' + schema.raw + '" not found (validation).'));
+			F.error(new Error('Schema "{0}" not found (validation).'.format(schema.raw)));
 			continue;
 		}
 
-		if (!schema.isArray) {
+		if (schema.isArray) {
+			var arr = model[key];
+			for (var j = 0, jl = arr.length; j < jl; j++)
+				(model[key][j] != null || schema.required) && s.validate(model[key][j], resourcePrefix, resourceName, builder, filter, path + key + '[' + j + ']', j);
+		} else
 			(model[key] != null || schema.required) && s.validate(model[key], resourcePrefix, resourceName, builder, filter, path + key, -1);
-			continue;
-		}
-
-		var arr = model[key];
-		for (var j = 0, jl = arr.length; j < jl; j++)
-			(model[key][j] != null || schema.required) && s.validate(model[key][j], resourcePrefix, resourceName, builder, filter, path + key + '[' + j + ']', j);
 	}
 
 	return builder;
@@ -2788,7 +2786,7 @@ ErrorBuilder.prototype._resource = function() {
 
 ErrorBuilder.prototype._resource_handler = function(name) {
 	var self = this;
-	return typeof(framework) !== 'undefined' ? F.resource(self.resourceName || 'default', self.resourcePrefix + name) : '';
+	return typeof(F) !== 'undefined' ? F.resource(self.resourceName || 'default', name) : '';
 };
 
 ErrorBuilder.prototype.exception = function(message) {
@@ -2816,7 +2814,8 @@ ErrorBuilder.prototype.add = function(name, error, path, index) {
  * @param {Number} index Array Index, optional.
  * @return {ErrorBuilder}
  */
-ErrorBuilder.prototype.push = function(name, error, path, index) {
+ErrorBuilder.prototype.push = function(name, error, path, index, prefix) {
+
 	this.isPrepared = false;
 
 	if (name instanceof ErrorBuilder) {
@@ -2830,13 +2829,13 @@ ErrorBuilder.prototype.push = function(name, error, path, index) {
 
 	if (name instanceof Array) {
 		for (var i = 0, length = name.length; i < length; i++)
-			this.push(name[i], undefined, path, index);
+			this.push(name[i], undefined, path, index, prefix);
 		return this;
 	}
 
 	if (error instanceof Array) {
 		for (var i = 0, length = error.length; i < length; i++)
-			this.push(name, error[i], path, index);
+			this.push(name, error[i], path, index, prefix);
 		return this;
 	}
 
@@ -2858,7 +2857,7 @@ ErrorBuilder.prototype.push = function(name, error, path, index) {
 		error = error.toString();
 	}
 
-	this.items.push({ name: name, error: typeof(error) === 'string' ? error : error.toString(), path: path, index: index });
+	this.items.push({ name: name, error: typeof(error) === 'string' ? error : error.toString(), path: path, index: index, prefix: prefix });
 	this.count = this.items.length;
 	return this;
 };
@@ -2958,11 +2957,12 @@ ErrorBuilder.prototype._prepare = function() {
 	for (var i = 0, length = arr.length; i < length; i++) {
 
 		var o = arr[i];
+
 		if (o.error[0] !== '@')
 			continue;
 
 		if (o.error.length === 1)
-			o.error = this.onResource(o.name);
+			o.error = this.onResource(o.prefix ? o.prefix : (this.resourcePrefix + o.name));
 		else
 			o.error = this.onResource(o.error.substring(1));
 
