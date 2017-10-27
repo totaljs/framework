@@ -44,6 +44,8 @@
 - fixed: empty localization in view engine e.g. `@()`
 - fixed: `schema.setPrefix()` in nested schemas
 
+- improved: performance and security
+
 ======= 2.8.0
 
 - added: `NOSQL().restore()` restores a database (its package)
