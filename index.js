@@ -1440,7 +1440,7 @@ F.restful2 = function(url, flags, onQuery, onGet, onSave, onDelete) {
  * @param {Boolean} credentials
  * @return {Framework}
  */
-F.cors = function(url, flags, credentials) {
+global.CORS = F.cors = function(url, flags, credentials) {
 
 	var route = {};
 	var origins = [];
