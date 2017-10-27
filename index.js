@@ -6836,7 +6836,7 @@ F.$requestcontinue = function(req, res, headers) {
 	}
 
 	if (!PERF[req.method]) {
-		req.$total_403();
+		req.$total_status(404);
 		return;
 	}
 
@@ -7008,7 +7008,7 @@ F.$requestcontinue = function(req, res, headers) {
 			break;
 	}
 
-	req.$total_403();
+	req.$total_status(404);
 };
 
 function cors_callback0(req) {
@@ -7033,7 +7033,7 @@ F.$requestcontinue_mmr = function(req, res, header) {
 		F.path.verify('temp');
 		framework_internal.parseMULTIPART_MIXED(req, header, F.config['directory-temp'], route.exec);
 	} else
-		req.$total_403();
+		req.$total_status(404);
 };
 
 F.$cors = function(req, res, fn, arg) {
@@ -9318,12 +9318,11 @@ function Controller(name, req, res, currentView) {
 
 	// controller.type === 0 - classic
 	// controller.type === 1 - server sent events
-	this.type = 0;
+	// this.type = 0;
 
 	// this.layoutName = F.config['default-layout'];
 	// this.themeName = F.config['default-theme'];
-
-	this.status = 200;
+	// this.status = 200;
 
 	// this.isLayout = false;
 	// this.isCanceled = false;
@@ -9332,7 +9331,6 @@ function Controller(name, req, res, currentView) {
 
 	this.isConnected = true;
 	this.isController = true;
-	this.repository = {};
 
 	// render output
 	// this.output = null;
@@ -9349,6 +9347,17 @@ function Controller(name, req, res, currentView) {
 }
 
 Controller.prototype = {
+
+	get repository() {
+		if (this.$repository)
+			return this.$repository;
+		else
+			return this.$repository ? this.$repository : (this.$repository = {});
+	},
+
+	set repository(val) {
+		this.$repository = val;
+	},
 
 	get schema() {
 		return this.$total_route.schema[0] === 'default' ? this.$total_route.schema[1] : this.$total_route.schema.join('/');
@@ -9378,18 +9387,8 @@ Controller.prototype = {
 		return F.path;
 	},
 
-	get get() {
-		OBSOLETE('controller.get', 'Instead of controller.get use controller.query');
-		return this.req.query;
-	},
-
 	get query() {
 		return this.req.query;
-	},
-
-	get post() {
-		OBSOLETE('controller.post', 'Instead of controller.post use controller.body');
-		return this.req.body;
 	},
 
 	get body() {
@@ -11297,7 +11296,7 @@ Controller.prototype.json = function(obj, headers, beautify, replacer) {
 		beautify = headers;
 	}
 
-	res.options.code = self.status;
+	res.options.code = self.status || 200;
 	res.options.type = CT_JSON;
 	res.options.headers = headers;
 
@@ -11368,7 +11367,7 @@ Controller.prototype.jsonp = function(name, obj, headers, beautify, replacer) {
 		beautify = headers;
 	}
 
-	res.options.code = self.status;
+	res.options.code = self.status || 200;
 	res.options.headers = headers;
 	res.options.type = 'application/x-javascript';
 
@@ -11462,7 +11461,7 @@ Controller.prototype.content = function(body, type, headers) {
 	var res = self.res;
 
 	res.options.headers = headers;
-	res.options.code = self.status;
+	res.options.code = self.status || 200;
 
 	if (body instanceof ErrorBuilder) {
 		var tmp = body.output(true);
@@ -11482,7 +11481,7 @@ Controller.prototype.content = function(body, type, headers) {
 	res.options.body = body;
 	res.$text();
 
-	if (self.precache && self.status === 200) {
+	if (self.precache && (!self.status || self.status === 200)) {
 		self.layout('');
 		self.precache(body, res.options.type, headers, true);
 	}
@@ -11501,7 +11500,7 @@ Controller.prototype.plain = function(body, headers) {
 	var self = this;
 	var res = self.res;
 
-	res.options.code = self.status;
+	res.options.code = self.status || 200;
 	res.options.headers = headers;
 	res.options.type = CT_TEXT;
 
@@ -11546,7 +11545,7 @@ Controller.prototype.empty = function(headers) {
 		headers = null;
 	}
 
-	res.options.code = self.status;
+	res.options.code = self.status || 200;
 	res.options.headers = headers;
 	res.options.body = EMPTYBUFFER;
 	res.options.type = CT_TEXT;
@@ -11813,7 +11812,7 @@ Controller.prototype.sse = function(data, eventname, id, retry) {
 		self.req.$total_success();
 		self.req.on('close', () => self.close());
 		res.success = true;
-		res.writeHead(self.status, HEADERS.sse);
+		res.writeHead(self.status || 200, HEADERS.sse);
 	}
 
 	if (typeof(data) === 'object')
@@ -11866,7 +11865,7 @@ Controller.prototype.mmr = function(name, stream, callback) {
 		self.req.on('close', () => self.close());
 		res.success = true;
 		HEADERS.mmr[HEADER_TYPE] = 'multipart/x-mixed-replace; boundary=' + self.boundary;
-		res.writeHead(self.status, HEADERS.mmr);
+		res.writeHead(self.status || 200, HEADERS.mmr);
 	}
 
 	res.write('--' + self.boundary + NEWLINE + HEADER_TYPE + ': ' + U.getContentType(U.getExtension(name)) + NEWLINE + NEWLINE);
@@ -12221,7 +12220,7 @@ Controller.prototype.$viewrender = function(filename, generator, model, headers,
 		return value;
 	}
 
-	if (!isLayout && self.precache && self.status === 200 && !partial)
+	if (!isLayout && self.precache && (!self.status || self.status === 200) && !partial)
 		self.precache(value, CT_HTML, headers, true);
 
 	if (isLayout || !self.layoutName) {
@@ -12240,7 +12239,7 @@ Controller.prototype.$viewrender = function(filename, generator, model, headers,
 
 		var res = self.res;
 		res.options.body = value;
-		res.options.code = self.status;
+		res.options.code = self.status || 200;
 		res.options.type = CT_HTML;
 		res.options.headers = headers;
 		res.$text();
@@ -12300,7 +12299,7 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
 
 	var res = self.res;
 
-	res.options.code = self.status;
+	res.options.code = self.status || 200;
 	res.options.type = output.type;
 	res.options.headers = output.headers;
 	res.options.body = output.content;
@@ -13692,7 +13691,7 @@ function extend_request(PROTO) {
 			F.path.verify('temp');
 			framework_internal.parseMULTIPART(this, header, this.$total_route, F.config['directory-temp']);
 		} else
-			this.$total_403();
+			this.$total_status(404);
 	};
 
 	PROTO.$total_urlencoded = function() {
@@ -13703,14 +13702,14 @@ function extend_request(PROTO) {
 			this.on('data', subscribe_parse);
 			this.$total_end();
 		} else
-			this.$total_403();
+			this.$total_status(404);
 	};
 
-	PROTO.$total_403 = function() {
+	PROTO.$total_status = function(status) {
 		F.stats.request.blocked++;
 		F.reqstats(false, false);
-		this.res.writeHead(403);
-		this.res.end();
+		this.res.writeHead(status);
+		this.res.end(U.httpStatus(status));
 		F.$events['request-end'] && F.emit('request-end', this, this.res);
 		this.clear(true);
 	};
