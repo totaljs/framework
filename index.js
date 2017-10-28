@@ -6849,16 +6849,22 @@ F.$requestcontinue = function(req, res, headers) {
 		return;
 	}
 
+	F.stats.request.web++;
+
 	req.body = EMPTYOBJECT;
 	req.files = EMPTYARRAY;
-	req.isProxy = headers['x-proxy'] === 'total.js';
 	req.buffer_exceeded = false;
 	req.buffer_has = false;
 	req.$flags = req.method[0] + req.method[1];
-	F.stats.request.web++;
+
+	if (headers['x-proxy'] === 'total.js') {
+		req.isProxy = true;
+		req.$flags += 'f';
+		flags.push('proxy');
+	}
 
 	var flags = [req.method.toLowerCase()];
-	var multipart = req.headers['content-type'] || '';
+	var multipart;
 
 	if (req.mobile) {
 		req.$flags += 'a';
@@ -6874,6 +6880,7 @@ F.$requestcontinue = function(req, res, headers) {
 	var first = method[0];
 
 	if (first === 'P' || first === 'D') {
+		multipart = req.headers['content-type'] || '';
 		req.buffer_data = U.createBuffer();
 		var index = multipart.lastIndexOf(';');
 		var tmp = multipart;
@@ -6917,11 +6924,6 @@ F.$requestcontinue = function(req, res, headers) {
 				}
 				break;
 		}
-	}
-
-	if (req.isProxy) {
-		req.$flags += 'f';
-		flags.push('proxy');
 	}
 
 	if (headers.accept === 'text/event-stream') {
@@ -9427,7 +9429,7 @@ Controller.prototype = {
 	},
 
 	get isProxy() {
-		return this.req.isProxy;
+		return this.req.isProxy === true;
 	},
 
 	get isDebug() {
@@ -12402,7 +12404,6 @@ function WebSocket(path, name, id) {
 	this.id = id;
 	this.online = 0;
 	this.connections = {};
-	this.repository = {};
 	this.name = name;
 	this.isController = true;
 	this.url = U.path(path);
@@ -12417,6 +12418,13 @@ function WebSocket(path, name, id) {
 }
 
 WebSocket.prototype = {
+
+	get repository() {
+		if (this.$repository)
+			return this.$repository;
+		else
+			return this.$repository ? this.$repository : (this.$repository = {});
+	},
 
 	get global() {
 		return F.global;
@@ -12583,14 +12591,13 @@ WebSocket.prototype.ping = function() {
 		return this;
 
 	var length = keys.length;
-	if (!length)
-		return this;
 
-	this.$ping = true;
-	F.stats.other.websocketPing++;
-
-	for (var i = 0; i < length; i++)
-		this.connections[keys[i]].ping();
+	if (length) {
+		this.$ping = true;
+		F.stats.other.websocketPing++;
+		for (var i = 0; i < length; i++)
+			this.connections[keys[i]].ping();
+	}
 
 	return this;
 };
@@ -12657,7 +12664,7 @@ WebSocket.prototype.close = function(id, message, code) {
  */
 WebSocket.prototype.error = function(err) {
 	var result = F.error(typeof(err) === 'string' ? new Error(err) : err, this.name, this.path);
-	return err === undefined ? result : this;
+	return err ? this : result;
 };
 
 /**
@@ -12832,19 +12839,16 @@ WebSocket.prototype.logger = function() {
 };
 
 WebSocket.prototype.check = function() {
-
-	if (!this.$ping)
-		return this;
-
-	this.all(function(client) {
-		if (client.$ping)
-			return;
-		client.close();
-		F.stats.other.websocketCleaner++;
-	});
-
+	this.$ping && this.all(websocketcheck_ping);
 	return this;
 };
+
+function websocketcheck_ping(client) {
+	if (!client.$ping) {
+		client.close();
+		F.stats.other.websocketCleaner++;
+	}
+}
 
 /**
  * WebSocket controller
@@ -13700,7 +13704,12 @@ function extend_request(PROTO) {
 	};
 
 	PROTO.$total_status = function(status) {
-		F.stats.request.blocked++;
+
+		if (status == null)
+			F.stats.request.blocked++;
+		else
+			F.stats.request['error' + status]++;
+
 		F.reqstats(false, false);
 		this.res.writeHead(status);
 		this.res.end(U.httpStatus(status));
