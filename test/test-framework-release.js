@@ -1,4 +1,4 @@
-var utils = require('../utils');
+ var utils = require('../utils');
 var assert = require('assert');
 var framework = require('../index');
 var url = 'http://127.0.0.1:8001/';
@@ -70,7 +70,6 @@ function test_controller_functions(next) {
 		assert.ok(code === 404, 'controller: statusCode ' + code);
 		assert.ok(headers['etag'] === '1234561', 'controller: setModified(etag)');
 		assert.ok(headers['last-modified'].toString().indexOf('1984') !== -1, 'controller: setModified(date)');
-		assert.ok(headers['expires'].toString().indexOf('1984') !== -1, 'controller: setExpires(date)');
 		next();
 	});
 }
