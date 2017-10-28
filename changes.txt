@@ -14,6 +14,7 @@
 - added: `NOSQL('users').backups([filter(doc)], callback(err, response))` returns all backups
 - added: `AUTH(fn)` is an alias to `F.onAuthorize = fn`
 - added: `CORS()` alias to `F.cors()`
+- added: `DatabaseBuilder.paginate(page, limit)`
 
 - updated: `sitemap` routing can contain an additional path, e.g. `#sitemapid/path/`
 - updated: `F.localize()` supports sitemap routing
@@ -41,6 +42,7 @@
 - fixed: a check for maximum length of request data
 - fixed: `ArrayBuffer` in webosocket
 - fixed: (IMPORTANT) `DatabaseBuilder.in()`
+- fixed: NoSQL filtering with `or`
 - fixed: NoSQL multiple updates
 - fixed: NoSQL sorting of boolean values in larger dataset
 - fixed: external static routing in view engine on Windows

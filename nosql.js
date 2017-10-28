@@ -2029,12 +2029,25 @@ DatabaseBuilder.prototype.compare_string = function(json, index) {
 
 	var b = null;
 	var e = null;
+	var can = true;
+	var wasor = false;
+	var prevscope = 0;
 
 	for (var i = 0, length = this.$filter.length; i < length; i++) {
 		var filter = this.$filter[i];
+
+		if (wasor && filter.scope)
+			continue;
+
+		if (prevscope && !filter.scope && !wasor)
+			return;
+
+		prevscope = filter.scope;
+
 		var path = '"' + filter.name + '":';
 		var beg = json.indexOf(path);
 		var value = '';
+		var allow = true;
 
 		if (beg !== -1) {
 			beg = beg + path.length;
@@ -2111,51 +2124,51 @@ DatabaseBuilder.prototype.compare_string = function(json, index) {
 			case 1: // string
 				if (filter.operator === '=') {
 					if (filter.value !== value)
-						return;
+						allow = false;
 				} else if (filter.operator === '!=') {
 					if (filter.value === value)
-						return;
+						allow = false;
 				} else if (filter.operator === 10) { // beg
 					if (!value.startsWith(filter.value))
-						return;
+						allow = false;
 				} else if (filter.operator === 11) { // end
 					if (!value.endsWith(filter.value))
-						return;
+						allow = false;
 				} else if (filter.operator === 12) { // *
 					if (value.toLowerCase().indexOf(filter.value) === -1)
-						return;
+						allow = false;
 				} else
 					return; // >, < is not supported for strings
 				break;
 			case 2: // number
 				if (filter.operator === '=') {
 					if (filter.value.toString() !== value)
-						return;
+						allow = false;
 				} else if (filter.operator === '!=') {
 					if (filter.value.toString() === value)
-						return;
+						allow = false;
 				} else if (filter.operator === '>') {
 					if (filter.value < +value)
-						return;
+						allow = false;
 				} else if (filter.operator === '<') {
 					if (filter.value > +value)
-						return;
+						allow = false;
 				} else if (filter.operator === '>=') {
 					if (filter.value <= +value)
-						return;
+						allow = false;
 				} else if (filter.operator === '<=') {
 					if (filter.value >= +value)
-						return;
+						allow = false;
 				} else
 					return; // >, < is not supported for strings
 				break;
 			case 3: // boolean
 				if (filter.operator === '=') {
 					if (filter.value.toString() !== value)
-						return;
+						allow = false;
 				} else if (filter.operator === '!=') {
 					if (filter.value.toString() === value)
-						return;
+						allow = false;
 				} else
 					return;
 				break;
@@ -2163,32 +2176,32 @@ DatabaseBuilder.prototype.compare_string = function(json, index) {
 				var ticks = new Date(value).getTime();
 				if (filter.operator === '=') {
 					if (filter.value.getTime() !== ticks)
-						return;
+						allow = false;
 				} else if (filter.operator === '!=') {
 					if (filter.value.getTime() === ticks)
-						return;
+						allow = false;
 				} else if (filter.operator === '>') {
 					if (filter.value.getTime() <= ticks)
-						return;
+						allow = false;
 				} else if (filter.operator === '<') {
 					if (filter.value.getTime() >= ticks)
-						return;
+						allow = false;
 				} else if (filter.operator === '>=') {
 					if (filter.value.getTime() < ticks)
-						return;
+						allow = false;
 				} else if (filter.operator === '<=') {
 					if (filter.value.getTime() > ticks)
-						return;
+						allow = false;
 				} else
 					return;
 				break;
 			case 5: // contains
 				if (!value || value === 'null')
-					return;
+					allow = false;
 				break;
 			case 6: // empty
 				if (value && value !== 'null')
-					return;
+					allow = false;
 				break;
 			case 21: // number in
 				// Array
@@ -2201,7 +2214,7 @@ DatabaseBuilder.prototype.compare_string = function(json, index) {
 					}
 				}
 				if (!is)
-					return;
+					allow = false;
 				break;
 			case 22: // string in
 				// Array
@@ -2214,16 +2227,32 @@ DatabaseBuilder.prototype.compare_string = function(json, index) {
 						}
 					}
 					if (!is)
-						return;
+						allow = false;
 				} else if (filter.value.indexOf(value) === -1)
-					return;
+					allow = false;
 				break;
 			case 23: // boolean in
 				if (filter.value.indexOf(value === 'true') === -1)
-					return;
+					allow = false;
 				break;
 		}
+
+		if (allow) {
+			can = true;
+			if (filter.scope)
+				wasor = true;
+			continue;
+		} else if (filter.scope) {
+			can = false;
+			wasor = false;
+			continue;
+		}
+
+		return;
 	}
+
+	if (!can)
+		return;
 
 	var doc = JSON.parse(json, jsonparser);
 
@@ -2247,7 +2276,7 @@ DatabaseBuilder.prototype.compare = function(doc, index) {
 
 	var can = true;
 	var wasor = false;
-	var prevscope = false;
+	var prevscope = 0;
 
 	for (var i = 0, length = this.$filter.length; i < length; i++) {
 
@@ -2528,8 +2557,25 @@ DatabaseBuilder.prototype.limit = function(count) {
 };
 
 DatabaseBuilder.prototype.page = function(page, limit) {
-	this.skip(page * limit);
-	return this.take(limit);
+	this.$skip = page * limit;
+	this.$take = limit;
+	return this;
+};
+
+DatabaseBuilder.prototype.paginate = function(page, limit, maxlimit) {
+
+	var limit2 = +(limit || 0);
+	var page2 = (+(page || 0)) - 1;
+
+	if (page2 < 0)
+		page2 = 0;
+
+	if (maxlimit && limit2 > maxlimit)
+		limit2 = maxlimit;
+
+	this.$skip = page2 * limit2;
+	this.$take = limit2;
+	return this;
 };
 
 DatabaseBuilder.prototype.skip = function(count) {
