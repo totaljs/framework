@@ -7,6 +7,7 @@ const Http = require('http');
 const Url = require('url');
 const Zlib = require('zlib');
 const REG_WEBSOCKET_ERROR = /ECONNRESET|EHOSTUNREACH|EPIPE|is closed/i;
+const CONCAT = [null, null];
 
 function WebSocketClient() {
 	this.current = {};
@@ -273,6 +274,10 @@ WebSocketClient.prototype.$parse = function() {
 
 	var self = this;
 	var current = self.current;
+
+	// 
+
+	console.log(self.current.buffer.toString('ascii'));
 
 	if (!current.buffer || current.buffer.length <= 2 || ((current.buffer[1] & 0x80) >> 7) !== 1)
 		return;
