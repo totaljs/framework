@@ -1079,7 +1079,7 @@ F.$routesSort = function(type) {
 
 	// Clears cache
 	Object.keys(F.temporary.other).forEach(function(key) {
-		if (key[0] === '#')
+		if (key[0] === '1')
 			F.temporary.other[key] = undefined;
 	});
 
@@ -4329,7 +4329,7 @@ F.install_prepare = function(noRecursive) {
 	F.temporary.other.dependencies = setTimeout(function() {
 		var keys = Object.keys(F.temporary.dependencies);
 		if (keys.length)
-			throw new Error('Dependency exception (module): missing dependencies for: ' + keys.join(', ').trim());
+			throw new Error('Dependency exception, missing dependencies for: ' + keys.join(', ').trim());
 		delete F.temporary.other.dependencies;
 	}, F.config['default-dependency-timeout']);
 
