@@ -275,10 +275,6 @@ WebSocketClient.prototype.$parse = function() {
 	var self = this;
 	var current = self.current;
 
-	// 
-
-	console.log(self.current.buffer.toString('ascii'));
-
 	if (!current.buffer || current.buffer.length <= 2 || ((current.buffer[1] & 0x80) >> 7) !== 1)
 		return;
 
@@ -288,10 +284,6 @@ WebSocketClient.prototype.$parse = function() {
 	index = (index === 126) ? 4 : (index === 127 ? 10 : 2);
 
 	var mlength = index + 4 + length;
-	if (mlength > this.length) {
-		this.close('Maximum request length exceeded.');
-		return;
-	}
 
 	// Check length of data
 	if (current.buffer.length < mlength)
@@ -523,10 +515,19 @@ WebSocketClient.prototype.close = function(message, code) {
 	return this;
 };
 
+function $decodeURIComponent(value) {
+	try
+	{
+		return decodeURIComponent(value);
+	} catch (e) {
+		return value;
+	}
+}
+
 var ws = new WebSocketClient();
 
 ws.on('message', function(message) {
-	console.log(message);
+	console.log('message', message);
 });
 
 ws.on('open', function() {
