@@ -7814,8 +7814,15 @@ F.sitemap = function(name, me, language) {
 			title = F.translate(language, title);
 
 		url = sitemap.url;
+		var wildcard = false;
+
 		if (sitemap.localizeUrl)
 			url = F.translate(language, url);
+
+		if (url.endsWith('*')) {
+			url = url.substring(0, url.length - 1);
+			wildcard = true;
+		}
 
 		item.sitemap = id;
 		item.id = name;
@@ -7825,7 +7832,7 @@ F.sitemap = function(name, me, language) {
 		item.localizeName = sitemap.localizeName;
 		item.name = title;
 		item.url = url;
-		item.wildcard = sitemap.wildcard;
+		item.wildcard = wildcard;
 		F.temporary.other[key] = item;
 		return item;
 	}
@@ -7841,13 +7848,20 @@ F.sitemap = function(name, me, language) {
 		title = sitemap.name;
 		url = sitemap.url;
 
+		var wildcard = false;
+
 		if (sitemap.localizeName)
 			title = F.translate(language, sitemap.name);
 
 		if (sitemap.localizeUrl)
 			url = F.translate(language, url);
 
-		arr.push({ sitemap: id, id: name, name: title, url: url, last: index === 0, first: sitemap.parent ? false : true, selected: index === 0, index: index, wildcard: sitemap.wildcard, formatName: sitemap.formatName, formatUrl: sitemap.formatUrl, localizeName: sitemap.localizeName, localizeUrl: sitemap.localizeUrl });
+		if (url.endsWith('*')) {
+			url = url.substring(0, url.length - 1);
+			wildcard = true;
+		}
+
+		arr.push({ sitemap: id, id: name, name: title, url: url, last: index === 0, first: sitemap.parent ? false : true, selected: index === 0, index: index, wildcard: wildcard, formatName: sitemap.formatName, formatUrl: sitemap.formatUrl, localizeName: sitemap.localizeName, localizeUrl: sitemap.localizeUrl });
 		index++;
 		name = sitemap.parent;
 		if (!name)
