@@ -5,3 +5,4 @@
 .idea
 test/tmp/*
 node_modules
+websocket.js
