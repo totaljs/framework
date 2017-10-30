@@ -3560,7 +3560,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 
 	if (type === 'sitemap') {
 
-		F.$cofnigure_sitemap(declaration.toString().split('\n'));
+		F.$configure_sitemap(declaration.toString().split('\n'));
 		setTimeout(function() {
 			F.emit(type + '#' + name);
 			F.emit('install', type, name);
@@ -4072,7 +4072,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 				F.$configure_configs();
 				F.$configure_versions();
 				F.$configure_dependencies();
-				F.$cofnigure_sitemap();
+				F.$configure_sitemap();
 				F.$configure_workflows();
 			} else {
 
@@ -4086,7 +4086,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 				F.isTest && F.$configure_configs('@' + name + '/config-test');
 				F.$configure_versions('@' + name + '/versions');
 				F.$configure_dependencies('@' + name + '/dependencies');
-				F.$cofnigure_sitemap('@' + name + '/sitemap');
+				F.$configure_sitemap('@' + name + '/sitemap');
 				F.$configure_workflows('@' + name + '/workflows');
 			}
 
@@ -6177,7 +6177,7 @@ F.load = function(debug, types, pwd) {
 			F.$configure_workflows();
 
 		if (!types || types.indexOf('sitemap') !== -1)
-			F.$cofnigure_sitemap();
+			F.$configure_sitemap();
 
 		F.consoledebug('init');
 		F.cache.init();
@@ -6256,7 +6256,7 @@ F.initialize = function(http, debug, options, restart) {
 	F.$configure_configs();
 	F.$configure_versions();
 	F.$configure_workflows();
-	F.$cofnigure_sitemap();
+	F.$configure_sitemap();
 	F.isTest && F.$configure_configs('config-test', true);
 	F.cache.init();
 	F.consoledebug('init');
@@ -7723,7 +7723,7 @@ F.translator = function(language, text) {
 	return framework_internal.parseLocalization(text, language);
 };
 
-F.$cofnigure_sitemap = function(arr, clean) {
+F.$configure_sitemap = function(arr, clean) {
 
 	if (!arr || typeof(arr) === 'string') {
 		var filename = prepare_filename(arr || 'sitemap');
@@ -7761,6 +7761,10 @@ F.$cofnigure_sitemap = function(arr, clean) {
 		if (url.endsWith('*')) {
 			wildcard = true;
 			url = url.substring(0, url.length - 1);
+		} else if (url.endsWith('*)')) {
+			// localization
+			wildcard = true;
+			url = url.substring(0, url.length - 2);
 		}
 
 		var name = a[0].trim();
@@ -7900,7 +7904,7 @@ F.sitemap_navigation = function(parent, language) {
  * @return {framework}
  */
 F.sitemap_add = function (obj) {
-	F.$cofnigure_sitemap(obj instanceof Array ? obj : [obj]);
+	F.$configure_sitemap(obj instanceof Array ? obj : [obj]);
 	return F;
 };
 
