@@ -15,6 +15,7 @@
 - added: `AUTH(fn)` is an alias to `F.onAuthorize = fn`
 - added: `CORS()` alias to `F.cors()`
 - added: `DatabaseBuilder.paginate(page, limit)`
+- added: `$ASYNC(schema, callback, [index])` alias to `SchemaBuilderEntity.$async()`
 
 - updated: `sitemap` routing can contain an additional path, e.g. `#sitemapid/path/`
 - updated: `F.localize()` supports sitemap routing

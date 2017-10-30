@@ -352,6 +352,11 @@ global.$TRANSFORM = function(schema, name, options, callback, controller) {
 	return o ? true : false;
 };
 
+global.$ASYNC = function(schema, callback, index) {
+	schema = parseSchema(schema);
+	return framework_builders.getschema(schema[0], schema[1]).default().$async(callback, index);
+};
+
 global.$OPERATION = function(schema, name, options, callback, controller) {
 	schema = parseSchema(schema);
 	var o = framework_builders.getschema(schema[0], schema[1]);
