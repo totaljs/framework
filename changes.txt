@@ -1,21 +1,21 @@
 ======= 2.8.1
 
-- added: `LOCALIZE()` a new global alias to `F.localize()`
-- added: `MERGE()` a new global alias to `F.merge()`
-- added: `MAP()` a new global alias to `F.map()`
-- added: `F.path.rmdir(directory/directories, callback)`
-- added: `F.path.unlink(file/files, callback)`
+- added: `$ASYNC(schema, callback, [index], [controlller])` alias to `SchemaBuilderEntity.$async()`
 - added: `ArrayBuffer.prototype.toBuffer()`
-- added: `F.config['allow-compile']` can disable the whole compilation of static files
-- added: `F.config['default-dependency-timeout']` it's a timeout for module dependencies
-- added: `SchemaOptions.invalid(name, [value], [path], [index])` alias to `$.errors.push() + callback()`
-- added: `SchemaOptions.success()` alias to `callback(SUCCESS(value))`
-- added: `controller.success()` alias to `controller.json(SUCCESS(value))`
-- added: `NOSQL('users').backups([filter(doc)], callback(err, response))` returns all backups
 - added: `AUTH(fn)` is an alias to `F.onAuthorize = fn`
+- added: `controller.success()` alias to `controller.json(SUCCESS(value))`
 - added: `CORS()` alias to `F.cors()`
 - added: `DatabaseBuilder.paginate(page, limit)`
-- added: `$ASYNC(schema, callback, [index], [controlller])` alias to `SchemaBuilderEntity.$async()`
+- added: `F.config['allow-compile']` can disable the whole compilation of static files
+- added: `F.config['default-dependency-timeout']` it's a timeout for module dependencies
+- added: `F.path.rmdir(directory/directories, callback)`
+- added: `F.path.unlink(file/files, callback)`
+- added: `LOCALIZE()` a new global alias to `F.localize()`
+- added: `MAP()` a new global alias to `F.map()`
+- added: `MERGE()` a new global alias to `F.merge()`
+- added: `NOSQL('users').backups([filter(doc)], callback(err, response))` returns all backups
+- added: `SchemaOptions.invalid(name, [value], [path], [index])` alias to `$.errors.push() + callback()`
+- added: `SchemaOptions.success()` alias to `callback(SUCCESS(value))`
 
 - updated: `sitemap` routing can contain an additional path, e.g. `#sitemapid/path/`
 - updated: `F.localize()` supports sitemap routing
@@ -31,23 +31,23 @@
 
 - renamed: `allow-handle-static-files` to `allow-static-files`
 
-- fixed: `JSON` type in Total.js schemas
-- fixed: responding on `range` header
+- fixed: (IMPORTANT) `DatabaseBuilder.in()`
 - fixed: (IMPORTANT) `U.ls2()`
-- fixed: `F.rmdir` removes all files and directories
-- fixed: Date formatting with `a` value
+- fixed: `ArrayBuffer` in webosocket
 - fixed: `F.path.mkdir()` on Windows (author: @molda)
 - fixed: `F.restore()` on Windows (author: @molda)
+- fixed: `F.rmdir` removes all files and directories
+- fixed: `JSON` type in Total.js schemas
 - fixed: `MODEL()`, `MODULE()`, `INCLUDE()` now are direct aliases
-- fixed: unit testing (author: @ckpiggy)
 - fixed: a check for maximum length of request data
-- fixed: `ArrayBuffer` in webosocket
-- fixed: (IMPORTANT) `DatabaseBuilder.in()`
+- fixed: Date formatting with `a` value
+- fixed: empty localization in view engine e.g. `@()`
+- fixed: external static routing in view engine on Windows
 - fixed: NoSQL filtering with `or`
 - fixed: NoSQL multiple updates
 - fixed: NoSQL sorting of boolean values in larger dataset
-- fixed: external static routing in view engine on Windows
-- fixed: empty localization in view engine e.g. `@()`
+- fixed: responding on `range` header
+- fixed: unit testing (author: @ckpiggy)
 - fixed: `schema.setPrefix()` in nested schemas
 
 - improved: performance and security
