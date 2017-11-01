@@ -49,6 +49,7 @@
 - fixed: responding on `range` header
 - fixed: unit testing (author: @ckpiggy)
 - fixed: `schema.setPrefix()` in nested schemas
+- fixed: sitemap localization
 
 - improved: performance and security
 

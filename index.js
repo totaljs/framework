@@ -7822,10 +7822,17 @@ F.sitemap = function(name, me, language) {
 			title = F.translate(language, title);
 
 		url = sitemap.url;
+
 		var wildcard = false;
 
-		if (sitemap.localizeUrl)
+		if (sitemap.localizeUrl) {
+			if (sitemap.wildcard) {
+				if (url[url.length - 1] !== '/')
+					url += '/';
+				url += '*';
+			}
 			url = F.translate(language, url);
+		}
 
 		if (url.endsWith('*')) {
 			url = url.substring(0, url.length - 1);
@@ -7861,8 +7868,14 @@ F.sitemap = function(name, me, language) {
 		if (sitemap.localizeName)
 			title = F.translate(language, sitemap.name);
 
-		if (sitemap.localizeUrl)
+		if (sitemap.localizeUrl) {
+			if (sitemap.wildcard) {
+				if (url[url.length - 1] !== '/')
+					url += '/';
+				url += '*';
+			}
 			url = F.translate(language, url);
+		}
 
 		if (url.endsWith('*')) {
 			url = url.substring(0, url.length - 1);
