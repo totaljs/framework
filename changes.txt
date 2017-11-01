@@ -16,6 +16,7 @@
 - added: `NOSQL('users').backups([filter(doc)], callback(err, response))` returns all backups
 - added: `SchemaOptions.invalid(name, [value], [path], [index])` alias to `$.errors.push() + callback()`
 - added: `SchemaOptions.success()` alias to `callback(SUCCESS(value))`
+- added: `controller.sitemapid` contains a sitemap identificator
 
 - updated: `sitemap` routing can contain an additional path, e.g. `#sitemapid/path/`
 - updated: `F.localize()` supports sitemap routing

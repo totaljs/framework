@@ -1615,7 +1615,6 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 					else
 						url += tmp;
 				}
-
 			} else
 				throw new Error('Sitemap item "' + url + '" not found.');
 		} else
@@ -9522,9 +9521,11 @@ Controller.prototype = {
 
 	get viewname() {
 		var name = this.req.path[this.req.path.length - 1];
-		if (!name || name === '/')
-			name = 'index';
-		return name;
+		return !name || name === '/' ? 'index' : name;
+	},
+
+	get sitemapid() {
+		return this.$sitemapid || this.route.sitemap;
 	}
 };
 
@@ -10112,20 +10113,16 @@ Controller.prototype.$author = function(value) {
 };
 
 Controller.prototype.sitemap_navigation = function(name, language) {
-	return F.sitemap_navigation(name, language || this.language);
+	return F.sitemap_navigation(name || this.sitemapid, language || this.language);
 };
 
 Controller.prototype.sitemap_url = function(name, a, b, c, d, e, f) {
-	if (!name)
-		name = this.repository[REPOSITORY_SITEMAP];
-	var item = F.sitemap(name, true, this.language);
+	var item = F.sitemap(name || this.sitemapid, true, this.language);
 	return item ? item.url.format(a, b, c, d, e, f) : '';
 };
 
 Controller.prototype.sitemap_name = function(name, a, b, c, d, e, f) {
-	if (!name)
-		name = this.repository[REPOSITORY_SITEMAP];
-	var item = F.sitemap(name, true, this.language);
+	var item = F.sitemap(name || this.sitemapid, true, this.language);
 	return item ? item.name.format(a, b, c, d, e, f) : '';
 };
 
@@ -10133,6 +10130,9 @@ Controller.prototype.sitemap_change = function(name, type, a, b, c, d, e, f) {
 
 	var self = this;
 	var sitemap = self.repository[REPOSITORY_SITEMAP];
+
+	if (!name)
+		name = self.sitemapid;
 
 	if (!sitemap)
 		sitemap = self.sitemap(name);
@@ -10173,9 +10173,13 @@ Controller.prototype.sitemap_change = function(name, type, a, b, c, d, e, f) {
 
 Controller.prototype.sitemap_replace = function(name, title, url) {
 	var self = this;
-	var sitemap = self.repository[REPOSITORY_SITEMAP];
-	if (!sitemap)
-		sitemap = self.sitemap(name);
+
+	if (!name)
+		name = self.sitemapid;
+
+	// var sitemap = self.repository[REPOSITORY_SITEMAP];
+	//if (!sitemap)
+	var sitemap = self.sitemap(name);
 
 	if (!sitemap.$cloned) {
 		sitemap = U.clone(sitemap);
@@ -10199,14 +10203,14 @@ Controller.prototype.sitemap_replace = function(name, title, url) {
 };
 
 // Arguments: name, type, value, format
-Controller.prototype.$sitemap_change = function() {
-	this.sitemap_change.apply(this, arguments);
+Controller.prototype.$sitemap_change = function(a, b, c, d, e, f, g, h) {
+	this.sitemap_change(a, b, c, d, e, f, g, h);
 	return '';
 };
 
-// Arguments: name, title, url, format
-Controller.prototype.$sitemap_replace = function() {
-	this.sitemap_replace.apply(this, arguments);
+// Arguments: name, title, url
+Controller.prototype.$sitemap_replace =function(a, b, c) {
+	this.sitemap_replace(a, b, c);
 	return '';
 };
 
@@ -10214,16 +10218,17 @@ Controller.prototype.sitemap = function(name) {
 	var self = this;
 	var sitemap;
 
-	if (name instanceof Array) {
-		self.repository[REPOSITORY_SITEMAP] = name;
-		return self;
-	}
-
 	if (!name) {
 		sitemap = self.repository[REPOSITORY_SITEMAP];
 		return sitemap ? sitemap : self.repository.sitemap || EMPTYARRAY;
 	}
 
+	if (name instanceof Array) {
+		self.repository[REPOSITORY_SITEMAP] = name;
+		return self;
+	}
+
+	self.$sitemapid = name;
 	sitemap = F.sitemap(name, false, self.language);
 	self.repository[REPOSITORY_SITEMAP] = sitemap;
 	if (!self.repository[REPOSITORY_META_TITLE]) {
@@ -10236,9 +10241,9 @@ Controller.prototype.sitemap = function(name) {
 };
 
 // Arguments: name
-Controller.prototype.$sitemap = function() {
+Controller.prototype.$sitemap = function(name) {
 	var self = this;
-	self.sitemap.apply(self, arguments);
+	self.sitemap(name);
 	return '';
 };
 
