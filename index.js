@@ -2360,7 +2360,7 @@ global.MAP = F.map = function(url, filename, filter) {
  * @param {Function(req, res, next, options)} funcExecute
  * @return {Framework}
  */
-F.middleware = function(name, funcExecute) {
+global.MIDDLEWARE = F.middleware = function(name, funcExecute) {
 	F.install('middleware', name, funcExecute);
 	_owner && F.owners.push({ type: 'middleware', owner: _owner, id: name });
 	return F;

@@ -13,6 +13,7 @@
 - added: `LOCALIZE()` a new global alias to `F.localize()`
 - added: `MAP()` a new global alias to `F.map()`
 - added: `MERGE()` a new global alias to `F.merge()`
+- added: `MIDDLEWARE()` a new global alias to `F.middleware()`
 - added: `NOSQL('users').backups([filter(doc)], callback(err, response))` returns all backups
 - added: `SchemaOptions.invalid(name, [value], [path], [index])` alias to `$.errors.push() + callback()`
 - added: `SchemaOptions.success()` alias to `callback(SUCCESS(value))`
