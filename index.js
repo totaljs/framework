@@ -1585,36 +1585,26 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 			}
 
 			sitemap = F.sitemap(url, true, language);
+
 			if (sitemap) {
 
 				name = url;
 				url = sitemap.url;
 
-				if (sitemap.wildcard)
+				if (sitemap.localizeUrl && language === undefined) {
+					var sitemaproutes = {};
+					F.temporary.internal.resources.forEach(function(language) {
+						var item = F.sitemap(sitemap.id, true, language);
+						if (item.url && item.url !== url)
+							sitemaproutes[item.url] = { name: sitemap.id, language: language };
+					});
+					Object.keys(sitemaproutes).forEach(key => F.route('#' + sitemap.id, funcExecute, flags, length, sitemaproutes[key].language));
+				}
+
+				if (tmp)
+					url += url[url.length - 1] === '/' ? tmp.substring(1) : tmp;
+				else if (sitemap.wildcard)
 					url += '*';
-
-				if (sitemap.localizeUrl) {
-					if (language === undefined) {
-						var sitemaproutes = {};
-						F.temporary.internal.resources.forEach(function(language) {
-							var item = F.sitemap(sitemap.id, true, language);
-							if (item.url && item.url !== url)
-								sitemaproutes[item.url] = { name: sitemap.id, language: language };
-						});
-						Object.keys(sitemaproutes).forEach(key => F.route('#' + sitemap.id, funcExecute, flags, length, sitemaproutes[key].language));
-					}
-				}
-
-				if (tmp) {
-
-					if (url[url.length - 1] === '*')
-						url = url.substring(0, url.length - 1);
-
-					if (url[url.length - 1] === '/')
-						url += tmp.substring(1);
-					else
-						url += tmp;
-				}
 			} else
 				throw new Error('Sitemap item "' + url + '" not found.');
 		} else
@@ -7821,8 +7811,7 @@ F.sitemap = function(name, me, language) {
 			title = F.translate(language, title);
 
 		url = sitemap.url;
-
-		var wildcard = false;
+		var wildcard = sitemap.wildcard;
 
 		if (sitemap.localizeUrl) {
 			if (sitemap.wildcard) {
@@ -7830,12 +7819,14 @@ F.sitemap = function(name, me, language) {
 					url += '/';
 				url += '*';
 			}
-			url = F.translate(language, url);
-		}
 
-		if (url.endsWith('*')) {
-			url = url.substring(0, url.length - 1);
-			wildcard = true;
+			url = F.translate(language, url);
+
+			if (url.endsWith('*')) {
+				url = url.substring(0, url.length - 1);
+				wildcard = true;
+			} else
+				wildcard = false;
 		}
 
 		item.sitemap = id;
@@ -7862,7 +7853,7 @@ F.sitemap = function(name, me, language) {
 		title = sitemap.name;
 		url = sitemap.url;
 
-		var wildcard = false;
+		var wildcard = sitemap.wildcard;
 
 		if (sitemap.localizeName)
 			title = F.translate(language, sitemap.name);
@@ -7874,11 +7865,12 @@ F.sitemap = function(name, me, language) {
 				url += '*';
 			}
 			url = F.translate(language, url);
-		}
 
-		if (url.endsWith('*')) {
-			url = url.substring(0, url.length - 1);
-			wildcard = true;
+			if (url.endsWith('*')) {
+				url = url.substring(0, url.length - 1);
+				wildcard = true;
+			} else
+				wildcard = false;
 		}
 
 		arr.push({ sitemap: id, id: name, name: title, url: url, last: index === 0, first: sitemap.parent ? false : true, selected: index === 0, index: index, wildcard: wildcard, formatName: sitemap.formatName, formatUrl: sitemap.formatUrl, localizeName: sitemap.localizeName, localizeUrl: sitemap.localizeUrl });
