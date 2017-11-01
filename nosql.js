@@ -3249,7 +3249,7 @@ Counter.prototype.read = function(options, callback, reader) {
 			output = tmp;
 		}
 
-		callback(null, single ? (options.subtype ? output[options.id[0]] || null : output[options.id[0]] || 0) : output);
+		callback(null, single ? (options.subtype ? output[options.id[0]] || EMPTYARRAY : output[options.id[0]] || 0) : output);
 	};
 
 	if (reader)
