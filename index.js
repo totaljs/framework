@@ -2461,11 +2461,20 @@ F.websocket = function(url, funcInitialize, flags, length) {
 		url = '/';
 
 	if (url[0] === '#') {
+
+		var index = url.indexOf('/');
+		if (index !== -1) {
+			tmp = url.substring(index);
+			url = url.substring(0, index);
+		}
+
 		url = url.substring(1);
 		var sitemap = F.sitemap(url, true);
 		if (sitemap) {
 			url = sitemap.url;
-			if (sitemap.wildcard)
+			if (tmp)
+				url += url[url.length - 1] === '/' ? tmp.substring(1) : tmp;
+			else if (sitemap.wildcard)
 				url += '*';
 		} else
 			throw new Error('Sitemap item "' + url + '" not found.');
@@ -7258,7 +7267,7 @@ F.$websocketcontinue_process = function(route, req, path) {
 		connection.options = route.options;
 		F.connections[id] = connection;
 		route.onInitialize.apply(connection, framework_internal.routeParam(route.param.length ? req.split : req.path, route));
-		process.nextTick(next_upgrade_continue, socket, connection);
+		setImmediate(next_upgrade_continue, socket, connection);
 	};
 
 	if (route.middleware)
