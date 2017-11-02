@@ -4040,7 +4040,7 @@ global.NEWOPERATION = function(name, fn) {
 
 global.OPERATION = function(name, value, callback, param) {
 
-	if (callback === undefined) {
+	if (typeof(value) === 'function') {
 		callback = value;
 		value = EMPTYOBJECT;
 	}
@@ -4053,15 +4053,17 @@ global.OPERATION = function(name, value, callback, param) {
 			fn(new OperationOptions(error, value, callback, param));
 		} else
 			fn(error, value, function(value) {
-				if (value instanceof Error) {
-					error.push(value);
-					value = EMPTYOBJECT;
+				if (callback) {
+					if (value instanceof Error) {
+						error.push(value);
+						value = EMPTYOBJECT;
+					}
+					callback(error.hasError() ? error : null, value, param);
 				}
-				callback(error.hasError() ? error : null, value, param);
 			});
 	} else {
 		error.push('Operation "{0}" not found.'.format(name));
-		callback(error, EMPTYOBJECT, param);
+		callback && callback(error, EMPTYOBJECT, param);
 	}
 };
 
@@ -4074,11 +4076,15 @@ function OperationOptions(error, value, callback, options) {
 
 OperationOptions.prototype.callback = function(value) {
 	var self = this;
-	if (value instanceof Error) {
-		self.error.push(value);
-		value = EMPTYOBJECT;
+
+	if (self.$callback) {
+		if (value instanceof Error) {
+			self.error.push(value);
+			value = EMPTYOBJECT;
+		}
+		self.$callback(self.error.hasError() ? self.error : null, value, self.options);
 	}
-	self.$callback(self.error.hasError() ? self.error : null, value, self.options);
+
 	return self;
 };
 
