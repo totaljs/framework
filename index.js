@@ -858,6 +858,7 @@ F.prototypes = function(fn) {
 	proto.HttpResponse = PROTORES;
 	proto.Image = framework_image.Image.prototype;
 	proto.Message = Mail.Message.prototype;
+	proto.OperationOptions = framework_builders.OperationOptions.prototype;
 	proto.Page = framework_builders.Page.prototype;
 	proto.Pagination = framework_builders.Pagination.prototype;
 	proto.RESTBuilder = framework_builders.RESTBuilder.prototype;

@@ -4050,17 +4050,7 @@ global.OPERATION = function(name, value, callback, param) {
 
 	if (fn) {
 		if (fn.$newversion) {
-			var opt = {};
-			opt.error = error;
-			opt.value = opt.model = value;
-			opt.callback = function(value) {
-				if (value instanceof Error) {
-					error.push(value);
-					value = EMPTYOBJECT;
-				}
-				callback(error.hasError() ? error : null, value, param);
-			};
-			fn(opt);
+			fn(new OperationOptions(error, value, callback, param));
 		} else
 			fn(error, value, function(value) {
 				if (value instanceof Error) {
@@ -4075,6 +4065,34 @@ global.OPERATION = function(name, value, callback, param) {
 	}
 };
 
+function OperationOptions(error, value, callback, options) {
+	this.model = this.value = value;
+	this.error = error;
+	this.$callback = callback;
+	this.options = options;
+}
+
+OperationOptions.prototype.callback = function(value) {
+	var self = this;
+	if (value instanceof Error) {
+		self.error.push(value);
+		value = EMPTYOBJECT;
+	}
+	self.$callback(self.error.hasError() ? self.error : null, value, self.options);
+	return self;
+};
+
+OperationOptions.prototype.success = function(a, b) {
+	this.callback(SUCCESS(a === undefined ? true : a, b));
+	return this;
+};
+
+OperationOptions.prototype.invalid = function(name, error, path, index) {
+	this.error.push(name, error, path, index);
+	this.callback();
+	return this;
+};
+
 // ======================================================
 // EXPORTS
 // ======================================================
@@ -4087,6 +4105,7 @@ exports.Page = Page;
 exports.UrlBuilder = UrlBuilder;
 exports.TransformBuilder = TransformBuilder;
 exports.SchemaOptions = SchemaOptions;
+exports.OperationOptions = OperationOptions;
 exports.RESTBuilderResponse = RESTBuilderResponse;
 global.RESTBuilder = RESTBuilder;
 global.RESTBuilderResponse = RESTBuilderResponse;
