@@ -14,4 +14,3 @@ test/
 *.sh
 changes.txt
 roadmap.txt
-websocketclient.js
