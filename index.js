@@ -874,7 +874,6 @@ F.prototypes = function(fn) {
 	proto.UrlBuilder = framework_builders.UrlBuilder.prototype;
 	proto.WebSocket = WebSocket.prototype;
 	proto.WebSocketClient = WebSocketClient.prototype;
-	proto.WebSocketClient2 = require('./websocketclient').WebSocketClient.prototype;
 	fn.call(proto, proto);
 	return F;
 };
