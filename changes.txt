@@ -1,5 +1,6 @@
-======= 2.8.1
+======= 2.9.0
 
+- added: `WebSocketClient`
 - added: `$ASYNC(schema, callback, [index], [controlller])` alias to `SchemaBuilderEntity.$async()`
 - added: `ArrayBuffer.prototype.toBuffer()`
 - added: `AUTH(fn)` is an alias to `F.onAuthorize = fn`
@@ -36,6 +37,7 @@
 
 - fixed: (IMPORTANT) `DatabaseBuilder.in()`
 - fixed: (IMPORTANT) `U.ls2()`
+- fixed: (IMPORTANT) `WebSocket` implementation (author: @jozefgula)
 - fixed: `ArrayBuffer` in webosocket
 - fixed: `F.path.mkdir()` on Windows (author: @molda)
 - fixed: `F.restore()` on Windows (author: @molda)

@@ -21,7 +21,7 @@
 
 /**
  * @module Framework
- * @version 2.8.1
+ * @version 2.9.0
  */
 
 'use strict';
@@ -311,6 +311,11 @@ global.REDIRECT = (a, b, c, d) => F.redirect(a, b, c, d);
 global.AUTH = function(fn) {
 	F.onAuthorize = fn;
 };
+global.WEBSOCKETCLIENT = function(callback) {
+	var ws = require('./websocketclient').create();
+	callback && callback.call(ws, ws);
+	return ws;
+};
 
 global.$CREATE = function(schema) {
 	schema = parseSchema(schema);
@@ -530,8 +535,8 @@ var PERF = {};
 function Framework() {
 
 	this.$id = null; // F.id ==> property
-	this.version = 2810;
-	this.version_header = '2.8.1';
+	this.version = 2900;
+	this.version_header = '2.9.0';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -869,6 +874,7 @@ F.prototypes = function(fn) {
 	proto.UrlBuilder = framework_builders.UrlBuilder.prototype;
 	proto.WebSocket = WebSocket.prototype;
 	proto.WebSocketClient = WebSocketClient.prototype;
+	proto.WebSocketClient2 = require('./websocketclient').WebSocketClient.prototype;
 	fn.call(proto, proto);
 	return F;
 };
@@ -12642,7 +12648,6 @@ WebSocket.prototype.ping = function() {
 		return this;
 
 	var length = keys.length;
-
 	if (length) {
 		this.$ping = true;
 		F.stats.other.websocketPing++;
@@ -13026,14 +13031,24 @@ WebSocketClient.prototype.prepare = function(flags, protocols, allow, length) {
 		self.inflatelock = false;
 		self.inflate = Zlib.createInflateRaw(WEBSOCKET_COMPRESS_OPTIONS);
 		self.inflate.$websocket = self;
-		self.inflate.on('error', F.error());
+		self.inflate.on('error', function() {
+			if (self.$uerror)
+				return;
+			self.$uerror = true;
+			self.close('Unexpected error');
+		});
 		self.inflate.on('data', websocket_inflate);
 
 		self.deflatepending = [];
 		self.deflatelock = false;
 		self.deflate = Zlib.createDeflateRaw(WEBSOCKET_COMPRESS_OPTIONS);
 		self.deflate.$websocket = self;
-		self.deflate.on('error', F.error());
+		self.deflate.on('error', function() {
+			if (self.$uerror)
+				return;
+			self.$uerror = true;
+			self.close('Unexpected error');
+		});
 		self.deflate.on('data', websocket_deflate);
 	}
 
@@ -13085,11 +13100,6 @@ function websocket_close() {
 	this.$websocket.$onclose();
 }
 
-/**
- * Internal handler written by Jozef Gula
- * @param {Buffer} data
- * @return {Framework}
- */
 WebSocketClient.prototype.$ondata = function(data) {
 
 	if (this.isClosed)
@@ -13168,17 +13178,17 @@ WebSocketClient.prototype.$ondata = function(data) {
 
 		case 0x09:
 			// ping, response pong
-			this.socket.write(U.getWebSocketFrame(0, '', 0x0A));
-			this.current.buffer = null;
-			this.current.inflatedata = null;
+			this.socket.write(U.getWebSocketFrame(0, 'PONG', 0x0A));
+			current.buffer = null;
+			current.inflatedata = null;
 			this.$ping = true;
 			break;
 
 		case 0x0a:
 			// pong
 			this.$ping = true;
-			this.current.buffer = null;
-			this.current.inflatedata = null;
+			current.buffer = null;
+			current.inflatedata = null;
 			break;
 	}
 
@@ -13206,15 +13216,30 @@ WebSocketClient.prototype.$parse = function() {
 	var self = this;
 	var current = self.current;
 
-	if (!current.buffer || current.buffer.length <= 2 || ((current.buffer[1] & 0x80) >> 7) !== 1)
+	// check end message
+	if (!current.buffer || current.buffer.length <= 2 || ((current.buffer[0] & 0x80) >> 7) !== 1)
 		return;
 
+	// webSocked - Opcode
+	current.type = current.buffer[0] & 0x0f;
+
+	// is final message?
+	current.final = ((current.buffer[0] & 0x80) >> 7) === 0x01;
+
+	// does frame contain mask?
+	current.isMask = ((current.buffer[1] & 0xfe) >> 7) === 0x01;
+
+	// data length
 	var length = U.getMessageLength(current.buffer, F.isLE);
-	var index = (current.buffer[1] & 0x7f);
+	// index for data
 
-	index = (index === 126) ? 4 : (index === 127 ? 10 : 2);
+	var index = current.buffer[1] & 0x7f;
+	index = ((index === 126) ? 4 : (index === 127 ? 10 : 2)) + (current.isMask ? 4 : 0);
 
-	var mlength = index + 4 + length;
+	// total message length (data + header)
+	var mlength = index + length;
+
+	// ???
 	if (mlength > this.length) {
 		this.close('Maximum request length exceeded.');
 		return;
@@ -13225,27 +13250,33 @@ WebSocketClient.prototype.$parse = function() {
 		return;
 
 	current.length = mlength;
-	current.type = current.buffer[0] & 0x0f;
-	current.final = ((current.buffer[0] & 0x80) >> 7) === 0x01;
 
-	// Ping & Pong
+	// Not Ping & Pong
 	if (current.type !== 0x09 && current.type !== 0x0A) {
-		current.mask = U.createBufferSize(4);
-		current.buffer.copy(current.mask, 0, index, index + 4);
+
+		// does frame contain mask?
+		if (current.isMask) {
+			current.mask = U.createBufferSize(4);
+			current.buffer.copy(current.mask, 0, index - 4, index);
+		}
 
 		if (this.inflate) {
-			var buf = U.createBufferSize(length);
-			current.buffer.copy(buf, 0, index + 4, index + 4 + length);
 
-			for (var i = 0; i < length; i++)
-				buf[i] = buf[i] ^ this.current.mask[i % 4];
+			var buf = U.createBufferSize(length);
+			current.buffer.copy(buf, 0, index, mlength);
+
+			// does frame contain mask?
+			if (current.isMask) {
+				for (var i = 0; i < length; i++)
+					buf[i] = buf[i] ^ current.mask[i % 4];
+			}
 
 			// Does the buffer continue?
 			buf.$continue = current.final === false;
 			this.inflatepending.push(buf);
 		} else {
 			current.data = U.createBufferSize(length);
-			current.buffer.copy(current.data, 0, index + 4, index + 4 + length);
+			current.buffer.copy(current.data, 0, index, mlength);
 		}
 	}
 
@@ -13253,22 +13284,40 @@ WebSocketClient.prototype.$parse = function() {
 };
 
 WebSocketClient.prototype.$readbody = function() {
-	var length = this.current.data.length;
-	if (this.type === 1) {
-		var binary = U.createBufferSize(length);
-		for (var i = 0; i < length; i++)
-			binary[i] = this.current.data[i] ^ this.current.mask[i % 4];
-		return binary;
+
+	var current = this.current;
+	var length = current.data.length;
+	var buf;
+
+	if (current.type === 1) {
+
+		buf = U.createBufferSize(length);
+		for (var i = 0; i < length; i++)  {
+			if (current.isMask)
+				buf[i] = current.data[i] ^ current.mask[i % 4];
+			else
+				buf[i] = current.data[i];
+		}
+
+		return buf.toString('utf8');
+
 	} else {
-		var output = '';
-		for (var i = 0; i < length; i++)
-			output += String.fromCharCode(this.current.data[i] ^ this.current.mask[i % 4]);
-		return output;
+
+		buf = U.createBufferSize(length);
+		for (var i = 0; i < length; i++) {
+			// does frame contain mask?
+			if (current.isMask)
+				buf[i] = current.data[i] ^ current.mask[i % 4];
+			else
+				buf[i] = current.data[i];
+		}
+		return buf;
 	}
 };
 
 WebSocketClient.prototype.$decode = function() {
 	var data = this.current.body;
+
 	switch (this.type) {
 
 		case 1: // BINARY
@@ -13276,19 +13325,15 @@ WebSocketClient.prototype.$decode = function() {
 			break;
 
 		case 3: // JSON
-
 			if (data instanceof Buffer)
 				data = data.toString(ENCODING);
-
 			F.config['default-websocket-encodedecode'] === true && (data = $decodeURIComponent(data));
 			data.isJSON() && this.container.emit('message', this, F.onParseJSON(data, this.req));
 			break;
 
 		default: // TEXT
-
 			if (data instanceof Buffer)
 				data = data.toString(ENCODING);
-
 			this.container.emit('message', this, F.config['default-websocket-encodedecode'] === true ? $decodeURIComponent(data) : data);
 			break;
 	}
@@ -13437,7 +13482,7 @@ WebSocketClient.prototype.sendDeflate = function() {
  */
 WebSocketClient.prototype.ping = function() {
 	if (!this.isClosed) {
-		this.socket.write(U.getWebSocketFrame(0, '', 0x09));
+		this.socket.write(U.getWebSocketFrame(0, 'PING', 0x09));
 		this.$ping = false;
 	}
 	return this;
@@ -13452,7 +13497,7 @@ WebSocketClient.prototype.ping = function() {
 WebSocketClient.prototype.close = function(message, code) {
 	if (!this.isClosed) {
 		this.isClosed = true;
-		this.socket.end(U.getWebSocketFrame(code || 1000,  message ? encodeURIComponent(message) : '', 0x08));
+		this.socket.end(U.getWebSocketFrame(code || 1000,  message ? (this.options.encodedecode ? encodeURIComponent(message) : message) : '', 0x08));
 	}
 	return this;
 };
