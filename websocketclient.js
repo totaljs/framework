@@ -47,6 +47,7 @@ function WebSocketClient() {
 
 	// type: json, text, binary
 	this.options = { type: 'json', compress: true, reconnect: 3000, encodedecode: true };
+	this.cookies = {};
 }
 
 WebSocketClient.prototype.connect = function(url, protocol, origin) {
@@ -75,6 +76,18 @@ WebSocketClient.prototype.connect = function(url, protocol, origin) {
 	origin && (options.headers['Sec-WebSocket-Origin'] = origin);
 	options.headers.Connection = 'Upgrade';
 	options.headers.Upgrade = 'websocket';
+
+	var keys = Object.keys(self.headers);
+	for (var i = 0, length = keys.length; i < length; i++)
+		options.headers[keys[i]] = self.headers[keys[i]];
+
+	var keys = Object.keys(self.cookies);
+	if (keys.length) {
+		var tmp = [];
+		for (var i = 0, length = keys.length; i < length; i++)
+			tmp.push(keys[i] + '=' + self.headers[keys[i]]);
+		options.headers['Cookie'] = tmp.join(', ');
+	}
 
 	self.req = (isSecure ? Https : Http).get(options);
 	self.req.$main = self;
@@ -129,7 +142,6 @@ WebSocketClient.prototype.connect = function(url, protocol, origin) {
 			self.deflate.on('data', websocket_deflate);
 		}
 	});
-
 };
 
 function websocket_ondata(chunk) {
