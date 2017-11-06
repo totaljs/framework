@@ -10227,6 +10227,8 @@ Controller.prototype.sitemap = function(name) {
 
 	if (!name) {
 		sitemap = self.repository[REPOSITORY_SITEMAP];
+		if (!sitemap && self.$sitemapid || self.route.sitemap)
+			return self.sitemap(self.$sitemapid || self.route.sitemap);
 		return sitemap ? sitemap : self.repository.sitemap || EMPTYARRAY;
 	}
 
