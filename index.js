@@ -10139,15 +10139,14 @@ Controller.prototype.sitemap_add = function(parent, name, url) {
 	var sitemap = self.repository[REPOSITORY_SITEMAP];
 
 	if (!sitemap) {
-		if (self.$sitemapid || self.route.sitemap)
-			sitemap = self.sitemap(self.$sitemapid || self.route.sitemap);
+		sitemap = self.sitemap();
 		if (!sitemap)
-			return self;
+			return EMPTYARRAY;
 	}
 
 	var index = sitemap.findIndex('id', parent);
 	if (index === -1)
-		return self;
+		return sitemap;
 
 	var obj = { sitemap: '', id: '', name: name, url: url, last: false, first: false, index: index, wildcard: false, formatName: false, formatUrl: false, localizeName: false, localizeUrl: false };
 
@@ -10159,7 +10158,7 @@ Controller.prototype.sitemap_add = function(parent, name, url) {
 			sitemap[i].index = tmp++;
 	}
 
-	return self;
+	return sitemap;
 };
 
 Controller.prototype.sitemap_change = function(name, type, a, b, c, d, e, f) {
@@ -10170,8 +10169,11 @@ Controller.prototype.sitemap_change = function(name, type, a, b, c, d, e, f) {
 	if (!name)
 		name = self.sitemapid;
 
-	if (!sitemap)
+	if (!sitemap) {
 		sitemap = self.sitemap(name);
+		if (!sitemap)
+			return EMPTYARRAY;
+	}
 
 	if (!sitemap.$cloned) {
 		sitemap = U.clone(sitemap);
@@ -10201,10 +10203,10 @@ Controller.prototype.sitemap_change = function(name, type, a, b, c, d, e, f) {
 		if (type === 'name' && self.repository[REPOSITORY_META_TITLE] === tmp)
 			self.repository[REPOSITORY_META_TITLE] = item[type];
 
-		return self;
+		return sitemap;
 	}
 
-	return self;
+	return sitemap;
 };
 
 Controller.prototype.sitemap_replace = function(name, title, url) {
@@ -10232,10 +10234,10 @@ Controller.prototype.sitemap_replace = function(name, title, url) {
 		item.url = typeof(url) === 'function' ? url(item.url) : item.formatUrl ? item.url.format(url) : url;
 		if (is)
 			self.repository[REPOSITORY_META_TITLE] = item.name;
-		return self;
+		return sitemap;
 	}
 
-	return self;
+	return sitemap;
 };
 
 // Arguments: parent, name, url
