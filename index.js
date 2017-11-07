@@ -10137,8 +10137,13 @@ Controller.prototype.sitemap_add = function(parent, name, url) {
 
 	var self = this;
 	var sitemap = self.repository[REPOSITORY_SITEMAP];
-	if (!sitemap)
-		return self;
+
+	if (!sitemap) {
+		if (self.$sitemapid || self.route.sitemap)
+			sitemap = self.sitemap(self.$sitemapid || self.route.sitemap);
+		if (!sitemap)
+			return self;
+	}
 
 	var index = sitemap.findIndex('id', parent);
 	if (index === -1)
@@ -10268,7 +10273,9 @@ Controller.prototype.sitemap = function(name) {
 	}
 
 	self.$sitemapid = name;
-	sitemap = F.sitemap(name, false, self.language);
+	sitemap = U.clone(F.sitemap(name, false, self.language));
+	sitemap.$cloned = true;
+
 	self.repository[REPOSITORY_SITEMAP] = sitemap;
 
 	if (!self.repository[REPOSITORY_META_TITLE]) {
