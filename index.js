@@ -14194,7 +14194,7 @@ function extend_request(PROTO) {
 			F.onAuthorize(req, req.res, req.flags, function(isAuthorized, user) {
 				var hasRoles = length !== req.flags.length;
 				if (hasRoles)
-					req.$flags += flags.slice(length).join('');
+					req.$flags += req.flags.slice(length).join('');
 				if (typeof(isAuthorized) !== 'boolean') {
 					user = isAuthorized;
 					isAuthorized = !user;
