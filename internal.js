@@ -1949,9 +1949,9 @@ function view_parse(content, minify, filename, controller) {
 	}
 
 	if (RELEASE)
-		builder = builder.replace(/(\+\$EMPTY\+)/g, '+').replace(/(\$output\=\$EMPTY\+)/g, '$output=').replace(/(\$output\+\=\$EMPTY\+)/g, '$output+=').replace(/(\}\$output\+\=\$EMPTY)/g, '}').replace(/(\{\$output\+\=\$EMPTY\;)/g, '{').replace(/(\+\$EMPTY\+)/g, '+').replace(/(\>\'\+\'\<)/g, '><').replace(/\'\+\'/g, '');
+		builder = builder.replace(/(\+\$EMPTY\+)/g, '+').replace(/(\$output=\$EMPTY\+)/g, '$output=').replace(/(\$output\+=\$EMPTY\+)/g, '$output+=').replace(/(\}\$output\+=\$EMPTY)/g, '}').replace(/(\{\$output\+=\$EMPTY;)/g, '{').replace(/(\+\$EMPTY\+)/g, '+').replace(/(>'\+'<)/g, '><').replace(/'\+'/g, '');
 
-	var fn = '(function(self,repository,model,session,query,body,url,global,helpers,user,config,functions,index,output,cookie,files,mobile,settings){var get=query;var post=body;var theme=this.themeName;var language=this.language;var cookie=function(name){return controller.req.cookie(name);};' + (functions.length ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})';
+	var fn = '(function(self,repository,model,session,query,body,url,global,helpers,user,config,functions,index,output,cookie,files,mobile,settings){var get=query;var post=body;var theme=this.themeName;var language=this.language;var sitemap=this.repository.$sitemap;var cookie=function(name){return controller.req.cookie(name);};' + (functions.length ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})';
 	try {
 		fn = eval(fn);
 	} catch (e) {
@@ -2011,7 +2011,7 @@ function view_prepare(command, dynamicCommand, functions, controller) {
 
 		case 'section':
 			tmp = command.indexOf('(');
-			return tmp === -1 ? '' : '(repository[\'$section_' + command.substring(tmp + 1, command.length - 1).replace(/\'|\"/g, '') + '\'] || \'\')';
+			return tmp === -1 ? '' : '(repository[\'$section_' + command.substring(tmp + 1, command.length - 1).replace(/'|"/g, '') + '\'] || \'\')';
 
 		case 'log':
 		case 'LOG':
@@ -2151,7 +2151,7 @@ function view_prepare(command, dynamicCommand, functions, controller) {
 			if (controller.$hasComponents instanceof Array) {
 				var group = command.match(REG_COMPONENTS_GROUP);
 				if (group && group.length) {
-					group = group[0].toString().replace(/\'|\"'/g, '');
+					group = group[0].toString().replace(/'|"'/g, '');
 					controller.$hasComponents.indexOf(group) === -1 && controller.$hasComponents.push(group);
 				}
 			}

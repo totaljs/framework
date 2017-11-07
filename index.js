@@ -10227,7 +10227,7 @@ Controller.prototype.sitemap = function(name) {
 
 	if (!name) {
 		sitemap = self.repository[REPOSITORY_SITEMAP];
-		if (!sitemap && self.$sitemapid || self.route.sitemap)
+		if (!sitemap && (self.$sitemapid || self.route.sitemap))
 			return self.sitemap(self.$sitemapid || self.route.sitemap);
 		return sitemap ? sitemap : self.repository.sitemap || EMPTYARRAY;
 	}
@@ -10240,6 +10240,7 @@ Controller.prototype.sitemap = function(name) {
 	self.$sitemapid = name;
 	sitemap = F.sitemap(name, false, self.language);
 	self.repository[REPOSITORY_SITEMAP] = sitemap;
+
 	if (!self.repository[REPOSITORY_META_TITLE]) {
 		sitemap = sitemap.last();
 		if (sitemap)
