@@ -19,6 +19,8 @@
 - added: `SchemaOptions.invalid(name, [value], [path], [index])` alias to `$.errors.push() + callback()`
 - added: `SchemaOptions.success()` alias to `callback(SUCCESS(value))`
 - added: `controller.sitemapid` contains a sitemap identificator
+- added: `controller.sitemap_add(parent, name, url)` appends a new item into the sitemap per request
+- added: `@{sitemap_add(parent, name, url)}` appends a new item into the sitemap per request
 
 - updated: `sitemap` routing can contain an additional path, e.g. `#sitemapid/path/`
 - updated: `F.localize()` supports sitemap routing

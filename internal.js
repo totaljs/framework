@@ -2180,6 +2180,7 @@ function view_prepare(command, dynamicCommand, functions, controller) {
 		case 'json':
 		case 'sitemap_change':
 		case 'sitemap_replace':
+		case 'sitemap_add':
 		case 'helper':
 		case 'view':
 		case 'layout':

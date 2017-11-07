@@ -10133,6 +10133,30 @@ Controller.prototype.sitemap_name = function(name, a, b, c, d, e, f) {
 	return item ? item.name.format(a, b, c, d, e, f) : '';
 };
 
+Controller.prototype.sitemap_add = function(parent, name, url) {
+
+	var self = this;
+	var sitemap = self.repository[REPOSITORY_SITEMAP];
+	if (!sitemap)
+		return self;
+
+	var index = sitemap.findIndex('id', parent);
+	if (index === -1)
+		return self;
+
+	var obj = { sitemap: '', id: '', name: name, url: url, last: false, first: false, index: index, wildcard: false, formatName: false, formatUrl: false, localizeName: false, localizeUrl: false };
+
+	sitemap.splice(index + 1, 0, obj);
+
+	if (index) {
+		var tmp = index;
+		for (var i = index + 1; i > -1; i--)
+			sitemap[i].index = tmp++;
+	}
+
+	return self;
+};
+
 Controller.prototype.sitemap_change = function(name, type, a, b, c, d, e, f) {
 
 	var self = this;
@@ -10207,6 +10231,12 @@ Controller.prototype.sitemap_replace = function(name, title, url) {
 	}
 
 	return self;
+};
+
+// Arguments: parent, name, url
+Controller.prototype.$sitemap_add = function(parent, name, url) {
+	this.sitemap_add(parent, name, url);
+	return '';
 };
 
 // Arguments: name, type, value, format
