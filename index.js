@@ -9868,7 +9868,7 @@ Controller.prototype.invalid = function(status) {
 		self.status = status;
 
 	var builder = new ErrorBuilder();
-	process.nextTick(next_controller_invalid, self, builder);
+	setImmediate(next_controller_invalid, self, builder);
 	return builder;
 };
 
