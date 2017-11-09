@@ -175,6 +175,34 @@ SchemaBuilderEntity.prototype.allow = function() {
 	return self;
 };
 
+SchemaBuilderEntity.prototype.required = function(name, fn) {
+
+	var self = this;
+
+	if (fn === false) {
+		self.properties && (self.properties = self.properties.remove(name));
+		return self;
+	}
+
+	var prop = self.schema[name];
+	if (!prop)
+		throw new Error('Property "{0}" doesn\'t exist in "{1}" schema.'.format(name, self.name));
+
+	var is = prop.required;
+
+	prop.can = typeof(fn) === 'function' ? fn : null;
+
+	if (!prop.required) {
+		prop.required = true;
+		if (self.properties) {
+			self.properties.indexOf(name) === -1 && self.properties.push(name);
+		} else
+			self.properties = [name];
+	}
+
+	return self;
+};
+
 /**
  * Define type in schema
  * @param {String|String[]} name
@@ -191,7 +219,9 @@ SchemaBuilderEntity.prototype.define = function(name, type, required, custom) {
 		return this;
 	}
 
-	if (required !== undefined && typeof(required) !== 'boolean') {
+	var rt = typeof(required);
+
+	if (required !== undefined && rt === 'string') {
 		custom = required;
 		required = false;
 	}
@@ -212,13 +242,12 @@ SchemaBuilderEntity.prototype.define = function(name, type, required, custom) {
 
 	this.fields = Object.keys(this.schema);
 
-	if (!required)
-		return this;
+	if (required) {
+		if (this.properties == null)
+			this.properties = [];
+		this.properties.indexOf(name) === -1 && this.properties.push(name);
+	}
 
-	if (this.properties == null)
-		this.properties = [];
-
-	this.properties.indexOf(name) === -1 && this.properties.push(name);
 	return this;
 };
 
@@ -387,10 +416,10 @@ SchemaBuilderEntity.prototype.filter = function(custom, model, reverse) {
 function parseLength(lower, result) {
 	result.raw = 'string';
 	var beg = lower.indexOf('(');
-	if (beg === -1)
-		return result;
-	result.length = lower.substring(beg + 1, lower.length - 1).parseInt();
-	result.raw = lower.substring(0, beg);
+	if (beg !== -1) {
+		result.length = lower.substring(beg + 1, lower.length - 1).parseInt();
+		result.raw = lower.substring(0, beg);
+	}
 	return result;
 }
 
@@ -403,6 +432,8 @@ SchemaBuilderEntity.prototype.$parse = function(name, value, required, custom) {
 	result.type = 0;
 	result.length = 0;
 	result.required = required ? true : false;
+	result.validate = typeof(required) === 'function' ? required : null;
+	result.can = null;
 	result.isArray = false;
 	result.custom = custom || '';
 
@@ -1207,10 +1238,16 @@ SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourc
 
 		if (schema.isArray) {
 			var arr = model[key];
-			for (var j = 0, jl = arr.length; j < jl; j++)
-				(model[key][j] != null || schema.required) && s.validate(model[key][j], resourcePrefix, resourceName, builder, filter, path + key + '[' + j + ']', j);
-		} else
-			(model[key] != null || schema.required) && s.validate(model[key], resourcePrefix, resourceName, builder, filter, path + key, -1);
+			for (var j = 0, jl = arr.length; j < jl; j++) {
+				if (model[key][j] != null || schema.required) {
+					if (!schema.can || schema.can(model))
+						s.validate(model[key][j], resourcePrefix, resourceName, builder, filter, path + key + '[' + j + ']', j);
+				}
+			}
+		} else if (model[key] != null || schema.required) {
+			if (!schema.can || schema.can(model))
+				s.validate(model[key], resourcePrefix, resourceName, builder, filter, path + key, -1);
+		}
 	}
 
 	return builder;
@@ -2681,6 +2718,7 @@ exports.validate = function(name, model, resourcePrefix, resourceName) {
 	if (schema === undefined)
 		return null;
 	schema = schema.get(name);
+	model = schema.prepare(model);
 	return schema === undefined ? null : schema.validate(model, resourcePrefix, resourceName);
 };
 

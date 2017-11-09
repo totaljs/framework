@@ -21,6 +21,7 @@
 - added: `controller.sitemapid` contains a sitemap identificator
 - added: `controller.sitemap_add(parent, name, url)` appends a new item into the sitemap per request
 - added: `@{sitemap_add(parent, name, url)}` appends a new item into the sitemap per request
+- added: `SchemaEntity.required('fieldname', boolean/function(model))` which can disable/enable validation for this field
 
 - updated: `sitemap` routing can contain an additional path, e.g. `#sitemapid/path/`
 - updated: `F.localize()` supports sitemap routing
@@ -34,6 +35,7 @@
 - updated: HTTP server is listening after the framework is completely loaded
 - updated: (IMPORTANT) HTTP cache in dynamic content and static files
 - updated: `F.prototypes()` by adding `OperationOptions`
+- updated: ErrorHandling in schemas (supports inline validation and advanced conditions)
 
 - renamed: `allow-handle-static-files` to `allow-static-files`
 

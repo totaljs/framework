@@ -1988,12 +1988,17 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 	for (var i = 0; i < properties.length; i++) {
 
 		var name = properties[i];
+
 		if (fields && fields.indexOf(name) === -1)
+			continue;
+
+		var TYPE = collection[schema].schema[name];
+
+		if (TYPE.can && !TYPE.can(model))
 			continue;
 
 		var value = model[name];
 		var type = typeof(value);
-		var TYPE = collection[schema].schema[name];
 		var prefix = entity.resourcePrefix ? (entity.resourcePrefix + name) : name;
 
 		if (value === undefined) {
@@ -2034,7 +2039,7 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 					// The schema not exists
 					if (collection[entity] === undefined) {
 
-						var result2 = prepare(name, value, current + name, model, schema, TYPE);
+						var result2 = TYPE.validate ? TYPE.validate(value, model) : prepare(name, value, current + name, model, schema, TYPE);
 						if (result2 === undefined) {
 							result2 = validate_builder_default(name, value, TYPE);
 							if (result2)
@@ -2052,7 +2057,6 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 						}
 
 						if (type === 'boolean' && !result2) {
-
 							error.push(pluspath + name, '@', current + name, index, prefix);
 							continue;
 						}
@@ -2063,7 +2067,7 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 						continue;
 					}
 
-					var result3 = prepare(name, value, current + name, model, schema, TYPE);
+					var result3 = TYPE.validate ? TYPE.validate(value, model) : prepare(name, value, current + name, model, schema, TYPE);
 					if (result3 === undefined) {
 						result3 = validate_builder_default(name, value, TYPE);
 						if (result3)
@@ -2101,7 +2105,7 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 			}
 		}
 
-		var result = prepare(name, value, current + name, model, schema, TYPE);
+		var result = TYPE.validate ? TYPE.validate(value, model) : prepare(name, value, current + name, model, schema, TYPE);
 		if (result === undefined) {
 			result = validate_builder_default(name, value, TYPE);
 			if (result)
@@ -2115,15 +2119,9 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 				error.push(pluspath + name, '@', current + name, index, entity.resourcePrefix + result.substring(1));
 			else
 				error.push(pluspath + name, result, current + name, index, prefix);
-			continue;
-		}
-
-		if (type === 'boolean') {
+		} else if (type === 'boolean') {
 			!result && error.push(pluspath + name, '@', current + name, index, prefix);
-			continue;
-		}
-
-		if (result.isValid === false)
+		} else if (result.isValid === false)
 			error.push(pluspath + name, result.error, current + name, index, prefix);
 	}
 
