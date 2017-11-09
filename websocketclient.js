@@ -48,6 +48,7 @@ function WebSocketClient() {
 	// type: json, text, binary
 	this.options = { type: 'json', compress: true, reconnect: 3000, encodedecode: true };
 	this.cookies = {};
+	this.headers = {};
 }
 
 WebSocketClient.prototype.connect = function(url, protocol, origin) {
@@ -81,7 +82,7 @@ WebSocketClient.prototype.connect = function(url, protocol, origin) {
 	for (var i = 0, length = keys.length; i < length; i++)
 		options.headers[keys[i]] = self.headers[keys[i]];
 
-	var keys = Object.keys(self.cookies);
+	keys = Object.keys(self.cookies);
 	if (keys.length) {
 		var tmp = [];
 		for (var i = 0, length = keys.length; i < length; i++)
