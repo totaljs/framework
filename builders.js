@@ -179,6 +179,16 @@ SchemaBuilderEntity.prototype.required = function(name, fn) {
 
 	var self = this;
 
+	if (!name)
+		return self;
+
+	if (name.indexOf(',') !== -1) {
+		var arr = name.split(',');
+		for (var i = 0; i < arr.length; i++)
+			self.required(arr[i].trim(), fn);
+		return self;
+	}
+
 	if (fn === false) {
 		self.properties && (self.properties = self.properties.remove(name));
 		return self;
