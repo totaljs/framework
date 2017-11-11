@@ -146,7 +146,7 @@ function test_routing(next) {
 			assert.ok(headers['access-control-allow-origin'] === 'http://www.petersirka.eu', 'CORS, headers problem 1');
 			assert.ok(headers['access-control-allow-credentials'] === 'true', 'CORS, headers problem 2');
 			assert.ok(headers['access-control-allow-methods'] === 'POST, PUT, DELETE, OPTIONS', 'CORS, headers problem 3');
-			assert.ok(headers['access-control-allow-headers'] === 'X-Ping', 'CORS, headers problem 4');
+			assert.ok(headers['access-control-allow-headers'] === 'x-ping', 'CORS, headers problem 4');
 			complete();
 		}, null, { 'origin': 'http://www.petersirka.eu' });
 	});
