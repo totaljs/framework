@@ -13474,7 +13474,7 @@ WebSocketClient.prototype.send = function(message, raw, replacer) {
 
 	if (this.type !== 1) {
 		var data = this.type === 3 ? (raw ? message : JSON.stringify(message, replacer)) : (message || '').toString();
-		if (this.container.config['default-websocket-encodedecode'] === true && data)
+		if (F.config['default-websocket-encodedecode'] === true && data)
 			data = encodeURIComponent(data);
 		if (this.deflate) {
 			this.deflatepending.push(U.createBuffer(data));
@@ -13538,7 +13538,7 @@ WebSocketClient.prototype.ping = function() {
 WebSocketClient.prototype.close = function(message, code) {
 	if (!this.isClosed) {
 		this.isClosed = true;
-		this.socket.end(U.getWebSocketFrame(code || 1000,  message ? (this.options.encodedecode ? encodeURIComponent(message) : message) : '', 0x08));
+		this.socket.end(U.getWebSocketFrame(code || 1000,  message ? (F.config['default-websocket-encodedecode'] ? encodeURIComponent(message) : message) : '', 0x08));
 	}
 	return this;
 };
