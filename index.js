@@ -1508,7 +1508,7 @@ global.CORS = F.cors = function(url, flags, credentials) {
 					methods.push(flag.toUpperCase());
 					break;
 				default:
-					headers.push(flags[i]);
+					headers.push(flags[i].toLowerCase());
 					break;
 			}
 		}

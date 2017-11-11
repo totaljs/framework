@@ -59,6 +59,7 @@
 - fixed: unit testing (author: @ckpiggy)
 - fixed: `schema.setPrefix()` in nested schemas
 - fixed: sitemap localization
+- fixed: CORS custom headers
 
 - improved: performance and security
 
