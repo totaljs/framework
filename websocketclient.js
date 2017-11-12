@@ -126,8 +126,6 @@ WebSocketClient.prototype.connect = function(url, protocol, origin) {
 		self.socket.on('close', websocket_close);
 		self.socket.on('end', websocket_close);
 
-		self.$events.open && self.emit('open');
-
 		if (compress) {
 			self.inflatepending = [];
 			self.inflatelock = false;
@@ -142,6 +140,8 @@ WebSocketClient.prototype.connect = function(url, protocol, origin) {
 			self.deflate.on('error', F.error());
 			self.deflate.on('data', websocket_deflate);
 		}
+
+		self.$events.open && self.emit('open');
 	});
 };
 
@@ -157,12 +157,10 @@ function websocket_close() {
 	var ws = this.$websocket;
 	ws.closed = true;
 	ws.$onclose();
-	if (ws.options.reconnect) {
-		setTimeout(function(ws) {
-			ws.reconnect++;
-			ws.connect(ws.url, ws.protocol, ws.origin);
-		}, ws.options.reconnect);
-	}
+	ws.options.reconnect && setTimeout(function(ws) {
+		ws.reconnect++;
+		ws.connect(ws.url, ws.protocol, ws.origin);
+	}, ws.options.reconnect, ws);
 }
 
 WebSocketClient.prototype.emit = function(name, a, b, c, d, e, f, g) {
@@ -442,13 +440,13 @@ WebSocketClient.prototype.$readbody = function() {
 
 WebSocketClient.prototype.$decode = function() {
 	var data = this.current.body;
-	switch (this.type) {
+	switch (this.options.type) {
 
-		case 1: // BINARY
+		case 'binary': // BINARY
 			this.emit('message', new Uint8Array(data).buffer);
 			break;
 
-		case 3: // JSON
+		case 'json': // JSON
 			if (data instanceof Buffer)
 				data = data.toString(ENCODING);
 			this.options.encodedecode && (data = $decodeURIComponent(data));
