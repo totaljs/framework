@@ -1514,9 +1514,9 @@ global.CORS = F.cors = function(url, flags, credentials) {
 		}
 	}
 
-	route.isASTERIX = url.lastIndexOf('*') !== -1;
+	route.isWILDCARD = url.lastIndexOf('*') !== -1;
 
-	if (route.isASTERIX)
+	if (route.isWILDCARD)
 		url = url.replace('*', '');
 
 	url = framework_internal.preparePath(framework_internal.encodeUnicodeURL(url.trim()));
@@ -1536,7 +1536,7 @@ global.CORS = F.cors = function(url, flags, credentials) {
 	F.routes.cors.sort(function(a, b) {
 		var al = a.url.length;
 		var bl = b.url.length;
-		return al > bl ? - 1 : al < bl ? 1 : a.isASTERIX && b.isASTERIX ? 1 : 0;
+		return al > bl ? - 1 : al < bl ? 1 : a.isWILDCARD && b.isWILDCARD ? 1 : 0;
 	});
 
 	PERF.OPTIONS = true;
@@ -1655,8 +1655,8 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 		}
 	}
 
-	var isASTERIX = url.indexOf('*') !== -1;
-	if (isASTERIX) {
+	var isWILDCARD = url.indexOf('*') !== -1;
+	if (isWILDCARD) {
 		url = url.replace('*', '').replace('//', '/');
 		priority = priority - 100;
 	}
@@ -1937,7 +1937,7 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 		isGENERATOR = (funcExecute.constructor.name === 'GeneratorFunction' || funcExecute.toString().indexOf('function*') === 0);
 
 	var url2 = framework_internal.preparePath(url.trim());
-	var urlraw = U.path(url2) + (isASTERIX ? '*' : '');
+	var urlraw = U.path(url2) + (isWILDCARD ? '*' : '');
 	var hash = url2.hash();
 	var routeURL = framework_internal.routeSplitCreate(url2);
 	var arr = [];
@@ -2065,7 +2065,7 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 	r.isMOBILE_VARY = isMOBILE;
 	r.isGENERATOR = isGENERATOR;
 	r.MEMBER = membertype;
-	r.isASTERIX = isASTERIX;
+	r.isWILDCARD = isWILDCARD;
 	r.isROLE = isROLE;
 	r.isREFERER = flags.indexOf('referer') !== -1;
 	r.isHTTPS = flags.indexOf('https') !== -1;
@@ -2077,7 +2077,7 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 	r.isXHR = flags.indexOf('xhr') !== -1;
 	r.isUPLOAD = flags.indexOf('upload') !== -1;
 	r.isSYSTEM = url.startsWith('/#');
-	r.isCACHE = !url.startsWith('/#') && !CUSTOM && !arr.length && !isASTERIX;
+	r.isCACHE = !url.startsWith('/#') && !CUSTOM && !arr.length && !isWILDCARD;
 	r.isPARAM = arr.length > 0;
 	r.isDELAY = isDELAY;
 	r.CUSTOM = CUSTOM;
@@ -2508,8 +2508,8 @@ F.websocket = function(url, funcInitialize, flags, length) {
 		priority += subdomain.indexOf('*') !== -1 ? 50 : 100;
 	}
 
-	var isASTERIX = url.indexOf('*') !== -1;
-	if (isASTERIX) {
+	var isWILDCARD = url.indexOf('*') !== -1;
+	if (isWILDCARD) {
 		url = url.replace('*', '').replace('//', '/');
 		priority = (-10) - priority;
 	}
@@ -2520,7 +2520,7 @@ F.websocket = function(url, funcInitialize, flags, length) {
 	var reg = null;
 	var regIndex = null;
 	var hash = url2.hash();
-	var urlraw = U.path(url2) + (isASTERIX ? '*' : '');
+	var urlraw = U.path(url2) + (isWILDCARD ? '*' : '');
 
 	if (url.indexOf('{') !== -1) {
 
@@ -2693,7 +2693,7 @@ F.websocket = function(url, funcInitialize, flags, length) {
 	r.isJSON = isJSON;
 	r.isBINARY = isBINARY;
 	r.isROLE = isROLE;
-	r.isASTERIX = isASTERIX;
+	r.isWILDCARD = isWILDCARD;
 	r.isHTTPS = flags.indexOf('https');
 	r.isHTTP = flags.indexOf('http');
 	r.isDEBUG = flags.indexOf('debug');
@@ -7069,7 +7069,7 @@ F.$cors = function(req, res, fn, arg) {
 
 	for (var i = 0; i < F._length_cors; i++) {
 		cors = F.routes.cors[i];
-		if (framework_internal.routeCompare(req.path, cors.url, false, cors.isASTERIX)) {
+		if (framework_internal.routeCompare(req.path, cors.url, false, cors.isWILDCARD)) {
 			isAllowed = true;
 			break;
 		}
@@ -8585,7 +8585,7 @@ F.lookup = function(req, url, flags, membertype) {
 		} else {
 			if (F._length_subdomain_web && !framework_internal.routeCompareSubdomain(subdomain, route.subdomain))
 				continue;
-			if (route.isASTERIX) {
+			if (route.isWILDCARD) {
 				if (!framework_internal.routeCompare(req.path, route.url, isSystem, true))
 					continue;
 			} else {
@@ -8655,7 +8655,7 @@ F.lookup_websocket = function(req, url, membertype) {
 
 			if (F._length_subdomain_websocket && !framework_internal.routeCompareSubdomain(subdomain, route.subdomain))
 				continue;
-			if (route.isASTERIX) {
+			if (route.isWILDCARD) {
 				if (!framework_internal.routeCompare(req.path, route.url, false, true))
 					continue;
 			} else {
@@ -9928,7 +9928,7 @@ Controller.prototype.transfer = function(url, flags) {
 
 		var route = F.routes.web[i];
 
-		if (route.isASTERIX) {
+		if (route.isWILDCARD) {
 			if (!framework_internal.routeCompare(path, route.url, isSystem, true))
 				continue;
 		} else {

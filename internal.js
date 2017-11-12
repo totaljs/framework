@@ -545,15 +545,15 @@ exports.routeSplitCreate = function(url, noLower) {
 	return arr;
 };
 
-exports.routeCompare = function(url, route, isSystem, isAsterix) {
+exports.routeCompare = function(url, route, isSystem, isWildcard) {
 
 	var length = url.length;
 	var lengthRoute = route.length;
 
-	if (lengthRoute !== length && !isAsterix)
+	if (lengthRoute !== length && !isWildcard)
 		return false;
 
-	if (isAsterix && lengthRoute === 1 && route[0] === '/')
+	if (isWildcard && lengthRoute === 1 && route[0] === '/')
 		return true;
 
 	var skip = length === 1 && url[0] === '/';
@@ -562,14 +562,14 @@ exports.routeCompare = function(url, route, isSystem, isAsterix) {
 
 		var value = route[i];
 
-		if (!isSystem && isAsterix && value === undefined)
+		if (!isSystem && isWildcard && value === undefined)
 			return true;
 
 		if (!isSystem && (!skip && value[0] === '{'))
 			continue;
 
 		if (url[i] !== value)
-			return isSystem ? false : isAsterix ? i >= lengthRoute : false;
+			return isSystem ? false : isWildcard ? i >= lengthRoute : false;
 	}
 
 	return true;
