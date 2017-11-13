@@ -1885,7 +1885,6 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 					this.themeName = '';
 				else if (themeName)
 					this.themeName = themeName;
-
 				if (!this.route.workflow)
 					return this.view(name);
 				var self = this;
