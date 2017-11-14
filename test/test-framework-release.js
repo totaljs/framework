@@ -1,4 +1,4 @@
- var utils = require('../utils');
+var utils = require('../utils');
 var assert = require('assert');
 var framework = require('../index');
 var url = 'http://127.0.0.1:8001/';
