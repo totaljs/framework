@@ -10214,8 +10214,6 @@ Controller.prototype.sitemap_replace = function(name, title, url) {
 	if (!name)
 		name = self.sitemapid;
 
-	// var sitemap = self.repository[REPOSITORY_SITEMAP];
-	//if (!sitemap)
 	var sitemap = self.sitemap(name);
 
 	if (!sitemap.$cloned) {
@@ -10228,11 +10226,18 @@ Controller.prototype.sitemap_replace = function(name, title, url) {
 		var item = sitemap[i];
 		if (item.id !== name)
 			continue;
+
 		var is = self.repository[REPOSITORY_META_TITLE] === item.name;
-		item.name = typeof(title) === 'function' ? title(item.name) : item.formatName ? item.name.format(title) : title;
-		item.url = typeof(url) === 'function' ? url(item.url) : item.formatUrl ? item.url.format(url) : url;
+
+		if (title)
+			item.name = typeof(title) === 'function' ? title(item.name) : item.formatName ? item.name.format(title) : title;
+
+		if (url)
+			item.url = typeof(url) === 'function' ? url(item.url) : item.formatUrl ? item.url.format(url) : url;
+
 		if (is)
 			self.repository[REPOSITORY_META_TITLE] = item.name;
+
 		return sitemap;
 	}
 
