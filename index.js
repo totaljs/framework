@@ -48,20 +48,20 @@ const COMPRESSION = { 'text/plain': true, 'text/javascript': true, 'text/css': t
 const REG_TEMPORARY = /\//g;
 const REG_MOBILE = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet/i;
 const REG_ROBOT = /search|agent|bot|crawler|spider/i;
-const REG_VERSIONS = /(href|src)="[a-zA-Z0-9\/\:\-\.]+\.(jpg|js|css|png|gif|svg|html|ico|json|less|sass|scss|swf|txt|webp|woff|woff2|xls|xlsx|xml|xsl|xslt|zip|rar|csv|doc|docx|eps|gzip|jpe|jpeg|manifest|mov|mp3|flac|mp4|ogg|package|pdf)"/gi;
+const REG_VERSIONS = /(href|src)="[a-zA-Z0-9/:\-.]+\.(jpg|js|css|png|gif|svg|html|ico|json|less|sass|scss|swf|txt|webp|woff|woff2|xls|xlsx|xml|xsl|xslt|zip|rar|csv|doc|docx|eps|gzip|jpe|jpeg|manifest|mov|mp3|flac|mp4|ogg|package|pdf)"/gi;
 const REG_COMPILECSS = /url\(.*?\)/g;
-const REG_ROUTESTATIC = /^(\/\/|https\:|http\:)+/;
+const REG_ROUTESTATIC = /^(\/\/|https:|http:)+/;
 const REG_RANGE = /bytes=/;
 const REG_EMPTY = /\s/g;
 const REG_ACCEPTCLEANER = /\s|\./g;
 const REG_SANITIZE_BACKSLASH = /\/\//g;
 const REG_WEBSOCKET_ERROR = /ECONNRESET|EHOSTUNREACH|EPIPE|is closed/i;
 const REG_WINDOWSPATH = /\\/g;
-const REG_SCRIPTCONTENT = /\<|\>|;/;
-const REG_HTTPHTTPS = /^(\/)?(http|https)\:\/\//i;
-const REG_NOCOMPRESS = /[\.|-]+min\.(css|js)$/i;
+const REG_SCRIPTCONTENT = /<|>|;/;
+const REG_HTTPHTTPS = /^(\/)?(http|https):\/\//i;
+const REG_NOCOMPRESS = /[.|-]+min\.(css|js)$/i;
 const REG_TEXTAPPLICATION = /text|application/;
-const REG_ENCODINGCLEANER = /[\;\s]charset=utf\-8/g;
+const REG_ENCODINGCLEANER = /[;\s]charset=utf-8/g;
 const REG_SKIPERROR = /epipe|invalid\sdistance/i;
 const FLAGS_PROXY = ['post', 'json'];
 const FLAGS_INSTALL = ['get'];
@@ -5910,9 +5910,9 @@ F.isProcessing = function(filename) {
  * @param  {Response} res (optional) Response
  * @return {Framework}
  */
-F.noCache = function(req, res) {
+F.noCache = function(req) {
+	OBSOLETE('F.noCache()', 'Use req.noCache() or res.noCache() --> they have same functionality.');
 	req.noCache();
-	res && res.noCache();
 	return F;
 };
 
@@ -13666,8 +13666,7 @@ function extend_request(PROTO) {
 	 * @return {Request}
 	 */
 	PROTO.noCache = function() {
-		delete this.headers['if-none-match'];
-		delete this.headers['if-modified-since'];
+		this.res && this.res.noCache();
 		return this;
 	};
 
@@ -14283,9 +14282,25 @@ function extend_response(PROTO) {
 	 */
 	PROTO.noCache = function() {
 		var self = this;
-		self.removeHeader(HEADER_CACHE);
-		self.removeHeader('Etag');
-		self.removeHeader('Last-Modified');
+
+		if (self.$nocache)
+			return self;
+
+		if (self.req) {
+			delete self.req.headers['if-none-match'];
+			delete self.req.headers['if-modified-since'];
+		}
+
+		if (self.getHeader(HEADER_CACHE)) {
+			self.removeHeader(HEADER_CACHE);
+			self.removeHeader('Expires');
+			self.removeHeader('Etag');
+			self.removeHeader('Last-Modified');
+			self.setHeader(HEADER_CACHE, 'private, no-cache, no-store, max-age=0');
+			self.setHeader('Expires', -1);
+		}
+
+		self.$nocache = true;
 		return self;
 	};
 
@@ -14734,7 +14749,7 @@ function extend_response(PROTO) {
 			!req.extension && options.filename && (req.extension = U.getExtension(options.filename));
 		}
 
-		if (name && RELEASE && req.headers['if-modified-since'] === name[2]) {
+		if (name && RELEASE && !res.$nocache && req.headers['if-modified-since'] === name[2]) {
 			$file_notmodified(res, name);
 			return res;
 		}
@@ -14765,7 +14780,7 @@ function extend_response(PROTO) {
 
 		var compress = F.config['allow-gzip'] && COMPRESSION[contentType] && accept.indexOf('gzip') !== -1;
 		var range = req.headers.range;
-		var canCache = RELEASE && contentType !== 'text/cache-manifest';
+		var canCache = !res.$nocache && RELEASE && contentType !== 'text/cache-manifest';
 
 		if (canCache) {
 			if (compress)
@@ -14790,7 +14805,7 @@ function extend_response(PROTO) {
 			headers[HEADER_TYPE] += '; charset=utf-8';
 
 		if (canCache && !res.getHeader('Expires')) {
- 			headers.Expires = DATE_EXPIRES;
+			headers.Expires = DATE_EXPIRES;
 		} else if (headers.Expires && RELEASE)
 			delete headers.Expires;
 
@@ -14814,7 +14829,7 @@ function extend_response(PROTO) {
 			return res;
 		}
 
-		DEBUG && F.isProcessed(req.$key) && (F.temporary.path[req.$key] = undefined);
+		(DEBUG || res.$nocache) && F.isProcessed(req.$key) && (F.temporary.path[req.$key] = undefined);
 
 		if (name[1] && !compress)
 			headers[HEADER_LENGTH] = name[1];
