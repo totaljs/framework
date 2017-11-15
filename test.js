@@ -156,7 +156,7 @@ exports.load = function() {
 
 function logger(fail, name, description) {
 	var time = Math.floor(Date.now() - T.now) + ' ms';
-	T.count++
+	T.count++;
 	if (fail) {
 		T.countno++;
 		T.current.countno++;

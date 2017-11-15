@@ -45,20 +45,20 @@ if (!global.framework_utils)
 
 var regexpSTATIC = /\.\w{2,8}($|\?)+/;
 const regexpTRIM = /^[\s]+|[\s]+$/g;
-const regexpDATE = /(\d{1,2}\.\d{1,2}\.\d{4})|(\d{4}\-\d{1,2}\-\d{1,2})|(\d{1,2}\:\d{1,2}(\:\d{1,2})?)/g;
+const regexpDATE = /(\d{1,2}\.\d{1,2}\.\d{4})|(\d{4}-\d{1,2}-\d{1,2})|(\d{1,2}:\d{1,2}(:\d{1,2})?)/g;
 const regexpDATEFORMAT = /yyyy|yy|M+|d+|HH|H|hh|h|mm|m|ss|s|a|ww|w/g;
 const regexpSTRINGFORMAT = /\{\d+\}/g;
 const regexpPATH = /\\/g;
 const regexpTags = /<\/?[^>]+(>|$)/g;
 const regexpDiacritics = /[^\u0000-\u007e]/g;
-const regexpXML = /\w+\=\".*?\"/g;
+const regexpXML = /\w+=".*?"/g;
 const regexpDECODE = /&#?[a-z0-9]+;/g;
 const regexpPARAM = /\{{2}[^}\n]*\}{2}/g;
-const regexpINTEGER = /(^\-|\s-)?[0-9]+/g;
-const regexpFLOAT = /(^\-|\s-)?[0-9\.\,]+/g;
+const regexpINTEGER = /(^-|\s-)?[0-9]+/g;
+const regexpFLOAT = /(^-|\s-)?[0-9.,]+/g;
 const regexpALPHA = /^[A-Za-z0-9]+$/;
 const regexpSEARCH = /[^a-zA-Zá-žÁ-Ž\d\s:]/g;
-const regexpDECRYPT = /\-|\_/g;
+const regexpDECRYPT = /-|_/g;
 const regexpENCRYPT = /\/|\+/g;
 const regexpUNICODE = /\\u([\d\w]{4})/gi;
 const regexpTERMINAL = /[\w\S]+/g;
@@ -1868,7 +1868,7 @@ exports.setContentType = function(ext, type) {
 		ext = ext.substring(1);
 
 	if (ext.length > 8) {
-		var tmp = regexpSTATIC.toString().replace(/\,\d+\}/, ',' + ext.length + '}').substring(1);
+		var tmp = regexpSTATIC.toString().replace(/,\d+\}/, ',' + ext.length + '}').substring(1);
 		regexpSTATIC = new RegExp(tmp.substring(0, tmp.length - 1));
 	}
 
@@ -2681,7 +2681,6 @@ Date.prototype.format = function(format, resource) {
 		return datetimeformat[format](this, resource);
 
 	var key = format;
-	var self = this;
 	var half = false;
 
 	if (format && format[0] === '!') {
@@ -3430,7 +3429,7 @@ String.prototype.parseInt2 = function(def) {
 
 String.prototype.parseFloat2 = function(def) {
 	var num = this.match(regexpFLOAT);
-	return num ? +num[0].toString().replace(/\,/g, '.') : def || 0;
+	return num ? +num[0].toString().replace(/,/g, '.') : def || 0;
 };
 
 String.prototype.parseBool = String.prototype.parseBoolean = function() {
@@ -5451,7 +5450,7 @@ exports.set = function(obj, path, value) {
 		break;
 	}
 
-	var fn = (new Function('w', 'a', 'b', builder.join(';') + ';w.' + path.replace(/\'/, '\'') + '=a;return a'));
+	var fn = (new Function('w', 'a', 'b', builder.join(';') + ';w.' + path.replace(/'/, '\'') + '=a;return a'));
 	F.temporary.other[cachekey] = fn;
 	fn(obj, value, path);
 };
@@ -5476,7 +5475,7 @@ exports.get = function(obj, path) {
 		builder.push('if(!w.' + p + ')return');
 	}
 
-	var fn = (new Function('w', builder.join(';') + ';return w.' + path.replace(/\'/, '\'')));
+	var fn = (new Function('w', builder.join(';') + ';return w.' + path.replace(/'/, '\'')));
 	F.temporary.other[cachekey] = fn;
 	return fn(obj);
 };

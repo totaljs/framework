@@ -1122,7 +1122,7 @@ function minify_javascript(data) {
 	var output = [];
 	var isCS = false;
 	var isCI = false;
-	var alpha = /[0-9a-z\$]/i;
+	var alpha = /[0-9a-z$]/i;
 	var white = /\W/;
 	var skip = { '$': true, '_': true };
 	var regexp = false;
@@ -1893,7 +1893,7 @@ function view_parse(content, minify, filename, controller) {
 							var isMeta = tmp.indexOf('\'meta\'') !== -1;
 							var isHead = tmp.indexOf('\'head\'') !== -1;
 							var isComponent = tmp.indexOf('\'components\'') !== -1;
-							tmp = tmp.replace(/\'(meta|head|components)\'\,/g, '').replace(/(\,\,|\,\)|\s{1,})/g, '');
+							tmp = tmp.replace(/'(meta|head|components)',/g, '').replace(/(,,|,\)|\s{1,})/g, '');
 							if (isMeta || isHead || isComponent) {
 								var tmpimp = '';
 								if (isMeta)
@@ -2422,7 +2422,7 @@ function compressView(html, minify) {
 
 	html = compressHTML(html, minify, false);
 
-	return html.replace(/\#\@\d+\#/g, function(text) {
+	return html.replace(/#@\d+#/g, function(text) {
 		return cache[+text.substring(2, text.length - 1)];
 	});
 }

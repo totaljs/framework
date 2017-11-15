@@ -95,14 +95,14 @@ WebSocketClient.prototype.connect = function(url, protocol, origin) {
 
 	self.req.on('error', function(e) {
 		self.$events.error && self.emit('error', e);
-	})
+	});
 
-	self.req.on('response', function(response) {
+	self.req.on('response', function() {
 		self.$events.error && self.emit('error', new Error('Unexpected server response.'));
 		self.free();
 	});
 
-	self.req.on('upgrade', function(response, socket, head) {
+	self.req.on('upgrade', function(response, socket) {
 
 		self.socket = socket;
 		self.socket.$websocket = self;
@@ -112,7 +112,7 @@ WebSocketClient.prototype.connect = function(url, protocol, origin) {
 
 		if (response.headers['sec-websocket-accept'] !== digest) {
 			socket.destroy();
-			ws.closed = true;
+			self.closed = true;
 			self.$events.error && self.emit('error', new Error('Invalid server key.'));
 			self.free();
 			return;

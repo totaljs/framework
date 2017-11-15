@@ -198,8 +198,6 @@ SchemaBuilderEntity.prototype.required = function(name, fn) {
 	if (!prop)
 		throw new Error('Property "{0}" doesn\'t exist in "{1}" schema.'.format(name, self.name));
 
-	var is = prop.required;
-
 	prop.can = typeof(fn) === 'function' ? fn : null;
 
 	if (!prop.required) {

@@ -31,9 +31,9 @@ const child = require('child_process');
 const exec = child.exec;
 const spawn = child.spawn;
 const Fs = require('fs');
-const REGEXP_SVG = /(width=\"\d+\")+|(height=\"\d+\")+/g;
+const REGEXP_SVG = /(width="\d+")+|(height="\d+")+/g;
 const REGEXP_PATH = /\//g;
-const REGEXP_ESCAPE = /\'/g;
+const REGEXP_ESCAPE = /'/g;
 const D = require('os').platform().substring(0, 3).toLowerCase() === 'win' ? '"' : '\'';
 
 var CACHE = {};
@@ -366,7 +366,7 @@ Image.prototype.arg = function(first, last) {
 			arr.push(o.cmd);
 		else {
 			arr.push(o.cmd.substring(0, index));
-			arr.push(o.cmd.substring(index + 1).replace(/\"/g, ''));
+			arr.push(o.cmd.substring(index + 1).replace(/"/g, ''));
 		}
 	}
 

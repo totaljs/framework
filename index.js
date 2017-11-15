@@ -698,8 +698,8 @@ function Framework() {
 
 	this.validators = {
 		email: new RegExp('^[a-zA-Z0-9-_.+]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$'),
-		url: /^(https?:\/\/(?:www\.|(?!www))[^\s\.#!:\?\+=&@!$'~*,;\/\(\)\[\]]+\.[^\s#!\?\+=&@!$'~*,;\(\)\[\]\\]{2,}\/?|www\.[^\s#!:\.\?\+=&@!$'~*,;\/\(\)\[\]]+\.[^\s#!\?\+=&@!$'~*,;\(\)\[\]\\]{2,}\/?)/i,
-		phone: /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/im,
+		url: /^(https?:\/\/(?:www\.|(?!www))[^\s.#!:?+=&@!$'~*,;/()[\]]+\.[^\s#!?+=&@!$'~*,;()[\]\\]{2,}\/?|www\.[^\s#!:.?+=&@!$'~*,;/()[\]]+\.[^\s#!?+=&@!$'~*,;()[\]\\]{2,}\/?)/i,
+		phone: /^[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}$/im,
 		zip: /^\d{5}(?:[-\s]\d{4})?$/,
 		uid: /^\d{14,}[a-z]{3}[01]{1}$/
 	};
@@ -1331,7 +1331,7 @@ F.resize = function(url, fn, flags) {
 			var flag = flags[i];
 			if (flag[0] === '.')
 				extensions[flag.substring(1)] = true;
-			else if (flag[0] === '~' || flag[0] === '/' || flag.match(/^http\:|https\:/gi))
+			else if (flag[0] === '~' || flag[0] === '/' || flag.match(/^http:|https:/gi))
 				path = flag;
 			else if (flag === 'nocache')
 				cache = false;
@@ -1350,7 +1350,7 @@ F.resize = function(url, fn, flags) {
 	else if (extensions['jpeg'] && !extensions['jpg'])
 		extensions['jpg'] = true;
 
-	F.routes.resize[url] = { fn: fn, path: U.path(path || url), ishttp: path.match(/http\:|https\:/gi) ? true : false, extension: extensions, cache: cache };
+	F.routes.resize[url] = { fn: fn, path: U.path(path || url), ishttp: path.match(/http:|https:/gi) ? true : false, extension: extensions, cache: cache };
 	F.owners.push({ type: 'resize', owner: _owner, id: url });
 	return F;
 };
@@ -2991,9 +2991,9 @@ F.error = function(err, name, uri) {
 	}
 
 	if (!name && !uri && err.stack) {
-		var defer = err.stack.match(/\/\w+\/defer\-.*?\.js/);
+		var defer = err.stack.match(/\/\w+\/defer-.*?\.js/);
 		if (defer)
-			err.stack = err.stack.replace(defer, defer.toString()).replace(/\/\w+\/defer\-/, '/').split('$').join('/');
+			err.stack = err.stack.replace(defer, defer.toString()).replace(/\/\w+\/defer-/, '/').split('$').join('/');
 	}
 
 	F.onError(err, name, uri);
@@ -6252,7 +6252,7 @@ F.initialize = function(http, debug, options, restart) {
 
 	F.isHTTPS = http.STATUS_CODES === undefined;
 
-  if (isNaN(port) && typeof(port) !== 'string')
+	if (isNaN(port) && typeof(port) !== 'string')
 		port = null;
 
 	if (options.id)
@@ -8123,7 +8123,7 @@ F.$configure_workflows = function(arr, clean) {
 		line.substring(index + 1).split('-->').forEach(function(operation, index) {
 
 			var options = 'options||EMPTYOBJECT';
-			operation = operation.trim().replace(/\"/g, '\'');
+			operation = operation.trim().replace(/"/g, '\'');
 
 			var oindex = operation.indexOf('{');
 			if (oindex !== -1) {
@@ -8228,7 +8228,7 @@ F.$configure_configs = function(arr, rewrite) {
 		if (existsSync(configs)) {
 			var tmp = Fs.readdirSync(configs);
 			for (var i = 0, length = tmp.length; i < length; i++) {
-				var skip = tmp[i].match(/\-(debug|release|test)$/i);
+				var skip = tmp[i].match(/-(debug|release|test)$/i);
 				if (skip) {
 					skip = skip[0].toString().toLowerCase();
 					if (skip === '-debug' && !F.isDebug)
@@ -8309,7 +8309,7 @@ F.$configure_configs = function(arr, rewrite) {
 				break;
 			case 'default-image-consumption':
 			case 'default-image-quality':
-				obj[name] = U.parseInt(value.replace(/\%|\s/g, ''));
+				obj[name] = U.parseInt(value.replace(/%|\s/g, ''));
 				break;
 
 			case 'static-accepts-custom':
@@ -11445,7 +11445,7 @@ Controller.prototype.json = function(obj, headers, beautify, replacer) {
 Controller.prototype.success = function(is, value) {
 	if (is === undefined)
 		is = true;
-	return this.json(SUCCESS(is, value))
+	return this.json(SUCCESS(is, value));
 };
 
 /**
