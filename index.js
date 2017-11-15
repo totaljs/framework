@@ -6251,7 +6251,8 @@ F.initialize = function(http, debug, options, restart) {
 		F.config['allow-debug'] = true;
 
 	F.isHTTPS = http.STATUS_CODES === undefined;
-	if (isNaN(port) && typeof(port) !== 'string')
+
+  if (isNaN(port) && typeof(port) !== 'string')
 		port = null;
 
 	if (options.id)
