@@ -258,11 +258,6 @@ WebSocketClient.prototype.$ondata = function(data) {
 	switch (current.type === 0x00 ? current.type2 : current.type) {
 		case 0x01:
 
-			if (this.type === 1) {
-				this.close('Invalid data type.');
-				return;
-			}
-
 			// text
 			if (this.inflate) {
 				current.final && this.parseInflate();
@@ -278,14 +273,7 @@ WebSocketClient.prototype.$ondata = function(data) {
 			break;
 
 		case 0x02:
-
 			// binary
-
-			if (this.type !== 1) {
-				this.close('Invalid data type.');
-				return;
-			}
-
 			if (this.inflate) {
 				current.final && this.parseInflate();
 			} else {
@@ -440,6 +428,7 @@ WebSocketClient.prototype.$readbody = function() {
 
 WebSocketClient.prototype.$decode = function() {
 	var data = this.current.body;
+
 	switch (this.options.type) {
 
 		case 'binary': // BINARY

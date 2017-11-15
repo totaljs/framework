@@ -13170,14 +13170,8 @@ WebSocketClient.prototype.$ondata = function(data) {
 
 	var tmp;
 
-	// @TODO: add a check for mixin types (text/binary)
 	switch (current.type === 0x00 ? current.type2 : current.type) {
 		case 0x01:
-
-			if (this.type === 1) {
-				this.close('Invalid data type.');
-				return;
-			}
 
 			// text
 			if (this.inflate) {
@@ -13196,12 +13190,6 @@ WebSocketClient.prototype.$ondata = function(data) {
 		case 0x02:
 
 			// binary
-
-			if (this.type !== 1) {
-				this.close('Invalid data type.');
-				return;
-			}
-
 			if (this.inflate) {
 				current.final && this.parseInflate();
 			} else {
