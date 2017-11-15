@@ -2175,22 +2175,22 @@ DatabaseBuilder.prototype.compare_string = function(json, index) {
 			case 4: // date
 				var ticks = new Date(value).getTime();
 				if (filter.operator === '=') {
-					if (filter.value.getTime() !== ticks)
+					if (ticks !== filter.ticks)
 						allow = false;
 				} else if (filter.operator === '!=') {
-					if (filter.value.getTime() === ticks)
+					if (ticks === filter.ticks)
 						allow = false;
 				} else if (filter.operator === '>') {
-					if (filter.value.getTime() <= ticks)
+					if (ticks <= filter.ticks)
 						allow = false;
 				} else if (filter.operator === '<') {
-					if (filter.value.getTime() >= ticks)
+					if (ticks >= filter.ticks)
 						allow = false;
 				} else if (filter.operator === '>=') {
-					if (filter.value.getTime() < ticks)
+					if (ticks < filter.ticks)
 						allow = false;
 				} else if (filter.operator === '<=') {
-					if (filter.value.getTime() > ticks)
+					if (ticks > filter.ticks)
 						allow = false;
 				} else
 					return;
@@ -2409,7 +2409,7 @@ DatabaseBuilder.prototype.where = function(name, operator, value) {
 		}
 	}
 
-	this.$filter.push({ scope: this.$scope, filter: fn, name: name, value: value, noconvert: noconvert, operator: operator });
+	this.$filter.push({ scope: this.$scope, filter: fn, name: name, value: value, noconvert: noconvert, operator: operator, ticks: date ? value.getTime() : 0 });
 	return this;
 };
 
@@ -4222,7 +4222,7 @@ function compare_not(doc, index, item) {
 
 function compare_eq_date(doc, index, item) {
 	var val = doc[item.name];
-	return val ? item.value.getTime() === (val instanceof Date ? val : new Date(val)).getTime() : false;
+	return val ? item.ticks === (val instanceof Date ? val : new Date(val)).getTime() : false;
 }
 
 function compare_lt_date(doc, index, item) {

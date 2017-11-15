@@ -61,6 +61,7 @@
 - fixed: `schema.setPrefix()` in nested schemas
 - fixed: sitemap localization
 - fixed: CORS custom headers
+- fixed: NoSQL date filtering
 
 - improved: performance and security
 
