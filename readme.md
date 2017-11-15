@@ -5,7 +5,7 @@
 Node.js framework
 =====================
 
-__Total.js framework__ is a framework for Node.js platfrom written in `pure` JavaScript similar to PHP's Laravel or Python's Django or ASP.NET MVC. It can be used for web, desktop, service and IoT applications.
+__Total.js framework__ is a framework for Node.js platfrom written in `pure` JavaScript similar to PHP's Laravel or Python's Django or ASP.NET MVC. It can be used as web, desktop, service or IoT application.
 
 ```bash
 $ npm install -g total.js
@@ -29,7 +29,7 @@ $ npm install -g total.js
 - [Total.js modules and packages](https://modules.totaljs.com)
 - [Total.js +100 examples](https://github.com/totaljs/examples)
 - [NoSQL embedded database explorer](https://www.totaljs.com/nosql/)
-- [Download +89 client-side components (jComponent) for free](https://componentator.com)
+- [Download +90 client-side components (jComponent) for free](https://componentator.com)
 
 ---
 
@@ -69,7 +69,8 @@ $ npm install -g total.js
 | Supports modules and packages |
 | Built-in image processing engine via ImageMagick or GraphicsMagick |
 | Supports WebSockets (__RFC 6455__) and Server-Sent events |
-| __NEW__ Supports `multipart/x-mixed-replace` (IP camera streaming) uploading and sending |
+| __NEW__ Supports WebSockets client |
+| Supports `multipart/x-mixed-replace` (IP camera streaming) uploading and sending |
 | Supports RESTful routing |
 | Supports middleware (like express.js) with custom options |
 | Supports unit testing |
@@ -84,10 +85,9 @@ $ npm install -g total.js
 | Supports String, Date, Number and Array prototypes |
 | Supports additional utilities (e.g. create request, XML parsing, etc.) |
 | Supports themes |
-| __NEW__ Supports scripting |
+| Supports scripting |
 | Possibility to rewrite existing functionality |
 | NoSQL embedded database (__NEW: joins, scalar operations and in-memory mode__) |
-| __You can use framework as single library__ `total.js (415 kB)` |
 
 ## Contributors
 
@@ -108,6 +108,7 @@ $ npm install -g total.js
 | [Peter Štolc](https://github.com/fokinko) | contributor | <stolcp@gmail.com> |
 | [Denis Granec](https://github.com/PatchwerkQWER) | contributor | <danis1999@gmail.com> |
 | [Chao Tang Chang](https://github.com/ckpiggy) | contributor | <mrgmp2004@hotmail.com> |
+| [luoage](https://github.com/luoage) | contributor | <luoage@msn.cn> |
 
 ## Useful modules
 
@@ -127,6 +128,7 @@ Please support the framework on social networks.
 
 ## Contact
 
+- Peter Širka - <petersirka@gmail.com>
 - contact form <https://www.totaljs.com/contact/>
 - <info@totaljs.com>
 

@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkInternal
- * @version 2.8.0
+ * @version 2.9.0
  */
 
 'use strict';
@@ -45,33 +45,33 @@ const REG_1 = /[\n\r\t]+/g;
 const REG_2 = /\s{2,}/g;
 const REG_4 = /\n\s{2,}./g;
 const REG_5 = />\n\s{1,}</g;
-const REG_6 = /[\<\w\"\u0080-\u07ff\u0400-\u04FF]+\s{2,}[\w\u0080-\u07ff\u0400-\u04FF\>]+/;
+const REG_6 = /[<\w"\u0080-\u07ff\u0400-\u04FF]+\s{2,}[\w\u0080-\u07ff\u0400-\u04FF>]+/;
 const REG_7 = /\\/g;
-const REG_8 = /\'/g;
-const REG_BLOCK_BEG = /\@\{block.*?\}/i;
-const REG_BLOCK_END = /\@\{end\}/i;
-const REG_SKIP_1 = /\(\'|\"/;
-const REG_SKIP_2 = /\,(\s)?\w+/;
-const REG_HEAD = /\<\/head\>/i;
-const REG_COMPONENTS = /\@{(\s)?(component|components)(\s)?\(/i;
-const REG_COMPONENTS_GROUP = /(\'|\")[a-z0-9]+(\'|\")/i;
+const REG_8 = /'/g;
+const REG_BLOCK_BEG = /@\{block.*?\}/i;
+const REG_BLOCK_END = /@\{end\}/i;
+const REG_SKIP_1 = /\('|"/;
+const REG_SKIP_2 = /,(\s)?\w+/;
+const REG_HEAD = /<\/head>/i;
+const REG_COMPONENTS = /@{(\s)?(component|components)(\s)?\(/i;
+const REG_COMPONENTS_GROUP = /('|")[a-z0-9]+('|")/i;
 const HTTPVERBS = { 'get': true, 'post': true, 'options': true, 'put': true, 'delete': true, 'patch': true, 'upload': true, 'head': true, 'trace': true, 'propfind': true };
-const RENDERNOW = ['self.$import(', 'self.route', 'self.$js(', 'self.$css(', 'self.$favicon(', 'self.$script(', '$STRING(self.resource(', '$STRING(self.RESOURCE(', 'self.translate(', 'language', 'self.sitemap_url(', 'self.sitemap_name(', '$STRING(CONFIG(', '$STRING(config.', '$STRING(config[', '$STRING(config('];
+const RENDERNOW = ['self.$import(', 'self.route', 'self.$js(', 'self.$css(', 'self.$favicon(', 'self.$script(', '$STRING(self.resource(', '$STRING(RESOURCE(', 'self.translate(', 'language', 'self.sitemap_url(', 'self.sitemap_name(', '$STRING(CONFIG(', '$STRING(config.', '$STRING(config[', '$STRING(config('];
 const REG_NOTRANSLATE = /@\{notranslate\}/gi;
 const REG_NOCOMPRESS = /@\{nocompress\s\w+}/gi;
-const REG_TAGREMOVE = /[^\>]\n\s{1,}$/;
+const REG_TAGREMOVE = /[^>]\n\s{1,}$/;
 const REG_HELPERS = /helpers\.[a-z0-9A-Z_$]+\(.*?\)+/g;
 const REG_SITEMAP = /\s+(sitemap_navigation\(|sitemap\()+/g;
 const REG_CSS_1 = /\n|\s{2,}/g;
 const REG_CSS_2 = /\s?\{\s{1,}/g;
 const REG_CSS_3 = /\s?\}\s{1,}/g;
-const REG_CSS_4 = /\s?\:\s{1,}/g;
-const REG_CSS_5 = /\s?\;\s{1,}/g;
-const REG_CSS_6 = /\,\s{1,}/g;
+const REG_CSS_4 = /\s?:\s{1,}/g;
+const REG_CSS_5 = /\s?;\s{1,}/g;
+const REG_CSS_6 = /,\s{1,}/g;
 const REG_CSS_7 = /\s\}/g;
 const REG_CSS_8 = /\s\{/g;
-const REG_CSS_9 = /\;\}/g;
-const REG_CSS_10 = /\$[a-z0-9-_]+\:.*?;/gi;
+const REG_CSS_9 = /;\}/g;
+const REG_CSS_10 = /\$[a-z0-9-_]+:.*?;/gi;
 const REG_CSS_11 = /\$[a-z0-9-_]+/gi;
 const AUTOVENDOR = ['filter', 'appearance', 'column-count', 'column-gap', 'column-rule', 'display', 'transform', 'transform-style', 'transform-origin', 'transition', 'user-select', 'animation', 'perspective', 'animation-name', 'animation-duration', 'animation-timing-function', 'animation-delay', 'animation-iteration-count', 'animation-direction', 'animation-play-state', 'opacity', 'background', 'background-image', 'font-smoothing', 'text-size-adjust', 'backface-visibility', 'box-sizing', 'overflow-scrolling'];
 const WRITESTREAM = { flags: 'w' };
@@ -545,15 +545,15 @@ exports.routeSplitCreate = function(url, noLower) {
 	return arr;
 };
 
-exports.routeCompare = function(url, route, isSystem, isAsterix) {
+exports.routeCompare = function(url, route, isSystem, isWildcard) {
 
 	var length = url.length;
 	var lengthRoute = route.length;
 
-	if (lengthRoute !== length && !isAsterix)
+	if (lengthRoute !== length && !isWildcard)
 		return false;
 
-	if (isAsterix && lengthRoute === 1 && route[0] === '/')
+	if (isWildcard && lengthRoute === 1 && route[0] === '/')
 		return true;
 
 	var skip = length === 1 && url[0] === '/';
@@ -562,14 +562,14 @@ exports.routeCompare = function(url, route, isSystem, isAsterix) {
 
 		var value = route[i];
 
-		if (!isSystem && isAsterix && value === undefined)
+		if (!isSystem && isWildcard && value === undefined)
 			return true;
 
 		if (!isSystem && (!skip && value[0] === '{'))
 			continue;
 
 		if (url[i] !== value)
-			return isSystem ? false : isAsterix ? i >= lengthRoute : false;
+			return isSystem ? false : isWildcard ? i >= lengthRoute : false;
 	}
 
 	return true;
@@ -1619,8 +1619,10 @@ function view_parse_localization(content, language) {
 		return content;
 
 	while (command) {
+
 		if (command)
-			output += content.substring(end ? end + 1 : 0, command.beg) + F.translate(language, command.command);
+			output += content.substring(end ? end + 1 : 0, command.beg) + (command.command ? F.translate(language, command.command) : '');
+
 		end = command.end;
 		command = view_find_localization(content, command.end);
 	}
@@ -1947,9 +1949,9 @@ function view_parse(content, minify, filename, controller) {
 	}
 
 	if (RELEASE)
-		builder = builder.replace(/(\+\$EMPTY\+)/g, '+').replace(/(\$output\=\$EMPTY\+)/g, '$output=').replace(/(\$output\+\=\$EMPTY\+)/g, '$output+=').replace(/(\}\$output\+\=\$EMPTY)/g, '}').replace(/(\{\$output\+\=\$EMPTY\;)/g, '{').replace(/(\+\$EMPTY\+)/g, '+').replace(/(\>\'\+\'\<)/g, '><').replace(/\'\+\'/g, '');
+		builder = builder.replace(/(\+\$EMPTY\+)/g, '+').replace(/(\$output=\$EMPTY\+)/g, '$output=').replace(/(\$output\+=\$EMPTY\+)/g, '$output+=').replace(/(\}\$output\+=\$EMPTY)/g, '}').replace(/(\{\$output\+=\$EMPTY;)/g, '{').replace(/(\+\$EMPTY\+)/g, '+').replace(/(>'\+'<)/g, '><').replace(/'\+'/g, '');
 
-	var fn = '(function(self,repository,model,session,query,body,url,global,helpers,user,config,functions,index,output,cookie,files,mobile,settings){var get=query;var post=body;var theme=this.themeName;var language=this.language;var cookie=function(name){return controller.req.cookie(name);};' + (functions.length ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})';
+	var fn = '(function(self,repository,model,session,query,body,url,global,helpers,user,config,functions,index,output,cookie,files,mobile,settings){var get=query;var post=body;var theme=this.themeName;var language=this.language;var sitemap=this.repository.$sitemap;var cookie=function(name){return controller.req.cookie(name);};' + (functions.length ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})';
 	try {
 		fn = eval(fn);
 	} catch (e) {
@@ -2009,7 +2011,7 @@ function view_prepare(command, dynamicCommand, functions, controller) {
 
 		case 'section':
 			tmp = command.indexOf('(');
-			return tmp === -1 ? '' : '(repository[\'$section_' + command.substring(tmp + 1, command.length - 1).replace(/\'|\"/g, '') + '\'] || \'\')';
+			return tmp === -1 ? '' : '(repository[\'$section_' + command.substring(tmp + 1, command.length - 1).replace(/'|"/g, '') + '\'] || \'\')';
 
 		case 'log':
 		case 'LOG':
@@ -2086,11 +2088,12 @@ function view_prepare(command, dynamicCommand, functions, controller) {
 		case 'resource':
 			return '$STRING(self.' + command + ').encode()';
 		case 'RESOURCE':
-			return '$STRING(self.' + command.toLowerCase() + ').encode()';
+			return '$STRING(' + command + ').encode()';
 
 		case '!resource':
-		case '!RESOURCE':
 			return '$STRING(self.' + command.substring(1) + ')';
+		case '!RESOURCE':
+			return '$STRING(' + command.substring(1) + ')';
 
 		case 'host':
 		case 'hostname':
@@ -2148,7 +2151,7 @@ function view_prepare(command, dynamicCommand, functions, controller) {
 			if (controller.$hasComponents instanceof Array) {
 				var group = command.match(REG_COMPONENTS_GROUP);
 				if (group && group.length) {
-					group = group[0].toString().replace(/\'|\"'/g, '');
+					group = group[0].toString().replace(/'|"'/g, '');
 					controller.$hasComponents.indexOf(group) === -1 && controller.$hasComponents.push(group);
 				}
 			}
@@ -2177,6 +2180,7 @@ function view_prepare(command, dynamicCommand, functions, controller) {
 		case 'json':
 		case 'sitemap_change':
 		case 'sitemap_replace':
+		case 'sitemap_add':
 		case 'helper':
 		case 'view':
 		case 'layout':

@@ -1,3 +1,70 @@
+======= 2.9.0
+
+- added: `WebSocketClient`
+- added: `$ASYNC(schema, callback, [index], [controlller])` alias to `SchemaBuilderEntity.$async()`
+- added: `ArrayBuffer.prototype.toBuffer()`
+- added: `AUTH(fn)` is an alias to `F.onAuthorize = fn`
+- added: `controller.success()` alias to `controller.json(SUCCESS(value))`
+- added: `CORS()` alias to `F.cors()`
+- added: `DatabaseBuilder.paginate(page, limit)`
+- added: `F.config['allow-compile']` can disable the whole compilation of static files
+- added: `F.config['default-dependency-timeout']` it's a timeout for module dependencies
+- added: `F.path.rmdir(directory/directories, callback)`
+- added: `F.path.unlink(file/files, callback)`
+- added: `LOCALIZE()` a new global alias to `F.localize()`
+- added: `MAP()` a new global alias to `F.map()`
+- added: `MERGE()` a new global alias to `F.merge()`
+- added: `MIDDLEWARE()` a new global alias to `F.middleware()`
+- added: `NOSQL('users').backups([filter(doc)], callback(err, response))` returns all backups
+- added: `SchemaOptions.invalid(name, [value], [path], [index])` alias to `$.errors.push() + callback()`
+- added: `SchemaOptions.success()` alias to `callback(SUCCESS(value))`
+- added: `controller.sitemapid` contains a sitemap identificator
+- added: `controller.sitemap_add(parent, name, url)` appends a new item into the sitemap per request
+- added: `@{sitemap_add(parent, name, url)}` appends a new item into the sitemap per request
+- added: `SchemaEntity.required('fieldname', boolean/function(model))` which can disable/enable validation for this field
+
+- updated: `sitemap` routing can contain an additional path, e.g. `#sitemapid/path/`
+- updated: `F.localize()` supports sitemap routing
+- updated: `F.merge()` supports sitemap routing
+- updated: `F.map()` supports sitemap routing
+- updated: `F.http(mode, [options], [middleware(listen)])` added a new argument `middleware`
+- updated: `debug.js` now reads directories according to the config (author: @luoage)
+- updated: config parser supports `config` sub-type
+- updated: `controller.$exec()` --> `callback` is by default `controller.callback()`
+- updated: `F.localize()` has enabled `compression` by default
+- updated: HTTP server is listening after the framework is completely loaded
+- updated: (IMPORTANT) HTTP cache in dynamic content and static files
+- updated: `F.prototypes()` by adding `OperationOptions`
+- updated: ErrorHandling in schemas (supports inline validation and advanced conditions)
+- updated: `F.noCache()` is obsolete
+
+- renamed: `allow-handle-static-files` to `allow-static-files`
+
+- fixed: (IMPORTANT) `DatabaseBuilder.in()`
+- fixed: (IMPORTANT) `U.ls2()`
+- fixed: (IMPORTANT) `WebSocket` implementation (author: @jozefgula)
+- fixed: `ArrayBuffer` in webosocket
+- fixed: `F.path.mkdir()` on Windows (author: @molda)
+- fixed: `F.restore()` on Windows (author: @molda)
+- fixed: `F.rmdir` removes all files and directories
+- fixed: `JSON` type in Total.js schemas
+- fixed: `MODEL()`, `MODULE()`, `INCLUDE()` now are direct aliases
+- fixed: a check for maximum length of request data
+- fixed: Date formatting with `a` value
+- fixed: empty localization in view engine e.g. `@()`
+- fixed: external static routing in view engine on Windows
+- fixed: NoSQL filtering with `or`
+- fixed: NoSQL multiple updates
+- fixed: NoSQL sorting of boolean values in larger dataset
+- fixed: responding on `range` header
+- fixed: unit testing (author: @ckpiggy)
+- fixed: `schema.setPrefix()` in nested schemas
+- fixed: sitemap localization
+- fixed: CORS custom headers
+- fixed: NoSQL date filtering
+
+- improved: performance and security
+
 ======= 2.8.0
 
 - added: `NOSQL().restore()` restores a database (its package)

@@ -21,7 +21,7 @@
 
 /**
  * @module NoSQL
- * @version 2.8.0
+ * @version 2.9.0
  */
 
 'use strict';
@@ -200,6 +200,32 @@ Database.prototype.meta = function(name, value) {
 	self.metadata[name] = value;
 	clearTimeout(self.timeoutmeta);
 	self.timeoutmeta = setTimeout(() => self.$meta(true), 500);
+	return self;
+};
+
+Database.prototype.backups = function(filter, callback) {
+
+	if (callback === undefined) {
+		callback = filter;
+		filter = null;
+	}
+
+	var self = this;
+	var stream = Fs.createReadStream(self.filenameBackup);
+	var output = [];
+
+	stream.on('data', U.streamer('\n', function(item, index) {
+		var end = item.indexOf('|', item.indexOf('|') + 2);
+		var meta = item.substring(0, end);
+		var arr = meta.split('|');
+		var dv = arr[0].trim().replace(' ', 'T') + ':00.000Z';
+		var obj = { id: index + 1, date: dv.parseDate(), user: arr[1].trim(), data: item.substring(end + 1).trim().parseJSON(true) };
+		if (!filter || filter(obj))
+			output.push(obj);
+	}), stream);
+
+	CLEANUP(stream, () => callback(null, output));
+
 	return self;
 };
 
@@ -791,38 +817,45 @@ Database.prototype.$update = function() {
 
 	reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
 
+		if (value[0] !== '{')
+			return;
+
 		var doc = noconvert ? value.substring(0, value.length - 1) : JSON.parse(value.substring(0, value.length - 1), jsonparser);
+
 		var is = false;
+		var nc = noconvert;
 
 		for (var i = 0; i < length; i++) {
 			var item = filter[i];
 			var builder = item.builder;
-			var output = noconvert ? builder.compare_string(doc, index, true) : builder.compare(doc, index, true);
+			var output = nc ? builder.compare_string(doc, index, true) : builder.compare(doc, index, true);
+
 			if (output) {
-
 				builder.$backup && builder.$backupdoc(output);
-
 				if (item.keys) {
 					for (var j = 0, jl = item.keys.length; j < jl; j++) {
 						var val = item.doc[item.keys[j]];
-						if (val === undefined)
-							continue;
-						if (typeof(val) === 'function')
-							output[item.keys[j]] = val(output[item.keys[j]], output);
-						else
-							output[item.keys[j]] = val;
+						if (val !== undefined) {
+							if (typeof(val) === 'function')
+								output[item.keys[j]] = val(output[item.keys[j]], output);
+							else
+								output[item.keys[j]] = val;
+						}
 					}
 				} else
 					output = typeof(item.doc) === 'function' ? item.doc(output) : item.doc;
+
 				self.emit(item.keys ? 'modify' : 'update', output);
 				item.count++;
 				change = true;
 				is = true;
+				nc = false;
+				doc = output;
 			}
 		}
 
 		if (is)
-			writer.write(JSON.stringify(output) + NEWLINE);
+			writer.write(JSON.stringify(doc) + NEWLINE);
 		else
 			writer.write((noconvert ? doc : JSON.stringify(doc)) + NEWLINE);
 	}));
@@ -1057,6 +1090,9 @@ Database.prototype.$reader2 = function(filename, items, callback, reader) {
 
 	reader && reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
 
+		if (value[0] !== '{')
+			return;
+
 		var json = noconvert ? value.substring(0, value.length - 1) : JSON.parse(value.substring(0, value.length - 1), jsonparser);
 		var val;
 
@@ -1218,7 +1254,10 @@ function nosqlsortvalue(a, b, sorter) {
 		a = (a.length > 5 ? a.substring(0, 5) : a);
 		var c = COMPARER(a, b);
 		return sorter.asc ? c === 1 : c === -1;
-	} else if (a instanceof Date)
+	} else if (type === 'boolean')
+		// return sorter.asc ? a > b : a < b;
+		return sorter.asc ? (a && !b) : (!a && b);
+	else if (a instanceof Date)
 		return sorter.asc ? a > b : a < b;
 	return false;
 }
@@ -1431,7 +1470,11 @@ Database.prototype.$views = function() {
 
 	reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
 
+		if (value[0] !== '{')
+			return;
+
 		var json = noconvert ? value.substring(0, value.length - 1) : JSON.parse(value.substring(0, value.length - 1), jsonparser);
+
 		for (var j = 0; j < length; j++) {
 			var item = self.views[views[j]];
 			var output = noconvert ? item.compare_string(json, index) : item.compare(json, index);
@@ -1591,6 +1634,9 @@ Database.prototype.$remove = function() {
 	}
 
 	reader && reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
+
+		if (value[0] !== '{')
+			return;
 
 		var json = noconvert ? value.substring(0, value.length - 1) : JSON.parse(value.substring(0, value.length - 1), jsonparser);
 		var removed = false;
@@ -1983,12 +2029,25 @@ DatabaseBuilder.prototype.compare_string = function(json, index) {
 
 	var b = null;
 	var e = null;
+	var can = true;
+	var wasor = false;
+	var prevscope = 0;
 
 	for (var i = 0, length = this.$filter.length; i < length; i++) {
 		var filter = this.$filter[i];
+
+		if (wasor && filter.scope)
+			continue;
+
+		if (prevscope && !filter.scope && !wasor)
+			return;
+
+		prevscope = filter.scope;
+
 		var path = '"' + filter.name + '":';
 		var beg = json.indexOf(path);
 		var value = '';
+		var allow = true;
 
 		if (beg !== -1) {
 			beg = beg + path.length;
@@ -2065,101 +2124,138 @@ DatabaseBuilder.prototype.compare_string = function(json, index) {
 			case 1: // string
 				if (filter.operator === '=') {
 					if (filter.value !== value)
-						return;
+						allow = false;
 				} else if (filter.operator === '!=') {
 					if (filter.value === value)
-						return;
+						allow = false;
 				} else if (filter.operator === 10) { // beg
 					if (!value.startsWith(filter.value))
-						return;
+						allow = false;
 				} else if (filter.operator === 11) { // end
 					if (!value.endsWith(filter.value))
-						return;
+						allow = false;
 				} else if (filter.operator === 12) { // *
 					if (value.toLowerCase().indexOf(filter.value) === -1)
-						return;
+						allow = false;
 				} else
 					return; // >, < is not supported for strings
 				break;
 			case 2: // number
 				if (filter.operator === '=') {
 					if (filter.value.toString() !== value)
-						return;
+						allow = false;
 				} else if (filter.operator === '!=') {
 					if (filter.value.toString() === value)
-						return;
+						allow = false;
 				} else if (filter.operator === '>') {
 					if (filter.value < +value)
-						return;
+						allow = false;
 				} else if (filter.operator === '<') {
 					if (filter.value > +value)
-						return;
+						allow = false;
 				} else if (filter.operator === '>=') {
 					if (filter.value <= +value)
-						return;
+						allow = false;
 				} else if (filter.operator === '<=') {
 					if (filter.value >= +value)
-						return;
+						allow = false;
 				} else
 					return; // >, < is not supported for strings
 				break;
 			case 3: // boolean
 				if (filter.operator === '=') {
 					if (filter.value.toString() !== value)
-						return;
+						allow = false;
 				} else if (filter.operator === '!=') {
 					if (filter.value.toString() === value)
-						return;
+						allow = false;
 				} else
 					return;
 				break;
 			case 4: // date
 				var ticks = new Date(value).getTime();
 				if (filter.operator === '=') {
-					if (filter.value.getTime() !== ticks)
-						return;
+					if (ticks !== filter.ticks)
+						allow = false;
 				} else if (filter.operator === '!=') {
-					if (filter.value.getTime() === ticks)
-						return;
+					if (ticks === filter.ticks)
+						allow = false;
 				} else if (filter.operator === '>') {
-					if (filter.value.getTime() <= ticks)
-						return;
+					if (ticks <= filter.ticks)
+						allow = false;
 				} else if (filter.operator === '<') {
-					if (filter.value.getTime() >= ticks)
-						return;
+					if (ticks >= filter.ticks)
+						allow = false;
 				} else if (filter.operator === '>=') {
-					if (filter.value.getTime() < ticks)
-						return;
+					if (ticks < filter.ticks)
+						allow = false;
 				} else if (filter.operator === '<=') {
-					if (filter.value.getTime() > ticks)
-						return;
+					if (ticks > filter.ticks)
+						allow = false;
 				} else
 					return;
 				break;
 			case 5: // contains
 				if (!value || value === 'null')
-					return;
+					allow = false;
 				break;
 			case 6: // empty
 				if (value && value !== 'null')
-					return;
+					allow = false;
 				break;
 			case 21: // number in
-				if (filter.value.indexOf(+value) === -1)
-					return;
+				// Array
+				var is = false;
+				value = ' ' + value + ',';
+				for (var j = 0, jl = filter.value.length; j < jl; j++) {
+					if (value.indexOf(' ' + filter.value[j] + ',') !== -1) {
+						is = true;
+						break;
+					}
+				}
+				if (!is)
+					allow = false;
 				break;
 			case 22: // string in
-				if (filter.value.indexOf(value) === -1)
-					return;
+				// Array
+				if (value[0] === '"') {
+					var is = false;
+					for (var j = 0, jl = filter.value.length; j < jl; j++) {
+						if (value.indexOf('"' + filter.value[j] + '"') !== -1) {
+							is = true;
+							break;
+						}
+					}
+					if (!is)
+						allow = false;
+				} else if (filter.value.indexOf(value) === -1)
+					allow = false;
 				break;
 			case 23: // boolean in
 				if (filter.value.indexOf(value === 'true') === -1)
-					return;
+					allow = false;
 				break;
 		}
+
+		if (allow) {
+			can = true;
+			if (filter.scope)
+				wasor = true;
+			continue;
+		} else if (filter.scope) {
+			can = false;
+			wasor = false;
+			continue;
+		}
+
+		return;
 	}
 
+	if (!can)
+		return;
+
 	var doc = JSON.parse(json, jsonparser);
+
 	if (this.$prepare)
 		return this.$prepare(doc, index);
 
@@ -2180,7 +2276,7 @@ DatabaseBuilder.prototype.compare = function(doc, index) {
 
 	var can = true;
 	var wasor = false;
-	var prevscope = false;
+	var prevscope = 0;
 
 	for (var i = 0, length = this.$filter.length; i < length; i++) {
 
@@ -2313,7 +2409,7 @@ DatabaseBuilder.prototype.where = function(name, operator, value) {
 		}
 	}
 
-	this.$filter.push({ scope: this.$scope, filter: fn, name: name, value: value, noconvert: noconvert, operator: operator });
+	this.$filter.push({ scope: this.$scope, filter: fn, name: name, value: value, noconvert: noconvert, operator: operator, ticks: date ? value.getTime() : 0 });
 	return this;
 };
 
@@ -2461,8 +2557,25 @@ DatabaseBuilder.prototype.limit = function(count) {
 };
 
 DatabaseBuilder.prototype.page = function(page, limit) {
-	this.skip(page * limit);
-	return this.take(limit);
+	this.$skip = page * limit;
+	this.$take = limit;
+	return this;
+};
+
+DatabaseBuilder.prototype.paginate = function(page, limit, maxlimit) {
+
+	var limit2 = +(limit || 0);
+	var page2 = (+(page || 0)) - 1;
+
+	if (page2 < 0)
+		page2 = 0;
+
+	if (maxlimit && limit2 > maxlimit)
+		limit2 = maxlimit;
+
+	this.$skip = page2 * limit2;
+	this.$take = limit2;
+	return this;
 };
 
 DatabaseBuilder.prototype.skip = function(count) {
@@ -3018,7 +3131,7 @@ Counter.prototype.read = function(options, callback, reader) {
 
 		reader.on('error', function() {
 			self.type = 0;
-			callback(null, single ? (options.subtype ? output : 0) : (all ? EMPTYARRAY : output));
+			callback(null, single ? (options.subtype ? EMPTYARRAY : 0) : (all ? EMPTYARRAY : output));
 		});
 
 		reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
@@ -3136,7 +3249,7 @@ Counter.prototype.read = function(options, callback, reader) {
 			output = tmp;
 		}
 
-		callback(null, single ? (options.subtype ? output[options.id[0]] || null : output[options.id[0]] || 0) : output);
+		callback(null, single ? (options.subtype ? output[options.id[0]] || EMPTYARRAY : output[options.id[0]] || 0) : output);
 	};
 
 	if (reader)
@@ -4020,18 +4133,26 @@ Binary.prototype.all = function(callback) {
 		var le = EXTENSION_BINARY.length;
 
 		pending.wait(function(item, next) {
+			Fs.stat(target + '/' + item, function(err, stat) {
 
-			var stream = Fs.createReadStream(target + '/' + item, { start: 0, end: BINARY_HEADER_LENGTH - 1, encoding: 'binary' });
+				if (err)
+					return next();
 
-			stream.on('data', function(buffer) {
-				var json = framework_utils.createBuffer(buffer, 'binary').toString('utf8').replace(REG_CLEAN, '').parseJSON(true);
-				if (json) {
-					json.id = item.substring(l, item.length - le);
-					output.push(json);
-				}
+				var stream = Fs.createReadStream(target + '/' + item, { start: 0, end: BINARY_HEADER_LENGTH - 1, encoding: 'binary' });
+
+				stream.on('data', function(buffer) {
+					var json = framework_utils.createBuffer(buffer, 'binary').toString('utf8').replace(REG_CLEAN, '').parseJSON(true);
+					if (json) {
+						json.id = item.substring(l, item.length - le);
+						json.ctime = stat.ctime;
+						json.mtime = stat.mtime;
+						output.push(json);
+					}
+				});
+
+				CLEANUP(stream, next);
+
 			});
-
-			CLEANUP(stream, next);
 		}, () => callback(null, output), 2);
 	});
 
@@ -4101,7 +4222,7 @@ function compare_not(doc, index, item) {
 
 function compare_eq_date(doc, index, item) {
 	var val = doc[item.name];
-	return val ? item.value.getTime() === (val instanceof Date ? val : new Date(val)).getTime() : false;
+	return val ? item.ticks === (val instanceof Date ? val : new Date(val)).getTime() : false;
 }
 
 function compare_lt_date(doc, index, item) {

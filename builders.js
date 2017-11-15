@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkBuilders
- * @version 2.8.0
+ * @version 2.9.0
  */
 
 'use strict';
@@ -30,8 +30,8 @@ const REQUIRED = 'The field "@" is invalid.';
 const DEFAULT_SCHEMA = 'default';
 const SKIP = { $$schema: true, $$result: true, $$callback: true, $$async: true, $$index: true, $$repository: true, $$can: true, $$controller: true };
 const REGEXP_CLEAN_EMAIL = /\s/g;
-const REGEXP_CLEAN_PHONE = /\s|\.|\-|\(|\)/g;
-const REGEXP_NEWOPERATION = /^function(\s)?\([a-zA-Z0-9\$]+\)/;
+const REGEXP_CLEAN_PHONE = /\s|\.|-|\(|\)/g;
+const REGEXP_NEWOPERATION = /^function(\s)?\([a-zA-Z0-9$]+\)/;
 const hasOwnProperty = Object.prototype.hasOwnProperty;
 const Qs = require('querystring');
 
@@ -50,10 +50,33 @@ function SchemaOptions(error, model, options, callback, controller) {
 	this.options = options;
 	this.callback = this.next = callback;
 	this.controller = controller;
+
+	if (controller) {
+
+		if (controller.user)
+			this.user = controller.user;
+
+		if (controller.session)
+			this.session = controller.session;
+
+		this.language = controller.language || '';
+		this.ip = controller.ip;
+		this.id = controller.id;
+		this.query = controller.query;
+		this.body = controller.body;
+		this.files = controller.files;
+	} else
+		this.language = '';
 }
 
-SchemaOptions.prototype.throw = function(name, error, path, index) {
+SchemaOptions.prototype.success = function(a, b) {
+	this.callback(SUCCESS(a === undefined ? true : a, b));
+	return this;
+};
+
+SchemaOptions.prototype.invalid = function(name, error, path, index) {
 	this.error.push(name, error, path, index);
+	this.callback();
 	return this;
 };
 
@@ -152,6 +175,44 @@ SchemaBuilderEntity.prototype.allow = function() {
 	return self;
 };
 
+SchemaBuilderEntity.prototype.required = function(name, fn) {
+
+	var self = this;
+
+	if (!name)
+		return self;
+
+	if (name.indexOf(',') !== -1) {
+		var arr = name.split(',');
+		for (var i = 0; i < arr.length; i++)
+			self.required(arr[i].trim(), fn);
+		return self;
+	}
+
+	if (fn === false) {
+		self.properties && (self.properties = self.properties.remove(name));
+		return self;
+	}
+
+	var prop = self.schema[name];
+	if (!prop)
+		throw new Error('Property "{0}" doesn\'t exist in "{1}" schema.'.format(name, self.name));
+
+	var is = prop.required;
+
+	prop.can = typeof(fn) === 'function' ? fn : null;
+
+	if (!prop.required) {
+		prop.required = true;
+		if (self.properties) {
+			self.properties.indexOf(name) === -1 && self.properties.push(name);
+		} else
+			self.properties = [name];
+	}
+
+	return self;
+};
+
 /**
  * Define type in schema
  * @param {String|String[]} name
@@ -168,7 +229,9 @@ SchemaBuilderEntity.prototype.define = function(name, type, required, custom) {
 		return this;
 	}
 
-	if (required !== undefined && typeof(required) !== 'boolean') {
+	var rt = typeof(required);
+
+	if (required !== undefined && rt === 'string') {
 		custom = required;
 		required = false;
 	}
@@ -189,13 +252,12 @@ SchemaBuilderEntity.prototype.define = function(name, type, required, custom) {
 
 	this.fields = Object.keys(this.schema);
 
-	if (!required)
-		return this;
+	if (required) {
+		if (this.properties == null)
+			this.properties = [];
+		this.properties.indexOf(name) === -1 && this.properties.push(name);
+	}
 
-	if (this.properties == null)
-		this.properties = [];
-
-	this.properties.indexOf(name) === -1 && this.properties.push(name);
 	return this;
 };
 
@@ -364,10 +426,10 @@ SchemaBuilderEntity.prototype.filter = function(custom, model, reverse) {
 function parseLength(lower, result) {
 	result.raw = 'string';
 	var beg = lower.indexOf('(');
-	if (beg === -1)
-		return result;
-	result.length = lower.substring(beg + 1, lower.length - 1).parseInt();
-	result.raw = lower.substring(0, beg);
+	if (beg !== -1) {
+		result.length = lower.substring(beg + 1, lower.length - 1).parseInt();
+		result.raw = lower.substring(0, beg);
+	}
 	return result;
 }
 
@@ -380,6 +442,8 @@ SchemaBuilderEntity.prototype.$parse = function(name, value, required, custom) {
 	result.type = 0;
 	result.length = 0;
 	result.required = required ? true : false;
+	result.validate = typeof(required) === 'function' ? required : null;
+	result.can = null;
 	result.isArray = false;
 	result.custom = custom || '';
 
@@ -1178,18 +1242,22 @@ SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourc
 		var s = self.parent.collection[schema.raw];
 
 		if (!s) {
-			F.error(new Error('Schema "' + schema.raw + '" not found (validation).'));
+			F.error(new Error('Schema "{0}" not found (validation).'.format(schema.raw)));
 			continue;
 		}
 
-		if (!schema.isArray) {
-			(model[key] != null || schema.required) && s.validate(model[key], resourcePrefix, resourceName, builder, filter, path + key, -1);
-			continue;
+		if (schema.isArray) {
+			var arr = model[key];
+			for (var j = 0, jl = arr.length; j < jl; j++) {
+				if (model[key][j] != null || schema.required) {
+					if (!schema.can || schema.can(model))
+						s.validate(model[key][j], resourcePrefix, resourceName, builder, filter, path + key + '[' + j + ']', j);
+				}
+			}
+		} else if (model[key] != null || schema.required) {
+			if (!schema.can || schema.can(model))
+				s.validate(model[key], resourcePrefix, resourceName, builder, filter, path + key, -1);
 		}
-
-		var arr = model[key];
-		for (var j = 0, jl = arr.length; j < jl; j++)
-			(model[key][j] != null || schema.required) && s.validate(model[key][j], resourcePrefix, resourceName, builder, filter, path + key + '[' + j + ']', j);
 	}
 
 	return builder;
@@ -1423,6 +1491,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 			val = val();
 
 		if (!type.isArray) {
+
 			switch (type.type) {
 				// undefined
 				case 0:
@@ -1438,7 +1507,16 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 
 				// string
 				case 3:
-					tmp = val == null ? '' : autotrim(self, val.toString());
+
+					var tv = typeof(val);
+
+					if (val == null || tv === 'object')
+						tmp = '';
+					else if (tv === 'string')
+						tmp = autotrim(self, val);
+					else
+						tmp = autotrim(self, val.toString());
+
 					if (type.length && type.length < tmp.length)
 						tmp = tmp.substring(0, type.length);
 
@@ -2650,6 +2728,7 @@ exports.validate = function(name, model, resourcePrefix, resourceName) {
 	if (schema === undefined)
 		return null;
 	schema = schema.get(name);
+	model = schema.prepare(model);
 	return schema === undefined ? null : schema.validate(model, resourcePrefix, resourceName);
 };
 
@@ -2755,7 +2834,7 @@ ErrorBuilder.prototype._resource = function() {
 
 ErrorBuilder.prototype._resource_handler = function(name) {
 	var self = this;
-	return typeof(framework) !== 'undefined' ? F.resource(self.resourceName || 'default', self.resourcePrefix + name) : '';
+	return typeof(F) !== 'undefined' ? F.resource(self.resourceName || 'default', name) : '';
 };
 
 ErrorBuilder.prototype.exception = function(message) {
@@ -2783,7 +2862,8 @@ ErrorBuilder.prototype.add = function(name, error, path, index) {
  * @param {Number} index Array Index, optional.
  * @return {ErrorBuilder}
  */
-ErrorBuilder.prototype.push = function(name, error, path, index) {
+ErrorBuilder.prototype.push = function(name, error, path, index, prefix) {
+
 	this.isPrepared = false;
 
 	if (name instanceof ErrorBuilder) {
@@ -2797,13 +2877,13 @@ ErrorBuilder.prototype.push = function(name, error, path, index) {
 
 	if (name instanceof Array) {
 		for (var i = 0, length = name.length; i < length; i++)
-			this.push(name[i], undefined, path, index);
+			this.push(name[i], undefined, path, index, prefix);
 		return this;
 	}
 
 	if (error instanceof Array) {
 		for (var i = 0, length = error.length; i < length; i++)
-			this.push(name, error[i], path, index);
+			this.push(name, error[i], path, index, prefix);
 		return this;
 	}
 
@@ -2825,7 +2905,7 @@ ErrorBuilder.prototype.push = function(name, error, path, index) {
 		error = error.toString();
 	}
 
-	this.items.push({ name: name, error: typeof(error) === 'string' ? error : error.toString(), path: path, index: index });
+	this.items.push({ name: name, error: typeof(error) === 'string' ? error : error.toString(), path: path, index: index, prefix: prefix });
 	this.count = this.items.length;
 	return this;
 };
@@ -2925,11 +3005,12 @@ ErrorBuilder.prototype._prepare = function() {
 	for (var i = 0, length = arr.length; i < length; i++) {
 
 		var o = arr[i];
+
 		if (o.error[0] !== '@')
 			continue;
 
 		if (o.error.length === 1)
-			o.error = this.onResource(o.name);
+			o.error = this.onResource(o.prefix ? o.prefix : (this.resourcePrefix + o.name));
 		else
 			o.error = this.onResource(o.error.substring(1));
 
@@ -3646,6 +3727,8 @@ RESTBuilder.prototype.auth = function(user, password) {
 
 RESTBuilder.prototype.schema = function(group, name) {
 	this.$schema = exports.getschema(group, name);
+	if (!this.$schema)
+		throw Error('RESTBuilder: Schema "{0}" not found.'.format(name ? (group + '/' + name) : group));
 	return this;
 };
 
@@ -4005,7 +4088,7 @@ global.NEWOPERATION = function(name, fn) {
 
 global.OPERATION = function(name, value, callback, param) {
 
-	if (callback === undefined) {
+	if (typeof(value) === 'function') {
 		callback = value;
 		value = EMPTYOBJECT;
 	}
@@ -4015,29 +4098,53 @@ global.OPERATION = function(name, value, callback, param) {
 
 	if (fn) {
 		if (fn.$newversion) {
-			var opt = {};
-			opt.error = error;
-			opt.value = opt.model = value;
-			opt.callback = function(value) {
-				if (value instanceof Error) {
-					error.push(value);
-					value = EMPTYOBJECT;
-				}
-				callback(error.hasError() ? error : null, value, param);
-			};
-			fn(opt);
+			fn(new OperationOptions(error, value, callback, param));
 		} else
 			fn(error, value, function(value) {
-				if (value instanceof Error) {
-					error.push(value);
-					value = EMPTYOBJECT;
+				if (callback) {
+					if (value instanceof Error) {
+						error.push(value);
+						value = EMPTYOBJECT;
+					}
+					callback(error.hasError() ? error : null, value, param);
 				}
-				callback(error.hasError() ? error : null, value, param);
 			});
 	} else {
 		error.push('Operation "{0}" not found.'.format(name));
-		callback(error, EMPTYOBJECT, param);
+		callback && callback(error, EMPTYOBJECT, param);
 	}
+};
+
+function OperationOptions(error, value, callback, options) {
+	this.model = this.value = value;
+	this.error = error;
+	this.$callback = callback;
+	this.options = options;
+}
+
+OperationOptions.prototype.callback = function(value) {
+	var self = this;
+
+	if (self.$callback) {
+		if (value instanceof Error) {
+			self.error.push(value);
+			value = EMPTYOBJECT;
+		}
+		self.$callback(self.error.hasError() ? self.error : null, value, self.options);
+	}
+
+	return self;
+};
+
+OperationOptions.prototype.success = function(a, b) {
+	this.callback(SUCCESS(a === undefined ? true : a, b));
+	return this;
+};
+
+OperationOptions.prototype.invalid = function(name, error, path, index) {
+	this.error.push(name, error, path, index);
+	this.callback();
+	return this;
 };
 
 // ======================================================
@@ -4052,6 +4159,7 @@ exports.Page = Page;
 exports.UrlBuilder = UrlBuilder;
 exports.TransformBuilder = TransformBuilder;
 exports.SchemaOptions = SchemaOptions;
+exports.OperationOptions = OperationOptions;
 exports.RESTBuilderResponse = RESTBuilderResponse;
 global.RESTBuilder = RESTBuilder;
 global.RESTBuilderResponse = RESTBuilderResponse;

@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkUtils
- * @version 2.8.0
+ * @version 2.9.0
  */
 
 'use strict';
@@ -1987,16 +1987,22 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 
 	for (var i = 0; i < properties.length; i++) {
 
-		var name = properties[i].toString();
+		var name = properties[i];
+
 		if (fields && fields.indexOf(name) === -1)
+			continue;
+
+		var TYPE = collection[schema].schema[name];
+
+		if (TYPE.can && !TYPE.can(model))
 			continue;
 
 		var value = model[name];
 		var type = typeof(value);
-		var TYPE = collection[schema].schema[name];
+		var prefix = entity.resourcePrefix ? (entity.resourcePrefix + name) : name;
 
 		if (value === undefined) {
-			error.add(pluspath + name, '@', current + name);
+			error.push(pluspath + name, '@', current + name, undefined, prefix);
 			continue;
 		} else if (type === 'function')
 			value = model[name]();
@@ -2026,14 +2032,14 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 					entity = entity.substring(1, entity.length - 1).trim();
 
 					if (!(value instanceof Array)) {
-						error.add(pluspath + name, (pluspath ? '@' + name : '@'), current + name, index);
+						error.push(pluspath + name, '@', current + name, index, prefix);
 						continue;
 					}
 
 					// The schema not exists
 					if (collection[entity] === undefined) {
 
-						var result2 = prepare(name, value, current + name, model, schema, TYPE);
+						var result2 = TYPE.validate ? TYPE.validate(value, model) : prepare(name, value, current + name, model, schema, TYPE);
 						if (result2 === undefined) {
 							result2 = validate_builder_default(name, value, TYPE);
 							if (result2)
@@ -2043,22 +2049,25 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 						type = typeof(result2);
 
 						if (type === 'string') {
-							error.add(pluspath + name, result2, current + name, index);
+							if (result2[0] === '@')
+								error.push(pluspath + name, '@', current + name, index, entity.resourcePrefix + result2.substring(1));
+							else
+								error.push(pluspath + name, result2, current + name, index, prefix);
 							continue;
 						}
 
 						if (type === 'boolean' && !result2) {
-							error.add(pluspath + name, (pluspath ? '@' + name : '@'), current + name, index);
+							error.push(pluspath + name, '@', current + name, index, prefix);
 							continue;
 						}
 
 						if (result2.isValid === false)
-							error.add(pluspath + name, result2.error, current + name, index);
+							error.push(pluspath + name, result2.error, current + name, index, prefix);
 
 						continue;
 					}
 
-					var result3 = prepare(name, value, current + name, model, schema, TYPE);
+					var result3 = TYPE.validate ? TYPE.validate(value, model) : prepare(name, value, current + name, model, schema, TYPE);
 					if (result3 === undefined) {
 						result3 = validate_builder_default(name, value, TYPE);
 						if (result3)
@@ -2070,17 +2079,20 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 						type = typeof(result3);
 
 						if (type === 'string') {
-							error.add(pluspath + name, result3, current + name, index);
+							if (result3[0] === '@')
+								error.push(pluspath + name, '@', current + name, index, entity.resourcePrefix + result3.substring(1));
+							else
+								error.push(pluspath + name, result3, current + name, index, prefix);
 							continue;
 						}
 
 						if (type === 'boolean' && !result3) {
-							error.add(pluspath + name, (pluspath ? '@' + name : '@'), current + name, index);
+							error.push(pluspath + name, '@', current + name, index, prefix);
 							continue;
 						}
 
 						if (result3.isValid === false) {
-							error.add(pluspath + name, result3.error, current + name, index);
+							error.push(pluspath + name, result3.error, current + name, index, prefix);
 							continue;
 						}
 					}
@@ -2093,7 +2105,7 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 			}
 		}
 
-		var result = prepare(name, value, current + name, model, schema, TYPE);
+		var result = TYPE.validate ? TYPE.validate(value, model) : prepare(name, value, current + name, model, schema, TYPE);
 		if (result === undefined) {
 			result = validate_builder_default(name, value, TYPE);
 			if (result)
@@ -2103,18 +2115,14 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 		type = typeof(result);
 
 		if (type === 'string') {
-			error.add(pluspath + name, result, current + name, index);
-			continue;
-		}
-
-		if (type === 'boolean') {
-			if (!result)
-				error.add(pluspath + name, (pluspath ? '@' + name : '@'), current + name, index);
-			continue;
-		}
-
-		if (result.isValid === false)
-			error.add(pluspath + name, result.error, current + name, index);
+			if (result[0] === '@')
+				error.push(pluspath + name, '@', current + name, index, entity.resourcePrefix + result.substring(1));
+			else
+				error.push(pluspath + name, result, current + name, index, prefix);
+		} else if (type === 'boolean') {
+			!result && error.push(pluspath + name, '@', current + name, index, prefix);
+		} else if (result.isValid === false)
+			error.push(pluspath + name, result.error, current + name, index, prefix);
 	}
 
 	return error;
@@ -2376,17 +2384,21 @@ exports.distance = function(lat1, lon1, lat2, lon2) {
  * @param {Function(filename),isDirectory or String or RegExp} filter Custom filter (optional).
  */
 exports.ls = function(path, callback, filter) {
+
 	var filelist = new FileList();
+	var tmp;
+
 	filelist.onComplete = callback;
 
 	if (typeof(filter) === 'string') {
-		filter = filter.toLowerCase();
-		filter.onFilter = function(filename, is) {
-			return is ? true : filename.toLowerCase().indexOf(filter);
+		tmp = filter.toLowerCase();
+		filter.onFilter = function(filename, is, relative) {
+			return is ? true : relative.toLowerCase().indexOf(tmp);
 		};
 	} else if (exports.isRegExp(filter)) {
+		tmp = filter;
 		filter.onFilter = function(filename, is) {
-			return is ? true : filter.test(filename);
+			return is ? true : tmp.test(filename);
 		};
 	} else
 		filelist.onFilter = filter || null;
@@ -2402,17 +2414,20 @@ exports.ls = function(path, callback, filter) {
  */
 exports.ls2 = function(path, callback, filter) {
 	var filelist = new FileList();
+	var tmp;
+
 	filelist.advanced = true;
 	filelist.onComplete = callback;
 
 	if (typeof(filter) === 'string') {
-		filter = filter.toLowerCase();
+		tmp = filter.toLowerCase();
 		filter.onFilter = function(filename, is) {
-			return is ? true : filename.toLowerCase().indexOf(filter);
+			return is ? true : filename.toLowerCase().indexOf(tmp);
 		};
 	} else if (exports.isRegExp(filter)) {
+		tmp = filter;
 		filter.onFilter = function(filename, is) {
-			return is ? true : filter.test(filename);
+			return is ? true : tmp.test(filename);
 		};
 	} else
 		filelist.onFilter = filter || null;
@@ -2674,13 +2689,6 @@ Date.prototype.format = function(format, resource) {
 		format = format.substring(1);
 	}
 
-	var h = self.getHours();
-
-	if (half) {
-		if (h >= 12)
-			h -= 12;
-	}
-
 	var beg = '\'+';
 	var end = '+\'';
 	var before = [];
@@ -2717,10 +2725,10 @@ Date.prototype.format = function(format, resource) {
 				return beg + 'd.getDate()' + end;
 			case 'HH':
 			case 'hh':
-				return beg + 'd.getHours().toString().padLeft(2, \'0\')' + end;
+				return beg + (half ? 'framework_utils.$pmam(d.getHours()).toString().padLeft(2, \'0\')' : 'd.getHours().toString().padLeft(2, \'0\')') + end;
 			case 'H':
 			case 'h':
-				return beg + 'd.getHours()' + end;
+				return beg + (half ? 'framework_utils(d.getHours())' : 'd.getHours()') + end;
 			case 'mm':
 				return beg + 'd.getMinutes().toString().padLeft(2, \'0\')' + end;
 			case 'm':
@@ -2735,7 +2743,7 @@ Date.prototype.format = function(format, resource) {
 				return beg + (key === 'ww' ? 'ww.toString().padLeft(2, \'0\')' : 'ww') + end;
 			case 'a':
 				var b = "'PM':'AM'";
-				return beg + '(d.getHours() >= 12 ? ' + b + end;
+				return beg + '(d.getHours() >= 12 ? ' + b + ')' + end;
 		}
 	});
 
@@ -2745,6 +2753,10 @@ Date.prototype.format = function(format, resource) {
 
 	datetimeformat[key] = new Function('d', 'resource', before.join('\n') + 'return \'' + format + '\';');
 	return datetimeformat[key](this, resource);
+};
+
+exports.$pmam = function(value) {
+	return value >= 12 ? value - 12 : value;
 };
 
 Date.prototype.toUTC = function(ticks) {
@@ -3197,6 +3209,9 @@ String.prototype.parseConfig = function(def) {
 			case 'boolean':
 			case 'bool':
 				obj[name] = value.parseBoolean();
+				break;
+			case 'config':
+				obj[name] = F.config[value];
 				break;
 			case 'eval':
 			case 'object':
@@ -4540,52 +4555,53 @@ Array.prototype.remove = function(cb, value) {
 	return arr;
 };
 
-Array.prototype.wait = Array.prototype.waitFor = function(onItem, callback, thread) {
+Array.prototype.wait = Array.prototype.waitFor = function(onItem, callback, thread, tmp) {
 
 	var self = this;
 	var init = false;
 
 	// INIT
-	if (!onItem.$index) {
-		onItem.$pending = 0;
-		onItem.$index = 0;
-		init = true;
-		if (typeof(callback) === 'number') {
-			var tmp = thread;
+	if (!tmp) {
+
+		if (typeof(callback) !== 'function') {
 			thread = callback;
-			callback = tmp;
+			callback = null;
 		}
+
+		tmp = {};
+		tmp.pending = 0;
+		tmp.index = 0;
+		tmp.thread = thread;
+
+		// thread === Boolean then array has to be removed item by item
+
+		init = true;
 	}
 
-	if (thread === undefined)
-		thread = 1;
-
-	var item = thread === true ? self.shift() : self[onItem.$index];
-	onItem.$index++;
-
+	var item = thread === true ? self.shift() : self[tmp.index++];
 	if (item === undefined) {
-		if (onItem.$pending)
-			return self;
-		callback && callback();
-		onItem.$index = 0;
+		if (!tmp.pending) {
+			callback && callback();
+			tmp.cancel = true;
+		}
 		return self;
 	}
 
-	onItem.$pending++;
-	onItem.call(self, item, () => setImmediate(next_wait, self, onItem, callback, thread));
+	tmp.pending++;
+	onItem.call(self, item, () => setImmediate(next_wait, self, onItem, callback, thread, tmp), tmp.index);
 
-	if (!init || thread === true)
+	if (!init || tmp.thread === 1)
 		return self;
 
-	for (var i = 1; i < thread; i++)
-		self.wait(onItem, callback, 0);
+	for (var i = 1; i < tmp.thread; i++)
+		self.wait(onItem, callback, 1, tmp);
 
 	return self;
 };
 
-function next_wait(self, onItem, callback, thread) {
-	onItem.$pending--;
-	self.wait(onItem, callback, thread);
+function next_wait(self, onItem, callback, thread, tmp) {
+	tmp.pending--;
+	self.wait(onItem, callback, thread, tmp);
 }
 
 /**
@@ -4728,6 +4744,14 @@ Array.prototype.unique = function(property) {
 	}
 
 	return result;
+};
+
+ArrayBuffer.prototype.toBuffer = function() {
+	var buf = new Buffer(this.byteLength);
+	var view = new Uint8Array(this);
+	for (var i = 0, length = buf.length; i < length; ++i)
+		buf[i] = view[i];
+	return buf;
 };
 
 function AsyncTask(owner, name, fn, cb, waiting) {
@@ -5089,18 +5113,21 @@ FileList.prototype.stat = function(path) {
 		if (err)
 			return self.next();
 
-		if (stats.isDirectory() && (!self.onFilter || self.onFilter(path, true))) {
-			self.directory.push(path);
-			self.pendingDirectory.push(path);
-			self.next();
-			return;
-		}
-
-		if (!self.onFilter || self.onFilter(path, false))
+		if (stats.isDirectory()) {
+			path = self.clean(path);
+			if (!self.onFilter || self.onFilter(path, true)) {
+				self.directory.push(path);
+				self.pendingDirectory.push(path);
+			}
+		} else if (!self.onFilter || self.onFilter(path, false))
 			self.file.push(self.advanced ? { filename: path, stats: stats } : path);
 
 		self.next();
 	});
+};
+
+FileList.prototype.clean = function(path) {
+	return path[path.length - 1] === '/' ? path : path + '/';
 };
 
 FileList.prototype.next = function() {
@@ -5118,7 +5145,7 @@ FileList.prototype.next = function() {
 		return;
 	}
 
-	self.onComplete(self.advanced ? self.file.filename : self.file, self.directory);
+	self.onComplete(self.file, self.directory);
 };
 
 exports.Async = Async;
