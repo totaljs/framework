@@ -5,7 +5,7 @@
 Node.js framework
 =====================
 
-__Total.js framework__ is a framework for Node.js platfrom written in `pure` JavaScript similar to PHP's Laravel or Python's Django or ASP.NET MVC. It can be used for web, desktop, service and IoT applications.
+__Total.js framework__ is a framework for Node.js platfrom written in `pure` JavaScript similar to PHP's Laravel or Python's Django or ASP.NET MVC. It can be used as web, desktop, service or IoT application.
 
 ```bash
 $ npm install -g total.js
@@ -13,6 +13,7 @@ $ npm install -g total.js
 
 [![Support](https://www.totaljs.com/img/button-support.png?v=3)](https://www.totaljs.com/support/)
 
+- [Total.js Wiki](https://www.totaljs.com/wiki/)
 - [Total.js Flow](https://www.totaljs.com/flow/)
 - [Total.js Flowboard](https://www.totaljs.com/flowboard/)
 - [Total.js Messenger](https://www.totaljs.com/messenger/)
@@ -28,7 +29,7 @@ $ npm install -g total.js
 - [Total.js modules and packages](https://modules.totaljs.com)
 - [Total.js +100 examples](https://github.com/totaljs/examples)
 - [NoSQL embedded database explorer](https://www.totaljs.com/nosql/)
-- [Download +89 client-side components (jComponent) for free](https://componentator.com)
+- [Download +90 client-side components (jComponent) for free](https://componentator.com)
 
 ---
 
@@ -67,7 +68,8 @@ $ npm install -g total.js
 | Supports modules and packages |
 | Built-in image processing engine via ImageMagick or GraphicsMagick |
 | Supports WebSockets (__RFC 6455__) and Server-Sent events |
-| __NEW__ Supports `multipart/x-mixed-replace` (IP camera streaming) uploading and sending |
+| __NEW__ Supports WebSockets client |
+| Supports `multipart/x-mixed-replace` (IP camera streaming) uploading and sending |
 | Supports RESTful routing |
 | Supports middleware (like express.js) with custom options |
 | Supports unit testing |
@@ -82,10 +84,9 @@ $ npm install -g total.js
 | Supports String, Date, Number and Array prototypes |
 | Supports additional utilities (e.g. create request, XML parsing, etc.) |
 | Supports themes |
-| __NEW__ Supports scripting |
+| Supports scripting |
 | Possibility to rewrite existing functionality |
 | NoSQL embedded database (__NEW: joins, scalar operations and in-memory mode__) |
-| __You can use framework as single library__ `total.js (415 kB)` |
 
 ## Contributors
 
