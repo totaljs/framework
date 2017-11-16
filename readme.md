@@ -94,8 +94,8 @@ $ npm install -g total.js
 | Contributor | Type | E-mail |
 |-------------|------|--------|
 | [Peter Širka](https://github.com/petersirka) | author + support | <petersirka@gmail.com> |
-| [Jozef Gula](https://github.com/jozefgula) | contributor + support | <gula.jozef@gmail.com> |
 | [Martin Smola](https://github.com/molda) | contributor + support | <smola.martin@gmail.com> |
+| [Jozef Gula](https://github.com/jozefgula) | contributor | <gula.jozef@gmail.com> |
 | [Andrea Sessa](https://github.com/asessa) | contributor | <andrea.sessa@gmail.com> |
 | [Gera G. Güiles](https://github.com/Maxima-Solutions) | contributor | <gerardo.gonzalezg@gmail.com> |
 | [Tom Spaccialbelli](https://github.com/harry-stot) | contributor | <tom.spaccialbelli@gmail.com> |
