@@ -1874,12 +1874,12 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 	if (type === 'string') {
 		viewname = funcExecute;
 		funcExecute = (function(name, sitemap, language) {
-			if (language && !this.language)
-				this.language = language;
 			var themeName = U.parseTheme(name);
 			if (themeName)
 				name = prepare_viewname(name);
 			return function() {
+				if (language && !this.language)
+					this.language = language;
 				sitemap && this.sitemap(sitemap.id, language);
 				if (name[0] === '~')
 					this.themeName = '';

@@ -1,3 +1,7 @@
+======= 2.9.1
+
+- fixed: sitemap language auto-setting
+
 ======= 2.9.0
 
 - added: `WebSocketClient`
