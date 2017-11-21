@@ -2573,6 +2573,9 @@ DatabaseBuilder.prototype.paginate = function(page, limit, maxlimit) {
 	if (maxlimit && limit2 > maxlimit)
 		limit2 = maxlimit;
 
+	if (!limit2)
+		limit2 = maxlimit;
+
 	this.$skip = page2 * limit2;
 	this.$take = limit2;
 	return this;
