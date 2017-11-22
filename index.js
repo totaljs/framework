@@ -11784,6 +11784,15 @@ Controller.prototype.throw404 = Controller.prototype.view404 = function(problem)
 };
 
 /**
+ * Throw 409 - Conflict.
+ * @param  {String} problem Description of problem (optional)
+ * @return {Controller}
+ */
+Controller.prototype.throw409 = Controller.prototype.view409 = function(problem) {
+	return controller_error_status(this, 409, problem);
+};
+
+/**
  * Throw 500 - Internal Server Error.
  * @param {Error} error
  * @return {Controller}
@@ -15156,6 +15165,12 @@ function extend_response(PROTO) {
 
 	PROTO.throw408 = function(problem) {
 		this.options.code = 408;
+		problem && (this.options.problem = problem);
+		return this.$throw();
+	};
+
+	PROTO.throw409 = function(problem) {
+		this.options.code = 409;
 		problem && (this.options.problem = problem);
 		return this.$throw();
 	};
