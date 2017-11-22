@@ -2894,6 +2894,15 @@ ErrorBuilder.prototype.push = function(name, error, path, index, prefix) {
 	if (error === null || (!name && !error))
 		return this;
 
+	// Status code
+	if (error > 0) {
+		this.status = error;
+		error = '@';
+	} else if (path > 0) {
+		this.status = path;
+		path = undefined;
+	}
+
 	if (!error)
 		error = '@';
 
