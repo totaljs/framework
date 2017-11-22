@@ -1,5 +1,9 @@
 ======= 2.9.1
 
+- added: `controller.throw409()`, `req.throw409()`
+
+- updated: `ErrorBuilder.push()` supports `.push(name, status_code)` or `.push(name, error, status_code)`
+
 - fixed: sitemap language auto-setting
 - fixed: NoSQL: `builder.paginate()` a problem with zero limit (default limit will be `maxlimit`)
 
