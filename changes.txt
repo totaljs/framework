@@ -1,4 +1,4 @@
-======= 2.9.1
+======= 2.9.1 (HOTFIX)
 
 - added: `controller.throw409()`, `req.throw409()`
 - added: new view aliases: `@{R.something}` for `repository` and `@{M.something}` for `model`
