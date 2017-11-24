@@ -2142,22 +2142,22 @@ DatabaseBuilder.prototype.compare_string = function(json, index) {
 				break;
 			case 2: // number
 				if (filter.operator === '=') {
-					if (filter.value.toString() !== value)
+					if (filter.value !== +value)
 						allow = false;
 				} else if (filter.operator === '!=') {
 					if (filter.value.toString() === value)
 						allow = false;
 				} else if (filter.operator === '>') {
-					if (filter.value < +value)
+					if (+value <= filter.value)
 						allow = false;
 				} else if (filter.operator === '<') {
-					if (filter.value > +value)
+					if (+value >= filter.value)
 						allow = false;
 				} else if (filter.operator === '>=') {
-					if (filter.value <= +value)
+					if (+value < filter.value)
 						allow = false;
 				} else if (filter.operator === '<=') {
-					if (filter.value >= +value)
+					if (+value > filter.value)
 						allow = false;
 				} else
 					return; // >, < is not supported for strings
