@@ -8,6 +8,7 @@
 - fixed: sitemap language auto-setting
 - fixed: NoSQL: `builder.paginate()` a problem with zero limit (default limit will be `maxlimit`)
 - fixed: NoSQL number filtering
+- fixed: localization of ErrorBuilder in controllers
 
 ======= 2.9.0
 

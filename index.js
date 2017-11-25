@@ -11564,6 +11564,10 @@ Controller.prototype.content = function(body, type, headers) {
 	res.options.code = self.status || 200;
 
 	if (body instanceof ErrorBuilder) {
+
+		if (self.language && !body.resourceName)
+			body.resourceName = self.language;
+
 		var tmp = body.output(true);
 		if (body.contentType)
 			res.options.type = body.contentType;
