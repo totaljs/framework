@@ -1,7 +1,7 @@
 ======= 2.9.1 (HOTFIX)
 
 - added: `controller.throw409()`, `req.throw409()`
-- added: new view aliases: `@{R.something}` for `repository` and `@{M.something}` for `model`
+- added: new view aliases: `@{R.something}` for `repository`, `@{M.something}` for `model` and `@{G.something}` for `global`
 
 - updated: `ErrorBuilder.push()` supports `.push(name, status_code)` or `.push(name, error, status_code)`
 

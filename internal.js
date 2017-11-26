@@ -1951,7 +1951,7 @@ function view_parse(content, minify, filename, controller) {
 	if (RELEASE)
 		builder = builder.replace(/(\+\$EMPTY\+)/g, '+').replace(/(\$output=\$EMPTY\+)/g, '$output=').replace(/(\$output\+=\$EMPTY\+)/g, '$output+=').replace(/(\}\$output\+=\$EMPTY)/g, '}').replace(/(\{\$output\+=\$EMPTY;)/g, '{').replace(/(\+\$EMPTY\+)/g, '+').replace(/(>'\+'<)/g, '><').replace(/'\+'/g, '');
 
-	var fn = '(function(self,repository,model,session,query,body,url,global,helpers,user,config,functions,index,output,cookie,files,mobile,settings){var get=query;var post=body;var R=this.repository;var M=model;var theme=this.themeName;var language=this.language;var sitemap=this.repository.$sitemap;var cookie=function(name){return self.req.cookie(name)};' + (functions.length ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})';
+	var fn = '(function(self,repository,model,session,query,body,url,global,helpers,user,config,functions,index,output,cookie,files,mobile,settings){var get=query;var post=body;var G=F.global;var R=this.repository;var M=model;var theme=this.themeName;var language=this.language;var sitemap=this.repository.$sitemap;var cookie=function(name){return self.req.cookie(name)};' + (functions.length ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})';
 	try {
 		fn = eval(fn);
 	} catch (e) {
@@ -2031,6 +2031,7 @@ function view_prepare(command, dynamicCommand, functions, controller) {
 
 		case 'M':
 		case 'R':
+		case 'G':
 		case 'model':
 		case 'repository':
 		case 'get':
@@ -2066,6 +2067,9 @@ function view_prepare(command, dynamicCommand, functions, controller) {
 		case 'functions':
 			return '$STRING(' + command + ').encode()';
 
+		case '!M':
+		case '!R':
+		case '!G':
 		case '!controller':
 		case '!repository':
 		case '!get':
