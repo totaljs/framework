@@ -21,7 +21,7 @@
 
 /**
  * @module NoSQL
- * @version 2.9.0
+ * @version 2.9.1
  */
 
 'use strict';
