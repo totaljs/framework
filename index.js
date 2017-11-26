@@ -1874,12 +1874,12 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 	if (type === 'string') {
 		viewname = funcExecute;
 		funcExecute = (function(name, sitemap, language) {
-			if (language && !this.language)
-				this.language = language;
 			var themeName = U.parseTheme(name);
 			if (themeName)
 				name = prepare_viewname(name);
 			return function() {
+				if (language && !this.language)
+					this.language = language;
 				sitemap && this.sitemap(sitemap.id, language);
 				if (name[0] === '~')
 					this.themeName = '';
@@ -11564,6 +11564,10 @@ Controller.prototype.content = function(body, type, headers) {
 	res.options.code = self.status || 200;
 
 	if (body instanceof ErrorBuilder) {
+
+		if (self.language && !body.resourceName)
+			body.resourceName = self.language;
+
 		var tmp = body.output(true);
 		if (body.contentType)
 			res.options.type = body.contentType;
@@ -11781,6 +11785,15 @@ Controller.prototype.throw403 = Controller.prototype.view403 = function(problem)
  */
 Controller.prototype.throw404 = Controller.prototype.view404 = function(problem) {
 	return controller_error_status(this, 404, problem);
+};
+
+/**
+ * Throw 409 - Conflict.
+ * @param  {String} problem Description of problem (optional)
+ * @return {Controller}
+ */
+Controller.prototype.throw409 = Controller.prototype.view409 = function(problem) {
+	return controller_error_status(this, 409, problem);
 };
 
 /**
@@ -15156,6 +15169,12 @@ function extend_response(PROTO) {
 
 	PROTO.throw408 = function(problem) {
 		this.options.code = 408;
+		problem && (this.options.problem = problem);
+		return this.$throw();
+	};
+
+	PROTO.throw409 = function(problem) {
+		this.options.code = 409;
 		problem && (this.options.problem = problem);
 		return this.$throw();
 	};

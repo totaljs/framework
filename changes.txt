@@ -1,3 +1,15 @@
+======= 2.9.1 (HOTFIX)
+
+- added: `controller.throw409()`, `req.throw409()`
+- added: new view aliases: `@{R.something}` for `repository`, `@{M.something}` for `model` and `@{G.something}` for `global`
+
+- updated: `ErrorBuilder.push()` supports `.push(name, status_code)` or `.push(name, error, status_code)`
+
+- fixed: sitemap language auto-setting
+- fixed: NoSQL: `builder.paginate()` a problem with zero limit (default limit will be `maxlimit`)
+- fixed: NoSQL number filtering
+- fixed: localization of ErrorBuilder in controllers
+
 ======= 2.9.0
 
 - added: `WebSocketClient`

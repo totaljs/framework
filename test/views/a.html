@@ -20,7 +20,7 @@
 @{prev('/a/1/')}
 @{canonical('/a/a-b-c/')}
 @{head('//ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js')}
-#tag-encode@{repository.tag}#
+#tag-encode@{R.tag}#
 #tag-raw@{!repository.tag}#
 #helper-fn-@{helper('fn', 'A')}#
 #readonly@{readonly(true)}#
@@ -29,7 +29,7 @@
 #disabled@{disabled(true)}#
 #resource@{resource('name')}#
 #options-empty@{options(repository.optionsEmpty, 'B')}#
-#options@{options(repository.options, 'C', 'k', 'v')}#
+#options@{options(R.options, 'C', 'k', 'v')}#
 #view-toggle@{viewToggle(false, 'b')}#
 #view@{view('current/b', 'model')}#
 #routejs-@{routeScript('p.js')}#
