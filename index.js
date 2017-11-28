@@ -535,8 +535,8 @@ var PERF = {};
 function Framework() {
 
 	this.$id = null; // F.id ==> property
-	this.version = 2900;
-	this.version_header = '2.9.0';
+	this.version = 2920;
+	this.version_header = '2.9.2';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
