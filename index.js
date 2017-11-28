@@ -6167,6 +6167,11 @@ F.load = function(debug, types, pwd) {
 	else if (pwd)
 		F.directory = directory = U.$normalize(pwd);
 
+	if (debug === 'release')
+		debug = false;
+	else if (debug === 'debug')
+		debug = true;
+
 	F.isWorker = true;
 	F.config.debug = debug;
 	F.isDebug = debug;

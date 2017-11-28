@@ -1,5 +1,7 @@
 ======= 2.9.2 (HOTFIX)
 
+- updated: `F.load()`, now supports `string` for `debug` or `release` mode
+
 - fixed: schema validation (problem with Arrays)
 
 ======= 2.9.1 (HOTFIX)
