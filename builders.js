@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkBuilders
- * @version 2.9.1
+ * @version 2.9.2
  */
 
 'use strict';
@@ -1231,6 +1231,7 @@ SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourc
 
 	framework_utils.validate_builder.call(self, model, builder, self.name, self.parent.collection, self.name, index, filter, path);
 
+	/*
 	if (!self.dependencies)
 		return builder;
 
@@ -1243,6 +1244,7 @@ SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourc
 			F.error(new Error('Schema "{0}" not found (validation).'.format(schema.raw)));
 			continue;
 		}
+
 
 		if (schema.isArray) {
 			var arr = model[key];
@@ -1257,6 +1259,7 @@ SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourc
 				s.validate(model[key], resourcePrefix, resourceName, builder, filter, path + key, -1);
 		}
 	}
+	*/
 
 	return builder;
 };
@@ -1663,6 +1666,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 					break;
 
 				case 3:
+
 					tmp = tmp == null ? '' : autotrim(self, tmp.toString());
 					if (type.length && tmp.length < tmp.length)
 						tmp = tmp.substring(0, type.length);

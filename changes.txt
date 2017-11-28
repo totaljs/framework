@@ -1,3 +1,7 @@
+======= 2.9.2 (HOTFIX)
+
+- fixed: schema validation (problem with Arrays)
+
 ======= 2.9.1 (HOTFIX)
 
 - added: `controller.throw409()`, `req.throw409()`

@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkUtils
- * @version 2.9.0
+ * @version 2.9.2
  */
 
 'use strict';
@@ -1988,12 +1988,10 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 	for (var i = 0; i < properties.length; i++) {
 
 		var name = properties[i];
-
 		if (fields && fields.indexOf(name) === -1)
 			continue;
 
 		var TYPE = collection[schema].schema[name];
-
 		if (TYPE.can && !TYPE.can(model))
 			continue;
 
@@ -2007,102 +2005,38 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 		} else if (type === 'function')
 			value = model[name]();
 
-		if (type !== 'object') {
-			if (Builders.isJoin(collection, name))
-				type = 'object';
-		}
+		if (TYPE.isArray) {
 
-		if (type === 'object' && !exports.isDate(value)) {
-			entity = collection[schema];
+			if (!(value instanceof Array) || !value.length) {
+				error.push(pluspath + name, '@', current + name, index, prefix);
+				continue;
+			}
 
-			if (entity) {
-				entity = entity.schema[name] || null;
-
-				if (entity === Date || entity === String || entity === Number || entity === Boolean) {
-					// Empty
-				} else if (entity && typeof(entity) === 'string') {
-
-					var isArray = entity[0] === '[';
-
-					if (!isArray) {
-						exports.validate_builder(value, error, schema, collection, current + name, index, undefined, pluspath);
-						continue;
-					}
-
-					entity = entity.substring(1, entity.length - 1).trim();
-
-					if (!(value instanceof Array)) {
-						error.push(pluspath + name, '@', current + name, index, prefix);
-						continue;
-					}
-
-					// The schema not exists
-					if (collection[entity] === undefined) {
-
-						var result2 = TYPE.validate ? TYPE.validate(value, model) : prepare(name, value, current + name, model, schema, TYPE);
-						if (result2 === undefined) {
-							result2 = validate_builder_default(name, value, TYPE);
-							if (result2)
-								continue;
-						}
-
-						type = typeof(result2);
-
+			for (var j = 0, jl = value.length; j < jl; j++) {
+				if (TYPE.type === 7) {
+					// Another schema
+					exports.validate_builder(value[j], error, TYPE.raw, collection, current + name + '[' + j + ']', j, undefined, pluspath);
+				} else {
+					// Basic types
+					var result = TYPE.validate ? TYPE.validate(value[j], model) : prepare(name, value, current + name + '[' + j + ']', model, schema, TYPE);
+					if (result === undefined) {
+						result = validate_builder_default(name, value[j], TYPE);
+						if (result)
+							continue;
+						type = typeof(result);
 						if (type === 'string') {
-							if (result2[0] === '@')
-								error.push(pluspath + name, '@', current + name, index, entity.resourcePrefix + result2.substring(1));
+							if (result[0] === '@')
+								error.push(pluspath + name, '@', current + name + '[' + j + ']', j, entity.resourcePrefix + result.substring(1));
 							else
-								error.push(pluspath + name, result2, current + name, index, prefix);
-							continue;
-						}
-
-						if (type === 'boolean' && !result2) {
-							error.push(pluspath + name, '@', current + name, index, prefix);
-							continue;
-						}
-
-						if (result2.isValid === false)
-							error.push(pluspath + name, result2.error, current + name, index, prefix);
-
-						continue;
+								error.push(pluspath + name, result, current + name + '[' + j + ']', j, prefix);
+						} else if (type === 'boolean') {
+							!result && error.push(pluspath + name, '@', current + name + '[' + j + ']', j, prefix);
+						} else if (result.isValid === false)
+							error.push(pluspath + name, result.error, current + name + '[' + j + ']', j, prefix);
 					}
-
-					var result3 = TYPE.validate ? TYPE.validate(value, model) : prepare(name, value, current + name, model, schema, TYPE);
-					if (result3 === undefined) {
-						result3 = validate_builder_default(name, value, TYPE);
-						if (result3)
-							continue;
-					}
-
-					if (result3 !== undefined) {
-
-						type = typeof(result3);
-
-						if (type === 'string') {
-							if (result3[0] === '@')
-								error.push(pluspath + name, '@', current + name, index, entity.resourcePrefix + result3.substring(1));
-							else
-								error.push(pluspath + name, result3, current + name, index, prefix);
-							continue;
-						}
-
-						if (type === 'boolean' && !result3) {
-							error.push(pluspath + name, '@', current + name, index, prefix);
-							continue;
-						}
-
-						if (result3.isValid === false) {
-							error.push(pluspath + name, result3.error, current + name, index, prefix);
-							continue;
-						}
-					}
-
-					var sublength = value.length;
-					for (var j = 0; j < sublength; j++)
-						exports.validate_builder(value[j], error, entity, collection, current + name, j, undefined, pluspath);
-					continue;
 				}
 			}
+			continue;
 		}
 
 		var result = TYPE.validate ? TYPE.validate(value, model) : prepare(name, value, current + name, model, schema, TYPE);
