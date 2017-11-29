@@ -21,7 +21,7 @@
 
 /**
  * @module Framework
- * @version 2.9.1
+ * @version 2.9.2
  */
 
 'use strict';
@@ -11594,6 +11594,10 @@ Controller.prototype.custom = function() {
 Controller.prototype.noClear = function(enable) {
 	this.req._manual = enable === undefined ? true : enable;
 	return this;
+};
+
+Controller.prototype.html = function(body, headers) {
+	return this.content(body, 'text/html', headers);
 };
 
 Controller.prototype.content = function(body, type, headers) {

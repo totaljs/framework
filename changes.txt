@@ -1,5 +1,7 @@
 ======= 2.9.2 (HOTFIX)
 
+- added: `controller.html(body, [headers])`
+
 - updated: `F.load()`, now supports `string` for `debug` or `release` mode
 
 - fixed: schema validation (problem with Arrays)
