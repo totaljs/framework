@@ -86,6 +86,7 @@ const CLUSTER_CACHE_SET = { TYPE: 'cache-set' };
 const CLUSTER_CACHE_REMOVE = { TYPE: 'cache-remove' };
 const CLUSTER_CACHE_REMOVEALL = { TYPE: 'cache-remove-all' };
 const CLUSTER_CACHE_CLEAR = { TYPE: 'cache-clear' };
+const GZIPOPTIONS = { memLevel: Zlib.constants.Z_BEST_COMPRESSION };
 
 Object.freeze(EMPTYOBJECT);
 Object.freeze(EMPTYARRAY);
@@ -5307,7 +5308,7 @@ F.onCompileStyle = null;
 */
 F.onCompileScript = null;
 
-F.compile_file = function(res) {
+function compile_file(res) {
 	fsFileRead(res.options.filename, function(err, buffer) {
 
 		var req = res.req;
@@ -5323,16 +5324,17 @@ F.compile_file = function(res) {
 
 		var file = F.path.temp((F.id ? 'i-' + F.id + '_' : '') + createTemporaryKey(uri.pathname));
 		F.path.verify('temp');
-		Fs.writeFileSync(file, F.compile_content(req.extension, framework_internal.parseBlock(F.routes.blocks[uri.pathname], buffer.toString(ENCODING)), res.options.filename), ENCODING);
+		Fs.writeFileSync(file, compile_content(req.extension, framework_internal.parseBlock(F.routes.blocks[uri.pathname], buffer.toString(ENCODING)), res.options.filename), ENCODING);
 		var stats = Fs.statSync(file);
-		F.temporary.path[req.$key] = [file, stats.size, stats.mtime.toUTCString()];
-		delete F.temporary.processing[req.$key];
-		res.$file();
+		var tmp = F.temporary.path[req.$key] = [file, stats.size, stats.mtime.toUTCString()];
+		compile_gzip(tmp, function() {
+			delete F.temporary.processing[req.$key];
+			res.$file();
+		});
 	});
-	return F;
-};
+}
 
-F.compile_merge = function(res) {
+function compile_merge(res) {
 
 	var req = res.req;
 	var uri = req.uri;
@@ -5342,9 +5344,11 @@ F.compile_merge = function(res) {
 
 	if (!F.config.debug && existsSync(filename)) {
 		var stats = Fs.statSync(filename);
-		F.temporary.path[req.$key] = [filename, stats.size, stats.mtime.toUTCString()];
-		delete F.temporary.processing[req.$key];
-		res.$file();
+		var tmp = F.temporary.path[req.$key] = [filename, stats.size, stats.mtime.toUTCString()];
+		compile_gzip(tmp, function() {
+			delete F.temporary.processing[req.$key];
+			res.$file();
+		});
 		return;
 	}
 
@@ -5352,9 +5356,11 @@ F.compile_merge = function(res) {
 
 	writer.on('finish', function() {
 		var stats = Fs.statSync(filename);
-		F.temporary.path[req.$key] = [filename, stats.size, stats.mtime.toUTCString()];
-		delete F.temporary.processing[req.$key];
-		res.$file();
+		var tmp = F.temporary.path[req.$key] = [filename, stats.size, stats.mtime.toUTCString()];
+		compile_gzip(tmp, function() {
+			delete F.temporary.processing[req.$key];
+			res.$file();
+		});
 	});
 
 	var index = 0;
@@ -5374,7 +5380,7 @@ F.compile_merge = function(res) {
 		if (filename.startsWith('http://') || filename.startsWith('https://')) {
 			U.request(filename, FLAGS_DOWNLOAD, function(err, data) {
 
-				var output = F.compile_content(req.extension, framework_internal.parseBlock(block, data), filename);
+				var output = compile_content(req.extension, framework_internal.parseBlock(block, data), filename);
 
 				if (req.extension === 'js') {
 					if (output[output.length - 1] !== ';')
@@ -5425,7 +5431,7 @@ F.compile_merge = function(res) {
 				return;
 			}
 
-			var output = F.compile_content(req.extension, framework_internal.parseBlock(block, buffer.toString(ENCODING)), filename);
+			var output = compile_content(req.extension, framework_internal.parseBlock(block, buffer.toString(ENCODING)), filename);
 			if (req.extension === 'js') {
 				if (output[output.length - 1] !== ';')
 					output += ';' + NEWLINE;
@@ -5451,7 +5457,7 @@ F.compile_merge = function(res) {
 	});
 
 	return F;
-};
+}
 
 function merge_debug_writer(writer, filename, extension, index, block) {
 	var plus = '===========================================================================================';
@@ -5492,7 +5498,7 @@ F.compile_virtual = function(res) {
 
 		if (!res.noCompress && (req.extension === 'js' || req.extension === 'css') && F.config['allow-compile'] && !REG_NOCOMPRESS.test(res.options.filename)) {
 			res.options.filename = tmpname;
-			F.compile_file(res);
+			compile_file(res);
 		} else {
 			F.temporary.path[req.$key] = [tmpname, size, stats.mtime.toUTCString()];
 			delete F.temporary.processing[req.$key];
@@ -5503,23 +5509,34 @@ F.compile_virtual = function(res) {
 	return;
 };
 
-F.compile_check = function(res) {
+function compile_check(res) {
 
 	var req = res.req;
 	var uri = req.uri;
 
 	if (F.routes.merge[uri.pathname]) {
-		F.compile_merge(res);
+		compile_merge(res);
 		return F;
 	}
 
 	fsFileExists(res.options.filename, function(e, size, sfile, stats) {
+
 		if (e) {
+
 			if (!res.noCompress && (req.extension === 'js' || req.extension === 'css') && F.config['allow-compile'] && !REG_NOCOMPRESS.test(res.options.filename))
-				return F.compile_file(res);
-			F.temporary.path[req.$key] = [res.options.filename, size, stats.mtime.toUTCString()];
-			delete F.temporary.processing[req.$key];
-			res.$file();
+				return compile_file(res);
+
+			var tmp = F.temporary.path[req.$key] = [res.options.filename, size, stats.mtime.toUTCString()];
+			if (F.config['allow-gzip'] && COMPRESSION[U.getContentType(req.extension)]) {
+				compile_gzip(tmp, function() {
+					res.$file();
+					delete F.temporary.processing[req.$key];
+				});
+			} else {
+				res.$file();
+				delete F.temporary.processing[req.$key];
+			}
+
 		} else if (F.isVirtualDirectory)
 			F.compile_virtual(res);
 		else {
@@ -5528,11 +5545,29 @@ F.compile_check = function(res) {
 			res.$file();
 		}
 	});
+}
 
-	return F;
-};
+function compile_gzip(arr, callback) {
 
-F.compile_content = function(extension, content, filename) {
+	// GZIP compression
+
+	var filename = F.path.temp('file' + arr[0].hash().toString().replace('-', 'a') + '.gz');
+	arr.push(filename);
+
+	var reader = Fs.createReadStream(arr[0]);
+	var writer = Fs.createWriteStream(filename);
+
+	writer.on('finish', function() {
+		fsFileExists(filename, function(e, size) {
+			arr.push(size);
+			callback();
+		});
+	});
+
+	reader.pipe(Zlib.createGzip(GZIPOPTIONS)).pipe(writer);
+}
+
+function compile_content(extension, content, filename) {
 
 	if (filename && REG_NOCOMPRESS.test(filename))
 		return content;
@@ -5555,7 +5590,7 @@ F.compile_content = function(extension, content, filename) {
 	}
 
 	return content;
-};
+}
 
 // OBSOLETE
 F.responseStatic = function(req, res, done) {
@@ -14768,7 +14803,7 @@ function extend_response(PROTO) {
 
 		if (name === undefined) {
 
-			if (F.isProcessing(req.$key)) {
+			if (F.temporary.processing[req.$key]) {
 				if (req.processing > F.config['default-request-timeout']) {
 					res.throw408();
 				} else {
@@ -14780,7 +14815,7 @@ function extend_response(PROTO) {
 
 			// waiting
 			F.temporary.processing[req.$key] = true;
-			F.compile_check(res);
+			compile_check(res);
 			return res;
 		}
 
@@ -14790,7 +14825,7 @@ function extend_response(PROTO) {
 
 		!accept && isGZIP(req) && (accept = 'gzip');
 
-		var compress = F.config['allow-gzip'] && COMPRESSION[contentType] && accept.indexOf('gzip') !== -1;
+		var compress = F.config['allow-gzip'] && COMPRESSION[contentType] && accept.indexOf('gzip') !== -1 && name.length > 2;
 		var range = req.headers.range;
 		var canCache = !res.$nocache && RELEASE && contentType !== 'text/cache-manifest';
 
@@ -14805,7 +14840,6 @@ function extend_response(PROTO) {
 			else
 				headers = range ? HEADERS.file_debug_range : HEADERS.file_debug;
 		}
-
 
 		if (req.$mobile)
 			headers.Vary = 'Accept-Encoding, User-Agent';
@@ -14855,8 +14889,10 @@ function extend_response(PROTO) {
 			res.end();
 			response_end(res);
 		} else if (compress) {
+			headers[HEADER_LENGTH] = name[4];
 			res.writeHead(res.options.code || 200, headers);
-			fsStreamRead(name[0], undefined, $file_compress, res);
+			//fsStreamRead(name[0], undefined, $file_compress, res);
+			fsStreamRead(name[3], undefined, $file_nocompress, res);
 		} else {
 			res.writeHead(res.options.code || 200, headers);
 			fsStreamRead(name[0], undefined, $file_nocompress, res);
@@ -15066,7 +15102,7 @@ function extend_response(PROTO) {
 			return res;
 		}
 
-		if (F.isProcessing(req.$key)) {
+		if (F.temporary.processing[req.$key]) {
 			if (req.processing > F.config['default-request-timeout']) {
 				res.throw408();
 			} else {
@@ -15265,6 +15301,7 @@ function $file_notmodified(res, name) {
 	response_end(res);
 }
 
+/*
 function $file_compress(stream, next, res) {
 	framework_internal.onFinished(res, function() {
 		framework_internal.destroyStream(stream);
@@ -15273,6 +15310,7 @@ function $file_compress(stream, next, res) {
 	stream.pipe(Zlib.createGzip()).pipe(res);
 	response_end(res);
 }
+*/
 
 function $file_nocompress(stream, next, res) {
 	stream.pipe(res);
