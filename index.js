@@ -5552,7 +5552,7 @@ function compile_gzip(arr, callback) {
 
 	// GZIP compression
 
-	var filename = F.path.temp('file' + arr[0].hash().toString().replace('-', 'a') + '.gz');
+	var filename = F.path.temp('file' + arr[0].hash().toString().replace('-', '0') + '.gz');
 	arr.push(filename);
 
 	var reader = Fs.createReadStream(arr[0]);
