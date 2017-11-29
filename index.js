@@ -86,7 +86,8 @@ const CLUSTER_CACHE_SET = { TYPE: 'cache-set' };
 const CLUSTER_CACHE_REMOVE = { TYPE: 'cache-remove' };
 const CLUSTER_CACHE_REMOVEALL = { TYPE: 'cache-remove-all' };
 const CLUSTER_CACHE_CLEAR = { TYPE: 'cache-clear' };
-const GZIPOPTIONS = { memLevel: Zlib.constants.Z_BEST_COMPRESSION };
+const GZIPFILE = { memLevel: Zlib.constants.Z_BEST_COMPRESSION };
+const GZIPSTREAM = { memLevel: Zlib.constants.Z_BEST_SPEED };
 
 Object.freeze(EMPTYOBJECT);
 Object.freeze(EMPTYARRAY);
@@ -5564,7 +5565,7 @@ function compile_gzip(arr, callback) {
 		});
 	});
 
-	reader.pipe(Zlib.createGzip(GZIPOPTIONS)).pipe(writer);
+	reader.pipe(Zlib.createGzip(GZIPFILE)).pipe(writer);
 }
 
 function compile_content(extension, content, filename) {
@@ -5840,7 +5841,7 @@ F.backup = function(filename, filelist, callback, filter) {
 				var data = U.createBufferSize(0);
 
 				writer.write(item.padRight(padding) + ':');
-				CLEANUP(Fs.createReadStream(file).pipe(Zlib.createGzip()).on('data', function(chunk) {
+				CLEANUP(Fs.createReadStream(file).pipe(Zlib.createGzip(GZIPFILE)).on('data', function(chunk) {
 
 					CONCAT[0] = data;
 					CONCAT[1] = chunk;
@@ -14590,7 +14591,7 @@ function extend_response(PROTO) {
 
 				if (compress) {
 					res.setHeader('Content-Encoding', 'gzip');
-					response.pipe(Zlib.createGzip()).pipe(res);
+					response.pipe(Zlib.createGzip(GZIPSTREAM)).pipe(res);
 					return;
 				}
 
@@ -15047,7 +15048,7 @@ function extend_response(PROTO) {
 		if (compress) {
 			res.writeHead(options.code || 200, headers);
 			res.on('error', () => options.stream.close());
-			options.stream.pipe(Zlib.createGzip()).pipe(res);
+			options.stream.pipe(Zlib.createGzip(GZIPSTREAM)).pipe(res);
 			framework_internal.onFinished(res, () => framework_internal.destroyStream(options.stream));
 			response_end(res);
 			return res;
