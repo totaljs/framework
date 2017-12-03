@@ -1,8 +1,11 @@
 ======= 2.9.2 (HOTFIX)
 
 - added: `controller.html(body, [headers])`
+- added: `F.cluster.master(name, [data])` - for child processes, this method emits an event in master process
+- added: `F.cluster.on(name, callback(data))` - master event listener
 
 - updated: `F.load()`, now supports `string` for `debug` or `release` mode
+- updated: `F.cluster.request()` can be executed from master process
 
 - fixed: schema validation (problem with Arrays)
 

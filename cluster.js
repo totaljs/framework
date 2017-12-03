@@ -21,22 +21,37 @@
 
 /**
  * @module FrameworkCluster
- * @version 2.7.0
+ * @version 2.9.2
  */
 
 const Cluster = require('cluster');
 const CLUSTER_REQ = { TYPE: 'req' };
 const CLUSTER_RES = { TYPE: 'res' };
 const CLUSTER_EMIT = { TYPE: 'emit' };
+const CLUSTER_MASTER = { TYPE: 'master' };
 const FORKS = [];
 
 var OPERATIONS = {};
 var CALLBACKS = {};
 var OPTIONS = {};
 var THREADS = 0;
+var MASTER = null;
+
+exports.on = function(name, callback) {
+	!MASTER && (MASTER = {});
+	if (MASTER[name])
+		MASTER.push(callback);
+	else
+		MASTER[name] = [callback];
+	return F;
+};
 
 exports.emit = function(name, data) {
-	if (F.isCluster) {
+	if (Cluster.isMaster) {
+		CLUSTER_EMIT.name = name;
+		CLUSTER_EMIT.data = data;
+		message(CLUSTER_EMIT);
+	} else if (F.isCluster) {
 		CLUSTER_EMIT.name = name;
 		CLUSTER_EMIT.data = data;
 		process.send(CLUSTER_EMIT);
@@ -44,10 +59,16 @@ exports.emit = function(name, data) {
 	return F;
 };
 
-exports.request = function(name, data, callback, timeout) {
+exports.master = function(name, data) {
+	if (F.isCluster) {
+		CLUSTER_MASTER.name = name;
+		CLUSTER_MASTER.data = data;
+		process.send(CLUSTER_MASTER);
+	}
+	return F;
+};
 
-	if (!F.isCluster)
-		return F;
+exports.request = function(name, data, callback, timeout) {
 
 	if (typeof(data) === 'function') {
 		timeout = callback;
@@ -65,7 +86,10 @@ exports.request = function(name, data, callback, timeout) {
 		obj.fn && obj.fn(new Error('Timeout.'), obj.response);
 	}, timeout || 3000, obj);
 
-	process.send(CLUSTER_REQ);
+	if (Cluster.isMaster)
+		mastersend(CLUSTER_REQ);
+	else
+		process.send(CLUSTER_REQ);
 	return F;
 };
 
@@ -104,16 +128,24 @@ exports.req = function(message) {
 exports.res = function(message) {
 	var callback = CALLBACKS[message.callback];
 	callback.fn && callback.response.push(message.data);
-	if (callback.response.length >= THREADS - 1) {
+
+	var count = message.target === 'master' ? THREADS : THREADS - 1;
+	if (callback.response.length >= count) {
 		delete CALLBACKS[callback.id];
 		clearTimeout(callback.timeout);
 		callback.fn && callback.fn(null, callback.response);
 	}
 };
 
-exports.http = function(count, mode, options) {
+exports.http = function(count, mode, options, callback) {
 	// Fork will obtain options automatically via event
-	Cluster.isMaster ? master(count, mode, options) : fork();
+	if (Cluster.isMaster) {
+		CLUSTER_REQ.id = 'master';
+		CLUSTER_RES.id = 'master';
+		CLUSTER_EMIT.id = 'master';
+		master(count, mode, options, callback);
+	} else
+		fork();
 };
 
 exports.restart = function(index) {
@@ -155,6 +187,8 @@ function master(count, mode, options, callback) {
 	console.log('Mode        : ' + mode);
 	console.log('====================================================\n');
 
+	THREADS = count;
+
 	for (var i = 0; i < count; i++)
 		exec(i);
 
@@ -163,6 +197,23 @@ function master(count, mode, options, callback) {
 }
 
 function message(m) {
+
+	if (m.TYPE === 'master') {
+		if (MASTER && MASTER[m.name]) {
+			for (var i = 0, length = MASTER[m.name].length; i < length; i++)
+				MASTER[m.name][i](m.data);
+		}
+	} else {
+		if (m.target === 'master') {
+			exports.res(m);
+		} else {
+			for (var i = 0, length = FORKS.length; i < length; i++)
+				FORKS[i] && FORKS[i].send(m);
+		}
+	}
+}
+
+function mastersend(m) {
 	for (var i = 0, length = FORKS.length; i < length; i++)
 		FORKS[i] && FORKS[i].send(m);
 }
