@@ -167,7 +167,10 @@ function master(count, mode, options, callback) {
 	if (count == null || count === 'auto')
 		count = require('os').cpus().length;
 
-	if (!options)
+	if (typeof(options) === 'function') {
+		callback = options;
+		options = {};
+	}  else if (!options)
 		options = {};
 
 	OPTIONS.count = count;
