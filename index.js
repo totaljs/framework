@@ -86,8 +86,8 @@ const CLUSTER_CACHE_SET = { TYPE: 'cache-set' };
 const CLUSTER_CACHE_REMOVE = { TYPE: 'cache-remove' };
 const CLUSTER_CACHE_REMOVEALL = { TYPE: 'cache-remove-all' };
 const CLUSTER_CACHE_CLEAR = { TYPE: 'cache-clear' };
-const GZIPFILE = { memLevel: Zlib.constants.Z_BEST_COMPRESSION };
-const GZIPSTREAM = { memLevel: Zlib.constants.Z_BEST_SPEED };
+const GZIPFILE = { memLevel: 9 };
+const GZIPSTREAM = { memLevel: 1 };
 
 Object.freeze(EMPTYOBJECT);
 Object.freeze(EMPTYARRAY);
