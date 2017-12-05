@@ -6835,7 +6835,7 @@ F.listener = function(req, res) {
 		return res.throw400();
 
 	var headers = req.headers;
-	req.$protocol = (req.connection && req.connection.encrypted) || headers['x-forwarded-protocol'] === 'https' ? 'https' : 'http';
+	req.$protocol =((req.connection && req.connection.encrypted) || (headers['x-forwarded-proto'] || ['x-forwarded-protocol']) === 'https') ? 'https' : 'http';
 
 	req.uri = framework_internal.parseURI(req);
 

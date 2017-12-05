@@ -8,6 +8,7 @@
 - updated: `F.cluster.request()` can be executed from master process
 
 - fixed: schema validation (problem with Arrays)
+- fixed: determines `x-forwarded-proto`
 
 - improved: GZIP compression
 
