@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkImage
- * @version 2.8.0
+ * @version 2.9.2
  */
 
 'use strict';
@@ -517,7 +517,7 @@ Image.prototype.extent = function(w, h) {
  * @return {Image}
  */
 Image.prototype.miniature = function(w, h, color, filter) {
-	return this.filter(filter || 'Box').thumbnail(w, h).background(color ? color : 'white').align('center').extent(w, h);
+	return this.filter(filter || 'Hamming').thumbnail(w, h).background(color ? color : 'white').align('center').extent(w, h);
 };
 
 /**
