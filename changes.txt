@@ -6,6 +6,7 @@
 
 - updated: `F.load()`, now supports `string` for `debug` or `release` mode
 - updated: `F.cluster.request()` can be executed from master process
+- updated: `Image.miniature()` change a default filter from `Box` to `Hamming`
 
 - fixed: schema validation (problem with Arrays)
 - fixed: determines `x-forwarded-proto`
