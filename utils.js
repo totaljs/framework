@@ -4291,7 +4291,7 @@ Array.prototype.last = function(def) {
 	return item === undefined ? def : item;
 };
 
-Array.prototype.quicksort = Array.prototype.orderBy = function(name, asc, maxlength) {
+Array.prototype.quicksort = Array.prototype.orderBy = function(name, asc) {
 
 	var length = this.length;
 	if (!length || length === 1)
@@ -4301,9 +4301,6 @@ Array.prototype.quicksort = Array.prototype.orderBy = function(name, asc, maxlen
 		asc = name;
 		name = undefined;
 	}
-
-	if (maxlength === undefined)
-		maxlength = 5;
 
 	if (asc === undefined)
 		asc = true;
@@ -4339,7 +4336,7 @@ Array.prototype.quicksort = Array.prototype.orderBy = function(name, asc, maxlen
 
 		// String
 		if (type === 1) {
-			return va && vb ? (asc ? COMPARER(va.length > maxlength ? va.substring(0, maxlength) : va, vb.length > maxlength ? vb.substring(0, maxlength) : vb) : COMPARER(vb.length > maxlength ? vb.substring(0, maxlength) : vb, va.length > maxlength ? va.substring(0, maxlength) : va)) : 0;
+			return va && vb ? (asc ? COMPARER(va, vb) : COMPARER(vb, va)) : 0;
 		} else if (type === 2) {
 			return va > vb ? (asc ? 1 : -1) : va < vb ? (asc ? -1 : 1) : 0;
 		} else if (type === 3) {

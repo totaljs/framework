@@ -11,6 +11,8 @@
 - fixed: schema validation (problem with Arrays)
 - fixed: determines `x-forwarded-proto`
 
+- removed: max. sort `string` length
+
 - improved: GZIP compression
 
 ======= 2.9.1 (HOTFIX)
