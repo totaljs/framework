@@ -5558,7 +5558,7 @@ function compile_gzip(arr, callback) {
 	var reader = Fs.createReadStream(arr[0]);
 	var writer = Fs.createWriteStream(filename);
 
-	writer.on('finish', function() {
+	writer.on('close', function() {
 		fsFileExists(filename, function(e, size) {
 			arr.push(size);
 			callback();
@@ -14894,9 +14894,13 @@ function extend_response(PROTO) {
 			res.end();
 			response_end(res);
 		} else if (compress) {
-			headers[HEADER_LENGTH] = name[4];
+
+			if (name[4])
+				headers[HEADER_LENGTH] = name[4];
+			else
+				delete headers[HEADER_LENGTH];
+
 			res.writeHead(res.options.code || 200, headers);
-			//fsStreamRead(name[0], undefined, $file_compress, res);
 			fsStreamRead(name[3], undefined, $file_nocompress, res);
 		} else {
 			res.writeHead(res.options.code || 200, headers);
