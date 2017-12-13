@@ -1228,7 +1228,6 @@ function nosqlsortvalue(a, b, sorter) {
 	if (type === 'number')
 		return sorter.asc ? a > b : a < b;
 	else if (type === 'string') {
-		a = (a.length > 5 ? a.substring(0, 5) : a);
 		var c = COMPARER(a, b);
 		return sorter.asc ? c === 1 : c === -1;
 	} else if (type === 'boolean')
@@ -1241,9 +1240,6 @@ function nosqlsortvalue(a, b, sorter) {
 
 function nosqlresort(arr, builder, doc) {
 	var b = doc[builder.$sort.name];
-	if (typeof(b) === 'string')
-		b = (b.length > 5 ? b.substring(0, 5) : b).toLowerCase().removeDiacritics();
-
 	var beg = 0;
 	var length = arr.length;
 	var tmp = length - 1;
