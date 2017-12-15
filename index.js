@@ -8532,6 +8532,7 @@ F.$routeStatic = function(name, directory, theme) {
 	if (RELEASE && val)
 		return val;
 
+
 	if (name[0] === '~') {
 		name = name.substring(name[1] === '~' ? 2 : 1);
 		theme = '';
@@ -8540,9 +8541,11 @@ F.$routeStatic = function(name, directory, theme) {
 		var index = name.indexOf('/');
 		if (index !== -1) {
 			theme = name.substring(1, index);
-			name = name.substring(index + 1);
-			if (theme === '?')
+			if (theme === '?') {
 				theme = F.config['default-theme'];
+				name = name.substring(index);
+			} else
+				name = name.substring(index + 1);
 		}
 	}
 

@@ -10,6 +10,8 @@
 
 - fixed: schema validation (problem with Arrays)
 - fixed: determines `x-forwarded-proto`
+- fixed: nested schema validation
+- fixed: themes static routing
 
 - removed: max. sort `string` length
 
