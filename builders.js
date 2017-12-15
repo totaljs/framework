@@ -524,7 +524,7 @@ SchemaBuilderEntity.prototype.$parse = function(name, value, required, custom) {
 		return result;
 	}
 
-	if (lower.contains(['string', 'text', 'varchar', 'nvarchar'])) {
+	if (['string', 'text'].indexOf(lower) !== -1) {
 		result.type = 3;
 		return parseLength(lower, result);
 	}
@@ -594,22 +594,22 @@ SchemaBuilderEntity.prototype.$parse = function(name, value, required, custom) {
 		return result;
 	}
 
-	if (lower.contains(['int', 'byte'])) {
+	if (['int', 'integer', 'byte'].indexOf(lower) !== -1) {
 		result.type = 1;
 		return result;
 	}
 
-	if (lower.contains(['decimal', 'number', 'float', 'double'])) {
+	if (['decimal', 'number', 'float', 'double'].indexOf(lower) !== -1) {
 		result.type = 2;
 		return result;
 	}
 
-	if (lower.indexOf('bool') !== -1) {
+	if (['bool', 'boolean'].indexOf(lower) !== -1) {
 		result.type = 4;
 		return result;
 	}
 
-	if (lower.contains(['date', 'time'])) {
+	if (['date', 'time', 'datetime'].indexOf(lower) !== -1) {
 		result.type = 5;
 		return result;
 	}
@@ -1390,6 +1390,7 @@ SchemaBuilderEntity.prototype.make = function(model, filter, callback, argument,
 	}
 
 	var output = this.prepare(model);
+
 	if (novalidate) {
 		callback && callback(null, output, argument);
 		return output;

@@ -1992,6 +1992,7 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 			continue;
 
 		var TYPE = collection[schema].schema[name];
+
 		if (TYPE.can && !TYPE.can(model))
 			continue;
 
@@ -2036,6 +2037,12 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 					}
 				}
 			}
+			continue;
+		}
+
+		if (TYPE.type === 7) {
+			// Another schema
+			exports.validate_builder(value, error, TYPE.raw, collection, current + name, undefined, undefined, pluspath);
 			continue;
 		}
 
