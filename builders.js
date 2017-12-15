@@ -524,24 +524,24 @@ SchemaBuilderEntity.prototype.$parse = function(name, value, required, custom) {
 		return result;
 	}
 
-	if (['string', 'text'].indexOf(lower) !== -1) {
+	if ((/^(string|text)+(\(\d+\))?$/).test(lower)) {
 		result.type = 3;
 		return parseLength(lower, result);
 	}
 
-	if (lower.indexOf('capitalize') !== -1 || lower.indexOf('camel') !== -1) {
+	if ((/^(capitalize|camelcase|camelize)+(\(\d+\))?$/).test(lower)) {
 		result.type = 3;
 		result.subtype = 'capitalize';
 		return parseLength(lower, result);
 	}
 
-	if (lower.indexOf('lower') !== -1) {
+	if ((/^(lower|lowercase)+(\(\d+\))?$/).test(lower)) {
 		result.subtype = 'lowercase';
 		result.type = 3;
 		return parseLength(lower, result);
 	}
 
-	if (lower.indexOf('upper') !== -1) {
+	if ((/^(upper|uppercase)+(\(\d+\))?$/).test(lower)) {
 		result.subtype = 'uppercase';
 		result.type = 3;
 		return parseLength(lower, result);
