@@ -335,28 +335,28 @@ global.$QUERY = function(schema, options, callback, controller) {
 	schema = parseSchema(schema);
 	var o = framework_builders.getschema(schema[0], schema[1]);
 	o && o.query(options, callback, controller);
-	return o ? true : false;
+	return !!o;
 };
 
 global.$GET = function(schema, options, callback, controller) {
 	schema = parseSchema(schema);
 	var o = framework_builders.getschema(schema[0], schema[1]);
 	o && o.get(options, callback, controller);
-	return o ? true : false;
+	return !!o;
 };
 
 global.$WORKFLOW = function(schema, name, options, callback, controller) {
 	schema = parseSchema(schema);
 	var o = framework_builders.getschema(schema[0], schema[1]);
 	o && o.workflow2(name, options, callback, controller);
-	return o ? true : false;
+	return !!o;
 };
 
 global.$TRANSFORM = function(schema, name, options, callback, controller) {
 	schema = parseSchema(schema);
 	var o = framework_builders.getschema(schema[0], schema[1]);
 	o && o.transform2(name, options, callback, controller);
-	return o ? true : false;
+	return !!o;
 };
 
 global.$ASYNC = function(schema, callback, index, controller) {
@@ -376,7 +376,7 @@ global.$OPERATION = function(schema, name, options, callback, controller) {
 	schema = parseSchema(schema);
 	var o = framework_builders.getschema(schema[0], schema[1]);
 	o && o.operation2(name, options, callback, controller);
-	return o ? true : false;
+	return !!o;
 };
 
 global.DB = global.DATABASE = function() {
@@ -476,7 +476,7 @@ global.SUCCESS = function(success, value) {
 	} else if (success == null)
 		success = true;
 
-	SUCCESSHELPER.success = success ? true : false;
+	SUCCESSHELPER.success = !!success;
 	SUCCESSHELPER.value = value == null ? undefined : value;
 	SUCCESSHELPER.error = err ? err : undefined;
 	return SUCCESSHELPER;
@@ -5928,7 +5928,7 @@ F.isProcessed = function(filename) {
 F.isProcessing = function(filename) {
 
 	if (!filename.url)
-		return F.temporary.processing[filename] ? true : false;
+		return !!F.temporary.processing[filename];
 
 	var name = filename.url;
 	var index = name.indexOf('?');
@@ -5937,7 +5937,7 @@ F.isProcessing = function(filename) {
 		name = name.substring(0, index);
 
 	filename = U.combine(F.config['directory-public'], $decodeURIComponent(name));
-	return F.temporary.processing[filename] ? true : false;
+	return !!F.temporary.processing[filename];
 };
 
 /**

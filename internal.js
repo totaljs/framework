@@ -3268,7 +3268,7 @@ exports.parseBlock = function(name, content) {
 
 function existsSync(filename) {
 	try {
-		return Fs.statSync(filename) ? true : false;
+		return !!Fs.statSync(filename);
 	} catch (e) {
 		return false;
 	}

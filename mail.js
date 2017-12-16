@@ -245,11 +245,9 @@ Message.prototype.reply = function(address, clear) {
 };
 
 Message.prototype.attachment = function(filename, name) {
-	if (!name)
-		name = framework_utils.getName(filename);
+	!name && (name = framework_utils.getName(filename));
 	var extension = framework_utils.getExtension(name);
-	if (!this.files)
-		this.files = [];
+	!this.files && (this.files = []);
 	this.files.push({ name: name, filename: filename, contentType: framework_utils.getContentType(extension), extension: extension });
 	return this;
 };
@@ -275,10 +273,8 @@ Message.prototype.manually = function() {
  * @returns {Message}
  */
 Message.prototype.attachmentInline = function(filename, name, contentId) {
-	if (!name)
-		name = framework_utils.getName(filename);
-	if (!this.files)
-		this.files = [];
+	!name && (name = framework_utils.getName(filename));
+	!this.files && (this.files = []);
 	var extension = framework_utils.getExtension(name);
 	this.files.push({ name: name, filename: filename, contentType: framework_utils.getContentType(extension), disposition: 'inline', contentId: contentId, extension: extension });
 	return this;
