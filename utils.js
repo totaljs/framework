@@ -1835,7 +1835,7 @@ exports.getExtension = function(filename, raw) {
 			c = filename.substring(i + 1, end);
 			return raw ? c : c.toLowerCase();
 		}
-		else if (c === '/')
+		else if (c === '/' || c === '\\')
 			return '';
 	}
 	return '';
