@@ -8492,8 +8492,6 @@ F.$configure_configs = function(arr, rewrite) {
  * @return {String}
  */
 F.routeScript = function(name, theme) {
-	if (!name.endsWith('.js'))
-		name += '.js';
 	return F.$routeStatic(name, F.config['static-url-script'], theme);
 };
 
@@ -8503,7 +8501,7 @@ F.routeScript = function(name, theme) {
  * @return {String}
  */
 F.routeStyle = function(name, theme) {
-	return F.$routeStatic(name + (name.endsWith('.css') ? '' : '.css'), F.config['static-url-style'], theme);
+	return F.$routeStatic(name, F.config['static-url-style'], theme);
 };
 
 F.routeImage = function(name, theme) {
