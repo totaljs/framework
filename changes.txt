@@ -3,6 +3,8 @@
 - added: `controller.html(body, [headers])`
 - added: `F.cluster.master(name, [data])` - for child processes, this method emits an event in master process
 - added: `F.cluster.on(name, callback(data))` - master event listener
+- added: `LOGMAIL()` global alias for `F.logmail()`
+- added: `MAIL()` global alias for `F.mail()`
 
 - updated: `F.load()`, now supports `string` for `debug` or `release` mode
 - updated: `F.cluster.request()` can be executed from master process
