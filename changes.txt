@@ -17,6 +17,7 @@
 
 - removed: max. sort `string` length
 - removed: `auto` appending `.css` and `.js` extension in view engine
+- removed: experimental `defer` feature
 
 - improved: GZIP compression
 - improved: code

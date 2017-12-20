@@ -627,7 +627,6 @@ function Framework() {
 		'allow-performance': false,
 		'allow-custom-titles': false,
 		'allow-cache-snapshot': false,
-		'allow-defer': false,
 		'allow-debug': false,
 		'allow-head': false,
 		'allow-filter-errors': true,
@@ -727,8 +726,7 @@ function Framework() {
 		other: {},
 		internal: {}, // controllers/modules names for the routing
 		owners: {},
-		ready: {},
-		defer: {}
+		ready: {}
 	};
 
 	this.stats = {
@@ -2992,12 +2990,6 @@ F.error = function(err, name, uri) {
 		F.errors.length > 50 && F.errors.shift();
 	}
 
-	if (!name && !uri && err.stack) {
-		var defer = err.stack.match(/\/\w+\/defer-.*?\.js/);
-		if (defer)
-			err.stack = err.stack.replace(defer, defer.toString()).replace(/\/\w+\/defer-/, '/').split('$').join('/');
-	}
-
 	F.onError(err, name, uri);
 	return F;
 };
@@ -3497,7 +3489,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 
 	if (type === 'middleware') {
 
-		F.routes.middleware[name] = typeof(declaration) === 'function' ? declaration : eval(parseDefer(declaration));
+		F.routes.middleware[name] = typeof(declaration) === 'function' ? declaration : eval(declaration);
 		F._length_middleware = Object.keys(F.routes.middleware).length;
 
 		next && next();
@@ -3622,7 +3614,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 			try {
 				var filecomponent = F.path.temp('component-' + name + '.js');
 				_owner = (packageName ? packageName + '@' : '') + type + '#' + name;
-				Fs.writeFileSync(filecomponent, parseDefer(content.install.trim()));
+				Fs.writeFileSync(filecomponent, content.install.trim());
 				obj = require(filecomponent);
 				(function(name) {
 					setTimeout(function() {
@@ -3724,7 +3716,6 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 	if (type === 'theme') {
 
 		_owner = (packageName ? packageName + '@' : '') + type + '#' + name;
-		declaration = parseDeferFile(type, declaration);
 		obj = require(declaration);
 		obj.$owner = _owner;
 		F.temporary.owners[_owner] = true;
@@ -3809,7 +3800,6 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 		try {
 
 			if (useRequired) {
-				declaration = parseDeferFile(type, declaration);
 				delete require.cache[require.resolve(declaration)];
 				obj = require(declaration);
 
@@ -3818,7 +3808,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 				})(require.resolve(declaration));
 			}
 			else
-				obj = typeof(declaration) === 'function' ? eval('(' + parseDefer(declaration.toString()) + ')()') : eval(parseDefer(declaration));
+				obj = typeof(declaration) === 'function' ? eval('(' + declaration.toString() + ')()') : eval(declaration);
 
 		} catch (ex) {
 			err = ex;
@@ -3858,7 +3848,6 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 			}
 
 			if (useRequired) {
-				declaration = parseDeferFile(type, declaration);
 				delete require.cache[require.resolve(declaration)];
 				obj = require(declaration);
 				content = Fs.readFileSync(declaration).toString(ENCODING);
@@ -3867,7 +3856,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 				})(require.resolve(declaration));
 			}
 			else {
-				obj = typeof(declaration) === 'function' ? eval('(' + parseDefer(declaration.toString()) + ')()') : eval(parseDefer(declaration));
+				obj = typeof(declaration) === 'function' ? eval('(' + declaration.toString() + ')()') : eval(declaration);
 				content = declaration.toString();
 			}
 
@@ -3921,7 +3910,6 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 		try {
 
 			if (useRequired) {
-				declaration = parseDeferFile(type, declaration);
 				obj = require(declaration);
 				(function(name) {
 					setTimeout(() => delete require.cache[name], 1000);
@@ -3939,7 +3927,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 				}
 
 				var filename = F.path.temporary(plus + 'installed-' + type + '-' + U.GUID(10) + '.js');
-				Fs.writeFileSync(filename, parseDefer(declaration));
+				Fs.writeFileSync(filename, declaration);
 				obj = require(filename);
 
 				(function(name, filename) {
@@ -4023,7 +4011,6 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 
 		try {
 			if (useRequired) {
-				declaration = parseDeferFile(type, declaration);
 				obj = require(declaration);
 				(function(name) {
 					setTimeout(function() {
@@ -4042,7 +4029,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 				}
 
 				filename = F.path.temporary(plus + 'installed-' + type + '-' + U.GUID(10) + '.js');
-				Fs.writeFileSync(filename, parseDefer(declaration));
+				Fs.writeFileSync(filename, declaration);
 				obj = require(filename);
 				(function(name, filename) {
 					setTimeout(function() {
@@ -4256,8 +4243,7 @@ F.$restart = function() {
 			other: {},
 			internal: {},
 			owners: {},
-			ready: {},
-			defer: {}
+			ready: {}
 		};
 
 		F.modificators = null;
@@ -5177,7 +5163,6 @@ F.usage = function(detailed) {
 	var staticNotfound = Object.keys(F.temporary.notfound);
 	var staticRange = Object.keys(F.temporary.range);
 	var redirects = Object.keys(F.routes.redirects);
-	var defer = Object.keys(F.temporary.defer);
 	var output = {};
 
 	output.framework = {
@@ -5221,8 +5206,7 @@ F.usage = function(detailed) {
 		streaming: staticRange.length,
 		modificator:  F.modificators ? F.modificators.length : 0,
 		viewphrases: $VIEWCACHE.length,
-		uptodates: F.uptodates ? F.uptodates.length : 0,
-		defer: defer.length
+		uptodates: F.uptodates ? F.uptodates.length : 0
 	};
 
 	output.routing = {
@@ -8394,7 +8378,6 @@ F.$configure_configs = function(arr, rewrite) {
 			case 'allow-compile-script':
 			case 'allow-compile-style':
 			case 'allow-debug':
-			case 'allow-defer':
 			case 'allow-gzip':
 			case 'allow-performance':
 			case 'allow-static-files':
@@ -15834,64 +15817,6 @@ function parseSchema(name) {
 
 	F.temporary.internal['$$$' + name] = schema;
 	return schema;
-}
-
-function parseDefer(code) {
-
-	if (!F.config['allow-defer'])
-		return code;
-
-	var beg = code.indexOf('function DEFER(');
-	if (beg === -1)
-		return code;
-
-	var b = code.indexOf('{', beg);
-	var end = -1;
-	var count = 0;
-	var indexer = b + 1;
-
-	while (true) {
-		var c = code[indexer++];
-
-		if (!c)
-			break;
-
-		if (c === '{') {
-			count++;
-			continue;
-		}
-
-		if (c === '}') {
-			if (count) {
-				count--;
-				continue;
-			}
-			end = indexer;
-			break;
-		}
-	}
-
-	if (end === -1)
-		return code;
-
-	var scope = code.substring(beg, end);
-	var id = 'D' + scope.hash().toString().replace('-', '_');
-	code = code.replace(scope, 'F.temporary.defer.' + id);
-	scope = U.minifyScript(scope.trim().replace(' DEFER(', '('));
-	F.temporary.defer[id] = new Function('return ' + parseDefer(scope))();
-	return parseDefer(code);
-}
-
-function parseDeferFile(type, filename) {
-	if (!F.config['allow-defer'])
-		return filename;
-	var data = Fs.readFileSync(filename).toString(ENCODING);
-	if (data.indexOf(' DEFER(') === -1)
-		return filename;
-	var tmp = F.path.temp('defer-' + type + '$' + U.getName(filename));
-	Fs.writeFileSync(tmp, parseDefer(data));
-	F.config['allow-debug'] && F.consoledebug('defer', filename + ' <--> ' + tmp);
-	return tmp;
 }
 
 // Because of controller prototypes
