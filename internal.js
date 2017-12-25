@@ -1633,6 +1633,7 @@ function view_parse_localization(content, language) {
 
 // Escaping ", ' and ` chars
 function localize(language, command) {
+
 	var output = F.translate(language, command.command);
 
 	if (command.escape) {
@@ -1652,8 +1653,6 @@ function localize(language, command) {
 
 	return output;
 }
-
-console.log(localize('sk', { escape: '`' }));
 
 function view_parse(content, minify, filename, controller) {
 
