@@ -1621,7 +1621,7 @@ function view_parse_localization(content, language) {
 	while (command) {
 
 		if (command)
-			output += content.substring(end ? end + 1 : 0, command.beg) + (command.command ? F.translate(language, command.command) : '');
+			output += content.substring(end ? end + 1 : 0, command.beg) + (command.command ? localize(language, command) : '');
 
 		end = command.end;
 		command = view_find_localization(content, command.end);
@@ -1629,6 +1629,11 @@ function view_parse_localization(content, language) {
 
 	output += content.substring(end + 1);
 	return output;
+}
+
+function localize(language, command) {
+	var output = F.translate(language, command.command);
+	return command.escape ? output.replace(new RegExp(command.escape, 'g'), '\\' + command.escape) : output;
 }
 
 function view_parse(content, minify, filename, controller) {
@@ -2359,6 +2364,8 @@ function view_find_localization(content, index) {
 
 	var length = content.length;
 	var count = 0;
+	var beg = content[index - 1];
+	var esc = '';
 
 	for (var i = index + 2; i < length; i++) {
 		var c = content[i];
@@ -2375,11 +2382,10 @@ function view_find_localization(content, index) {
 			continue;
 		}
 
-		return {
-			beg: index,
-			end: i,
-			command: content.substring(index + 2, i).trim()
-		};
+		var end = content.substring(i + 1, i + 2);
+		if (beg === end && beg === '"' || beg === '\'' || beg === '`')
+			esc = beg;
+		return { beg: index, end: i, command: content.substring(index + 2, i).trim(), escape: esc };
 	}
 
 	return null;
