@@ -1631,10 +1631,29 @@ function view_parse_localization(content, language) {
 	return output;
 }
 
+// Escaping ", ' and ` chars
 function localize(language, command) {
 	var output = F.translate(language, command.command);
-	return command.escape ? output.replace(new RegExp(command.escape, 'g'), '\\' + command.escape) : output;
+
+	if (command.escape) {
+		var index = 0;
+		while (true) {
+			index = output.indexOf(command.escape, index);
+			if (index === -1)
+				break;
+			var c = output[index - 1];
+			if (c !== '\\') {
+				output = output.substring(0, index) + '\\' + output.substring(index);
+				index++;
+			} else
+				index += 2;
+		}
+	}
+
+	return output;
 }
+
+console.log(localize('sk', { escape: '`' }));
 
 function view_parse(content, minify, filename, controller) {
 
