@@ -1055,10 +1055,16 @@ Database.prototype.$reader2 = function(filename, items, callback, reader) {
 
 	var filter = items;
 	var length = filter.length;
-	var first = length <= 1;
+	var first = true;
 
-	for (var i = 0; i < length; i++)
+	for (var i = 0; i < length; i++) {
+		if (!filter[i].builder.$first)
+			first = false;
 		filter[i].scalarcount = 0;
+	}
+
+	if (first && length > 1)
+		first = false;
 
 	reader && reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
 
