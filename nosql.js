@@ -1045,8 +1045,7 @@ Database.prototype.$reader2 = function(filename, items, callback, reader) {
 	if (self.readonly) {
 		if (reader === undefined) {
 			U.download(filename, FLAGS_READ, function(err, response) {
-				if (err)
-					F.error(err, 'NoSQL database: ' + self.name);
+				err && F.error(err, 'NoSQL database: ' + self.name);
 				self.$reader2(filename, items, callback, err ? null : response);
 			});
 			return self;
@@ -1056,14 +1055,10 @@ Database.prototype.$reader2 = function(filename, items, callback, reader) {
 
 	var filter = items;
 	var length = filter.length;
-	var first = true;
+	var first = length <= 1;
 
-	for (var i = 0; i < length; i++) {
-		var item = filter[i].builder;
-		if (!item.$first)
-			first = false;
+	for (var i = 0; i < length; i++)
 		filter[i].scalarcount = 0;
-	}
 
 	reader && reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
 
