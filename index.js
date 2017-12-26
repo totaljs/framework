@@ -7708,7 +7708,7 @@ F.resource = function(name, key) {
 
 	var res = F.resources[name];
 	if (res)
-		return res[key] || '';
+		return res[key] == null ? '' : res[key];
 
 	var routes = F.routes.resources[name];
 	var body = '';
@@ -7722,12 +7722,16 @@ F.resource = function(name, key) {
 	}
 
 	var filename = U.combine(F.config['directory-resources'], name + '.resource');
+	var empty = false;
 	if (existsSync(filename))
 		body += (body ? '\n' : '') + Fs.readFileSync(filename).toString(ENCODING);
+	else
+		empty = true;
 
 	var obj = body.parseConfig();
 	F.resources[name] = obj;
-	return obj[key] || '';
+	obj.$empty = empty;
+	return obj[key] == null ? '' : obj[key];
 };
 
 /**

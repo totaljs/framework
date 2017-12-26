@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkInternal
- * @version 2.9.0
+ * @version 2.9.2
  */
 
 'use strict';
@@ -1633,6 +1633,11 @@ function view_parse_localization(content, language) {
 
 // Escaping ", ' and ` chars
 function localize(language, command) {
+
+	!language && (language = 'default');
+
+	if (F.resources[language] && F.resources[language].$empty)
+		return command.command;
 
 	var output = F.translate(language, command.command);
 
