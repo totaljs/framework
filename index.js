@@ -11119,6 +11119,7 @@ Controller.prototype.$import = function() {
 				break;
 			case '.jpg':
 			case '.gif':
+			case '.svg':
 			case '.png':
 			case '.jpeg':
 				builder += self.routeImage(filename);
