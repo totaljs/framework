@@ -3038,6 +3038,7 @@ Counter.prototype.stats = Counter.prototype.stats_sum = function(top, year, mont
 
 	reader.on('end', function() {
 		self.type = 0;
+		output.sort(counter_sort_sum);
 		callback && callback(null, output);
 	});
 

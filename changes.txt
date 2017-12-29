@@ -15,6 +15,7 @@
 - fixed: nested schema validation
 - fixed: themes static routing
 - fixed: NoSQL reader
+- fixed: NoSQL counter (sorting while reading stats)
 
 - removed: max. sort `string` length
 - removed: `auto` appending `.css` and `.js` extension in view engine
