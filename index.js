@@ -3176,22 +3176,20 @@ F.$load = function(types, targetdirectory, callback, packageName) {
 
 	if (!types || types.indexOf('packages') !== -1) {
 		operations.push(function(resume) {
-
 			dir = U.combine(targetdirectory, isPackage ? '/packages/' : F.config['directory-packages']);
 			arr = [];
 			listing(dir, 0, arr, '.package');
 			var dirtmp = U.$normalize(dir);
 
-			arr.forEach(function(item) {
+			arr.wait(function(item, next2) {
 
 				if (!item.is) {
 					dependencies.push(next => F.install('package', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next, packageName));
-					return resume();
+					return next2();
 				}
 
 				U.ls(item.filename, function(files, directories) {
 					var dir = F.path.temp(item.name) + '.package';
-
 					!existsSync(dir) && Fs.mkdirSync(dir);
 
 					for (var i = 0, length = directories.length; i < length; i++) {
@@ -3200,20 +3198,23 @@ F.$load = function(types, targetdirectory, callback, packageName) {
 					}
 
 					files.wait(function(filename, next) {
+
 						var stream = Fs.createReadStream(filename);
-						stream.pipe(Fs.createWriteStream(Path.join(dir, filename.replace(item.filename, '').replace(/\.package$/i, ''))));
-						stream.on('end', next);
+						var writer = Fs.createWriteStream(Path.join(dir, filename.replace(item.filename, '').replace(/\.package$/i, '')));
+						stream.pipe(writer);
+						writer.on('finish', next);
+
 					}, function() {
+
 						// Windows sometimes doesn't load package and this delay solves the problem.
 						setTimeout(function() {
-							resume();
 							dependencies.push(next => F.install('package2', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next, packageName));
+							next2();
 						}, 50);
+
 					});
 				});
-			});
-
-			!arr.length && resume();
+			}, resume);
 		});
 	}
 
