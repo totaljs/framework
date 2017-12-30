@@ -3089,7 +3089,7 @@ function onFinished(stream, fn) {
 
 	// Both
 	stream.on('error', callback);
-	stream.on('close', callback);
+	// stream.on('close', callback);
 }
 
 exports.encodeUnicodeURL = function(url) {
