@@ -302,8 +302,8 @@ global.EACHSCHEMA = (group, fn) => framework_builders.eachschema(group, fn);
 global.FUNCTION = (name) => F.functions[name];
 global.ROUTING = (name) => F.routing(name);
 global.SCHEDULE = (date, each, fn, param) => F.schedule(date, each, fn, param);
-global.FINISHED = (stream, callback) => framework_internal.onFinished(stream, callback);
-global.DESTROY = (stream) => framework_internal.destroyStream(stream);
+global.FINISHED = framework_internal.onFinished;
+global.DESTROY = framework_internal.destroyStream;
 global.UID = () => UIDGENERATOR.date + (++UIDGENERATOR.index).padLeft(4, '0') + UIDGENERATOR.instance + (UIDGENERATOR.index % 2 ? 1 : 0);
 global.ROUTE = (a, b, c, d, e) => F.route(a, b, c, d, e);
 global.GROUP = (a, b) => F.group(a, b);
@@ -435,23 +435,13 @@ global.NEWSCHEMA = function(group, name) {
 };
 
 global.CLEANUP = function(stream, callback) {
-
-	var fn = function() {
-		FINISHED(stream, function() {
-			DESTROY(stream);
-			if (callback) {
-				callback();
-				callback = null;
-			}
-		});
-	};
-
-	stream.on('error', fn);
-
-	if (stream.readable)
-		stream.on('end', fn);
-	else
-		stream.on('finish', fn);
+	FINISHED(stream, function() {
+		DESTROY(stream);
+		if (callback) {
+			callback();
+			callback = null;
+		}
+	});
 };
 
 global.SUCCESS = function(success, value) {
@@ -15046,13 +15036,15 @@ function extend_response(PROTO) {
 			res.writeHead(options.code || 200, headers);
 			res.on('error', () => options.stream.close());
 			options.stream.pipe(Zlib.createGzip(GZIPSTREAM)).pipe(res);
-			framework_internal.onFinished(res, () => framework_internal.destroyStream(options.stream));
+			// @TODO: destroy
+			// framework_internal.onFinished(res, () => framework_internal.destroyStream(options.stream));
 			response_end(res);
 			return res;
 		}
 
 		res.writeHead(options.code || 200, headers);
-		framework_internal.onFinished(res, () => framework_internal.destroyStream(options.stream));
+		// @TODO: destroy
+		// framework_internal.onFinished(res, () => framework_internal.destroyStream(options.stream));
 		options.stream.pipe(res);
 		response_end(res);
 		return res;
@@ -15299,23 +15291,17 @@ function $file_notmodified(res, name) {
 	response_end(res);
 }
 
-/*
-function $file_compress(stream, next, res) {
-	framework_internal.onFinished(res, function() {
-		framework_internal.destroyStream(stream);
-		next();
-	});
-	stream.pipe(Zlib.createGzip()).pipe(res);
-	response_end(res);
-}
-*/
-
 function $file_nocompress(stream, next, res) {
 	stream.pipe(res);
+	stream.on('error', next);
+	stream.on('end', next);
+	// @TODO: destroy
+	/*
 	framework_internal.onFinished(res, function() {
 		framework_internal.destroyStream(stream);
 		next();
 	});
+	*/
 	response_end(res);
 }
 
@@ -15366,10 +15352,16 @@ function $file_range(name, range, headers, res) {
 
 function $file_range_callback(stream, next, res) {
 
+	stream.on('error', next);
+	stream.on('end', next);
+
+	// @TODO: destroy
+	/*
 	framework_internal.onFinished(res, function() {
 		framework_internal.destroyStream(stream);
 		next();
 	});
+	*/
 
 	stream.pipe(res);
 	response_end(res);

@@ -831,15 +831,21 @@ HttpFile.prototype.md5 = function(callback) {
 	var self = this;
 	var md5 = Crypto.createHash('md5');
 	var stream = Fs.createReadStream(self.path);
+
 	stream.on('data', (buffer) => md5.update(buffer));
 	stream.on('error', function(error) {
-		callback(error, null);
-		callback = null;
+		if (callback) {
+			callback(error, null);
+			callback = null;
+		}
 	});
 
 	onFinished(stream, function() {
 		destroyStream(stream);
-		callback && callback(null, md5.digest('hex'));
+		if (callback) {
+			callback(null, md5.digest('hex'));
+			callback = null;
+		}
 	});
 
 	return self;
@@ -3058,173 +3064,32 @@ exports.parseURI = function(req) {
 function destroyStream(stream) {
 	if (stream instanceof ReadStream) {
 		stream.destroy();
-		if (typeof(stream.close) !== 'function')
-			return stream;
-		stream.on('open', function() {
+		typeof(stream.close) === 'function' && stream.on('open', function() {
 			typeof(this.fd) === 'number' && this.close();
 		});
-		return stream;
-	}
-	stream instanceof Stream && typeof(stream.destroy) === 'function' && stream.destroy();
+	} else if (stream instanceof Stream)
+		typeof(stream.destroy) === 'function' && stream.destroy();
 	return stream;
 }
 
-/*
- * ee-first (first, listener)
- * Copyright(c) 2014 Jonathan Ong <me@jongleberry.com>
- * MIT Licensed
- * https://github.com/jonathanong/ee-first
- */
-function first(stuff, done) {
-	var cleanups = [];
-	for (var i = 0, il = stuff.length; i < il; i++) {
-		var arr = stuff[i];
-		var ee = arr[0];
-		for (var j = 1, jl = arr.length; j < jl; j++) {
-			var event = arr[j];
-			var fn = listener(event, callback);
-			ee.on(event, fn);
-			cleanups.push({ ee: ee, event: event, fn: fn });
+function onFinished(stream, fn) {
+
+	var callback = function() {
+		if (!this.$onFinished) {
+			this.$onFinished = true;
+			fn();
 		}
-	}
-
-	function callback() {
-		cleanup();
-		done.apply(null, arguments);
-	}
-
-	function cleanup() {
-		var x;
-		for (var i = 0, length = cleanups.length; i < length; i++) {
-			x = cleanups[i];
-			x.ee.removeListener(x.event, x.fn);
-		}
-	}
-
-	function thunk(fn) {
-		done = fn;
-	}
-
-	thunk.cancel = cleanup;
-	return thunk;
-}
-
-function listener(event, done) {
-	return function(arg1) {
-		var args = new Array(arguments.length);
-		var ee = this;
-		var err = event === 'error' ? arg1 : null;
-
-		// copy args to prevent arguments escaping scope
-		for (var i = 0; i < args.length; i++)
-			args[i] = arguments[i];
-
-		done(err, ee, event, args);
 	};
-}
 
-/*
- * on-finished (onFinished, attachFinishedListener, attachListener, createListener, patchAssignSocket, isFinished)
- * Copyright(c) 2013 Jonathan Ong <me@jongleberry.com>
- * Copyright(c) 2014 Douglas Christopher Wilson <doug@somethingdoug.com>
- * MIT Licensed
- * https://github.com/jshttp/on-finished
- */
-function onFinished(msg, listener) {
-	if (isFinished(msg) !== false)
-		setImmediate(listener, null, msg);
-	else
-		attachListener(msg, listener);
-	return msg;
-}
+	// Writeable stream
+	stream.write && stream.on('finish', callback);
 
-function attachFinishedListener(msg, callback) {
-	var eeMsg;
-	var eeSocket;
-	var finished = false;
+	// Readable stream
+	stream.read && stream.on('end', callback);
 
-	function onFinish(err) {
-		eeMsg.cancel();
-		eeSocket.cancel();
-		finished = true;
-		callback(err);
-	}
-
-	// finished on first message event
-	eeMsg = eeSocket = first([[msg, 'end', 'finish']], onFinish);
-
-	function onSocket(socket) {
-		// remove listener
-		msg.removeListener('socket', onSocket);
-
-		if (finished || eeMsg !== eeSocket)
-			return;
-
-		// finished on first socket event
-		eeSocket = first([[socket, 'error', 'close']], onFinish);
-	}
-
-	// socket already assigned
-	if (msg.socket) {
-		onSocket(msg.socket);
-		return;
-	}
-
-	// wait for socket to be assigned
-	msg.on('socket', onSocket);
-
-	// node.js 0.8 patch
-	!msg.socket && patchAssignSocket(msg, onSocket);
-}
-
-function attachListener(msg, listener) {
-	var attached = msg.__onFinished;
-
-	// create a private single listener with queue
-	if (!attached || !attached.queue) {
-		attached = msg.__onFinished = createListener(msg);
-		attachFinishedListener(msg, attached);
-	}
-
-	attached.queue.push(listener);
-}
-
-function createListener(msg) {
-	function listener(err) {
-		if (msg.__onFinished === listener)
-			msg.__onFinished = null;
-		if (!listener.queue)
-			return;
-		var queue = listener.queue;
-		listener.queue = null;
-		for (var i = 0, length = queue.length; i < length; i++)
-			queue[i](err, msg);
-	}
-	listener.queue = [];
-	return listener;
-}
-
-function patchAssignSocket(res, callback) {
-	var assignSocket = res.assignSocket;
-	if (typeof(assignSocket) !== 'function')
-		return;
-	// res.on('socket', callback) is broken in 0.8
-	res.assignSocket = function(socket) {
-		assignSocket.call(this, socket);
-		callback(socket);
-	};
-}
-
-function isFinished(msg) {
-	var socket = msg.socket;
-
-	// OutgoingMessage
-	if (typeof msg.finished === 'boolean')
-		return Boolean(msg.finished || (socket && !socket.writable));
-
-	// IncomingMessage
-	if (typeof msg.complete === 'boolean')
-		return Boolean(msg.upgrade || !socket || !socket.readable || (msg.complete && !msg.readable));
+	// Both
+	stream.on('error', callback);
+	stream.on('close', callback);
 }
 
 exports.encodeUnicodeURL = function(url) {
