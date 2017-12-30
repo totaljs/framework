@@ -4546,7 +4546,7 @@ function next_wait(self, onItem, callback, thread, tmp) {
  * @param {Function} callback Optional
  * @return {Array}
  */
-Array.prototype.async = function(thread, callback) {
+Array.prototype.async = function(thread, callback, pending) {
 
 	var self = this;
 
@@ -4556,15 +4556,15 @@ Array.prototype.async = function(thread, callback) {
 	} else if (thread === undefined)
 		thread = 1;
 
-	if (self.$pending === undefined)
-		self.$pending = 0;
+	if (pending === undefined)
+		pending = 0;
 
 	var item = self.shift();
 	if (item === undefined) {
-		if (self.$pending)
-			return self;
-		self.$pending = undefined;
-		callback && callback();
+		if (!pending) {
+			pending = undefined;
+			callback && callback();
+		}
 		return self;
 	}
 
@@ -4573,11 +4573,11 @@ Array.prototype.async = function(thread, callback) {
 		if (i)
 			item = self.shift();
 
-		self.$pending++;
+		pending++;
 		item(function() {
 			setImmediate(function() {
-				self.$pending--;
-				self.async(1, callback);
+				pending--;
+				self.async(1, callback, pending);
 			});
 		});
 	}
