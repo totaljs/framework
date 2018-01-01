@@ -2789,9 +2789,7 @@ String.prototype.replacer = function(find, text) {
  * @return {String}
  */
 String.prototype.hash = function(type, salt) {
-	var str = this;
-	if (salt)
-		str += salt;
+	var str = salt ? this + salt : this;
 	switch (type) {
 		case 'md5':
 			return str.md5();
@@ -2806,15 +2804,14 @@ String.prototype.hash = function(type, salt) {
 	}
 };
 
-function string_hash(s) {
-	var hash = 0, i, char;
+function string_hash(s, convert) {
+	var hash = 0;
 	if (s.length === 0)
-		return hash;
-	var l = s.length;
-	for (i = 0; i < l; i++) {
-		char = s.charCodeAt(i);
+		return convert ? '' : hash;
+	for (var i = 0, l = s.length; i < l; i++) {
+		var char = s.charCodeAt(i);
 		hash = ((hash << 5) - hash) + char;
-		hash |= 0; // Convert to 32bit integer
+		hash |= 0;
 	}
 	return hash;
 }
