@@ -5533,7 +5533,7 @@ function compile_gzip(arr, callback) {
 	var reader = Fs.createReadStream(arr[0]);
 	var writer = Fs.createWriteStream(filename);
 
-	writer.on('close', function() {
+	writer.on('finish', function() {
 		fsFileExists(filename, function(e, size) {
 			arr.push(size);
 			callback();
@@ -8768,7 +8768,6 @@ F.worker = function(name, id, timeout, args) {
 	if (fork)
 		return fork;
 
-	// @TODO: dokončiť
 	var filename = name[0] === '@' ? F.path.package(name.substring(1)) : U.combine(F.config['directory-workers'], name);
 
 	if (!args)
@@ -15037,6 +15036,8 @@ function extend_response(PROTO) {
 			res.writeHead(options.code || 200, headers);
 			res.on('error', () => options.stream.close());
 			options.stream.pipe(Zlib.createGzip(GZIPSTREAM)).pipe(res);
+			options.stream.on('error', streamdestroy);
+			options.stream.on('end', streamdestroy);
 			// @TODO: destroy
 			// framework_internal.onFinished(res, () => framework_internal.destroyStream(options.stream));
 			response_end(res);
@@ -15046,6 +15047,10 @@ function extend_response(PROTO) {
 		res.writeHead(options.code || 200, headers);
 		// @TODO: destroy
 		// framework_internal.onFinished(res, () => framework_internal.destroyStream(options.stream));
+
+		options.stream.on('error', streamdestroy);
+		options.stream.on('end', streamdestroy);
+
 		options.stream.pipe(res);
 		response_end(res);
 		return res;
@@ -15293,9 +15298,12 @@ function $file_notmodified(res, name) {
 }
 
 function $file_nocompress(stream, next, res) {
+
 	stream.pipe(res);
-	stream.on('error', next);
+	stream.on('error', streamdestroy);
 	stream.on('end', next);
+	stream.on('end', streamdestroy);
+
 	// @TODO: destroy
 	/*
 	framework_internal.onFinished(res, function() {
@@ -15304,6 +15312,10 @@ function $file_nocompress(stream, next, res) {
 	});
 	*/
 	response_end(res);
+}
+
+function streamdestroy() {
+	framework_internal.destroyStream(this);
 }
 
 function $file_range(name, range, headers, res) {
@@ -15355,6 +15367,8 @@ function $file_range_callback(stream, next, res) {
 
 	stream.on('error', next);
 	stream.on('end', next);
+	stream.on('error', streamdestroy);
+	stream.on('end', streamdestroy);
 
 	// @TODO: destroy
 	/*
