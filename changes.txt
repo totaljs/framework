@@ -5,6 +5,7 @@
 - added: `F.cluster.on(name, callback(data))` - master event listener
 - added: `LOGMAIL()` global alias for `F.logmail()`
 - added: `MAIL()` global alias for `F.mail()`
+- added: own and improved implementation of `onFinished`
 
 - updated: `F.load()`, now supports `string` for `debug` or `release` mode
 - updated: `F.cluster.request()` can be executed from master process
