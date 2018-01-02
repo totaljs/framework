@@ -172,6 +172,7 @@ var CONTENTTYPES = {
 	'zip': 'application/zip'
 };
 
+var persistentcookies = {};
 var dnscache = {};
 var datetimeformat = {};
 const hasOwnProperty = Object.prototype.hasOwnProperty;
@@ -435,6 +436,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 	var options = { length: 0, timeout: timeout || 10000, evt: new EventEmitter2(), encoding: typeof(encoding) !== 'string' ? ENCODING : encoding, callback: callback, post: false, redirect: 0 };
 	var method;
 	var type = 0;
+	var isCookies = false;
 
 	if (headers)
 		headers = exports.extend({}, headers);
@@ -518,7 +520,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 					break;
 
 				case 'cookies':
-					options.cookies = cookies;
+					isCookies = true;
 					break;
 			}
 		}
@@ -548,6 +550,8 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 		options.data = data;
 
 	if (cookies) {
+		if (isCookies)
+			options.cookies = cookies;
 		var builder = '';
 		for (var m in cookies)
 			builder += (builder ? '; ' : '') + m + '=' + cookies[m];
@@ -559,8 +563,6 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 	uri.method = method;
 	uri.agent = false;
 	uri.headers = headers;
-
-	if (options.cookies)
 
 	if (options.resolve) {
 		exports.resolve(url, function(err, u) {
@@ -726,12 +728,23 @@ function request_response(res, uri, options) {
 
 	// Shared cookies
 	if (options.cookies) {
-		var arr = (res.headers['cookie'] || '').split(';');
-		for (var i = 0, length = arr.length; i < length; i++) {
-			var line = arr[i].trim();
-			var index = line.indexOf('=');
-			if (index !== -1)
-				options.cookies[line.substring(0, index)] = decodeURIComponent(line.substring(index + 1));
+		var arr = (res.headers['set-cookie'] || '');
+
+		// Only the one value
+		if (arr && !(arr instanceof Array))
+			arr = [arr];
+
+		if (arr instanceof Array) {
+			for (var i = 0, length = arr.length; i < length; i++) {
+				var line = arr[i];
+				var end = line.indexOf(';');
+				if (end === -1)
+					end = line.length;
+				line = line.substring(0, end);
+				var index = line.indexOf('=');
+				if (index !== -1)
+					options.cookies[line.substring(0, index)] = decodeURIComponent(line.substring(index + 1));
+			}
 		}
 	}
 
@@ -907,7 +920,6 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 				case 'dnscache':
 					options.resolve = true;
 					break;
-
 			}
 		}
 	}

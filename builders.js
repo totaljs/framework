@@ -3659,6 +3659,7 @@ function RESTBuilder(url) {
 	this.$length = 0;
 	this.$transform = transforms['restbuilder_default'];
 	this.$files = null;
+	this.$persistentcookies = false;
 
 	// this.$flags;
 	// this.$data = {};
@@ -3894,9 +3895,18 @@ RESTBuilder.prototype.raw = function(value) {
 	return this;
 };
 
+RESTBuilder.prototype.cook = function(value) {
+	this.$persistentcookies = value !== false;
+	return this;
+};
+
+RESTBuilder.prototype.cookies = function(obj) {
+	this.$cookies = obj;
+	return this;
+};
+
 RESTBuilder.prototype.cookie = function(name, value) {
-	if (!this.$cookies)
-		this.$cookies = {};
+	!this.$cookies && (this.$cookies = {});
 	this.$cookies[name] = value;
 	return this;
 };

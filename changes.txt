@@ -6,10 +6,13 @@
 - added: `LOGMAIL()` global alias for `F.logmail()`
 - added: `MAIL()` global alias for `F.mail()`
 - added: own and improved implementation of `onFinished`
+- added: `RESTBuilder.cookies(obj)` can set cookies as raw object
+- added: `RESTBuilder.cook([true/false])` enables persistent cookies
 
 - updated: `F.load()`, now supports `string` for `debug` or `release` mode
 - updated: `F.cluster.request()` can be executed from master process
 - updated: `Image.miniature()` change a default filter from `Box` to `Hamming`
+- updated: `U.request()` supports a new flag `cookies` which enables a parsing cookies from response
 
 - fixed: schema validation (problem with Arrays)
 - fixed: determines `x-forwarded-proto`
