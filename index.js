@@ -4851,7 +4851,6 @@ F.download = F.snapshot = function(url, filename, callback) {
 		});
 
 		CLEANUP(stream, function() {
-			DESTROY(stream);
 			callback && callback(null, filename);
 			callback = null;
 		});
@@ -15036,21 +15035,13 @@ function extend_response(PROTO) {
 			res.writeHead(options.code || 200, headers);
 			res.on('error', () => options.stream.close());
 			options.stream.pipe(Zlib.createGzip(GZIPSTREAM)).pipe(res);
-			options.stream.on('error', streamdestroy);
-			options.stream.on('end', streamdestroy);
-			// @TODO: destroy
-			// framework_internal.onFinished(res, () => framework_internal.destroyStream(options.stream));
+			framework_internal.onFinished(res, () => framework_internal.destroyStream(options.stream));
 			response_end(res);
 			return res;
 		}
 
 		res.writeHead(options.code || 200, headers);
-		// @TODO: destroy
-		// framework_internal.onFinished(res, () => framework_internal.destroyStream(options.stream));
-
-		options.stream.on('error', streamdestroy);
-		options.stream.on('end', streamdestroy);
-
+		framework_internal.onFinished(res, () => framework_internal.destroyStream(options.stream));
 		options.stream.pipe(res);
 		response_end(res);
 		return res;
@@ -15300,22 +15291,13 @@ function $file_notmodified(res, name) {
 function $file_nocompress(stream, next, res) {
 
 	stream.pipe(res);
-	stream.on('error', streamdestroy);
-	stream.on('end', next);
-	stream.on('end', streamdestroy);
 
-	// @TODO: destroy
-	/*
 	framework_internal.onFinished(res, function() {
 		framework_internal.destroyStream(stream);
 		next();
 	});
-	*/
-	response_end(res);
-}
 
-function streamdestroy() {
-	framework_internal.destroyStream(this);
+	response_end(res);
 }
 
 function $file_range(name, range, headers, res) {
@@ -15364,20 +15346,10 @@ function $file_range(name, range, headers, res) {
 }
 
 function $file_range_callback(stream, next, res) {
-
-	stream.on('error', next);
-	stream.on('end', next);
-	stream.on('error', streamdestroy);
-	stream.on('end', streamdestroy);
-
-	// @TODO: destroy
-	/*
 	framework_internal.onFinished(res, function() {
 		framework_internal.destroyStream(stream);
 		next();
 	});
-	*/
-
 	stream.pipe(res);
 	response_end(res);
 }

@@ -1148,7 +1148,6 @@ Database.prototype.$reader2 = function(filename, items, callback, reader) {
 
 			if (first && reader.destroy) {
 				reader.destroy();
-				finish();
 				return false;
 			}
 		}

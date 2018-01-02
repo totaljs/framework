@@ -3072,24 +3072,69 @@ function destroyStream(stream) {
 	return stream;
 }
 
+function isFinished(stream) {
+
+	// OutgoingMessage
+	if (typeof(stream.finished) === 'boolean')
+		return stream.finished || !!(stream.socket && !stream.socket.writetable);
+
+	// IncomingMessage
+	if (typeof(stream.complete) === 'boolean')
+		return stream.upgrade || !!(!stream.socket || !stream.socket.readable || (stream.complete && !stream.readable));
+}
+
 function onFinished(stream, fn) {
 
+	if (stream.$onFinished) {
+		fn && fn();
+		fn = null;
+		return;
+	}
+
+	if (stream.$onFinishedQueue) {
+		if (stream.$onFinishedQueue instanceof Array)
+			stream.$onFinishedQueue.push(fn);
+		else
+			stream.$onFinishedQueue = [stream.$onFinishedQueue, fn];
+		return;
+	} else
+		stream.$onFinishedQueue = fn;
+
 	var callback = function() {
-		if (!this.$onFinished) {
-			this.$onFinished = true;
-			fn();
-		}
+		!stream.$onFinished && (stream.$onFinished = true);
+		if (stream.$onFinishedQueue instanceof Array) {
+			while (stream.$onFinishedQueue.length)
+				stream.$onFinishedQueue.shift()();
+			stream.$onFinishedQueue = null;
+		} else if (stream.$onFinishedQueue)
+			stream.$onFinishedQueue();
 	};
 
-	// Writeable stream
-	stream.write && stream.on('finish', callback);
+	if (isFinished(stream) !== false) {
 
-	// Readable stream
-	stream.read && stream.on('end', callback);
+		// Writeable stream
+		stream.write && stream.prependListener('finish', callback);
 
-	// Both
-	stream.on('error', callback);
-	// stream.on('close', callback);
+		// Readable stream
+		stream.read && stream.prependListener('end', callback);
+
+		// Both
+		stream.prependListener('error', callback);
+		stream.prependListener('close', callback);
+
+	} else {
+
+		if (stream.socket) {
+			if (stream.socket.$totalstream) {
+				stream.socket.$totalstream = stream;
+				stream.socket.prependListener('error', callback);
+				stream.socket.prependListener('close', callback);
+			}
+		}
+
+		stream.prependListener('end', callback);
+		stream.prependListener('finish', callback);
+	}
 }
 
 exports.encodeUnicodeURL = function(url) {
