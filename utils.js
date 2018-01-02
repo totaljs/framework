@@ -512,8 +512,13 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 					method = flags[i].toUpperCase();
 					!headers['Content-Type'] && (headers['Content-Type'] = 'application/x-www-form-urlencoded');
 					break;
+
 				case 'dnscache':
 					options.resolve = true;
+					break;
+
+				case 'cookies':
+					options.cookies = cookies;
 					break;
 			}
 		}
@@ -554,6 +559,8 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 	uri.method = method;
 	uri.agent = false;
 	uri.headers = headers;
+
+	if (options.cookies)
 
 	if (options.resolve) {
 		exports.resolve(url, function(err, u) {
@@ -652,7 +659,7 @@ function request_response(res, uri, options) {
 		if (options.noredirect) {
 
 			if (options.callback) {
-				options.callback(null, '', res.statusCode, res.headers, uri.host);
+				options.callback(null, '', res.statusCode, res.headers, uri.host, EMPTYOBJECT);
 				options.callback = null;
 			}
 
@@ -671,7 +678,7 @@ function request_response(res, uri, options) {
 		if (options.redirect > 3) {
 
 			if (options.callback) {
-				options.callback(new Error('Too many redirects.'), '', 0, undefined, uri.host);
+				options.callback(new Error('Too many redirects.'), '', 0, undefined, uri.host, EMPTYOBJECT);
 				options.callback = null;
 			}
 
@@ -717,6 +724,17 @@ function request_response(res, uri, options) {
 	options.length = +res.headers['content-length'] || 0;
 	options.evt && options.evt.$events.begin && options.evt.emit('begin', options.length);
 
+	// Shared cookies
+	if (options.cookies) {
+		var arr = (res.headers['cookie'] || '').split(';');
+		for (var i = 0, length = arr.length; i < length; i++) {
+			var line = arr[i].trim();
+			var index = line.indexOf('=');
+			if (index !== -1)
+				options.cookies[line.substring(0, index)] = decodeURIComponent(line.substring(index + 1));
+		}
+	}
+
 	res.on('data', function(chunk) {
 		var self = this;
 		if (options.max && self._bufferlength > options.max)
@@ -737,13 +755,13 @@ function request_response(res, uri, options) {
 		self._buffer = undefined;
 
 		if (options.evt) {
-			options.evt.$events.end && options.evt.emit('end', str, self.statusCode, self.headers, uri.host);
+			options.evt.$events.end && options.evt.emit('end', str, self.statusCode, self.headers, uri.host, options.cookies);
 			options.evt.removeAllListeners();
 			options.evt = null;
 		}
 
 		if (options.callback) {
-			options.callback(null, uri.method === 'HEAD' ? self.headers : str, self.statusCode, self.headers, uri.host);
+			options.callback(null, uri.method === 'HEAD' ? self.headers : str, self.statusCode, self.headers, uri.host, options.cookies);
 			options.callback = null;
 		}
 
