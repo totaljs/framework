@@ -3129,7 +3129,9 @@ function onFinished(stream, fn) {
 				stream.socket.prependListener('close', callback);
 			}
 		}
+		stream.prependListener('error', callback);
 		stream.prependListener('end', callback);
+		stream.prependListener('close', callback);
 		stream.prependListener('finish', callback);
 	}
 }
