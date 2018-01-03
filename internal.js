@@ -3074,13 +3074,22 @@ function destroyStream(stream) {
 
 function isFinished(stream) {
 
-	// OutgoingMessage
-	if (typeof(stream.finished) === 'boolean')
-		return stream.finished || !!(stream.socket && !stream.socket.writetable);
+	// Response & Request
+	if (stream.socket) {
+		if (stream.writable && (!stream.socket._writableState || stream.socket._writableState.ended || stream.socket._writableState.destroyed || stream.socket._writableState.finished))
+			return true;
+		if (stream.readable && (!stream.socket._readableState || stream.socket._readableState.ended || stream.socket._readableState.destroyed))
+			return true;
+		return false;
+	}
 
-	// IncomingMessage
-	if (typeof(stream.complete) === 'boolean')
-		return stream.upgrade || !!(!stream.socket || !stream.socket.readable || (stream.complete && !stream.readable));
+	if (stream._readableState && ((stream._readableState.ended || stream._readableState.destroyed)))
+		return true;
+
+	if (stream._writableState && ((stream._writableState.ended || stream._writableState.finished || stream._writableState.destroyed)))
+		return true;
+
+	return false;
 }
 
 function onFinished(stream, fn) {
@@ -3110,20 +3119,9 @@ function onFinished(stream, fn) {
 			stream.$onFinishedQueue();
 	};
 
-	if (isFinished(stream) !== false) {
-
-		// Writeable stream
-		stream.write && stream.prependListener('finish', callback);
-
-		// Readable stream
-		stream.read && stream.prependListener('end', callback);
-
-		// Both
-		stream.prependListener('error', callback);
-		stream.prependListener('close', callback);
-
+	if (isFinished(stream)) {
+		setImmediate(fn, stream);
 	} else {
-
 		if (stream.socket) {
 			if (stream.socket.$totalstream) {
 				stream.socket.$totalstream = stream;
@@ -3131,7 +3129,6 @@ function onFinished(stream, fn) {
 				stream.socket.prependListener('close', callback);
 			}
 		}
-
 		stream.prependListener('end', callback);
 		stream.prependListener('finish', callback);
 	}

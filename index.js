@@ -15035,13 +15035,13 @@ function extend_response(PROTO) {
 			res.writeHead(options.code || 200, headers);
 			res.on('error', () => options.stream.close());
 			options.stream.pipe(Zlib.createGzip(GZIPSTREAM)).pipe(res);
-			framework_internal.onFinished(res, () => framework_internal.destroyStream(options.stream));
+			framework_internal.onFinished(options.stream, () => framework_internal.destroyStream(options.stream));
 			response_end(res);
 			return res;
 		}
 
 		res.writeHead(options.code || 200, headers);
-		framework_internal.onFinished(res, () => framework_internal.destroyStream(options.stream));
+		framework_internal.onFinished(options.stream, () => framework_internal.destroyStream(options.stream));
 		options.stream.pipe(res);
 		response_end(res);
 		return res;
@@ -15292,7 +15292,7 @@ function $file_nocompress(stream, next, res) {
 
 	stream.pipe(res);
 
-	framework_internal.onFinished(res, function() {
+	framework_internal.onFinished(stream, function() {
 		framework_internal.destroyStream(stream);
 		next();
 	});
@@ -15346,7 +15346,7 @@ function $file_range(name, range, headers, res) {
 }
 
 function $file_range_callback(stream, next, res) {
-	framework_internal.onFinished(res, function() {
+	framework_internal.onFinished(stream, function() {
 		framework_internal.destroyStream(stream);
 		next();
 	});
