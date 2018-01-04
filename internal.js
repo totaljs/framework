@@ -3076,7 +3076,7 @@ function isFinished(stream) {
 
 	// Response & Request
 	if (stream.socket) {
-		if (stream.writable && (!stream.socket._writableState || stream.socket._writableState.ended || stream.socket._writableState.destroyed || stream.socket._writableState.finished))
+		if (stream.writable && (!stream.socket._writableState || stream.socket._writableState.destroyed || stream.socket._writableState.finished))
 			return true;
 		if (stream.readable && (!stream.socket._readableState || stream.socket._readableState.ended || stream.socket._readableState.destroyed))
 			return true;
@@ -3086,7 +3086,7 @@ function isFinished(stream) {
 	if (stream._readableState && ((stream._readableState.ended || stream._readableState.destroyed)))
 		return true;
 
-	if (stream._writableState && ((stream._writableState.ended || stream._writableState.finished || stream._writableState.destroyed)))
+	if (stream._writableState && ((stream._writableState.finished || stream._writableState.destroyed)))
 		return true;
 
 	return false;
