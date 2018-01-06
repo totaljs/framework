@@ -3731,6 +3731,7 @@ Binary.prototype.read = function(id, callback) {
 		var json = framework_utils.createBuffer(buffer, 'binary').toString('utf8').replace(REG_CLEAN, '');
 		stream = Fs.createReadStream(filename, { start: BINARY_HEADER_LENGTH });
 		callback(null, stream, JSON.parse(json, jsonparser));
+		CLEANUP(stream);
 	});
 
 	return self;
