@@ -5332,6 +5332,7 @@ function compile_merge(res) {
 	writer.on('finish', function() {
 		var stats = Fs.statSync(filename);
 		var tmp = F.temporary.path[req.$key] = [filename, stats.size, stats.mtime.toUTCString()];
+		this.destroy && this.destroy();
 		compile_gzip(tmp, function() {
 			delete F.temporary.processing[req.$key];
 			res.$file();
@@ -5532,7 +5533,7 @@ function compile_gzip(arr, callback) {
 	var reader = Fs.createReadStream(arr[0]);
 	var writer = Fs.createWriteStream(filename);
 
-	writer.on('finish', function() {
+	CLEANUP(writer, function() {
 		fsFileExists(filename, function(e, size) {
 			arr.push(size);
 			callback();
@@ -5540,6 +5541,7 @@ function compile_gzip(arr, callback) {
 	});
 
 	reader.pipe(Zlib.createGzip(GZIPFILE)).pipe(writer);
+	CLEANUP(reader);
 }
 
 function compile_content(extension, content, filename) {
@@ -13175,10 +13177,12 @@ function websocket_ondata(chunk) {
 }
 
 function websocket_onerror(e) {
+	this.destroy && this.destroy();
 	this.$websocket.$onerror(e);
 }
 
 function websocket_close() {
+	this.destroy && this.destroy();
 	this.$websocket.$onclose();
 }
 
@@ -15035,13 +15039,13 @@ function extend_response(PROTO) {
 			res.writeHead(options.code || 200, headers);
 			res.on('error', () => options.stream.close());
 			options.stream.pipe(Zlib.createGzip(GZIPSTREAM)).pipe(res);
-			framework_internal.onFinished(options.stream, () => framework_internal.destroyStream(options.stream));
+			framework_internal.onFinished(res, () => framework_internal.destroyStream(options.stream));
 			response_end(res);
 			return res;
 		}
 
 		res.writeHead(options.code || 200, headers);
-		framework_internal.onFinished(options.stream, () => framework_internal.destroyStream(options.stream));
+		framework_internal.onFinished(res, () => framework_internal.destroyStream(options.stream));
 		options.stream.pipe(res);
 		response_end(res);
 		return res;
@@ -15289,14 +15293,12 @@ function $file_notmodified(res, name) {
 }
 
 function $file_nocompress(stream, next, res) {
-
 	stream.pipe(res);
 
-	framework_internal.onFinished(stream, function() {
-		framework_internal.destroyStream(stream);
+	framework_internal.onFinished(res, function() {
 		next();
+		framework_internal.destroyStream(stream);
 	});
-
 	response_end(res);
 }
 
@@ -15346,7 +15348,7 @@ function $file_range(name, range, headers, res) {
 }
 
 function $file_range_callback(stream, next, res) {
-	framework_internal.onFinished(stream, function() {
+	framework_internal.onFinished(res, function() {
 		framework_internal.destroyStream(stream);
 		next();
 	});
@@ -15557,7 +15559,7 @@ function fsStreamRead(filename, options, callback, req, res) {
 		var stream = Fs.createReadStream(filename, opt);
 		stream.on('error', NOOP);
 		callback(stream, next, req, res);
-	});
+	}, filename);
 }
 
 /**

@@ -3076,17 +3076,17 @@ function isFinished(stream) {
 
 	// Response & Request
 	if (stream.socket) {
-		if (stream.writable && (!stream.socket._writableState || stream.socket._writableState.destroyed || stream.socket._writableState.finished))
+		if (stream.writable && (!stream.socket._writableState || stream.socket._writableState.finished || stream.socket._writableState.destroyed))
 			return true;
-		if (stream.readable && (!stream.socket._readableState || stream.socket._readableState.ended || stream.socket._readableState.destroyed))
+		if (stream.readable && (!stream.socket._readableState|| stream.socket._writableState.ended || stream.socket._readableState.destroyed))
 			return true;
 		return false;
 	}
 
-	if (stream._readableState && ((stream._readableState.ended || stream._readableState.destroyed)))
+	if (stream._readableState && (stream._readableState.ended || stream._readableState.destroyed))
 		return true;
 
-	if (stream._writableState && ((stream._writableState.finished || stream._writableState.destroyed)))
+	if (stream._writableState && (stream._writableState.finished || stream._writableState.destroyed))
 		return true;
 
 	return false;
@@ -3115,24 +3115,33 @@ function onFinished(stream, fn) {
 			while (stream.$onFinishedQueue.length)
 				stream.$onFinishedQueue.shift()();
 			stream.$onFinishedQueue = null;
-		} else if (stream.$onFinishedQueue)
+		} else if (stream.$onFinishedQueue) {
 			stream.$onFinishedQueue();
+			stream.$onFinishedQueue = null;
+		}
 	};
 
 	if (isFinished(stream)) {
-		setImmediate(fn, stream);
+		setImmediate(callback);
 	} else {
+
 		if (stream.socket) {
-			if (stream.socket.$totalstream) {
+			if (!stream.socket.$totalstream) {
 				stream.socket.$totalstream = stream;
 				stream.socket.prependListener('error', callback);
 				stream.socket.prependListener('close', callback);
 			}
 		}
+
 		stream.prependListener('error', callback);
 		stream.prependListener('end', callback);
 		stream.prependListener('close', callback);
+		stream.prependListener('aborted', callback);
 		stream.prependListener('finish', callback);
+
+		//stream.uri --> determines ServerRespone
+		// stream.uri && stream.prependListener('aborted', callback);
+		// (stream._writableState || stream.uri) && stream.prependListener('finish', callback);
 	}
 }
 
