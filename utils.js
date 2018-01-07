@@ -5311,20 +5311,18 @@ function queue_next(name) {
 		return;
 
 	item.running--;
+
 	if (item.running < 0)
 		item.running = 0;
 
-	if (!item.pending.length)
-		return;
-
-	var fn = item.pending.shift();
-	if (!fn) {
-		item.running = 0;
-		return;
+	if (item.pending.length) {
+		var fn = item.pending.shift();
+		if (fn) {
+			item.running++;
+			setImmediate(queue_next_callback, fn, name);
+		} else
+			item.running = 0;
 	}
-
-	item.running++;
-	setImmediate(queue_next_callback, fn, name);
 }
 
 function queue_next_callback(fn, name) {
