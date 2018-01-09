@@ -3896,6 +3896,7 @@ RESTBuilder.prototype.raw = function(value) {
 };
 
 RESTBuilder.prototype.cook = function(value) {
+	this.$flags = null;
 	this.$persistentcookies = value !== false;
 	return this;
 };
@@ -3950,6 +3951,7 @@ RESTBuilder.prototype.stream = function(callback) {
 
 	if (!self.$flags) {
 		!self.$nodnscache && flags.push('dnscache');
+		self.$persistentcookies && flags.push('cookies');
 		switch (self.$type) {
 			case 1:
 				flags.push('json');
@@ -3980,6 +3982,7 @@ RESTBuilder.prototype.exec = function(callback) {
 	if (!self.$flags) {
 
 		!self.$nodnscache && flags.push('dnscache');
+		self.$persistentcookies && flags.push('cookies');
 		self.$length && flags.push('<' + self.$length);
 		self.$redirect === false && flags.push('noredirect');
 
