@@ -5,7 +5,7 @@
 - added: `F.cluster.on(name, callback(data))` - master event listener
 - added: `LOGMAIL()` global alias for `F.logmail()`
 - added: `MAIL()` global alias for `F.mail()`
-- added: own and improved implementation of `onFinished`
+- added: own implementation of `onFinished`
 - added: `RESTBuilder.cookies(obj)` can set cookies as raw object
 - added: `RESTBuilder.cook([true/false])` enables persistent cookies
 
