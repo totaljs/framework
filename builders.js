@@ -74,6 +74,22 @@ SchemaOptions.prototype.success = function(a, b) {
 	return this;
 };
 
+SchemaOptions.prototype.done = function(arg) {
+	var self = this;
+	return function(err, response) {
+
+		if (err && !(err instanceof ErrorBuilder)) {
+			self.error.push(err);
+			self.callback();
+		}
+
+		if (arg)
+			self.callback(SUCCESS(err == null, response));
+		else
+			self.callback(SUCCESS(err == null));
+	};
+};
+
 SchemaOptions.prototype.invalid = function(name, error, path, index) {
 	this.error.push(name, error, path, index);
 	this.callback();
@@ -4159,6 +4175,22 @@ OperationOptions.prototype.callback = function(value) {
 	}
 
 	return self;
+};
+
+OperationOptions.prototype.done = function(arg) {
+	var self = this;
+	return function(err, response) {
+
+		if (err && !(err instanceof ErrorBuilder)) {
+			self.error.push(err);
+			self.callback();
+		}
+
+		if (arg)
+			self.callback(SUCCESS(err == null, response));
+		else
+			self.callback(SUCCESS(err == null));
+	};
 };
 
 OperationOptions.prototype.success = function(a, b) {
