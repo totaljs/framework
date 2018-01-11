@@ -179,6 +179,17 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory) {
 		}
 
 		tmp.filename = header[1];
+
+		// IE9 sends absolute filename
+		var index = tmp.filename.lastIndexOf('\\');
+
+		// For Unix like senders
+		if (index === -1)
+			index = tmp.filename.lastIndexOf('/');
+
+		if (index !== -1)
+			tmp.filename = tmp.filename.substring(index + 1);
+
 		tmp.path = path + (INDEXFILE++) + '.bin';
 	};
 
