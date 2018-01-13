@@ -6261,8 +6261,7 @@ F.initialize = function(http, debug, options, restart) {
 	var ip = options.ip;
 	var listenpath = options.listenpath;
 
-	if (options.config)
-		U.copy(options.config, F.config);
+	options.config && U.extend(F.config, options.config, true);
 
 	if (options.debug || options['allow-debug'])
 		F.config['allow-debug'] = true;
