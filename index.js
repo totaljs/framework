@@ -282,7 +282,6 @@ var U = global.Utils = global.utils = global.U = global.framework_utils;
 global.Mail = framework_mail;
 
 global.WTF = (message, name, uri) => F.problem(message, name, uri);
-global.NOSQL = (name) => F.nosql(name);
 global.NOBIN = (name) => F.nosql(name).binary;
 global.NOCOUNTER = (name) => F.nosql(name).counter;
 global.NOMEM = global.NOSQLMEMORY = (name, view) => global.framework_nosql.inmemory(name, view);
@@ -1150,7 +1149,7 @@ F.database = function(name) {
 	return F.nosql(name);
 };
 
-F.nosql = function(name) {
+global.NOSQL = F.nosql = function(name) {
 	var db = F.databases[name];
 	if (db)
 		return db;
