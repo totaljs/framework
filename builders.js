@@ -69,6 +69,10 @@ function SchemaOptions(error, model, options, callback, controller) {
 		this.language = '';
 }
 
+SchemaOptions.prototype.DB = function() {
+	return F.database(this.error);
+};
+
 SchemaOptions.prototype.success = function(a, b) {
 	this.callback(SUCCESS(a === undefined ? true : a, b));
 	return this;
@@ -4162,6 +4166,10 @@ function OperationOptions(error, value, callback, options) {
 	this.$callback = callback;
 	this.options = options;
 }
+
+OperationOptions.prototype.DB = function() {
+	return F.database(this.error);
+};
 
 OperationOptions.prototype.callback = function(value) {
 	var self = this;

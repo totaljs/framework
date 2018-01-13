@@ -9,7 +9,9 @@
 - added: `RESTBuilder.cookies(obj)` can set cookies as raw object
 - added: `RESTBuilder.cook([true/false])` enables persistent cookies
 - added: `SchemaOptions.done([arg])` as a callback (contains wrapped SUCCESS())
+- added: `SchemaOptions.DB()` which returns `DB(this.error)` instance (for SQL Agent)
 - added: `OperationOptions.done([arg])` as a callback (contains wrapped SUCCESS())
+- added: `OperationOptions.DB()` which returns `DB(this.error)` instance (for SQL Agent)
 
 - updated: `F.load()`, now supports `string` for `debug` or `release` mode
 - updated: `F.cluster.request()` can be executed from master process
