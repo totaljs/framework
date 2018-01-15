@@ -74,6 +74,12 @@ SchemaOptions.prototype.DB = function() {
 };
 
 SchemaOptions.prototype.success = function(a, b) {
+
+	if (a && b === undefined && typeof(a) !== 'boolean') {
+		b = a;
+		a = true;
+	}
+
 	this.callback(SUCCESS(a === undefined ? true : a, b));
 	return this;
 };
@@ -4202,6 +4208,12 @@ OperationOptions.prototype.done = function(arg) {
 };
 
 OperationOptions.prototype.success = function(a, b) {
+
+	if (a && b === undefined && typeof(a) !== 'boolean') {
+		b = a;
+		a = true;
+	}
+
 	this.callback(SUCCESS(a === undefined ? true : a, b));
 	return this;
 };
