@@ -110,6 +110,7 @@ $ npm install -g total.js
 | [Denis Granec](https://github.com/PatchwerkQWER) | contributor | <danis1999@gmail.com> |
 | [Chao Tang Chang](https://github.com/ckpiggy) | contributor | <mrgmp2004@hotmail.com> |
 | [luoage](https://github.com/luoage) | contributor | <luoage@msn.cn> |
+| [Mato Holly](https://github.com/boardshepherd) | contributor | <mato.holly@gmail.com> |
 
 ## Useful modules
 
