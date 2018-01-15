@@ -12,6 +12,7 @@
 - added: `SchemaOptions.DB()` which returns `DB(this.error)` instance (for SQL Agent)
 - added: `OperationOptions.done([arg])` as a callback (contains wrapped SUCCESS())
 - added: `OperationOptions.DB()` which returns `DB(this.error)` instance (for SQL Agent)
+- added: static method `Image.measure(type, buffer)` for measuring width/height of image
 
 - updated: `F.load()`, now supports `string` for `debug` or `release` mode
 - updated: `F.cluster.request()` can be executed from master process

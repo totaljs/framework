@@ -119,6 +119,29 @@ exports.measureSVG = function(buffer) {
 	return { width: width, height: height };
 };
 
+exports.measure = function(type, buffer) {
+	switch (type) {
+		case '.jpg':
+		case '.jpeg':
+		case 'jpg':
+		case 'jpeg':
+		case 'image/jpeg':
+			return exports.measureJPG(buffer);
+		case '.gif':
+		case 'gif':
+		case 'image/gif':
+			return exports.measureGIF(buffer);
+		case '.png':
+		case 'png':
+		case 'image/png':
+			return exports.measurePNG(buffer);
+		case '.svg':
+		case 'svg':
+		case 'image/svg+xml':
+			return exports.measureSVG(buffer);
+	}
+};
+
 function Image(filename, useImageMagick, width, height) {
 	var type = typeof(filename);
 	this.width = width;
