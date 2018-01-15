@@ -1,4 +1,4 @@
-======= 2.9.2 (HOTFIX)
+======= 2.9.2
 
 - added: `controller.html(body, [headers])`
 - added: `F.cluster.master(name, [data])` - for child processes, this method emits an event in master process
