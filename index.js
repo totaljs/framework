@@ -1463,6 +1463,7 @@ global.CORS = F.cors = function(url, flags, credentials) {
 	var methods = [];
 	var headers = [];
 	var age;
+	var id;
 
 	if (flags instanceof Array) {
 		for (var i = 0, length = flags.length; i < length; i++) {
@@ -1483,6 +1484,11 @@ global.CORS = F.cors = function(url, flags, credentials) {
 
 			if (flag.startsWith('http://') || flag.startsWith('https://')) {
 				origins.push(flag);
+				continue;
+			}
+
+			if (flag.substring(0, 3) === 'id:') {
+				id = flag.substring(3);
 				continue;
 			}
 
@@ -1518,6 +1524,7 @@ global.CORS = F.cors = function(url, flags, credentials) {
 	route.headers = headers.length ? headers : null;
 	route.credentials = credentials;
 	route.age = age || F.config['default-cors-maxage'];
+	route.id = id;
 
 	F.routes.cors.push(route);
 	F._length_cors = F.routes.cors.length;
@@ -4420,6 +4427,16 @@ F.uninstall = function(type, name, options, skipEmit, packageName) {
 		return F;
 	}
 
+	if (type === 'cors') {
+		k = typeof(name) === 'string' ? name.substring(0, 3) === 'id:' ? 'id' : 'hash' : 'hash';
+		v = k === 'id' ? name.substring(3).trim() : name;
+		if (k !== 'id')
+			v = framework_internal.preparePath(framework_internal.encodeUnicodeURL(v.replace('*', '').trim()));
+		F.routes.cors = F.routes.cors.remove(k, v);
+		F.consoledebug('uninstall', type + '#' + name);
+		return F;
+	}
+
 	if (type === 'schedule') {
 		F.clearSchedule(name);
 		F.consoledebug('uninstall', type + '#' + name);
@@ -4476,7 +4493,7 @@ F.uninstall = function(type, name, options, skipEmit, packageName) {
 		}
 
 		for (var i = 0, length = F.routes.websockets.length; i < length; i++) {
-			tmp = F.routes.websocket[i];
+			tmp = F.routes.websockets[i];
 			if (tmp.middleware && tmp.middleware.length)
 				tmp.middleware = tmp.middleware.remove(name);
 		}
