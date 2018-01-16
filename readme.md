@@ -111,6 +111,7 @@ $ npm install -g total.js
 | [Chao Tang Chang](https://github.com/ckpiggy) | contributor | <mrgmp2004@hotmail.com> |
 | [luoage](https://github.com/luoage) | contributor | <luoage@msn.cn> |
 | [Mato Holly](https://github.com/boardshepherd) | contributor | <mato.holly@gmail.com> |
+| [Tema Smirnov](https://github.com/TemaSM) | contributor | <github.tema@smirnov.one> |
 
 ## Useful modules
 
