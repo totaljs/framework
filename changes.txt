@@ -27,6 +27,7 @@
 - fixed: NoSQL counter (sorting while reading stats)
 - fixed: loading dependencies
 - fixed: uninstalling middleware
+- fixed: reading/updating sitemap in controller
 
 - removed: max. sort `string` length
 - removed: `auto` appending `.css` and `.js` extension in view engine

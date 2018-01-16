@@ -10189,7 +10189,7 @@ Controller.prototype.sitemap_add = function(parent, name, url) {
 	var sitemap = self.repository[REPOSITORY_SITEMAP];
 
 	if (!sitemap) {
-		sitemap = self.sitemap();
+		sitemap = self.sitemap(self.sitemapid || name);
 		if (!sitemap)
 			return EMPTYARRAY;
 	}
@@ -10216,11 +10216,8 @@ Controller.prototype.sitemap_change = function(name, type, a, b, c, d, e, f) {
 	var self = this;
 	var sitemap = self.repository[REPOSITORY_SITEMAP];
 
-	if (!name)
-		name = self.sitemapid;
-
 	if (!sitemap) {
-		sitemap = self.sitemap(name);
+		sitemap = self.sitemap(self.sitemapid || name);
 		if (!sitemap)
 			return EMPTYARRAY;
 	}
@@ -10260,12 +10257,15 @@ Controller.prototype.sitemap_change = function(name, type, a, b, c, d, e, f) {
 };
 
 Controller.prototype.sitemap_replace = function(name, title, url) {
+
 	var self = this;
+	var sitemap = self.repository[REPOSITORY_SITEMAP];
 
-	if (!name)
-		name = self.sitemapid;
-
-	var sitemap = self.sitemap(name);
+	if (!sitemap) {
+		sitemap = self.sitemap(self.sitemapid || name);
+		if (!sitemap)
+			return EMPTYARRAY;
+	}
 
 	if (!sitemap.$cloned) {
 		sitemap = U.clone(sitemap);
