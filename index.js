@@ -9440,11 +9440,11 @@ Controller.prototype = {
 	},
 
 	get schema() {
-		return this.$total_route.schema[0] === 'default' ? this.$total_route.schema[1] : this.$total_route.schema.join('/');
+		return this.req.$total_route.schema[0] === 'default' ? this.req.$total_route.schema[1] : this.req.$total_route.schema.join('/');
 	},
 
 	get workflow() {
-		return this.$total_route.schema_workflow;
+		return this.req.$total_route.schema_workflow;
 	},
 
 	get sseID() {
