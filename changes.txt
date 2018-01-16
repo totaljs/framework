@@ -26,6 +26,7 @@
 - fixed: NoSQL reader
 - fixed: NoSQL counter (sorting while reading stats)
 - fixed: loading dependencies
+- fixed: uninstalling middleware
 
 - removed: max. sort `string` length
 - removed: `auto` appending `.css` and `.js` extension in view engine
