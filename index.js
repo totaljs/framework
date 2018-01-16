@@ -3471,7 +3471,8 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 				declaration = declaration.substring(1);
 			if (type !== 'config' && type !== 'resource' && type !== 'package' && type !== 'component' && !REG_SCRIPTCONTENT.test(declaration)) {
 				var relative = F.path.root(declaration);
-				if (existsSync(relative)) declaration = relative;
+				if (existsSync(relative))
+					declaration = relative;
 				if (!existsSync(declaration))
 					throw new Error('The ' + type + ': ' + declaration + ' doesn\'t exist.');
 				useRequired = true;
@@ -3793,7 +3794,8 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 
 			if (useRequired) {
 				var relative = F.path.root(declaration);
-				if (existsSync(relative)) declaration = relative;
+				if (existsSync(relative))
+					declaration = relative;
 				delete require.cache[require.resolve(declaration)];
 				obj = require(declaration);
 
@@ -3843,7 +3845,8 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 
 			if (useRequired) {
 				var relative = F.path.root(declaration);
-				if (existsSync(relative)) declaration = relative;
+				if (existsSync(relative))
+					declaration = relative;
 				delete require.cache[require.resolve(declaration)];
 				obj = require(declaration);
 				content = Fs.readFileSync(declaration).toString(ENCODING);
@@ -3907,7 +3910,8 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 
 			if (useRequired) {
 				var relative = F.path.root(declaration);
-				if (existsSync(relative)) declaration = relative;
+				if (existsSync(relative))
+					declaration = relative;
 				obj = require(declaration);
 				(function(name) {
 					setTimeout(() => delete require.cache[name], 1000);
@@ -4010,7 +4014,8 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 		try {
 			if (useRequired) {
 				var relative = F.path.root(declaration);
-				if (existsSync(relative)) declaration = relative;
+				if (existsSync(relative))
+					declaration = relative;
 				obj = require(declaration);
 				(function(name) {
 					setTimeout(function() {
