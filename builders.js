@@ -2397,7 +2397,7 @@ SchemaInstance.prototype.$callback = function(callback) {
 	return this;
 };
 
-SchemaInstance.prototype.$output = function() {
+SchemaInstance.prototype.$response = SchemaInstance.prototype.$output = function() {
 	this.$$index = this.$$result.length;
 	return this;
 };
