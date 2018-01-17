@@ -8,6 +8,7 @@
 - added: own implementation of `onFinished`
 - added: `RESTBuilder.cookies(obj)` can set cookies as raw object
 - added: `RESTBuilder.cook([true/false])` enables persistent cookies
+- added: `SchemaOptions.params` which returns dynamic params from the controller's action
 - added: `SchemaOptions.done([arg])` as a callback (contains wrapped SUCCESS())
 - added: `SchemaOptions.DB()` which returns `DB(this.error)` instance (for SQL Agent)
 - added: `OperationOptions.done([arg])` as a callback (contains wrapped SUCCESS())

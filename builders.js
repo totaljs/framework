@@ -50,24 +50,46 @@ function SchemaOptions(error, model, options, callback, controller) {
 	this.options = options;
 	this.callback = this.next = callback;
 	this.controller = controller;
-
-	if (controller) {
-
-		if (controller.user)
-			this.user = controller.user;
-
-		if (controller.session)
-			this.session = controller.session;
-
-		this.language = controller.language || '';
-		this.ip = controller.ip;
-		this.id = controller.id;
-		this.query = controller.query;
-		this.body = controller.body;
-		this.files = controller.files;
-	} else
-		this.language = '';
 }
+
+SchemaOptions.prototype = {
+
+	get user() {
+		return this.controller ? this.controller.user : null;
+	},
+
+	get session() {
+		return this.controller ? this.controller.session : null;
+	},
+
+	get language() {
+		return (this.controller ? this.controller.language : '') || '';
+	},
+
+	get ip() {
+		return this.controller ? this.controller.ip : null;
+	},
+
+	get id() {
+		return this.controller ? this.controller.id : null;
+	},
+
+	get params() {
+		return this.controller ? this.controller.params : null;
+	},
+
+	get files() {
+		return this.controller ? this.controller.files : null;
+	},
+
+	get body() {
+		return this.controller ? this.controller.body : null;
+	},
+
+	get query() {
+		return this.controller ? this.controller.query : null;
+	}
+};
 
 SchemaOptions.prototype.DB = function() {
 	return F.database(this.error);
