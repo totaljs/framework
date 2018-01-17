@@ -297,7 +297,6 @@ global.$$$ = global.GETSCHEMA = (group, name, fn, timeout) => framework_builders
 global.CREATE = (group, name) => framework_builders.getschema(group, name).default();
 global.SCRIPT = (body, value, callback, param) => F.script(body, value, callback, param);
 global.SINGLETON = (name, def) => SINGLETONS[name] || (SINGLETONS[name] = (new Function('return ' + (def || '{}')))());
-global.EACHSCHEMA = (group, fn) => framework_builders.eachschema(group, fn);
 global.FUNCTION = (name) => F.functions[name];
 global.ROUTING = (name) => F.routing(name);
 global.SCHEDULE = (date, each, fn, param) => F.schedule(date, each, fn, param);
@@ -1936,6 +1935,7 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 	var hash = url2.hash();
 	var routeURL = framework_internal.routeSplitCreate(url2);
 	var arr = [];
+	var params = [];
 	var reg = null;
 	var regIndex = null;
 
@@ -1947,6 +1947,9 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 			arr.push(i);
 
 			var sub = o.substring(1, o.length - 1);
+			var name = o.substring(1, o.length - 1).trim();
+
+			params.push(name);
 
 			if (sub[0] !== '/')
 				return;
@@ -1960,6 +1963,7 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 				regIndex = [];
 			}
 
+			params[params.length - 1] = 'regexp' + (regIndex.length + 1);
 			reg[i] = new RegExp(sub.substring(1, index), sub.substring(index + 1));
 			regIndex.push(i);
 		});
@@ -2042,6 +2046,7 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 	r.urlraw = urlraw;
 	r.url = routeURL;
 	r.param = arr;
+	r.paramnames = params.length ? params : null;
 	r.flags = flags || EMPTYARRAY;
 	r.flags2 = flags_to_object(flags);
 	r.method = method;
@@ -9589,6 +9594,23 @@ Controller.prototype = {
 
 	get sitemapid() {
 		return this.$sitemapid || this.route.sitemap;
+	},
+
+	get params() {
+		if (this.$params)
+			return this.$params;
+		var route = this.req.$total_route;
+		var names = route.paramnames;
+		if (names) {
+			var obj = {};
+			for (var i = 0; i < names.length; i++)
+				obj[names[i]] = this.req.split[route.param[i]];
+			this.$params = obj;
+			return obj;
+		} else {
+			this.$params = EMPTYOBJECT;
+			return EMPTYOBJECT;
+		}
 	}
 };
 

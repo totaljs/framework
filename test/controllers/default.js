@@ -56,7 +56,7 @@ exports.install = function() {
 	F.route('/cookie/', view_cookie);
 	F.route('/layout/', view_layout);
 	F.route('/custom/', viewCustomTesting);
-	F.route('/views/', viewViews, ["#middleware"]);
+	F.route('/views/', viewViews, ['#middleware']);
 	F.route('/view-notfound/', viewError);
 	F.route('/views-if/', viewViewsIf);
 	F.route('/{a}/', viewRouteA);
@@ -627,8 +627,10 @@ function viewRouteA() {
 	self.plain('OK');
 }
 
-function viewRouteAB() {
+function viewRouteAB(a, b) {
 	var self = this;
+	var params = self.params;
+	assert.ok(params.a === a, params.b === b, 'controller.params');
 	assert.ok(self.url === '/c/b/', 'routing: viewRouteAB');
 	self.plain('OK');
 }
