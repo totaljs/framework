@@ -4131,6 +4131,13 @@ function $decodeURIComponent(value) {
 }
 
 global.NEWOPERATION = function(name, fn) {
+
+	// Remove operation
+	if (fn == null) {
+		delete operations[name];
+		return this;
+	}
+
 	operations[name] = fn;
 	operations[name].$owner = F.$owner();
 	operations[name].$newversion = REGEXP_NEWOPERATION.test(fn.toString());

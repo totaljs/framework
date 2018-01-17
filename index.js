@@ -4437,6 +4437,12 @@ F.uninstall = function(type, name, options, skipEmit, packageName) {
 		return F;
 	}
 
+	if (type === 'operation') {
+		NEWOPERATION(name, null);
+		F.consoledebug('uninstall', type + '#' + name);
+		return F;
+	}
+
 	if (type === 'schedule') {
 		F.clearSchedule(name);
 		F.consoledebug('uninstall', type + '#' + name);
