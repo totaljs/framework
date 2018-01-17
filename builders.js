@@ -2624,7 +2624,7 @@ exports.isSchema = function(obj) {
 	return obj instanceof SchemaInstance;
 };
 
-exports.eachschema = function(group, fn) {
+global.EACHSCHEMA = exports.eachschema = function(group, fn) {
 
 	if (fn === undefined) {
 		fn = group;
@@ -2686,6 +2686,12 @@ exports.remove = function(group, name) {
 		g && g.remove(name);
 	} else
 		delete schemas[group];
+};
+
+global.EACHOPERATION = function(fn) {
+	var keys = Object.keys(operations);
+	for (var i = 0, length = keys.length; i < length; i++)
+		fn(keys[i]);
 };
 
 /**
