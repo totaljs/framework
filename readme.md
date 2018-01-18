@@ -13,15 +13,15 @@ $ npm install -g total.js
 
 [![Support](https://www.totaljs.com/img/button-support.png?v=3)](https://www.totaljs.com/support/)
 
-- [__NEW__: Total.js Wiki](https://www.totaljs.com/wiki/)
+- [__NEW__ Total.js CMS](http://www.totaljs.com/cms/)
+- [__NEW__ Total.js Eshop](http://www.totaljs.com/eshop/)
+- [Total.js Wiki](https://www.totaljs.com/wiki/)
 - [Total.js Flow](https://www.totaljs.com/flow/)
 - [Total.js Flowboard](https://www.totaljs.com/flowboard/)
 - [Total.js Messenger](https://www.totaljs.com/messenger/)
 - [Total.js Dashboard](https://www.totaljs.com/dashboard/)
 - [Total.js BlogEngine](https://www.totaljs.com/blogengine/)
 - [Total.js SuperAdmin](https://www.totaljs.com/superadmin/)
-- [Total.js Eshop](http://www.totaljs.com/eshop/)
-- [Total.js CMS](http://www.totaljs.com/cms/)
 - [Total.js HelpDesk](https://www.totaljs.com/helpdesk/)
 - [Total.js OpenPlatform](https://www.totaljs.com/openplatform/)
 - [Total.js AppMonitor](https://www.totaljs.com/monitor/)
@@ -29,7 +29,7 @@ $ npm install -g total.js
 - [Total.js modules and packages](https://modules.totaljs.com)
 - [Total.js +100 examples](https://github.com/totaljs/examples)
 - [NoSQL embedded database explorer](https://www.totaljs.com/nosql/)
-- [Download +90 client-side components (jComponent) for free](https://componentator.com)
+- [Download +100 client-side components (jComponent) for free](https://componentator.com)
 
 ---
 
@@ -110,6 +110,8 @@ $ npm install -g total.js
 | [Denis Granec](https://github.com/PatchwerkQWER) | contributor | <danis1999@gmail.com> |
 | [Chao Tang Chang](https://github.com/ckpiggy) | contributor | <mrgmp2004@hotmail.com> |
 | [luoage](https://github.com/luoage) | contributor | <luoage@msn.cn> |
+| [Mato Holly](https://github.com/boardshepherd) | contributor | <mato.holly@gmail.com> |
+| [Tema Smirnov](https://github.com/TemaSM) | contributor | <github.tema@smirnov.one> |
 
 ## Useful modules
 
@@ -128,8 +130,7 @@ Please support the framework on social networks.
 - [Follow Total.js on LinkedIn](https://www.linkedin.com/groups/totaljs-8109884)
 
 ## Contact
-
-- Peter Širka - <petersirka@gmail.com>
+- (c) 2012-2018 by Peter Širka - <petersirka@gmail.com>
 - contact form <https://www.totaljs.com/contact/>
 - <info@totaljs.com>
 

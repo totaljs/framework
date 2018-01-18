@@ -83,8 +83,14 @@
     },{
         "name": "luoage",
         "email": "luoage@msn.cn"
+    },{
+        "name": "Mato Holly",
+        "email": "mato.holly@gmail.com"
+    },{
+        "name": "Tema Smirnov",
+        "email": "github.tema@smirnov.one"
     }],
-    "version": "2.9.2-1",
+    "version": "2.9.2",
     "homepage": "http://www.totaljs.com",
     "bugs": {
         "url": "https://github.com/totaljs/framework/issues",

@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkImage
- * @version 2.8.0
+ * @version 2.9.2
  */
 
 'use strict';
@@ -117,6 +117,29 @@ exports.measureSVG = function(buffer) {
 	}
 
 	return { width: width, height: height };
+};
+
+exports.measure = function(type, buffer) {
+	switch (type) {
+		case '.jpg':
+		case '.jpeg':
+		case 'jpg':
+		case 'jpeg':
+		case 'image/jpeg':
+			return exports.measureJPG(buffer);
+		case '.gif':
+		case 'gif':
+		case 'image/gif':
+			return exports.measureGIF(buffer);
+		case '.png':
+		case 'png':
+		case 'image/png':
+			return exports.measurePNG(buffer);
+		case '.svg':
+		case 'svg':
+		case 'image/svg+xml':
+			return exports.measureSVG(buffer);
+	}
 };
 
 function Image(filename, useImageMagick, width, height) {
@@ -517,7 +540,7 @@ Image.prototype.extent = function(w, h) {
  * @return {Image}
  */
 Image.prototype.miniature = function(w, h, color, filter) {
-	return this.filter(filter || 'Box').thumbnail(w, h).background(color ? color : 'white').align('center').extent(w, h);
+	return this.filter(filter || 'Hamming').thumbnail(w, h).background(color ? color : 'white').align('center').extent(w, h);
 };
 
 /**

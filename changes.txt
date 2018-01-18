@@ -1,6 +1,43 @@
-======= 2.9.2 (HOTFIX)
+======= 2.9.2
+
+- added: `controller.html(body, [headers])`
+- added: `F.cluster.master(name, [data])` - for child processes, this method emits an event in master process
+- added: `F.cluster.on(name, callback(data))` - master event listener
+- added: `LOGMAIL()` global alias for `F.logmail()`
+- added: `MAIL()` global alias for `F.mail()`
+- added: own implementation of `onFinished`
+- added: `RESTBuilder.cookies(obj)` can set cookies as raw object
+- added: `RESTBuilder.cook([true/false])` enables persistent cookies
+- added: `SchemaOptions.params` which returns dynamic params from the controller's action
+- added: `SchemaOptions.done([arg])` as a callback (contains wrapped SUCCESS())
+- added: `SchemaOptions.DB()` which returns `DB(this.error)` instance (for SQL Agent)
+- added: `OperationOptions.done([arg])` as a callback (contains wrapped SUCCESS())
+- added: `OperationOptions.DB()` which returns `DB(this.error)` instance (for SQL Agent)
+- added: static method `Image.measure(type, buffer)` for measuring width/height of image
+- added: `EACHOPERATION(function(name) {})` for obtaining all registered operations
+- added: `controller.params` which returns dynamic params from the action
+
+- updated: `F.load()`, now supports `string` for `debug` or `release` mode
+- updated: `F.cluster.request()` can be executed from master process
+- updated: `Image.miniature()` change a default filter from `Box` to `Hamming`
+- updated: `U.request()` supports a new flag `cookies` which enables a parsing cookies from response
 
 - fixed: schema validation (problem with Arrays)
+- fixed: determines `x-forwarded-proto`
+- fixed: nested schema validation
+- fixed: themes static routing
+- fixed: NoSQL reader
+- fixed: NoSQL counter (sorting while reading stats)
+- fixed: loading dependencies
+- fixed: uninstalling middleware
+- fixed: reading/updating sitemap in controller
+
+- removed: max. sort `string` length
+- removed: `auto` appending `.css` and `.js` extension in view engine
+- removed: experimental `defer` feature
+
+- improved: GZIP compression
+- improved: code
 
 ======= 2.9.1 (HOTFIX)
 

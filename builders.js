@@ -31,7 +31,7 @@ const DEFAULT_SCHEMA = 'default';
 const SKIP = { $$schema: true, $$result: true, $$callback: true, $$async: true, $$index: true, $$repository: true, $$can: true, $$controller: true };
 const REGEXP_CLEAN_EMAIL = /\s/g;
 const REGEXP_CLEAN_PHONE = /\s|\.|-|\(|\)/g;
-const REGEXP_NEWOPERATION = /^function(\s)?\([a-zA-Z0-9$]+\)/;
+const REGEXP_NEWOPERATION = /^function(\s)?\([a-zA-Z0-9$]+\)|^function anonymous\(\$/;
 const hasOwnProperty = Object.prototype.hasOwnProperty;
 const Qs = require('querystring');
 
@@ -50,28 +50,76 @@ function SchemaOptions(error, model, options, callback, controller) {
 	this.options = options;
 	this.callback = this.next = callback;
 	this.controller = controller;
-
-	if (controller) {
-
-		if (controller.user)
-			this.user = controller.user;
-
-		if (controller.session)
-			this.session = controller.session;
-
-		this.language = controller.language || '';
-		this.ip = controller.ip;
-		this.id = controller.id;
-		this.query = controller.query;
-		this.body = controller.body;
-		this.files = controller.files;
-	} else
-		this.language = '';
 }
 
+SchemaOptions.prototype = {
+
+	get user() {
+		return this.controller ? this.controller.user : null;
+	},
+
+	get session() {
+		return this.controller ? this.controller.session : null;
+	},
+
+	get language() {
+		return (this.controller ? this.controller.language : '') || '';
+	},
+
+	get ip() {
+		return this.controller ? this.controller.ip : null;
+	},
+
+	get id() {
+		return this.controller ? this.controller.id : null;
+	},
+
+	get params() {
+		return this.controller ? this.controller.params : null;
+	},
+
+	get files() {
+		return this.controller ? this.controller.files : null;
+	},
+
+	get body() {
+		return this.controller ? this.controller.body : null;
+	},
+
+	get query() {
+		return this.controller ? this.controller.query : null;
+	}
+};
+
+SchemaOptions.prototype.DB = function() {
+	return F.database(this.error);
+};
+
 SchemaOptions.prototype.success = function(a, b) {
+
+	if (a && b === undefined && typeof(a) !== 'boolean') {
+		b = a;
+		a = true;
+	}
+
 	this.callback(SUCCESS(a === undefined ? true : a, b));
 	return this;
+};
+
+SchemaOptions.prototype.done = function(arg) {
+	var self = this;
+	return function(err, response) {
+
+		if (err && !(err instanceof ErrorBuilder)) {
+			self.error.push(err);
+			self.callback();
+		}
+
+		if (arg)
+			self.callback(SUCCESS(err == null, response));
+		else
+			self.callback(SUCCESS(err == null));
+	};
 };
 
 SchemaOptions.prototype.invalid = function(name, error, path, index) {
@@ -524,24 +572,24 @@ SchemaBuilderEntity.prototype.$parse = function(name, value, required, custom) {
 		return result;
 	}
 
-	if (lower.contains(['string', 'text', 'varchar', 'nvarchar'])) {
+	if ((/^(string|text)+(\(\d+\))?$/).test(lower)) {
 		result.type = 3;
 		return parseLength(lower, result);
 	}
 
-	if (lower.indexOf('capitalize') !== -1 || lower.indexOf('camel') !== -1) {
+	if ((/^(capitalize|camelcase|camelize)+(\(\d+\))?$/).test(lower)) {
 		result.type = 3;
 		result.subtype = 'capitalize';
 		return parseLength(lower, result);
 	}
 
-	if (lower.indexOf('lower') !== -1) {
+	if ((/^(lower|lowercase)+(\(\d+\))?$/).test(lower)) {
 		result.subtype = 'lowercase';
 		result.type = 3;
 		return parseLength(lower, result);
 	}
 
-	if (lower.indexOf('upper') !== -1) {
+	if ((/^(upper|uppercase)+(\(\d+\))?$/).test(lower)) {
 		result.subtype = 'uppercase';
 		result.type = 3;
 		return parseLength(lower, result);
@@ -594,22 +642,22 @@ SchemaBuilderEntity.prototype.$parse = function(name, value, required, custom) {
 		return result;
 	}
 
-	if (lower.contains(['int', 'byte'])) {
+	if (['int', 'integer', 'byte'].indexOf(lower) !== -1) {
 		result.type = 1;
 		return result;
 	}
 
-	if (lower.contains(['decimal', 'number', 'float', 'double'])) {
+	if (['decimal', 'number', 'float', 'double'].indexOf(lower) !== -1) {
 		result.type = 2;
 		return result;
 	}
 
-	if (lower.indexOf('bool') !== -1) {
+	if (['bool', 'boolean'].indexOf(lower) !== -1) {
 		result.type = 4;
 		return result;
 	}
 
-	if (lower.contains(['date', 'time'])) {
+	if (['date', 'time', 'datetime'].indexOf(lower) !== -1) {
 		result.type = 5;
 		return result;
 	}
@@ -1390,6 +1438,7 @@ SchemaBuilderEntity.prototype.make = function(model, filter, callback, argument,
 	}
 
 	var output = this.prepare(model);
+
 	if (novalidate) {
 		callback && callback(null, output, argument);
 		return output;
@@ -2348,7 +2397,7 @@ SchemaInstance.prototype.$callback = function(callback) {
 	return this;
 };
 
-SchemaInstance.prototype.$output = function() {
+SchemaInstance.prototype.$response = SchemaInstance.prototype.$output = function() {
 	this.$$index = this.$$result.length;
 	return this;
 };
@@ -2597,7 +2646,7 @@ exports.isSchema = function(obj) {
 	return obj instanceof SchemaInstance;
 };
 
-exports.eachschema = function(group, fn) {
+global.EACHSCHEMA = exports.eachschema = function(group, fn) {
 
 	if (fn === undefined) {
 		fn = group;
@@ -2659,6 +2708,12 @@ exports.remove = function(group, name) {
 		g && g.remove(name);
 	} else
 		delete schemas[group];
+};
+
+global.EACHOPERATION = function(fn) {
+	var keys = Object.keys(operations);
+	for (var i = 0, length = keys.length; i < length; i++)
+		fn(keys[i]);
 };
 
 /**
@@ -3658,6 +3713,7 @@ function RESTBuilder(url) {
 	this.$length = 0;
 	this.$transform = transforms['restbuilder_default'];
 	this.$files = null;
+	this.$persistentcookies = false;
 
 	// this.$flags;
 	// this.$data = {};
@@ -3893,9 +3949,19 @@ RESTBuilder.prototype.raw = function(value) {
 	return this;
 };
 
+RESTBuilder.prototype.cook = function(value) {
+	this.$flags = null;
+	this.$persistentcookies = value !== false;
+	return this;
+};
+
+RESTBuilder.prototype.cookies = function(obj) {
+	this.$cookies = obj;
+	return this;
+};
+
 RESTBuilder.prototype.cookie = function(name, value) {
-	if (!this.$cookies)
-		this.$cookies = {};
+	!this.$cookies && (this.$cookies = {});
 	this.$cookies[name] = value;
 	return this;
 };
@@ -3939,6 +4005,7 @@ RESTBuilder.prototype.stream = function(callback) {
 
 	if (!self.$flags) {
 		!self.$nodnscache && flags.push('dnscache');
+		self.$persistentcookies && flags.push('cookies');
 		switch (self.$type) {
 			case 1:
 				flags.push('json');
@@ -3969,6 +4036,7 @@ RESTBuilder.prototype.exec = function(callback) {
 	if (!self.$flags) {
 
 		!self.$nodnscache && flags.push('dnscache');
+		self.$persistentcookies && flags.push('cookies');
 		self.$length && flags.push('<' + self.$length);
 		self.$redirect === false && flags.push('noredirect');
 
@@ -4091,6 +4159,13 @@ function $decodeURIComponent(value) {
 }
 
 global.NEWOPERATION = function(name, fn) {
+
+	// Remove operation
+	if (fn == null) {
+		delete operations[name];
+		return this;
+	}
+
 	operations[name] = fn;
 	operations[name].$owner = F.$owner();
 	operations[name].$newversion = REGEXP_NEWOPERATION.test(fn.toString());
@@ -4133,6 +4208,10 @@ function OperationOptions(error, value, callback, options) {
 	this.options = options;
 }
 
+OperationOptions.prototype.DB = function() {
+	return F.database(this.error);
+};
+
 OperationOptions.prototype.callback = function(value) {
 	var self = this;
 
@@ -4147,7 +4226,29 @@ OperationOptions.prototype.callback = function(value) {
 	return self;
 };
 
+OperationOptions.prototype.done = function(arg) {
+	var self = this;
+	return function(err, response) {
+
+		if (err && !(err instanceof ErrorBuilder)) {
+			self.error.push(err);
+			self.callback();
+		}
+
+		if (arg)
+			self.callback(SUCCESS(err == null, response));
+		else
+			self.callback(SUCCESS(err == null));
+	};
+};
+
 OperationOptions.prototype.success = function(a, b) {
+
+	if (a && b === undefined && typeof(a) !== 'boolean') {
+		b = a;
+		a = true;
+	}
+
 	this.callback(SUCCESS(a === undefined ? true : a, b));
 	return this;
 };

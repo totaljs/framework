@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkInternal
- * @version 2.9.0
+ * @version 2.9.2
  */
 
 'use strict';
@@ -179,6 +179,17 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory) {
 		}
 
 		tmp.filename = header[1];
+
+		// IE9 sends absolute filename
+		var index = tmp.filename.lastIndexOf('\\');
+
+		// For Unix like senders
+		if (index === -1)
+			index = tmp.filename.lastIndexOf('/');
+
+		if (index !== -1)
+			tmp.filename = tmp.filename.substring(index + 1);
+
 		tmp.path = path + (INDEXFILE++) + '.bin';
 	};
 
@@ -831,15 +842,21 @@ HttpFile.prototype.md5 = function(callback) {
 	var self = this;
 	var md5 = Crypto.createHash('md5');
 	var stream = Fs.createReadStream(self.path);
+
 	stream.on('data', (buffer) => md5.update(buffer));
 	stream.on('error', function(error) {
-		callback(error, null);
-		callback = null;
+		if (callback) {
+			callback(error, null);
+			callback = null;
+		}
 	});
 
 	onFinished(stream, function() {
 		destroyStream(stream);
-		callback && callback(null, md5.digest('hex'));
+		if (callback) {
+			callback(null, md5.digest('hex'));
+			callback = null;
+		}
 	});
 
 	return self;
@@ -1621,13 +1638,41 @@ function view_parse_localization(content, language) {
 	while (command) {
 
 		if (command)
-			output += content.substring(end ? end + 1 : 0, command.beg) + (command.command ? F.translate(language, command.command) : '');
+			output += content.substring(end ? end + 1 : 0, command.beg) + (command.command ? localize(language, command) : '');
 
 		end = command.end;
 		command = view_find_localization(content, command.end);
 	}
 
 	output += content.substring(end + 1);
+	return output;
+}
+
+// Escaping ", ' and ` chars
+function localize(language, command) {
+
+	!language && (language = 'default');
+
+	if (F.resources[language] && F.resources[language].$empty)
+		return command.command;
+
+	var output = F.translate(language, command.command);
+
+	if (command.escape) {
+		var index = 0;
+		while (true) {
+			index = output.indexOf(command.escape, index);
+			if (index === -1)
+				break;
+			var c = output[index - 1];
+			if (c !== '\\') {
+				output = output.substring(0, index) + '\\' + output.substring(index);
+				index++;
+			} else
+				index += 2;
+		}
+	}
+
 	return output;
 }
 
@@ -2359,6 +2404,8 @@ function view_find_localization(content, index) {
 
 	var length = content.length;
 	var count = 0;
+	var beg = content[index - 1];
+	var esc = '';
 
 	for (var i = index + 2; i < length; i++) {
 		var c = content[i];
@@ -2375,11 +2422,10 @@ function view_find_localization(content, index) {
 			continue;
 		}
 
-		return {
-			beg: index,
-			end: i,
-			command: content.substring(index + 2, i).trim()
-		};
+		var end = content.substring(i + 1, i + 2);
+		if (beg === end && beg === '"' || beg === '\'' || beg === '`')
+			esc = beg;
+		return { beg: index, end: i, command: content.substring(index + 2, i).trim(), escape: esc };
 	}
 
 	return null;
@@ -3029,173 +3075,85 @@ exports.parseURI = function(req) {
 function destroyStream(stream) {
 	if (stream instanceof ReadStream) {
 		stream.destroy();
-		if (typeof(stream.close) !== 'function')
-			return stream;
-		stream.on('open', function() {
+		typeof(stream.close) === 'function' && stream.on('open', function() {
 			typeof(this.fd) === 'number' && this.close();
 		});
-		return stream;
-	}
-	stream instanceof Stream && typeof(stream.destroy) === 'function' && stream.destroy();
+	} else if (stream instanceof Stream)
+		typeof(stream.destroy) === 'function' && stream.destroy();
 	return stream;
 }
 
-/*
- * ee-first (first, listener)
- * Copyright(c) 2014 Jonathan Ong <me@jongleberry.com>
- * MIT Licensed
- * https://github.com/jonathanong/ee-first
- */
-function first(stuff, done) {
-	var cleanups = [];
-	for (var i = 0, il = stuff.length; i < il; i++) {
-		var arr = stuff[i];
-		var ee = arr[0];
-		for (var j = 1, jl = arr.length; j < jl; j++) {
-			var event = arr[j];
-			var fn = listener(event, callback);
-			ee.on(event, fn);
-			cleanups.push({ ee: ee, event: event, fn: fn });
-		}
+function isFinished(stream) {
+
+	// Response & Request
+	if (stream.socket) {
+		if (stream.writable && (!stream.socket._writableState || stream.socket._writableState.finished || stream.socket._writableState.destroyed))
+			return true;
+		if (stream.readable && (!stream.socket._readableState|| stream.socket._writableState.ended || stream.socket._readableState.destroyed))
+			return true;
+		return false;
 	}
 
-	function callback() {
-		cleanup();
-		done.apply(null, arguments);
-	}
+	if (stream._readableState && (stream._readableState.ended || stream._readableState.destroyed))
+		return true;
 
-	function cleanup() {
-		var x;
-		for (var i = 0, length = cleanups.length; i < length; i++) {
-			x = cleanups[i];
-			x.ee.removeListener(x.event, x.fn);
-		}
-	}
+	if (stream._writableState && (stream._writableState.finished || stream._writableState.destroyed))
+		return true;
 
-	function thunk(fn) {
-		done = fn;
-	}
-
-	thunk.cancel = cleanup;
-	return thunk;
+	return false;
 }
 
-function listener(event, done) {
-	return function(arg1) {
-		var args = new Array(arguments.length);
-		var ee = this;
-		var err = event === 'error' ? arg1 : null;
+function onFinished(stream, fn) {
 
-		// copy args to prevent arguments escaping scope
-		for (var i = 0; i < args.length; i++)
-			args[i] = arguments[i];
-
-		done(err, ee, event, args);
-	};
-}
-
-/*
- * on-finished (onFinished, attachFinishedListener, attachListener, createListener, patchAssignSocket, isFinished)
- * Copyright(c) 2013 Jonathan Ong <me@jongleberry.com>
- * Copyright(c) 2014 Douglas Christopher Wilson <doug@somethingdoug.com>
- * MIT Licensed
- * https://github.com/jshttp/on-finished
- */
-function onFinished(msg, listener) {
-	if (isFinished(msg) !== false)
-		setImmediate(listener, null, msg);
-	else
-		attachListener(msg, listener);
-	return msg;
-}
-
-function attachFinishedListener(msg, callback) {
-	var eeMsg;
-	var eeSocket;
-	var finished = false;
-
-	function onFinish(err) {
-		eeMsg.cancel();
-		eeSocket.cancel();
-		finished = true;
-		callback(err);
-	}
-
-	// finished on first message event
-	eeMsg = eeSocket = first([[msg, 'end', 'finish']], onFinish);
-
-	function onSocket(socket) {
-		// remove listener
-		msg.removeListener('socket', onSocket);
-
-		if (finished || eeMsg !== eeSocket)
-			return;
-
-		// finished on first socket event
-		eeSocket = first([[socket, 'error', 'close']], onFinish);
-	}
-
-	// socket already assigned
-	if (msg.socket) {
-		onSocket(msg.socket);
+	if (stream.$onFinished) {
+		fn && fn();
+		fn = null;
 		return;
 	}
 
-	// wait for socket to be assigned
-	msg.on('socket', onSocket);
-
-	// node.js 0.8 patch
-	!msg.socket && patchAssignSocket(msg, onSocket);
-}
-
-function attachListener(msg, listener) {
-	var attached = msg.__onFinished;
-
-	// create a private single listener with queue
-	if (!attached || !attached.queue) {
-		attached = msg.__onFinished = createListener(msg);
-		attachFinishedListener(msg, attached);
-	}
-
-	attached.queue.push(listener);
-}
-
-function createListener(msg) {
-	function listener(err) {
-		if (msg.__onFinished === listener)
-			msg.__onFinished = null;
-		if (!listener.queue)
-			return;
-		var queue = listener.queue;
-		listener.queue = null;
-		for (var i = 0, length = queue.length; i < length; i++)
-			queue[i](err, msg);
-	}
-	listener.queue = [];
-	return listener;
-}
-
-function patchAssignSocket(res, callback) {
-	var assignSocket = res.assignSocket;
-	if (typeof(assignSocket) !== 'function')
+	if (stream.$onFinishedQueue) {
+		if (stream.$onFinishedQueue instanceof Array)
+			stream.$onFinishedQueue.push(fn);
+		else
+			stream.$onFinishedQueue = [stream.$onFinishedQueue, fn];
 		return;
-	// res.on('socket', callback) is broken in 0.8
-	res.assignSocket = function(socket) {
-		assignSocket.call(this, socket);
-		callback(socket);
+	} else
+		stream.$onFinishedQueue = fn;
+
+	var callback = function() {
+		!stream.$onFinished && (stream.$onFinished = true);
+		if (stream.$onFinishedQueue instanceof Array) {
+			while (stream.$onFinishedQueue.length)
+				stream.$onFinishedQueue.shift()();
+			stream.$onFinishedQueue = null;
+		} else if (stream.$onFinishedQueue) {
+			stream.$onFinishedQueue();
+			stream.$onFinishedQueue = null;
+		}
 	};
-}
 
-function isFinished(msg) {
-	var socket = msg.socket;
+	if (isFinished(stream)) {
+		setImmediate(callback);
+	} else {
 
-	// OutgoingMessage
-	if (typeof msg.finished === 'boolean')
-		return Boolean(msg.finished || (socket && !socket.writable));
+		if (stream.socket) {
+			if (!stream.socket.$totalstream) {
+				stream.socket.$totalstream = stream;
+				stream.socket.prependListener('error', callback);
+				stream.socket.prependListener('close', callback);
+			}
+		}
 
-	// IncomingMessage
-	if (typeof msg.complete === 'boolean')
-		return Boolean(msg.upgrade || !socket || !socket.readable || (msg.complete && !msg.readable));
+		stream.prependListener('error', callback);
+		stream.prependListener('end', callback);
+		stream.prependListener('close', callback);
+		stream.prependListener('aborted', callback);
+		stream.prependListener('finish', callback);
+
+		//stream.uri --> determines ServerRespone
+		// stream.uri && stream.prependListener('aborted', callback);
+		// (stream._writableState || stream.uri) && stream.prependListener('finish', callback);
+	}
 }
 
 exports.encodeUnicodeURL = function(url) {
@@ -3268,7 +3226,7 @@ exports.parseBlock = function(name, content) {
 
 function existsSync(filename) {
 	try {
-		return Fs.statSync(filename) ? true : false;
+		return !!Fs.statSync(filename);
 	} catch (e) {
 		return false;
 	}

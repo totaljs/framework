@@ -21,7 +21,7 @@
 
 /**
  * @module NoSQL
- * @version 2.9.1
+ * @version 2.9.2
  */
 
 'use strict';
@@ -61,7 +61,6 @@ const CLUSTER_LOCK_COUNTER = { TYPE: 'nosql-counter-lock' };
 const CLUSTER_UNLOCK_COUNTER = { TYPE: 'nosql-counter-unlock' };
 const FLAGS_READ = ['get'];
 const COUNTER_MMA = [0, 0];
-const NOSQL_STR_END = { '"': true, ',': true, '}': true };
 const COMPARER = global.Intl ? global.Intl.Collator().compare : function(a, b) {
 	return a.removeDiacritics().localeCompare(b.removeDiacritics());
 };
@@ -805,30 +804,18 @@ Database.prototype.$update = function() {
 	var filter = self.pending_update.splice(0);
 	var length = filter.length;
 	var change = false;
-	var noconvert = true;
-
-	for (var i = 0; i < length; i++) {
-		var item = filter[i].builder;
-		for (var j = 0; j < item.$filter.length; j++) {
-			if (!item.$filter[j].noconvert)
-				noconvert = false;
-		}
-	}
 
 	reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
 
 		if (value[0] !== '{')
 			return;
 
-		var doc = noconvert ? value.substring(0, value.length - 1) : JSON.parse(value.substring(0, value.length - 1), jsonparser);
-
-		var is = false;
-		var nc = noconvert;
+		var doc = JSON.parse(value.substring(0, value.length - 1), jsonparser);
 
 		for (var i = 0; i < length; i++) {
 			var item = filter[i];
 			var builder = item.builder;
-			var output = nc ? builder.compare_string(doc, index, true) : builder.compare(doc, index, true);
+			var output = builder.compare(doc, index, true);
 
 			if (output) {
 				builder.$backup && builder.$backupdoc(output);
@@ -848,16 +835,11 @@ Database.prototype.$update = function() {
 				self.emit(item.keys ? 'modify' : 'update', output);
 				item.count++;
 				change = true;
-				is = true;
-				nc = false;
 				doc = output;
 			}
 		}
 
-		if (is)
-			writer.write(JSON.stringify(doc) + NEWLINE);
-		else
-			writer.write((noconvert ? doc : JSON.stringify(doc)) + NEWLINE);
+		writer.write(JSON.stringify(doc) + NEWLINE);
 	}));
 
 	var finish = function() {
@@ -1063,8 +1045,7 @@ Database.prototype.$reader2 = function(filename, items, callback, reader) {
 	if (self.readonly) {
 		if (reader === undefined) {
 			U.download(filename, FLAGS_READ, function(err, response) {
-				if (err)
-					F.error(err, 'NoSQL database: ' + self.name);
+				err && F.error(err, 'NoSQL database: ' + self.name);
 				self.$reader2(filename, items, callback, err ? null : response);
 			});
 			return self;
@@ -1074,32 +1055,29 @@ Database.prototype.$reader2 = function(filename, items, callback, reader) {
 
 	var filter = items;
 	var length = filter.length;
-	var noconvert = true;
 	var first = true;
 
 	for (var i = 0; i < length; i++) {
-		var item = filter[i].builder;
-		if (!item.$first)
+		if (!filter[i].builder.$first)
 			first = false;
-		for (var j = 0; j < item.$filter.length; j++) {
-			if (!item.$filter[j].noconvert)
-				noconvert = false;
-		}
 		filter[i].scalarcount = 0;
 	}
+
+	if (first && length > 1)
+		first = false;
 
 	reader && reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
 
 		if (value[0] !== '{')
 			return;
 
-		var json = noconvert ? value.substring(0, value.length - 1) : JSON.parse(value.substring(0, value.length - 1), jsonparser);
+		var json = JSON.parse(value.substring(0, value.length - 1), jsonparser);
 		var val;
 
 		for (var i = 0; i < length; i++) {
 			var item = filter[i];
 			var builder = item.builder;
-			var output = noconvert ? builder.compare_string(json, index) : builder.compare(json, index);
+			var output = builder.compare(json, index);
 			if (!output)
 				continue;
 
@@ -1170,7 +1148,6 @@ Database.prototype.$reader2 = function(filename, items, callback, reader) {
 
 			if (first && reader.destroy) {
 				reader.destroy();
-				finish();
 				return false;
 			}
 		}
@@ -1251,7 +1228,6 @@ function nosqlsortvalue(a, b, sorter) {
 	if (type === 'number')
 		return sorter.asc ? a > b : a < b;
 	else if (type === 'string') {
-		a = (a.length > 5 ? a.substring(0, 5) : a);
 		var c = COMPARER(a, b);
 		return sorter.asc ? c === 1 : c === -1;
 	} else if (type === 'boolean')
@@ -1264,9 +1240,6 @@ function nosqlsortvalue(a, b, sorter) {
 
 function nosqlresort(arr, builder, doc) {
 	var b = doc[builder.$sort.name];
-	if (typeof(b) === 'string')
-		b = (b.length > 5 ? b.substring(0, 5) : b).toLowerCase().removeDiacritics();
-
 	var beg = 0;
 	var length = arr.length;
 	var tmp = length - 1;
@@ -1454,17 +1427,9 @@ Database.prototype.$views = function() {
 		return;
 
 	var response = [];
-	var noconvert = true;
 
-	for (var i = 0; i < length; i++) {
-
-		for (var j = 0; j < self.views[views[i]].$filter.length; j++) {
-			if (!self.views[views[i]].$filter[j].noconvert)
-				noconvert = false;
-		}
-
+	for (var i = 0; i < length; i++)
 		response.push({ response: [], name: views[i], builder: self.views[views[i]], count: 0, counter: 0 });
-	}
 
 	var reader = Fs.createReadStream(self.filename);
 
@@ -1473,11 +1438,11 @@ Database.prototype.$views = function() {
 		if (value[0] !== '{')
 			return;
 
-		var json = noconvert ? value.substring(0, value.length - 1) : JSON.parse(value.substring(0, value.length - 1), jsonparser);
+		var json = JSON.parse(value.substring(0, value.length - 1), jsonparser);
 
 		for (var j = 0; j < length; j++) {
 			var item = self.views[views[j]];
-			var output = noconvert ? item.compare_string(json, index) : item.compare(json, index);
+			var output = item.compare(json, index);
 
 			if (!output)
 				continue;
@@ -1623,28 +1588,18 @@ Database.prototype.$remove = function() {
 	if (F.isCluster && self.$lock())
 		return;
 
-	var noconvert = true;
-
-	for (var i = 0; i < length; i++) {
-		var item = filter[i].builder;
-		for (var j = 0; j < item.$filter.length; j++) {
-			if (!item.$filter[j].noconvert)
-				noconvert = false;
-		}
-	}
-
 	reader && reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
 
 		if (value[0] !== '{')
 			return;
 
-		var json = noconvert ? value.substring(0, value.length - 1) : JSON.parse(value.substring(0, value.length - 1), jsonparser);
+		var json = JSON.parse(value.substring(0, value.length - 1), jsonparser);
 		var removed = false;
 
 		for (var i = 0; i < length; i++) {
 			var item = filter[i];
 			var builder = item.builder;
-			var output = noconvert ? builder.compare_string(json, index) : builder.compare(json, index);
+			var output = builder.compare(json, index);
 			if (output) {
 				builder.$backup && builder.$backupdoc(output);
 				removed = true;
@@ -2025,253 +1980,6 @@ DatabaseBuilder.prototype.make = function(fn) {
 	return this;
 };
 
-DatabaseBuilder.prototype.compare_string = function(json, index) {
-
-	var b = null;
-	var e = null;
-	var can = true;
-	var wasor = false;
-	var prevscope = 0;
-
-	for (var i = 0, length = this.$filter.length; i < length; i++) {
-		var filter = this.$filter[i];
-
-		if (wasor && filter.scope)
-			continue;
-
-		if (prevscope && !filter.scope && !wasor)
-			return;
-
-		prevscope = filter.scope;
-
-		var path = '"' + filter.name + '":';
-		var beg = json.indexOf(path);
-		var value = '';
-		var allow = true;
-
-		if (beg !== -1) {
-			beg = beg + path.length;
-
-			var indexer = beg;
-			var c = json[indexer];
-			var is = false;
-			var type = 0; // number, boolean
-			var counter = 0;
-
-			switch (c) {
-				case '[': // array
-					type = 1;
-					indexer++;
-					b = '[';
-					e = ']';
-					break;
-				case '{': // object
-					type = 2;
-					indexer++;
-					b = '{';
-					e = '}';
-					break;
-				case '"': // string, date
-					type = 3;
-					indexer++;
-					break;
-			}
-
-			while (true) {
-
-				c = json[indexer++];
-				if (!c)
-					break;
-
-				if (c === '\\') {
-					value += c;
-					c = json[indexer++];
-					value += c;
-					continue;
-				}
-
-				if (is) {
-					if (c === '"')
-						is = false;
-					value += c;
-					continue;
-				}
-
-				if (type === 1 || type === 2) {
-					// Array
-					if (c === '"') {
-						is = true;
-					} else if (c === b) {
-						counter++;
-					} else if (c === e) {
-						if (counter) {
-							counter--;
-							value += c;
-							continue;
-						}
-						break;
-					}
-					value += c;
-				} else {
-					if (NOSQL_STR_END[c])
-						break;
-					value += c;
-				}
-			}
-		}
-
-		switch (filter.noconvert) {
-			case 1: // string
-				if (filter.operator === '=') {
-					if (filter.value !== value)
-						allow = false;
-				} else if (filter.operator === '!=') {
-					if (filter.value === value)
-						allow = false;
-				} else if (filter.operator === 10) { // beg
-					if (!value.startsWith(filter.value))
-						allow = false;
-				} else if (filter.operator === 11) { // end
-					if (!value.endsWith(filter.value))
-						allow = false;
-				} else if (filter.operator === 12) { // *
-					if (value.toLowerCase().indexOf(filter.value) === -1)
-						allow = false;
-				} else
-					return; // >, < is not supported for strings
-				break;
-			case 2: // number
-				if (filter.operator === '=') {
-					if (filter.value !== +value)
-						allow = false;
-				} else if (filter.operator === '!=') {
-					if (filter.value.toString() === value)
-						allow = false;
-				} else if (filter.operator === '>') {
-					if (+value <= filter.value)
-						allow = false;
-				} else if (filter.operator === '<') {
-					if (+value >= filter.value)
-						allow = false;
-				} else if (filter.operator === '>=') {
-					if (+value < filter.value)
-						allow = false;
-				} else if (filter.operator === '<=') {
-					if (+value > filter.value)
-						allow = false;
-				} else
-					return; // >, < is not supported for strings
-				break;
-			case 3: // boolean
-				if (filter.operator === '=') {
-					if (filter.value.toString() !== value)
-						allow = false;
-				} else if (filter.operator === '!=') {
-					if (filter.value.toString() === value)
-						allow = false;
-				} else
-					return;
-				break;
-			case 4: // date
-				var ticks = new Date(value).getTime();
-				if (filter.operator === '=') {
-					if (ticks !== filter.ticks)
-						allow = false;
-				} else if (filter.operator === '!=') {
-					if (ticks === filter.ticks)
-						allow = false;
-				} else if (filter.operator === '>') {
-					if (ticks <= filter.ticks)
-						allow = false;
-				} else if (filter.operator === '<') {
-					if (ticks >= filter.ticks)
-						allow = false;
-				} else if (filter.operator === '>=') {
-					if (ticks < filter.ticks)
-						allow = false;
-				} else if (filter.operator === '<=') {
-					if (ticks > filter.ticks)
-						allow = false;
-				} else
-					return;
-				break;
-			case 5: // contains
-				if (!value || value === 'null')
-					allow = false;
-				break;
-			case 6: // empty
-				if (value && value !== 'null')
-					allow = false;
-				break;
-			case 21: // number in
-				// Array
-				var is = false;
-				value = ' ' + value + ',';
-				for (var j = 0, jl = filter.value.length; j < jl; j++) {
-					if (value.indexOf(' ' + filter.value[j] + ',') !== -1) {
-						is = true;
-						break;
-					}
-				}
-				if (!is)
-					allow = false;
-				break;
-			case 22: // string in
-				// Array
-				if (value[0] === '"') {
-					var is = false;
-					for (var j = 0, jl = filter.value.length; j < jl; j++) {
-						if (value.indexOf('"' + filter.value[j] + '"') !== -1) {
-							is = true;
-							break;
-						}
-					}
-					if (!is)
-						allow = false;
-				} else if (filter.value.indexOf(value) === -1)
-					allow = false;
-				break;
-			case 23: // boolean in
-				if (filter.value.indexOf(value === 'true') === -1)
-					allow = false;
-				break;
-		}
-
-		if (allow) {
-			can = true;
-			if (filter.scope)
-				wasor = true;
-			continue;
-		} else if (filter.scope) {
-			can = false;
-			wasor = false;
-			continue;
-		}
-
-		return;
-	}
-
-	if (!can)
-		return;
-
-	var doc = JSON.parse(json, jsonparser);
-
-	if (this.$prepare)
-		return this.$prepare(doc, index);
-
-	if (!this.$fields)
-		return doc;
-
-	var obj = {};
-
-	for (var i = 0, length = this.$fields.length; i < length; i++) {
-		var prop = this.$fields[i];
-		obj[prop] = doc[prop];
-	}
-
-	return obj;
-};
-
 DatabaseBuilder.prototype.compare = function(doc, index) {
 
 	var can = true;
@@ -2336,12 +2044,12 @@ DatabaseBuilder.prototype.scalar = function(type, name) {
 };
 
 DatabaseBuilder.prototype.contains = function(name) {
-	this.$filter.push({ scope: this.$scope, filter: compare_notempty, name: name, noconvert: 5 });
+	this.$filter.push({ scope: this.$scope, filter: compare_notempty, name: name });
 	return this;
 };
 
 DatabaseBuilder.prototype.empty = function(name) {
-	this.$filter.push({ scope: this.$scope, filter: compare_empty, name: name, noconvert: 6 });
+	this.$filter.push({ scope: this.$scope, filter: compare_empty, name: name });
 	return this;
 };
 
@@ -2368,7 +2076,6 @@ DatabaseBuilder.prototype.where = function(name, operator, value) {
 	}
 
 	var date = framework_utils.isDate(value);
-	var noconvert = 0;
 
 	switch (operator) {
 		case '=':
@@ -2393,23 +2100,7 @@ DatabaseBuilder.prototype.where = function(name, operator, value) {
 			break;
 	}
 
-	if (date) {
-		noconvert = 4;
-	} else {
-		switch (typeof(value)) {
-			case 'string':
-				noconvert = 1;
-				break;
-			case 'number':
-				noconvert = 2;
-				break;
-			case 'boolean':
-				noconvert = 3;
-				break;
-		}
-	}
-
-	this.$filter.push({ scope: this.$scope, filter: fn, name: name, value: value, noconvert: noconvert, operator: operator, ticks: date ? value.getTime() : 0 });
+	this.$filter.push({ scope: this.$scope, filter: fn, name: name, value: value, operator: operator, ticks: date ? value.getTime() : 0 });
 	return this;
 };
 
@@ -2542,7 +2233,7 @@ DatabaseBuilder.prototype.like = DatabaseBuilder.prototype.search = function(nam
 			break;
 	}
 
-	this.$filter.push({ scope: this.$scope, name: name, filter: fn, value: value, noconvert: 1, operator: where === 'beg' ? 10 : where === 'end' ? 11 : 12 });
+	this.$filter.push({ scope: this.$scope, name: name, filter: fn, value: value, operator: where === 'beg' ? 10 : where === 'end' ? 11 : 12 });
 	return this;
 };
 
@@ -2624,23 +2315,7 @@ DatabaseBuilder.prototype.$sortinline = function() {
 DatabaseBuilder.prototype.in = function(name, value) {
 	if (!(value instanceof Array))
 		value = [value];
-
-	var type = typeof(value[0]);
-	var noconvert = 0;
-
-	switch (type) {
-		case 'number':
-			noconvert = 21;
-			break;
-		case 'string':
-			noconvert = 22;
-			break;
-		case 'boolean':
-			noconvert = 23;
-			break;
-	}
-
-	this.$filter.push({ scope: this.$scope, name: name, filter: compare_in, value: value, noconvert: noconvert });
+	this.$filter.push({ scope: this.$scope, name: name, filter: compare_in, value: value });
 	return this;
 };
 
@@ -3362,6 +3037,7 @@ Counter.prototype.stats = Counter.prototype.stats_sum = function(top, year, mont
 
 	reader.on('end', function() {
 		self.type = 0;
+		output.sort(counter_sort_sum);
 		callback && callback(null, output);
 	});
 
@@ -4055,6 +3731,7 @@ Binary.prototype.read = function(id, callback) {
 		var json = framework_utils.createBuffer(buffer, 'binary').toString('utf8').replace(REG_CLEAN, '');
 		stream = Fs.createReadStream(filename, { start: BINARY_HEADER_LENGTH });
 		callback(null, stream, JSON.parse(json, jsonparser));
+		CLEANUP(stream);
 	});
 
 	return self;

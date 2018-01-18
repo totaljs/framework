@@ -172,6 +172,7 @@ var CONTENTTYPES = {
 	'zip': 'application/zip'
 };
 
+var persistentcookies = {};
 var dnscache = {};
 var datetimeformat = {};
 const hasOwnProperty = Object.prototype.hasOwnProperty;
@@ -435,6 +436,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 	var options = { length: 0, timeout: timeout || 10000, evt: new EventEmitter2(), encoding: typeof(encoding) !== 'string' ? ENCODING : encoding, callback: callback, post: false, redirect: 0 };
 	var method;
 	var type = 0;
+	var isCookies = false;
 
 	if (headers)
 		headers = exports.extend({}, headers);
@@ -512,8 +514,13 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 					method = flags[i].toUpperCase();
 					!headers['Content-Type'] && (headers['Content-Type'] = 'application/x-www-form-urlencoded');
 					break;
+
 				case 'dnscache':
 					options.resolve = true;
+					break;
+
+				case 'cookies':
+					isCookies = true;
 					break;
 			}
 		}
@@ -543,6 +550,8 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 		options.data = data;
 
 	if (cookies) {
+		if (isCookies)
+			options.cookies = cookies;
 		var builder = '';
 		for (var m in cookies)
 			builder += (builder ? '; ' : '') + m + '=' + cookies[m];
@@ -652,7 +661,7 @@ function request_response(res, uri, options) {
 		if (options.noredirect) {
 
 			if (options.callback) {
-				options.callback(null, '', res.statusCode, res.headers, uri.host);
+				options.callback(null, '', res.statusCode, res.headers, uri.host, EMPTYOBJECT);
 				options.callback = null;
 			}
 
@@ -671,7 +680,7 @@ function request_response(res, uri, options) {
 		if (options.redirect > 3) {
 
 			if (options.callback) {
-				options.callback(new Error('Too many redirects.'), '', 0, undefined, uri.host);
+				options.callback(new Error('Too many redirects.'), '', 0, undefined, uri.host, EMPTYOBJECT);
 				options.callback = null;
 			}
 
@@ -717,6 +726,28 @@ function request_response(res, uri, options) {
 	options.length = +res.headers['content-length'] || 0;
 	options.evt && options.evt.$events.begin && options.evt.emit('begin', options.length);
 
+	// Shared cookies
+	if (options.cookies) {
+		var arr = (res.headers['set-cookie'] || '');
+
+		// Only the one value
+		if (arr && !(arr instanceof Array))
+			arr = [arr];
+
+		if (arr instanceof Array) {
+			for (var i = 0, length = arr.length; i < length; i++) {
+				var line = arr[i];
+				var end = line.indexOf(';');
+				if (end === -1)
+					end = line.length;
+				line = line.substring(0, end);
+				var index = line.indexOf('=');
+				if (index !== -1)
+					options.cookies[line.substring(0, index)] = decodeURIComponent(line.substring(index + 1));
+			}
+		}
+	}
+
 	res.on('data', function(chunk) {
 		var self = this;
 		if (options.max && self._bufferlength > options.max)
@@ -737,13 +768,13 @@ function request_response(res, uri, options) {
 		self._buffer = undefined;
 
 		if (options.evt) {
-			options.evt.$events.end && options.evt.emit('end', str, self.statusCode, self.headers, uri.host);
+			options.evt.$events.end && options.evt.emit('end', str, self.statusCode, self.headers, uri.host, options.cookies);
 			options.evt.removeAllListeners();
 			options.evt = null;
 		}
 
 		if (options.callback) {
-			options.callback(null, uri.method === 'HEAD' ? self.headers : str, self.statusCode, self.headers, uri.host);
+			options.callback(null, uri.method === 'HEAD' ? self.headers : str, self.statusCode, self.headers, uri.host, options.cookies);
 			options.callback = null;
 		}
 
@@ -889,7 +920,6 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 				case 'dnscache':
 					options.resolve = true;
 					break;
-
 			}
 		}
 	}
@@ -1835,7 +1865,7 @@ exports.getExtension = function(filename, raw) {
 			c = filename.substring(i + 1, end);
 			return raw ? c : c.toLowerCase();
 		}
-		else if (c === '/')
+		else if (c === '/' || c === '\\')
 			return '';
 	}
 	return '';
@@ -1992,6 +2022,7 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 			continue;
 
 		var TYPE = collection[schema].schema[name];
+
 		if (TYPE.can && !TYPE.can(model))
 			continue;
 
@@ -2036,6 +2067,12 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 					}
 				}
 			}
+			continue;
+		}
+
+		if (TYPE.type === 7) {
+			// Another schema
+			exports.validate_builder(value, error, TYPE.raw, collection, current + name, undefined, undefined, pluspath);
 			continue;
 		}
 
@@ -2782,9 +2819,7 @@ String.prototype.replacer = function(find, text) {
  * @return {String}
  */
 String.prototype.hash = function(type, salt) {
-	var str = this;
-	if (salt)
-		str += salt;
+	var str = salt ? this + salt : this;
 	switch (type) {
 		case 'md5':
 			return str.md5();
@@ -2799,15 +2834,14 @@ String.prototype.hash = function(type, salt) {
 	}
 };
 
-function string_hash(s) {
-	var hash = 0, i, char;
+function string_hash(s, convert) {
+	var hash = 0;
 	if (s.length === 0)
-		return hash;
-	var l = s.length;
-	for (i = 0; i < l; i++) {
-		char = s.charCodeAt(i);
+		return convert ? '' : hash;
+	for (var i = 0, l = s.length; i < l; i++) {
+		var char = s.charCodeAt(i);
 		hash = ((hash << 5) - hash) + char;
-		hash |= 0; // Convert to 32bit integer
+		hash |= 0;
 	}
 	return hash;
 }
@@ -4291,7 +4325,7 @@ Array.prototype.last = function(def) {
 	return item === undefined ? def : item;
 };
 
-Array.prototype.quicksort = Array.prototype.orderBy = function(name, asc, maxlength) {
+Array.prototype.quicksort = Array.prototype.orderBy = function(name, asc) {
 
 	var length = this.length;
 	if (!length || length === 1)
@@ -4301,9 +4335,6 @@ Array.prototype.quicksort = Array.prototype.orderBy = function(name, asc, maxlen
 		asc = name;
 		name = undefined;
 	}
-
-	if (maxlength === undefined)
-		maxlength = 5;
 
 	if (asc === undefined)
 		asc = true;
@@ -4339,7 +4370,7 @@ Array.prototype.quicksort = Array.prototype.orderBy = function(name, asc, maxlen
 
 		// String
 		if (type === 1) {
-			return va && vb ? (asc ? COMPARER(va.length > maxlength ? va.substring(0, maxlength) : va, vb.length > maxlength ? vb.substring(0, maxlength) : vb) : COMPARER(vb.length > maxlength ? vb.substring(0, maxlength) : vb, va.length > maxlength ? va.substring(0, maxlength) : va)) : 0;
+			return va && vb ? (asc ? COMPARER(va, vb) : COMPARER(vb, va)) : 0;
 		} else if (type === 2) {
 			return va > vb ? (asc ? 1 : -1) : va < vb ? (asc ? -1 : 1) : 0;
 		} else if (type === 3) {
@@ -4542,7 +4573,7 @@ function next_wait(self, onItem, callback, thread, tmp) {
  * @param {Function} callback Optional
  * @return {Array}
  */
-Array.prototype.async = function(thread, callback) {
+Array.prototype.async = function(thread, callback, pending) {
 
 	var self = this;
 
@@ -4552,15 +4583,15 @@ Array.prototype.async = function(thread, callback) {
 	} else if (thread === undefined)
 		thread = 1;
 
-	if (self.$pending === undefined)
-		self.$pending = 0;
+	if (pending === undefined)
+		pending = 0;
 
 	var item = self.shift();
 	if (item === undefined) {
-		if (self.$pending)
-			return self;
-		self.$pending = undefined;
-		callback && callback();
+		if (!pending) {
+			pending = undefined;
+			callback && callback();
+		}
 		return self;
 	}
 
@@ -4569,11 +4600,11 @@ Array.prototype.async = function(thread, callback) {
 		if (i)
 			item = self.shift();
 
-		self.$pending++;
+		pending++;
 		item(function() {
 			setImmediate(function() {
-				self.$pending--;
-				self.async(1, callback);
+				pending--;
+				self.async(1, callback, pending);
 			});
 		});
 	}
@@ -5280,20 +5311,18 @@ function queue_next(name) {
 		return;
 
 	item.running--;
+
 	if (item.running < 0)
 		item.running = 0;
 
-	if (!item.pending.length)
-		return;
-
-	var fn = item.pending.shift();
-	if (!fn) {
-		item.running = 0;
-		return;
+	if (item.pending.length) {
+		var fn = item.pending.shift();
+		if (fn) {
+			item.running++;
+			setImmediate(queue_next_callback, fn, name);
+		} else
+			item.running = 0;
 	}
-
-	item.running++;
-	setImmediate(queue_next_callback, fn, name);
 }
 
 function queue_next_callback(fn, name) {
