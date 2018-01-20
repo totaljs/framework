@@ -3705,7 +3705,7 @@ function async_wait(arr, onItem, onCallback, index) {
 function RESTBuilder(url) {
 
 	this.$url = url;
-	this.$headers = { 'User-Agent': 'Total.js/v' + F.version_header, Accept: 'application/json, text/plain, text/plain, text/xml' };
+	this.$headers = { 'user-agent': 'Total.js/v' + F.version_header, accept: 'application/json, text/plain, text/plain, text/xml' };
 	this.$method = 'get';
 	this.$timeout = 10000;
 	this.$type = 0; // 0 = query, 1 = json, 2 = urlencode, 3 = raw

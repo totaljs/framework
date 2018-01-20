@@ -1,3 +1,7 @@
+======= 2.9.3
+
+- updated: RESTBuilder default headers are lower-case
+
 ======= 2.9.2
 
 - added: `controller.html(body, [headers])`
