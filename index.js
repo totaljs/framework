@@ -4429,6 +4429,7 @@ F.uninstall = function(type, name, options, skipEmit, packageName) {
 		F.routes.web = F.routes.web.remove(k, v);
 		F.$routesSort();
 		F.consoledebug('uninstall', type + '#' + name);
+		F.temporary.other = {};
 		return F;
 	}
 
