@@ -361,7 +361,7 @@ global.$ASYNC = function(schema, callback, index, controller) {
 
 	if (index && typeof(index) === 'object') {
 		controller = index;
-		index = null;
+		index = undefined;
 	}
 
 	schema = parseSchema(schema);

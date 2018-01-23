@@ -2,6 +2,8 @@
 
 - updated: RESTBuilder default headers are lower-case
 
+- fixed: `$ASYNC()` execution in some cases
+
 ======= 2.9.2
 
 - added: `controller.html(body, [headers])`
