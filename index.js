@@ -650,6 +650,7 @@ function Framework() {
 	this.routes = {
 		sitemap: null,
 		web: [],
+		system: {},
 		files: [],
 		cors: [],
 		websockets: [],
@@ -1761,7 +1762,6 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 			}
 
 			var flag = flags[i].toString().toLowerCase();
-
 			if (flag.startsWith('http://') || flag.startsWith('https://')) {
 				corsflags.push(flag);
 				continue;
@@ -2105,14 +2105,17 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 		PERF[arr[i].toLowerCase()] = true;
 	}
 
-	F.routes.web.push(r);
+	if (r.isSYSTEM)
+		F.routes.system[url.substring(1)] = r;
+	else {
+		F.routes.web.push(r);
+
+		// Appends cors route
+		isCORS && F.cors(urlcache, corsflags);
+		!_controller && F.$routesSort(1);
+	}
 
 	F.emit('route', 'web', instance);
-
-	// Appends cors route
-	isCORS && F.cors(urlcache, corsflags);
-	!_controller && F.$routesSort(1);
-
 	return instance;
 };
 
@@ -4237,6 +4240,7 @@ F.$restart = function() {
 		F.routes = {
 			sitemap: null,
 			web: [],
+			system: {},
 			files: [],
 			cors: [],
 			websockets: [],
@@ -4430,7 +4434,10 @@ F.uninstall = function(type, name, options, skipEmit, packageName) {
 	if (type === 'route' || type === 'web') {
 		k = typeof(name) === 'string' ? name.substring(0, 3) === 'id:' ? 'id' : 'urlraw' : 'execute';
 		v = k === 'execute' ? name : k === 'id' ? name.substring(3).trim() : name;
-		F.routes.web = F.routes.web.remove(k, v);
+		if (k === 'urlraw' && v[0] === '#')
+			delete F.routes.system[v];
+		else
+			F.routes.web = F.routes.web.remove(k, v);
 		F.$routesSort();
 		F.consoledebug('uninstall', type + '#' + name);
 		F.temporary.other = {};
@@ -8628,6 +8635,10 @@ F.lookup = function(req, url, flags, membertype) {
 
 	var isSystem = url[0] === '#';
 	var subdomain = F._length_subdomain_web && req.subdomain ? req.subdomain.join('.') : null;
+
+	if (isSystem)
+		return F.routes.system[url];
+
 	if (isSystem)
 		req.path = [url];
 
