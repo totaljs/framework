@@ -3,6 +3,7 @@
 - updated: RESTBuilder default headers are lower-case
 
 - fixed: `$ASYNC()` execution in some cases
+- fixed: `SCRIPT()` code with comments
 
 ======= 2.9.2
 
