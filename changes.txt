@@ -8,6 +8,7 @@
 - fixed: `SCRIPT()` code with comments
 - fixed: a callback reference in `OPERATION()`
 - fixed: cache after route is removed
+- fixed: `409` system route
 
 ======= 2.9.2
 
