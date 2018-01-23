@@ -1573,7 +1573,7 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 
 	if (url[0] === '#') {
 		url = url.substring(1);
-		if (url !== '400' && url !== '401' && url !== '403' && url !== '404' && url !== '408' && url !== '431' && url !== '500' && url !== '501') {
+		if (url !== '400' && url !== '401' && url !== '403' && url !== '404' && url !== '408' && url !== '409' && url !== '431' && url !== '500' && url !== '501') {
 
 			var sitemapflags = funcExecute instanceof Array ? funcExecute : flags;
 			if (!(sitemapflags instanceof Array))
