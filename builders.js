@@ -4184,7 +4184,26 @@ global.OPERATION = function(name, value, callback, param) {
 
 	if (fn) {
 		if (fn.$newversion) {
-			fn(new OperationOptions(error, value, callback, param));
+			var self = new OperationOptions(error, value, param);
+			if (callback && callback !== NOOP) {
+				self.callback = function(value) {
+					if (arguments.length > 1) {
+						if (value instanceof Error || (value instanceof ErrorBuilder && value.hasError())) {
+							self.error.push(value);
+							value = EMPTYOBJECT;
+						} else
+							value = arguments[1];
+					} else if (value instanceof Error || (value instanceof ErrorBuilder && value.hasError())) {
+						self.error.push(value);
+						value = EMPTYOBJECT;
+					}
+
+					callback(self.error.hasError() ? self.error : null, value, self.options);
+					return self;
+				};
+			} else
+				self.callback = NOOP;
+			fn(self);
 		} else
 			fn(error, value, function(value) {
 				if (callback) {
@@ -4201,29 +4220,14 @@ global.OPERATION = function(name, value, callback, param) {
 	}
 };
 
-function OperationOptions(error, value, callback, options) {
+function OperationOptions(error, value, options) {
 	this.model = this.value = value;
 	this.error = error;
-	this.$callback = callback;
 	this.options = options;
 }
 
 OperationOptions.prototype.DB = function() {
 	return F.database(this.error);
-};
-
-OperationOptions.prototype.callback = function(value) {
-	var self = this;
-
-	if (self.$callback) {
-		if (value instanceof Error) {
-			self.error.push(value);
-			value = EMPTYOBJECT;
-		}
-		self.$callback(self.error.hasError() ? self.error : null, value, self.options);
-	}
-
-	return self;
 };
 
 OperationOptions.prototype.done = function(arg) {
