@@ -1,4 +1,4 @@
-// Copyright 2012-2017 (c) Peter Širka <petersirka@gmail.com>
+// Copyright 2012-2018 (c) Peter Širka <petersirka@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the
@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkBuilders
- * @version 2.9.2
+ * @version 2.9.3
  */
 
 'use strict';
