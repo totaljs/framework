@@ -1,7 +1,9 @@
 ======= 2.9.3
 
+
 - updated: RESTBuilder default headers are lower-case
 
+- fixed: a missing property `controller.params` in WebSocket controller
 - fixed: `$ASYNC()` execution in some cases
 - fixed: `SCRIPT()` code with comments
 - fixed: a callback reference in `OPERATION()`

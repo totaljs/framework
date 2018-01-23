@@ -2521,16 +2521,20 @@ F.websocket = function(url, funcInitialize, flags, length) {
 	var regIndex = null;
 	var hash = url2.hash();
 	var urlraw = U.path(url2) + (isWILDCARD ? '*' : '');
+	var params = [];
 
 	if (url.indexOf('{') !== -1) {
-
 		routeURL.forEach(function(o, i) {
+
 			if (o.substring(0, 1) !== '{')
 				return;
 
 			arr.push(i);
 
 			var sub = o.substring(1, o.length - 1);
+			var name = o.substring(1, o.length - 1).trim();
+
+			params.push(name);
 
 			if (sub[0] !== '/')
 				return;
@@ -2544,11 +2548,10 @@ F.websocket = function(url, funcInitialize, flags, length) {
 				regIndex = [];
 			}
 
+			params[params.length - 1] = 'regexp' + (regIndex.length + 1);
 			reg[i] = new RegExp(sub.substring(1, index), sub.substring(index + 1));
 			regIndex.push(i);
 		});
-
-		priority -= arr.length;
 	}
 
 	if (typeof(allow) === 'string')
@@ -2679,6 +2682,7 @@ F.websocket = function(url, funcInitialize, flags, length) {
 	r.controller = _controller ? _controller : 'unknown';
 	r.owner = _owner;
 	r.url = routeURL;
+	r.paramnames = params.length ? params : null;
 	r.param = arr;
 	r.subdomain = subdomain;
 	r.priority = priority;
@@ -12657,6 +12661,23 @@ WebSocket.prototype = {
 	get secured() {
 		return this.req.secured;
 	},
+
+	get params() {
+		if (this.$params)
+			return this.$params;
+		var split = framework_internal.routeSplit(this.url, true);
+		var names = this.route.paramnames;
+		if (names) {
+			var obj = {};
+			for (var i = 0; i < names.length; i++)
+				obj[names[i]] = split[this.route.param[i]];
+			this.$params = obj;
+			return obj;
+		} else {
+			this.$params = EMPTYOBJECT;
+			return EMPTYOBJECT;
+		}
+	}
 };
 
 WebSocket.prototype.emit = function(name, a, b, c, d, e, f, g) {
