@@ -15640,9 +15640,14 @@ function fsStreamRead(filename, options, callback, req, res) {
 	var opt;
 
 	if (options) {
+
 		opt = HEADERS.fsStreamReadRange;
 		opt.start = options.start;
 		opt.end = options.end;
+
+		if (opt.start > opt.end)
+			delete opt.end;
+
 	} else
 		opt = HEADERS.fsStreamRead;
 

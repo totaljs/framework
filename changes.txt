@@ -9,6 +9,7 @@
 - fixed: a callback reference in `OPERATION()`
 - fixed: cache after route is removed
 - fixed: `409` system route
+- fixed: requests with `range` header and bad values
 
 ======= 2.9.2
 
