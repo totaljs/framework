@@ -54,6 +54,7 @@ const regexpDiacritics = /[^\u0000-\u007e]/g;
 const regexpXML = /\w+=".*?"/g;
 const regexpDECODE = /&#?[a-z0-9]+;/g;
 const regexpPARAM = /\{{2}[^}\n]*\}{2}/g;
+const regexpARG = /\{[^}\n]*\}/g;
 const regexpINTEGER = /(^-|\s-)?[0-9]+/g;
 const regexpFLOAT = /(^-|\s-)?[0-9.,]+/g;
 const regexpALPHA = /^[A-Za-z0-9]+$/;
@@ -3257,6 +3258,13 @@ String.prototype.urlEncode = function() {
 
 String.prototype.urlDecode = function() {
 	return decodeURIComponent(this);
+};
+
+String.prototype.arg = function(obj) {
+	return this.replace(regexpARG, function(text) {
+		var val = obj[text.substring(1, text.length - 1).trim()];
+		return val == null ? text : val;
+	});
 };
 
 String.prototype.params = function(obj) {

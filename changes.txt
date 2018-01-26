@@ -1,5 +1,6 @@
 ======= 2.9.3
 
+- added: `String.arg(obj)` for a simple templating `Hello {variable}!`
 
 - updated: RESTBuilder default headers are lower-case
 
