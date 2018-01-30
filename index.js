@@ -1276,7 +1276,7 @@ F.schedule = function(date, repeat, fn) {
 };
 
 F.clearSchedule = function(id) {
-	F.schedules.remove('id', id);
+	F.schedules = F.schedules.remove('id', id);
 	return F;
 };
 

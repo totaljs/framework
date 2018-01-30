@@ -12,6 +12,7 @@
 - fixed: cache after route is removed
 - fixed: `409` system route
 - fixed: requests with `range` header and bad values
+- fixed: `clearSchedule()`
 
 ======= 2.9.2
 
