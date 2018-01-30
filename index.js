@@ -63,6 +63,7 @@ const REG_NOCOMPRESS = /[.|-]+min\.(css|js)$/i;
 const REG_TEXTAPPLICATION = /text|application/;
 const REG_ENCODINGCLEANER = /[;\s]charset=utf-8/g;
 const REG_SKIPERROR = /epipe|invalid\sdistance/i;
+const REG_UTF8 = /[^\x20-\x7E]+/;
 const FLAGS_PROXY = ['post', 'json'];
 const FLAGS_INSTALL = ['get'];
 const FLAGS_DOWNLOAD = ['get', 'dnscache'];
@@ -14936,9 +14937,10 @@ function extend_response(PROTO) {
 		if (res.options.headers)
 			headers = U.extend_headers(headers, res.options.headers);
 
-		if (res.options.download)
-			headers['Content-Disposition'] = 'attachment; filename*=utf-8\'\'' + encodeURIComponent(res.options.download);
-		else if (headers['Content-Disposition'])
+		if (res.options.download) {
+			var encoded = encodeURIComponent(res.options.download);
+			headers['Content-Disposition'] = 'attachment; ' + (REG_UTF8.test(res.options.download) ? 'filename*=utf-8\'\'' + encoded : ('filename="' + encoded + '"'));
+		} else if (headers['Content-Disposition'])
 			delete headers['Content-Disposition'];
 
 		if (res.getHeader('Last-Modified'))
