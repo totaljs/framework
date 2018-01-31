@@ -2567,14 +2567,14 @@ Date.prototype.extend = function(date) {
 			tmp = +arr[0];
 			dt.setFullYear(tmp);
 
-			if (arr[1]) {
-				tmp = +arr[1];
-				!isNaN(tmp) && dt.setMonth(tmp - 1);
-			}
-
 			if (arr[2]) {
 				tmp = +arr[2];
 				!isNaN(tmp) && dt.setDate(tmp);
+			}
+
+			if (arr[1]) {
+				tmp = +arr[1];
+				!isNaN(tmp) && dt.setMonth(tmp - 1);
 			}
 
 			continue;

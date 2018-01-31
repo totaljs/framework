@@ -13,6 +13,7 @@
 - fixed: `409` system route
 - fixed: requests with `range` header and bad values
 - fixed: `clearSchedule()`
+- fixed: `Date.extend()` problem with months
 
 ======= 2.9.2
 
