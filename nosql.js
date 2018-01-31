@@ -1939,10 +1939,16 @@ DatabaseBuilder.prototype.join = function(field, name, view) {
 
 	join = NOSQL(name).find(view);
 
-	join.where = function(a, b) {
+	join.on = function(a, b) {
 		self.$join[key].a = a;
 		self.$join[key].b = b;
 		return join;
+	};
+
+	join.$where = self.where;
+
+	join.where = function(a, b, c) {
+		return c === undefined && typeof(b) === 'string' ? join.on(a, b) : join.$where(a, b, c);
 	};
 
 	join.scalar = function(type, field) {
