@@ -14059,7 +14059,9 @@ function extend_request(PROTO) {
 			if (controller.isCanceled)
 				return;
 
+			var ctrlname = '@' + name;
 			F.$events.controller && F.emit('controller', controller, name, this.$total_route.options);
+			F.$events[ctrlname] && F.emit(ctrlname, controller, name, this.$total_route.options);
 
 			if (controller.isCanceled)
 				return;

@@ -1,6 +1,7 @@
 ======= 2.9.3 (HOTFIX)
 
 - added: `String.arg(obj)` for a simple templating `Hello {variable}!`
+- added: new event `ON('@controllername', function() {})` -> is executed if the controller is evaluated
 
 - updated: RESTBuilder default headers are lower-case
 - updated: `content-disposition` header by adding `utf-8` according to [RFC 5987](https://tools.ietf.org/html/rfc5987#section-3.2.2)
