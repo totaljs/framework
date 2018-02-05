@@ -1,3 +1,7 @@
+======= 3.0.0
+
+- added: (IMPORTANT) Total.js components can have async delegate
+
 ======= 2.9.3 (HOTFIX)
 
 - added: `String.arg(obj)` for a simple templating `Hello {variable}!`

@@ -526,8 +526,8 @@ var PERF = {};
 function Framework() {
 
 	this.$id = null; // F.id ==> property
-	this.version = 2920;
-	this.version_header = '2.9.2';
+	this.version = 3000;
+	this.version_header = '3.0.0';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -3637,6 +3637,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 				obj.$owner = _owner;
 				F.temporary.owners[_owner] = true;
 				_controller = '';
+				obj.name = name;
 				F.components.instances[name] = obj;
 				obj && typeof(obj.install) === 'function' && obj.install(options || F.config[_owner], name);
 			} catch(e) {
@@ -3648,6 +3649,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 				_owner = (packageName ? packageName + '@' : '') + type + '#' + name;
 				F.temporary.owners[_owner] = true;
 				obj = require(js);
+				obj.name = name;
 				obj.$owner = _owner;
 				_controller = '';
 				F.components.instances[name] = obj;
@@ -9780,14 +9782,15 @@ Controller.prototype.getSchema = function() {
  * Renders component
  * @param {String} name A component name
  * @param {Object} settings Optional, settings.
+ * @model {Object} settings Optional, model for the component.
  * @return {String}
  */
-Controller.prototype.component = function(name, settings) {
+Controller.prototype.component = function(name, settings, model) {
 	var filename = F.components.views[name];
 	if (filename) {
 		var generator = framework_internal.viewEngine(name, filename, this);
 		if (generator)
-			return generator.call(this, this, this.repository, this.$model, this.session, this.query, this.body, this.url, F.global, F.helpers, this.user, this.config, F.functions, 0, this.outputPartial, this.req.cookie, this.req.files, this.req.mobile, settings || EMPTYOBJECT);
+			return generator.call(this, this, this.repository, model || this.$model, this.session, this.query, this.body, this.url, F.global, F.helpers, this.user, this.config, F.functions, 0, this.outputPartial, this.req.files, this.req.mobile, settings || EMPTYOBJECT);
 	}
 	return '';
 };
@@ -9800,8 +9803,16 @@ Controller.prototype.$components = function(group, settings) {
 		for (var i = 0, length = keys.length; i < length; i++) {
 			var component = F.components.instances[keys[i]];
 			if (component.group === group) {
-				var tmp = this.component(keys[i], settings);
-				tmp && output.push(tmp);
+				if (component.render) {
+					!this.$viewasync && (this.$viewasync = []);
+					$VIEWASYNC++;
+					var name = '@{-' + $VIEWASYNC + '-}';
+					this.$viewasync.push({ replace: name, name: component.name, settings: settings });
+					output.push(name);
+				} else {
+					var tmp = this.component(keys[i], settings);
+					tmp && output.push(tmp);
+				}
 			}
 		}
 		return output.join('\n');
@@ -10515,7 +10526,26 @@ Controller.prototype.$templateToggle = function(visible, name, model, expire, ke
 };
 
 Controller.prototype.$view = function(name, model, expire, key) {
-	return this.$viewToggle(true, name, model, expire, key);
+
+	var self = this;
+	var cache;
+
+	if (expire) {
+		cache = '$view.' + name + '.' + (key || '');
+		var output = self.cache.read2(cache);
+		if (output) {
+			if (output.components)
+				self.$hasComponents = true;
+			return output.body;
+		}
+	}
+
+	var value = self.view(name, model, null, true, true, cache);
+	if (!value)
+		return '';
+
+	expire && self.cache.add(cache, { components: value instanceof Function, body: value instanceof Function ? '' : value }, expire, false);
+	return value;
 };
 
 Controller.prototype.$viewCompile = function(body, model, key) {
@@ -10527,31 +10557,8 @@ Controller.prototype.$viewCompile = function(body, model, key) {
 	return value || '';
 };
 
-Controller.prototype.$viewToggle = function(visible, name, model, expire, key) {
-
-	if (!visible)
-		return '';
-
-	var self = this;
-	var cache;
-
-	if (expire) {
-		cache = '$view.' + name + '.' + (key || '');
-		var output = self.cache.read2(cache);
-		if (output)
-			return output;
-	}
-
-	var layout = self.layoutName;
-	self.layoutName = '';
-	var value = self.view(name, model, null, true);
-	self.layoutName = layout;
-
-	if (!value)
-		return '';
-
-	expire && self.cache.add(cache, value, expire, false);
-	return value;
+Controller.prototype.$viewToggle = function(visible, name, model, expire, key, async) {
+	return visible ? this.$view(name, model, expire, key, async) : '';
 };
 
 /**
@@ -12249,7 +12256,7 @@ Controller.prototype.proxy2 = function(url, callback, headers, timeout) {
  * @param {Boolean} isPartial When is `true` the method returns rendered HTML as `String`
  * @return {Controller/String}
  */
-Controller.prototype.view = function(name, model, headers, partial) {
+Controller.prototype.view = function(name, model, headers, partial, noasync, cachekey) {
 
 	var self = this;
 
@@ -12360,7 +12367,7 @@ Controller.prototype.view = function(name, model, headers, partial) {
 		}
 	}
 
-	return self.$viewrender(filename, framework_internal.viewEngine(name, filename, self), model, headers, partial, isLayout);
+	return self.$viewrender(filename, framework_internal.viewEngine(name, filename, self), model, headers, partial, isLayout, noasync, cachekey);
 };
 
 Controller.prototype.viewCompile = function(body, model, headers, partial, key) {
@@ -12380,7 +12387,7 @@ Controller.prototype.viewCompile = function(body, model, headers, partial, key) 
 	return this.$viewrender('[dynamic view]', framework_internal.viewEngineCompile(body, this.language, this, key), model, headers, partial);
 };
 
-Controller.prototype.$viewrender = function(filename, generator, model, headers, partial, isLayout) {
+Controller.prototype.$viewrender = function(filename, generator, model, headers, partial, isLayout, noasync, cachekey) {
 
 	var self = this;
 	var err;
@@ -12412,7 +12419,7 @@ Controller.prototype.$viewrender = function(filename, generator, model, headers,
 	var helpers = F.helpers;
 
 	try {
-		value = generator.call(self, self, self.repository, model, self.session, self.query, self.body, self.url, F.global, helpers, self.user, self.config, F.functions, 0, partial ? self.outputPartial : self.output, self.req.cookie, self.req.files, self.req.mobile, EMPTYOBJECT);
+		value = generator.call(self, self, self.repository, model, self.session, self.query, self.body, self.url, F.global, helpers, self.user, self.config, F.functions, 0, partial ? self.outputPartial : self.output, self.req.files, self.req.mobile, EMPTYOBJECT);
 	} catch (ex) {
 
 		err = new Error('View "' + filename + '": ' + ex.message);
@@ -12433,7 +12440,105 @@ Controller.prototype.$viewrender = function(filename, generator, model, headers,
 		return value;
 	}
 
-	if (!isLayout && self.precache && (!self.status || self.status === 200) && !partial)
+	// noasync = true --> rendered inline view in view
+
+	if (self.$viewasync && self.$viewasync.length) {
+
+		var can = ((isLayout || !self.layoutName) && noasync !== true) || !!cachekey;
+		if (can) {
+			var done = {};
+			var obj = {};
+
+			obj.repository = self.repository;
+			obj.model = self.$model;
+			obj.user = self.user;
+			obj.session = self.session;
+			obj.controller = self;
+			obj.query = self.query;
+			obj.body = self.body;
+			obj.files = self.files;
+
+			self.$viewasync.waitFor(function(item, next) {
+
+				if (item.value) {
+					value = value.replace(item.replace, item.value);
+					if (isLayout && self.precache)
+						self.output = self.output.replace(item.replace, item.value);
+					return next();
+				}
+
+				obj.options = obj.settings = item.settings;
+				obj.next = obj.callback = function(model) {
+					item.value = self.component(item.name, item.settings, model);
+					value = value.replace(item.replace, item.value);
+					if (isLayout && self.precache)
+						self.output = self.output.replace(item.replace, item.value);
+					next();
+				};
+
+				F.components.instances[item.name].render(obj);
+
+			}, function() {
+
+				if (cachekey && F.cache.items[cachekey]) {
+					var cache = F.cache.items[cachekey].value;
+					cache.body = value;
+					cache.components = true;
+				}
+
+				if (isLayout && self.precache && (!self.status || self.status === 200) && !partial)
+					self.precache(self.output, CT_HTML, headers, true);
+
+				if (isLayout || !self.layoutName) {
+
+					self.outputPartial = '';
+					self.output = '';
+					isLayout = false;
+
+					if (partial) {
+						done.callback && done.callback(null, value);
+						return;
+					}
+
+					self.req.$total_success();
+
+					if (!self.isConnected)
+						return self;
+
+					var res = self.res;
+					res.options.body = value;
+					res.options.code = self.status || 200;
+					res.options.type = CT_HTML;
+					res.options.headers = headers;
+					res.$text();
+					F.stats.response.view++;
+					return self;
+				}
+
+				if (partial)
+					self.outputPartial = value;
+				else
+					self.output = value;
+
+				if (!cachekey && !noasync) {
+					self.isLayout = true;
+					value = self.view(self.layoutName, self.$model, headers, partial);
+				}
+
+				// Async
+				if (partial) {
+					self.outputPartial = '';
+					self.isLayout = false;
+					done.callback && done.callback(null, value);
+				}
+
+			}, 3);
+
+			return cachekey ? value : (partial ? (fn => done.callback = fn) : self);
+		}
+	}
+
+	if (!isLayout && self.precache && (!self.status || self.status === 200) && !partial && !self.$viewasync)
 		self.precache(value, CT_HTML, headers, true);
 
 	if (isLayout || !self.layoutName) {
@@ -12465,9 +12570,12 @@ Controller.prototype.$viewrender = function(filename, generator, model, headers,
 	else
 		self.output = value;
 
-	self.isLayout = true;
-	value = self.view(self.layoutName, self.$model, headers, partial);
+	if (!cachekey && !noasync) {
+		self.isLayout = true;
+		value = self.view(self.layoutName, self.$model, headers, partial);
+	}
 
+	// Async
 	if (partial) {
 		self.outputPartial = '';
 		self.isLayout = false;
@@ -12509,6 +12617,9 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
 
 	self.layoutName = output.layout;
 	self.themeName = output.theme;
+
+	if (output.components)
+		self.$hasComponents = true;
 
 	var res = self.res;
 
@@ -12576,7 +12687,7 @@ Controller.prototype.$memorize_prepare = function(key, expires, disabled, fnTo, 
 			return;
 		}
 
-		var options = { content: value, type: contentType || CT_TEXT, layout: self.layoutName, theme: self.themeName };
+		var options = { content: value, type: contentType || CT_TEXT, layout: self.layoutName, theme: self.themeName, components: (self.$viewasync ? true : false) || (self.$hasComponents ? true : false) };
 		if (headers)
 			options.headers = headers;
 
@@ -15837,8 +15948,13 @@ function parseComponent(body, filename) {
 
 	while (true) {
 		beg = body.indexOf('<script type="text/totaljs">');
-		if (beg === -1)
-			break;
+		if (beg === -1) {
+			beg = body.indexOf('<script total>');
+			if (beg === -1)
+				beg = body.indexOf('<script totaljs>');
+			if (beg === -1)
+				break;
+		}
 		end = body.indexOf('</script>', beg);
 		if (end === -1)
 			break;

@@ -85,6 +85,7 @@ global.$STRING = function(value) {
 };
 
 global.$VIEWCACHE = [];
+global.$VIEWASYNC = 0;
 
 exports.parseMULTIPART = function(req, contentType, route, tmpDirectory) {
 
@@ -1927,7 +1928,7 @@ function view_parse(content, minify, filename, controller) {
 			builder += '}$output+=$EMPTY';
 		} else {
 
-			tmp = view_prepare(command.command, newCommand, functionsName, controller);
+			tmp = view_prepare(command.command, newCommand, functionsName, controller, filename);
 			var can = false;
 
 			// Inline rendering is supported only in release mode
@@ -1979,7 +1980,10 @@ function view_parse(content, minify, filename, controller) {
 			} else if (tmp) {
 				if (view_parse_plus(builder))
 					builder += '+';
-				builder += wrapTryCatch(tmp, command.command, command.line);
+				if (tmp.substring(1, 4) !== '@{-' && tmp.substring(0, 11) !== 'self.$view')
+					builder += wrapTryCatch(tmp, command.command, command.line);
+				else
+					builder += tmp;
 			}
 		}
 
@@ -1996,7 +2000,7 @@ function view_parse(content, minify, filename, controller) {
 	if (RELEASE)
 		builder = builder.replace(/(\+\$EMPTY\+)/g, '+').replace(/(\$output=\$EMPTY\+)/g, '$output=').replace(/(\$output\+=\$EMPTY\+)/g, '$output+=').replace(/(\}\$output\+=\$EMPTY)/g, '}').replace(/(\{\$output\+=\$EMPTY;)/g, '{').replace(/(\+\$EMPTY\+)/g, '+').replace(/(>'\+'<)/g, '><').replace(/'\+'/g, '');
 
-	var fn = '(function(self,repository,model,session,query,body,url,global,helpers,user,config,functions,index,output,cookie,files,mobile,settings){var get=query;var post=body;var G=F.global;var R=this.repository;var M=model;var theme=this.themeName;var language=this.language;var sitemap=this.repository.$sitemap;var cookie=function(name){return self.req.cookie(name)};' + (functions.length ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})';
+	var fn = '(function(self,repository,model,session,query,body,url,global,helpers,user,config,functions,index,output,files,mobile,settings){var get=query;var post=body;var G=F.global;var R=this.repository;var M=model;var theme=this.themeName;var language=this.language;var sitemap=this.repository.$sitemap;var cookie=function(name){return self.req.cookie(name)};' + (functions.length ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})';
 	try {
 		fn = eval(fn);
 	} catch (e) {
@@ -2211,7 +2215,33 @@ function view_prepare(command, dynamicCommand, functions, controller) {
 			return '(' + command + ')';
 
 		case 'component':
+
 			controller.$hasComponents = true;
+			tmp = command.indexOf('\'');
+
+			var is = false;
+			if (tmp !== -1) {
+				name = command.substring(tmp + 1, command.indexOf('\'', tmp + 1));
+				tmp = F.components.instances[name];
+				if (tmp && tmp.render)
+					is = true;
+			} else {
+				tmp = command.indexOf('"');
+				name = command.substring(tmp + 1, command.indexOf('"', tmp + 1));
+				tmp = F.components.instances[name];
+				if (tmp && tmp.render)
+					is = true;
+			}
+
+
+			if (is) {
+				var settings = command.substring(11 + name.length + 2, command.length - 1).trim();
+				if (settings === ')')
+					settings = '';
+				$VIEWASYNC++;
+				return '\'@{-{0}-}\'+(function(index){!controller.$viewasync&&(controller.$viewasync=[]);controller.$viewasync.push({replace:\'@{-{0}-}\',name:\'{1}\',settings:{2}});return $EMPTY})({0})'.format($VIEWASYNC, name, settings || 'null');
+			}
+
 			return 'self.' + command;
 
 		case 'routeJS':
