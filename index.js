@@ -21,7 +21,7 @@
 
 /**
  * @module Framework
- * @version 2.9.3
+ * @version 3.0.0
  */
 
 'use strict';
@@ -12469,6 +12469,10 @@ Controller.prototype.$viewrender = function(filename, generator, model, headers,
 
 				obj.options = obj.settings = item.settings;
 				obj.next = obj.callback = function(model) {
+
+					if (arguments.length > 1)
+						model = arguments[1];
+
 					item.value = self.component(item.name, item.settings, model);
 					value = value.replace(item.replace, item.value);
 					if (isLayout && self.precache)
