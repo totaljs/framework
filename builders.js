@@ -1,4 +1,4 @@
-// Copyright 2012-2017 (c) Peter Širka <petersirka@gmail.com>
+// Copyright 2012-2018 (c) Peter Širka <petersirka@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the
@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkBuilders
- * @version 2.9.2
+ * @version 2.9.3
  */
 
 'use strict';
@@ -31,7 +31,7 @@ const DEFAULT_SCHEMA = 'default';
 const SKIP = { $$schema: true, $$result: true, $$callback: true, $$async: true, $$index: true, $$repository: true, $$can: true, $$controller: true };
 const REGEXP_CLEAN_EMAIL = /\s/g;
 const REGEXP_CLEAN_PHONE = /\s|\.|-|\(|\)/g;
-const REGEXP_NEWOPERATION = /^function(\s)?\([a-zA-Z0-9$]+\)|^function anonymous\(\$/;
+const REGEXP_NEWOPERATION = /^(async\s)?function(\s)?\([a-zA-Z0-9$]+\)|^function anonymous\(\$/;
 const hasOwnProperty = Object.prototype.hasOwnProperty;
 const Qs = require('querystring');
 
@@ -3705,7 +3705,7 @@ function async_wait(arr, onItem, onCallback, index) {
 function RESTBuilder(url) {
 
 	this.$url = url;
-	this.$headers = { 'User-Agent': 'Total.js/v' + F.version_header, Accept: 'application/json, text/plain, text/plain, text/xml' };
+	this.$headers = { 'user-agent': 'Total.js/v' + F.version_header, accept: 'application/json, text/plain, text/plain, text/xml' };
 	this.$method = 'get';
 	this.$timeout = 10000;
 	this.$type = 0; // 0 = query, 1 = json, 2 = urlencode, 3 = raw
@@ -4184,7 +4184,26 @@ global.OPERATION = function(name, value, callback, param) {
 
 	if (fn) {
 		if (fn.$newversion) {
-			fn(new OperationOptions(error, value, callback, param));
+			var self = new OperationOptions(error, value, param);
+			if (callback && callback !== NOOP) {
+				self.callback = function(value) {
+					if (arguments.length > 1) {
+						if (value instanceof Error || (value instanceof ErrorBuilder && value.hasError())) {
+							self.error.push(value);
+							value = EMPTYOBJECT;
+						} else
+							value = arguments[1];
+					} else if (value instanceof Error || (value instanceof ErrorBuilder && value.hasError())) {
+						self.error.push(value);
+						value = EMPTYOBJECT;
+					}
+
+					callback(self.error.hasError() ? self.error : null, value, self.options);
+					return self;
+				};
+			} else
+				self.callback = NOOP;
+			fn(self);
 		} else
 			fn(error, value, function(value) {
 				if (callback) {
@@ -4201,29 +4220,14 @@ global.OPERATION = function(name, value, callback, param) {
 	}
 };
 
-function OperationOptions(error, value, callback, options) {
+function OperationOptions(error, value, options) {
 	this.model = this.value = value;
 	this.error = error;
-	this.$callback = callback;
 	this.options = options;
 }
 
 OperationOptions.prototype.DB = function() {
 	return F.database(this.error);
-};
-
-OperationOptions.prototype.callback = function(value) {
-	var self = this;
-
-	if (self.$callback) {
-		if (value instanceof Error) {
-			self.error.push(value);
-			value = EMPTYOBJECT;
-		}
-		self.$callback(self.error.hasError() ? self.error : null, value, self.options);
-	}
-
-	return self;
 };
 
 OperationOptions.prototype.done = function(arg) {

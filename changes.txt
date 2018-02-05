@@ -1,3 +1,22 @@
+======= 2.9.3 (HOTFIX)
+
+- added: `String.arg(obj)` for a simple templating `Hello {variable}!`
+- added: new event `ON('@controllername', function() {})` -> is executed if the controller is evaluated
+
+- updated: RESTBuilder default headers are lower-case
+- updated: `content-disposition` header by adding `utf-8` according to [RFC 5987](https://tools.ietf.org/html/rfc5987#section-3.2.2)
+
+- fixed: a missing property `controller.params` in WebSocket controller
+- fixed: `$ASYNC()` execution in some cases
+- fixed: `SCRIPT()` code with comments
+- fixed: a callback reference in `OPERATION()`
+- fixed: cache after route is removed
+- fixed: `409` system route
+- fixed: requests with `range` header and bad values
+- fixed: `clearSchedule()`
+- fixed: `Date.extend()` problem with months
+- fixed: NoSQL counter reading stats
+
 ======= 2.9.2
 
 - added: `controller.html(body, [headers])`

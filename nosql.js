@@ -1,4 +1,4 @@
-// Copyright 2012-2017 (c) Peter Širka <petersirka@gmail.com>
+// Copyright 2012-2018 (c) Peter Širka <petersirka@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the
@@ -1939,10 +1939,16 @@ DatabaseBuilder.prototype.join = function(field, name, view) {
 
 	join = NOSQL(name).find(view);
 
-	join.where = function(a, b) {
+	join.on = function(a, b) {
 		self.$join[key].a = a;
 		self.$join[key].b = b;
 		return join;
+	};
+
+	join.$where = self.where;
+
+	join.where = function(a, b, c) {
+		return c === undefined && typeof(b) === 'string' ? join.on(a, b) : join.$where(a, b, c);
 	};
 
 	join.scalar = function(type, field) {
@@ -3032,7 +3038,7 @@ Counter.prototype.stats = Counter.prototype.stats_sum = function(top, year, mont
 			count = opt.type2 ? counter_minmax(opt, val) : +val;
 		}
 
-		count != null && counter_parse_stats_avg(output, top, value.substring(7, index), count, type);
+		count != null && counter_parse_stats_avg(output, top, value.substring(7, index), count, type, undefined, year == null && month == null && day == null);
 	}));
 
 	reader.on('end', function() {
@@ -3052,9 +3058,18 @@ function counter_sort_min(a, b) {
 	return a.count > b.count ? 1 : a.count === b.count ? 0 : -1;
 }
 
-function counter_parse_stats_avg(group, top, key, count, opt) {
+function counter_parse_stats_avg(group, top, key, count, opt, filter) {
 
-	if (group.length < top) {
+	var length = group.length;
+
+	if (length < top) {
+		for (var i = 0; i < length; i++) {
+			if (group[i].id === key) {
+				group[i].count += count;
+				return;
+			}
+		}
+
 		group.push({ id: key, count: count });
 		if (group.length === top) {
 			switch (opt.type2 || opt.type) {
@@ -3070,7 +3085,14 @@ function counter_parse_stats_avg(group, top, key, count, opt) {
 		return;
 	}
 
-	for (var i = 0, length = group.length; i < length; i++) {
+	for (var i = 0; i < length; i++) {
+		if (group[i].id === key) {
+			group[i].count += count;
+			return;
+		}
+	}
+
+	for (var i = 0; i < length; i++) {
 		var item = group[i];
 
 		if (opt.type === 'min') {

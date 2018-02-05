@@ -1,4 +1,4 @@
-// Copyright 2012-2017 (c) Peter Širka <petersirka@gmail.com>
+// Copyright 2012-2018 (c) Peter Širka <petersirka@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the
@@ -21,7 +21,7 @@
 
 /**
  * @module Framework
- * @version 2.9.2
+ * @version 2.9.3
  */
 
 'use strict';
@@ -63,6 +63,7 @@ const REG_NOCOMPRESS = /[.|-]+min\.(css|js)$/i;
 const REG_TEXTAPPLICATION = /text|application/;
 const REG_ENCODINGCLEANER = /[;\s]charset=utf-8/g;
 const REG_SKIPERROR = /epipe|invalid\sdistance/i;
+const REG_UTF8 = /[^\x20-\x7E]+/;
 const FLAGS_PROXY = ['post', 'json'];
 const FLAGS_INSTALL = ['get'];
 const FLAGS_DOWNLOAD = ['get', 'dnscache'];
@@ -361,7 +362,7 @@ global.$ASYNC = function(schema, callback, index, controller) {
 
 	if (index && typeof(index) === 'object') {
 		controller = index;
-		index = null;
+		index = undefined;
 	}
 
 	schema = parseSchema(schema);
@@ -650,6 +651,7 @@ function Framework() {
 	this.routes = {
 		sitemap: null,
 		web: [],
+		system: {},
 		files: [],
 		cors: [],
 		websockets: [],
@@ -1102,7 +1104,7 @@ F.script = function(body, value, callback, param) {
 	var err;
 
 	try {
-		fn = new Function('next', 'value', 'now', 'var model=value;var global,require,process,GLOBAL,root,clearImmediate,clearInterval,clearTimeout,setImmediate,setInterval,setTimeout,console,$STRING,$VIEWCACHE,framework_internal,TransformBuilder,Pagination,Page,URLBuilder,UrlBuilder,SchemaBuilder,framework_builders,framework_utils,framework_mail,Image,framework_image,framework_nosql,Builders,U,utils,Utils,Mail,WTF,SOURCE,INCLUDE,MODULE,NOSQL,NOBIN,NOCOUNTER,NOSQLMEMORY,NOMEM,DATABASE,DB,CONFIG,INSTALL,UNINSTALL,RESOURCE,TRANSLATOR,LOG,LOGGER,MODEL,GETSCHEMA,CREATE,UID,TRANSFORM,MAKE,SINGLETON,NEWTRANSFORM,NEWSCHEMA,EACHSCHEMA,FUNCTION,ROUTING,SCHEDULE,OBSOLETE,DEBUG,TEST,RELEASE,is_client,is_server,F,framework,Controller,setTimeout2,clearTimeout2,String,Number,Boolean,Object,Function,Date,isomorphic,I,eval;UPTODATE,NEWOPERATION,OPERATION,$$$,EMIT,ON,$QUERY,$GET,$WORKFLOW,$TRANSFORM,$OPERATION,$MAKE,$CREATE,HttpFile;EMPTYCONTROLLER,ROUTE,FILE,TEST,WEBSOCKET;try{' + body + '}catch(e){next(e)}');
+		fn = new Function('next', 'value', 'now', 'var model=value;var global,require,process,GLOBAL,root,clearImmediate,clearInterval,clearTimeout,setImmediate,setInterval,setTimeout,console,$STRING,$VIEWCACHE,framework_internal,TransformBuilder,Pagination,Page,URLBuilder,UrlBuilder,SchemaBuilder,framework_builders,framework_utils,framework_mail,Image,framework_image,framework_nosql,Builders,U,utils,Utils,Mail,WTF,SOURCE,INCLUDE,MODULE,NOSQL,NOBIN,NOCOUNTER,NOSQLMEMORY,NOMEM,DATABASE,DB,CONFIG,INSTALL,UNINSTALL,RESOURCE,TRANSLATOR,LOG,LOGGER,MODEL,GETSCHEMA,CREATE,UID,TRANSFORM,MAKE,SINGLETON,NEWTRANSFORM,NEWSCHEMA,EACHSCHEMA,FUNCTION,ROUTING,SCHEDULE,OBSOLETE,DEBUG,TEST,RELEASE,is_client,is_server,F,framework,Controller,setTimeout2,clearTimeout2,String,Number,Boolean,Object,Function,Date,isomorphic,I,eval;UPTODATE,NEWOPERATION,OPERATION,$$$,EMIT,ON,$QUERY,$GET,$WORKFLOW,$TRANSFORM,$OPERATION,$MAKE,$CREATE,HttpFile;EMPTYCONTROLLER,ROUTE,FILE,TEST,WEBSOCKET,MAIL,LOGMAIL;try{' + body + ';\n}catch(e){next(e)}');
 	} catch(e) {
 		err = e;
 	}
@@ -1274,7 +1276,7 @@ F.schedule = function(date, repeat, fn) {
 };
 
 F.clearSchedule = function(id) {
-	F.schedules.remove('id', id);
+	F.schedules = F.schedules.remove('id', id);
 	return F;
 };
 
@@ -1573,7 +1575,7 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 
 	if (url[0] === '#') {
 		url = url.substring(1);
-		if (url !== '400' && url !== '401' && url !== '403' && url !== '404' && url !== '408' && url !== '431' && url !== '500' && url !== '501') {
+		if (url !== '400' && url !== '401' && url !== '403' && url !== '404' && url !== '408' && url !== '409' && url !== '431' && url !== '500' && url !== '501') {
 
 			var sitemapflags = funcExecute instanceof Array ? funcExecute : flags;
 			if (!(sitemapflags instanceof Array))
@@ -1761,7 +1763,6 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 			}
 
 			var flag = flags[i].toString().toLowerCase();
-
 			if (flag.startsWith('http://') || flag.startsWith('https://')) {
 				corsflags.push(flag);
 				continue;
@@ -2105,14 +2106,17 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 		PERF[arr[i].toLowerCase()] = true;
 	}
 
-	F.routes.web.push(r);
+	if (r.isSYSTEM)
+		F.routes.system[url.substring(1)] = r;
+	else {
+		F.routes.web.push(r);
+
+		// Appends cors route
+		isCORS && F.cors(urlcache, corsflags);
+		!_controller && F.$routesSort(1);
+	}
 
 	F.emit('route', 'web', instance);
-
-	// Appends cors route
-	isCORS && F.cors(urlcache, corsflags);
-	!_controller && F.$routesSort(1);
-
 	return instance;
 };
 
@@ -2521,16 +2525,20 @@ F.websocket = function(url, funcInitialize, flags, length) {
 	var regIndex = null;
 	var hash = url2.hash();
 	var urlraw = U.path(url2) + (isWILDCARD ? '*' : '');
+	var params = [];
 
 	if (url.indexOf('{') !== -1) {
-
 		routeURL.forEach(function(o, i) {
+
 			if (o.substring(0, 1) !== '{')
 				return;
 
 			arr.push(i);
 
 			var sub = o.substring(1, o.length - 1);
+			var name = o.substring(1, o.length - 1).trim();
+
+			params.push(name);
 
 			if (sub[0] !== '/')
 				return;
@@ -2544,11 +2552,10 @@ F.websocket = function(url, funcInitialize, flags, length) {
 				regIndex = [];
 			}
 
+			params[params.length - 1] = 'regexp' + (regIndex.length + 1);
 			reg[i] = new RegExp(sub.substring(1, index), sub.substring(index + 1));
 			regIndex.push(i);
 		});
-
-		priority -= arr.length;
 	}
 
 	if (typeof(allow) === 'string')
@@ -2679,6 +2686,7 @@ F.websocket = function(url, funcInitialize, flags, length) {
 	r.controller = _controller ? _controller : 'unknown';
 	r.owner = _owner;
 	r.url = routeURL;
+	r.paramnames = params.length ? params : null;
 	r.param = arr;
 	r.subdomain = subdomain;
 	r.priority = priority;
@@ -4233,6 +4241,7 @@ F.$restart = function() {
 		F.routes = {
 			sitemap: null,
 			web: [],
+			system: {},
 			files: [],
 			cors: [],
 			websockets: [],
@@ -4426,9 +4435,13 @@ F.uninstall = function(type, name, options, skipEmit, packageName) {
 	if (type === 'route' || type === 'web') {
 		k = typeof(name) === 'string' ? name.substring(0, 3) === 'id:' ? 'id' : 'urlraw' : 'execute';
 		v = k === 'execute' ? name : k === 'id' ? name.substring(3).trim() : name;
-		F.routes.web = F.routes.web.remove(k, v);
+		if (k === 'urlraw' && v[0] === '#')
+			delete F.routes.system[v];
+		else
+			F.routes.web = F.routes.web.remove(k, v);
 		F.$routesSort();
 		F.consoledebug('uninstall', type + '#' + name);
+		F.temporary.other = {};
 		return F;
 	}
 
@@ -8623,6 +8636,10 @@ F.lookup = function(req, url, flags, membertype) {
 
 	var isSystem = url[0] === '#';
 	var subdomain = F._length_subdomain_web && req.subdomain ? req.subdomain.join('.') : null;
+
+	if (isSystem)
+		return F.routes.system[url];
+
 	if (isSystem)
 		req.path = [url];
 
@@ -12656,6 +12673,23 @@ WebSocket.prototype = {
 	get secured() {
 		return this.req.secured;
 	},
+
+	get params() {
+		if (this.$params)
+			return this.$params;
+		var split = framework_internal.routeSplit(this.url, true);
+		var names = this.route.paramnames;
+		if (names) {
+			var obj = {};
+			for (var i = 0; i < names.length; i++)
+				obj[names[i]] = split[this.route.param[i]];
+			this.$params = obj;
+			return obj;
+		} else {
+			this.$params = EMPTYOBJECT;
+			return EMPTYOBJECT;
+		}
+	}
 };
 
 WebSocket.prototype.emit = function(name, a, b, c, d, e, f, g) {
@@ -14025,7 +14059,9 @@ function extend_request(PROTO) {
 			if (controller.isCanceled)
 				return;
 
+			var ctrlname = '@' + name;
 			F.$events.controller && F.emit('controller', controller, name, this.$total_route.options);
+			F.$events[ctrlname] && F.emit(ctrlname, controller, name, this.$total_route.options);
 
 			if (controller.isCanceled)
 				return;
@@ -14903,9 +14939,10 @@ function extend_response(PROTO) {
 		if (res.options.headers)
 			headers = U.extend_headers(headers, res.options.headers);
 
-		if (res.options.download)
-			headers['Content-Disposition'] = 'attachment; filename="' + encodeURIComponent(res.options.download) + '"';
-		else if (headers['Content-Disposition'])
+		if (res.options.download) {
+			var encoded = encodeURIComponent(res.options.download);
+			headers['Content-Disposition'] = 'attachment; ' + (REG_UTF8.test(res.options.download) ? 'filename*=utf-8\'\'' + encoded : ('filename="' + encoded + '"'));
+		} else if (headers['Content-Disposition'])
 			delete headers['Content-Disposition'];
 
 		if (res.getHeader('Last-Modified'))
@@ -15607,9 +15644,14 @@ function fsStreamRead(filename, options, callback, req, res) {
 	var opt;
 
 	if (options) {
+
 		opt = HEADERS.fsStreamReadRange;
 		opt.start = options.start;
 		opt.end = options.end;
+
+		if (opt.start > opt.end)
+			delete opt.end;
+
 	} else
 		opt = HEADERS.fsStreamRead;
 

@@ -1,4 +1,4 @@
-// Copyright 2012-2017 (c) Peter Širka <petersirka@gmail.com>
+// Copyright 2012-2018 (c) Peter Širka <petersirka@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the
@@ -54,6 +54,7 @@ const regexpDiacritics = /[^\u0000-\u007e]/g;
 const regexpXML = /\w+=".*?"/g;
 const regexpDECODE = /&#?[a-z0-9]+;/g;
 const regexpPARAM = /\{{2}[^}\n]*\}{2}/g;
+const regexpARG = /\{[^}\n]*\}/g;
 const regexpINTEGER = /(^-|\s-)?[0-9]+/g;
 const regexpFLOAT = /(^-|\s-)?[0-9.,]+/g;
 const regexpALPHA = /^[A-Za-z0-9]+$/;
@@ -2566,14 +2567,14 @@ Date.prototype.extend = function(date) {
 			tmp = +arr[0];
 			dt.setFullYear(tmp);
 
-			if (arr[1]) {
-				tmp = +arr[1];
-				!isNaN(tmp) && dt.setMonth(tmp - 1);
-			}
-
 			if (arr[2]) {
 				tmp = +arr[2];
 				!isNaN(tmp) && dt.setDate(tmp);
+			}
+
+			if (arr[1]) {
+				tmp = +arr[1];
+				!isNaN(tmp) && dt.setMonth(tmp - 1);
 			}
 
 			continue;
@@ -3257,6 +3258,13 @@ String.prototype.urlEncode = function() {
 
 String.prototype.urlDecode = function() {
 	return decodeURIComponent(this);
+};
+
+String.prototype.arg = function(obj) {
+	return this.replace(regexpARG, function(text) {
+		var val = obj[text.substring(1, text.length - 1).trim()];
+		return val == null ? text : val;
+	});
 };
 
 String.prototype.params = function(obj) {
