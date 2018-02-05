@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkInternal
- * @version 2.9.2
+ * @version 3.0.0
  */
 
 'use strict';
