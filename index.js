@@ -9662,6 +9662,32 @@ Controller.prototype.$save = function(helper, callback) {
 	return self;
 };
 
+Controller.prototype.$insert = function(helper, callback) {
+	var self = this;
+	if (framework_builders.isSchema(self.body)) {
+		self.body.$$controller = self;
+		self.body.$insert(helper, callback);
+	} else {
+		var model = self.getSchema().default();
+		model.$$controller = self;
+		model.$insert(helper, callback);
+	}
+	return self;
+};
+
+Controller.prototype.$update = function(helper, callback) {
+	var self = this;
+	if (framework_builders.isSchema(self.body)) {
+		self.body.$$controller = self;
+		self.body.$update(helper, callback);
+	} else {
+		var model = self.getSchema().default();
+		model.$$controller = self;
+		model.$update(helper, callback);
+	}
+	return self;
+};
+
 Controller.prototype.$remove = function(helper, callback) {
 	var self = this;
 	self.getSchema().remove(helper, callback, self);

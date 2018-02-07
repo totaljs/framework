@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkBuilders
- * @version 2.9.3
+ * @version 3.0.0
  */
 
 'use strict';
@@ -195,6 +195,8 @@ function SchemaBuilderEntity(parent, name) {
 	this.$onDefault; // Array of functions for inherits
 	this.onValidate = F.onValidate;
 	this.onSave;
+	this.onInsert;
+	this.onUpdate;
 	this.onGet;
 	this.onRemove;
 	this.onQuery;
@@ -359,6 +361,12 @@ SchemaBuilderEntity.prototype.inherit = function(group, name) {
 
 		if (!self.onSave && schema.onSave)
 			self.onSave = schema.onSave;
+
+		if (!self.onInsert && schema.onInsert)
+			self.onInsert = schema.onInsert;
+
+		if (!self.onUpdate && schema.onUpdate)
+			self.onUpdate = schema.onUpdate;
 
 		if (!self.onGet && schema.onGet)
 			self.onGet = schema.onGet;
@@ -750,6 +758,29 @@ SchemaBuilderEntity.prototype.setSave = function(fn, description) {
 	return this;
 };
 
+/**
+ * Set insert handler
+ * @param {Function(error, model, helper, next(value), controller)} fn
+ * @return {SchemaBuilderEntity}
+ */
+SchemaBuilderEntity.prototype.setInsert = function(fn, description) {
+	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
+	this.onInsert = fn;
+	this.meta.insert = description;
+	return this;
+};
+
+/**
+ * Set update handler
+ * @param {Function(error, model, helper, next(value), controller)} fn
+ * @return {SchemaBuilderEntity}
+ */
+SchemaBuilderEntity.prototype.setUpdate = function(fn, description) {
+	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
+	this.onUpdate = fn;
+	this.meta.update = description;
+	return this;
+};
 
 /**
  * Set error handler
@@ -912,6 +943,8 @@ SchemaBuilderEntity.prototype.destroy = function() {
 	this.$onDefault = undefined;
 	this.onValidate = undefined;
 	this.onSave = undefined;
+	this.onInsert = undefined;
+	this.onUpdate = undefined;
 	this.onRead = undefined;
 	this.onGet = undefined;
 	this.onRemove = undefined;
@@ -943,6 +976,37 @@ SchemaBuilderEntity.prototype.destroy = function() {
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.save = function(model, options, callback, controller, skip) {
+	return this.execute('onSave', model, options, callback, controller, skip);
+};
+
+/**
+ * Execute onInsert delegate
+ * @param {Object} model
+ * @param {Object} options Custom options object, optional
+ * @param {Function(err, result)} callback
+ * @param {Controller} controller
+ * @param {Boolean} skip Skips preparing and validation, optional
+ * @return {SchemaBuilderEntity}
+ */
+SchemaBuilderEntity.prototype.insert = function(model, options, callback, controller, skip) {
+	return this.execute('onInsert', model, options, callback, controller, skip);
+};
+
+/**
+ * Execute onUpdate delegate
+ * @param {Object} model
+ * @param {Object} options Custom options object, optional
+ * @param {Function(err, result)} callback
+ * @param {Controller} controller
+ * @param {Boolean} skip Skips preparing and validation, optional
+ * @return {SchemaBuilderEntity}
+ */
+SchemaBuilderEntity.prototype.update = function(model, options, callback, controller, skip) {
+	return this.execute('onUpdate', model, options, callback, controller, skip);
+};
+
+
+SchemaBuilderEntity.prototype.execute = function(TYPE, model, options, callback, controller, skip) {
 
 	if (typeof(callback) === 'boolean') {
 		skip = callback;
@@ -963,7 +1027,19 @@ SchemaBuilderEntity.prototype.save = function(model, options, callback, controll
 		callback = function(){};
 
 	var self = this;
-	var $type = 'save';
+	var $type;
+
+	switch (TYPE) {
+		case 'onInsert':
+			$type = 'insert';
+			break;
+		case 'onUpdate':
+			$type = 'update';
+			break;
+		default:
+			$type = 'save';
+			break;
+	}
 
 	self.$prepare(model, function(err, model) {
 
@@ -979,13 +1055,13 @@ SchemaBuilderEntity.prototype.save = function(model, options, callback, controll
 		self.resourceName && builder.setResource(self.resourceName);
 		self.resourcePrefix && builder.setPrefix(self.resourcePrefix);
 
-		if (!isGenerator(self, $type, self.onSave)) {
-			if (self.onSave.$newversion)
-				self.onSave(new SchemaOptions(builder, model, options, function(res) {
+		if (!isGenerator(self, $type, self[TYPE])) {
+			if (self[TYPE].$newversion)
+				self[TYPE](new SchemaOptions(builder, model, options, function(res) {
 					self.$process(arguments, model, $type, undefined, builder, res, callback);
 				}, controller));
 			else
-				self.onSave(builder, model, options, function(res) {
+				self[TYPE](builder, model, options, function(res) {
 					self.$process(arguments, model, $type, undefined, builder, res, callback);
 				}, controller, skip !== true);
 			return self;
@@ -1018,14 +1094,15 @@ SchemaBuilderEntity.prototype.save = function(model, options, callback, controll
 			callback(has ? builder : null, res === undefined ? model : res);
 		};
 
-		if (self.onSave.$newversion)
-			async.call(self, self.onSave)(onError, new SchemaOptions(builder, model, options, onCallback, controller));
+		if (self[TYPE].$newversion)
+			async.call(self, self[TYPE])(onError, new SchemaOptions(builder, model, options, onCallback, controller));
 		else
-			async.call(self, self.onSave)(onError, builder, model, options, onCallback, controller, skip !== true);
+			async.call(self, self[TYPE])(onError, builder, model, options, onCallback, controller, skip !== true);
 	});
 
 	return self;
 };
+
 
 function isGenerator(obj, name, fn) {
 	return obj.gcache[name] ? obj.gcache[name] : obj.gcache[name] = fn.toString().substring(0, 9) === 'function*';
@@ -2407,7 +2484,7 @@ SchemaInstance.prototype.$push = function(type, name, helper, first) {
 	var self = this;
 	var fn;
 
-	if (type === 'save') {
+	if (type === 'save' || type === 'insert' || type === 'update') {
 
 		helper = name;
 		name = undefined;
@@ -2496,6 +2573,22 @@ SchemaInstance.prototype.$save = function(helper, callback) {
 		this.$push('save', helper);
 	else
 		this.$$schema.save(this, helper, callback, this.$$controller);
+	return this;
+};
+
+SchemaInstance.prototype.$insert = function(helper, callback) {
+	if (this.$$can && this.$$async)
+		this.$push('insert', helper);
+	else
+		this.$$schema.insert(this, helper, callback, this.$$controller);
+	return this;
+};
+
+SchemaInstance.prototype.$update = function(helper, callback) {
+	if (this.$$can && this.$$async)
+		this.$push('update', helper);
+	else
+		this.$$schema.update(this, helper, callback, this.$$controller);
 	return this;
 };
 
