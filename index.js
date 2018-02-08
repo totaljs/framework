@@ -378,28 +378,12 @@ global.$OPERATION = function(schema, name, options, callback, controller) {
 	return !!o;
 };
 
-global.DB = global.DATABASE = function() {
-	return typeof(F.database) === 'object' ? F.database : F.database.apply(framework, arguments);
-};
-
-global.ON = function() {
-	return F.on.apply(F, arguments);
+global.DB = global.DATABASE = function(a, b, c, d) {
+	return typeof(F.database) === 'object' ? F.database : F.database(a, b, c, d);
 };
 
 global.OFF = function() {
 	return arguments.length > 1 ? F.removeListener.apply(F, arguments) : F.removeAllListeners.apply(F, arguments);
-};
-
-global.EMIT = function() {
-	return F.emit.apply(F, arguments);
-};
-
-global.LOG = function() {
-	return F.log.apply(F, arguments);
-};
-
-global.LOGGER = function() {
-	return F.logger.apply(F, arguments);
 };
 
 global.MAKE = global.TRANSFORM = function(transform, fn) {
@@ -868,7 +852,7 @@ F.prototypes = function(fn) {
 	return F;
 };
 
-F.on = function(name, fn) {
+global.ON = F.on = function(name, fn) {
 
 	if (name === 'init' || name === 'ready' || name === 'load') {
 		if (this.isLoaded) {
@@ -908,7 +892,8 @@ F.on = function(name, fn) {
 	return this;
 };
 
-F.emit = function(name, a, b, c, d, e, f, g) {
+global.EMIT = F.emit = function(name, a, b, c, d, e, f, g) {
+
 	var evt = F.$events[name];
 	if (evt) {
 		var clean = false;
@@ -5131,7 +5116,7 @@ F.onMeta = function() {
 };
 
 // @arguments {Object params}
-F.log = function() {
+global.LOG = F.log = function() {
 
 	F.datetime = new Date();
 	var filename = F.datetime.getFullYear() + '-' + (F.datetime.getMonth() + 1).toString().padLeft(2, '0') + '-' + F.datetime.getDate().toString().padLeft(2, '0');
@@ -5155,7 +5140,7 @@ F.log = function() {
 	return F;
 };
 
-F.logger = function() {
+global.LOGGER = F.logger = function() {
 	F.datetime = new Date();
 	var dt = F.datetime.getFullYear() + '-' + (F.datetime.getMonth() + 1).toString().padLeft(2, '0') + '-' + F.datetime.getDate().toString().padLeft(2, '0') + ' ' + F.datetime.getHours().toString().padLeft(2, '0') + ':' + F.datetime.getMinutes().toString().padLeft(2, '0') + ':' + F.datetime.getSeconds().toString().padLeft(2, '0');
 	var str = '';
@@ -10109,12 +10094,12 @@ Controller.prototype.cancel = function() {
 };
 
 Controller.prototype.log = function() {
-	F.log.apply(framework, arguments);
+	F.log.apply(F, arguments);
 	return this;
 };
 
 Controller.prototype.logger = function() {
-	F.logger.apply(framework, arguments);
+	F.logger.apply(F, arguments);
 	return this;
 };
 
