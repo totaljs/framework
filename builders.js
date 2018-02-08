@@ -3984,6 +3984,16 @@ RESTBuilder.prototype.post = function(data) {
 	return this;
 };
 
+RESTBuilder.prototype.patch = function(data) {
+	if (this.$method !== 'patch') {
+		this.$flags = null;
+		this.$method = 'patch';
+		this.$type = 1;
+	}
+	data && this.raw(data);
+	return this;
+};
+
 RESTBuilder.prototype.json = function(data) {
 
 	if (this.$type !== 1)
