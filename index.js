@@ -953,8 +953,12 @@ F.isSuccess = function(obj) {
 global.CONVERT = F.convert = function(value, convertor) {
 
 	if (convertor) {
-		if (F.convertors.findIndex('name', value) !== -1)
+
+		if (F.convertors.findIndex('name', value) !== -1) {
+			if (convertor == null)
+				F.convertors = F.convertors.remove('name', value);
 			return false;
+		}
 
 		if (convertor === Number)
 			convertor = U.parseFloat;
@@ -4444,6 +4448,12 @@ F.uninstall = function(type, name, options, skipEmit, packageName) {
 
 	if (type === 'operation') {
 		NEWOPERATION(name, null);
+		F.consoledebug('uninstall', type + '#' + name);
+		return F;
+	}
+
+	if (type === 'convertor') {
+		F.convertor(name, null);
 		F.consoledebug('uninstall', type + '#' + name);
 		return F;
 	}
