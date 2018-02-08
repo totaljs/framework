@@ -406,7 +406,7 @@ global.MAKE = global.TRANSFORM = function(transform, fn) {
 };
 
 global.NEWTRANSFORM = function() {
-	return TransformBuilder.addTransform.apply(this, arguments);
+	return TransformBuilder.addTransform.apply(F, arguments);
 };
 
 global.NEWSCHEMA = function(group, name) {
@@ -855,31 +855,31 @@ F.prototypes = function(fn) {
 global.ON = F.on = function(name, fn) {
 
 	if (name === 'init' || name === 'ready' || name === 'load') {
-		if (this.isLoaded) {
-			fn.call(this);
+		if (F.isLoaded) {
+			fn.call(F);
 			return;
 		}
 	} else if (name.indexOf('#') !== -1) {
 		var arr = name.split('#');
 		switch (arr[0]) {
 			case 'middleware':
-				F.temporary.ready[name] && fn.call(this);
+				F.temporary.ready[name] && fn.call(F);
 				break;
 			case 'component':
-				F.temporary.ready[name] && fn.call(this);
+				F.temporary.ready[name] && fn.call(F);
 				break;
 			case 'model':
-				F.temporary.ready[name] && fn.call(this, F.models[arr[1]]);
+				F.temporary.ready[name] && fn.call(F, F.models[arr[1]]);
 				break;
 			case 'source':
-				F.temporary.ready[name] && fn.call(this, F.sources[arr[1]]);
+				F.temporary.ready[name] && fn.call(F, F.sources[arr[1]]);
 				break;
 			case 'package':
 			case 'module':
-				F.temporary.ready[name] && fn.call(this, F.modules[arr[1]]);
+				F.temporary.ready[name] && fn.call(F, F.modules[arr[1]]);
 				break;
 			case 'controller':
-				F.temporary.ready[name] && fn.call(this, F.controllers[arr[1]]);
+				F.temporary.ready[name] && fn.call(F, F.controllers[arr[1]]);
 				break;
 		}
 	}
@@ -889,7 +889,7 @@ global.ON = F.on = function(name, fn) {
 	else
 		F.$events[name] = [fn];
 
-	return this;
+	return F;
 };
 
 global.EMIT = F.emit = function(name, a, b, c, d, e, f, g) {
@@ -1527,9 +1527,9 @@ global.CORS = F.cors = function(url, flags, credentials) {
 
 F.group = function(flags, fn) {
 	_flags = flags;
-	fn.call(this);
+	fn.call(F);
 	_flags = undefined;
-	return this;
+	return F;
 };
 
 /**
@@ -2336,7 +2336,7 @@ global.MAP = F.map = function(url, filename, filter) {
 		});
 	}, isPackage ? 500 : 1);
 
-	return this;
+	return F;
 };
 
 /**
@@ -3322,7 +3322,7 @@ F.$startup = function(callback) {
 		});
 	}, callback);
 
-	return this;
+	return F;
 };
 
 F.uptodate = function(type, url, options, interval, callback, next) {
@@ -5162,7 +5162,7 @@ global.LOGGER = F.logger = function() {
 	return F;
 };
 
-F.logmail = function(address, subject, body, callback) {
+global.LOGMAIL = F.logmail = function(address, subject, body, callback) {
 
 	if (typeof(body) === FUNCTION) {
 		callback = body;
@@ -7412,7 +7412,7 @@ F.include = function(name, options, callback) {
  * @param {String} language Optional.
  * @return {MailMessage}
  */
-F.mail = function(address, subject, view, model, callback, language) {
+global.MAIL = F.mail = function(address, subject, view, model, callback, language) {
 
 	if (typeof(callback) === 'string') {
 		var tmp = language;
@@ -16047,5 +16047,3 @@ EMPTYCONTROLLER.req.query = EMPTYOBJECT;
 EMPTYCONTROLLER.req.body = EMPTYOBJECT;
 EMPTYCONTROLLER.req.files = EMPTYARRAY;
 global.EMPTYCONTROLLER = EMPTYCONTROLLER;
-global.LOGMAIL = F.logmail;
-global.MAIL = F.mail;
