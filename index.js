@@ -950,7 +950,7 @@ F.isSuccess = function(obj) {
 	return obj === SUCCESSHELPER;
 };
 
-F.convert = function(value, convertor) {
+global.CONVERT = F.convert = function(value, convertor) {
 
 	if (convertor) {
 		if (F.convertors.findIndex('name', value) !== -1)
@@ -985,7 +985,7 @@ F.convert = function(value, convertor) {
 	}
 
 	for (var i = 0, length = F.convertors.length; i < length; i++) {
-		if (value[F.convertors[i].name])
+		if (value[F.convertors[i].name] != null)
 			value[F.convertors[i].name] = F.convertors[i].convertor(value[F.convertors[i].name]);
 	}
 

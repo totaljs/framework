@@ -3,6 +3,7 @@
 - added: (IMPORTANT) Total.js components can have async delegate
 - added: new schema operations: `schema.setInsert()` and `schema.setUpdate()`
 - added: `RESTBuilder.patch([data])`
+- added: `CONVERT()` alias to `F.convert()`
 
 ======= 2.9.3 (HOTFIX)
 
