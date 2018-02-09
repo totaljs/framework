@@ -663,6 +663,7 @@ function Framework() {
 	this.isomorphic = {};
 	this.components = { has: false, css: false, js: false, views: {}, instances: {}, version: null, links: '', groups: {} };
 	this.convertors = [];
+	this.convertors2 = null;
 	this.tests = [];
 	this.errors = [];
 	this.problems = [];
@@ -950,7 +951,7 @@ F.isSuccess = function(obj) {
 	return obj === SUCCESSHELPER;
 };
 
-global.CONVERT = F.convert = function(value, convertor) {
+F.convert = function(value, convertor) {
 
 	if (convertor) {
 

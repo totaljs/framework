@@ -608,6 +608,11 @@ function test_ErrorBuilder() {
 
 }
 
+function test_Convertors() {
+	var a = CONVERT({ page: 5, age: 3, money: '-100', tags: 'Total.js' }, 'page:Number,age:Number, money:Number, tags:[String], empty: Boolean');
+	assert.ok(a.page === 5 && a.age === 3 && a.money === -100 && a.tags[0] === 'Total.js' && a.empty === false, 'Problem in convertor');
+}
+
 function test_Operations() {
 
 	NEWOPERATION('testA', function(error, value, callback) {
@@ -635,6 +640,7 @@ test_UrlBuilder();
 test_Schema();
 test_ErrorBuilder();
 test_Operations();
+test_Convertors();
 
 console.log('================================================');
 console.log('success - OK');

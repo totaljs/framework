@@ -1767,7 +1767,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 
 		// ARRAY:
 		if (!(val instanceof Array)) {
-			item[property] = (defaults ? isUndefined(self.$ondefault(property, false, self.name), []) : []);
+			item[property] = (defaults ? isUndefined(self.$ondefault(property, false, self.name), EMPTYARRAY) : []);
 			continue;
 		}
 
@@ -2917,7 +2917,7 @@ exports.prepare = function(name, model) {
 };
 
 function isUndefined(value, def) {
-	return value === undefined ? def : value;
+	return value === undefined ? (def === EMPTYARRAY ? [] : def) : value;
 }
 
 // ======================================================
@@ -4365,6 +4365,185 @@ OperationOptions.prototype.invalid = function(name, error, path, index) {
 	this.callback();
 	return this;
 };
+
+global.CONVERT = function(value, schema) {
+	var key = schema;
+	if (key.length > 50)
+		key = key.hash();
+	var fn = F.convertors2 && F.convertors2[key];
+	return fn ? fn(value) : convertorcompile(schema, value, key);
+};
+
+function convertorcompile(schema, data, key) {
+	var prop = schema.split(',');
+	var cache = [];
+	for (var i = 0, length = prop.length; i < length; i++) {
+		var arr = prop[i].split(':');
+		var obj = {};
+
+		var type = arr[1].toLowerCase().trim();
+		var size = 0;
+		var isarr = type[0] === '[';
+		if (isarr)
+			type = type.substring(1, type.length - 1);
+
+		var index = type.indexOf('(');
+		if (index !== -1) {
+			size = +type.substring(index + 1, type.length - 1).trim();
+			type = type.substring(0, index);
+		}
+
+		obj.name = arr[0].trim();
+		obj.size = size;
+		obj.type = type;
+		obj.array = isarr;
+
+		switch (type) {
+			case 'string':
+				obj.fn = $convertstring;
+				break;
+			case 'number':
+				obj.fn = $convertnumber;
+				break;
+			case 'boolean':
+				obj.fn = $convertboolean;
+				break;
+			case 'date':
+				obj.fn = $convertdate;
+				break;
+			case 'uid':
+				obj.fn = $convertuid;
+				break;
+			case 'upper':
+				obj.fn = (val, obj) => $convertstring(val, obj).toUpperCase();
+				break;
+			case 'lower':
+				obj.fn = (val, obj) => $convertstring(val, obj).toLowerCase();
+				break;
+			case 'capitalize':
+				obj.fn = (val, obj) => $convertstring(val, obj).capitalize();
+				break;
+			case 'email':
+				obj.fn = function(val, obj) {
+					var tmp = $convertstring(val, obj);
+					return tmp.isEmail() ? tmp : '';
+				};
+				break;
+			case 'zip':
+				obj.fn = function(val, obj) {
+					var tmp = $convertstring(val, obj);
+					return tmp.isZIP() ? tmp : '';
+				};
+				break;
+			case 'phone':
+				obj.fn = function(val, obj) {
+					var tmp = $convertstring(val, obj);
+					return tmp.isPhone() ? tmp : '';
+				};
+				break;
+			case 'url':
+				obj.fn = function(val, obj) {
+					var tmp = $convertstring(val, obj);
+					return tmp.isURL() ? tmp : '';
+				};
+				break;
+			case 'json':
+				obj.fn = function(val, obj) {
+					var tmp = $convertstring(val, obj);
+					return tmp.isJSON() ? tmp : '';
+				};
+				break;
+			case 'object':
+				return val => val;
+			case 'search':
+				obj.fn = (val, obj) => $convertstring(val, obj).toSearch();
+				break;
+			default:
+				obj.fn = val => val;
+				break;
+		}
+
+		if (isarr) {
+			obj.fn2 = obj.fn;
+			obj.fn = function(val, obj) {
+				if (!(val instanceof Array))
+					val = [val];
+				var output = [];
+				for (var i = 0, length = val.length; i < length; i++) {
+					var o = obj.fn2(val[i], obj);
+					switch (obj.type) {
+						case 'email':
+						case 'phone':
+						case 'zip':
+						case 'json':
+						case 'url':
+						case 'uid':
+						case 'date':
+							o && output.push(o);
+							break;
+						default:
+							output.push(o);
+							break;
+					}
+				}
+				return output;
+			};
+		}
+
+		cache.push(obj);
+	}
+
+	var fn = function(data) {
+		var output = {};
+		for (var i = 0, length = cache.length; i < length; i++) {
+			var item = cache[i];
+			output[item.name] = item.fn(data[item.name], item);
+		}
+		return output;
+	};
+	if (!F.convertors2)
+		F.convertors2 = {};
+	F.convertors2[key] = fn;
+	return fn(data);
+}
+
+function $convertstring(value, obj) {
+	return value == null ? '' : typeof(value) !== 'string' ? obj.size ? value.toString().max(obj.size) : value.toString() : obj.size ? value.max(obj.size) : value;
+}
+
+function $convertnumber(value) {
+	if (value == null)
+		return 0;
+	if (typeof(value) === 'number')
+		return value;
+	var num = +value.toString().replace(',', '.');
+	return isNaN(num) ? 0 : num;
+}
+
+function $convertboolean(value) {
+	return value == null ? false : value === true || value == '1' || value === 'true' || value === 'on';
+}
+
+function $convertuid(value) {
+	return value == null ? '' : typeof(value) === 'string' ? value.isUID() ? value : '' : '';
+}
+
+function $convertdate(value) {
+
+	if (value == null)
+		return null;
+
+	if (value instanceof Date)
+		return value;
+
+	switch (typeof(value)) {
+		case 'string':
+		case 'number':
+			return value.parseDate();
+	}
+
+	return null;
+}
 
 // ======================================================
 // EXPORTS
