@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkUtils
- * @version 2.9.2
+ * @version 2.9.3
  */
 
 'use strict';
