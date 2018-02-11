@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkMail
- * @version 2.8.0
+ * @version 3.0.0
  */
 
 'use strict';
@@ -257,7 +257,7 @@ Message.prototype.attachment = function(filename, name) {
  * @return {Message}
  */
 Message.prototype.manually = function() {
-	this.$sending && clearTimeout(this.$sending);
+	this.$sending && clearImmediate(this.$sending);
 	return this;
 };
 
@@ -353,6 +353,7 @@ Mailer.prototype.destroy = function(obj) {
 };
 
 const ATTACHMENT_SO = { encoding: 'base64' };
+
 Mailer.prototype.$writeattachment = function(obj) {
 
 	var attachment = obj.files ? obj.files.shift() : false;
@@ -647,7 +648,6 @@ Mailer.prototype.$send = function(obj, options, autosend) {
 	var socket = obj.socket2 ? obj.socket2 : obj.socket;
 	var host = obj.host;
 	var line = null;
-
 	var isAttach = !options.tls || (obj.tls && options.tls);
 
 	isAttach && mailer.$events.send && mailer.emit('send', obj);
@@ -740,11 +740,11 @@ Mailer.prototype.$send = function(obj, options, autosend) {
 				if (obj.messages.length) {
 					mailer.$writemessage(obj, buffer);
 					mailer.$writeline(obj, buffer.shift());
-					return;
+				} else {
+					// end
+					mailer.$writeline(obj, 'QUIT');
 				}
 
-				// end
-				mailer.$writeline(obj, 'QUIT');
 				return;
 
 			case 221: // BYE
@@ -762,16 +762,16 @@ Mailer.prototype.$send = function(obj, options, autosend) {
 				}
 
 				var value = auth.shift();
-				if (!value) {
+				if (value) {
+					mailer.$writeline(obj, value);
+				} else {
 					var err = new Error('Forbidden.');
 					mailer.destroy(obj);
 					obj.callback && obj.callback(err);
 					obj.callback = null;
 					mailer.$events.error && !obj.try && mailer.emit('error', err, obj);
-					return;
 				}
 
-				mailer.$writeline(obj, value);
 				return;
 
 			case 354:
@@ -796,12 +796,12 @@ Mailer.prototype.$send = function(obj, options, autosend) {
 					buffer = [];
 					obj.count--;
 					socket.emit('line', '999 TRY NEXT MESSAGE');
-					return;
+				} else {
+					mailer.destroy(obj);
+					obj.callback && obj.callback(err);
+					obj.callback = null;
 				}
 
-				mailer.destroy(obj);
-				obj.callback && obj.callback(err);
-				obj.callback = null;
 				return;
 		}
 	});

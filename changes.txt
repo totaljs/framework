@@ -5,6 +5,8 @@
 - added: `RESTBuilder.patch([data])`
 - added: `CONVERT(obj, schema)` for quick converting values like Schema (more in docs.)
 
+- fixed: mail `message.manually()`
+
 ======= 2.9.3 (HOTFIX)
 
 - added: `String.arg(obj)` for a simple templating `Hello {variable}!`
