@@ -7437,8 +7437,8 @@ global.MAIL = F.mail = function(address, subject, view, model, callback, languag
 
 	if (controller.themeName)
 		view = prepare_viewname(view);
-	else if (this.onTheme)
-		controller.themeName = this.onTheme(controller);
+	else if (F.onTheme)
+		controller.themeName = F.onTheme(controller);
 	else
 		controller.themeName = '';
 
