@@ -4,6 +4,7 @@
 - added: new schema operations: `schema.setInsert()` and `schema.setUpdate()`
 - added: `RESTBuilder.patch([data])`
 - added: `CONVERT(obj, schema)` for quick converting values like Schema (more in docs.)
+- added: `Capitalize2` schema type which converts only the first char
 
 - fixed: mail `message.manually()`
 

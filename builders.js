@@ -585,6 +585,12 @@ SchemaBuilderEntity.prototype.$parse = function(name, value, required, custom) {
 		return parseLength(lower, result);
 	}
 
+	if ((/^(capitalize2)+(\(\d+\))?$/).test(lower)) {
+		result.type = 3;
+		result.subtype = 'capitalize2';
+		return parseLength(lower, result);
+	}
+
 	if ((/^(capitalize|camelcase|camelize)+(\(\d+\))?$/).test(lower)) {
 		result.type = 3;
 		result.subtype = 'capitalize';
@@ -1673,6 +1679,9 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 						case 'capitalize':
 							tmp = tmp.capitalize();
 							break;
+						case 'capitalize2':
+							tmp = tmp.capitalize(true);
+							break;
 						case 'lowercase':
 							tmp = tmp.toLowerCase();
 							break;
@@ -1818,6 +1827,9 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 							break;
 						case 'capitalize':
 							tmp = tmp.capitalize();
+							break;
+						case 'capitalize2':
+							tmp = tmp.capitalize(true);
 							break;
 						case 'lowercase':
 							tmp = tmp.toLowerCase();
@@ -4422,6 +4434,9 @@ function convertorcompile(schema, data, key) {
 				break;
 			case 'capitalize':
 				obj.fn = (val, obj) => $convertstring(val, obj).capitalize();
+				break;
+			case 'capitalize2':
+				obj.fn = (val, obj) => $convertstring(val, obj).capitalize(true);
 				break;
 			case 'email':
 				obj.fn = function(val, obj) {
