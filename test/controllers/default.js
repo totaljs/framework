@@ -26,6 +26,18 @@ exports.install = function() {
 		this.plain('ROBOT');
 	}, ['robot']);
 
+	GROUP(['get'], '/prefix1/', function() {
+		ROUTE('/test/', function() {
+			this.plain('PREFIX1TEST');
+		});
+	});
+
+	GROUP('prefix2', ['get'], function() {
+		ROUTE('/test/', function() {
+			this.plain('PREFIX2TEST');
+		});
+	});
+
 	F.route('#route');
 	F.route('/view-in-modules/', '.' + F.path.modules('someview'));
 	F.route('/options/', plain_options, ['options']);

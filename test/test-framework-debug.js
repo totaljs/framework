@@ -397,6 +397,24 @@ function test_routing(next) {
 		});
 	});
 
+	async.await('prefix -- 1', function(complete) {
+		utils.request(url + 'prefix1/test/', ['get'], function(error, data) {
+			if (error)
+				throw error;
+			assert.ok(data === 'PREFIX1TEST', 'Group + Prefix 1');
+			complete();
+		});
+	});
+
+	async.await('prefix -- 2', function(complete) {
+		utils.request(url + 'prefix2/test/', ['get'], function(error, data) {
+			if (error)
+				throw error;
+			assert.ok(data === 'PREFIX2TEST', 'Group + Prefix 2');
+			complete();
+		});
+	});
+
 	async.await('package/', function(complete) {
 		utils.request(url + 'package/', ['get'], function(error, data, code, headers) {
 			if (error)

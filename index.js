@@ -269,6 +269,7 @@ var IMAGEMAGICK = false;
 var _controller = '';
 var _owner = '';
 var _flags;
+var _prefix;
 
 // GO ONLINE MODE
 !global.framework_internal && (global.framework_internal = require('./internal'));
@@ -305,7 +306,6 @@ global.FINISHED = framework_internal.onFinished;
 global.DESTROY = framework_internal.destroyStream;
 global.UID = () => UIDGENERATOR.date + (++UIDGENERATOR.index).padLeft(4, '0') + UIDGENERATOR.instance + (UIDGENERATOR.index % 2 ? 1 : 0);
 global.ROUTE = (a, b, c, d, e) => F.route(a, b, c, d, e);
-global.GROUP = (a, b) => F.group(a, b);
 global.WEBSOCKET = (a, b, c, d) => F.websocket(a, b, c, d);
 global.FILE = (a, b, c) => F.file(a, b, c);
 global.REDIRECT = (a, b, c, d) => F.redirect(a, b, c, d);
@@ -1530,9 +1530,35 @@ global.CORS = F.cors = function(url, flags, credentials) {
 	return F;
 };
 
-F.group = function(flags, fn) {
-	_flags = flags;
-	fn.call(F);
+global.GROUP = F.group = function() {
+
+	var fn = null;
+
+	_flags = null;
+	_prefix = null;
+
+	for (var i = 0; i < arguments.length; i++) {
+		var o = arguments[i];
+
+		if (o instanceof Array) {
+			_flags = o;
+			continue;
+		}
+
+		switch (typeof(o)) {
+			case 'string':
+				if (o.endsWith('/'))
+					o = o.substring(0, o.length - 1);
+				_prefix = o;
+				break;
+			case 'function':
+				fn = o;
+				break;
+		}
+	}
+
+	fn && fn.call(F);
+	_prefix = undefined;
 	_flags = undefined;
 	return F;
 };
@@ -1609,6 +1635,9 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 
 	if (url[0] !== '[' && url[0] !== '/')
 		url = '/' + url;
+
+	if (_prefix)
+		url = _prefix + url;
 
 	if (url.endsWith('/'))
 		url = url.substring(0, url.length - 1);

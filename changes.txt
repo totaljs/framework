@@ -6,6 +6,8 @@
 - added: `CONVERT(obj, schema)` for quick converting values like Schema (more in docs.)
 - added: `Capitalize2` schema type which converts only the first char
 
+- updated: `GROUP()` by adding a new argument `url_prefix`
+
 - fixed: mail `message.manually()`
 
 ======= 2.9.3 (HOTFIX)
