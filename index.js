@@ -438,7 +438,7 @@ global.SUCCESS = function(success, value) {
 	var err;
 
 	if (success instanceof Error) {
-		err = success;
+		err = success.toString();
 		success = false;
 	} else if (success instanceof framework_builders.ErrorBuilder) {
 		if (success.hasError()) {
