@@ -182,6 +182,21 @@ Message.prototype.from = function(address, name) {
 	return this;
 };
 
+Message.prototype.high = function() {
+	this.$priority = 1;
+	return this;
+};
+
+Message.prototype.low = function() {
+	this.$priority = 5;
+	return this;
+};
+
+Message.prototype.confidential = function() {
+	this.$confidential = true;
+	return this;
+};
+
 Message.prototype.to = function(address, name, clear) {
 
 	if (typeof(name) === 'boolean') {
@@ -537,6 +552,10 @@ Mailer.prototype.$writemessage = function(obj, buffer) {
 	buffer.push('MAIL FROM: <' + msg.addressFrom.address + '>');
 	message.push('Message-ID: <total' + (INDEXATTACHMENT++) + '@WIN-t' + (INDEXATTACHMENT) + '>');
 	message.push('MIME-Version: 1.0');
+
+	self.$priority && message.push('X-Priority: ' + self.$priority);
+	self.$confidential && message.push('Sensitivity: Company-Confidential');
+
 	message.push('From: ' + (msg.addressFrom.name ? unicode_encode(msg.addressFrom.name) + ' <' + msg.addressFrom.address + '>' : msg.addressFrom.address));
 
 	var length;
