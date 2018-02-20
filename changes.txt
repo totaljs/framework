@@ -8,6 +8,11 @@
 - added: `MailMessage.high()` sets `high` priority of the email messsage
 - added: `MailMessage.low()` sets `low` priority of the email messsage
 - added: `MailMessage.confidential()` sets `Sensitivity` header with `confidential` value
+- added: `SchemaBuilderEntity.$stop()` stops the async list
+- added: `SchemaOptions.stop()` alias to `$.model.$stop()`
+- added: `SchemaOptions.next()` alias to `$.model.$next()`
+- added: `SchemaOptions.output()` alias to `$.model.$output()`
+- added: `SchemaOptions.clean()` alias to `$.model.$clean()`
 
 - updated: `GROUP()` by adding a new argument `url_prefix`
 

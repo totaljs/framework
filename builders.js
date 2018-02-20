@@ -91,6 +91,26 @@ SchemaOptions.prototype = {
 	}
 };
 
+SchemaOptions.prototype.clean = function() {
+	return this.model.$clean();
+};
+
+SchemaOptions.prototype.push = function(type, name, helper, first) {
+	return this.model.$push(type, name, helper, first);
+};
+
+SchemaOptions.prototype.next = function(type, name, helper) {
+	return this.model.$next(type, name, helper);
+};
+
+SchemaOptions.prototype.output = function() {
+	return this.model.$output();
+};
+
+SchemaOptions.prototype.stop = function() {
+	return this.model.$stop();
+};
+
 SchemaOptions.prototype.DB = function() {
 	return F.database(this.error);
 };
@@ -2488,6 +2508,11 @@ SchemaInstance.prototype.$callback = function(callback) {
 
 SchemaInstance.prototype.$response = SchemaInstance.prototype.$output = function() {
 	this.$$index = this.$$result.length;
+	return this;
+};
+
+SchemaInstance.prototype.$stop = function() {
+	this.$$async.length = 0;
 	return this;
 };
 
