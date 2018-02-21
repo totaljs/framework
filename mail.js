@@ -263,7 +263,7 @@ Message.prototype.attachment = function(filename, name) {
 	!name && (name = framework_utils.getName(filename));
 	var extension = framework_utils.getExtension(name);
 	!this.files && (this.files = []);
-	this.files.push({ name: name, filename: filename, contentType: framework_utils.getContentType(extension), extension: extension });
+	this.files.push({ name: name, filename: filename, type: framework_utils.getContentType(extension), extension: extension });
 	return this;
 };
 
@@ -291,7 +291,7 @@ Message.prototype.attachmentInline = function(filename, name, contentId) {
 	!name && (name = framework_utils.getName(filename));
 	!this.files && (this.files = []);
 	var extension = framework_utils.getExtension(name);
-	this.files.push({ name: name, filename: filename, contentType: framework_utils.getContentType(extension), disposition: 'inline', contentId: contentId, extension: extension });
+	this.files.push({ name: name, filename: filename, type: framework_utils.getContentType(extension), disposition: 'inline', contentId: contentId, extension: extension });
 	return this;
 };
 
@@ -395,7 +395,7 @@ Mailer.prototype.$writeattachment = function(obj) {
 			message.push('Content-Disposition: attachment; filename="' + name + '"');
 	}
 
-	message.push('Content-Type: ' + extension + ';' + (isCalendar ? ' charset="utf-8"; method=REQUEST' : ''));
+	message.push('Content-Type: ' + attachment.type + ';' + (isCalendar ? ' charset="utf-8"; method=REQUEST' : ''));
 	message.push('Content-Transfer-Encoding: base64');
 	message.push(CRLF);
 	mailer.$writeline(obj, message.join(CRLF));

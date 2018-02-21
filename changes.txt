@@ -16,6 +16,7 @@
 
 - updated: `GROUP()` by adding a new argument `url_prefix`
 
+- fixed: mail attachments
 - fixed: mail `message.manually()`
 
 ======= 2.9.3 (HOTFIX)
