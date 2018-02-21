@@ -10019,12 +10019,18 @@ Controller.prototype.error = function(err) {
 };
 
 Controller.prototype.invalid = function(status) {
-	var self = this;
 
-	if (status)
+	var self = this;
+	var type = typeof(status);
+
+	if (type === 'number')
 		self.status = status;
 
 	var builder = new ErrorBuilder();
+
+	if (type === 'string')
+		builder.push(status);
+
 	setImmediate(next_controller_invalid, self, builder);
 	return builder;
 };
