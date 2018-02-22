@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkTest
- * @version 2.9.0
+ * @version 3.0.0
  */
 
 var T = F.tests = {};
@@ -73,7 +73,7 @@ function NEXT() {
 		T.current = test;
 		T.current.results = [];
 
-		console.log('[ TEST: ' + test.filename.substring(F.path.root('/tests/').length) + (T.current.priority ? ' ({0}) ]'.format(T.current.priority) : ' ]'));
+		console.log('[ TEST: ' + test.filename.substring(F.path.tests().length) + (T.current.priority ? ' ({0}) ]'.format(T.current.priority) : ' ]'));
 		console.log('');
 
 		NEXT();
