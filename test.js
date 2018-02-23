@@ -130,7 +130,7 @@ global.OK = function(is, description) {
 };
 
 exports.load = function() {
-	U.ls(F.path.root('/tests/'), function(files) {
+	U.ls(F.path.tests(), function(files) {
 		files.waitFor(function(filename, next) {
 			T.current = { filename: filename, items: [] };
 			var m = require(filename);
