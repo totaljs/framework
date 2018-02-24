@@ -13,6 +13,8 @@
 - added: `SchemaOptions.next()` alias to `$.model.$next()`
 - added: `SchemaOptions.output()` alias to `$.model.$output()`
 - added: `SchemaOptions.clean()` alias to `$.model.$clean()`
+- added: a new route flag type `&group` something like `roles` but groups aren't evaluated
+- added: `route.groups` with defined groups
 
 - updated: `GROUP()` by adding a new argument `url_prefix`
 

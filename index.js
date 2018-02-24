@@ -775,6 +775,7 @@ function Framework() {
 	this._request_check_referer = false;
 	this._request_check_POST = false;
 	this._request_check_robot = false;
+	this._request_check_mobile = false;
 	this._length_middleware = 0;
 	this._length_request_middleware = 0;
 	this._length_files = 0;
@@ -1698,13 +1699,11 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 	var isGENERATOR = false;
 	var description;
 	var id = null;
+	var groups = [];
 
 	if (_flags) {
-		if (!flags)
-			flags = [];
-		_flags.forEach(function(flag) {
-			flags.indexOf(flag) === -1 && flags.push(flag);
-		});
+		!flags && (flags = []);
+		_flags.forEach(flag => flags.indexOf(flag) === -1 && flags.push(flag));
 	}
 
 	if (flags) {
@@ -1729,8 +1728,7 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 			var first = flags[i][0];
 
 			if (first === '&') {
-				// resource (sitemap localization)
-				// isn't used now
+				groups.push(flags[i].substring(1).trim());
 				continue;
 			}
 
@@ -1742,7 +1740,7 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 
 			if (first === '#') {
 				!middleware && (middleware = []);
-				middleware.push(flags[i].substring(1));
+				middleware.push(flags[i].substring(1).trim());
 				continue;
 			}
 
@@ -2054,6 +2052,7 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 	r.hash = hash;
 	r.id = id;
 	r.name = name;
+	r.groups = groups.length ? groups : null;
 	r.priority = priority;
 	r.sitemap = sitemap ? sitemap.id : '';
 	r.schema = schema;
@@ -2135,15 +2134,16 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 		!_controller && F.$routesSort(1);
 	}
 
+	if (isMOBILE)
+		F._request_check_mobile = true;
+
 	F.emit('route', 'web', instance);
 	return instance;
 };
 
 function flags_to_object(flags) {
 	var obj = {};
-	flags.forEach(function(flag) {
-		obj[flag] = true;
-	});
+	flags.forEach(flag => obj[flag] = true);
 	return obj;
 }
 
@@ -2522,6 +2522,7 @@ F.websocket = function(url, funcInitialize, flags, length) {
 	var options;
 	var protocols;
 	var id;
+	var groups = [];
 
 	priority = url.count('/');
 
@@ -2591,13 +2592,8 @@ F.websocket = function(url, funcInitialize, flags, length) {
 	var count = 0;
 	var membertype = 0;
 
-	if (!flags)
-		flags = [];
-
-	_flags && _flags.forEach(function(flag) {
-		if (flags.indexOf(flag) === -1)
-			flags.push(flag);
-	});
+	!flags && (flags = []);
+	_flags && _flags.forEach(flag => flags.indexOf(flag) === -1 && flags.push(flag));
 
 	for (var i = 0; i < flags.length; i++) {
 
@@ -2606,7 +2602,7 @@ F.websocket = function(url, funcInitialize, flags, length) {
 
 		// Middleware options
 		if (type === 'object') {
-			options = flags[i];
+			options = flag;
 			continue;
 		}
 
@@ -2621,10 +2617,16 @@ F.websocket = function(url, funcInitialize, flags, length) {
 			continue;
 		}
 
+		// Groups
+		if (flag[0] === '&') {
+			groups.push(flag.substring(1).trim());
+			continue;
+		}
+
 		// Middleware
 		if (flag[0] === '#') {
 			!middleware && (middleware = []);
-			middleware.push(flags[i].substring(1));
+			middleware.push(flag.substring(1).trim());
 			continue;
 		}
 
@@ -2682,8 +2684,7 @@ F.websocket = function(url, funcInitialize, flags, length) {
 				tmp.push(flag);
 				break;
 			default:
-				if (!protocols)
-					protocols = [];
+				!protocols && (protocols = []);
 				protocols.push(flag);
 				break;
 		}
@@ -2702,6 +2703,7 @@ F.websocket = function(url, funcInitialize, flags, length) {
 	r.id = id;
 	r.urlraw = urlraw;
 	r.hash = hash;
+	r.groups = groups.length ? groups : null;
 	r.controller = _controller ? _controller : 'unknown';
 	r.owner = _owner;
 	r.url = routeURL;
@@ -2783,38 +2785,29 @@ F.file = function(fnValidation, fnExecute, flags) {
 	var fixedfile = false;
 	var id = null;
 	var urlraw = fnValidation;
+	var groups = [];
 
 	if (_flags) {
 		!flags && (flags = []);
-		_flags.forEach(function(flag) {
-			flags.indexOf(flag) === -1 && flags.push(flag);
-		});
+		_flags.forEach(flag => flags.indexOf(flag) === -1 && flags.push(flag));
 	}
 
 	if (flags) {
 		for (var i = 0, length = flags.length; i < length; i++) {
 			var flag = flags[i];
-
-			if (typeof(flag) === 'object') {
+			if (typeof(flag) === 'object')
 				options = flag;
-				continue;
-			}
-
-			if (flag.substring(0, 3) === 'id:') {
-				id = flag.substring(3).trim();
-				continue;
-			}
-
-			if (flag[0] === '#') {
+			else if (flag[0] === '&')
+				groups.push(flag.substring(1).trim());
+			else if (flag[0] === '#') {
 				!middleware && (middleware = []);
-				middleware.push(flag.substring(1));
-			}
-
-			if (flag[0] === '.') {
-				flag = flag.substring(1).toLowerCase();
+				middleware.push(flag.substring(1).trim());
+			} else if (flag[0] === '.') {
+				flag = flag.substring(1).toLowerCase().trim();
 				!extensions && (extensions = {});
 				extensions[flag] = true;
-			}
+			} else if (flag.substring(0, 3) === 'id:')
+				id = flag.substring(3).trim();
 		}
 	}
 
@@ -2851,6 +2844,7 @@ F.file = function(fnValidation, fnExecute, flags) {
 	var r = instance.route;
 	r.id = id;
 	r.urlraw = urlraw;
+	r.groups = groups.length ? groups : null;
 	r.controller = _controller ? _controller : 'unknown';
 	r.owner = _owner;
 	r.url = url;
@@ -4121,14 +4115,12 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 				F.$configure_sitemap();
 				F.$configure_workflows();
 			} else {
-
 				F.$configure_configs('@' + name + '/config');
 
 				if (F.config.debug)
 					F.$configure_configs('@' + name + '/config-debug');
 				else
 					F.$configure_configs('@' + name + '/config-release');
-
 				F.isTest && F.$configure_configs('@' + name + '/config-test');
 				F.$configure_versions('@' + name + '/versions');
 				F.$configure_dependencies('@' + name + '/dependencies');
@@ -4258,6 +4250,7 @@ F.$restart = function() {
 		F.isLoaded = false;
 		F.isRestarted = false;
 		F.components = { has: false, css: false, js: false, views: {}, instances: {}, version: null, links: '', groups: {} };
+		PERF = {};
 
 		F.routes = {
 			sitemap: null,
@@ -4308,12 +4301,14 @@ F.$restart = function() {
 		F.traces = [];
 		F.workers = {};
 		F.convertors = [];
+		F.convertors2 = null;
 		F.databases = {};
 
 		F._request_check_redirect = false;
 		F._request_check_referer = false;
 		F._request_check_POST = false;
 		F._request_check_robot = false;
+		F._request_check_mobile = false;
 		F._length_middleware = 0;
 		F._length_request_middleware = 0;
 		F._length_files = 0;
@@ -5221,6 +5216,7 @@ global.LOGMAIL = F.logmail = function(address, subject, body, callback) {
 };
 
 F.usage = function(detailed) {
+
 	var memory = process.memoryUsage();
 	var cache = Object.keys(F.cache.items);
 	var resources = Object.keys(F.resources);
@@ -5298,31 +5294,31 @@ F.usage = function(detailed) {
 		return output;
 
 	output.controllers = [];
-
-	controllers.forEach(function(o) {
-		var item = F.controllers[o];
-		output.controllers.push({ name: o, usage: item.usage ? item.usage() : null });
-	});
+	for (var i = 0, length = controllers.length; i < length; i++) {
+		var key = controllers[i];
+		var item = F.controllers[key];
+		output.controllers.push({ name: key, usage: item.usage ? item.usage() : null });
+	}
 
 	output.connections = [];
-
-	connections.forEach(function(o) {
-		output.connections.push({ name: o, online: F.connections[o].online });
-	});
+	for (var i = 0, length = connections.length; i < length; i++) {
+		var key = connections[i];
+		output.connections.push({ name: key, online: F.connections[key].online });
+	}
 
 	output.modules = [];
-
-	modules.forEach(function(o) {
-		var item = F.modules[o];
-		output.modules.push({ name: o, usage: item.usage ? item.usage() : null });
-	});
+	for (var i = 0, length = modules.length; i < length; i++) {
+		var key = modules[i];
+		var item = F.modules[key];
+		output.modules.push({ name: key, usage: item.usage ? item.usage() : null });
+	}
 
 	output.models = [];
-
-	models.forEach(function(o) {
-		var item = F.models[o];
-		output.models.push({ name: o, usage: item.usage ? item.usage() : null });
-	});
+	for (var i = 0, length = models.length; i < length; i++) {
+		var key = models[i];
+		var item = F.models[key];
+		output.models.push({ name: key, usage: item.usage ? item.usage() : null });
+	}
 
 	output.uptodates = F.uptodates;
 	output.helpers = helpers;
@@ -5335,6 +5331,7 @@ F.usage = function(detailed) {
 	output.files = staticFiles;
 	output.streaming = staticRange;
 	output.other = Object.keys(F.temporary.other);
+
 	return output;
 };
 
@@ -6981,7 +6978,7 @@ F.$requestcontinue = function(req, res, headers) {
 	var flags = [req.method.toLowerCase()];
 	var multipart;
 
-	if (req.mobile) {
+	if (F._request_check_mobile && req.mobile) {
 		req.$flags += 'a';
 		F.stats.request.mobile++;
 	} else
@@ -8989,6 +8986,12 @@ FrameworkRoute.prototype = {
 	},
 	get flags() {
 		return this.route.flags || EMPTYARRAY;
+	},
+	set groups(value) {
+		this.route.groups = value;
+	},
+	get groups() {
+		return this.route.groups;
 	}
 };
 
