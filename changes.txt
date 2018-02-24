@@ -20,6 +20,7 @@
 
 - fixed: mail attachments
 - fixed: mail `message.manually()`
+- fixed: WebSocket comparing of `origin` header
 
 ======= 2.9.3 (HOTFIX)
 
