@@ -2,6 +2,7 @@
 
 - fixed: mail attachments
 - fixed: comparing `origin` header in WebSocket
+- fixed: unit-testing
 
 ======= 2.9.3 (HOTFIX)
 
