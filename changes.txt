@@ -22,6 +22,12 @@
 - fixed: mail `message.manually()`
 - fixed: WebSocket comparing of `origin` header
 
+======= 2.9.4 (HOTFIX)
+
+- fixed: mail attachments
+- fixed: comparing `origin` header in WebSocket
+- fixed: unit-testing
+
 ======= 2.9.3 (HOTFIX)
 
 - added: `String.arg(obj)` for a simple templating `Hello {variable}!`
