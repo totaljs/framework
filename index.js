@@ -21,7 +21,7 @@
 
 /**
  * @module Framework
- * @version 2.9.3
+ * @version 2.9.4
  */
 
 'use strict';
@@ -526,8 +526,8 @@ var PERF = {};
 function Framework() {
 
 	this.$id = null; // F.id ==> property
-	this.version = 2920;
-	this.version_header = '2.9.2';
+	this.version = 2940;
+	this.version_header = '2.9.4';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -13172,18 +13172,25 @@ WebSocketClient.prototype.prepare = function(flags, protocols, allow, length) {
 	allow = allow || EMPTYARRAY;
 
 	var self = this;
+
+	if (SOCKET_ALLOW_VERSION.indexOf(U.parseInt(self.req.headers['sec-websocket-version'])) === -1)
+		return false;
+
 	self.length = length;
 
 	var origin = self.req.headers['origin'] || '';
 	var length = allow.length;
 
-	if (length) {
-		if (allow.indexOf('*') === -1) {
-			for (var i = 0; i < length; i++) {
-				if (origin.indexOf(allow[i]) === -1)
-					return false;
+	if (length && allow.indexOf('*') === -1) {
+		var is = false;
+		for (var i = 0; i < length; i++) {
+			if (origin.indexOf(allow[i]) !== -1) {
+				is = true;
+				break;
 			}
 		}
+		if (!is)
+			return false;
 	}
 
 	length = protocols.length;
@@ -13193,9 +13200,6 @@ WebSocketClient.prototype.prepare = function(flags, protocols, allow, length) {
 				return false;
 		}
 	}
-
-	if (SOCKET_ALLOW_VERSION.indexOf(U.parseInt(self.req.headers['sec-websocket-version'])) === -1)
-		return false;
 
 	var compress = (F.config['allow-websocket-compression'] && self.req.headers['sec-websocket-extensions'] || '').indexOf('permessage-deflate') !== -1;
 	var header = protocols.length ? (compress ? SOCKET_RESPONSE_PROTOCOL_COMPRESS : SOCKET_RESPONSE_PROTOCOL).format(self.$websocket_key(self.req), protocols.join(', ')) : (compress ? SOCKET_RESPONSE_COMPRESS : SOCKET_RESPONSE).format(self.$websocket_key(self.req));

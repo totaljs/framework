@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkTest
- * @version 2.9.0
+ * @version 2.9.4
  */
 
 var T = F.tests = {};
@@ -73,7 +73,7 @@ function NEXT() {
 		T.current = test;
 		T.current.results = [];
 
-		console.log('[ TEST: ' + test.filename.substring(F.path.root('/tests/').length) + (T.current.priority ? ' ({0}) ]'.format(T.current.priority) : ' ]'));
+		console.log('[ TEST: ' + test.filename.substring(F.path.tests().length) + (T.current.priority ? ' ({0}) ]'.format(T.current.priority) : ' ]'));
 		console.log('');
 
 		NEXT();
@@ -130,7 +130,7 @@ global.OK = function(is, description) {
 };
 
 exports.load = function() {
-	U.ls(F.path.root('/tests/'), function(files) {
+	U.ls(F.path.tests(), function(files) {
 		files.waitFor(function(filename, next) {
 			T.current = { filename: filename, items: [] };
 			var m = require(filename);
