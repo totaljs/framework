@@ -21,7 +21,7 @@
 
 /**
  * @module NoSQL
- * @version 2.9.2
+ * @version 3.0.0
  */
 
 'use strict';
@@ -850,9 +850,10 @@ Database.prototype.$update = function() {
 
 				for (var i = 0; i < length; i++) {
 					var item = filter[i];
-					if (item.insert && !item.count)
+					if (item.insert && !item.count) {
+						item.builder.$insertcallback && item.builder.$insertcallback(item.insert);
 						self.insert(item.insert).$callback = item.builder.$callback;
-					else {
+					} else {
 						item.builder.$log && item.builder.log();
 						item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count);
 					}
@@ -878,9 +879,10 @@ Database.prototype.$update = function() {
 
 			for (var i = 0; i < length; i++) {
 				var item = filter[i];
-				if (item.insert && !item.count)
+				if (item.insert && !item.count) {
+					item.builder.$insertcallback && item.builder.$insertcallback(item.insert);
 					self.insert(item.insert).$callback = item.builder.$callback;
-				else {
+				} else {
 					item.builder.$log && item.builder.log();
 					item.builder.$callback && item.builder.$callback(errorhandling(err, item.builder, item.count), item.count);
 				}
@@ -961,9 +963,10 @@ Database.prototype.$update_inmemory = function() {
 
 		for (var i = 0; i < length; i++) {
 			var item = filter[i];
-			if (item.insert && !item.count)
+			if (item.insert && !item.count) {
+				item.builder.$insertcallback && item.builder.$insertcallback(item.insert);
 				self.insert(item.insert).$callback = item.builder.$callback;
-			else {
+			} else {
 				item.count && self.emit(item.keys ? 'modify' : 'update', item.doc);
 				item.builder.$log && item.builder.log();
 				item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count);
@@ -1808,6 +1811,11 @@ function DatabaseBuilder(db) {
 	// this.$scalarfield;
 	// this.$log;
 }
+
+DatabaseBuilder.prototype.insert = function(fn) {
+	this.$insertcallback = fn;
+	return this;
+};
 
 DatabaseBuilder.prototype.log = function(msg, user) {
 	var self = this;
