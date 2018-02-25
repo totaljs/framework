@@ -4467,6 +4467,7 @@ F.uninstall = function(type, name, options, skipEmit, packageName) {
 		if (k !== 'id')
 			v = framework_internal.preparePath(framework_internal.encodeUnicodeURL(v.replace('*', '').trim()));
 		F.routes.cors = F.routes.cors.remove(k, v);
+		F._length_cors = F.routes.cors.length;
 		F.consoledebug('uninstall', type + '#' + name);
 		return F;
 	}
