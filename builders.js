@@ -780,7 +780,7 @@ SchemaBuilderEntity.prototype.setPrepare = function(fn) {
 SchemaBuilderEntity.prototype.setSave = function(fn, description) {
 	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	this.onSave = fn;
-	this.meta.save = description;
+	this.meta.save = description || null;
 	return this;
 };
 
@@ -792,7 +792,7 @@ SchemaBuilderEntity.prototype.setSave = function(fn, description) {
 SchemaBuilderEntity.prototype.setInsert = function(fn, description) {
 	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	this.onInsert = fn;
-	this.meta.insert = description;
+	this.meta.insert = description || null;
 	return this;
 };
 
@@ -804,7 +804,7 @@ SchemaBuilderEntity.prototype.setInsert = function(fn, description) {
 SchemaBuilderEntity.prototype.setUpdate = function(fn, description) {
 	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	this.onUpdate = fn;
-	this.meta.update = description;
+	this.meta.update = description || null;
 	return this;
 };
 
@@ -826,7 +826,7 @@ SchemaBuilderEntity.prototype.setError = function(fn) {
 SchemaBuilderEntity.prototype.setGet = SchemaBuilderEntity.prototype.setRead = function(fn, description) {
 	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	this.onGet = fn;
-	this.meta.get = description;
+	this.meta.get this.meta.read = description || null;
 	return this;
 };
 
@@ -839,7 +839,7 @@ SchemaBuilderEntity.prototype.setGet = SchemaBuilderEntity.prototype.setRead = f
 SchemaBuilderEntity.prototype.setQuery = function(fn, description) {
 	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	this.onQuery = fn;
-	this.meta.query = description;
+	this.meta.query = description || null;
 	return this;
 };
 
@@ -852,7 +852,7 @@ SchemaBuilderEntity.prototype.setQuery = function(fn, description) {
 SchemaBuilderEntity.prototype.setRemove = function(fn, description) {
 	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	this.onRemove = fn;
-	this.meta.remove = description;
+	this.meta.remove = description || null;
 	return this;
 };
 
