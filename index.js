@@ -11382,7 +11382,7 @@ Controller.prototype.$favicon = function(name) {
 
 	var contentType = 'image/x-icon';
 
-	if (name == null)
+	if (!name)
 		name = 'favicon.ico';
 
 	var key = 'favicon#' + name;

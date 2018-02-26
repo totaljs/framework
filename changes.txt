@@ -23,6 +23,7 @@
 - fixed: mail `message.manually()`
 - fixed: WebSocket comparing of `origin` header
 - fixed: uninstalling CORS routes
+- fixed: cache for `favicon`
 
 ======= 2.9.4 (HOTFIX)
 
