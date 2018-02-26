@@ -826,7 +826,7 @@ SchemaBuilderEntity.prototype.setError = function(fn) {
 SchemaBuilderEntity.prototype.setGet = SchemaBuilderEntity.prototype.setRead = function(fn, description) {
 	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	this.onGet = fn;
-	this.meta.get this.meta.read = description || null;
+	this.meta.get = this.meta.read = description || null;
 	return this;
 };
 
