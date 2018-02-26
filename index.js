@@ -411,7 +411,7 @@ global.NEWTRANSFORM = function() {
 
 global.NEWSCHEMA = function(group, name) {
 	if (!name) {
-		var arr = name.split('/');
+		var arr = group.split('/');
 		if (arr.length === 2) {
 			name = arr[1];
 			group = arr[0];
@@ -1762,6 +1762,7 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 					schema = workflow;
 					workflow = null;
 				}
+
 				schema = schema.replace(/\\/g, '/').split('/');
 
 				if (schema.length === 1) {
@@ -1890,6 +1891,9 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 		method = 'get';
 	}
 
+	if (workflow && workflow[0] === '@')
+		workflow = { id: workflow.substring(1) };
+
 	if (type === 'string') {
 		viewname = funcExecute;
 		funcExecute = (function(name, sitemap, language) {
@@ -1930,7 +1934,7 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 			if (!viewname || viewname === '/')
 				viewname = 'index';
 
-			funcExecute = (function(name, sitemap, language) {
+			funcExecute = (function(name, sitemap, language, action) {
 				return function() {
 					if (language && !this.language)
 						this.language = language;
@@ -1939,12 +1943,16 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 					if (!this.route.workflow)
 						return this.view(name);
 					var self = this;
-					this.$exec(this.route.workflow, null, function(err, response) {
-						if (err)
-							self.content(err);
-						else
-							self.view(name, response);
-					});
+
+					if (action) {
+					} else {
+						self.$exec(self.route.workflow, null, function(err, response) {
+							if (err)
+								self.content(err);
+							else
+								self.view(name, response);
+						});
+					}
 				};
 			})(viewname, sitemap, language);
 		} else if (workflow)
@@ -16076,7 +16084,32 @@ function parseComponent(body, filename) {
 function controller_json_workflow(id) {
 	var self = this;
 	self.id = id;
-	self.$exec(self.route.workflow, null, self.callback());
+	var w = self.route.workflow;
+	if (w instanceof Object) {
+		if (!w.type) {
+			var schema = GETSCHEMA(self.route.schema[0], self.route.schema[1]);
+			if (schema.meta[w.id] !== undefined) {
+				w.type = '$' + w.id;
+			} else if (schema.meta['workflow#' + w.id] !== undefined) {
+				w.type = '$workflow';
+				w.name = w.id;
+			} else if (schema.meta['workflow#' + w.id] !== undefined) {
+				w.type = '$transform';
+				w.name = w.id;
+			} else if (schema.meta['operation#' + w.id] !== undefined) {
+				w.type = '$operation';
+				w.name = w.id;
+			} else if (schema.meta['hook#' + w.id] !== undefined) {
+				w.type = '$hook';
+				w.name = w.id;
+			}
+		}
+		if (w.name)
+			self[w.type](w.name, self.callback());
+		else
+			self[w.type](self.callback());
+	} else
+		self.$exec(w, null, self.callback());
 }
 
 // Parses schema group and schema name from string e.g. "User" or "Company/User"

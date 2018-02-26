@@ -870,7 +870,7 @@ SchemaBuilderEntity.prototype.constant = function(name, value, description) {
 
 	!this.constants && (this.constants = {});
 	this.constants[name] = value;
-	this.meta['constant#' + name] = description;
+	this.meta['constant#' + name] = description || null;
 	return this;
 };
 
@@ -891,7 +891,7 @@ SchemaBuilderEntity.prototype.addTransform = function(name, fn, description) {
 	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	!this.transforms && (this.transforms = {});
 	this.transforms[name] = fn;
-	this.meta['transform#' + name] = description;
+	this.meta['transform#' + name] = description || null;
 	return this;
 };
 
@@ -912,7 +912,7 @@ SchemaBuilderEntity.prototype.addOperation = function(name, fn, description) {
 	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	!this.operations && (this.operations = {});
 	this.operations[name] = fn;
-	this.meta['operation#' + name] = description;
+	this.meta['operation#' + name] = description || null;
 	return this;
 };
 
@@ -933,7 +933,7 @@ SchemaBuilderEntity.prototype.addWorkflow = function(name, fn, description) {
 	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	!this.workflows && (this.workflows = {});
 	this.workflows[name] = fn;
-	this.meta['workflow#' + name] = description;
+	this.meta['workflow#' + name] = description || null;
 	return this;
 };
 
@@ -945,7 +945,7 @@ SchemaBuilderEntity.prototype.addHook = function(name, fn, description) {
 	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	!this.hooks[name] && (this.hooks[name] = []);
 	this.hooks[name].push({ owner: F.$owner(), fn: fn });
-	this.meta['hook#' + name] = description;
+	this.meta['hook#' + name] = description || null;
 	return this;
 };
 
