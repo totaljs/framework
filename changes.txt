@@ -24,6 +24,7 @@
 - fixed: WebSocket comparing of `origin` header
 - fixed: uninstalling CORS routes
 - fixed: cache for `favicon`
+- fixed: `Date.extend()`
 
 ======= 2.9.4 (HOTFIX)
 

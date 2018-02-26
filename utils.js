@@ -2546,16 +2546,16 @@ Date.prototype.extend = function(date) {
 
 			arr = m.split(':');
 			tmp = +arr[0];
-			!isNaN(tmp) && dt.setHours(tmp);
+			tmp && dt.setHours(tmp);
 
 			if (arr[1]) {
 				tmp = +arr[1];
-				!isNaN(tmp) && dt.setMinutes(tmp);
+				tmp >= 0 && dt.setMinutes(tmp);
 			}
 
 			if (arr[2]) {
 				tmp = +arr[2];
-				!isNaN(tmp) && dt.setSeconds(tmp);
+				tmp >= 0 && dt.setSeconds(tmp);
 			}
 
 			continue;
@@ -2565,16 +2565,16 @@ Date.prototype.extend = function(date) {
 			arr = m.split('-');
 
 			tmp = +arr[0];
-			dt.setFullYear(tmp);
-
-			if (arr[2]) {
-				tmp = +arr[2];
-				!isNaN(tmp) && dt.setDate(tmp);
-			}
+			tmp && dt.setFullYear(tmp);
 
 			if (arr[1]) {
 				tmp = +arr[1];
-				!isNaN(tmp) && dt.setMonth(tmp - 1);
+				tmp >= 0 && dt.setMonth(tmp - 1);
+			}
+
+			if (arr[2]) {
+				tmp = +arr[2];
+				tmp >= 0 && dt.setDate(tmp);
 			}
 
 			continue;
@@ -2583,18 +2583,18 @@ Date.prototype.extend = function(date) {
 		if (m.indexOf('.') !== -1) {
 			arr = m.split('.');
 
-			tmp = +arr[0];
-			dt.setDate(tmp);
+			if (arr[2]) {
+				tmp = +arr[2];
+				!isNaN(tmp) && dt.setFullYear(tmp);
+			}
 
 			if (arr[1]) {
 				tmp = +arr[1];
 				!isNaN(tmp) && dt.setMonth(tmp - 1);
 			}
 
-			if (arr[2]) {
-				tmp = +arr[2];
-				!isNaN(tmp) && dt.setFullYear(tmp);
-			}
+			tmp = +arr[0];
+			!isNaN(tmp) && dt.setDate(tmp);
 
 			continue;
 		}
