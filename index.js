@@ -411,8 +411,14 @@ global.NEWTRANSFORM = function() {
 
 global.NEWSCHEMA = function(group, name) {
 	if (!name) {
-		name = group;
-		group = 'default';
+		var arr = name.split('/');
+		if (arr.length === 2) {
+			name = arr[1];
+			group = arr[0];
+		} else {
+			name = group;
+			group = 'default';
+		}
 	}
 	return framework_builders.newschema(group, name);
 };
