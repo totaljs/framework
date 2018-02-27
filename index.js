@@ -1640,6 +1640,12 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 	if (!url)
 		url = '/';
 
+	var index = url.indexOf(' ');
+	if (index !== -1) {
+		flags.push(url.substring(0, index).toLowerCase().trim());
+		url = url.substring(index + 1).trim();
+	}
+
 	if (url[0] !== '[' && url[0] !== '/')
 		url = '/' + url;
 
@@ -1652,7 +1658,6 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 	url = framework_internal.encodeUnicodeURL(url);
 
 	var type = typeof(funcExecute);
-	var index = 0;
 	var urlcache = url;
 
 	if (!name)

@@ -20,6 +20,7 @@
 - updated: `GROUP()` by adding a new argument `url_prefix`
 - updated: `NEWSCHEMA()` supports `NEWSCHEMA('group/name')`
 - updated: `ROUTE()`, extended syntax for schems, for example: `Schema --> @name` (more in docs.)
+- updated: `ROUTE()` supports a new HTTP method definition `ROUTE('GET /api/users/')`, `ROUTE('POST /api/users/')`, etc.
 
 - fixed: mail attachments
 - fixed: mail `message.manually()`

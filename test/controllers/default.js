@@ -87,7 +87,7 @@ exports.install = function() {
 	F.route('/post/json/', plain_post_json, ['json']);
 	F.route('/post/xml/', plain_post_xml, ['xml']);
 	F.route('/multiple/', plain_multiple, ['post', 'get', 'put', 'delete']);
-	F.route('/post/schema/', plain_post_schema_parse, ['post', '*test/User']);
+	F.route('POST /post/schema/', plain_post_schema_parse, ['*test/User']);
 	F.route('/rest/', plain_rest, ['post']);
 	F.route('/rest/', plain_rest, ['put']);
 	F.route('/rest/', plain_rest, ['get', 'head']);
@@ -113,7 +113,7 @@ exports.install = function() {
 	assert.ok(F.decrypt('MjM9QR8HExlaHQJQBxcGAEoaFQoGGgAW', 'key', false) === '123456', 'F.decrypt(string)');
 
 	assert.ok(F.encrypt({ name: 'Peter' }, 'key', false) === 'MzM9QVUXTkwCThBbF3RXQRlYBkUFVRdOTAJOEFsXdFdBGQ', 'F.encrypt(object)');
-	assert.ok(F.decrypt('MzM9QVUXTkwCThBbF3RXQRlYBkUFVRdOTAJOEFsXdFdBGQ', 'key').name === 'Peter', 'F.decrypt(object)')
+	assert.ok(F.decrypt('MzM9QVUXTkwCThBbF3RXQRlYBkUFVRdOTAJOEFsXdFdBGQ', 'key').name === 'Peter', 'F.decrypt(object)');
 
 	assert.ok(SOURCE('main').hello() === 'world', 'source');
 	assert.ok(INCLUDE('main').hello() === 'world', 'source');
