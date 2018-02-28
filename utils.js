@@ -2535,6 +2535,8 @@ Date.prototype.extend = function(date) {
 	var dt = new Date(this);
 	var match = date.match(regexpDATE);
 
+	console.log(match);
+
 	if (!match)
 		return dt;
 
@@ -2546,7 +2548,7 @@ Date.prototype.extend = function(date) {
 
 			arr = m.split(':');
 			tmp = +arr[0];
-			tmp && dt.setHours(tmp);
+			tmp >= 0 && dt.setHours(tmp);
 
 			if (arr[1]) {
 				tmp = +arr[1];
