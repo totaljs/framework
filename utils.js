@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkUtils
- * @version 2.9.3
+ * @version 3.0.0
  */
 
 'use strict';
@@ -72,7 +72,7 @@ const STREAM_READONLY = { flags: 'r' };
 const STREAM_END = { end: false };
 const ALPHA_INDEX = { '&lt': '<', '&gt': '>', '&quot': '"', '&apos': '\'', '&amp': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&apos;': '\'', '&amp;': '&' };
 const EMPTYARRAY = [];
-const EMPTYOBJECT = [];
+const EMPTYOBJECT = {};
 const NODEVERSION = parseFloat(process.version.toString().replace('v', '').replace(/\./g, ''));
 const STREAMPIPE = { end: false };
 
