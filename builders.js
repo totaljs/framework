@@ -1031,7 +1031,6 @@ SchemaBuilderEntity.prototype.update = function(model, options, callback, contro
 	return this.execute('onUpdate', model, options, callback, controller, skip);
 };
 
-
 SchemaBuilderEntity.prototype.execute = function(TYPE, model, options, callback, controller, skip) {
 
 	if (typeof(callback) === 'boolean') {
