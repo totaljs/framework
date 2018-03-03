@@ -3169,16 +3169,29 @@ function onFinished(stream, fn) {
 		if (stream.socket) {
 			if (!stream.socket.$totalstream) {
 				stream.socket.$totalstream = stream;
-				stream.socket.prependListener('error', callback);
-				stream.socket.prependListener('close', callback);
+				if (stream.socket.prependListener) {
+					stream.socket.prependListener('error', callback);
+					stream.socket.prependListener('close', callback);
+				} else {
+					stream.socket.on('error', callback);
+					stream.socket.on('close', callback);
+				}
 			}
 		}
 
-		stream.prependListener('error', callback);
-		stream.prependListener('end', callback);
-		stream.prependListener('close', callback);
-		stream.prependListener('aborted', callback);
-		stream.prependListener('finish', callback);
+		if (stream.prependListener) {
+			stream.prependListener('error', callback);
+			stream.prependListener('end', callback);
+			stream.prependListener('close', callback);
+			stream.prependListener('aborted', callback);
+			stream.prependListener('finish', callback);
+		} else {
+			stream.on('error', callback);
+			stream.on('end', callback);
+			stream.on('close', callback);
+			stream.on('aborted', callback);
+			stream.on('finish', callback);
+		}
 
 		//stream.uri --> determines ServerRespone
 		// stream.uri && stream.prependListener('aborted', callback);
