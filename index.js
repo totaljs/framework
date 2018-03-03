@@ -3151,7 +3151,6 @@ F.modify = function(fn) {
 
 F.$bundle = function(callback) {
 
-	var can = false;
 	var makebundle = function() {
 		require('./bundles').make(function() {
 			F.directory = HEADERS.workers.cwd = directory = F.path.root(F.config['directory-src']);
@@ -4179,7 +4178,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 				F.$configure_workflows('@' + name + '/workflows');
 			}
 
-			F.$bundle(n => F.$load(undefined, tmpdir, undefined, name));
+			F.$bundle(() => F.$load(undefined, tmpdir, undefined, name));
 		}, 100);
 
 		key = type + '.' + name;
@@ -5772,7 +5771,7 @@ F.restore = function(filename, target, callback, filter) {
 		}
 
 		if (typeof(filename) === 'string')
-			path = Path.join(target, filename);;
+			path = Path.join(target, filename);
 
 		// File
 		type = 2;

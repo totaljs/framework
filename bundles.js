@@ -5,9 +5,6 @@ const Path = require('path');
 const CONSOLE = process.argv.indexOf('restart') === -1;
 const META = {};
 
-var BUNDLED = false;
-var RESTORED = {};
-
 META.version = 1;
 META.created = new Date();
 META.total = 'v' + F.version_header;
@@ -18,7 +15,7 @@ META.directories = [];
 exports.make = function(callback) {
 
 	var path = F.path.root();
-	var blacklist = {}
+	var blacklist = {};
 
 	if (CONSOLE) {
 		console.log('==================== BUNDLING ======================');
@@ -92,8 +89,7 @@ exports.make = function(callback) {
 			});
 		} else
 			next();
-	})
-
+	});
 	async.push(function(next) {
 		U.ls(path, function(files, dirs) {
 
@@ -112,7 +108,7 @@ exports.make = function(callback) {
 			}
 
 			next();
-		}, (p, dir) => blacklist[p.substring(Length)] == null);
+		}, (p) => blacklist[p.substring(Length)] == null);
 	});
 
 	async.push(function(next) {
@@ -146,7 +142,6 @@ function cleanFiles(callback) {
 	var meta = {};
 	try {
 		meta = U.parseJSON(Fs.readFileSync(F.path.root('bundle.json')).toString('utf8'), true);
-		BUNDLED = true;
 	} catch (e) {}
 
 	var restore = [];
@@ -230,12 +225,12 @@ function copyFiles(files, callback) {
 			if (F.config['allow-debug'])
 				F.consoledebug(append ? 'EXT: ' : 'REW:', file.name);
 			else
-				console.warn(append ? 'EXT:' : 'REW :', file.name)
+				console.warn(append ? 'EXT:' : 'REW :', file.name);
 		else
 			F.consoledebug(append ? 'EXT:' :   'COP:', file.name);
 
 		if (append) {
-			Fs.appendFile(filename, '\n' + Fs.readFileSync(file.filename).toString('utf8'), next)
+			Fs.appendFile(filename, '\n' + Fs.readFileSync(file.filename).toString('utf8'), next);
 		} else
 			copyFile(file.filename, filename, next);
 
@@ -243,7 +238,7 @@ function copyFiles(files, callback) {
 			if (F.config['allow-debug'])
 				F.consoledebug('REW:', file.name);
 			else
-				console.warn('REW:', file.name)
+				console.warn('REW:', file.name);
 		else
 			F.consoledebug('COP:', file.name);
 
@@ -251,7 +246,7 @@ function copyFiles(files, callback) {
 }
 
 function copyFile(oldname, newname, callback) {
-	writer = Fs.createWriteStream(newname);
+	var writer = Fs.createWriteStream(newname);
 	writer.on('finish', callback);
 	Fs.createReadStream(oldname).pipe(writer);
 }

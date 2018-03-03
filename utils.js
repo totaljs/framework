@@ -173,7 +173,6 @@ var CONTENTTYPES = {
 	'zip': 'application/zip'
 };
 
-var persistentcookies = {};
 var dnscache = {};
 var datetimeformat = {};
 const hasOwnProperty = Object.prototype.hasOwnProperty;

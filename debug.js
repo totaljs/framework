@@ -80,14 +80,14 @@ function runwatching() {
 	const VERSION = F.version_header;
 	const TIME = 2000;
 	const REG_CONFIGS = /configs\//g;
-	const REG_FILES = /config\-debug|config\-release|config|versions|workflows|sitemap|dependencies|\.js$|\.resource$/i;
+	const REG_FILES = /config-debug|config-release|config|versions|workflows|sitemap|dependencies|\.js$|\.resource$/i;
 	const REG_THEMES = /\/themes\//i;
 	const REG_COMPONENTS = /components\/.*?\.html/i;
 	const REG_THEMES_INDEX = /themes(\/|\\)?[a-z0-9_.-]+(\/|\\)?index\.js$/i;
 	const REG_EXTENSION = /\.(js|resource|package|bundle)$/i;
 
 	function copyFile(oldname, newname, callback) {
-		writer = Fs.createWriteStream(newname);
+		var writer = Fs.createWriteStream(newname);
 		callback && writer.on('finish', callback);
 		Fs.createReadStream(oldname).pipe(writer);
 	}
@@ -117,7 +117,6 @@ function runwatching() {
 		];
 
 		const SRC = U.combine(F.config['directory-src']);
-		const async = new U.Async();
 		const prefix = '---------------------------------> ';
 
 		options.watch && options.watch.forEach(function(item) {
@@ -138,7 +137,6 @@ function runwatching() {
 		var isSkip = false;
 		var pidIncrease;
 		var speed = TIME;
-		var counter = 0;
 		var isBUNDLE = false;
 		var blacklist = {};
 
@@ -206,7 +204,6 @@ function runwatching() {
 		}
 
 		function refresh() {
-			counter++;
 			Object.keys(files).wait(function(filename, next) {
 				Fs.stat(filename, function(err, stat) {
 
@@ -251,7 +248,6 @@ function runwatching() {
 				if (status !== 1 || !force)
 					return;
 
-				counter = 0;
 				onIncrease(true);
 				restart();
 

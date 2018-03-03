@@ -3066,7 +3066,7 @@ function counter_sort_min(a, b) {
 	return a.count > b.count ? 1 : a.count === b.count ? 0 : -1;
 }
 
-function counter_parse_stats_avg(group, top, key, count, opt, filter) {
+function counter_parse_stats_avg(group, top, key, count, opt) {
 
 	var length = group.length;
 
