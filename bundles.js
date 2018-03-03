@@ -221,12 +221,9 @@ function copyFiles(files, callback) {
 		if (file.type !== 1 && META.files.indexOf(file.name) === -1)
 			META.files.push(file.name);
 
-		if (CONSOLE && exists)
-			if (F.config['allow-debug'])
-				F.consoledebug(append ? 'EXT: ' : 'REW:', file.name);
-			else
-				console.warn(append ? 'EXT:' : 'REW :', file.name);
-		else
+		if (CONSOLE && exists) {
+			F.config['allow-debug'] && F.consoledebug(append ? 'EXT: ' : 'REW:', file.name);
+		} else
 			F.consoledebug(append ? 'EXT:' :   'COP:', file.name);
 
 		if (append) {
@@ -235,10 +232,7 @@ function copyFiles(files, callback) {
 			copyFile(file.filename, filename, next);
 
 		if (CONSOLE && exists)
-			if (F.config['allow-debug'])
-				F.consoledebug('REW:', file.name);
-			else
-				console.warn('REW:', file.name);
+			F.config['allow-debug'] && F.consoledebug('REW:', file.name);
 		else
 			F.consoledebug('COP:', file.name);
 

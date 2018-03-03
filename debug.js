@@ -203,6 +203,12 @@ function runwatching() {
 			});
 		}
 
+		function isViewPublic(filename) {
+			var fn = filename.substring(directory.length);
+			var dir = fn.substring(0, fn.indexOf('/', 1) + 1);
+			return F.config['directory-views'] === dir || F.config['directory-public'] === dir ? fn : '';
+		}
+
 		function refresh() {
 			Object.keys(files).wait(function(filename, next) {
 				Fs.stat(filename, function(err, stat) {
@@ -211,8 +217,15 @@ function runwatching() {
 
 					if (err) {
 						delete files[filename];
-						changes.push(stamp.replace('#', 'REM') + prefix + filename.replace(directory, ''));
-						force = true;
+						var tmp = isViewPublic(filename);
+						var log = stamp.replace('#', 'REM') + prefix + filename.replace(directory, '');
+						if (tmp) {
+							Fs.unlinkSync(Path.join(SRC, tmp));
+							console.log(log);
+						} else {
+							changes.push(log);
+							force = true;
+						}
 					} else {
 						var ticks = stat.mtime.getTime();
 						if (files[filename] != null && files[filename] !== ticks) {
@@ -220,10 +233,9 @@ function runwatching() {
 							var log = stamp.replace('#', files[filename] === 0 ? 'ADD' : 'UPD') + prefix + filename.replace(directory, '');
 
 							if (files[filename]) {
-								var fn = filename.substring(directory.length);
-								var dir = fn.substring(0, fn.indexOf('/', 1) + 1);
-								if (F.config['directory-views'] === dir || F.config['directory-public'] === dir) {
-									copyFile(filename, Path.join(SRC, fn));
+								var tmp = isViewPublic(filename);
+								if (tmp) {
+									copyFile(filename, Path.join(SRC, tmp));
 									files[filename] = ticks;
 									console.log(log);
 									next();
