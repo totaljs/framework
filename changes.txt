@@ -24,6 +24,7 @@
 - updated: `ROUTE()`, extended syntax for schemas, for example: `Schema --> @name` (more in docs.)
 - updated: `ROUTE()` supports a new HTTP method definition `ROUTE('GET /api/users/')`, `ROUTE('POST /api/users/')`, etc.
 - updaded: `tpm` supports a new command called `bundle`, for example: `tpm bundle cms`
+- updated: `F.restore()` filter can return a new filename (for files only)
 
 - fixed: mail attachments
 - fixed: mail `message.manually()`
