@@ -1,9 +1,13 @@
 require('./index');
+
 const Fs = require('fs');
 const Path = require('path');
-var CONSOLE = process.argv.indexOf('restart') === -1;
+const CONSOLE = process.argv.indexOf('restart') === -1;
+const META = {};
 
-var META = {};
+var BUNDLED = false;
+var RESTORED = {};
+
 META.version = 1;
 META.created = new Date();
 META.total = 'v' + F.version_header;
@@ -25,7 +29,7 @@ exports.make = function(callback) {
 	blacklist[F.config['directory-bundles']] = 1;
 	blacklist[F.config['directory-src']] = 1;
 	blacklist['/node_modules/'] = 1;
-	blacklist['/debug.js'] = 1;
+	// blacklist['/debug.js'] = 1;
 	blacklist['/debug.pid'] = 1;
 	blacklist['/package.json'] = 1;
 	blacklist['/bundle.json'] = 1;
@@ -43,6 +47,7 @@ exports.make = function(callback) {
 			files.wait(function(filename, resume) {
 				var dbpath = F.config['directory-databases'];
 				F.restore(filename, target, resume, function(p, dir) {
+
 					if (dir) {
 						if (!p.startsWith(dbpath) && META.directories.indexOf(p) === -1)
 							META.directories.push(p);
@@ -117,16 +122,25 @@ function cleanFiles(callback) {
 	blacklist[F.config['directory-databases']] = 1;
 
 	var meta = {};
-
 	try {
 		meta = U.parseJSON(Fs.readFileSync(F.path.root('bundle.json')).toString('utf8'), true);
+		BUNDLED = true;
 	} catch (e) {}
+
+	var restore = [];
 
 	if (meta.files && meta.files.length) {
 		for (var i = 0, length = meta.files.length; i < length; i++) {
+
+			var filename = meta.files[i];
+			var ext = U.getExtension(filename);
+
+			if (ext === 'resource' || (!ext && U.getName(filename).indexOf('config') !== -1))
+				restore.push(filename);
+
 			try {
-				F.consoledebug('Remove', meta.files[i]);
-				Fs.unlinkSync(Path.join(path, meta.files[i]));
+				F.consoledebug('Remove', filename);
+				Fs.unlinkSync(Path.join(path, filename));
 			} catch (e) {}
 		}
 	}
@@ -140,7 +154,24 @@ function cleanFiles(callback) {
 		}
 	}
 
-	callback();
+	if (restore.length) {
+		restore.wait(function(filename, next) {
+
+			var is = false;
+			filename = Path.join(path, filename);
+
+			try {
+				is = !!Fs.statSync(filename + '.backup');
+			} catch (e) {}
+
+			if (is)
+				copyFile(filename + '.backup', filename, next);
+			else
+				next();
+
+		}, callback);
+	} else
+		callback();
 }
 
 function createDirectories(dirs, callback) {
@@ -169,6 +200,8 @@ function copyFiles(files, callback) {
 
 		var filename = Path.join(path, file.name);
 		var exists = false;
+		var ext = U.getExtension(file.name);
+		var append = false;
 
 		try {
 			exists = Fs.statSync(filename) != null;
@@ -183,16 +216,62 @@ function copyFiles(files, callback) {
 		if (file.type !== 1 && META.files.indexOf(file.name) === -1)
 			META.files.push(file.name);
 
+		/*
+		var backup = true;
+
+		if (exists && (ext === 'resource' || (!ext && file.name.substring(1, 7) === 'config'))) {
+
+			append = true;
+
+			try {
+				if (Fs.statSync(filename + '.backup'))
+					backup = false;
+			} catch (e) {}
+
+			// Creates a backup file
+			if (backup) {
+				copyFile(filename, filename + '.backup', () => Fs.appendFile(filename, '\n' + Fs.readFileSync(file.filename).toString('utf8'), next));
+			} else if (!BUNDLED && !RESTORED[filename]) {
+				RESTORED[filename] = 1;
+				copyFile(filename + '.backup', filename, () => Fs.appendFile(filename, '\n' + Fs.readFileSync(file.filename).toString('utf8'), next));
+				// Skips appending
+				append = true;
+				backup = true;
+			}
+		}
+
+		if (file.type !== 1 && META.files.indexOf(file.name) === -1)
+			META.files.push(file.name);
+
 		if (CONSOLE && exists)
 			if (F.config['allow-debug'])
-				F.consoledebug('Rewrite', file.name);
+				F.consoledebug(append ? 'Extend : ' : 'Rewrite:', file.name);
 			else
-				console.warn('Rewrite: ' + file.name)
+				console.warn(append ? 'Extend :' : 'Rewrite:', file.name)
 		else
-			F.consoledebug('Copy', file.name);
+			F.consoledebug(append ? 'Extend :' :   'Copy   :', file.name);
 
-		var writer = Fs.createWriteStream(filename);
-		writer.on('finish', next);
-		Fs.createReadStream(file.filename).pipe(writer);
+		if (append) {
+			!backup && Fs.appendFile(filename, '\n' + Fs.readFileSync(file.filename).toString('utf8'), next)
+		} else
+			copyFile(file.filename, filename, next);
+		*/
+
+		if (CONSOLE && exists)
+			if (F.config['allow-debug'])
+				F.consoledebug('Rewrite:', file.name);
+			else
+				console.warn('Rewrite:', file.name)
+		else
+			F.consoledebug('Copy   :', file.name);
+
+		copyFile(file.filename, filename, next);
+
 	}, callback);
+}
+
+function copyFile(oldname, newname, callback) {
+	writer = Fs.createWriteStream(newname);
+	writer.on('finish', callback);
+	Fs.createReadStream(oldname).pipe(writer);
 }
