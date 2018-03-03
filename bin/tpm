@@ -2,7 +2,7 @@
 
 'use strict';
 
-const VERSION = 'v3.0.0';
+const VERSION = 'v4.0.0';
 const PADDING = 120;
 
 const Fs = require('fs');
@@ -804,10 +804,60 @@ function create() {
 		log('Success      :', path);
 		log('');
 
-	}, function(path) {
-		// return path.lastIndexOf('.package') === -1;
-		return true;
-	});
+	}, () => true);
+}
+
+function createbundle() {
+
+	var target = process.cwd();
+	var name = current_package;
+	var length = process.argv.length;
+	var blacklist = {};
+
+	blacklist['/bundle.json'] = 1;
+	blacklist['/debug.js'] = 1;
+	blacklist['/release.js'] = 1;
+	blacklist['/debug.pid'] = 1;
+	blacklist['/package.json'] = 1;
+	blacklist['/readme.md'] = 1;
+	blacklist['/license.txt'] = 1;
+	blacklist['/bundles/'] = 1;
+	blacklist['/tmp/'] = 1;
+	blacklist['/.git/'] = 1;
+
+	if (length === 5) {
+		target = process.argv[4];
+		name = process.argv[3];
+	} else if (length === 4) {
+		current_package = process.argv[3];
+		name = Path.join(process.cwd(), current_package);
+	}
+
+	if (name.toLowerCase().lastIndexOf('.bundle') === -1)
+		name += '.bundle';
+
+	log('');
+	log('--- CREATE BUNDLE PACKAGE --');
+	log('');
+	log('Package      :', current_package);
+	log('Directory    :', target);
+
+	if (!isWindows) {
+		if (name[0] !== '/')
+			name = Path.join(process.cwd(), name);
+	}
+
+	var backup = new Backup();
+
+	backup.backup(target, name, function(err, path) {
+
+		if (err)
+			throw err;
+
+		log('Success      :', path);
+		log('');
+
+	}, path => blacklist[path] == null);
 }
 
 function unlink(path) {
@@ -862,6 +912,11 @@ function main() {
 
 		if (cmd === 'create') {
 			$type = 2;
+			continue;
+		}
+
+		if (cmd === 'bundle') {
+			$type = 7;
 			continue;
 		}
 
@@ -936,6 +991,10 @@ function main() {
 
 		case 2:
 			create();
+			break;
+
+		case 7:
+			createbundle();
 			break;
 
 		case 3:
