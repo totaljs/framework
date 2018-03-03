@@ -1,5 +1,6 @@
 ======= 3.0.0
 
+- added: (IMPORTANT) bundles
 - added: (IMPORTANT) Total.js components can have async delegate
 - added: new schema operations: `schema.setInsert()` and `schema.setUpdate()`
 - added: `RESTBuilder.patch([data])`

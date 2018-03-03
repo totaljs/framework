@@ -518,7 +518,7 @@ function Framework() {
 	this.$id = null; // F.id ==> property
 	this.version = 3000;
 	this.version_header = '3.0.0';
-	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
+	this.version_node = process.version.toString();
 
 	this.config = {
 
@@ -533,6 +533,8 @@ function Framework() {
 
 		'default-xpoweredby': 'Total.js',
 		'etag-version': '',
+		'directory-src': '/src/',
+		'directory-bundles': '/bundles/',
 		'directory-controllers': '/controllers/',
 		'directory-components': '/components/',
 		'directory-views': '/views/',
@@ -603,6 +605,7 @@ function Framework() {
 		'allow-compile-script': true,
 		'allow-compile-style': true,
 		'allow-compile-html': true,
+		'allow-compile-build': true,
 		'allow-performance': false,
 		'allow-custom-titles': false,
 		'allow-cache-snapshot': false,
@@ -3145,6 +3148,31 @@ F.modify = function(fn) {
 	return F;
 };
 
+F.$bundle = function(callback) {
+
+	var can = false;
+	var makebundle = function() {
+		require('./bundles').make(function() {
+			F.directory = HEADERS.workers.cwd = directory = F.path.root(F.config['directory-src']);
+			callback();
+		});
+	};
+
+	try {
+		Fs.statSync(F.path.root(F.config['directory-src']));
+		makebundle();
+		return;
+	} catch(e) {}
+
+	try {
+		Fs.statSync(F.path.root(F.config['directory-bundles']));
+		makebundle();
+		return;
+	} catch(e) {}
+
+	callback();
+};
+
 F.$load = function(types, targetdirectory, callback, packageName) {
 
 	var arr = [];
@@ -3563,7 +3591,6 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 	}
 
 	if (type === 'config' || type === 'configuration' || type === 'settings') {
-
 		F.$configure_configs(declaration instanceof Array ? declaration : declaration.toString().split('\n'), true);
 		setTimeout(function() {
 			delete F.temporary['mail-settings'];
@@ -4147,7 +4174,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 				F.$configure_workflows('@' + name + '/workflows');
 			}
 
-			F.$load(undefined, tmpdir, undefined, name);
+			F.$bundle(n => F.$load(undefined, tmpdir, undefined, name));
 		}, 100);
 
 		key = type + '.' + name;
@@ -6291,53 +6318,55 @@ F.load = function(debug, types, pwd) {
 	global.RELEASE = !debug;
 	global.I = global.isomorphic = F.isomorphic;
 
-	F.consoledebug('startup');
-	F.$startup(function() {
+	F.$bundle(function() {
+		F.consoledebug('startup');
+		F.$startup(function() {
 
-		F.consoledebug('startup (done)');
-		F.$configure_configs();
+			F.consoledebug('startup (done)');
+			F.$configure_configs();
 
-		if (!types || types.indexOf('versions') !== -1)
-			F.$configure_versions();
+			if (!types || types.indexOf('versions') !== -1)
+				F.$configure_versions();
 
-		if (!types || types.indexOf('workflows') !== -1)
-			F.$configure_workflows();
+			if (!types || types.indexOf('workflows') !== -1)
+				F.$configure_workflows();
 
-		if (!types || types.indexOf('sitemap') !== -1)
-			F.$configure_sitemap();
+			if (!types || types.indexOf('sitemap') !== -1)
+				F.$configure_sitemap();
 
-		F.consoledebug('init');
-		F.cache.init();
-		F.emit('init');
+			F.consoledebug('init');
+			F.cache.init();
+			F.emit('init');
 
-		F.$load(types, directory, function() {
+			F.$load(types, directory, function() {
 
-			F.isLoaded = true;
-			process.send && process.send('total:ready');
+				F.isLoaded = true;
+				process.send && process.send('total:ready');
 
-			setTimeout(function() {
+				setTimeout(function() {
 
-				try {
-					F.emit('load', F);
-					F.emit('ready', F);
-				} catch (err) {
-					F.error(err, 'F.on("load/ready")');
+					try {
+						F.emit('load', F);
+						F.emit('ready', F);
+					} catch (err) {
+						F.error(err, 'F.on("load/ready")');
+					}
+
+					F.removeAllListeners('load');
+					F.removeAllListeners('ready');
+
+					// clear unnecessary items
+					delete F.tests;
+					delete F.test;
+					delete F.testing;
+					delete F.assert;
+				}, 500);
+
+				if (F.config['allow-debug']) {
+					F.consoledebug('done');
+					F.usagesnapshot();
 				}
-
-				F.removeAllListeners('load');
-				F.removeAllListeners('ready');
-
-				// clear unnecessary items
-				delete F.tests;
-				delete F.test;
-				delete F.testing;
-				delete F.assert;
-			}, 500);
-
-			if (F.config['allow-debug']) {
-				F.consoledebug('done');
-				F.usagesnapshot();
-			}
+			});
 		});
 	});
 
@@ -6380,121 +6409,124 @@ F.initialize = function(http, debug, options, restart) {
 	global.RELEASE = !debug;
 	global.I = global.isomorphic = F.isomorphic;
 
-	F.$configure_configs();
-	F.$configure_versions();
-	F.$configure_workflows();
-	F.$configure_sitemap();
-	F.isTest && F.$configure_configs('config-test', true);
-	F.cache.init();
-	F.consoledebug('init');
-	F.emit('init');
+	F.$bundle(function() {
 
-	if (!port) {
-		if (F.config['default-port'] === 'auto') {
-			var envPort = +(process.env.PORT || '');
-			if (!isNaN(envPort))
-				port = envPort;
+		F.$configure_configs();
+		F.$configure_versions();
+		F.$configure_workflows();
+		F.$configure_sitemap();
+		F.isTest && F.$configure_configs('config-test', true);
+		F.cache.init();
+		F.consoledebug('init');
+		F.emit('init');
+
+		if (!port) {
+			if (F.config['default-port'] === 'auto') {
+				var envPort = +(process.env.PORT || '');
+				if (!isNaN(envPort))
+					port = envPort;
+			} else
+				port = F.config['default-port'];
+		}
+
+		F.port = port || 8000;
+
+		if (ip !== null) {
+			F.ip = ip || F.config['default-ip'] || '0.0.0.0';
+			if (F.ip === 'null' || F.ip === 'undefined' || F.ip === 'auto')
+				F.ip = null;
 		} else
-			port = F.config['default-port'];
-	}
+			F.ip = undefined;
 
-	F.port = port || 8000;
+		if (F.ip == null)
+			F.ip = '0.0.0.0';
 
-	if (ip !== null) {
-		F.ip = ip || F.config['default-ip'] || '0.0.0.0';
-		if (F.ip === 'null' || F.ip === 'undefined' || F.ip === 'auto')
-			F.ip = null;
-	} else
-		F.ip = undefined;
+		!listenpath && (listenpath = F.config['default-listenpath']);
+		F.listenpath = listenpath;
 
-	if (F.ip == null)
-		F.ip = '0.0.0.0';
+		if (F.server) {
+			F.server.removeAllListeners();
+			Object.keys(F.connections).forEach(function(key) {
+				var item = F.connections[key];
+				if (item) {
+					item.removeAllListeners();
+					item.close();
+				}
+			});
 
-	!listenpath && (listenpath = F.config['default-listenpath']);
-	F.listenpath = listenpath;
+			F.server.close();
+		}
 
-	if (F.server) {
-		F.server.removeAllListeners();
-		Object.keys(F.connections).forEach(function(key) {
-			var item = F.connections[key];
-			if (item) {
-				item.removeAllListeners();
-				item.close();
-			}
-		});
+		var listen = function() {
 
-		F.server.close();
-	}
-
-	var listen = function() {
-
-		if (options.https)
-			F.server = http.createServer(options.https, F.listener);
-		else
-			F.server = http.createServer(F.listener);
-
-		F.config['allow-performance'] && F.server.on('connection', connection_tunning);
-		F.initwebsocket && F.initwebsocket();
-		F.consoledebug('HTTP listening');
-
-		if (listenpath)
-			F.server.listen(listenpath);
-		else
-			F.server.listen(F.port, F.ip);
-	};
-
-	// clears static files
-	F.consoledebug('clear temporary');
-	F.clear(function() {
-		F.consoledebug('clear temporary (done)');
-		F.$load(undefined, directory, function() {
-
-			F.isLoaded = true;
-			process.send && process.send('total:ready');
-
-			if (options.middleware)
-				options.middleware(listen);
+			if (options.https)
+				F.server = http.createServer(options.https, F.listener);
 			else
-				listen();
+				F.server = http.createServer(F.listener);
 
-			if (F.config['allow-debug']) {
-				F.consoledebug('done');
-				F.usagesnapshot();
-			}
+			F.config['allow-performance'] && F.server.on('connection', connection_tunning);
+			F.initwebsocket && F.initwebsocket();
+			F.consoledebug('HTTP listening');
 
-			if (!process.connected || restart)
-				F.console();
+			if (listenpath)
+				F.server.listen(listenpath);
+			else
+				F.server.listen(F.port, F.ip);
+		};
 
-			setTimeout(function() {
+		// clears static files
+		F.consoledebug('clear temporary');
+		F.clear(function() {
+			F.consoledebug('clear temporary (done)');
+			F.$load(undefined, directory, function() {
 
-				try {
-					F.emit('load', F);
-					F.emit('ready', F);
-				} catch (err) {
-					F.error(err, 'F.on("load/ready")');
+				F.isLoaded = true;
+				process.send && process.send('total:ready');
+
+				if (options.middleware)
+					options.middleware(listen);
+				else
+					listen();
+
+				if (F.config['allow-debug']) {
+					F.consoledebug('done');
+					F.usagesnapshot();
 				}
 
-				F.removeAllListeners('load');
-				F.removeAllListeners('ready');
-				options.package && INSTALL('package', options.package);
-			}, 500);
+				if (!process.connected || restart)
+					F.console();
 
-			if (F.isTest) {
-				var sleep = options.sleep || options.delay || 1000;
-				setTimeout(() => F.test(true, options.tests || options.test), sleep);
-				return F;
-			}
+				setTimeout(function() {
 
-			setTimeout(function() {
-				if (F.isTest)
-					return;
-				delete F.tests;
-				delete F.test;
-				delete F.testing;
-				delete F.assert;
-			}, 5000);
-		});
-	}, true);
+					try {
+						F.emit('load', F);
+						F.emit('ready', F);
+					} catch (err) {
+						F.error(err, 'F.on("load/ready")');
+					}
+
+					F.removeAllListeners('load');
+					F.removeAllListeners('ready');
+					options.package && INSTALL('package', options.package);
+				}, 500);
+
+				if (F.isTest) {
+					var sleep = options.sleep || options.delay || 1000;
+					setTimeout(() => F.test(true, options.tests || options.test), sleep);
+					return F;
+				}
+
+				setTimeout(function() {
+					if (F.isTest)
+						return;
+					delete F.tests;
+					delete F.test;
+					delete F.testing;
+					delete F.assert;
+				}, 5000);
+			});
+		}, true);
+	});
 
 	return F;
 };
@@ -7917,7 +7949,7 @@ F.$configure_sitemap = function(arr, clean) {
 F.sitemap = function(name, me, language) {
 
 	if (!F.routes.sitemap)
-		return EMPTYARRAY;
+		return me ? null : EMPTYARRAY;
 
 	if (typeof(me) === 'string') {
 		language = me;

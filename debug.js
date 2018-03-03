@@ -80,11 +80,11 @@ function runwatching() {
 	const VERSION = F.version_header;
 	const TIME = 2000;
 	const REG_CONFIGS = /configs\//g;
-	const REG_FILES = /config\-debug|config\-release|config|versions|workflows|sitemap|dependencies|\.js|\.resource/i;
+	const REG_FILES = /config\-debug|config\-release|config|versions|workflows|sitemap|dependencies|\.js$|\.resource$/i;
 	const REG_THEMES = /\/themes\//i;
 	const REG_COMPONENTS = /components\/.*?\.html/i;
-	const REG_THEMES_INDEX = /themes(\/|\\)?[a-z0-9_.-]+(\/|\\)?index\.js/i;
-	const REG_EXTENSION = /\.(js|resource|package)/i;
+	const REG_THEMES_INDEX = /themes(\/|\\)?[a-z0-9_.-]+(\/|\\)?index\.js$/i;
+	const REG_EXTENSION = /\.(js|resource|package|bundle)$/i;
 
 	function app() {
 
@@ -105,9 +105,23 @@ function runwatching() {
 			U.combine(F.config['directory-packages']),
 			U.combine(F.config['directory-themes']),
 			U.combine(F.config['directory-configs']),
+			U.combine(F.config['directory-bundles']),
+			U.combine(F.config['directory-src'], F.config['directory-components']),
+			U.combine(F.config['directory-src'], F.config['directory-controllers']),
+			U.combine(F.config['directory-src'], F.config['directory-definitions']),
+			U.combine(F.config['directory-src'], F.config['directory-models']),
+			U.combine(F.config['directory-src'], F.config['directory-resources']),
+			U.combine(F.config['directory-src'], F.config['directory-source']),
+			U.combine(F.config['directory-src'], F.config['directory-workers']),
+			U.combine(F.config['directory-src'], F.config['directory-packages']),
+			U.combine(F.config['directory-src'], F.config['directory-themes']),
+			U.combine(F.config['directory-src'], F.config['directory-configs']),
 			U.combine('/startup/'),
 			U.combine('/schema/')
 		];
+
+		const SRC = U.combine(F.config['directory-src']);
+
 
 		const async = new U.Async();
 		const prefix = '---------------------------------> ';
@@ -130,6 +144,7 @@ function runwatching() {
 		var isSkip = false;
 		var pidIncrease;
 		var speed = TIME;
+		var counter = 0;
 
 		function onFilter(path, isDirectory) {
 			return !isDirectory && REG_THEMES.test(path) ? REG_THEMES_INDEX.test(path) : isDirectory ? true : REG_EXTENSION.test(path) || REG_COMPONENTS.test(path) || REG_CONFIGS.test(path);
@@ -173,39 +188,30 @@ function runwatching() {
 		}
 
 		function refresh() {
+			counter++;
+			Object.keys(files).wait(function(filename, next) {
+				Fs.stat(filename, function(err, stat) {
 
-			var filenames = Object.keys(files);
-			var length = filenames.length;
+					var stamp = '--- # --- [ ' + new Date().format('yyyy-MM-dd HH:mm:ss') + ' ] ';
 
-			for (var i = 0; i < length; i++) {
-				var filename = filenames[i];
-				(function(filename) {
-					async.await(function(next) {
-						Fs.stat(filename, function(err, stat) {
-
-							var stamp = '--- # --- [ ' + new Date().format('yyyy-MM-dd HH:mm:ss') + ' ] ';
-
-							if (err) {
-								delete files[filename];
-								changes.push(stamp.replace('#', 'REM') + prefix + filename.replace(directory, ''));
+					if (err) {
+						delete files[filename];
+						changes.push(stamp.replace('#', 'REM') + prefix + filename.replace(directory, ''));
+						force = true;
+					} else {
+						var ticks = stat.mtime.getTime();
+						if (files[filename] != null && files[filename] !== ticks) {
+							if (filename.substring(0, SRC.length) !== SRC || counter > 2) {
+								changes.push(stamp.replace('#', files[filename] === 0 ? 'ADD' : 'UPD') + prefix + filename.replace(directory, ''));
 								force = true;
-							} else {
-								var ticks = stat.mtime.getTime();
-								if (files[filename] != null && files[filename] !== ticks) {
-									changes.push(stamp.replace('#', files[filename] === 0 ? 'ADD' : 'UPD') + prefix + filename.replace(directory, ''));
-									force = true;
-								}
-								files[filename] = ticks;
 							}
+						}
+						files[filename] = ticks;
+					}
 
-							next();
-						});
-					});
-
-				})(filename);
-			}
-
-			async.complete(function() {
+					next();
+				});
+			}, function() {
 
 				isLoaded = true;
 				setTimeout(refresh_directory, speed);
@@ -214,6 +220,7 @@ function runwatching() {
 				if (status !== 1 || !force)
 					return;
 
+				counter = 0;
 				onIncrease(true);
 				restart();
 
@@ -223,7 +230,7 @@ function runwatching() {
 
 				changes = [];
 				force = false;
-			});
+			}, 3);
 		}
 
 		function refresh_directory() {
