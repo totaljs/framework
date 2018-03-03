@@ -533,7 +533,7 @@ function Framework() {
 
 		'default-xpoweredby': 'Total.js',
 		'etag-version': '',
-		'directory-src': '/src/',
+		'directory-src': '/.src/',
 		'directory-bundles': '/bundles/',
 		'directory-controllers': '/controllers/',
 		'directory-components': '/components/',
