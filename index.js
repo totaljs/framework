@@ -3160,12 +3160,6 @@ F.$bundle = function(callback) {
 	};
 
 	try {
-		Fs.statSync(F.path.root(F.config['directory-src']));
-		makebundle();
-		return;
-	} catch(e) {}
-
-	try {
 		Fs.statSync(F.path.root(F.config['directory-bundles']));
 		makebundle();
 		return;
@@ -5765,7 +5759,10 @@ F.restore = function(filename, target, callback, filter) {
 			cache[path] = true;
 
 			var npath = path.substring(0, path.lastIndexOf(F.isWindows ? '\\' : '/'));
-			if (!filter || filter(item, false) !== false)
+
+			var filename = filter && filter(item, false);
+
+			if (!filter || filename || filename == null)
 				F.path.mkdir(npath);
 			else {
 				type = 5; // skip
@@ -5773,6 +5770,9 @@ F.restore = function(filename, target, callback, filter) {
 				return;
 			}
 		}
+
+		if (typeof(filename) === 'string')
+			path = Path.join(target, filename);;
 
 		// File
 		type = 2;

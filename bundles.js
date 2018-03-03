@@ -36,6 +36,7 @@ exports.make = function(callback) {
 
 	var Files = [];
 	var Dirs = [];
+	var Merge = [];
 	var Length = path.length;
 	var async = [];
 
@@ -46,8 +47,8 @@ exports.make = function(callback) {
 		U.ls(F.path.root(F.config['directory-bundles']), function(files) {
 			files.wait(function(filename, resume) {
 				var dbpath = F.config['directory-databases'];
-				F.restore(filename, target, resume, function(p, dir) {
 
+				F.restore(filename, target, resume, function(p, dir) {
 					if (dir) {
 						if (!p.startsWith(dbpath) && META.directories.indexOf(p) === -1)
 							META.directories.push(p);
@@ -62,6 +63,13 @@ exports.make = function(callback) {
 						if (exists && p.startsWith(dbpath))
 							return false;
 
+						if (p === '/config' || p === '/sitemap' || p === '/workflows' || U.getExtension(p) === 'resource') {
+							var hash = Math.random().toString(16).substring(5);
+							Merge.push({ name: p, filename: Path.join(target, p + hash) });
+							META.files.push(p + hash);
+							return p + hash;
+						}
+
 						if (META.files.indexOf(p) === -1)
 							META.files.push(p);
 					}
@@ -71,6 +79,20 @@ exports.make = function(callback) {
 			}, next);
 		});
 	});
+
+	async.push(function(next) {
+		if (Merge.length) {
+			copyFiles(Merge, function() {
+				for (var i = 0, length = Merge.length; i < length; i++) {
+					try {
+						Fs.unlinkSync(Merge[i].filename);
+					} catch(e) {}
+				}
+				next();
+			});
+		} else
+			next();
+	})
 
 	async.push(function(next) {
 		U.ls(path, function(files, dirs) {
@@ -154,24 +176,7 @@ function cleanFiles(callback) {
 		}
 	}
 
-	if (restore.length) {
-		restore.wait(function(filename, next) {
-
-			var is = false;
-			filename = Path.join(path, filename);
-
-			try {
-				is = !!Fs.statSync(filename + '.backup');
-			} catch (e) {}
-
-			if (is)
-				copyFile(filename + '.backup', filename, next);
-			else
-				next();
-
-		}, callback);
-	} else
-		callback();
+	callback();
 }
 
 function createDirectories(dirs, callback) {
@@ -195,7 +200,6 @@ function createDirectories(dirs, callback) {
 
 function copyFiles(files, callback) {
 	var path = F.path.root(F.config['directory-src']);
-	var skip
 	files.wait(function(file, next) {
 
 		var filename = Path.join(path, file.name);
@@ -216,56 +220,32 @@ function copyFiles(files, callback) {
 		if (file.type !== 1 && META.files.indexOf(file.name) === -1)
 			META.files.push(file.name);
 
-		/*
-		var backup = true;
-
-		if (exists && (ext === 'resource' || (!ext && file.name.substring(1, 7) === 'config'))) {
-
+		if (exists && (ext === 'resource' || (!ext && file.name.substring(1, 7) === 'config')))
 			append = true;
-
-			try {
-				if (Fs.statSync(filename + '.backup'))
-					backup = false;
-			} catch (e) {}
-
-			// Creates a backup file
-			if (backup) {
-				copyFile(filename, filename + '.backup', () => Fs.appendFile(filename, '\n' + Fs.readFileSync(file.filename).toString('utf8'), next));
-			} else if (!BUNDLED && !RESTORED[filename]) {
-				RESTORED[filename] = 1;
-				copyFile(filename + '.backup', filename, () => Fs.appendFile(filename, '\n' + Fs.readFileSync(file.filename).toString('utf8'), next));
-				// Skips appending
-				append = true;
-				backup = true;
-			}
-		}
 
 		if (file.type !== 1 && META.files.indexOf(file.name) === -1)
 			META.files.push(file.name);
 
 		if (CONSOLE && exists)
 			if (F.config['allow-debug'])
-				F.consoledebug(append ? 'Extend : ' : 'Rewrite:', file.name);
+				F.consoledebug(append ? 'EXT: ' : 'REW:', file.name);
 			else
-				console.warn(append ? 'Extend :' : 'Rewrite:', file.name)
+				console.warn(append ? 'EXT:' : 'REW :', file.name)
 		else
-			F.consoledebug(append ? 'Extend :' :   'Copy   :', file.name);
+			F.consoledebug(append ? 'EXT:' :   'COP:', file.name);
 
 		if (append) {
-			!backup && Fs.appendFile(filename, '\n' + Fs.readFileSync(file.filename).toString('utf8'), next)
+			Fs.appendFile(filename, '\n' + Fs.readFileSync(file.filename).toString('utf8'), next)
 		} else
 			copyFile(file.filename, filename, next);
-		*/
 
 		if (CONSOLE && exists)
 			if (F.config['allow-debug'])
-				F.consoledebug('Rewrite:', file.name);
+				F.consoledebug('REW:', file.name);
 			else
-				console.warn('Rewrite:', file.name)
+				console.warn('REW:', file.name)
 		else
-			F.consoledebug('Copy   :', file.name);
-
-		copyFile(file.filename, filename, next);
+			F.consoledebug('COP:', file.name);
 
 	}, callback);
 }

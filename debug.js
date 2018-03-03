@@ -86,6 +86,12 @@ function runwatching() {
 	const REG_THEMES_INDEX = /themes(\/|\\)?[a-z0-9_.-]+(\/|\\)?index\.js$/i;
 	const REG_EXTENSION = /\.(js|resource|package|bundle)$/i;
 
+	function copyFile(oldname, newname, callback) {
+		writer = Fs.createWriteStream(newname);
+		callback && writer.on('finish', callback);
+		Fs.createReadStream(oldname).pipe(writer);
+	}
+
 	function app() {
 
 		F.$configure_configs();
@@ -107,24 +113,10 @@ function runwatching() {
 			U.combine(F.config['directory-themes']),
 			U.combine(F.config['directory-configs']),
 			U.combine(F.config['directory-bundles']),
-			U.combine(F.config['directory-src'], F.config['directory-components']),
-			U.combine(F.config['directory-src'], F.config['directory-controllers']),
-			U.combine(F.config['directory-src'], F.config['directory-definitions']),
-			U.combine(F.config['directory-src'], F.config['directory-models']),
-			U.combine(F.config['directory-src'], F.config['directory-schemas']),
-			U.combine(F.config['directory-src'], F.config['directory-resources']),
-			U.combine(F.config['directory-src'], F.config['directory-source']),
-			U.combine(F.config['directory-src'], F.config['directory-workers']),
-			U.combine(F.config['directory-src'], F.config['directory-packages']),
-			U.combine(F.config['directory-src'], F.config['directory-themes']),
-			U.combine(F.config['directory-src'], F.config['directory-configs']),
-			U.combine('/startup/'),
-			U.combine('/schema/')
+			U.combine('/startup/')
 		];
 
 		const SRC = U.combine(F.config['directory-src']);
-
-
 		const async = new U.Async();
 		const prefix = '---------------------------------> ';
 
@@ -147,9 +139,33 @@ function runwatching() {
 		var pidIncrease;
 		var speed = TIME;
 		var counter = 0;
+		var isBUNDLE = false;
+		var blacklist = {};
+
+		blacklist['/debug.pid'] = 1;
+		blacklist['/debug.js'] = 1;
+		blacklist['/bundle.json'] = 1;
+		blacklist['/package.json'] = 1;
+		blacklist['/readme.md'] = 1;
+
+		try {
+			Fs.statSync(F.path.root(F.config['directory-bundles']));
+			isBUNDLE = true;
+		} catch(e) {}
+
+		if (isBUNDLE) {
+			directories.push(U.combine(F.config['directory-public']));
+			directories.push(U.combine(F.config['directory-views']));
+		}
 
 		function onFilter(path, isDirectory) {
-			return !isDirectory && REG_THEMES.test(path) ? REG_THEMES_INDEX.test(path) : isDirectory ? true : REG_EXTENSION.test(path) || REG_COMPONENTS.test(path) || REG_CONFIGS.test(path);
+			if (isBUNDLE) {
+				if (isDirectory)
+					return SRC !== path;
+				var p = path.substring(directory.length);
+				return !blacklist[p];
+			}
+			return isDirectory && REG_THEMES.test(path) ? REG_THEMES_INDEX.test(path) : isDirectory ? true : REG_EXTENSION.test(path) || REG_COMPONENTS.test(path) || REG_CONFIGS.test(path);
 		}
 
 		function onIncrease(clear) {
@@ -203,10 +219,23 @@ function runwatching() {
 					} else {
 						var ticks = stat.mtime.getTime();
 						if (files[filename] != null && files[filename] !== ticks) {
-							if (filename.substring(0, SRC.length) !== SRC || counter > 2) {
-								changes.push(stamp.replace('#', files[filename] === 0 ? 'ADD' : 'UPD') + prefix + filename.replace(directory, ''));
-								force = true;
+
+							var log = stamp.replace('#', files[filename] === 0 ? 'ADD' : 'UPD') + prefix + filename.replace(directory, '');
+
+							if (files[filename]) {
+								var fn = filename.substring(directory.length);
+								var dir = fn.substring(0, fn.indexOf('/', 1) + 1);
+								if (F.config['directory-views'] === dir || F.config['directory-public'] === dir) {
+									copyFile(filename, Path.join(SRC, fn));
+									files[filename] = ticks;
+									console.log(log);
+									next();
+									return;
+								}
 							}
+
+							changes.push(log);
+							force = true;
 						}
 						files[filename] = ticks;
 					}
