@@ -118,7 +118,7 @@ function runwatching() {
 		];
 
 		const SRC = U.combine(F.config['directory-src']);
-		const prefix = '---------------------------------> ';
+		const prefix = '----------------> ';
 
 		options.watch && options.watch.forEach(function(item) {
 			if (item[0] === '/')
@@ -367,7 +367,7 @@ function runwatching() {
 
 		if (process.pid > 0) {
 
-			console.log(prefix.substring(8) + 'DEBUG PID: ' + process.pid + ' (v' + VERSION + ')');
+			console.log('DEBUG PID: ' + process.pid + ' (v' + VERSION + ')');
 
 			pid = Path.join(directory, 'debug.pid');
 			Fs.writeFileSync(pid, process.pid);

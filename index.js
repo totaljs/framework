@@ -4254,7 +4254,7 @@ F.restart = function() {
 
 F.$restart = function() {
 
-	console.log('----------------------------------------------------> RESTART ' + new Date().format('yyyy-MM-dd HH:mm:ss'));
+	console.log('----------------> RESTART ' + new Date().format('yyyy-MM-dd HH:mm:ss'));
 
 	F.server.setTimeout(0);
 	F.server.timeout = 0;
