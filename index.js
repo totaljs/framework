@@ -542,6 +542,7 @@ function Framework() {
 		'directory-temp': '/tmp/',
 		'directory-models': '/models/',
 		'directory-schemas': '/schemas/',
+		'directory-operations': '/operations/',
 		'directory-resources': '/resources/',
 		'directory-public': '/public/',
 		'directory-public-virtual': '/app/',
@@ -3311,6 +3312,16 @@ F.$load = function(types, targetdirectory, callback, packageName) {
 		});
 	}
 
+	if (!types || types.indexOf('operations') !== -1) {
+		operations.push(function(resume) {
+			dir = U.combine(targetdirectory, isPackage ? '/operations/' : F.config['directory-operations']);
+			arr = [];
+			listing(dir, 0, arr);
+			arr.forEach((item) => dependencies.push(next => F.install('operation', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next, packageName)));
+			resume();
+		});
+	}
+
 	if (!types || types.indexOf('themes') !== -1) {
 		operations.push(function(resume) {
 			arr = [];
@@ -3868,7 +3879,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 		return F;
 	}
 
-	if (type === 'definition' || type === 'eval' || type === 'schema') {
+	if (type === 'definition' || type === 'eval' || type === 'schema' || type === 'operation') {
 
 		_controller = '';
 		_owner = (packageName ? packageName + '@' : '') + type + '#' + name;
