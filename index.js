@@ -16164,8 +16164,12 @@ function controller_json_workflow(id) {
 		}
 		if (w.name)
 			self[w.type](w.name, self.callback());
-		else
-			self[w.type](self.callback());
+		else {
+			if (w.type)
+				self[w.type](self.callback());
+			else
+				self.throw500('Operation @' + w.id + ' not found.');
+		}
 	} else
 		self.$exec(w, null, self.callback());
 }
