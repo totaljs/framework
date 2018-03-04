@@ -106,6 +106,7 @@ function runwatching() {
 			U.combine(F.config['directory-modules']),
 			U.combine(F.config['directory-models']),
 			U.combine(F.config['directory-schemas']),
+			U.combine(F.config['directory-operations']),
 			U.combine(F.config['directory-resources']),
 			U.combine(F.config['directory-source']),
 			U.combine(F.config['directory-workers']),
