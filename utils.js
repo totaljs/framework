@@ -3370,7 +3370,7 @@ String.prototype.isJSON = function() {
 		break;
 	}
 
-	return (a === '"' && b === '"') || (a === '[' && b === ']') || (a === '{' && b === '}');
+	return (a === '"' && b === '"') || (a === '[' && b === ']') || (a === '{' && b === '}') || (a.charCodeAt(0) > 47 && b.charCodeAt(0) < 57);
 };
 
 String.prototype.isURL = function() {

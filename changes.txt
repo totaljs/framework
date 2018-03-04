@@ -33,6 +33,7 @@
 - fixed: uninstalling CORS routes
 - fixed: cache for `favicon`
 - fixed: `Date.extend()`
+- fixed: `String.isJSON()` validator
 
 ======= 2.9.4 (HOTFIX)
 
