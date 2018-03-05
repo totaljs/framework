@@ -4,6 +4,7 @@ const Fs = require('fs');
 const Path = require('path');
 const CONSOLE = process.argv.indexOf('restart') === -1;
 const META = {};
+const INTERNAL = { '/sitemap': 1, '/versions': 1, '/workflows': 1, '/dependencies': 1, '/config': 1, '/config-release': 1, '/config-debug': 1 };
 
 META.version = 1;
 META.created = new Date();
@@ -18,7 +19,7 @@ exports.make = function(callback) {
 	var blacklist = {};
 
 	if (CONSOLE) {
-		console.log('==================== BUNDLING ======================');
+		console.log('--------------------- BUNDLING ---------------------');
 		console.time('Done');
 	}
 
@@ -60,7 +61,7 @@ exports.make = function(callback) {
 						if (exists && p.startsWith(dbpath))
 							return false;
 
-						if (p === '/config' || p === '/sitemap' || p === '/workflows' || U.getExtension(p) === 'resource') {
+						if (INTERNAL[p] || U.getExtension(p) === 'resource') {
 							var hash = Math.random().toString(16).substring(5);
 							Merge.push({ name: p, filename: Path.join(target, p + hash) });
 							META.files.push(p + hash);
@@ -144,17 +145,9 @@ function cleanFiles(callback) {
 		meta = U.parseJSON(Fs.readFileSync(F.path.root('bundle.json')).toString('utf8'), true);
 	} catch (e) {}
 
-	var restore = [];
-
 	if (meta.files && meta.files.length) {
 		for (var i = 0, length = meta.files.length; i < length; i++) {
-
 			var filename = meta.files[i];
-			var ext = U.getExtension(filename);
-
-			if (ext === 'resource' || (!ext && U.getName(filename).indexOf('config') !== -1))
-				restore.push(filename);
-
 			try {
 				F.consoledebug('Remove', filename);
 				Fs.unlinkSync(Path.join(path, filename));
@@ -215,7 +208,7 @@ function copyFiles(files, callback) {
 		if (file.type !== 1 && META.files.indexOf(file.name) === -1)
 			META.files.push(file.name);
 
-		if (exists && (ext === 'resource' || (!ext && file.name.substring(1, 7) === 'config')))
+		if (exists && (ext === 'resource' || (!ext && file.name.substring(1, 7) === 'config') || INTERNAL[file.name]))
 			append = true;
 
 		if (file.type !== 1 && META.files.indexOf(file.name) === -1)

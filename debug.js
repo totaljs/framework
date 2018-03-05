@@ -106,7 +106,6 @@ function runwatching() {
 			U.combine(F.config['directory-modules']),
 			U.combine(F.config['directory-models']),
 			U.combine(F.config['directory-schemas']),
-			U.combine(F.config['directory-operations']),
 			U.combine(F.config['directory-resources']),
 			U.combine(F.config['directory-source']),
 			U.combine(F.config['directory-workers']),
@@ -367,7 +366,7 @@ function runwatching() {
 
 		if (process.pid > 0) {
 
-			console.log('DEBUG PID: ' + process.pid + ' (v' + VERSION + ')');
+			console.log(prefix.substring(8) + 'DEBUG PID: ' + process.pid + ' (v' + VERSION + ')');
 
 			pid = Path.join(directory, 'debug.pid');
 			Fs.writeFileSync(pid, process.pid);
