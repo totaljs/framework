@@ -1188,7 +1188,6 @@ F.stop = F.kill = function(signal) {
 	return F;
 };
 
-
 F.redirect = function(host, newHost, withPath, permanent) {
 
 	var external = host.startsWith('http://') || host.startsWith('https');
