@@ -5,6 +5,7 @@ const Path = require('path');
 const CONSOLE = process.argv.indexOf('restart') === -1;
 const META = {};
 const INTERNAL = { '/sitemap': 1, '/versions': 1, '/workflows': 1, '/dependencies': 1, '/config': 1, '/config-release': 1, '/config-debug': 1 };
+const isWindows = require('os').platform().substring(0, 3).toLowerCase() === 'win';
 
 META.version = 1;
 META.created = new Date();
@@ -46,6 +47,7 @@ exports.make = function(callback) {
 			var dirs = {};
 			files.wait(function(filename, resume) {
 				var dbpath = F.config['directory-databases'];
+
 				F.restore(filename, target, resume, function(p, dir) {
 
 					if (dir) {
@@ -80,10 +82,8 @@ exports.make = function(callback) {
 					return true;
 				});
 			}, function() {
-
 				dirs = Object.keys(dirs);
 				dirs.length && Dirs.push.apply(Dirs, dirs);
-
 				next();
 			});
 		});
@@ -102,11 +102,12 @@ exports.make = function(callback) {
 		} else
 			next();
 	});
+
 	async.push(function(next) {
 		U.ls(path, function(files, dirs) {
 
 			for (var i = 0, length = dirs.length; i < length; i++)
-				Dirs.push(dirs[i].substring(Length));
+				Dirs.push(normalize(dirs[i].substring(Length)));
 
 			for (var i = 0, length = files.length; i < length; i++) {
 				var file = files[i].substring(Length);
@@ -120,7 +121,7 @@ exports.make = function(callback) {
 			}
 
 			next();
-		}, (p) => blacklist[p.substring(Length)] == null);
+		}, (p) => blacklist[normalize(p.substring(Length))] == null);
 	});
 
 	async.push(function(next) {
@@ -130,7 +131,7 @@ exports.make = function(callback) {
 	});
 
 	async.push(function(next) {
-		Fs.writeFileSync(F.path.root('bundle.json'), JSON.stringify(META, null, '\t'));
+		Fs.writeFileSync(Path.join(F.path.root(F.config['directory-src']), 'bundle.json'), JSON.stringify(META, null, '\t'));
 		next();
 	});
 
@@ -140,6 +141,10 @@ exports.make = function(callback) {
 	});
 
 };
+
+function normalize(path) {
+	return isWindows ? path.replace(/\\/g, '/') : path;
+}
 
 function cleanFiles(callback) {
 
@@ -153,7 +158,7 @@ function cleanFiles(callback) {
 
 	var meta = {};
 	try {
-		meta = U.parseJSON(Fs.readFileSync(F.path.root('bundle.json')).toString('utf8'), true);
+		meta = U.parseJSON(Fs.readFileSync(Path.join(path, 'bundle.json')).toString('utf8'), true);
 	} catch (e) {}
 
 	if (meta.files && meta.files.length) {
@@ -187,8 +192,9 @@ function createDirectories(dirs, callback) {
 	} catch(e) {}
 
 	for (var i = 0, length = dirs.length; i < length; i++) {
-		if (META.directories.indexOf(dirs[i]) === -1)
-			META.directories.push(dirs[i]);
+		var p = normalize(dirs[i]);
+		if (META.directories.indexOf(p) === -1)
+			META.directories.push(p);
 		try {
 			Fs.mkdirSync(Path.join(path, dirs[i]));
 		} catch (e) {}
@@ -216,19 +222,18 @@ function copyFiles(files, callback) {
 			return;
 		}
 
-		if (file.type !== 1 && META.files.indexOf(file.name) === -1)
-			META.files.push(file.name);
+		var p = normalize(file.name);
+
+		if (file.type !== 1 && META.files.indexOf(p) === -1)
+			META.files.push(p);
 
 		if (exists && (ext === 'resource' || (!ext && file.name.substring(1, 7) === 'config') || INTERNAL[file.name]))
 			append = true;
 
-		if (file.type !== 1 && META.files.indexOf(file.name) === -1)
-			META.files.push(file.name);
-
 		if (CONSOLE && exists) {
-			F.config['allow-debug'] && F.consoledebug(append ? 'EXT: ' : 'REW:', file.name);
+			F.config['allow-debug'] && F.consoledebug(append ? 'EXT: ' : 'REW:', p);
 		} else
-			F.consoledebug(append ? 'EXT:' :   'COP:', file.name);
+			F.consoledebug(append ? 'EXT:' :   'COP:', p);
 
 		if (append) {
 			Fs.appendFile(filename, '\n' + Fs.readFileSync(file.filename).toString('utf8'), next);
@@ -236,9 +241,9 @@ function copyFiles(files, callback) {
 			copyFile(file.filename, filename, next);
 
 		if (CONSOLE && exists)
-			F.config['allow-debug'] && F.consoledebug('REW:', file.name);
+			F.config['allow-debug'] && F.consoledebug('REW:', p);
 		else
-			F.consoledebug('COP:', file.name);
+			F.consoledebug('COP:', p);
 
 	}, callback);
 }
