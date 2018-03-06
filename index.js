@@ -1596,9 +1596,18 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 		return F;
 	}
 
+	var method = '';
 	var CUSTOM = typeof(url) === 'function' ? url : null;
 	if (CUSTOM)
 		url = '/';
+
+	if (url) {
+		var index = url.indexOf(' ');
+		if (index !== -1) {
+			method = url.substring(0, index).toLowerCase().trim();
+			url = url.substring(index + 1).trim();
+		}
+	}
 
 	if (url[0] === '#') {
 		url = url.substring(1);
@@ -1644,12 +1653,6 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 	if (!url)
 		url = '/';
 
-	var index = url.indexOf(' ');
-	if (index !== -1) {
-		flags.push(url.substring(0, index).toLowerCase().trim());
-		url = url.substring(index + 1).trim();
-	}
-
 	if (url[0] !== '[' && url[0] !== '/')
 		url = '/' + url;
 
@@ -1671,6 +1674,11 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 		tmp = funcExecute;
 		funcExecute = flags;
 		flags = tmp;
+	}
+
+	if (method) {
+		flags.push(method);
+		method = '';
 	}
 
 	var priority = 0;
@@ -1695,7 +1703,6 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 
 	var isRaw = false;
 	var isNOXHR = false;
-	var method = '';
 	var schema;
 	var workflow;
 	var isMOBILE = false;
