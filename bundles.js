@@ -43,14 +43,19 @@ exports.make = function(callback) {
 	async.push(function(next) {
 		var target = F.path.root(F.config['directory-src']);
 		U.ls(F.path.root(F.config['directory-bundles']), function(files) {
+			var dirs = {};
 			files.wait(function(filename, resume) {
 				var dbpath = F.config['directory-databases'];
-
 				F.restore(filename, target, resume, function(p, dir) {
+
 					if (dir) {
 						if (!p.startsWith(dbpath) && META.directories.indexOf(p) === -1)
 							META.directories.push(p);
 					} else {
+
+						var dirname = p.substring(0, p.length - U.getName(p).length);
+						if (dirname && dirname !== '/')
+							dirs[dirname] = true;
 
 						var exists = false;
 						try {
@@ -74,7 +79,13 @@ exports.make = function(callback) {
 
 					return true;
 				});
-			}, next);
+			}, function() {
+
+				dirs = Object.keys(dirs);
+				dirs.length && Dirs.push.apply(Dirs, dirs);
+
+				next();
+			});
 		});
 	});
 
