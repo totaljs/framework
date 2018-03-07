@@ -121,7 +121,10 @@ exports.make = function(callback) {
 			}
 
 			next();
-		}, (p) => blacklist[normalize(p.substring(Length))] == null);
+		}, function(p) {
+			p = normalize(p.substring(Length));
+			return blacklist[p] == null && p.substring(0, 2) !== '/.';
+		});
 	});
 
 	async.push(function(next) {
