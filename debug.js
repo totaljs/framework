@@ -21,12 +21,13 @@
 
 /**
  * @module FrameworkDebug
- * @version 2.9.0
+ * @version 3.0.0
  */
 
 const Path = require('path');
 const Fs = require('fs');
 const debugging = process.argv.indexOf('debugging') !== -1;
+const isWindows = require('os').platform().substring(0, 3).toLowerCase() === 'win';
 
 var first = process.argv.indexOf('restart') === -1;
 var options = null;
@@ -218,7 +219,7 @@ function runwatching() {
 					if (err) {
 						delete files[filename];
 						var tmp = isViewPublic(filename);
-						var log = stamp.replace('#', 'REM') + prefix + filename.replace(directory, '');
+						var log = stamp.replace('#', 'REM') + prefix + normalize(filename.replace(directory, ''));
 						if (tmp) {
 							Fs.unlinkSync(Path.join(SRC, tmp));
 							console.log(log);
@@ -230,7 +231,7 @@ function runwatching() {
 						var ticks = stat.mtime.getTime();
 						if (files[filename] != null && files[filename] !== ticks) {
 
-							var log = stamp.replace('#', files[filename] === 0 ? 'ADD' : 'UPD') + prefix + filename.replace(directory, '');
+							var log = stamp.replace('#', files[filename] === 0 ? 'ADD' : 'UPD') + prefix + normalize(filename.replace(directory, ''));
 
 							if (files[filename]) {
 								var tmp = isViewPublic(filename);
@@ -400,6 +401,10 @@ function runwatching() {
 		setTimeout(app, 2500);
 	} else
 		app();
+}
+
+function normalize(path) {
+	return isWindows ? path.replace(/\\/g, '/') : path;
 }
 
 if (debugging)
