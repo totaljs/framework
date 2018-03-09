@@ -118,7 +118,7 @@ function prototypeString() {
 	assert.ok('""'.isJSON() === true, 'string.isJSON("")');
 	assert.ok('12'.isJSON() === true, 'string.isJSON(12)');
 	assert.ok('[}'.isJSON() === false, 'string.isJSON([})');
-	assert.ok('['.isJSON() === false, 'string.isJSON([")');
+	assert.ok('['.isJSON() === false, 'string.isJSON([)');
 	assert.ok(str.isJSON() === false, 'string.isJSON()');
 	assert.ok(JSON.parse(JSON.stringify(new Date())).isJSONDate(), 'string.isJSONDate()');
 
