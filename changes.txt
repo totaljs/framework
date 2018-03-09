@@ -34,6 +34,7 @@
 - fixed: cache for `favicon`
 - fixed: `Date.extend()`
 - fixed: `String.isJSON()` validator
+- fixed: `String.parseDate()` now it parses date to UTC correctly
 
 ======= 2.9.4 (HOTFIX)
 

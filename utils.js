@@ -3079,7 +3079,7 @@ String.prototype.parseDate = function() {
 		}
 	}
 
-	return new Date(parsed[0], parsed[1] - 1, parsed[2], parsed[3], parsed[4], parsed[5]);
+	return new Date(parsed[0], parsed[1] - 1, parsed[2], parsed[3], parsed[4] - F.datetime.getTimezoneOffset(), parsed[5]);
 };
 
 String.prototype.parseDateExpiration = function() {
