@@ -43,11 +43,13 @@ Object.freeze(EMPTYARRAY);
 
 const REG_1 = /[\n\r\t]+/g;
 const REG_2 = /\s{2,}/g;
-const REG_4 = /\n\s{2,}./g;
-const REG_5 = />\n\s{1,}</g;
+const REG_4 = /(\r)?\n\s{2,}./g;
+const REG_5 = />(\r)?\n\s{1,}</g;
 const REG_6 = /[<\w"\u0080-\u07ff\u0400-\u04FF]+\s{2,}[\w\u0080-\u07ff\u0400-\u04FF>]+/;
 const REG_7 = /\\/g;
 const REG_8 = /'/g;
+const REG_9 = />(\r)?\n\s+/g;
+const REG_10 = /(\w|\W)(\r)?\n\s+</g;
 const REG_BLOCK_BEG = /@\{block.*?\}/i;
 const REG_BLOCK_END = /@\{end\}/i;
 const REG_SKIP_1 = /\('|"/;
@@ -59,10 +61,10 @@ const HTTPVERBS = { 'get': true, 'post': true, 'options': true, 'put': true, 'de
 const RENDERNOW = ['self.$import(', 'self.route', 'self.$js(', 'self.$css(', 'self.$favicon(', 'self.$script(', '$STRING(self.resource(', '$STRING(RESOURCE(', 'self.translate(', 'language', 'self.sitemap_url(', 'self.sitemap_name(', '$STRING(CONFIG(', '$STRING(config.', '$STRING(config[', '$STRING(config('];
 const REG_NOTRANSLATE = /@\{notranslate\}/gi;
 const REG_NOCOMPRESS = /@\{nocompress\s\w+}/gi;
-const REG_TAGREMOVE = /[^>]\n\s{1,}$/;
+const REG_TAGREMOVE = /[^>](\r)\n\s{1,}$/;
 const REG_HELPERS = /helpers\.[a-z0-9A-Z_$]+\(.*?\)+/g;
 const REG_SITEMAP = /\s+(sitemap_navigation\(|sitemap\()+/g;
-const REG_CSS_1 = /\n|\s{2,}/g;
+const REG_CSS_1 = /(\r)?\n|\s{2,}/g;
 const REG_CSS_2 = /\s?\{\s{1,}/g;
 const REG_CSS_3 = /\s?\}\s{1,}/g;
 const REG_CSS_4 = /\s?:\s{1,}/g;
@@ -2895,7 +2897,7 @@ function compressHTML(html, minify, isChunk) {
 		html = html.replace(REG_6, text => text.replace(/\s+/g, ' '));
 	}
 
-	html = html.replace(/>\n\s+/g, '>').replace(/(\w|\W)\n\s+</g, function(text) {
+	html = html.replace(REG_9, '>').replace(REG_10, function(text) {
 		return text.trim().replace(/\s/g, '');
 	}).replace(REG_5, '><').replace(REG_4, function(text) {
 		var c = text[text.length - 1];

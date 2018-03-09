@@ -36,6 +36,7 @@
 - fixed: `String.isJSON()` validator
 - fixed: `String.parseDate()` now it parses date to UTC correctly
 - fixed: `Date.format()` now it formats a date as UTC correctly
+- fixed: HTML compressor with `\r\n` (Windows line endings)
 
 ======= 2.9.4 (HOTFIX)
 
