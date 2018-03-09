@@ -23,10 +23,10 @@ function prototypeDate() {
 	assert.ok('1 minute 5 seconds'.parseDateExpiration().format('mm:ss') === dt.format('mm:ss'), 'date expiration');
 
 	dt = '2010-01-01 12:05:10'.parseDate();
-	assert.ok('Fri Jan 01 2010 12:05:10 GMT+0100 (CET)' === dt.toString(), 'date parsing 1');
+	assert.ok('Fri, 01 Jan 2010 11:05:10 GMT' === dt.toUTCString(), 'date parsing 1');
 
 	dt = '2010-01-02'.parseDate();
-	assert.ok('Sat Jan 02 2010 00:00:00 GMT+0100 (CET)' === dt.toString(), 'date parsing 2');
+	assert.ok('Fri, 01 Jan 2010 23:00:00 GMT' === dt.toUTCString(), 'date parsing 2');
 
 	dt = '2100-01-01'.parseDate();
 	assert.ok(dt.compare(new Date()) === 1, 'date compare (earlier)');
@@ -40,7 +40,6 @@ function prototypeDate() {
 
 // test: number prototype
 function prototypeNumber() {
-	var format = '';
 	assert.ok((10000).format(2) === '10 000.00', 'format number with decimal parameter');
 	assert.ok((10000).format(3) === '10 000.000', 'format/decimal: A');
 	assert.ok((10000).format(3, ',', '.') === '10,000.000', 'format/decimal: B');
@@ -371,39 +370,6 @@ function prototypeArray() {
 	});
 }
 
-function t_callback1(a, cb) {
-	cb(null, a);
-}
-
-function t_callback2(a, b, cb) {
-	cb(null, a + b);
-}
-
-function t_callback3(a, b, cb) {
-	cb(new Error('TEST'), a + b);
-}
-/*
-function harmony() {
-
-	async(function *() {
-		var a = yield sync(t_callback1)(1);
-		assert.ok(a === 1, 'harmony t_callback1');
-
-		var b = yield sync(t_callback2)(1, 1);
-		assert.ok(b === 2, 'harmony t_callback2');
-
-		return a + b;
-	})(function(err, value) {
-		assert.ok(value === 3, 'harmony callback');
-	});
-
-	async(function *() {
-		var err = yield sync(t_callback3)(1, 1);
-	})(function(err, value) {
-		assert.ok(err.message === 'TEST', 'harmony t_callback3');
-	});
-}*/
-
 function other() {
 	var obj = {};
 
@@ -589,7 +555,7 @@ function other() {
 		assert(err === null, 'utils.wait()');
 	});
 
-	utils.wait(noop, function(err) {
+	utils.wait(NOOP, function(err) {
 		assert(err !== null, 'utils.wait() - timeout');
 	}, 1000);
 
