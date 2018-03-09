@@ -2369,7 +2369,7 @@ function ls(path, callback, advanced, filter) {
 		filelist.onFilter = filter || null;
 
 	filelist.walk(path);
-};
+}
 
 /**
  * Directory listing
@@ -5079,7 +5079,7 @@ FileList.prototype.stat = function(path) {
 			}
 		} else if (!self.onFilter || self.onFilter(path, false))
 			self.file.push(self.advanced ? { filename: path, stats: stats } : path);
-		
+
 		self.next();
 	});
 };
