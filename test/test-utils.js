@@ -118,7 +118,7 @@ function prototypeString() {
 	assert.ok('""'.isJSON() === true, 'string.isJSON("")');
 	assert.ok('12'.isJSON() === true, 'string.isJSON(12)');
 	assert.ok('[}'.isJSON() === false, 'string.isJSON([})');
-	assert.ok('['.isJSON() === false, 'string.isJSON([")');
+	assert.ok('['.isJSON() === false, 'string.isJSON([)');
 	assert.ok(str.isJSON() === false, 'string.isJSON()');
 	assert.ok(JSON.parse(JSON.stringify(new Date())).isJSONDate(), 'string.isJSONDate()');
 
@@ -612,14 +612,61 @@ function other() {
 
 	var a = { buf: Buffer.from('123456') };
 	assert.ok(U.clone(a).buf !== a, 'Cloning buffers');
-
 }
+
+function Utils_Ls2_StringFilter() {
+	var result;
+	var async = new Utils.Async();
+	
+	async.await('U.ls2', function(next) {
+		U.ls2(
+			'./app',
+			function(files, folders) {
+				result = {files: files, folders: folders};
+				next();
+			},
+			'app'
+		);
+	});
+	
+	async.run(function() {
+		assert.ok(result.files.length === 1, 'problem with number of files from U.ls2 string filter');
+		assert.ok(result.files[0].filename.indexOf('virtual.txt') !== -1, 'problem with files[0].filename from U.ls2 string filter');
+		assert.ok(result.files[0].stats, 'problem with files[0].stats from U.ls2');
+		assert.ok(result.folders.length === 0, 'problem with folders from U.ls2');
+	});
+}
+
+function Utils_Ls_RegExpFilter() {
+	var result;
+	var async = new Utils.Async();
+	
+	async.await('U.ls', function(next) {
+		U.ls(
+			'./app',
+			function(files, folders) {
+				result = {files: files, folders: folders};
+				next();
+			},
+			/QQQ/
+		);
+	});
+	
+	async.run(function() {
+		assert.ok(result.files.length === 0, 'problem with files from U.ls regExp filter');
+		assert.ok(result.folders.length === 0, 'problem with folders from U.ls regExp filter');
+	});
+}
+
 
 prototypeDate();
 prototypeNumber();
 prototypeString();
 prototypeArray();
 other();
+Utils_Ls_RegExpFilter();
+Utils_Ls2_StringFilter();
+
 //harmony();
 
 console.log('================================================');
