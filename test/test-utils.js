@@ -114,9 +114,9 @@ function prototypeString() {
 	assert.ok('    {}     '.isJSON() === true, 'string.isJSON({})');
 	assert.ok('"'.isJSON() === false, 'string.isJSON(")');
 	assert.ok('""'.isJSON() === true, 'string.isJSON("")');
-	assert.ok('12'.isJSON() === false, 'string.isJSON(12)');
+	assert.ok('12'.isJSON() === true, 'string.isJSON(12)');
 	assert.ok('[}'.isJSON() === false, 'string.isJSON([})');
-	assert.ok('["'.isJSON() === false, 'string.isJSON([")');
+	assert.ok('['.isJSON() === false, 'string.isJSON([")');
 	assert.ok(str.isJSON() === false, 'string.isJSON()');
 	assert.ok(JSON.parse(JSON.stringify(new Date())).isJSONDate(), 'string.isJSONDate()');
 
@@ -330,7 +330,7 @@ function prototypeArray() {
 			assert.ok(item.join(',') === '1,2,3', 'arrray.limit(0-3)');
 		else if (beg === 3 && end === 6)
 			assert.ok(item.join(',') === '4,5,6', 'arrray.limit(3-6)');
-	    next();
+		next();
 	});
 
 	var arr1 = [{ id: 1, name: 'Peter', age: 25 }, { id: 2, name: 'Lucia', age: 19 }, { id: 3, name: 'Jozef', age: 33 }, { id: 10, name: 'New', age: 39 }];
@@ -537,10 +537,6 @@ function other() {
 	utils.request('http://xxxxxxx.yyy', ['get'], null, function(err, data, code) {
 		assert.ok(err !== null, 'utils.request (error)');
 	});
-
-	var resource = function(name) {
-		return 'resource-' + name;
-	};
 
 	assert.ok(utils.getName('/aaa/bbb/ccc/dddd') === 'dddd', 'problem with getName (1)');
 	assert.ok(utils.getName('\\aaa\\bbb\\ccc\\dddd') === 'dddd', 'problem with getName (2)');
