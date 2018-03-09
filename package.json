@@ -92,6 +92,9 @@
     }, {
         "name": "Jeroen van Hilst",
         "email": "frunjik@gmail.com"
+    }, {
+        "name": "Pedro Costa",
+        "email": "pedro@pmcdigital.pt"
     }],
     "version": "3.0.0-11",
     "homepage": "http://www.totaljs.com",

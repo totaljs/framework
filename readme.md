@@ -113,6 +113,7 @@ $ npm install -g total.js
 | [Mato Holly](https://github.com/boardshepherd) | contributor | <mato.holly@gmail.com> |
 | [Tema Smirnov](https://github.com/TemaSM) | contributor | <github.tema@smirnov.one> |
 ! [Jeroen van Hilst](https://github.com/frunjik) | contributor | <frunjik@gmail.com> |
+! [Pedro Maia Costa](https://github.com/pnmcosta) | contributor | <pedro@pmcdigital.pt> |
 
 ## Useful modules
 
