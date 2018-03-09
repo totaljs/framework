@@ -2348,27 +2348,21 @@ exports.distance = function(lat1, lon1, lat2, lon2) {
 	return (R * c).floor(3);
 };
 
-/**
- * Directory listing
- * @param {String} path Path.
- * @param {Function(files, directories)} callback Callback
- * @param {Function(filename),isDirectory or String or RegExp} filter Custom filter (optional).
- */
-exports.ls = function(path, callback, filter) {
-
+function ls(path, callback, advanced, filter) {
 	var filelist = new FileList();
 	var tmp;
 
+	filelist.advanced = advanced;
 	filelist.onComplete = callback;
 
 	if (typeof(filter) === 'string') {
 		tmp = filter.toLowerCase();
-		filter.onFilter = function(filename, is, relative) {
-			return is ? true : relative.toLowerCase().indexOf(tmp);
+		filelist.onFilter = function(filename, is) {
+			return is ? true : filename.toLowerCase().indexOf(tmp) !== -1;
 		};
 	} else if (exports.isRegExp(filter)) {
 		tmp = filter;
-		filter.onFilter = function(filename, is) {
+		filelist.onFilter = function(filename, is) {
 			return is ? true : tmp.test(filename);
 		};
 	} else
@@ -2378,32 +2372,23 @@ exports.ls = function(path, callback, filter) {
 };
 
 /**
+ * Directory listing
+ * @param {String} path Path.
+ * @param {Function(files, directories)} callback Callback
+ * @param {Function(filename, isDirectory) or String or RegExp} filter Custom filter (optional).
+ */
+exports.ls = function(path, callback, filter) {
+	ls(path, callback, false, filter);
+};
+
+/**
  * Advanced Directory listing
  * @param {String} path Path.
  * @param {Function(files, directories)} callback Callback
- * @param {Function(filename),isDirectory or String or RegExp} filter Custom filter (optional).
+ * @param {Function(filename ,isDirectory) or String or RegExp} filter Custom filter (optional).
  */
 exports.ls2 = function(path, callback, filter) {
-	var filelist = new FileList();
-	var tmp;
-
-	filelist.advanced = true;
-	filelist.onComplete = callback;
-
-	if (typeof(filter) === 'string') {
-		tmp = filter.toLowerCase();
-		filter.onFilter = function(filename, is) {
-			return is ? true : filename.toLowerCase().indexOf(tmp);
-		};
-	} else if (exports.isRegExp(filter)) {
-		tmp = filter;
-		filter.onFilter = function(filename, is) {
-			return is ? true : tmp.test(filename);
-		};
-	} else
-		filelist.onFilter = filter || null;
-
-	filelist.walk(path);
+	ls(path, callback, true, filter);
 };
 
 Date.prototype.add = function(type, value) {
@@ -5094,7 +5079,7 @@ FileList.prototype.stat = function(path) {
 			}
 		} else if (!self.onFilter || self.onFilter(path, false))
 			self.file.push(self.advanced ? { filename: path, stats: stats } : path);
-
+		
 		self.next();
 	});
 };
