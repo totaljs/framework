@@ -9,7 +9,7 @@ function prototypeDate() {
 
 	var dt = new Date(1404723152167);
 	assert.ok(dt.toString() === 'Mon Jul 07 2014 10:52:32 GMT+0200 (CEST)', 'date problem');
-	assert.ok(dt.format() === '2014-07-07T10:52:32.167Z', 'date format(0) problem');
+	assert.ok(dt.format() === '2014-07-07T08:52:32.167Z', 'date format(0) problem');
 	assert.ok(dt.add('minute', 5).toString() === 'Mon Jul 07 2014 10:57:32 GMT+0200 (CEST)', 'date add');
 	assert.ok(dt.format('MMM') === 'Jul', 'month name 1');
 	assert.ok(dt.format('MMMM') === 'July', 'month name 2');

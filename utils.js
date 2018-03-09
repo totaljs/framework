@@ -2648,7 +2648,7 @@ Date.compare = function(d1, d2) {
 Date.prototype.format = function(format, resource) {
 
 	if (!format)
-		return this.getFullYear() + '-' + (this.getMonth() + 1).toString().padLeft(2, '0') + '-' + this.getDate().toString().padLeft(2, '0') + 'T' + this.getHours().toString().padLeft(2, '0') + ':' + this.getMinutes().toString().padLeft(2, '0') + ':' + this.getSeconds().toString().padLeft(2, '0') + '.' + this.getMilliseconds().toString().padLeft(3, '0') + 'Z';
+		return this.getUTCFullYear() + '-' + (this.getUTCMonth() + 1).toString().padLeft(2, '0') + '-' + this.getUTCDate().toString().padLeft(2, '0') + 'T' + this.getUTCHours().toString().padLeft(2, '0') + ':' + this.getUTCMinutes().toString().padLeft(2, '0') + ':' + this.getUTCSeconds().toString().padLeft(2, '0') + '.' + this.getUTCMilliseconds().toString().padLeft(3, '0') + 'Z';
 
 	if (datetimeformat[format])
 		return datetimeformat[format](this, resource);
