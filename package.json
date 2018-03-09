@@ -89,6 +89,9 @@
     },{
         "name": "Tema Smirnov",
         "email": "github.tema@smirnov.one"
+    }, {
+        "name": "Jeroen van Hilst",
+        "email": "frunjik@gmail.com"
     }],
     "version": "3.0.0-11",
     "homepage": "http://www.totaljs.com",

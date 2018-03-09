@@ -112,6 +112,7 @@ $ npm install -g total.js
 | [luoage](https://github.com/luoage) | contributor | <luoage@msn.cn> |
 | [Mato Holly](https://github.com/boardshepherd) | contributor | <mato.holly@gmail.com> |
 | [Tema Smirnov](https://github.com/TemaSM) | contributor | <github.tema@smirnov.one> |
+! [Jeroen van Hilst](https://github.com/frunjik) | contributor | <frunjik@gmail.com> |
 
 ## Useful modules
 
