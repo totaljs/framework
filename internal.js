@@ -43,13 +43,14 @@ Object.freeze(EMPTYARRAY);
 
 const REG_1 = /[\n\r\t]+/g;
 const REG_2 = /\s{2,}/g;
-const REG_4 = /(\r)?\n\s{2,}./g;
-const REG_5 = />(\r)?\n\s{1,}</g;
+const REG_4 = /\n\s{2,}./g;
+const REG_5 = />\n\s{1,}</g;
 const REG_6 = /[<\w"\u0080-\u07ff\u0400-\u04FF]+\s{2,}[\w\u0080-\u07ff\u0400-\u04FF>]+/;
 const REG_7 = /\\/g;
 const REG_8 = /'/g;
-const REG_9 = />(\r)?\n\s+/g;
-const REG_10 = /(\w|\W)(\r)?\n\s+</g;
+const REG_9 = />\n\s+/g;
+const REG_10 = /(\w|\W)\n\s+</g;
+const REG_WIN = /\r/g;
 const REG_BLOCK_BEG = /@\{block.*?\}/i;
 const REG_BLOCK_END = /@\{end\}/i;
 const REG_SKIP_1 = /\('|"/;
@@ -64,7 +65,7 @@ const REG_NOCOMPRESS = /@\{nocompress\s\w+}/gi;
 const REG_TAGREMOVE = /[^>](\r)\n\s{1,}$/;
 const REG_HELPERS = /helpers\.[a-z0-9A-Z_$]+\(.*?\)+/g;
 const REG_SITEMAP = /\s+(sitemap_navigation\(|sitemap\()+/g;
-const REG_CSS_1 = /(\r)?\n|\s{2,}/g;
+const REG_CSS_1 = /\n|\s{2,}/g;
 const REG_CSS_2 = /\s?\{\s{1,}/g;
 const REG_CSS_3 = /\s?\}\s{1,}/g;
 const REG_CSS_4 = /\s?:\s{1,}/g;
@@ -2826,7 +2827,7 @@ function compressHTML(html, minify, isChunk) {
 	if (!html || !minify)
 		return html;
 
-	html = removeComments(html);
+	html = removeComments(html.replace(REG_WIN, ''));
 
 	var tags = ['script', 'textarea', 'pre', 'code'];
 	var id = '[' + new Date().getTime() + ']#';

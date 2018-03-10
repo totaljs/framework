@@ -173,7 +173,7 @@ function test_routing(next) {
 		utils.request(url + 'html-nocompress/', ['get'], function(error, data, code, headers) {
 			if (error)
 				throw error;
-			assert(data.indexOf('<div>\nA\n</div>') !== -1, 'HTML nocompress');
+			assert(data.indexOf('<div>\nA\n</div>') !== -1 || data.indexOf('<div>\r\nA\r\n</div>') !== -1, 'HTML nocompress');
 			complete();
 		});
 	});
