@@ -551,7 +551,7 @@ function viewViews() {
 	assert.ok(output.contains('<INLINE>5</INLINE>'), name + 'Inline assign value');
 	assert.ok(output.contains('var d="$\'"'), name + 'JS script special chars 1');
 	assert.ok(output.contains("var e='$\\'';"), name + "JS script special chars 2");
-	assert.ok(output.contains('<script type="text/template"><textarea>\na</textarea>a</script>'), name + ' minify html');
+	assert.ok(output.contains('<script type="text/template"><textarea>\na</textarea>a</script>') || output.contains('<script type="text/template"><textarea>\r\na</textarea>a</script>'), name + ' minify html');
 	assert.ok(output.contains('#tag-encode&lt;b&gt;A&lt;/b&gt;#'), name + 'encode value');
 	assert.ok(output.contains('#tag-raw<b>A</b>#'), name + 'raw value');
 	assert.ok(output.contains('#helper-fn-A#'), name + 'helper function');
