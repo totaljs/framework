@@ -206,8 +206,19 @@ function runwatching() {
 		}
 
 		function isViewPublic(filename) {
+
+			if (!isBUNDLE)
+				return false;
+
 			var fn = filename.substring(directory.length);
-			var dir = fn.substring(0, fn.indexOf('/', 1) + 1);
+			var index = fn.indexOf('/', 1);
+			var dir = fn.substring(0, index + 1);
+
+			if (dir === F.config['directory-themes']) {
+				index = fn.indexOf('/', index + 1);
+				dir = fn.substring(index, fn.indexOf('/', index + 1) + 1);
+			}
+
 			return F.config['directory-views'] === dir || F.config['directory-public'] === dir ? fn : '';
 		}
 
@@ -231,9 +242,7 @@ function runwatching() {
 					} else {
 						var ticks = stat.mtime.getTime();
 						if (files[filename] != null && files[filename] !== ticks) {
-
 							var log = stamp.replace('#', files[filename] === 0 ? 'ADD' : 'UPD') + prefix + normalize(filename.replace(directory, ''));
-
 							if (files[filename]) {
 								var tmp = isViewPublic(filename);
 								if (tmp) {
