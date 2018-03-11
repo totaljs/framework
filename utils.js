@@ -2048,23 +2048,25 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 					// Another schema
 					exports.validate_builder(value[j], error, TYPE.raw, collection, current + name + '[' + j + ']', j, undefined, pluspath);
 				} else {
+
 					// Basic types
 					var result = TYPE.validate ? TYPE.validate(value[j], model) : prepare(name, value, current + name + '[' + j + ']', model, schema, TYPE);
-					if (result === undefined) {
+					if (result == null) {
 						result = validate_builder_default(name, value[j], TYPE);
-						if (result)
+						if (result == null || result === true)
 							continue;
-						type = typeof(result);
-						if (type === 'string') {
-							if (result[0] === '@')
-								error.push(pluspath + name, '@', current + name + '[' + j + ']', j, entity.resourcePrefix + result.substring(1));
-							else
-								error.push(pluspath + name, result, current + name + '[' + j + ']', j, prefix);
-						} else if (type === 'boolean') {
-							!result && error.push(pluspath + name, '@', current + name + '[' + j + ']', j, prefix);
-						} else if (result.isValid === false)
-							error.push(pluspath + name, result.error, current + name + '[' + j + ']', j, prefix);
 					}
+
+					type = typeof(result);
+					if (type === 'string') {
+						if (result[0] === '@')
+							error.push(pluspath + name, '@', current + name + '[' + j + ']', j, entity.resourcePrefix + result.substring(1));
+						else
+							error.push(pluspath + name, result, current + name + '[' + j + ']', j, prefix);
+					} else if (type === 'boolean') {
+						!result && error.push(pluspath + name, '@', current + name + '[' + j + ']', j, prefix);
+					} else if (result.isValid === false)
+						error.push(pluspath + name, result.error, current + name + '[' + j + ']', j, prefix);
 				}
 			}
 			continue;
@@ -2077,9 +2079,9 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 		}
 
 		var result = TYPE.validate ? TYPE.validate(value, model) : prepare(name, value, current + name, model, schema, TYPE);
-		if (result === undefined) {
+		if (result == null) {
 			result = validate_builder_default(name, value, TYPE);
-			if (result)
+			if (result == null || result === true)
 				continue;
 		}
 
