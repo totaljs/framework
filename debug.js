@@ -79,11 +79,11 @@ function runwatching() {
 	const FILENAME = U.getName(process.argv[1]);
 	const directory = process.cwd();
 	const VERSION = F.version_header;
-	const TIME = 2000;
+	const SPEED = 1500;
 	const REG_CONFIGS = /configs\//g;
 	const REG_FILES = /config-debug|config-release|config|versions|workflows|sitemap|dependencies|\.js$|\.resource$/i;
 	const REG_THEMES = /\/themes\//i;
-	const REG_COMPONENTS = /components\/.*?\.html/i;
+	const REG_COMPONENTS = /components\/.*?\.html|\.package\/.*?$/i;
 	const REG_THEMES_INDEX = /themes(\/|\\)?[a-z0-9_.-]+(\/|\\)?index\.js$/i;
 	const REG_EXTENSION = /\.(js|resource|package|bundle)$/i;
 
@@ -138,9 +138,10 @@ function runwatching() {
 		var isLoaded = false;
 		var isSkip = false;
 		var pidIncrease;
-		var speed = TIME;
+		var speed = SPEED;
 		var isBUNDLE = false;
 		var blacklist = {};
+		var counter = 0;
 
 		blacklist['/debug.pid'] = 1;
 		blacklist['/debug.js'] = 1;
@@ -159,28 +160,9 @@ function runwatching() {
 		}
 
 		function onFilter(path, isDirectory) {
-			if (isBUNDLE) {
-				if (isDirectory)
-					return SRC !== path;
-				var p = path.substring(directory.length);
-				return !blacklist[p];
-			}
+			if (isBUNDLE)
+				return isDirectory ? SRC !== path : !blacklist[path.substring(directory.length)];
 			return isDirectory && REG_THEMES.test(path) ? REG_THEMES_INDEX.test(path) : isDirectory ? true : REG_EXTENSION.test(path) || REG_COMPONENTS.test(path) || REG_CONFIGS.test(path);
-		}
-
-		function onIncrease(clear) {
-
-			if (clear) {
-				clearTimeout(pidIncrease);
-				speed = TIME;
-			}
-
-			pidIncrease = setTimeout(function() {
-				speed += TIME;
-				if (speed > 4000)
-					speed = 4000;
-				onIncrease();
-			}, 120000);
 		}
 
 		function onComplete(f) {
@@ -240,6 +222,7 @@ function runwatching() {
 							force = true;
 						}
 					} else {
+
 						var ticks = stat.mtime.getTime();
 						if (files[filename] != null && files[filename] !== ticks) {
 							var log = stamp.replace('#', files[filename] === 0 ? 'ADD' : 'UPD') + prefix + normalize(filename.replace(directory, ''));
@@ -266,13 +249,16 @@ function runwatching() {
 
 				isLoaded = true;
 				setTimeout(refresh_directory, speed);
-				onIncrease();
 
-				if (status !== 1 || !force)
+				if (status !== 1 || !force) {
+					if (counter % 150 === 0)
+						speed = 6000;
 					return;
+				}
 
-				onIncrease(true);
 				restart();
+				counter = 0;
+				speed = SPEED;
 
 				var length = changes.length;
 				for (var i = 0; i < length; i++)
@@ -284,6 +270,7 @@ function runwatching() {
 		}
 
 		function refresh_directory() {
+			counter++;
 			U.ls(directories, onComplete, onFilter);
 		}
 
