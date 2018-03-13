@@ -39,6 +39,8 @@
 - fixed: HTML compressor with `\r\n` (Windows line endings)
 - fixed: schema validation
 
+- improved: `debug` mode timing with improved consumption
+
 ======= 2.9.4 (HOTFIX)
 
 - fixed: mail attachments
