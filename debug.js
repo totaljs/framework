@@ -138,7 +138,7 @@ function runwatching() {
 		var isLoaded = false;
 		var isSkip = false;
 		var pidIncrease;
-		var speed = SPEED;
+		var speed = 4000;
 		var isBUNDLE = false;
 		var blacklist = {};
 		var counter = 0;
