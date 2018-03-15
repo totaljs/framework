@@ -248,17 +248,18 @@ function runwatching() {
 			}, function() {
 
 				isLoaded = true;
-				setTimeout(refresh_directory, speed);
 
 				if (status !== 1 || !force) {
 					if (counter % 150 === 0)
 						speed = 6000;
+					setTimeout(refresh_directory, speed);
 					return;
 				}
 
 				restart();
 				counter = 0;
 				speed = SPEED;
+				setTimeout(refresh_directory, speed);
 
 				var length = changes.length;
 				for (var i = 0; i < length; i++)
@@ -385,7 +386,7 @@ function runwatching() {
 					process.exit(0);
 				});
 
-			}, 2000);
+			}, 3000);
 		}
 
 		restart();
@@ -395,7 +396,7 @@ function runwatching() {
 	var filename = Path.join(directory, 'debug.pid');
 	if (Fs.existsSync(filename)) {
 		Fs.unlinkSync(filename);
-		setTimeout(app, 2500);
+		setTimeout(app, 3500);
 	} else
 		app();
 }
