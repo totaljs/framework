@@ -42,6 +42,7 @@ module.exports = function(opt) {
 	// options.inspector = 9229;
 	// options.debugger = 40894;
 	// options.watch = ['adminer'];
+	// options.livereload = true;
 };
 
 process.on('uncaughtException', e => e.toString().indexOf('ESRCH') == -1 && console.log(e));
@@ -79,13 +80,15 @@ function runwatching() {
 	const FILENAME = U.getName(process.argv[1]);
 	const directory = process.cwd();
 	const VERSION = F.version_header;
-	const SPEED = 1500;
 	const REG_CONFIGS = /configs\//g;
 	const REG_FILES = /config-debug|config-release|config|versions|workflows|sitemap|dependencies|\.js$|\.resource$/i;
 	const REG_THEMES = /\/themes\//i;
 	const REG_COMPONENTS = /components\/.*?\.html|\.package\/.*?$/i;
 	const REG_THEMES_INDEX = /themes(\/|\\)?[a-z0-9_.-]+(\/|\\)?index\.js$/i;
 	const REG_EXTENSION = /\.(js|resource|package|bundle)$/i;
+	const REG_RELOAD = /\.(js|css|html|htm|jpg|png|gif|ico|svg|resource)$/i;
+	const isRELOAD = !!options.livereload;
+	const SPEED = isRELOAD ? 1000 : 1500;
 
 	function copyFile(oldname, newname, callback) {
 		var writer = Fs.createWriteStream(newname);
@@ -138,10 +141,11 @@ function runwatching() {
 		var isLoaded = false;
 		var isSkip = false;
 		var pidIncrease;
-		var speed = 4000;
 		var isBUNDLE = false;
 		var blacklist = {};
 		var counter = 0;
+		var WS = null;
+		var speed = isRELOAD ? 1000 : 4000;
 
 		blacklist['/debug.pid'] = 1;
 		blacklist['/debug.js'] = 1;
@@ -149,12 +153,24 @@ function runwatching() {
 		blacklist['/package.json'] = 1;
 		blacklist['/readme.md'] = 1;
 
+		if (isRELOAD) {
+			F.console = NOOP;
+			F.websocket('/', function() {
+				var self = this;
+				self.autodestroy(function() {
+					WS = null;
+				});
+				WS = self;
+			});
+			F.http('release', { port: typeof(options.livereload) === 'number' ? options.livereload : 35729 });
+		}
+
 		try {
 			Fs.statSync(F.path.root(F.config['directory-bundles']));
 			isBUNDLE = true;
 		} catch(e) {}
 
-		if (isBUNDLE) {
+		if (isBUNDLE || isRELOAD) {
 			directories.push(U.combine(F.config['directory-public']));
 			directories.push(U.combine(F.config['directory-views']));
 		}
@@ -162,11 +178,12 @@ function runwatching() {
 		function onFilter(path, isDirectory) {
 			if (isBUNDLE)
 				return isDirectory ? SRC !== path : !blacklist[path.substring(directory.length)];
+			if (isRELOAD)
+				return isDirectory ? true : REG_RELOAD.test(path);
 			return isDirectory && REG_THEMES.test(path) ? REG_THEMES_INDEX.test(path) : isDirectory ? true : REG_EXTENSION.test(path) || REG_COMPONENTS.test(path) || REG_CONFIGS.test(path);
 		}
 
 		function onComplete(f) {
-
 			Fs.readdir(directory, function(err, arr) {
 
 				var length = arr.length;
@@ -187,9 +204,13 @@ function runwatching() {
 			});
 		}
 
+		function livereload() {
+			isRELOAD && setTimeout2('livereload', () => WS && WS.send('reload'), 500);
+		}
+
 		function isViewPublic(filename) {
 
-			if (!isBUNDLE)
+			if (!isBUNDLE && !isRELOAD)
 				return false;
 
 			var fn = filename.substring(directory.length);
@@ -205,6 +226,7 @@ function runwatching() {
 		}
 
 		function refresh() {
+			var reload = false;
 			Object.keys(files).wait(function(filename, next) {
 				Fs.stat(filename, function(err, stat) {
 
@@ -215,8 +237,11 @@ function runwatching() {
 						var tmp = isViewPublic(filename);
 						var log = stamp.replace('#', 'REM') + prefix + normalize(filename.replace(directory, ''));
 						if (tmp) {
-							Fs.unlinkSync(Path.join(SRC, tmp));
-							console.log(log);
+							if (isBUNDLE) {
+								Fs.unlinkSync(Path.join(SRC, tmp));
+								console.log(log);
+							}
+							reload = true;
 						} else {
 							changes.push(log);
 							force = true;
@@ -229,9 +254,12 @@ function runwatching() {
 							if (files[filename]) {
 								var tmp = isViewPublic(filename);
 								if (tmp) {
-									copyFile(filename, Path.join(SRC, tmp));
+									if (isBUNDLE) {
+										copyFile(filename, Path.join(SRC, tmp));
+										console.log(log);
+									}
 									files[filename] = ticks;
-									console.log(log);
+									reload = true;
 									next();
 									return;
 								}
@@ -249,9 +277,11 @@ function runwatching() {
 
 				isLoaded = true;
 
+				reload && livereload();
+
 				if (status !== 1 || !force) {
 					if (counter % 150 === 0)
-						speed = 6000;
+						speed = isRELOAD ? 3000 : 6000;
 					setTimeout(refresh_directory, speed);
 					return;
 				}
@@ -267,6 +297,7 @@ function runwatching() {
 
 				changes = [];
 				force = false;
+				livereload();
 			}, 3);
 		}
 
