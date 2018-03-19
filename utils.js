@@ -792,11 +792,11 @@ exports.$$request = function(url, flags, data, cookies, headers, encoding, timeo
 };
 
 exports.btoa = function(str) {
-	return (str instanceof Buffer) ? str.toString('base64') : exports.createBuffer(str.toString(), 'binary').toString('base64');
+	return (str instanceof Buffer) ? str.toString('base64') : exports.createBuffer(str.toString(), 'utf8').toString('base64');
 };
 
 exports.atob = function(str) {
-	return exports.createBuffer(str, 'base64').toString('binary');
+	return exports.createBuffer(str, 'base64').toString('utf8');
 };
 
 /**

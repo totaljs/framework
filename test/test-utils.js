@@ -612,12 +612,18 @@ function other() {
 
 	var a = { buf: Buffer.from('123456') };
 	assert.ok(U.clone(a).buf !== a, 'Cloning buffers');
+
+	var input = '12345čťžýáýáííéídfsfgd';
+	var a = U.btoa(input);
+	var b = U.atob(a);
+
+	assert.ok(b === input, 'U.atob() / U.btoa()');
 }
 
 function Utils_Ls2_StringFilter() {
 	var result;
 	var async = new Utils.Async();
-	
+
 	async.await('U.ls2', function(next) {
 		U.ls2(
 			'./app',
@@ -628,7 +634,7 @@ function Utils_Ls2_StringFilter() {
 			'app'
 		);
 	});
-	
+
 	async.run(function() {
 		assert.ok(result.files.length === 1, 'problem with number of files from U.ls2 string filter');
 		assert.ok(result.files[0].filename.indexOf('virtual.txt') !== -1, 'problem with files[0].filename from U.ls2 string filter');
@@ -640,7 +646,7 @@ function Utils_Ls2_StringFilter() {
 function Utils_Ls_RegExpFilter() {
 	var result;
 	var async = new Utils.Async();
-	
+
 	async.await('U.ls', function(next) {
 		U.ls(
 			'./app',
@@ -651,7 +657,7 @@ function Utils_Ls_RegExpFilter() {
 			/QQQ/
 		);
 	});
-	
+
 	async.run(function() {
 		assert.ok(result.files.length === 0, 'problem with files from U.ls regExp filter');
 		assert.ok(result.folders.length === 0, 'problem with folders from U.ls regExp filter');
