@@ -75,6 +75,7 @@ const EMPTYARRAY = [];
 const EMPTYOBJECT = {};
 const NODEVERSION = parseFloat(process.version.toString().replace('v', '').replace(/\./g, ''));
 const STREAMPIPE = { end: false };
+const CT = 'Content-Type';
 
 exports.MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 exports.DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -469,22 +470,27 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 					headers['X-Requested-With'] = 'XMLHttpRequest';
 					break;
 				case 'plain':
-					headers['Content-Type'] = 'text/plain';
+					if (!headers[CT])
+						headers[CT] = 'text/plain';
 					break;
 				case 'html':
-					headers['Content-Type'] = 'text/html';
+					if (!headers[CT])
+						headers[CT] = 'text/html';
 					break;
 				case 'raw':
 					type = 3;
-					headers['Content-Type'] = 'application/octet-stream';
+					if (!headers[CT])
+						headers[CT] = 'application/octet-stream';
 					break;
 				case 'json':
-					headers['Content-Type'] = 'application/json';
+					if (!headers[CT])
+						headers[CT] = 'application/json';
 					!method && (method = 'POST');
 					type = 1;
 					break;
 				case 'xml':
-					headers['Content-Type'] = 'text/xml';
+					if (!headers[CT])
+						headers[CT] = 'text/xml';
 					!method && (method = 'POST');
 					type = 2;
 					break;
@@ -504,7 +510,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 					options.upload = true;
 					options.files = files || EMPTYARRAY;
 					options.boundary = '----totaljs' + Math.random().toString(16).substring(2);
-					headers['Content-Type'] = 'multipart/form-data; boundary=' + options.boundary;
+					headers[CT] = 'multipart/form-data; boundary=' + options.boundary;
 					break;
 
 				case 'post':
@@ -512,7 +518,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 				case 'delete':
 				case 'patch':
 					method = flags[i].toUpperCase();
-					!headers['Content-Type'] && (headers['Content-Type'] = 'application/x-www-form-urlencoded');
+					!headers[CT] && (headers['Content-Type'] = 'application/x-www-form-urlencoded');
 					break;
 
 				case 'dnscache':

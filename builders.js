@@ -4106,6 +4106,8 @@ RESTBuilder.prototype.cookie = function(name, value) {
 };
 
 RESTBuilder.prototype.header = function(name, value) {
+	if (name === 'content-type')
+		name = 'Content-Type';
 	this.$headers[name] = value;
 	return this;
 };
