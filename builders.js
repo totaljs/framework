@@ -4106,9 +4106,12 @@ RESTBuilder.prototype.cookie = function(name, value) {
 };
 
 RESTBuilder.prototype.header = function(name, value) {
-	if (name === 'content-type')
-		name = 'Content-Type';
 	this.$headers[name] = value;
+	return this;
+};
+
+RESTBuilder.prototype.type = function(value) {
+	this.$headers['Content-Type'] = value;
 	return this;
 };
 
@@ -4118,19 +4121,15 @@ RESTBuilder.prototype.cache = function(expire) {
 };
 
 RESTBuilder.prototype.set = function(name, value) {
-
 	if (!this.$data)
 		this.$data = {};
-
 	if (typeof(name) !== 'object') {
 		this.$data[name] = value;
-		return this;
+	} else {
+		var arr = Object.keys(name);
+		for (var i = 0, length = arr.length; i < length; i++)
+			this.$data[arr[i]] = name[arr[i]];
 	}
-
-	var arr = Object.keys(name);
-	for (var i = 0, length = arr.length; i < length; i++)
-		this.$data[arr[i]] = name[arr[i]];
-
 	return this;
 };
 
