@@ -63,25 +63,17 @@ exports.measureJPG = function(buffer) {
 	var o = 0;
 
 	var jpeg = 0xff == buffer[0] && 0xd8 == buffer[1];
-	if (!jpeg)
-		return;
+	if (jpeg) {
+		o += 2;
+		while (o < len) {
+			while (0xff != buffer[o]) o++;
+			while (0xff == buffer[o]) o++;
+			if (sof[buffer[o]])
+				return { width: u16(buffer, o + 6), height: u16(buffer, o + 4) };
+			else
+				o += u16(buffer, ++o);
 
-	o += 2;
-
-	while (o < len) {
-
-		while (0xff != buffer[o]) o++;
-		while (0xff == buffer[o]) o++;
-
-		if (!sof[buffer[o]]) {
-			o += u16(buffer, ++o);
-			continue;
 		}
-
-		var w = u16(buffer, o + 6);
-		var h = u16(buffer, o + 4);
-
-		return { width: w, height: h };
 	}
 
 	return null;
