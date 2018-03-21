@@ -11311,6 +11311,14 @@ Controller.prototype.$import = function() {
 			continue;
 		}
 
+		if (filename[0] === 'l' && filename[9] === 'd' && filename.substring(0, 10) === 'livereload') {
+			if (DEBUG) {
+				var url = filename.substring(11).trim();
+				builder += '<script src="//cdn.totaljs.com/livereload.js"' + (url ? (' data-url="' + url + '"') : '') + '></script>';
+			}
+			continue;
+		}
+
 		var extension = filename.substring(filename.lastIndexOf('.'));
 		var tag = filename[0] !== '!';
 		if (!tag)

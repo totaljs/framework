@@ -28,6 +28,7 @@
 - updated: `ROUTE()` supports a new HTTP method definition `ROUTE('GET /api/users/')`, `ROUTE('POST /api/users/')`, etc.
 - updaded: `tpm` supports a new command called `bundle`, for example: `tpm bundle cms`
 - updated: `F.restore()` filter can return a new filename (for files only)
+- updated: `@{import('livereload')}` or `@{import('livereload wss://mywebsite.com')}` supports `livereload` value and it's rendered in `debug` mode only
 
 - fixed: mail attachments
 - fixed: mail `message.manually()`
