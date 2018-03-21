@@ -30,8 +30,8 @@ exports.make = function(callback) {
 	blacklist['/node_modules/'] = 1;
 	// blacklist['/debug.js'] = 1;
 	blacklist['/debug.pid'] = 1;
-	blacklist['/package.json'] = 1;
-	blacklist['/bundle.json'] = 1;
+	//blacklist['/package.json'] = 1;
+	blacklist['/package-lock.json'] = 1;
 
 	var Files = [];
 	var Dirs = [];
