@@ -27,7 +27,8 @@
 const Path = require('path');
 const Fs = require('fs');
 const debugging = process.argv.indexOf('debugging') !== -1;
-const isWindows = require('os').platform().substring(0, 3).toLowerCase() === 'win';
+const Os = require('os');
+const isWindows = Os.platform().substring(0, 3).toLowerCase() === 'win';
 
 var first = process.argv.indexOf('restart') === -1;
 var options = null;
@@ -154,15 +155,18 @@ function runwatching() {
 		blacklist['/readme.md'] = 1;
 
 		if (isRELOAD) {
-			F.console = NOOP;
-			F.websocket('/', function() {
-				var self = this;
-				self.autodestroy(function() {
-					WS = null;
+			var tmppath = Path.join(Os.tmpdir(), 'totaljslivereload');
+			Fs.mkdir(tmppath, function() {
+				F.console = NOOP;
+				F.websocket('/', function() {
+					var self = this;
+					self.autodestroy(function() {
+						WS = null;
+					});
+					WS = self;
 				});
-				WS = self;
-			});
-			F.http('release', { port: typeof(options.livereload) === 'number' ? options.livereload : 35729 });
+				F.http('release', { port: typeof(options.livereload) === 'number' ? options.livereload : 35729, directory: tmppath });
+			});;
 		}
 
 		try {
