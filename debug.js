@@ -141,7 +141,6 @@ function runwatching() {
 		var pid = '';
 		var isLoaded = false;
 		var isSkip = false;
-		var pidIncrease;
 		var isBUNDLE = false;
 		var blacklist = {};
 		var counter = 0;
@@ -166,7 +165,7 @@ function runwatching() {
 					WS = self;
 				});
 				F.http('release', { port: typeof(options.livereload) === 'number' ? options.livereload : 35729, directory: tmppath });
-			});;
+			});
 		}
 
 		try {
