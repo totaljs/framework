@@ -1677,6 +1677,7 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 	}
 
 	if (method) {
+		!flags && (flags = []);
 		flags.push(method);
 		method = '';
 	}
