@@ -265,7 +265,7 @@ Database.prototype.insert = function(doc, unique) {
 	var json = framework_builders.isSchema(doc) ? doc.$clean() : doc;
 	self.pending_append.push({ doc: JSON.stringify(json), builder: builder });
 	setImmediate(next_operation, self, 1);
-	self.emit('insert', json);
+	self.$events.insert && self.emit('insert', json);
 	return builder;
 };
 
@@ -834,7 +834,8 @@ Database.prototype.$update = function() {
 				} else
 					output = typeof(item.doc) === 'function' ? item.doc(output) : item.doc;
 
-				self.emit(item.keys ? 'modify' : 'update', output);
+				var e = item.keys ? 'modify' : 'update';
+				self.$events[e] && self.emit(e, output);
 				item.count++;
 				change = true;
 				doc = output;
@@ -954,7 +955,8 @@ Database.prototype.$update_inmemory = function() {
 					} else
 						doc = typeof(item.doc) === 'function' ? item.doc(doc) : item.doc;
 
-					self.emit(item.keys ? 'modify' : 'update', doc);
+					var e = item.keys ? 'modify' : 'update';
+					self.$events[e] && self.emit(e, doc);
 					item.count++;
 					change = true;
 				}
@@ -969,7 +971,8 @@ Database.prototype.$update_inmemory = function() {
 				item.builder.$insertcallback && item.builder.$insertcallback(item.insert);
 				self.insert(item.insert).$callback = item.builder.$callback;
 			} else {
-				item.count && self.emit(item.keys ? 'modify' : 'update', item.doc);
+				var e = item.keys ? 'modify' : 'update';
+				item.count && self.$events[e] && self.emit(e, item.doc);
 				item.builder.$log && item.builder.log();
 				item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count);
 			}
@@ -1619,7 +1622,7 @@ Database.prototype.$remove = function() {
 				item.backup && item.backup.write(value);
 				item.count++;
 			}
-			self.emit('remove', json);
+			self.$events.remove && self.emit('remove', json);
 			change = true;
 		} else
 			writer.write(value);
@@ -1712,7 +1715,7 @@ Database.prototype.$remove_inmemory = function() {
 					item.count++;
 				}
 				change = true;
-				self.emit('remove', json);
+				self.$events.remove && self.emit('remove', json);
 			} else
 				arr.push(json);
 		}
