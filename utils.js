@@ -1596,8 +1596,8 @@ exports.isRelative = function(url) {
 
 /**
  * Streamer method
- * @param {String} beg
- * @param {String} end
+ * @param {String/Buffer} beg
+ * @param {String/Buffer} end
  * @param {Function(value, index)} callback
  */
 exports.streamer = function(beg, end, callback, skip, stream) {
@@ -1622,8 +1622,10 @@ exports.streamer = function(beg, end, callback, skip, stream) {
 	if (skip === undefined)
 		skip = 0;
 
-	beg = exports.createBuffer(beg, 'utf8');
-	if (end)
+	if (!(beg instanceof Buffer))
+		beg = exports.createBuffer(beg, 'utf8');
+
+	if (end && !(end instanceof Buffer))
 		end = exports.createBuffer(end, 'utf8');
 
 	if (!end) {

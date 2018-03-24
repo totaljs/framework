@@ -65,6 +65,8 @@ const COMPARER = global.Intl ? global.Intl.Collator().compare : function(a, b) {
 	return a.removeDiacritics().localeCompare(b.removeDiacritics());
 };
 
+const NEWLINEBUF = framework_utils.createBuffer('\n', 'utf8');
+
 Object.freeze(EMPTYARRAY);
 
 function Database(name, filename) {
@@ -213,7 +215,7 @@ Database.prototype.backups = function(filter, callback) {
 	var stream = Fs.createReadStream(self.filenameBackup);
 	var output = [];
 
-	stream.on('data', U.streamer('\n', function(item, index) {
+	stream.on('data', U.streamer(NEWLINEBUF, function(item, index) {
 		var end = item.indexOf('|', item.indexOf('|') + 2);
 		var meta = item.substring(0, end);
 		var arr = meta.split('|');
@@ -805,7 +807,7 @@ Database.prototype.$update = function() {
 	var length = filter.length;
 	var change = false;
 
-	reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
+	reader.on('data', framework_utils.streamer(NEWLINEBUF, function(value, index) {
 
 		if (value[0] !== '{')
 			return;
@@ -1069,7 +1071,7 @@ Database.prototype.$reader2 = function(filename, items, callback, reader) {
 	if (first && length > 1)
 		first = false;
 
-	reader && reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
+	reader && reader.on('data', framework_utils.streamer(NEWLINEBUF, function(value, index) {
 
 		if (value[0] !== '{')
 			return;
@@ -1436,7 +1438,7 @@ Database.prototype.$views = function() {
 
 	var reader = Fs.createReadStream(self.filename);
 
-	reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
+	reader.on('data', framework_utils.streamer(NEWLINEBUF, function(value, index) {
 
 		if (value[0] !== '{')
 			return;
@@ -1591,7 +1593,7 @@ Database.prototype.$remove = function() {
 	if (F.isCluster && self.$lock())
 		return;
 
-	reader && reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
+	reader && reader.on('data', framework_utils.streamer(NEWLINEBUF, function(value, index) {
 
 		if (value[0] !== '{')
 			return;
@@ -2409,7 +2411,7 @@ Counter.prototype.convert2 = function(filename) {
 	var writer = Fs.createWriteStream(filename + '2');
 	var self = this;
 	self.type = 100;
-	reader.on('data', framework_utils.streamer(NEWLINE, function(value) {
+	reader.on('data', framework_utils.streamer(NEWLINEBUF, function(value) {
 		var arr = value.split(';');
 		var years = {};
 		for (var i = 1, length = arr.length; i < length; i++) {
@@ -2826,7 +2828,7 @@ Counter.prototype.read = function(options, callback, reader) {
 			callback(null, single ? (options.subtype ? EMPTYARRAY : 0) : (all ? EMPTYARRAY : output));
 		});
 
-		reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
+		reader.on('data', framework_utils.streamer(NEWLINEBUF, function(value, index) {
 
 			var index = value.indexOf('=');
 			var key = value.substring(7, index);
@@ -3028,7 +3030,7 @@ Counter.prototype.stats = Counter.prototype.stats_sum = function(top, year, mont
 	} else
 		opt.type = type;
 
-	reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
+	reader.on('data', framework_utils.streamer(NEWLINEBUF, function(value, index) {
 
 		var index = value.indexOf('=');
 		if (value.substring(0, 3) !== opt.type || (year && value.substring(3, 7) !== year))
@@ -3398,7 +3400,7 @@ Counter.prototype.save = function() {
 		writer.end();
 	};
 
-	reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
+	reader.on('data', framework_utils.streamer(NEWLINEBUF, function(value, index) {
 
 		var id = value.substring(0, value.indexOf('='));
 		var count = cache[id];
