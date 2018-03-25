@@ -2047,19 +2047,16 @@ DatabaseBuilder.prototype.log = function(msg, user) {
 	return self;
 };
 
-DatabaseBuilder.prototype.$callback2 = function(err, response, count) {
+DatabaseBuilder.prototype.$callback2 = function(err, response, count, repository) {
 	var self = this;
 
 	if (err || !self.$join) {
 		self.$options.log && self.log();
-
-		// BACKWARD COMPATIBILITY
-		self.$prepare && self.$prepare(response);
-		return self.$callback(err, response, count);
+		return self.$callback(err, response, count, repository);
 	}
 
 	if (self.$joincount) {
-		setImmediate(() => self.$callback2(err, response, count));
+		setImmediate(() => self.$callback2(err, response, count, repository));
 		return self;
 	}
 
@@ -2082,11 +2079,7 @@ DatabaseBuilder.prototype.$callback2 = function(err, response, count) {
 	}
 
 	self.$options.log && self.log();
-
-	// BACKWARD COMPATIBILITY
-	self.$prepare && self.$prepare(response);
-
-	self.$callback(err, response, count);
+	self.$callback(err, response, count, repository);
 	return self;
 };
 
@@ -2226,7 +2219,7 @@ DatabaseBuilder.prototype.filter = function(fn) {
 	if (!self.$functions)
 		self.$functions = [];
 	var index = self.$functions.push(fn) - 1;
-	var code = '$is=!!fn[{0}].call($F,doc);'.format(index);
+	var code = '$is=!!fn[{0}].call($F,doc,index);'.format(index);
 	if (self.$scope)
 		code = 'if(!$is){' + code + '}';
 	self.$code.push(code);
@@ -2616,14 +2609,17 @@ DatabaseBuilder.prototype.code = function(code) {
 };
 
 DatabaseBuilder.prototype.prepare = function(fn) {
-	// BACKWARD COMPATIBILITY
-	this.$prepare = function(response) {
-		if (response instanceof Array) {
-			for (var i = 0; i < response.length; i++)
-				response[i] = fn(response[i]);
-		} else
-			fn(response);
-	};
+	var self = this;
+	var opt = self.$options;
+	var key = 'pre' + (self.$counter++);
+	if (!self.$functions)
+		self.$functions = [];
+	var index = self.$functions.push(fn) - 1;
+	var code = '$tmp=fn[{0}].call($F,U.clone(doc),index);if(typeof($tmp)==\'boolean\'){$is=$tmp}else{doc=$tmp;$is=$tmp!=null}'.format(index);
+	if (self.$scope)
+		code = 'if(!$is){' + code + '}';
+	self.$code.push(code);
+	!self.$scope && self.$code.push('if(!$is)return;');
 	return this;
 };
 
