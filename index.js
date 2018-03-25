@@ -1172,11 +1172,15 @@ global.NOSQL = F.nosql = function(name) {
 
 F.stop = F.kill = function(signal) {
 
+	if (!signal)
+		signal = 'SIGTERM';
+
 	for (var m in F.workers) {
 		var worker = F.workers[m];
-		TRY(() => worker && worker.kill && worker.kill(signal || 'SIGTERM'));
+		TRY(() => worker && worker.kill && worker.kill(signal));
 	}
 
+	framework_nosql.kill(signal);
 	F.emit('exit', signal);
 
 	if (!F.isWorker && process.send)
@@ -1185,7 +1189,7 @@ F.stop = F.kill = function(signal) {
 	F.cache.stop();
 	F.server && F.server.close && F.server.close();
 
-	setTimeout(() => process.exit(signal || 'SIGTERM'), TEST ? 2000 : 100);
+	setTimeout(() => process.exit(signal), TEST ? 2000 : 100);
 	return F;
 };
 

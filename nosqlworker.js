@@ -11,6 +11,13 @@ const RESCOUNTERREAD = { TYPE: 'counter.read' };
 const RESCOUNTERSTATS = { TYPE: 'counter.stats' };
 const RESCOUNTERCLEAR = { TYPE: 'counter.clear' };
 
+function killprocess() {
+	process.exit(0);
+}
+
+process.on('disconnect', killprocess);
+process.on('close', killprocess);
+process.on('exit', killprocess);
 process.on('message', function(msg) {
 
 	if (msg.TYPE === 'init') {

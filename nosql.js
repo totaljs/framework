@@ -66,6 +66,10 @@ var FORKCALLBACKS;
 
 Object.freeze(EMPTYARRAY);
 
+exports.kill = function(signal) {
+	FORK && TRY(() => FORK && FORK.kill && FORK.kill(signal || 'SIGTERM'));
+};
+
 exports.worker = function() {
 	FORKCALLBACKS = {};
 	FORK = require('child_process').fork(module.filename.replace(/\.js$/, '') + 'worker.js', [], { cwd: F.directory });
