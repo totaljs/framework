@@ -4099,6 +4099,7 @@ Storage.prototype.insert = function(doc) {
 			Fs.appendFile(self.db.filenameStorage.format(dt), self.pending.join(NEWLINE) + NEWLINE, function() {
 				self.locked_reader = false;
 			});
+			self.pending = [];
 		}
 		return self;
 	}
