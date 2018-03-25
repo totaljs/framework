@@ -5326,6 +5326,9 @@ F.usage = function(detailed) {
 		directory: process.cwd()
 	};
 
+	if (F.config['nosql-worker'])
+		output.framework.pidnosql = framework_nosql.pid();
+
 	var keys = Object.keys(U.queuecache);
 	var pending = 0;
 	for (var i = 0, length = keys.length; i < length; i++)
@@ -6751,11 +6754,14 @@ F.custom = function(mode, http, request, response, options) {
 };
 
 F.console = function() {
+	var memory = process.memoryUsage();
 	console.log('====================================================');
 	console.log('PID         : ' + process.pid);
 	console.log('Node.js     : ' + process.version);
 	console.log('Total.js    : v' + F.version_header);
 	console.log('OS          : ' + Os.platform() + ' ' + Os.release());
+	F.config['nosql-worker'] && console.log('NoSQL PID   : ' + framework_nosql.pid());
+	console.log('Memory      : ' + memory.heapUsed.filesize(2) + ' / ' + memory.heapTotal.filesize(2));
 	console.log('====================================================');
 	console.log('Name        : ' + F.config.name);
 	console.log('Version     : ' + F.config.version);

@@ -70,6 +70,10 @@ exports.kill = function(signal) {
 	FORK && TRY(() => FORK && FORK.kill && FORK.kill(signal || 'SIGTERM'));
 };
 
+exports.pid = function() {
+	return FORK ? FORK.pid : 0;
+};
+
 exports.worker = function() {
 
 	if (FORK)
@@ -77,6 +81,7 @@ exports.worker = function() {
 
 	FORKCALLBACKS = {};
 	FORK = require('child_process').fork(module.filename.replace(/\.js$/, '') + 'worker.js', [], { cwd: F.directory });
+
 	FORK.send({ TYPE: 'init', directory: F.path.root() });
 	FORK.on('message', function(msg) {
 		switch (msg.TYPE) {
