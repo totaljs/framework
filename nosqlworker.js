@@ -10,6 +10,7 @@ const RESREMOVE = { TYPE: 'remove' };
 const RESCOUNTERREAD = { TYPE: 'counter.read' };
 const RESCOUNTERSTATS = { TYPE: 'counter.stats' };
 const RESCOUNTERCLEAR = { TYPE: 'counter.clear' };
+const RESTORAGESCAN = { TYPE: 'storage.scan' };
 
 function killprocess() {
 	process.exit(0);
@@ -56,18 +57,20 @@ process.on('message', function(msg) {
 			});
 			break;
 		case 'update':
-			db.update(msg.arg[0], msg.arg[1]).parse(msg.data).callback(function(err, response) {
+			db.update(msg.arg[0], msg.arg[1]).parse(msg.data).callback(function(err, response, repository) {
 				RESUPDATE.err = err;
 				RESUPDATE.response = response;
 				RESUPDATE.id = msg.id;
+				RESUPDATE.repository = repository;
 				process.send(RESUPDATE);
 			});
 			break;
 		case 'modify':
-			db.modify(msg.arg[0], msg.arg[1]).parse(msg.data).callback(function(err, response) {
+			db.modify(msg.arg[0], msg.arg[1]).parse(msg.data).callback(function(err, response, repository) {
 				RESUPDATE.err = err;
 				RESUPDATE.response = response;
 				RESUPDATE.id = msg.id;
+				RESUPDATE.repository = repository;
 				process.send(RESUPDATE);
 			});
 			break;
@@ -82,10 +85,9 @@ process.on('message', function(msg) {
 			});
 			break;
 		case 'remove':
-			db.remove(msg.arg ? msg.arg[0] : undefined).parse(msg.data).callback(function(err, response, count, repository) {
+			db.remove(msg.arg ? msg.arg[0] : undefined).parse(msg.data).callback(function(err, response, repository) {
 				RESREMOVE.err = err;
 				RESREMOVE.response = response;
-				RESREMOVE.count = count;
 				RESREMOVE.repository = repository;
 				RESREMOVE.id = msg.id;
 				process.send(RESREMOVE);
@@ -150,6 +152,18 @@ process.on('message', function(msg) {
 				RESCOUNTERCLEAR.id = msg.id;
 				RESCOUNTERCLEAR.err = err;
 				process.send(RESCOUNTERCLEAR);
+			});
+			break;
+		case 'storage.insert':
+			db.storage.insert(msg.arg[0]);
+			break;
+		case 'storage.scan':
+			db.storage.scan(msg.arg[0], msg.arg[1], eval('(' + msg.arg[2] + ')'), function(err, response, repository) {
+				RESTORAGESCAN.id = msg.id;
+				RESTORAGESCAN.response = response;
+				RESTORAGESCAN.repository = repository;
+				RESTORAGESCAN.err = err;
+				process.send(RESTORAGESCAN);
 			});
 			break;
 	}

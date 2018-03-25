@@ -45,6 +45,7 @@ const EXTENSION = '.nosql';
 const EXTENSION_BINARY = '.nosql-binary';
 const EXTENSION_TMP = '.nosql-tmp';
 const EXTENSION_LOG = '.nosql-log';
+const EXTENSION_STORAGE = '.nosql-storage';
 const EXTENSION_BACKUP = '.nosql-backup';
 const EXTENSION_META = '.meta';
 const EXTENSION_COUNTER = '-counter2';
@@ -95,15 +96,15 @@ exports.worker = function() {
 				break;
 			case 'insert':
 				var obj = FORKCALLBACKS[msg.id];
-				obj && obj.builder.$callback(msg.err, msg.response);
+				obj && obj.builder.$callback(msg.err, msg.response, msg.repository);
 				break;
 			case 'update':
 				var obj = FORKCALLBACKS[msg.id];
-				obj && obj.builder.$callback(msg.err, msg.response);
+				obj && obj.builder.$callback(msg.err, msg.response, msg.repository);
 				break;
 			case 'remove':
 				var obj = FORKCALLBACKS[msg.id];
-				obj && obj.builder.$callback(msg.err, msg.response);
+				obj && obj.builder.$callback(msg.err, msg.response, msg.repository);
 				break;
 			case 'backup':
 			case 'restore':
@@ -115,6 +116,10 @@ exports.worker = function() {
 			case 'counter.clear':
 				var obj = FORKCALLBACKS[msg.id];
 				obj && obj.callback(msg.err, msg.response);
+				break;
+			case 'storage.scan':
+				var obj = FORKCALLBACKS[msg.id];
+				obj && obj.callback(msg.err, msg.response, msg.repository);
 				break;
 		}
 		delete FORKCALLBACKS[msg.id];
@@ -305,6 +310,28 @@ exports.worker = function() {
 		return this;
 	};
 
+	Storage.prototype.insert = function(doc) {
+		send(this.db, 'storage.insert', doc);
+		return this;
+	};
+
+	Storage.prototype.scan = function(beg, end, mapreduce, callback) {
+
+		if (typeof(beg) === 'function') {
+			mapreduce = beg;
+			callback = end;
+			beg = null;
+			end = null;
+		} else if (typeof(end) === 'function') {
+			callback = mapreduce;
+			mapreduce = end;
+			end = null;
+		}
+
+		send(this.db, 'storage.scan', beg, end, mapreduce.toString()).callback = callback;
+		return this;
+	};
+
 };
 
 function Database(name, filename) {
@@ -316,6 +343,7 @@ function Database(name, filename) {
 	self.filenameTemp = filename + EXTENSION_TMP;
 	self.filenameLog = self.readonly ? '' : filename + EXTENSION_LOG;
 	self.filenameBackup = self.readonly ? '' : filename + EXTENSION_BACKUP;
+	self.filenameStorage = self.readonly ? '' : filename + '-{0}' + EXTENSION_STORAGE;
 	self.filenameMeta = filename + EXTENSION_META;
 	self.directory = Path.dirname(filename);
 	self.filenameBackup2 = framework_utils.join(self.directory, name + '_backup' + EXTENSION);
@@ -331,6 +359,7 @@ function Database(name, filename) {
 	self.pending_views = false;
 	self.binary = self.readonly ? null : new Binary(self, self.directory + '/' + self.name + '-binary/');
 	self.counter = new Counter(self);
+	self.storage = new Storage(self);
 	self.inmemory = {};
 	self.inmemorylastusage;
 	self.metadata;
@@ -597,6 +626,14 @@ Database.prototype.backup = function(filename, callback) {
 			e && !file && list.push(Path.join(F.config['directory-databases'], self.name + '-binary'));
 			next();
 		});
+	});
+
+	pending.push(function(next) {
+		U.ls(self.directory, function(files) {
+			for (var i = 0, length = files.length; i < length; i++)
+				list.push(Path.join(F.config['directory-databases'], files[i].substring(self.directory.length)));
+			next();
+		}, (path, is) => is ? false : path.substring(self.directory.length + 1).startsWith(self.name + '-') && path.endsWith(EXTENSION_STORAGE));
 	});
 
 	pending.async(function() {
@@ -1049,7 +1086,7 @@ Database.prototype.$update = function() {
 						self.insert(item.insert).$callback = item.builder.$callback;
 					} else {
 						item.builder.$options.log && item.builder.log();
-						item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count);
+						item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count, item.filter.repository);
 					}
 				}
 
@@ -1077,7 +1114,7 @@ Database.prototype.$update = function() {
 					self.insert(item.insert).$callback = item.builder.$callback;
 				} else {
 					item.builder.$options.log && item.builder.log();
-					item.builder.$callback && item.builder.$callback(errorhandling(err, item.builder, item.count), item.count);
+					item.builder.$callback && item.builder.$callback(errorhandling(err, item.builder, item.count), item.count, item.filter.repository);
 				}
 			}
 
@@ -1167,7 +1204,7 @@ Database.prototype.$update_inmemory = function() {
 				var e = item.keys ? 'modify' : 'update';
 				item.count && self.$events[e] && self.emit(e, item.doc);
 				item.builder.$options.log && item.builder.log();
-				item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count);
+				item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count, item.filter.repository);
 			}
 		}
 
@@ -1835,13 +1872,14 @@ Database.prototype.$remove = function() {
 
 	var finish = function() {
 
+
 		// No change
 		if (!change) {
 			Fs.unlink(self.filenameTemp, function() {
 				for (var i = 0; i < length; i++) {
 					var item = filter[i];
 					item.builder.$options.log && item.builder.log();
-					item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count);
+					item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count, item.filter.repository);
 				}
 				self.next(0);
 			});
@@ -1862,7 +1900,7 @@ Database.prototype.$remove = function() {
 			for (var i = 0; i < length; i++) {
 				var item = filter[i];
 				item.builder.$options.log && item.builder.log();
-				item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count);
+				item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count, item.filter.repository);
 			}
 
 			setImmediate(function() {
@@ -2219,7 +2257,8 @@ DatabaseBuilder.prototype.filter = function(fn) {
 	if (!self.$functions)
 		self.$functions = [];
 	var index = self.$functions.push(fn) - 1;
-	var code = '$is=!!fn[{0}].call($F,doc,index);'.format(index);
+
+	var code = '$is=!!fn[{0}].call($F,doc,index,repository);'.format(index);
 	if (self.$scope)
 		code = 'if(!$is){' + code + '}';
 	self.$code.push(code);
@@ -2615,7 +2654,7 @@ DatabaseBuilder.prototype.prepare = function(fn) {
 	if (!self.$functions)
 		self.$functions = [];
 	var index = self.$functions.push(fn) - 1;
-	var code = '$tmp=fn[{0}].call($F,U.clone(doc),index);if(typeof($tmp)==\'boolean\'){$is=$tmp}else{doc=$tmp;$is=$tmp!=null}'.format(index);
+	var code = '$tmp=fn[{0}].call($F,U.clone(doc),index,repository);if(typeof($tmp)==\'boolean\'){$is=$tmp}else{doc=$tmp;$is=$tmp!=null}'.format(index);
 	if (self.$scope)
 		code = 'if(!$is){' + code + '}';
 	self.$code.push(code);
@@ -4041,6 +4080,171 @@ Binary.prototype.all = function(callback) {
 
 	return self;
 };
+
+function Storage(db, directory) {
+	this.db = db;
+	this.pending = [];
+	this.locked_writer = 0;
+	this.locked_reader = false;
+}
+
+Storage.prototype.insert = function(doc) {
+
+	var self = this;
+
+	if (doc == null) {
+		if (self.pending.length) {
+			var dt = F.datetime.format('yyyyMMdd');
+			self.locked_reader = true;
+			Fs.appendFile(self.db.filenameStorage.format(dt), self.pending.join(NEWLINE) + NEWLINE, function() {
+				self.locked_reader = false;
+			});
+		}
+		return self;
+	}
+
+	if (self.locked_writer) {
+		self.pending.push(JSON.stringify(doc));
+		return self;
+	}
+
+	self.locked_reader = true;
+	Fs.appendFile(self.db.filenameStorage.format(F.datetime.format('yyyyMMdd')), JSON.stringify(doc) + NEWLINE, function() {
+		self.locked_reader = false;
+	});
+
+	return self;
+};
+
+Storage.prototype.scan = function(beg, end, mapreduce, callback) {
+
+	if (typeof(beg) === 'function') {
+		mapreduce = beg;
+		callback = end;
+		beg = null;
+		end = null;
+	} else if (typeof(end) === 'function') {
+		callback = mapreduce;
+		mapreduce = end;
+		end = null;
+	}
+
+	var tmp;
+
+	if (beg) {
+		tmp = beg.toString().length;
+		if (tmp === 4)
+			beg *= 10000;
+		else if (tmp === 6)
+			beg *= 100;
+	}
+
+	if (end) {
+		tmp = end.toString().length;
+		if (tmp === 4)
+			end *= 10000;
+		else if (tmp === 6)
+			end *= 100;
+	}
+
+	var self = this;
+
+	U.ls(self.db.directory, function(files) {
+
+		var storage = [];
+		var repository = {};
+		var stats = {};
+
+		for (var i = 0, length = files.length; i < length; i++) {
+			var item = files[i];
+			var skip = item.length - EXTENSION_STORAGE.length;
+			var date = +item.substring(skip - 8, skip);
+			if ((beg && beg > date) || (end && end < date))
+				continue;
+			storage.push({ filename: item, date: date });
+		}
+
+		// Desc
+		storage.quicksort('date', false);
+
+		stats.files = storage.length;
+		stats.documents = 0;
+		stats.duration = Date.now();
+		stats.processed = 0;
+		stats.canceled = false;
+
+		var today = +F.datetime.format('yyyyMMdd');
+		var process = function(item, next, index) {
+
+			if (self.locked_read) {
+				setTimeout(process, 100, item, next, index);
+				return;
+			}
+
+			var reader = Fs.createReadStream(item.filename);
+
+			stats.current = item.date;
+			stats.index = index;
+
+			reader && reader.on('data', framework_utils.streamer(NEWLINEBUF, function(value, index) {
+
+				if (value[0] !== '{')
+					return;
+
+				stats.documents++;
+
+				var json = JSON.parse(value.substring(0, value.length - 1), jsonparser);
+				var end = mapreduce(json, repository, stats) === false;
+				if (end && reader.destroy) {
+					stats.canceled = true;
+					reader.destroy();
+					return false;
+				}
+			}));
+
+			var finish = function() {
+
+				stats.processed++;
+
+				if (item.date === today) {
+					self.locked_writer--;
+					if (self.locked_writer <= 0 && self.pending.length)
+						self.insert();
+				}
+
+				setImmediate(next);
+			};
+
+			if (reader)
+				CLEANUP(reader, finish);
+			else
+				finish();
+		};
+
+		storage.wait(function(item, next, index) {
+			if (stats.canceled) {
+				setImmediate(next);
+			} else {
+
+				if (item.date === today) {
+					if (self.locked_read) {
+						setTimeout(process, 100, item, next, index);
+						return;
+					}
+				}
+
+				if (item.date === today)
+					self.locked_writer++;
+
+				process(item, next, index);
+			}
+		}, function() {
+			stats.duration = Date.now() - stats.duration;
+			callback && callback(null, repository, stats);
+		});
+
+	}, (path, is) => is ? false : path.substring(self.db.directory.length + 1).startsWith(self.db.name + '-') && path.endsWith(EXTENSION_STORAGE));
+}
 
 function Backuper(filename) {
 	this.filename = filename;

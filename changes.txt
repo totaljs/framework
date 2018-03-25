@@ -3,6 +3,7 @@
 - added: (IMPORTANT) bundles
 - added: (IMPORTANT) Total.js components can have async delegate
 - added: (IMPORTANT) NoSQL worker
+- added: (IMPORTANT) NoSQL embedded storage for smaller big data / IoT
 - added: `debugging` supports live reloading
 - added: new schema operations: `schema.setInsert()` and `schema.setUpdate()`
 - added: `RESTBuilder.patch([data])`
@@ -26,6 +27,7 @@
 - added: `U.hash('crc32')` and `U.hash('crc32unsigned')`
 - added: config `nosql-worker' for enabling worker for NoSQL embedded database (default: `false`)
 - added: config `nosql-inmemory' can contain name of databases e.g. (`users, products`) or String Array
+- added: `NOSQLSTORAGE(name)` alias for `NOSQL(name).storage`
 
 - updated: `GROUP()` by adding a new argument `url_prefix`
 - updated: `NEWSCHEMA()` supports `NEWSCHEMA('group/name')`

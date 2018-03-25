@@ -285,7 +285,8 @@ global.Mail = framework_mail;
 
 global.WTF = (message, name, uri) => F.problem(message, name, uri);
 global.NOBIN = (name) => F.nosql(name).binary;
-global.NOCOUNTER = (name) => F.nosql(name).counter;
+global.NOSQLSTORAGE = (name) => F.nosql(name).storage;
+global.NOCOUNTER = global.NOSQLCOUNTER = (name) => F.nosql(name).counter;
 global.NOMEM = global.NOSQLMEMORY = (name, view) => global.framework_nosql.inmemory(name, view);
 global.CONFIG = (name) => F.config[name];
 global.UPTODATE = (type, url, options, interval, callback) => F.uptodate(type, url, options, interval, callback);
