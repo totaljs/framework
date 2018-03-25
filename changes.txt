@@ -34,6 +34,7 @@
 - updaded: `tpm` supports a new command called `bundle`, for example: `tpm bundle cms`
 - updated: `F.restore()` filter can return a new filename (for files only)
 - updated: `@{import('livereload')}` or `@{import('livereload wss://mywebsite.com')}` supports `livereload` value and it's rendered in `debug` mode only
+- updated: information after the framework is started
 
 - fixed: mail attachments
 - fixed: mail `message.manually()`
