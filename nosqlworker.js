@@ -21,7 +21,7 @@ process.on('message', function(msg) {
 	var db = NOSQL(msg.name);
 	switch (msg.TYPE) {
 		case 'find':
-			db.find(msg.arg ? msg.arg[0] : null).parse(msg.data).callback(function(err, response, count, repository) {
+			db.find(msg.arg ? msg.arg[0] : undefined).parse(msg.data).callback(function(err, response, count, repository) {
 				RESFIND.err = err;
 				RESFIND.response = response;
 				RESFIND.count = count;
@@ -31,7 +31,7 @@ process.on('message', function(msg) {
 			});
 			break;
 		case 'one':
-			db.one(msg.arg ? msg.arg[0] : null).parse(msg.data).callback(function(err, response, count, repository) {
+			db.one(msg.arg ? msg.arg[0] : undefined).parse(msg.data).callback(function(err, response, count, repository) {
 				RESFIND.err = err;
 				RESFIND.response = response;
 				RESFIND.count = count;
@@ -65,7 +65,7 @@ process.on('message', function(msg) {
 			});
 			break;
 		case 'count':
-			db.count(msg.arg ? msg.arg[0] : null).parse(msg.data).callback(function(err, response, count, repository) {
+			db.count(msg.arg ? msg.arg[0] : undefined).parse(msg.data).callback(function(err, response, count, repository) {
 				RESCOUNT.err = err;
 				RESCOUNT.response = response;
 				RESCOUNT.count = count;
@@ -75,7 +75,7 @@ process.on('message', function(msg) {
 			});
 			break;
 		case 'remove':
-			db.remove(msg.arg ? msg.arg[0] : null).parse(msg.data).callback(function(err, response, count, repository) {
+			db.remove(msg.arg ? msg.arg[0] : undefined).parse(msg.data).callback(function(err, response, count, repository) {
 				RESREMOVE.err = err;
 				RESREMOVE.response = response;
 				RESREMOVE.count = count;
@@ -120,7 +120,7 @@ process.on('message', function(msg) {
 			db.counter.hit(msg.arg[0], msg.arg[1]);
 			break;
 		case 'counter.remove':
-			db.counter.remove(msg.arg ? msg.arg[0] : null);
+			db.counter.remove(msg.arg ? msg.arg[0] : undefined);
 			break;
 		case 'counter.read':
 			db.counter.read(msg.arg[0], function(err, response) {

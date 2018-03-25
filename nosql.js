@@ -979,10 +979,10 @@ Database.prototype.$update = function() {
 	for (var i = 0; i < length; i++) {
 		var fil = filter[i];
 		fil.compare = fil.builder.compile();
-		fil.repository = {};
+		fil.filter = { repository: fil.builder.$repository, options: fil.builder.$options, arg: fil.builder.$params, fn: fil.builder.$functions };
 	}
 
-	reader.on('data', framework_utils.streamer(NEWLINEBUF, function(value) {
+	reader.on('data', framework_utils.streamer(NEWLINEBUF, function(value, index) {
 
 		if (value[0] !== '{')
 			return;
@@ -992,7 +992,9 @@ Database.prototype.$update = function() {
 		for (var i = 0; i < length; i++) {
 			var item = filter[i];
 			var builder = item.builder;
-			var output = item.compare(doc, item, i);
+
+			item.filter.index = index;
+			var output = item.compare(doc, item.filter, i);
 
 			if (output) {
 				builder.$options.backup && builder.$backupdoc(output);
@@ -1101,7 +1103,7 @@ Database.prototype.$update_inmemory = function() {
 	for (var i = 0; i < length; i++) {
 		var fil = filter[i];
 		fil.compare = fil.builder.compile();
-		fil.repository = {};
+		fil.filter = { repository: fil.builder.$repository, options: fil.builder.$options, arg: fil.builder.$params, fn: fil.builder.$functions };
 	}
 
 	return self.$inmemory('#', function() {
@@ -1114,7 +1116,8 @@ Database.prototype.$update_inmemory = function() {
 
 				var item = filter[i];
 				var builder = item.builder;
-				var output = item.compare(doc, item, j);
+				item.filter.index = j;
+				var output = item.compare(doc, item.filter, j);
 				if (output) {
 
 					builder.$options.backup && builder.$backupdoc(doc);
@@ -1249,13 +1252,13 @@ Database.prototype.$reader2 = function(filename, items, callback, reader) {
 			first = false;
 		fil.scalarcount = 0;
 		fil.compare = fil.builder.compile();
-		fil.repository = {};
+		fil.filter = { repository: fil.builder.$repository, options: fil.builder.$options, arg: fil.builder.$params, fn: fil.builder.$functions };
 	}
 
 	if (first && length > 1)
 		first = false;
 
-	reader && reader.on('data', framework_utils.streamer(NEWLINEBUF, function(value) {
+	reader && reader.on('data', framework_utils.streamer(NEWLINEBUF, function(value, index) {
 
 		if (value[0] !== '{')
 			return;
@@ -1266,7 +1269,8 @@ Database.prototype.$reader2 = function(filename, items, callback, reader) {
 		for (var i = 0; i < length; i++) {
 			var item = filter[i];
 			var builder = item.builder;
-			var output = item.compare(json, item, i);
+			item.filter.index = index;
+			var output = item.compare(json, item.filter, index);
 			if (!output)
 				continue;
 
@@ -1463,7 +1467,7 @@ Database.prototype.$reader2_inmemory = function(name, items, callback) {
 	for (var i = 0; i < length; i++) {
 		var fil = filter[i];
 		fil.compare = fil.builder.compile();
-		fil.repository = {};
+		fil.filter = { repository: fil.builder.$repository, options: fil.builder.$options, arg: fil.builder.$params, fn: fil.builder.$functions };
 	}
 
 	return self.$inmemory(name, function() {
@@ -1476,7 +1480,8 @@ Database.prototype.$reader2_inmemory = function(name, items, callback) {
 			for (var i = 0; i < length; i++) {
 				var item = filter[i];
 				var builder = item.builder;
-				var output = item.compare(U.clone(json), item, j);
+				item.filter.index = j;
+				var output = item.compare(U.clone(json), item.filter, j);
 				if (!output)
 					continue;
 
@@ -1620,7 +1625,7 @@ Database.prototype.$views = function() {
 
 	for (var i = 0; i < length; i++) {
 		var builder = self.views[views[i]];
-		response.push({ response: [], name: views[i], compare: builder.compile(), builder: builder, count: 0, counter: 0, repository: {} });
+		response.push({ response: [], name: views[i], compare: builder.compile(), filter: { repository: builder.$repository, options: builder.$options, arg: builder.$params, fn: builder.$functions }, builder: builder, count: 0, counter: 0, repository: {} });
 	}
 
 	var reader = Fs.createReadStream(self.filename);
@@ -1634,18 +1639,16 @@ Database.prototype.$views = function() {
 
 		for (var j = 0; j < length; j++) {
 			var item = self.views[views[j]];
-			var output = item.compare(json, item, index);
-
+			var res = response[j];
+			res.filter.index = index;
+			var output = res.compare(json, res.filter, index);
 			if (!output)
 				continue;
-
-			response[j].count++;
-
-			if (!item.$sort && ((item.$skip && item.$skip >= response[j].count) || (item.$take && item.$take < response[j].counter)))
+			res.count++;
+			if (!res.filter.options.sort && ((res.filter.options.skip && res.filter.options.skip >= res.count) || (res.filter.options.take && res.filter.options.take <= res.counter)))
 				continue;
-
-			response[j].counter++;
-			!item.type && response[j].response.push(output);
+			res.counter++;
+			!item.type && res.response.push(output);
 		}
 	}));
 
@@ -1708,8 +1711,10 @@ Database.prototype.$views_inmemory = function() {
 
 	var response = [];
 
-	for (var i = 0; i < length; i++)
-		response.push({ response: [], name: views[i], builder: self.views[views[i]], count: 0, counter: 0 });
+	for (var i = 0; i < length; i++) {
+		var builder = self.views[views[i]];
+		response.push({ response: [], name: views[i], compare: builder.compile(), filter: { repository: builder.$repository, options: builder.$options, arg: builder.$params, fn: builder.$functions }, builder: builder, count: 0, counter: 0, repository: {} });
+	}
 
 	return self.$inmemory('#', function() {
 		var data = self.inmemory['#'];
@@ -1718,14 +1723,16 @@ Database.prototype.$views_inmemory = function() {
 			var json = data[j];
 			for (var i = 0; i < length; i++) {
 				var item = self.views[views[i]];
-				var output = item.compare(json, j);
+				var res = response[i];
+				res.filter.index = j;
+				var output = res.compare(json, res.filter, j);
 				if (!output)
 					continue;
-				response[i].count++;
-				if (!item.$sort && ((item.$skip && item.$skip >= response[i].count) || (item.$take && item.$take < response[i].counter)))
+				res.count++;
+				if (!item.$options.sort && ((item.$options.skip && item.$options.skip >= res.count) || (item.$options.take && item.$options.take <= res.counter)))
 					continue;
-				response[i].counter++;
-				!item.type && response[i].response.push(output);
+				res.counter++;
+				!item.type && res.response.push(output);
 			}
 		}
 
@@ -1776,8 +1783,8 @@ Database.prototype.$remove = function() {
 
 	for (var i = 0; i < length; i++) {
 		var fil = filter[i];
-		fil.repository = {};
 		fil.compare = fil.builder.compile();
+		fil.filter = { repository: fil.builder.$repository, options: fil.builder.$options, arg: fil.builder.$params, fn: fil.builder.$functions };
 	}
 
 	reader && reader.on('data', framework_utils.streamer(NEWLINEBUF, function(value, index) {
@@ -1791,7 +1798,8 @@ Database.prototype.$remove = function() {
 		for (var i = 0; i < length; i++) {
 			var item = filter[i];
 			var builder = item.builder;
-			var output = item.compare(json, item, index);
+			item.filter.index = index;
+			var output = item.compare(json, item.filter, index);
 			if (output) {
 				builder.$options.backup && builder.$backupdoc(output);
 				removed = true;
@@ -1872,8 +1880,8 @@ Database.prototype.$remove_inmemory = function() {
 
 	for (var i = 0; i < length; i++) {
 		var fil = filter[i];
-		fil.repository = {};
 		fil.compare = fil.builder.compile();
+		fil.filter = { repository: fil.builder.$repository, options: fil.builder.$options, arg: fil.builder.$params, fn: fil.builder.$functions };
 	}
 
 	return self.$inmemory('#', function() {
@@ -1887,7 +1895,8 @@ Database.prototype.$remove_inmemory = function() {
 
 			for (var i = 0; i < length; i++) {
 				var item = filter[i];
-				if (item.compare(json, item, j)) {
+				item.filter.index = j;
+				if (item.compare(json, item.filter, j)) {
 					removed = true;
 					break;
 				}
@@ -1999,6 +2008,7 @@ function DatabaseBuilder(db) {
 	this.$code = [];
 	this.$params = {};
 	this.$options = {};
+	this.$repository = {};
 	this.$counter = 0;
 }
 
@@ -2196,9 +2206,19 @@ DatabaseBuilder.prototype.make = function(fn) {
 	return this;
 };
 
-DatabaseBuilder.prototype.filter = function() {
-	OBSOLETE('DatabaseBuilder.filter()', 'You need to rewrite this code with help of DatabaseBuidler.code() alternative.');
-	return this;
+DatabaseBuilder.prototype.filter = function(fn) {
+	var self = this;
+	var opt = self.$options;
+	var key = 'fil' + (self.$counter++);
+	if (!self.$functions)
+		self.$functions = [];
+	var index = self.$functions.push(fn) - 1;
+	var code = '$is=!!fn[{0}].call($F,doc);'.format(index);
+	if (self.$scope)
+		code = 'if(!$is){' + code + '}';
+	self.$code.push(code);
+	!self.$scope && self.$code.push('if(!$is)return;');
+	return self;
 };
 
 DatabaseBuilder.prototype.scalar = function(type, name) {
@@ -2371,6 +2391,15 @@ DatabaseBuilder2.prototype.stringify = DatabaseBuilder.prototype.stringify = fun
 	obj.options = this.$options;
 	obj.code = this.$code;
 	obj.params = this.$params;
+	if (this.$functions) {
+		obj.functions = [];
+		for (var i = 0; i < this.$functions.length; i++)
+			obj.functions.push(this.$functions[i].toString());
+	}
+
+	if (this.$repository)
+		obj.repository = this.$repository;
+
 	return JSON.stringify(obj);
 };
 
@@ -2381,6 +2410,14 @@ DatabaseBuilder2.prototype.parse = DatabaseBuilder.prototype.parse = function(da
 	this.$params = data.params;
 	this.$take = data.options.take;
 	this.$skip = data.options.skip;
+	this.$repository = data.repository;
+
+	if (data.functions) {
+		for (var i = 0; i < data.functions.length; i++)
+			data.functions[i] = eval('(' + data.functions[i] + ')');
+		this.$functions = data.functions;
+	}
+
 	return this;
 };
 
@@ -2447,13 +2484,23 @@ DatabaseBuilder.prototype.sort = function(name, desc) {
 	return this;
 };
 
+DatabaseBuilder.prototype.repository = function(key, value) {
+	if (key === undefined)
+		return this.$repository;
+	if (value === undefined)
+		return this.$repository[key];
+	this.$repository[key] = value;
+	return this;
+};
+
 DatabaseBuilder.prototype.compile = function() {
 	var self = this;
-	var code = 'var repository=$F.repository;var options=$F.builder.$options;var arg=$F.builder.$params;var $is=false;var $tmp;' + self.$code.join('') + (self.$code.length ? 'if(!$is)return;' : '') + 'if(!options.fields)return doc;var $doc={};for(var $i=0;$i<options.fields.length;$i++){var prop=options.fields[$i];$doc[prop]=doc[prop];}return $doc;';
+	var raw = self.$code.join('');
+	var code = 'var repository=$F.repository;var options=$F.options;var arg=$F.arg;var fn=$F.fn;var $is=false;var $tmp;' + raw + (self.$code.length && raw.substring(raw.length - 7) !== 'return;' ? 'if(!$is)return;' : '') + 'if(!options.fields)return doc;var $doc={};for(var $i=0;$i<options.fields.length;$i++){var prop=options.fields[$i];$doc[prop]=doc[prop];}return $doc;';
 	var opt = self.$options;
 	self.$inlinesort = !!(opt.take && opt.sort && opt.sort !== null);
 	self.$limit = (opt.take || 0) + (opt.skip || 0);
-	var key = opt.id || code.hash();
+	var key = opt.id ? self.db.name + '_' + opt.id : code.hash();
 	return CACHE[key] ? CACHE[key] : (CACHE[key] = new Function('doc', '$F', 'index', code));
 };
 
