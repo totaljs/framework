@@ -2551,16 +2551,19 @@ DatabaseBuilder.prototype.between = function(name, a, b) {
 };
 
 DatabaseBuilder.prototype.or = function() {
+	this.$code.push('$is=false;');
 	this.$scope = 1;
 	return this;
 };
 
 DatabaseBuilder.prototype.end = function() {
 	this.$scope = 0;
+	this.$code.push('if(!$is)return;');
 	return this;
 };
 
 DatabaseBuilder.prototype.and = function() {
+	this.$code.push('$is=false;');
 	this.$scope = 0;
 	return this;
 };
