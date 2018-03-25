@@ -2,6 +2,7 @@
 
 - added: (IMPORTANT) bundles
 - added: (IMPORTANT) Total.js components can have async delegate
+- added: (IMPORTANT) NoSQL worker
 - added: `debugging` supports live reloading
 - added: new schema operations: `schema.setInsert()` and `schema.setUpdate()`
 - added: `RESTBuilder.patch([data])`
@@ -47,6 +48,7 @@
 - fixed: `U.btoa()`
 
 - improved: `debug` mode timing with improved consumption
+- improved: NoSQL embedded database
 
 ======= 2.9.4 (HOTFIX)
 

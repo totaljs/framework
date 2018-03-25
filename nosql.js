@@ -53,12 +53,6 @@ const NEWLINE = '\n';
 const EMPTYARRAY = [];
 const REG_CLEAN = /^[\s]+|[\s]+$/g;
 const INMEMORY = {};
-const CLUSTER_TIMEOUT = 150;
-const CLUSTER_LOCK = { TYPE: 'nosql-lock' };
-const CLUSTER_UNLOCK = { TYPE: 'nosql-unlock' };
-const CLUSTER_META = { TYPE: 'nosql-meta' };
-const CLUSTER_LOCK_COUNTER = { TYPE: 'nosql-counter-lock' };
-const CLUSTER_UNLOCK_COUNTER = { TYPE: 'nosql-counter-unlock' };
 const FLAGS_READ = ['get'];
 const COUNTER_MMA = [0, 0];
 const COMPARER = global.Intl ? global.Intl.Collator().compare : function(a, b) {
@@ -66,8 +60,239 @@ const COMPARER = global.Intl ? global.Intl.Collator().compare : function(a, b) {
 };
 
 const NEWLINEBUF = framework_utils.createBuffer('\n', 'utf8');
+const CACHE = {};
+var FORK;
+var FORKCALLBACKS;
 
 Object.freeze(EMPTYARRAY);
+
+exports.worker = function() {
+	FORKCALLBACKS = {};
+	FORK = require('child_process').fork(module.filename.replace(/\.js$/, '') + 'worker.js', [], { cwd: F.directory });
+	FORK.send({ TYPE: 'init', directory: F.path.root() });
+	FORK.on('message', function(msg) {
+		switch (msg.TYPE) {
+			case 'find':
+				var obj = FORKCALLBACKS[msg.id];
+				obj && obj.builder.$callback2(msg.err, msg.response, msg.count, msg.repository);
+				break;
+			case 'count':
+				var obj = FORKCALLBACKS[msg.id];
+				obj && obj.builder.$callback2(msg.err, msg.response, msg.count, msg.repository);
+				break;
+			case 'insert':
+				var obj = FORKCALLBACKS[msg.id];
+				obj && obj.builder.$callback(msg.err, msg.response);
+				break;
+			case 'update':
+				var obj = FORKCALLBACKS[msg.id];
+				obj && obj.builder.$callback(msg.err, msg.response);
+				break;
+			case 'remove':
+				var obj = FORKCALLBACKS[msg.id];
+				obj && obj.builder.$callback(msg.err, msg.response);
+				break;
+			case 'backup':
+			case 'restore':
+				var obj = FORKCALLBACKS[msg.id];
+				obj && obj.callback(msg.err, msg.response);
+				break;
+			case 'counter.read':
+			case 'counter.stats':
+			case 'counter.clear':
+				var obj = FORKCALLBACKS[msg.id];
+				obj && obj.callback(msg.err, msg.response);
+				break;
+		}
+		delete FORKCALLBACKS[msg.id];
+	});
+
+	var CMD = {};
+
+	function send(instance, type) {
+		var obj = {};
+		obj.type = type;
+		obj.name = instance.name;
+		obj.time = Date.now();
+		if (arguments.length > 2) {
+			obj.arg = [];
+			for (var i = 2; i < arguments.length; i++)
+				obj.arg.push(arguments[i]);
+		}
+		setImmediate(send2, obj);
+		return obj;
+	}
+
+	function notify(instance, type) {
+		var obj = {};
+		obj.type = type;
+		obj.name = instance.name;
+		obj.time = Date.now();
+		if (arguments.length > 2) {
+			obj.arg = [];
+			for (var i = 2; i < arguments.length; i++)
+				obj.arg.push(arguments[i]);
+		}
+		setImmediate(send2, obj, false);
+		return obj;
+	}
+
+	function send2(obj, callback) {
+		CMD.TYPE = obj.type;
+		CMD.arg = obj.arg;
+		CMD.data = obj.builder ? obj.builder.stringify() : null;
+		CMD.name = obj.name;
+		if (callback !== false) {
+			CMD.id = Math.random().toString(32).substring(2);
+			FORKCALLBACKS[CMD.id] = obj;
+		}
+		FORK.send(CMD);
+	}
+
+	var DP = Database.prototype;
+	var CP = Counter.prototype;
+
+	DP.once = DP.on = DP.emit = DP.removeListener = DP.removeAllListeners = CP.on = CP.once = CP.emit = CP.removeListener = CP.removeAllListeners = function() {
+		console.log('ERROR --> NoSQL events are not supported in fork mode.');
+	};
+
+	Database.prototype.find = function(view) {
+		return send(this, 'find', view).builder = new DatabaseBuilder(this);
+	};
+
+	Database.prototype.top = function(max, view) {
+		var builder = new DatabaseBuilder(this);
+		builder.take(max);
+		return send(this, 'find', view).builder = builder;
+	};
+
+	Database.prototype.one = function(view) {
+		var builder = new DatabaseBuilder(this);
+		builder.first();
+		return send(this, 'one', view).builder = builder;
+	};
+
+	Database.prototype.insert = function(doc, unique) {
+
+		var self = this;
+		var builder;
+
+		if (unique) {
+			builder = self.one();
+
+			var callback;
+
+			builder.callback(function(err, d) {
+				if (d)
+					callback && callback(null, 0);
+				else
+					self.insert(doc).callback(callback);
+			});
+
+			builder.callback = function(fn) {
+				callback = fn;
+				return builder;
+			};
+
+			return builder;
+		}
+
+		return send(self, 'insert', framework_builders.isSchema(doc) ? doc.$clean() : doc).builder = new DatabaseBuilder2(self);
+	};
+
+	Database.prototype.count = function(view) {
+		var builder = new DatabaseBuilder(this);
+		return send(this, 'count', view).builder = builder;
+	};
+
+	Database.prototype.view = function(name) {
+		var builder = new DatabaseBuilder(this);
+		builder.id('$view_' + name);
+		return send(this, 'view', name).builder = builder;
+	};
+
+	Database.prototype.update = function(doc, insert) {
+		return send(this, 'update', framework_builders.isSchema(doc) ? doc.$clean() : doc, insert).builder = new DatabaseBuilder(this);
+	};
+
+	Database.prototype.modify = function(doc, insert) {
+		return send(this, 'modify', framework_builders.isSchema(doc) ? doc.$clean() : doc, insert).builder = new DatabaseBuilder(this);
+	};
+
+	Database.prototype.restore = function(filename, callback) {
+		var obj = send(this, 'restore', filename);
+		obj.callback = callback;
+		return this;
+	};
+
+	Database.prototype.backup = function(filename, callback) {
+		var obj = send(this, 'backup', filename);
+		obj.callback = callback;
+		return this;
+	};
+
+	Database.prototype.refresh = function() {
+		notify(this, 'refresh');
+		return this;
+	};
+
+	Database.prototype.drop = function() {
+		notify(this, 'drop');
+		return this;
+	};
+
+	Database.prototype.clear = Database.prototype.remove = function(filename) {
+		return send(this, 'remove', filename).builder = new DatabaseBuilder(this);
+	};
+
+	Counter.prototype.min = function(id, count) {
+		notify(this.db, 'counter.min', id, count);
+		return this;
+	};
+
+	Counter.prototype.max = function(id, count) {
+		notify(this.db, 'counter.max', id, count);
+		return this;
+	};
+
+	Counter.prototype.inc = Counter.prototype.hit = function(id, count) {
+		notify(this.db, 'counter.hit', id, count);
+		return this;
+	};
+
+	Counter.prototype.remove = function(id) {
+		notify(this.db, 'counter.remove', id);
+		return this;
+	};
+
+	Counter.prototype.read = function(options, callback) {
+		send(this.db, 'counter.read', options).callback = callback;
+		return this;
+	};
+
+	Counter.prototype.stats = Counter.prototype.stats_sum = function(top, year, month, day, type, callback) {
+
+		if (typeof(day) == 'function') {
+			callback = day;
+			day = null;
+		} else if (typeof(month) == 'function') {
+			callback = month;
+			month = null;
+		} else if (typeof(year) === 'function') {
+			callback = year;
+			year = month = null;
+		}
+
+		send(this.db, 'counter.stats', top, year, month, day, type).callback = callback;
+		return this;
+	};
+
+	Counter.prototype.clear = function(callback) {
+		send(this.db, 'counter.clear').callback = callback;
+		return this;
+	};
+
+};
 
 function Database(name, filename) {
 	var self = this;
@@ -100,7 +325,6 @@ function Database(name, filename) {
 	self.$timeoutmeta;
 	self.$events = {};
 	self.$free = true;
-	self.locked = false;
 	self.renaming = false;
 }
 
@@ -170,11 +394,6 @@ exports.DatabaseCounter = Counter;
 exports.DatabaseBinary = Binary;
 
 exports.load = function(name, filename) {
-	CLUSTER_LOCK.id = F.id;
-	CLUSTER_UNLOCK.id = F.id;
-	CLUSTER_META.id = F.id;
-	CLUSTER_LOCK_COUNTER.id = F.id;
-	CLUSTER_UNLOCK_COUNTER.id = F.id;
 	return new Database(name, filename);
 };
 
@@ -230,8 +449,7 @@ Database.prototype.backups = function(filter, callback) {
 	return self;
 };
 
-function next_operation(self, type, builder) {
-	builder && builder.$sortinline();
+function next_operation(self, type) {
 	self.next(type);
 }
 
@@ -307,11 +525,13 @@ Database.prototype.restore = function(filename, callback) {
 			throw new Error('Database can\'t be restored because it\'s busy.');
 
 		self.type = 9;
+
 		F.restore(filename, F.path.root(), function(err, response) {
 			self.type = 0;
 			!err && self.refresh();
 			callback && callback(err, response);
 		});
+
 	});
 	return self;
 };
@@ -367,7 +587,6 @@ Database.prototype.backup = function(filename, callback) {
 	});
 
 	pending.async(function() {
-
 		if (list.length)
 			F.backup(filename, list, callback);
 		else
@@ -397,13 +616,13 @@ Database.prototype.backup2 = function(filename, remove) {
 	stream.pipe(Fs.createWriteStream(filename || self.filenameBackup2));
 
 	stream.on('error', function(err) {
-		builder.$log && builder.$log();
+		builder.$options.log && builder.log();
 		builder.$callback && builder.$callback(errorhandling(err, builder));
 		builder.$callback = null;
 	});
 
 	stream.on('end', function() {
-		builder.$log && builder.$log();
+		builder.$options.log && builder.log();
 		builder.$callback && builder.$callback(errorhandling(null, builder, true), true);
 		builder.$callback = null;
 	});
@@ -457,10 +676,10 @@ Database.prototype.find = function(view) {
 
 	if (view) {
 		self.pending_reader_view.push({ builder: builder, count: 0, counter: 0, view: view });
-		setImmediate(next_operation, self, 6, builder);
+		setImmediate(next_operation, self, 6);
 	} else {
 		self.pending_reader.push({ builder: builder, count: 0, counter: 0 });
-		setImmediate(next_operation, self, 4, builder);
+		setImmediate(next_operation, self, 4);
 	}
 
 	return builder;
@@ -496,10 +715,10 @@ Database.prototype.one = function(view) {
 
 	if (view) {
 		self.pending_reader_view.push({ builder: builder, count: 0, view: view });
-		setImmediate(next_operation, self, 6, builder);
+		setImmediate(next_operation, self, 6);
 	} else {
 		self.pending_reader.push({ builder: builder, count: 0 });
-		setImmediate(next_operation, self, 4, builder);
+		setImmediate(next_operation, self, 4);
 	}
 
 	return builder;
@@ -512,10 +731,10 @@ Database.prototype.top = function(max, view) {
 
 	if (view) {
 		self.pending_reader_view.push({ builder: builder, count: 0, counter: 0, view: view });
-		setImmediate(next_operation, self, 6, builder);
+		setImmediate(next_operation, self, 6);
 	} else {
 		self.pending_reader.push({ builder: builder, count: 0, counter: 0 });
-		setImmediate(next_operation, self, 4, builder);
+		setImmediate(next_operation, self, 4);
 	}
 
 	return builder;
@@ -526,24 +745,14 @@ Database.prototype.view = function(name) {
 	this.views[name] = {};
 	this.views[name] = builder;
 	this.views[name].$filename = this.filename.replace(/\.nosql/, '#' + name + '.nosql');
+	builder.id('$view_' + name);
 	return builder;
-};
-
-Database.prototype.lock = function() {
-	this.locked = true;
-	return this;
-};
-
-Database.prototype.unlock = function() {
-	this.locked = false;
-	next_operation(this, 0);
-	return this;
 };
 
 Database.prototype.next = function(type) {
 
 	// 9: renaming file (by updating/removing)
-	if (this.locked || (type && this.step === 9))
+	if (type && this.step === 9)
 		return;
 
 	if (this.renaming) {
@@ -610,36 +819,8 @@ Database.prototype.refresh = function() {
 	if (this.views) {
 		this.pending_views = true;
 		setImmediate(next_operation, this, 5);
-	} else if (F.cluster)
-		this.$unlock();
+	}
 	return this;
-};
-
-Database.prototype.$lock = function() {
-	if (this.lockwait === 2)
-		return false;
-	CLUSTER_LOCK.name = this.name;
-	process.send(CLUSTER_LOCK);
-	if (this.lockwait === 1)
-		return true;
-	if (this.lockwait === 2)
-		return false;
-	this.lockwait = 1;
-	setTimeout(locker_timeout, CLUSTER_TIMEOUT, this);
-	return true;
-};
-
-function locker_timeout(self) {
-	self.lockwait = 2;
-	self.next(0);
-}
-
-Database.prototype.$unlock = function() {
-	if (!this.lockwait)
-		return;
-	this.lockwait = 0;
-	CLUSTER_UNLOCK.name = this.name;
-	process.send(CLUSTER_UNLOCK);
 };
 
 // ======================================================================
@@ -707,12 +888,7 @@ Database.prototype.$meta = function(write) {
 
 	if (write) {
 		self.readonly && self.throwReadonly();
-		Fs.writeFile(self.filenameMeta, JSON.stringify(self.metadata), function() {
-			if (F.isCluster) {
-				CLUSTER_META.name = self.name;
-				process.send(CLUSTER_META);
-			}
-		});
+		Fs.writeFile(self.filenameMeta, JSON.stringify(self.metadata), NOOP);
 		return self;
 	}
 
@@ -730,13 +906,10 @@ Database.prototype.$append = function() {
 	var self = this;
 	self.step = 1;
 
-	if (self.locked || !self.pending_append.length) {
+	if (!self.pending_append.length) {
 		self.next(0);
 		return;
 	}
-
-	if (F.isCluster && self.$lock())
-		return;
 
 	self.pending_append.splice(0).limit(20, function(items, next) {
 		var json = [];
@@ -746,7 +919,7 @@ Database.prototype.$append = function() {
 
 		Fs.appendFile(self.filename, json.join(NEWLINE) + NEWLINE, function(err) {
 			for (var i = 0, length = items.length; i < length; i++) {
-				items[i].builder.$log && items[i].builder.log();
+				items[i].builder.$options.log && items[i].builder.log();
 				var callback = items[i].builder.$callback;
 				callback && callback(err, 1);
 			}
@@ -758,7 +931,6 @@ Database.prototype.$append = function() {
 
 function next_append(self) {
 	self.next(0);
-	// $unlock() is in refresh()
 	setImmediate(views_refresh, self);
 }
 
@@ -766,7 +938,7 @@ Database.prototype.$append_inmemory = function() {
 	var self = this;
 	self.step = 1;
 
-	if (self.locked || !self.pending_append.length) {
+	if (!self.pending_append.length) {
 		self.next(0);
 		return self;
 	}
@@ -777,7 +949,7 @@ Database.prototype.$append_inmemory = function() {
 
 		for (var i = 0, length = items.length; i < length; i++) {
 			self.inmemory['#'].push(JSON.parse(items[i].doc, jsonparser));
-			items[i].builder.$log && items[i].builder.log();
+			items[i].builder.$options.log && items[i].builder.log();
 			var callback = items[i].builder.$callback;
 			callback && callback(null, 1);
 		}
@@ -792,13 +964,10 @@ Database.prototype.$update = function() {
 	var self = this;
 	self.step = 2;
 
-	if (self.locked || !self.pending_update.length) {
+	if (!self.pending_update.length) {
 		self.next(0);
 		return self;
 	}
-
-	if (F.isCluster && self.$lock())
-		return;
 
 	var reader = Fs.createReadStream(self.filename);
 	var writer = Fs.createWriteStream(self.filenameTemp);
@@ -807,7 +976,13 @@ Database.prototype.$update = function() {
 	var length = filter.length;
 	var change = false;
 
-	reader.on('data', framework_utils.streamer(NEWLINEBUF, function(value, index) {
+	for (var i = 0; i < length; i++) {
+		var fil = filter[i];
+		fil.compare = fil.builder.compile();
+		fil.repository = {};
+	}
+
+	reader.on('data', framework_utils.streamer(NEWLINEBUF, function(value) {
 
 		if (value[0] !== '{')
 			return;
@@ -817,10 +992,10 @@ Database.prototype.$update = function() {
 		for (var i = 0; i < length; i++) {
 			var item = filter[i];
 			var builder = item.builder;
-			var output = builder.compare(doc, index, true);
+			var output = item.compare(doc, item, i);
 
 			if (output) {
-				builder.$backup && builder.$backupdoc(output);
+				builder.$options.backup && builder.$backupdoc(output);
 				if (item.keys) {
 					for (var j = 0, jl = item.keys.length; j < jl; j++) {
 						var val = item.doc[item.keys[j]];
@@ -829,7 +1004,8 @@ Database.prototype.$update = function() {
 								output[item.keys[j]] = val(output[item.keys[j]], output);
 							else
 								output[item.keys[j]] = val;
-						}
+						} else
+							output[item.keys[j]] = undefined;
 					}
 				} else
 					output = typeof(item.doc) === 'function' ? item.doc(output) : item.doc;
@@ -857,13 +1033,12 @@ Database.prototype.$update = function() {
 						item.builder.$insertcallback && item.builder.$insertcallback(item.insert);
 						self.insert(item.insert).$callback = item.builder.$callback;
 					} else {
-						item.builder.$log && item.builder.log();
+						item.builder.$options.log && item.builder.log();
 						item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count);
 					}
 				}
 
 				self.next(0);
-				F.cluster && self.$unlock();
 			});
 			return;
 		}
@@ -886,7 +1061,7 @@ Database.prototype.$update = function() {
 					item.builder.$insertcallback && item.builder.$insertcallback(item.insert);
 					self.insert(item.insert).$callback = item.builder.$callback;
 				} else {
-					item.builder.$log && item.builder.log();
+					item.builder.$options.log && item.builder.log();
 					item.builder.$callback && item.builder.$callback(errorhandling(err, item.builder, item.count), item.count);
 				}
 			}
@@ -894,10 +1069,7 @@ Database.prototype.$update = function() {
 			setImmediate(function() {
 				self.renaming = false;
 				self.next(0);
-				if (change)
-					setImmediate(views_refresh, self);
-				else if (F.isCluster)
-					self.$unlock();
+				change && setImmediate(views_refresh, self);
 			});
 		});
 	};
@@ -917,7 +1089,7 @@ Database.prototype.$update_inmemory = function() {
 	var self = this;
 	self.step = 2;
 
-	if (self.locked || !self.pending_update.length) {
+	if (!self.pending_update.length) {
 		self.next(0);
 		return self;
 	}
@@ -925,6 +1097,12 @@ Database.prototype.$update_inmemory = function() {
 	var filter = self.pending_update.splice(0);
 	var length = filter.length;
 	var change = false;
+
+	for (var i = 0; i < length; i++) {
+		var fil = filter[i];
+		fil.compare = fil.builder.compile();
+		fil.repository = {};
+	}
 
 	return self.$inmemory('#', function() {
 
@@ -936,11 +1114,10 @@ Database.prototype.$update_inmemory = function() {
 
 				var item = filter[i];
 				var builder = item.builder;
-				var output = builder.compare(doc, j);
-
+				var output = item.compare(doc, item, j);
 				if (output) {
 
-					builder.$backup && builder.$backupdoc(doc);
+					builder.$options.backup && builder.$backupdoc(doc);
 
 					if (item.keys) {
 						for (var j = 0, jl = item.keys.length; j < jl; j++) {
@@ -973,7 +1150,7 @@ Database.prototype.$update_inmemory = function() {
 			} else {
 				var e = item.keys ? 'modify' : 'update';
 				item.count && self.$events[e] && self.emit(e, item.doc);
-				item.builder.$log && item.builder.log();
+				item.builder.$options.log && item.builder.log();
 				item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count);
 			}
 		}
@@ -990,7 +1167,7 @@ Database.prototype.$reader = function() {
 	var self = this;
 	self.step = 4;
 
-	if (self.locked || !self.pending_reader.length) {
+	if (!self.pending_reader.length) {
 		self.next(0);
 		return self;
 	}
@@ -1009,7 +1186,7 @@ Database.prototype.$readerview = function() {
 	var self = this;
 	self.step = 6;
 
-	if (self.locked || !self.pending_reader_view.length) {
+	if (!self.pending_reader_view.length) {
 		self.next(0);
 		return self;
 	}
@@ -1061,20 +1238,24 @@ Database.prototype.$reader2 = function(filename, items, callback, reader) {
 	} else
 		reader = Fs.createReadStream(filename);
 
+
 	var filter = items;
 	var length = filter.length;
 	var first = true;
 
 	for (var i = 0; i < length; i++) {
-		if (!filter[i].builder.$first)
+		var fil = filter[i];
+		if (!fil.builder.$options.first)
 			first = false;
-		filter[i].scalarcount = 0;
+		fil.scalarcount = 0;
+		fil.compare = fil.builder.compile();
+		fil.repository = {};
 	}
 
 	if (first && length > 1)
 		first = false;
 
-	reader && reader.on('data', framework_utils.streamer(NEWLINEBUF, function(value, index) {
+	reader && reader.on('data', framework_utils.streamer(NEWLINEBUF, function(value) {
 
 		if (value[0] !== '{')
 			return;
@@ -1085,13 +1266,13 @@ Database.prototype.$reader2 = function(filename, items, callback, reader) {
 		for (var i = 0; i < length; i++) {
 			var item = filter[i];
 			var builder = item.builder;
-			var output = builder.compare(json, index);
+			var output = item.compare(json, item, i);
 			if (!output)
 				continue;
 
 			item.count++;
 
-			if (!builder.$inlinesort && ((builder.$skip && builder.$skip >= item.count) || (builder.$take && builder.$take <= item.counter)))
+			if (!builder.$inlinesort && ((builder.$options.skip && builder.$options.skip >= item.count) || (builder.$options.take && builder.$options.take <= item.counter)))
 				continue;
 
 			item.counter++;
@@ -1099,16 +1280,16 @@ Database.prototype.$reader2 = function(filename, items, callback, reader) {
 			if (item.type)
 				continue;
 
-			switch (builder.$scalar) {
+			switch (builder.$options.scalar) {
 				case 'count':
 					item.scalar = item.scalar ? item.scalar + 1 : 1;
 					break;
 				case 'sum':
-					val = output[builder.$scalarfield] || 0;
+					val = output[builder.$options.scalarfield] || 0;
 					item.scalar = item.scalar ? item.scalar + val : val;
 					break;
 				case 'min':
-					val = output[builder.$scalarfield] || 0;
+					val = output[builder.$options.scalarfield] || 0;
 					if (val != null) {
 						if (item.scalar) {
 							if (item.scalar > val)
@@ -1118,7 +1299,7 @@ Database.prototype.$reader2 = function(filename, items, callback, reader) {
 					}
 					break;
 				case 'max':
-					val = output[builder.$scalarfield];
+					val = output[builder.$options.scalarfield];
 					if (val != null) {
 						if (item.scalar) {
 							if (item.scalar < val)
@@ -1128,7 +1309,7 @@ Database.prototype.$reader2 = function(filename, items, callback, reader) {
 					}
 					break;
 				case 'avg':
-					val = output[builder.$scalarfield];
+					val = output[builder.$options.scalarfield];
 					if (val != null) {
 						item.scalar = item.scalar ? item.scalar + val : val;
 						item.scalarcount++;
@@ -1136,7 +1317,7 @@ Database.prototype.$reader2 = function(filename, items, callback, reader) {
 					break;
 				case 'group':
 					!item.scalar && (item.scalar = {});
-					val = output[builder.$scalarfield];
+					val = output[builder.$options.scalarfield];
 					if (val != null) {
 						if (item.scalar[val])
 							item.scalar[val]++;
@@ -1167,11 +1348,11 @@ Database.prototype.$reader2 = function(filename, items, callback, reader) {
 			var builder = item.builder;
 			var output;
 
-			if (builder.$scalar || !builder.$sort) {
+			if (builder.$options.scalar || !builder.$options.sort) {
 
-				if (builder.$scalar)
-					output = builder.$scalar === 'avg' ? item.scalar / item.scalarcount : item.scalar;
-				else if (builder.$first)
+				if (builder.$options.scalar)
+					output = builder.$options.scalar === 'avg' ? item.scalar / item.scalarcount : item.scalar;
+				else if (builder.$options.first)
 					output = item.response ? item.response[0] : undefined;
 				else
 					output = item.response || EMPTYARRAY;
@@ -1181,23 +1362,23 @@ Database.prototype.$reader2 = function(filename, items, callback, reader) {
 			}
 
 			if (item.count) {
-				if (builder.$sort.name) {
-					if (!builder.$inlinesort || builder.$take !== item.response.length)
-						item.response.quicksort(builder.$sort.name, builder.$sort.asc);
-				} else if (builder.$sort === EMPTYOBJECT)
+				if (builder.$options.sort.name) {
+					if (!builder.$inlinesort || builder.$options.take !== item.response.length)
+						item.response.quicksort(builder.$options.sort.name, builder.$options.sort.asc);
+				} else if (builder.$options.sort === null)
 					item.response.random();
 				else
-					item.response.sort(builder.$sort);
+					item.response.sort(builder.$options.sort);
 
-				if (builder.$skip && builder.$take)
-					item.response = item.response.splice(builder.$skip, builder.$take);
-				else if (builder.$skip)
-					item.response = item.response.splice(builder.$skip);
-				else if (!builder.$inlinesort && builder.$take)
-					item.response = item.response.splice(0, builder.$take);
+				if (builder.$options.skip && builder.$options.take)
+					item.response = item.response.splice(builder.$options.skip, builder.$options.take);
+				else if (builder.$options.skip)
+					item.response = item.response.splice(builder.$options.skip);
+				else if (!builder.$inlinesort && builder.$options.take)
+					item.response = item.response.splice(0, builder.$options.take);
 			}
 
-			if (builder.$first)
+			if (builder.$options.first)
 				output = item.response ? item.response[0] : undefined;
 			else
 				output = item.response || EMPTYARRAY;
@@ -1226,7 +1407,7 @@ function nosqlinlinesorter(item, builder, doc) {
 	var length = item.response.length;
 	if (length < builder.$limit) {
 		item.response.push(doc);
-		length + 1 >= builder.$limit && item.response.quicksort(builder.$sort.name, builder.$sort.asc);
+		length + 1 >= builder.$limit && item.response.quicksort(builder.$options.sort.name, builder.$options.sort.asc);
 	} else
 		nosqlresort(item.response, builder, doc);
 }
@@ -1247,23 +1428,23 @@ function nosqlsortvalue(a, b, sorter) {
 }
 
 function nosqlresort(arr, builder, doc) {
-	var b = doc[builder.$sort.name];
+	var b = doc[builder.$options.sort.name];
 	var beg = 0;
 	var length = arr.length;
 	var tmp = length - 1;
 
-	var sort = nosqlsortvalue(arr[tmp][builder.$sort.name], b, builder.$sort);
+	var sort = nosqlsortvalue(arr[tmp][builder.$options.sort.name], b, builder.$options.sort);
 	if (!sort)
 		return;
 
 	tmp = arr.length / 2 >> 0;
-	sort = nosqlsortvalue(arr[tmp][builder.$sort.name], b, builder.$sort);
+	sort = nosqlsortvalue(arr[tmp][builder.$options.sort.name], b, builder.$options.sort);
 	if (!sort)
 		beg = tmp + 1;
 
 	for (var i = beg; i < length; i++) {
 		var item = arr[i];
-		var sort = nosqlsortvalue(item[builder.$sort.name], b, builder.$sort);
+		var sort = nosqlsortvalue(item[builder.$options.sort.name], b, builder.$options.sort);
 		if (!sort)
 			continue;
 		for (var j = length - 1; j > i; j--)
@@ -1279,6 +1460,12 @@ Database.prototype.$reader2_inmemory = function(name, items, callback) {
 	var filter = items;
 	var length = filter.length;
 
+	for (var i = 0; i < length; i++) {
+		var fil = filter[i];
+		fil.compare = fil.builder.compile();
+		fil.repository = {};
+	}
+
 	return self.$inmemory(name, function() {
 
 		var data = self.inmemory[name];
@@ -1289,13 +1476,13 @@ Database.prototype.$reader2_inmemory = function(name, items, callback) {
 			for (var i = 0; i < length; i++) {
 				var item = filter[i];
 				var builder = item.builder;
-				var output = builder.compare(U.clone(json), j);
+				var output = item.compare(U.clone(json), item, j);
 				if (!output)
 					continue;
 
 				item.count++;
 
-				if (!builder.$sort && ((builder.$skip && builder.$skip >= item.count) || (builder.$take && builder.$take <= item.counter)))
+				if (!builder.$options.sort && ((builder.$options.skip && builder.$options.skip >= item.count) || (builder.$options.take && builder.$options.take <= item.counter)))
 					continue;
 
 				item.counter++;
@@ -1303,16 +1490,16 @@ Database.prototype.$reader2_inmemory = function(name, items, callback) {
 				if (item.type)
 					continue;
 
-				switch (builder.$scalar) {
+				switch (builder.$options.scalar) {
 					case 'count':
 						item.scalar = item.scalar ? item.scalar + 1 : 1;
 						break;
 					case 'sum':
-						val = json[builder.$scalarfield] || 0;
+						val = json[builder.$options.scalarfield] || 0;
 						item.scalar = item.scalar ? item.scalar + val : val;
 						break;
 					case 'min':
-						val = json[builder.$scalarfield] || 0;
+						val = json[builder.$options.scalarfield] || 0;
 						if (val != null) {
 							if (item.scalar) {
 								if (item.scalar > val)
@@ -1322,7 +1509,7 @@ Database.prototype.$reader2_inmemory = function(name, items, callback) {
 						}
 						break;
 					case 'max':
-						val = json[builder.$scalarfield];
+						val = json[builder.$options.scalarfield];
 						if (val != null) {
 							if (item.scalar) {
 								if (item.scalar < val)
@@ -1332,7 +1519,7 @@ Database.prototype.$reader2_inmemory = function(name, items, callback) {
 						}
 						break;
 					case 'avg':
-						val = json[builder.$scalarfield];
+						val = json[builder.$options.scalarfield];
 						if (val != null) {
 							item.scalar = item.scalar ? item.scalar + val : 0;
 							if (item.scalarcount)
@@ -1343,7 +1530,7 @@ Database.prototype.$reader2_inmemory = function(name, items, callback) {
 						break;
 					case 'group':
 						!item.scalar && (item.scalar = {});
-						val = output[builder.$scalarfield];
+						val = output[builder.$options.scalarfield];
 						if (val != null) {
 							if (item.scalar[val])
 								item.scalar[val]++;
@@ -1367,11 +1554,11 @@ Database.prototype.$reader2_inmemory = function(name, items, callback) {
 			var builder = item.builder;
 			var output;
 
-			if (builder.$scalar || !builder.$sort) {
+			if (builder.$options.scalar || !builder.$options.sort) {
 
-				if (builder.$scalar)
-					output = builder.$scalar === 'avg' ? item.scalar / item.counter : item.scalar;
-				else if (builder.$first)
+				if (builder.$options.scalar)
+					output = builder.$options.scalar === 'avg' ? item.scalar / item.counter : item.scalar;
+				else if (builder.$options.first)
 					output = item.response ? item.response[0] : undefined;
 				else
 					output = item.response || EMPTYARRAY;
@@ -1381,22 +1568,22 @@ Database.prototype.$reader2_inmemory = function(name, items, callback) {
 			}
 
 			if (item.count) {
-				if (builder.$sort.name)
-					item.response.quicksort(builder.$sort.name, builder.$sort.asc);
-				else if (builder.$sort === EMPTYOBJECT)
+				if (builder.$options.sort.name)
+					item.response.quicksort(builder.$options.sort.name, builder.$options.sort.asc);
+				else if (builder.$options.sort === EMPTYOBJECT)
 					item.response.random();
 				else
-					item.response.sort(builder.$sort);
+					item.response.sort(builder.$options.sort);
 
-				if (builder.$skip && builder.$take)
-					item.response = item.response.splice(builder.$skip, builder.$take);
-				else if (builder.$skip)
-					item.response = item.response.splice(builder.$skip);
-				else if (builder.$take)
-					item.response = item.response.splice(0, builder.$take);
+				if (builder.$options.skip && builder.$options.take)
+					item.response = item.response.splice(builder.$options.skip, builder.$options.take);
+				else if (builder.$options.skip)
+					item.response = item.response.splice(builder.$options.skip);
+				else if (builder.$options.take)
+					item.response = item.response.splice(0, builder.$options.take);
 			}
 
-			if (builder.$first)
+			if (builder.$options.first)
 				output = item.response ? item.response[0] : undefined;
 			else
 				output = item.response || EMPTYARRAY;
@@ -1414,8 +1601,7 @@ Database.prototype.$views = function() {
 	var self = this;
 	self.step = 5;
 
-	if (self.locked || !self.pending_views) {
-		F.isCluster && self.$unlock();
+	if (!self.pending_views) {
 		self.next(0);
 		return;
 	}
@@ -1426,18 +1612,16 @@ Database.prototype.$views = function() {
 	var length = views.length;
 
 	if (!length) {
-		F.isCluster && self.$unlock();
 		self.next(0);
 		return self;
 	}
 
-	if (F.isCluster && self.$lock())
-		return;
-
 	var response = [];
 
-	for (var i = 0; i < length; i++)
-		response.push({ response: [], name: views[i], builder: self.views[views[i]], count: 0, counter: 0 });
+	for (var i = 0; i < length; i++) {
+		var builder = self.views[views[i]];
+		response.push({ response: [], name: views[i], compare: builder.compile(), builder: builder, count: 0, counter: 0, repository: {} });
+	}
 
 	var reader = Fs.createReadStream(self.filename);
 
@@ -1450,7 +1634,7 @@ Database.prototype.$views = function() {
 
 		for (var j = 0; j < length; j++) {
 			var item = self.views[views[j]];
-			var output = item.compare(json, index);
+			var output = item.compare(json, item, index);
 
 			if (!output)
 				continue;
@@ -1470,19 +1654,19 @@ Database.prototype.$views = function() {
 
 			var builder = item.builder;
 
-			if (builder.$sort) {
-				if (builder.$sort.name)
-					item.response.quicksort(builder.$sort.name, builder.$sort.asc);
-				else if (builder.$sort === EMPTYOBJECT)
+			if (builder.$options.sort) {
+				if (builder.$options.sort.name)
+					item.response.quicksort(builder.$options.sort.name, builder.$options.sort.asc);
+				else if (builder.$options.sort === EMPTYOBJECT)
 					item.response.random();
 				else
-					item.response.sort(builder.$sort);
-				if (builder.$skip && builder.$take)
-					item.response = item.response.splice(builder.$skip, builder.$take);
-				else if (builder.$skip)
-					item.response = item.response.splice(builder.$skip);
-				else if (builder.$take)
-					item.response = item.response.splice(0, builder.$take);
+					item.response.sort(builder.$options.sort);
+				if (builder.$options.skip && builder.$options.take)
+					item.response = item.response.splice(builder.$options.skip, builder.$options.take);
+				else if (builder.$options.skip)
+					item.response = item.response.splice(builder.$options.skip);
+				else if (builder.$options.take)
+					item.response = item.response.splice(0, builder.$options.take);
 			}
 
 			var filename = builder.$filename;
@@ -1498,10 +1682,7 @@ Database.prototype.$views = function() {
 					next();
 				});
 			});
-		}, function() {
-			F.isCluster && self.$unlock();
-			self.next(0);
-		}, 5);
+		}, () => self.next(0), 5);
 	});
 };
 
@@ -1510,7 +1691,7 @@ Database.prototype.$views_inmemory = function() {
 	var self = this;
 	self.step = 5;
 
-	if (self.locked || !self.pending_views) {
+	if (!self.pending_views) {
 		self.next(0);
 		return self;
 	}
@@ -1553,19 +1734,19 @@ Database.prototype.$views_inmemory = function() {
 			var item = response[j];
 			var builder = item.builder;
 
-			if (builder.$sort) {
-				if (builder.$sort.name)
-					item.response.quicksort(builder.$sort.name, builder.$sort.asc);
-				else if (builder.$sort === EMPTYOBJECT)
+			if (builder.$options.sort) {
+				if (builder.$options.sort.name)
+					item.response.quicksort(builder.$options.sort.name, builder.$options.sort.asc);
+				else if (builder.$options.sort === EMPTYOBJECT)
 					item.response.random();
 				else
-					item.response.sort(builder.$sort);
-				if (builder.$skip && builder.$take)
-					item.response = item.response.splice(builder.$skip, builder.$take);
-				else if (builder.$skip)
-					item.response = item.response.splice(builder.$skip);
-				else if (builder.$take)
-					item.response = item.response.splice(0, builder.$take);
+					item.response.sort(builder.$options.sort);
+				if (builder.$options.skip && builder.$options.take)
+					item.response = item.response.splice(builder.$options.skip, builder.$options.take);
+				else if (builder.$options.skip)
+					item.response = item.response.splice(builder.$options.skip);
+				else if (builder.$options.take)
+					item.response = item.response.splice(0, builder.$options.take);
 			}
 
 			self.inmemory[item.name] = item.response;
@@ -1593,8 +1774,11 @@ Database.prototype.$remove = function() {
 	var length = filter.length;
 	var change = false;
 
-	if (F.isCluster && self.$lock())
-		return;
+	for (var i = 0; i < length; i++) {
+		var fil = filter[i];
+		fil.repository = {};
+		fil.compare = fil.builder.compile();
+	}
 
 	reader && reader.on('data', framework_utils.streamer(NEWLINEBUF, function(value, index) {
 
@@ -1607,9 +1791,9 @@ Database.prototype.$remove = function() {
 		for (var i = 0; i < length; i++) {
 			var item = filter[i];
 			var builder = item.builder;
-			var output = builder.compare(json, index);
+			var output = item.compare(json, item, index);
 			if (output) {
-				builder.$backup && builder.$backupdoc(output);
+				builder.$options.backup && builder.$backupdoc(output);
 				removed = true;
 				json = output;
 				break;
@@ -1635,11 +1819,10 @@ Database.prototype.$remove = function() {
 			Fs.unlink(self.filenameTemp, function() {
 				for (var i = 0; i < length; i++) {
 					var item = filter[i];
-					item.builder.$log && item.builder.log();
+					item.builder.$options.log && item.builder.log();
 					item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count);
 				}
 				self.next(0);
-				F.cluster && self.$unlock();
 			});
 			return;
 		}
@@ -1657,17 +1840,14 @@ Database.prototype.$remove = function() {
 
 			for (var i = 0; i < length; i++) {
 				var item = filter[i];
-				item.builder.$log && item.builder.log();
+				item.builder.$options.log && item.builder.log();
 				item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count);
 			}
 
 			setImmediate(function() {
 				self.renaming = false;
 				self.next(0);
-				if (change)
-					setImmediate(views_refresh, self);
-				else if (F.cluster)
-					self.$unlock();
+				change && setImmediate(views_refresh, self);
 			});
 		});
 	};
@@ -1681,7 +1861,7 @@ Database.prototype.$remove_inmemory = function() {
 	var self = this;
 	self.step = 3;
 
-	if (self.locked || !self.pending_remove.length) {
+	if (!self.pending_remove.length) {
 		self.next(0);
 		return self;
 	}
@@ -1689,6 +1869,12 @@ Database.prototype.$remove_inmemory = function() {
 	var filter = self.pending_remove.splice(0);
 	var length = filter.length;
 	var change = false;
+
+	for (var i = 0; i < length; i++) {
+		var fil = filter[i];
+		fil.repository = {};
+		fil.compare = fil.builder.compile();
+	}
 
 	return self.$inmemory('#', function() {
 
@@ -1701,8 +1887,7 @@ Database.prototype.$remove_inmemory = function() {
 
 			for (var i = 0; i < length; i++) {
 				var item = filter[i];
-				var builder = item.builder;
-				if (builder.compare(json, j)) {
+				if (item.compare(json, item, j)) {
 					removed = true;
 					break;
 				}
@@ -1727,7 +1912,7 @@ Database.prototype.$remove_inmemory = function() {
 
 		for (var i = 0; i < length; i++) {
 			var item = filter[i];
-			item.builder.$log && item.builder.log();
+			item.builder.$options.log && item.builder.log();
 			item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count);
 		}
 
@@ -1740,13 +1925,10 @@ Database.prototype.$drop = function() {
 	var self = this;
 	self.step = 7;
 
-	if (self.locked || !self.pending_drops) {
+	if (!self.pending_drops) {
 		self.next(0);
 		return;
 	}
-
-	if (F.isCluster && self.$lock())
-		return;
 
 	self.pending_drops = false;
 	var remove = [self.filename, self.filenameTemp];
@@ -1759,7 +1941,6 @@ Database.prototype.$drop = function() {
 	} catch (e) {}
 
 	remove.wait((filename, next) => Fs.unlink(filename, next), function() {
-		F.isCluster && self.$unlock();
 		self.next(0);
 		self.free(true);
 	}, 5);
@@ -1772,17 +1953,17 @@ Database.prototype.$drop = function() {
 function DatabaseBuilder2(db) {
 	this.$callback = NOOP;
 	this.db = db;
-	// this.$log;
+	this.$options = {};
 }
 
 DatabaseBuilder2.prototype.log = function(msg, user) {
 	var self = this;
 	if (msg) {
 		F.datetime = new Date();
-		self.$log = (self.$log ? self.$log : '') + F.datetime.format('yyyy-MM-dd HH:mm:ss') + ' | ' + (user ? user.padRight(20) + ' | ' : '') + msg + NEWLINE;
-	} else if (self.$log) {
-		self.db.filenameLog && Fs.appendFile(self.db.filenameLog, self.$log, NOOP);
-		self.$log = '';
+		self.$options.log = (self.$options.log ? self.$options.log : '') + F.datetime.format('yyyy-MM-dd HH:mm:ss') + ' | ' + (user ? user.padRight(20) + ' | ' : '') + msg + NEWLINE;
+	} else if (self.$options.log) {
+		self.db.filenameLog && Fs.appendFile(self.db.filenameLog, self.$options.log, NOOP);
+		self.$options.log = '';
 	}
 	return self;
 };
@@ -1814,8 +1995,17 @@ function DatabaseBuilder(db) {
 	this.$callback = NOOP;
 	// this.$scalar;
 	// this.$scalarfield;
-	// this.$log;
+
+	this.$code = [];
+	this.$params = {};
+	this.$options = {};
+	this.$counter = 0;
 }
+
+DatabaseBuilder.prototype.id = function(id) {
+	this.$options.id = id;
+	return this;
+};
 
 DatabaseBuilder.prototype.insert = function(fn) {
 	this.$insertcallback = fn;
@@ -1826,10 +2016,10 @@ DatabaseBuilder.prototype.log = function(msg, user) {
 	var self = this;
 	if (msg) {
 		F.datetime = new Date();
-		self.$log = (self.$log ? self.$log : '') + F.datetime.format('yyyy-MM-dd HH:mm:ss') + ' | ' + (user ? user.padRight(20) + ' | ' : '') + msg + NEWLINE;
-	} else if (self.$log) {
-		self.db.filenameLog && Fs.appendFile(self.db.filenameLog, self.$log, NOOP);
-		self.$log = '';
+		self.$options.log = (self.$options.log ? self.$options.log : '') + F.datetime.format('yyyy-MM-dd HH:mm:ss') + ' | ' + (user ? user.padRight(20) + ' | ' : '') + msg + NEWLINE;
+	} else if (self.$options.log) {
+		self.db.filenameLog && Fs.appendFile(self.db.filenameLog, self.$options.log, NOOP);
+		self.$options.log = '';
 	}
 	return self;
 };
@@ -1838,7 +2028,10 @@ DatabaseBuilder.prototype.$callback2 = function(err, response, count) {
 	var self = this;
 
 	if (err || !self.$join) {
-		self.$log && self.log();
+		self.$options.log && self.log();
+
+		// BACKWARD COMPATIBILITY
+		self.$prepare && self.$prepare(response);
 		return self.$callback(err, response, count);
 	}
 
@@ -1865,7 +2058,11 @@ DatabaseBuilder.prototype.$callback2 = function(err, response, count) {
 		}
 	}
 
-	self.$log && self.log();
+	self.$options.log && self.log();
+
+	// BACKWARD COMPATIBILITY
+	self.$prepare && self.$prepare(response);
+
 	self.$callback(err, response, count);
 	return self;
 };
@@ -1990,7 +2187,7 @@ DatabaseBuilder.prototype.join = function(field, name, view) {
 };
 
 DatabaseBuilder.prototype.first = function() {
-	this.$first = true;
+	this.$options.first = true;
 	return this.take(1);
 };
 
@@ -1999,95 +2196,57 @@ DatabaseBuilder.prototype.make = function(fn) {
 	return this;
 };
 
-DatabaseBuilder.prototype.compare = function(doc, index) {
-
-	var can = true;
-	var wasor = false;
-	var prevscope = 0;
-
-	for (var i = 0, length = this.$filter.length; i < length; i++) {
-
-		var filter = this.$filter[i];
-		if (wasor && filter.scope)
-			continue;
-
-		if (prevscope && !filter.scope && !wasor)
-			return;
-
-		prevscope = filter.scope;
-
-		var res = filter.filter(doc, i, filter);
-
-		if (res === true) {
-			can = true;
-			if (filter.scope)
-				wasor = true;
-			continue;
-		} else if (filter.scope) {
-			can = false;
-			wasor = false;
-			continue;
-		}
-
-		return;
-	}
-
-	if (!can)
-		return;
-
-	if (this.$prepare)
-		return this.$prepare(doc, index);
-
-	if (!this.$fields)
-		return doc;
-
-	var obj = {};
-
-	for (var i = 0, length = this.$fields.length; i < length; i++) {
-		var prop = this.$fields[i];
-		obj[prop] = doc[prop];
-	}
-
-	return obj;
-};
-
-DatabaseBuilder.prototype.filter = function(fn) {
-	this.$filter.push({ scope: this.$scope, filter: fn });
+DatabaseBuilder.prototype.filter = function() {
+	OBSOLETE('DatabaseBuilder.filter()', 'You need to rewrite this code with help of DatabaseBuidler.code() alternative.');
 	return this;
 };
 
 DatabaseBuilder.prototype.scalar = function(type, name) {
-	this.$scalar = type;
-	this.$scalarfield = name;
+	var self = this;
+	var opt = self.$options;
+	opt.scalar = type;
+	opt.scalarfield = name;
 	return this;
 };
 
 DatabaseBuilder.prototype.contains = function(name) {
-	this.$filter.push({ scope: this.$scope, filter: compare_notempty, name: name });
-	return this;
+	var self = this;
+	var code = '$is=doc.{0} instanceof Array?!!doc.{0}.length:!!doc.{0};'.format(name);
+	if (self.$scope)
+		code = 'if(!$is){' + code + '}';
+	self.$code.push(code);
+	!self.$scope && self.$code.push('if(!$is)return;');
+	return self;
 };
 
 DatabaseBuilder.prototype.empty = function(name) {
-	this.$filter.push({ scope: this.$scope, filter: compare_empty, name: name });
-	return this;
+	var self = this;
+	var code = '$is=doc.{0} instanceof Array?!doc.{0}.length:!doc.{0};'.format(name);
+	if (self.$scope)
+		code = 'if(!$is){' + code + '}';
+	self.$code.push(code);
+	!self.$scope && self.$code.push('if(!$is)return;');
+	return self;
 };
 
 DatabaseBuilder.prototype.backup = function(user) {
 	if (this.db.filenameBackup)
-		this.$backup = typeof(user) === 'string' ? user : 'unknown';
+		this.$options.backup = typeof(user) === 'string' ? user : 'unknown';
 	else
-		this.$backup = null;
+		this.$options.backup = null;
 	return this;
 };
 
 DatabaseBuilder.prototype.$backupdoc = function(doc) {
-	this.db.filenameBackup && Fs.appendFile(this.db.filenameBackup, F.datetime.format('yyyy-MM-dd HH:mm') + ' | ' + this.$backup.padRight(20) + ' | ' + JSON.stringify(doc) + NEWLINE, NOOP);
+	this.db.filenameBackup && Fs.appendFile(this.db.filenameBackup, F.datetime.format('yyyy-MM-dd HH:mm') + ' | ' + this.$options.backup.padRight(20) + ' | ' + JSON.stringify(doc) + NEWLINE, NOOP);
 	return this;
 };
 
 DatabaseBuilder.prototype.where = function(name, operator, value) {
 
-	var fn;
+	var self = this;
+	var key = 'w' + (self.$counter++);
+	var code;
 
 	if (value === undefined) {
 		value = operator;
@@ -2095,155 +2254,102 @@ DatabaseBuilder.prototype.where = function(name, operator, value) {
 	}
 
 	var date = framework_utils.isDate(value);
+	self.$params[key] = date ? value.getTime() : value;
 
 	switch (operator) {
 		case '=':
-			fn = date ? compare_eq_date : compare_eq;
-			break;
-		case '<':
-			fn = date ? compare_gt_date : compare_gt;
-			break;
-		case '<=':
-			fn = date ? compare_eqgt_date : compare_eqgt;
-			break;
-		case '>':
-			fn = date ? compare_lt_date : compare_lt;
-			break;
-		case '>=':
-			fn = date ? compare_eqlt_date : compare_eqlt;
+			operator = '==';
 			break;
 		case '<>':
-		case '!=':
-			fn = date ? compare_not_date : compare_not;
 			operator = '!=';
 			break;
 	}
 
-	this.$filter.push({ scope: this.$scope, filter: fn, name: name, value: value, operator: operator, ticks: date ? value.getTime() : 0 });
-	return this;
+	code = (date ? '$is=(doc.{0} instanceof Date?doc.{0}:new Date(doc.{0})).getTime(){2}arg.{1};' : '$is=doc.{0}{2}arg.{1};');
+
+	if (self.$scope)
+		code = 'if(!$is){' + code + '}';
+
+	self.$code.push(code.format(name, key, operator));
+	!self.$scope && self.$code.push('if(!$is)return;');
+	return self;
 };
 
 DatabaseBuilder.prototype.month = function(name, operator, value) {
-
-	var fn;
+	var self = this;
+	var key = 'dm' + (self.$counter++);
 
 	if (value === undefined) {
 		value = operator;
 		operator = '=';
 	}
 
-	switch (operator) {
-		case '=':
-			fn = compare_eq_dtmonth;
-			break;
-		case '<':
-			fn = compare_gt_dtmonth;
-			break;
-		case '<=':
-			fn = compare_eqgt_dtmonth;
-			break;
-		case '>':
-			fn = compare_lt_dtmonth;
-			break;
-		case '>=':
-			fn = compare_eqlt_dtmonth;
-			break;
-		case '<>':
-		case '!=':
-			fn = compare_not_dtmonth;
-			break;
-	}
+	self.$params[key] = value;
 
-	this.$filter.push({ scope: this.$scope, filter: fn, name: name, value: value });
-	return this;
+	var code = compare_datetype('month', name, key, operator);
+	if (self.$scope)
+		code = 'if(!$is){' + code + '}';
+	self.$code.push(code);
+	!self.$scope && self.$code.push('if(!$is)return;');
+	return self;
 };
 
 DatabaseBuilder.prototype.day = function(name, operator, value) {
-
-	var fn;
+	var self = this;
+	var key = 'dd' + (self.$counter++);
 
 	if (value === undefined) {
 		value = operator;
 		operator = '=';
 	}
 
-	switch (operator) {
-		case '=':
-			fn = compare_eq_dtday;
-			break;
-		case '<':
-			fn = compare_gt_dtday;
-			break;
-		case '<=':
-			fn = compare_eqgt_dtday;
-			break;
-		case '>':
-			fn = compare_lt_dtday;
-			break;
-		case '>=':
-			fn = compare_eqlt_dtday;
-			break;
-		case '<>':
-		case '!=':
-			fn = compare_not_dtday;
-			break;
-	}
+	self.$params[key] = value;
 
-	this.$filter.push({ scope: this.$scope, filter: fn, name: name, value: value });
-	return this;
+	var code = compare_datetype('day', name, key, operator);
+	if (self.$scope)
+		code = 'if(!$is){' + code + '}';
+	self.$code.push(code);
+	!self.$scope && self.$code.push('if(!$is)return;');
+	return self;
 };
 
 DatabaseBuilder.prototype.year = function(name, operator, value) {
-
-	var fn;
+	var self = this;
+	var key = 'dy' + (self.$counter++);
 
 	if (value === undefined) {
 		value = operator;
 		operator = '=';
 	}
 
-	switch (operator) {
-		case '=':
-			fn = compare_eq_dtyear;
-			break;
-		case '<':
-			fn = compare_gt_dtyear;
-			break;
-		case '<=':
-			fn = compare_eqgt_dtyear;
-			break;
-		case '>':
-			fn = compare_lt_dtyear;
-			break;
-		case '>=':
-			fn = compare_eqlt_dtyear;
-			break;
-		case '<>':
-		case '!=':
-			fn = compare_not_dtyear;
-			break;
-	}
+	self.$params[key] = value;
 
-	this.$filter.push({ scope: this.$scope, filter: fn, name: name, value: value });
-	return this;
+	var code = compare_datetype('year', name, key, operator);
+	if (self.$scope)
+		code = 'if(!$is){' + code + '}';
+	self.$code.push(code);
+	!self.$scope && self.$code.push('if(!$is)return;');
+	return self;
 };
 
 DatabaseBuilder.prototype.like = DatabaseBuilder.prototype.search = function(name, value, where) {
 
-	var fn;
+	var self = this;
+	var code;
+	var key = 'l' + (self.$counter++);
 
 	if (!where)
 		where = '*';
 
 	switch (where) {
 		case 'beg':
-			fn = compare_likebeg;
+			code = '$is=doc.{0}?doc.{0}.startsWith(arg.{1}):false;';
 			break;
 		case 'end':
-			fn = compare_likeend;
+			code = '$is=doc.{0}?doc.{0}.endsWith(arg.{1}):false;';
 			break;
 		case '*':
-			fn = compare_like;
+			code = '$is=false;if(doc.{0}&&doc.{0}.toLowerCase){if(doc.{0} instanceof Array){for(var $i=0;$i<doc.{0}.length;$i++){if(doc.{0}.toLowerCase().indexOf(arg.{1})!==-1){$is=true;break;}}}else{$is=doc.{0}.toLowerCase().indexOf(arg.{1})!==-1}}';
 			if (value instanceof Array) {
 				for (var i = 0, length = value.length; i < length; i++)
 					value[i] = value[i].toLowerCase();
@@ -2252,23 +2358,45 @@ DatabaseBuilder.prototype.like = DatabaseBuilder.prototype.search = function(nam
 			break;
 	}
 
-	this.$filter.push({ scope: this.$scope, name: name, filter: fn, value: value, operator: where === 'beg' ? 10 : where === 'end' ? 11 : 12 });
+	self.$params[key] = value;
+	if (self.$scope)
+		code = 'if(!$is){' + code + '}';
+	self.$code.push(code.format(name, key));
+	!self.$scope && self.$code.push('if(!$is)return;');
+	return this;
+};
+
+DatabaseBuilder2.prototype.stringify = DatabaseBuilder.prototype.stringify = function() {
+	var obj = {};
+	obj.options = this.$options;
+	obj.code = this.$code;
+	obj.params = this.$params;
+	return JSON.stringify(obj);
+};
+
+DatabaseBuilder2.prototype.parse = DatabaseBuilder.prototype.parse = function(data) {
+	data = JSON.parse(data, jsonparser);
+	this.$options = data.options;
+	this.$code = data.code;
+	this.$params = data.params;
+	this.$take = data.options.take;
+	this.$skip = data.options.skip;
 	return this;
 };
 
 DatabaseBuilder.prototype.take = function(count) {
-	this.$take = count;
+	this.$take = this.$options.take = count;
 	return this;
 };
 
 DatabaseBuilder.prototype.limit = function(count) {
-	this.$take = count;
+	this.$take = this.$options.take = count;
 	return this;
 };
 
 DatabaseBuilder.prototype.page = function(page, limit) {
-	this.$skip = page * limit;
-	this.$take = limit;
+	this.$take = this.$options.take = limit;
+	this.$skip = this.$options.skip = page * limit;
 	return this;
 };
 
@@ -2286,13 +2414,13 @@ DatabaseBuilder.prototype.paginate = function(page, limit, maxlimit) {
 	if (!limit2)
 		limit2 = maxlimit;
 
-	this.$skip = page2 * limit2;
-	this.$take = limit2;
+	this.$skip = this.$options.skip = page2 * limit2;
+	this.$take = this.$options.take = limit2;
 	return this;
 };
 
 DatabaseBuilder.prototype.skip = function(count) {
-	this.$skip = count;
+	this.$take = this.$options.skip = count;
 	return this;
 };
 
@@ -2310,44 +2438,61 @@ DatabaseBuilder.prototype.callback = function(fn, emptyerror) {
 };
 
 DatabaseBuilder.prototype.random = function() {
-	this.$sort = EMPTYOBJECT;
+	this.$options.sort = null;
 	return this;
 };
 
 DatabaseBuilder.prototype.sort = function(name, desc) {
-
-	if (typeof(name) === 'function') {
-		this.$sort = name;
-		return this;
-	}
-
-	this.$sort = { name: name, asc: desc ? false : true };
+	this.$options.sort = { name: name, asc: desc ? false : true };
 	return this;
 };
 
-DatabaseBuilder.prototype.$sortinline = function() {
-	this.$inlinesort = this.$take && this.$sort && this.$sort !== EMPTYOBJECT;
-	this.$limit = (this.$take || 0) + (this.$skip || 0);
-	return this;
+DatabaseBuilder.prototype.compile = function() {
+	var self = this;
+	var code = 'var repository=$F.repository;var options=$F.builder.$options;var arg=$F.builder.$params;var $is=false;var $tmp;' + self.$code.join('') + (self.$code.length ? 'if(!$is)return;' : '') + 'if(!options.fields)return doc;var $doc={};for(var $i=0;$i<options.fields.length;$i++){var prop=options.fields[$i];$doc[prop]=doc[prop];}return $doc;';
+	var opt = self.$options;
+	self.$inlinesort = !!(opt.take && opt.sort && opt.sort !== null);
+	self.$limit = (opt.take || 0) + (opt.skip || 0);
+	var key = opt.id || code.hash();
+	return CACHE[key] ? CACHE[key] : (CACHE[key] = new Function('doc', '$F', 'index', code));
 };
 
 DatabaseBuilder.prototype.in = function(name, value) {
-	if (!(value instanceof Array))
-		value = [value];
-	this.$filter.push({ scope: this.$scope, name: name, filter: compare_in, value: value });
-	return this;
+	var self = this;
+	var key = 'in' + (self.$counter++);
+	self.$params[key] = value instanceof Array ? value : [value];
+	var code = '$tmp=doc.{0};if($tmp instanceof Array){for(var $i=0;$i<$tmp.length;$i++){if(arg.{1}.indexOf($tmp[$i])!==-1){$is=true;break}}}else{if(arg.{1}.indexOf($tmp)!==-1)$is=true}'.format(name, key);
+	if (self.$scope)
+		code = 'if(!$is){' + code + '}';
+	self.$code.push(code);
+	!self.$scope && self.$code.push('if(!$is)return;');
+	return self;
 };
 
 DatabaseBuilder.prototype.notin = function(name, value) {
-	if (!(value instanceof Array))
-		value = [value];
-	this.$filter.push({ scope: this.$scope, name: name, filter: compare_notin, value: value });
-	return this;
+	var self = this;
+	var key = 'in' + (self.$counter++);
+	self.$params[key] = value instanceof Array ? value : [value];
+	var code = '$is=true;$tmp=doc.{0};if($tmp instanceof Array){for(var $i=0;$i<$tmp.length;$i++){if(arg.{1}.indexOf($tmp[$i])!==-1){$is=false;break}}}else{if(arg.{1}.indexOf($tmp)!==-1)$is=false}'.format(name, key);
+	if (self.$scope)
+		code = 'if(!$is){' + code + '}';
+	self.$code.push(code);
+	!self.$scope && self.$code.push('if(!$is)return;');
+	return self;
 };
 
 DatabaseBuilder.prototype.between = function(name, a, b) {
-	this.$filter.push({ scope: this.$scope, name: name, filter: compare_between, a: a, b: b });
-	return this;
+	var self = this;
+	var keya = 'ba' + (self.$counter++);
+	var keyb = 'bb' + (self.$counter++);
+	var code = '$is=doc.{0}>=arg.{1}&&doc.{0}<=arg.{2};'.format(name, keya, keyb);
+	if (self.$scope)
+		code = 'if(!$is){' + code + '}';
+	self.$params[keya] = a;
+	self.$params[keyb] = b;
+	self.$code.push(code);
+	!self.$scope && self.$code.push('if(!$is)return;');
+	return self;
 };
 
 DatabaseBuilder.prototype.or = function() {
@@ -2366,8 +2511,8 @@ DatabaseBuilder.prototype.and = function() {
 };
 
 DatabaseBuilder.prototype.done = function() {
-	this.$filter = null;
-	this.$sort = null;
+	this.$options = {};
+	this.$code = [];
 	return this;
 };
 
@@ -2379,15 +2524,43 @@ DatabaseBuilder.prototype.cache = function() {
 };
 
 DatabaseBuilder.prototype.fields = function() {
-	if (!this.$fields)
-		this.$fields = [];
+	var self = this;
+	var opt = self.$options;
+	if (!opt.fields)
+		opt.fields = [];
 	for (var i = 0, length = arguments.length; i < length; i++)
-		this.$fields.push(arguments[i]);
-	return this;
+		opt.fields.push(arguments[i]);
+	return self;
+};
+
+DatabaseBuilder.prototype.code = function(code) {
+	var self = this;
+
+	if (typeof(code) === 'function') {
+		code = code.toString();
+		code = code.substring(code.indexOf('{') + 1, code.lastIndexOf('}'));
+	}
+
+	code = code.trim();
+
+	if (self.$scope)
+		code = 'if(!$is){' + code + '}';
+
+	self.$code.push(code + ';');
+	!self.$scope && self.$code.push('if(!$is)return;');
+
+	return self;
 };
 
 DatabaseBuilder.prototype.prepare = function(fn) {
-	this.$prepare = fn;
+	// BACKWARD COMPATIBILITY
+	this.$prepare = function(response) {
+		if (response instanceof Array) {
+			for (var i = 0; i < response.length; i++)
+				response[i] = fn(response[i]);
+		} else
+			fn(response);
+	};
 	return this;
 };
 
@@ -2399,51 +2572,7 @@ function Counter(db) {
 	self.key = 'nosql' + db.name.hash();
 	self.type = 0; // 1 === saving, 2 === reading
 	self.$events = {};
-	self.locked = false;
-	var filename = self.db.filename + '-counter';
-	if (!self.db.readonly) {
-		try {
-			var val = Fs.statSync(filename);
-			val && val.isFile() && self.convert2(filename);
-		} catch (e) {}
-	}
 }
-
-Counter.prototype.convert2 = function(filename) {
-	var reader = Fs.createReadStream(filename);
-	var writer = Fs.createWriteStream(filename + '2');
-	var self = this;
-	self.type = 100;
-	reader.on('data', framework_utils.streamer(NEWLINEBUF, function(value) {
-		var arr = value.split(';');
-		var years = {};
-		for (var i = 1, length = arr.length; i < length; i++) {
-			var item = arr[i];
-			var year = item.substring(0, 4);
-			!years[year] && (years[year] = ['sum' + year + arr[0]]);
-			years[year].push(item.substring(4, 6) + '01' + item.substring(6).trim());
-		}
-		arr = Object.keys(years);
-		for (var i = 0, length = arr.length; i < length; i++) {
-			var year = arr[i];
-			var item = years[year];
-			writer.write(item.join(';') + NEWLINE);
-		}
-	}));
-
-	reader.on('end', function() {
-		writer.end();
-		console.log(F.datetime.format('yyyy-MM-dd HH:mm:ss') + ' :: Converted NoSQL embedded counter for database "{0}" to version "2" (IMPORTANT: backwards incompatible)'.format(self.db.name));
-	});
-
-	writer.on('finish', function() {
-		Fs.rename(filename, filename + '-backup', function() {
-			self.type = 0;
-		});
-	});
-
-	return self;
-};
 
 Counter.prototype.emit = function(name, a, b, c, d, e, f, g) {
 	var evt = this.$events[name];
@@ -2958,19 +3087,19 @@ Counter.prototype.read = function(options, callback, reader) {
 };
 
 Counter.prototype.stats_max = function(top, year, month, day, callback) {
-	return this.stats(top, year, month, day, callback, 'max');
+	return this.stats(top, year, month, day, 'max', callback);
 };
 
 Counter.prototype.stats_min = function(top, year, month, day, callback) {
-	return this.stats(top, year, month, day, callback, 'min');
+	return this.stats(top, year, month, day, 'min', callback);
 };
 
-Counter.prototype.stats = Counter.prototype.stats_sum = function(top, year, month, day, callback, type, reader) {
+Counter.prototype.stats = Counter.prototype.stats_sum = function(top, year, month, day, type, callback, reader) {
 
 	var self = this;
 
 	if (self.type && reader === undefined) {
-		setTimeout(() => self.stats(top, year, month, day, callback, type), 200);
+		setTimeout(() => self.stats(top, year, month, day, type, callback), 200);
 		return self;
 	}
 
@@ -2983,7 +3112,7 @@ Counter.prototype.stats = Counter.prototype.stats_sum = function(top, year, mont
 					self.type = 0;
 					callback && callback(err, []);
 				} else
-					self.stats(top, year, month, day, callback, type, response);
+					self.stats(top, year, month, day, type, callback, response);
 			});
 			return self;
 		}
@@ -3370,7 +3499,7 @@ Counter.prototype.save = function() {
 	var self = this;
 	self.db.readonly && self.db.throwReadonly();
 
-	if (self.type || self.locked) {
+	if (self.type) {
 		setTimeout(() => self.save(), 200);
 		return self;
 	}
@@ -3384,11 +3513,6 @@ Counter.prototype.save = function() {
 
 	self.cache = null;
 	self.type = 1;
-
-	if (F.isCluster) {
-		CLUSTER_LOCK_COUNTER.name = self.name;
-		process.send(CLUSTER_LOCK_COUNTER);
-	}
 
 	var flush = function() {
 		var keys = Object.keys(cache);
@@ -3489,10 +3613,6 @@ Counter.prototype.save = function() {
 			clearTimeout(self.timeout);
 			self.timeout = 0;
 			self.type = 0;
-			if (F.isCluster) {
-				CLUSTER_UNLOCK_COUNTER.name = self.name;
-				process.send(CLUSTER_UNLOCK_COUNTER);
-			}
 			counter && self.$events.stats && setImmediate(() => self.emit('stats', counter));
 		});
 	});
@@ -3503,25 +3623,14 @@ Counter.prototype.save = function() {
 Counter.prototype.clear = function(callback) {
 	var self = this;
 
-	if (self.type || self.locked) {
+	if (self.type) {
 		setTimeout(() => self.clear(callback), 200);
 		return self;
-	}
-
-	if (F.isCluster) {
-		CLUSTER_LOCK_COUNTER.name = self.name;
-		process.send(CLUSTER_LOCK_COUNTER);
 	}
 
 	self.type = 3;
 
 	Fs.unlink(self.db.filename + EXTENSION_COUNTER, function() {
-
-		if (F.isCluster) {
-			CLUSTER_UNLOCK_COUNTER.name = self.name;
-			process.send(CLUSTER_UNLOCK_COUNTER);
-		}
-
 		self.type = 0;
 		self.emit('clear');
 		callback && callback();
@@ -3889,6 +3998,7 @@ Backuper.prototype.write = function(value) {
 
 Backuper.prototype.flush = function() {
 	var self = this;
+
 	if (self.is)
 		return self;
 
@@ -3911,221 +4021,38 @@ Backuper.prototype.flush = function() {
 // Helper functions
 // ======================================================
 
-function compare_eq(doc, index, item) {
-	return item.value === doc[item.name];
-}
+function compare_datetype(type, key, arg, operator) {
 
-function compare_lt(doc, index, item) {
-	return item.value < doc[item.name];
-}
+	// 0 doc
+	// 1 arg
+	// 2 operator
+	// 3 type
 
-function compare_gt(doc, index, item) {
-	return item.value > doc[item.name];
-}
+	key = 'doc.' + key;
+	arg = 'arg.' + arg;
 
-function compare_eqlt(doc, index, item) {
-	return item.value <= doc[item.name];
-}
-
-function compare_eqgt(doc, index, item) {
-	return item.value >= doc[item.name];
-}
-
-function compare_not(doc, index, item) {
-	return item.value !== doc[item.name];
-}
-
-function compare_eq_date(doc, index, item) {
-	var val = doc[item.name];
-	return val ? item.ticks === (val instanceof Date ? val : new Date(val)).getTime() : false;
-}
-
-function compare_lt_date(doc, index, item) {
-	var val = doc[item.name];
-	return val ? item.value < (val instanceof Date ? val : new Date(val)) : false;
-}
-
-function compare_gt_date(doc, index, item) {
-	var val = doc[item.name];
-	return val ? item.value > (val instanceof Date ? val : new Date(val)) : false;
-}
-
-function compare_eqlt_date(doc, index, item) {
-	var val = doc[item.name];
-	return val ? item.value <= (val instanceof Date ? val : new Date(val)) : false;
-}
-
-function compare_eqgt_date(doc, index, item) {
-	var val = doc[item.name];
-	return val ? item.value >= (val instanceof Date ? val : new Date(val)) : false;
-}
-
-function compare_not_date(doc, index, item) {
-	var val = doc[item.name];
-	return val ? item.value !== (val instanceof Date ? val : new Date(val)) : false;
-}
-
-function compare_likebeg(doc, index, item) {
-	var val = doc[item.name];
-	return val ? val.startsWith(item.value) : false;
-}
-
-function compare_likeend(doc, index, item) {
-	var val = doc[item.name];
-	return val ? val.endsWith(item.value) : false;
-}
-
-function compare_like(doc, index, item) {
-	var val = doc[item.name];
-
-	if (!val || !val.toLowerCase)
-		return false;
-
-	if (item.value instanceof Array) {
-		for (var i = 0, length = item.value.length; i < length; i++) {
-			if (val.toLowerCase().indexOf(item.value[i]) !== -1)
-				return true;
-		}
-		return false;
-	}
-
-	return val.toLowerCase().indexOf(item.value) !== -1;
-}
-
-function compare_between(doc, index, item) {
-	var val = doc[item.name];
-	return val >= item.a && val <= item.b;
-}
-
-function compare_in(doc, index, item) {
-	var val = doc[item.name];
-	if (val instanceof Array) {
-		for (var i = 0, length = val.length; i < length; i++) {
-			if (item.value.indexOf(val[i]) !== -1)
-				return true;
-		}
-		return false;
-	}
-	return item.value.indexOf(val) !== -1;
-}
-
-function compare_notin(doc, index, item) {
-	var val = doc[item.name];
-	if (val instanceof Array) {
-		for (var i = 0, length = val.length; i < length; i++) {
-			if (item.value.indexOf(val[i]) !== -1)
-				return false;
-		}
-		return true;
-	}
-	return item.value.indexOf(val) === -1;
-}
-
-function compare_notempty(doc, index, item) {
-	var val = doc[item.name];
-	return val instanceof Array ? (val.length ? true : false) : (val ? true : false);
-}
-
-function compare_empty(doc, index, item) {
-	var val = doc[item.name];
-	return val instanceof Array ? (val.length ? false : true) : (val ? false : true);
-}
-
-function compare_datetype(type, eqtype, val, doc) {
-
-	if (!doc)
-		return false;
-	else if (!doc.getTime) {
-		doc = new Date(doc);
-		if (isNaN(doc))
-			return false;
+	switch (operator) {
+		case '=':
+			operator = '==';
+			break;
+		case '<>':
+			operator = '!=';
+			break;
 	}
 
 	switch (type) {
-		case 'month':
-			doc = doc.getMonth() + 1;
-			break;
 		case 'day':
-			doc = doc.getDate();
+			type = 'getDate()';
+			break;
+		case 'month':
+			type = 'getMonth()+1';
 			break;
 		case 'year':
-			doc = doc.getFullYear();
+			type = 'getFullYear()';
 			break;
 	}
 
-	return eqtype === '=' ? val === doc : eqtype === '>' ? val > doc : eqtype === '<' ? val < doc : eqtype === '>=' ? val >= doc : eqtype === '<=' ? val <= doc : val !== doc;
-}
-
-function compare_eq_dtmonth(doc, index, item) {
-	return compare_datetype('month', '=', item.value, doc[item.name]);
-}
-
-function compare_lt_dtmonth(doc, index, item) {
-	return compare_datetype('month', '<', item.value, doc[item.name]);
-}
-
-function compare_gt_dtmonth(doc, index, item) {
-	return compare_datetype('month', '>', item.value, doc[item.name]);
-}
-
-function compare_eqlt_dtmonth(doc, index, item) {
-	return compare_datetype('month', '<=', item.value, doc[item.name]);
-}
-
-function compare_eqgt_dtmonth(doc, index, item) {
-	return compare_datetype('month', '>=', item.value, doc[item.name]);
-}
-
-function compare_not_dtmonth(doc, index, item) {
-	return compare_datetype('month', '!=', item.value, doc[item.name]);
-}
-
-function compare_eq_dtyear(doc, index, item) {
-	return compare_datetype('year', '=', item.value, doc[item.name]);
-}
-
-function compare_lt_dtyear(doc, index, item) {
-	return compare_datetype('year', '<', item.value, doc[item.name]);
-}
-
-function compare_gt_dtyear(doc, index, item) {
-	return compare_datetype('year', '>', item.value, doc[item.name]);
-}
-
-function compare_eqlt_dtyear(doc, index, item) {
-	return compare_datetype('year', '<=', item.value, doc[item.name]);
-}
-
-function compare_eqgt_dtyear(doc, index, item) {
-	return compare_datetype('year', '>=', item.value, doc[item.name]);
-}
-
-function compare_not_dtyear(doc, index, item) {
-	return compare_datetype('year', '!=', item.value, doc[item.name]);
-}
-
-function compare_eq_dtday(doc, index, item) {
-	return compare_datetype('day', '=', item.value, doc[item.name]);
-}
-
-function compare_lt_dtday(doc, index, item) {
-	return compare_datetype('day', '<', item.value, doc[item.name]);
-}
-
-function compare_gt_dtday(doc, index, item) {
-	return compare_datetype('day', '>', item.value, doc[item.name]);
-}
-
-function compare_eqlt_dtday(doc, index, item) {
-	return compare_datetype('day', '<=', item.value, doc[item.name]);
-}
-
-function compare_eqgt_dtday(doc, index, item) {
-	return compare_datetype('day', '>=', item.value, doc[item.name]);
-}
-
-function compare_not_dtday(doc, index, item) {
-	return compare_datetype('day', '!=', item.value, doc[item.name]);
+	return '$is=false;$tmp={0};if($tmp){if(!$tmp.getTime){$tmp=new Date($tmp);if(isNaN($tmp))$tmp=0;}if($tmp)$is=($tmp.{3}){2}{1};}'.format(key, arg, operator, type);
 }
 
 function errorhandling(err, builder, response) {

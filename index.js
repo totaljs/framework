@@ -287,6 +287,7 @@ global.WTF = (message, name, uri) => F.problem(message, name, uri);
 global.NOBIN = (name) => F.nosql(name).binary;
 global.NOCOUNTER = (name) => F.nosql(name).counter;
 global.NOMEM = global.NOSQLMEMORY = (name, view) => global.framework_nosql.inmemory(name, view);
+global.NOSQLWORKER = () => global.framework_nosql.worker();
 global.CONFIG = (name) => F.config[name];
 global.UPTODATE = (type, url, options, interval, callback) => F.uptodate(type, url, options, interval, callback);
 global.INSTALL = (type, name, declaration, options, callback) => F.install(type, name, declaration, options, callback);
@@ -5937,6 +5938,10 @@ F.backup = function(filename, filelist, callback, filter) {
 
 		var writer = Fs.createWriteStream(filename);
 
+		writer.on('finish', function() {
+			callback && Fs.stat(filename, (e, stat) => callback(null, { filename: filename, files: counter, size: stat.size }));
+		});
+
 		filelist.wait(function(item, next) {
 
 			if (item[0] !== '/')
@@ -5969,9 +5974,8 @@ F.backup = function(filename, filelist, callback, filter) {
 				}
 
 				var data = U.createBufferSize(0);
-
 				writer.write(item.padRight(padding) + ':');
-				CLEANUP(Fs.createReadStream(file).pipe(Zlib.createGzip(GZIPFILE)).on('data', function(chunk) {
+				Fs.createReadStream(file).pipe(Zlib.createGzip(GZIPFILE)).on('data', function(chunk) {
 
 					CONCAT[0] = data;
 					CONCAT[1] = chunk;
@@ -5983,17 +5987,15 @@ F.backup = function(filename, filelist, callback, filter) {
 						data = data.slice(data.length - remaining);
 					}
 
-				}), function() {
+				}).on('end', function() {
 					data.length && writer.write(data.toString('base64'));
 					writer.write('\n', 'utf8');
 					counter++;
-					next();
+					setImmediate(next);
 				});
 
 			});
-		}, function() {
-			callback && Fs.stat(filename, (e, stat) => callback(null, { filename: filename, files: counter, size: stat.size }));
-		});
+		}, () => writer.end());
 	});
 
 	return F;
