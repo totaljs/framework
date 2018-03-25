@@ -24,6 +24,8 @@
 - added: new directory `operations` with a new configuration item `directory-operations'
 - added: `String.crc32([unsigned])`
 - added: `U.hash('crc32')` and `U.hash('crc32unsigned')`
+- added: config `nosql-worker' for enabling worker for NoSQL embedded database (default: `false`)
+- added: config `nosql-inmemory' can contain name of databases e.g. (`users, products`) or String Array
 
 - updated: `GROUP()` by adding a new argument `url_prefix`
 - updated: `NEWSCHEMA()` supports `NEWSCHEMA('group/name')`

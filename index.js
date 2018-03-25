@@ -287,7 +287,6 @@ global.WTF = (message, name, uri) => F.problem(message, name, uri);
 global.NOBIN = (name) => F.nosql(name).binary;
 global.NOCOUNTER = (name) => F.nosql(name).counter;
 global.NOMEM = global.NOSQLMEMORY = (name, view) => global.framework_nosql.inmemory(name, view);
-global.NOSQLWORKER = () => global.framework_nosql.worker();
 global.CONFIG = (name) => F.config[name];
 global.UPTODATE = (type, url, options, interval, callback) => F.uptodate(type, url, options, interval, callback);
 global.INSTALL = (type, name, declaration, options, callback) => F.install(type, name, declaration, options, callback);
@@ -617,6 +616,8 @@ function Framework() {
 		'allow-filter-errors': true,
 		'disable-strict-server-certificate-validation': true,
 		'disable-clear-temporary-directory': false,
+		'nosql-worker': false,
+		'nosql-inmemory': null, // String Array
 
 		// Used in F.service()
 		// All values are in minutes
@@ -8546,7 +8547,12 @@ F.$configure_configs = function(arr, rewrite) {
 			case 'disable-clear-temporary-directory':
 			case 'trace':
 			case 'allow-cache-snapshot':
+			case 'nosql-worker':
 				obj[name] = value.toLowerCase() === 'true' || value === '1' || value === 'on';
+				break;
+
+			case 'nosql-inmemory':
+				obj[name] = typeof(value) === 'string' ? value.split(',').trim() : value instanceof Array ? value : null;
 				break;
 
 			case 'allow-compress-html':
@@ -8600,6 +8606,8 @@ F.$configure_configs = function(arr, rewrite) {
 	if (F.config['default-timezone'])
 		process.env.TZ = F.config['default-timezone'];
 
+	F.config['nosql-worker'] && framework_nosql.worker();
+	F.config['nosql-inmemory'] && F.config['nosql-inmemory'].forEach(n => framework_nosql.inmemory(n));
 	accepts && accepts.length && accepts.forEach(accept => F.config['static-accepts'][accept] = true);
 
 	if (F.config['disable-strict-server-certificate-validation'] === true)

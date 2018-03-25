@@ -71,6 +71,10 @@ exports.kill = function(signal) {
 };
 
 exports.worker = function() {
+
+	if (FORK)
+		return;
+
 	FORKCALLBACKS = {};
 	FORK = require('child_process').fork(module.filename.replace(/\.js$/, '') + 'worker.js', [], { cwd: F.directory });
 	FORK.send({ TYPE: 'init', directory: F.path.root() });
