@@ -99,6 +99,7 @@ function runwatching() {
 
 	function app() {
 
+		global.OBSOLETE = NOOP;
 		F.$configure_configs();
 		F.directory = directory;
 
