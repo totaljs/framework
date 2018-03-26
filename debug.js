@@ -226,6 +226,12 @@ function runwatching() {
 				dir = fn.substring(index, fn.indexOf('/', index + 1) + 1);
 			}
 
+			if (dir !== F.config['components']) {
+				var ext = fn.substring(fn.lastIndexOf('.') + 1);
+				if (ext && ext !== 'js' && ext !== 'package' && ext !== 'bundle' && ext !== 'resource')
+					return fn;
+			}
+
 			return F.config['directory-views'] === dir || F.config['directory-public'] === dir ? fn : '';
 		}
 
