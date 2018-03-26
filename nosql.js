@@ -650,13 +650,20 @@ Database.prototype.backup = function(filename, callback) {
 		}, (path, is) => is ? false : path.substring(self.directory.length + 1).startsWith(self.name + '-') && path.endsWith(EXTENSION_STORAGE));
 	});
 
+	pending.push(function(next) {
+		var filename = Path.join(F.config['directory-databases'], self.name + EXTENSION_MAPREDUCE);
+		F.path.exists(F.path.root(filename), function(e) {
+			e && list.push(filename);
+			next();
+		});
+	});
+
 	pending.async(function() {
 		if (list.length)
 			F.backup(filename, list, callback);
 		else
 			callback(new Error('No files for backuping.'));
 	});
-
 
 	return self;
 };
