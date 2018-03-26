@@ -4221,6 +4221,16 @@ Storage.prototype.scan = function(beg, end, mapreduce, callback) {
 	var tmp;
 
 	if (beg) {
+
+		if (typeof(beg) === 'string') {
+			beg = beg.toString().split('-');
+			if (beg[1] && beg[1].length < 2)
+				beg[1] = '0' + beg[1];
+			if (beg[2] && beg[2].length < 2)
+				beg[2] = '0' + beg[2];
+			beg = +beg.join('');
+		}
+
 		tmp = beg.toString().length;
 		if (tmp === 4)
 			beg *= 10000;
@@ -4229,6 +4239,16 @@ Storage.prototype.scan = function(beg, end, mapreduce, callback) {
 	}
 
 	if (end) {
+
+		if (typeof(end) === 'string') {
+			end = end.toString().split('-');
+			if (end[1] && end[1].length < 2)
+				end[1] = '0' + end[1];
+			if (end[2] && end[2].length < 2)
+				end[2] = '0' + end[2];
+			end = +end.join('');
+		}
+
 		tmp = end.toString().length;
 		if (tmp === 4)
 			end *= 10000;
