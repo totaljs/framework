@@ -96,7 +96,6 @@ process.on('message', function(msg) {
 			break;
 		case 'view':
 			db.view(msg.arg[0]).parse(msg.data);
-			RESVIEW.id = msg.id;
 			break;
 		case 'backup':
 			db.backup(msg.arg[0], function(err, response) {
@@ -159,7 +158,7 @@ process.on('message', function(msg) {
 			db.storage.insert(msg.arg[0]);
 			break;
 		case 'storage.stats':
-			db.storage.stats(msg.arg[0], function(err, response, repository) {
+			db.storage.stats(msg.arg[0], function(err, response) {
 				RESTORAGESTATS.id = msg.id;
 				RESTORAGESTATS.response = response;
 				RESTORAGESTATS.err = err;
