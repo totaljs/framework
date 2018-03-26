@@ -474,26 +474,26 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 					break;
 				case 'plain':
 					if (!def)
-						def = headers[CT] = 'text/plain';
+						headers[CT] = 'text/plain';
 					break;
 				case 'html':
 					if (!def)
-						def = headers[CT] = 'text/html';
+						headers[CT] = 'text/html';
 					break;
 				case 'raw':
 					type = 3;
 					if (!def)
-						def = headers[CT] = 'application/octet-stream';
+						headers[CT] = 'application/octet-stream';
 					break;
 				case 'json':
 					if (!def)
-						def = headers[CT] = 'application/json';
+						headers[CT] = 'application/json';
 					!method && (method = 'POST');
 					type = 1;
 					break;
 				case 'xml':
 					if (!def)
-						def = headers[CT] = 'text/xml';
+						headers[CT] = 'text/xml';
 					!method && (method = 'POST');
 					type = 2;
 					break;
@@ -521,7 +521,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 				case 'delete':
 				case 'patch':
 					method = flags[i].toUpperCase();
-					!def && (def = headers['Content-Type'] = 'application/x-www-form-urlencoded');
+					!def && (headers['Content-Type'] = 'application/x-www-form-urlencoded');
 					break;
 
 				case 'dnscache':
