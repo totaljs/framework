@@ -4330,7 +4330,6 @@ Storage.prototype.scan = function(beg, end, mapreduce, callback) {
 			stats.current = item.date;
 			stats.index = index;
 
-			reader.on('error', finish);
 			reader.on('data', framework_utils.streamer(NEWLINEBUF, function(value, index) {
 
 				if (value[0] !== '{')
@@ -4359,6 +4358,8 @@ Storage.prototype.scan = function(beg, end, mapreduce, callback) {
 
 				setImmediate(next);
 			};
+
+			reader.on('error', finish);
 
 			if (reader)
 				CLEANUP(reader, finish);
