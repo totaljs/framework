@@ -4155,8 +4155,17 @@ Storage.prototype.insert = function(doc) {
 };
 
 Storage.prototype.stats = function(name, fn) {
-	var item = this.$mapreduce.findItem('name', name);
-	fn(item ? null : new Error('Stats of MapReduce "{0}" not found.'.format(name)), item ? (FORK ? item.repository : CLONE(item.repository)) : null);
+	if (fn == null) {
+		var obj = {};
+		for (var i = 0; i < this.$mapreduce.length; i++) {
+			var item = this.$mapreduce[i];
+			obj[item.name] = FORK ? item.repository : U.clone(item.repository);
+		}
+		name(null, obj);
+	} else {
+		var item = this.$mapreduce.findItem('name', name);
+		fn(item ? null : new Error('Stats of MapReduce "{0}" not found.'.format(name)), item ? (FORK ? item.repository : CLONE(item.repository)) : null);
+	}
 	return this;
 };
 
