@@ -3035,11 +3035,8 @@ F.$notModified = function(req, res, date) {
  */
 F.error = function(err, name, uri) {
 
-	if (!arguments.length) {
-		return function(err) {
-			err && F.error(err, name, uri);
-		};
-	}
+	if (!arguments.length)
+		return F.errorcallback;
 
 	if (!err)
 		return F;
@@ -3052,6 +3049,10 @@ F.error = function(err, name, uri) {
 
 	F.onError(err, name, uri);
 	return F;
+};
+
+F.errorcallback = function(err) {
+	err && F.error(err);
 };
 
 /**

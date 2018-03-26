@@ -46,6 +46,7 @@ const EXTENSION_BINARY = '.nosql-binary';
 const EXTENSION_TMP = '.nosql-tmp';
 const EXTENSION_LOG = '.nosql-log';
 const EXTENSION_STORAGE = '.nosql-storage';
+const EXTENSION_MAPREDUCE = '.nosql-mapreduce';
 const EXTENSION_BACKUP = '.nosql-backup';
 const EXTENSION_META = '.meta';
 const EXTENSION_COUNTER = '-counter2';
@@ -120,6 +121,10 @@ exports.worker = function() {
 			case 'storage.scan':
 				var obj = FORKCALLBACKS[msg.id];
 				obj && obj.callback(msg.err, msg.response, msg.repository);
+				break;
+			case 'storage.stats':
+				var obj = FORKCALLBACKS[msg.id];
+				obj && obj.callback(msg.err, msg.response);
 				break;
 		}
 		delete FORKCALLBACKS[msg.id];
@@ -332,6 +337,15 @@ exports.worker = function() {
 		return this;
 	};
 
+	Storage.prototype.mapreduce = function(name, fn) {
+		send(this.db, 'storage.mapreduce', name, fn);
+		return this;
+	};
+
+	Storage.prototype.stats = function(name, callback) {
+		send(this.db, 'storage.stats', name).callback = callback;
+		return this;
+	};
 };
 
 function Database(name, filename) {
@@ -4082,10 +4096,20 @@ Binary.prototype.all = function(callback) {
 };
 
 function Storage(db, directory) {
+
 	this.db = db;
 	this.pending = [];
 	this.locked_writer = 0;
 	this.locked_reader = false;
+
+	this.$mapreducefile = Path.join(db.directory, db.name + EXTENSION_MAPREDUCE);
+	this.$mapreduce = [];
+
+	try {
+		this.$mapreduce = Fs.readFileSync(this.$mapreducefile).toString('utf8').parseJSON(true);
+		for (var i = 0; i < this.$mapreduce.length; i++)
+			this.$mapreduce[i].reduce = eval('(' + this.$mapreduce[i].fn + ')');
+	} catch (e) {}
 }
 
 Storage.prototype.insert = function(doc) {
@@ -4104,16 +4128,67 @@ Storage.prototype.insert = function(doc) {
 		return self;
 	}
 
+	self.locked_reader = true;
+
+	if (self.$mapreduce.length) {
+		for (var i = 0, length = self.$mapreduce.length; i < length; i++) {
+			var mr = self.$mapreduce[i];
+			mr.ready && mr.reduce(doc, mr.repository);
+		}
+		self.$mapreducesave();
+	}
+
 	if (self.locked_writer) {
 		self.pending.push(JSON.stringify(doc));
 		return self;
 	}
 
-	self.locked_reader = true;
 	Fs.appendFile(self.db.filenameStorage.format(F.datetime.format('yyyyMMdd')), JSON.stringify(doc) + NEWLINE, function() {
 		self.locked_reader = false;
 	});
 
+	return self;
+};
+
+Storage.prototype.stats = function(name, fn) {
+	var item = this.$mapreduce.findItem('name', name);
+	fn(item ? null : new Error('Stats of MapReduce "{0}" not found.'.format(name)), item ? (FORK ? item.repository : CLONE(item.repository)) : null);
+	return this;
+};
+
+Storage.prototype.mapreduce = function(name, fn) {
+
+	var self = this;
+
+	if (!self.$mapreduce)
+		self.$mapreduce = [];
+
+	var item = self.$mapreduce.findItem('name', name);
+
+	if (item) {
+		item.reduce = fn;
+	} else {
+		item = {};
+		item.name = name;
+		item.repository = {};
+		item.reduce = fn;
+		item.ready = false;
+		self.$mapreduce.push(item);
+	}
+
+	// Scan storage for this new mapreduce record
+	!item.ready && self.scan(item.reduce, function(err, repository) {
+		item.repository = repository;
+		item.ready = true;
+		self.$mapreducesave();
+	});
+
+	return self;
+};
+
+Storage.prototype.$mapreducesave = function() {
+	var self = this;
+	Fs.writeFile(self.$mapreducefile, JSON.stringify(self.$mapreduce, (k, v) => k !== 'reduce' ? v : undefined), F.error());
 	return self;
 };
 
