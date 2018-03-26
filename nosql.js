@@ -4096,20 +4096,17 @@ Binary.prototype.all = function(callback) {
 };
 
 function Storage(db, directory) {
-
 	this.db = db;
 	this.pending = [];
 	this.locked_writer = 0;
 	this.locked_reader = false;
-
-	this.$mapreducefile = Path.join(db.directory, db.name + EXTENSION_MAPREDUCE);
-	this.$mapreduce = [];
-
-	try {
-		this.$mapreduce = Fs.readFileSync(this.$mapreducefile).toString('utf8').parseJSON(true);
-		for (var i = 0; i < this.$mapreduce.length; i++)
-			this.$mapreduce[i].reduce = eval('(' + this.$mapreduce[i].fn + ')');
-	} catch (e) {}
+	if (!FORK) {
+		this.$mapreducefile = Path.join(db.directory, db.name + EXTENSION_MAPREDUCE);
+		this.$mapreduce = [];
+		try {
+			this.$mapreduce = Fs.readFileSync(this.$mapreducefile).toString('utf8').parseJSON(true);
+		} catch (e) {}
+	}
 }
 
 Storage.prototype.insert = function(doc) {
