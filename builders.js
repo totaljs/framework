@@ -307,11 +307,7 @@ SchemaBuilderEntity.prototype.define = function(name, type, required, custom) {
 	if (type == null) {
 		// remove
 		delete this.schema[name];
-		if (this.properties) {
-			this.properties = this.properties.remove(name);
-			if (!this.properties.length)
-				this.properties = null;
-		}
+		this.properties = this.properties.remove(name);
 		if (this.dependencies)
 			this.dependencies = this.dependencies.remove(name);
 		this.fields = Object.keys(this.schema);
@@ -334,15 +330,10 @@ SchemaBuilderEntity.prototype.define = function(name, type, required, custom) {
 
 	this.fields = Object.keys(this.schema);
 
-	if (required) {
-		if (this.properties == null)
-			this.properties = [];
+	if (required)
 		this.properties.indexOf(name) === -1 && this.properties.push(name);
-	} else if (this.properties) {
+	else
 		this.properties = this.properties.remove(name);
-		if (!this.properties.length)
-			this.properties = null;
-	}
 
 	return this;
 };
