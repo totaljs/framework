@@ -304,11 +304,14 @@ SchemaBuilderEntity.prototype.define = function(name, type, required, custom) {
 		required = false;
 	}
 
-	if (arguments.length === 1) {
+	if (type == null) {
 		// remove
-		this.schema[name] = null;
-		if (this.properties)
+		delete this.schema[name];
+		if (this.properties) {
 			this.properties = this.properties.remove(name);
+			if (!this.properties.length)
+				this.properties = null;
+		}
 		if (this.dependencies)
 			this.dependencies = this.dependencies.remove(name);
 		this.fields = Object.keys(this.schema);
@@ -335,8 +338,11 @@ SchemaBuilderEntity.prototype.define = function(name, type, required, custom) {
 		if (this.properties == null)
 			this.properties = [];
 		this.properties.indexOf(name) === -1 && this.properties.push(name);
-	} else if (this.properties)
+	} else if (this.properties) {
 		this.properties = this.properties.remove(name);
+		if (!this.properties.length)
+			this.properties = null;
+	}
 
 	return this;
 };
