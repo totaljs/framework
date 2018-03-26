@@ -5954,10 +5954,14 @@ F.backup = function(filename, filelist, callback, filter) {
 
 		filelist.wait(function(item, next) {
 
+			var file = Path.join(path, item);
+
+			if (F.isWindows)
+				item = item.replace(/\\/g, '/');
+
 			if (item[0] !== '/')
 				item = '/' + item;
 
-			var file = Path.join(path, item);
 			Fs.stat(file, function(err, stats) {
 
 				if (err) {
