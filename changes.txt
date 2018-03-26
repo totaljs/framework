@@ -51,6 +51,7 @@
 - fixed: schema validation
 - fixed: `U.atob()`
 - fixed: `U.btoa()`
+- fixed: schema field can be changed dynamically
 
 - improved: `debug` mode timing with improved consumption
 - improved: NoSQL embedded database
