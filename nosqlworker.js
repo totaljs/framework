@@ -12,6 +12,7 @@ const RESCOUNTERSTATS = { TYPE: 'counter.stats' };
 const RESCOUNTERCLEAR = { TYPE: 'counter.clear' };
 const RESTORAGESCAN = { TYPE: 'storage.scan' };
 const RESTORAGESTATS = { TYPE: 'storage.stats' };
+const RESSTORAGECLEAR = { TYPE: 'storage.clear' };
 
 function killprocess() {
 	process.exit(0);
@@ -172,6 +173,14 @@ process.on('message', function(msg) {
 				RESTORAGESCAN.repository = repository;
 				RESTORAGESCAN.err = err;
 				process.send(RESTORAGESCAN);
+			});
+			break;
+		case 'storage.clear':
+			db.storage.clear(function(err, response) {
+				RESSTORAGECLEAR.id = msg.id;
+				RESSTORAGECLEAR.response = response;
+				RESSTORAGECLEAR.err = err;
+				process.send(RESSTORAGECLEAR);
 			});
 			break;
 	}

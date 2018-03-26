@@ -109,22 +109,17 @@ exports.worker = function() {
 				break;
 			case 'backup':
 			case 'restore':
-				var obj = FORKCALLBACKS[msg.id];
-				obj && obj.callback(msg.err, msg.response);
-				break;
 			case 'counter.read':
 			case 'counter.stats':
 			case 'counter.clear':
+			case 'storage.stats':
+			case 'storage.clear':
 				var obj = FORKCALLBACKS[msg.id];
-				obj && obj.callback(msg.err, msg.response);
+				obj && obj.callback && obj.callback(msg.err, msg.response);
 				break;
 			case 'storage.scan':
 				var obj = FORKCALLBACKS[msg.id];
-				obj && obj.callback(msg.err, msg.response, msg.repository);
-				break;
-			case 'storage.stats':
-				var obj = FORKCALLBACKS[msg.id];
-				obj && obj.callback(msg.err, msg.response);
+				obj && obj.callback && obj.callback(msg.err, msg.response, msg.repository);
 				break;
 		}
 		delete FORKCALLBACKS[msg.id];
@@ -346,6 +341,12 @@ exports.worker = function() {
 		send(this.db, 'storage.stats', name).callback = callback;
 		return this;
 	};
+
+	Storage.prototype.clear = function(callback) {
+		send(this.db, 'storage.clear').callback = callback;
+		return this;
+	};
+
 };
 
 function Database(name, filename) {
@@ -4147,7 +4148,8 @@ Storage.prototype.insert = function(doc) {
 		return self;
 	}
 
-	Fs.appendFile(self.db.filenameStorage.format(F.datetime.format('yyyyMMdd')), JSON.stringify(doc) + NEWLINE, function() {
+	Fs.appendFile(self.db.filenameStorage.format(F.datetime.format('yyyyMMdd')), JSON.stringify(doc) + NEWLINE, function(err) {
+		err && F.error(err, 'NoSQL.storage');
 		self.locked_reader = false;
 	});
 
@@ -4202,6 +4204,39 @@ Storage.prototype.mapreduce = function(name, fn) {
 Storage.prototype.$mapreducesave = function() {
 	var self = this;
 	Fs.writeFile(self.$mapreducefile, JSON.stringify(self.$mapreduce, (k, v) => k !== 'reduce' ? v : undefined), F.error());
+	return self;
+};
+
+Storage.prototype.clear = function(callback) {
+	var self = this;
+	U.ls(self.db.directory, function(files) {
+
+		var count = 0;
+
+		var remove = function(filename, callback, attemp) {
+			Fs.unlink(filename, function(err) {
+				if (err) {
+					if (err.toString().indexOf('no such file') === -1) {
+						if (attemp > 5)
+							callback();
+						else
+							setTimeout(() => remove(filename, callback, (attemp || 0) + 1), 100);
+					} else
+						callback();
+				} else {
+					count++;
+					callback();
+				}
+			});
+		};
+
+		files.wait((filename, next) => remove(filename, next), function() {
+			remove(self.$mapreducefile, function() {
+				callback(null, count);
+			});
+		});
+
+	}, (path, is) => is ? false : path.substring(self.db.directory.length + 1).startsWith(self.db.name + '-') && path.endsWith(EXTENSION_STORAGE));
 	return self;
 };
 
@@ -4295,7 +4330,8 @@ Storage.prototype.scan = function(beg, end, mapreduce, callback) {
 			stats.current = item.date;
 			stats.index = index;
 
-			reader && reader.on('data', framework_utils.streamer(NEWLINEBUF, function(value, index) {
+			reader.on('error', finish);
+			reader.on('data', framework_utils.streamer(NEWLINEBUF, function(value, index) {
 
 				if (value[0] !== '{')
 					return;
@@ -4353,6 +4389,7 @@ Storage.prototype.scan = function(beg, end, mapreduce, callback) {
 		});
 
 	}, (path, is) => is ? false : path.substring(self.db.directory.length + 1).startsWith(self.db.name + '-') && path.endsWith(EXTENSION_STORAGE));
+	return self;
 }
 
 function Backuper(filename) {
