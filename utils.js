@@ -1963,7 +1963,7 @@ function rnd() {
 	return Math.floor(Math.random() * 65536).toString(36);
 }
 
-exports.GUID = function(max) {
+global.GUID = exports.GUID = function(max) {
 	max = max || 40;
 	var str = '';
 	for (var i = 0; i < (max / 3) + 1; i++)
