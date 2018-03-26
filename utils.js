@@ -439,10 +439,12 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 	var method;
 	var type = 0;
 	var isCookies = false;
+	var def;
 
-	if (headers)
+	if (headers) {
 		headers = exports.extend({}, headers);
-	else
+		def = headers[CT];
+	} else
 		headers = {};
 
 	if (flags instanceof Array) {
@@ -471,26 +473,26 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 					headers['X-Requested-With'] = 'XMLHttpRequest';
 					break;
 				case 'plain':
-					if (!headers[CT])
+					if (!def)
 						headers[CT] = 'text/plain';
 					break;
 				case 'html':
-					if (!headers[CT])
+					if (!def)
 						headers[CT] = 'text/html';
 					break;
 				case 'raw':
 					type = 3;
-					if (!headers[CT])
+					if (!def)
 						headers[CT] = 'application/octet-stream';
 					break;
 				case 'json':
-					if (!headers[CT])
+					if (!def)
 						headers[CT] = 'application/json';
 					!method && (method = 'POST');
 					type = 1;
 					break;
 				case 'xml':
-					if (!headers[CT])
+					if (!def)
 						headers[CT] = 'text/xml';
 					!method && (method = 'POST');
 					type = 2;
@@ -519,7 +521,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 				case 'delete':
 				case 'patch':
 					method = flags[i].toUpperCase();
-					!headers[CT] && (headers['Content-Type'] = 'application/x-www-form-urlencoded');
+					!def && (headers['Content-Type'] = 'application/x-www-form-urlencoded');
 					break;
 
 				case 'dnscache':
