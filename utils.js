@@ -521,7 +521,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 				case 'delete':
 				case 'patch':
 					method = flags[i].toUpperCase();
-					!def && (headers['Content-Type'] = 'application/x-www-form-urlencoded');
+					!def && !headers[CT] && (headers[CT] = 'application/x-www-form-urlencoded');
 					break;
 
 				case 'dnscache':
