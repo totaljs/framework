@@ -7068,14 +7068,14 @@ F.$requestcontinue = function(req, res, headers) {
 	req.buffer_has = false;
 	req.$flags = req.method[0] + req.method[1];
 
+	var flags = [req.method.toLowerCase()];
+	var multipart;
+
 	if (headers['x-proxy'] === 'total.js') {
 		req.isProxy = true;
 		req.$flags += 'f';
 		flags.push('proxy');
 	}
-
-	var flags = [req.method.toLowerCase()];
-	var multipart;
 
 	if (F._request_check_mobile && req.mobile) {
 		req.$flags += 'a';
