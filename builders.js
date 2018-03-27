@@ -2486,6 +2486,10 @@ function async_continue(self) {
 	});
 }
 
+SchemaInstance.prototype.$response = function(index) {
+	return this.$$result[index == null ? this.$$index : index];
+};
+
 SchemaInstance.prototype.$repository = function(name, value) {
 
 	if (this.$$repository === undefined) {

@@ -29,6 +29,7 @@
 - added: config `nosql-inmemory' can contain name of databases e.g. (`users, products`) or String Array
 - added: `NOSQLSTORAGE(name)` alias for `NOSQL(name).storage`
 - added: `GUID()` a global alias for `U.GUID()`
+- added: `SchemaBuilderEntity.$response([index])` returns a specific response from an operation in `async` queue
 
 - updated: `GROUP()` by adding a new argument `url_prefix`
 - updated: `NEWSCHEMA()` supports `NEWSCHEMA('group/name')`
