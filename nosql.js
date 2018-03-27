@@ -45,7 +45,6 @@ const EXTENSION = '.nosql';
 const EXTENSION_BINARY = '.nosql-binary';
 const EXTENSION_TMP = '.nosql-tmp';
 const EXTENSION_LOG = '.nosql-log';
-const EXTENSION_STORAGE = '.nosql-storage';
 const EXTENSION_MAPREDUCE = '.nosql-mapreduce';
 const EXTENSION_BACKUP = '.nosql-backup';
 const EXTENSION_META = '.meta';
@@ -342,8 +341,8 @@ exports.worker = function() {
 		return this;
 	};
 
-	Storage.prototype.clear = function(callback) {
-		send(this.db, 'storage.clear').callback = callback;
+	Storage.prototype.clear = function(beg, end, callback) {
+		send(this.db, 'storage.clear', beg, end).callback = callback;
 		return this;
 	};
 
@@ -358,7 +357,7 @@ function Database(name, filename) {
 	self.filenameTemp = filename + EXTENSION_TMP;
 	self.filenameLog = self.readonly ? '' : filename + EXTENSION_LOG;
 	self.filenameBackup = self.readonly ? '' : filename + EXTENSION_BACKUP;
-	self.filenameStorage = self.readonly ? '' : filename + '-{0}' + EXTENSION_STORAGE;
+	self.filenameStorage = self.readonly ? '' : filename + '-storage/' + name + '-{0}' + EXTENSION;
 	self.filenameMeta = filename + EXTENSION_META;
 	self.directory = Path.dirname(filename);
 	self.filenameBackup2 = framework_utils.join(self.directory, name + '_backup' + EXTENSION);
@@ -373,8 +372,8 @@ function Database(name, filename) {
 	self.pending_drops = false;
 	self.pending_views = false;
 	self.binary = self.readonly ? null : new Binary(self, self.directory + '/' + self.name + '-binary/');
+	self.storage = self.readonly ? null : new Storage(self, self.directory + '/' + self.name + '-storage/');
 	self.counter = new Counter(self);
-	self.storage = new Storage(self);
 	self.inmemory = {};
 	self.inmemorylastusage;
 	self.metadata;
@@ -585,7 +584,13 @@ Database.prototype.restore = function(filename, callback) {
 
 		F.restore(filename, F.path.root(), function(err, response) {
 			self.type = 0;
-			!err && self.refresh();
+
+			if (!err) {
+				self.$meta();
+				self.refresh();
+				self.storage && self.storage.refresh();
+			}
+
 			callback && callback(err, response);
 		});
 
@@ -644,11 +649,10 @@ Database.prototype.backup = function(filename, callback) {
 	});
 
 	pending.push(function(next) {
-		U.ls(self.directory, function(files) {
-			for (var i = 0, length = files.length; i < length; i++)
-				list.push(Path.join(F.config['directory-databases'], files[i].substring(self.directory.length)));
+		F.path.exists(F.path.databases(self.name + '-storage'), function(e, size, file) {
+			e && !file && list.push(Path.join(F.config['directory-databases'], self.name + '-storage'));
 			next();
-		}, (path, is) => is ? false : path.substring(self.directory.length + 1).startsWith(self.name + '-') && path.endsWith(EXTENSION_STORAGE));
+		});
 	});
 
 	pending.push(function(next) {
@@ -912,7 +916,7 @@ Database.prototype.$save = function(view) {
 		if (view !== '#')
 			filename = filename.replace(/\.nosql/, '#' + view + '.nosql');
 
-		Fs.writeFile(filename, builder.join(NEWLINE) + NEWLINE, NOOP);
+		Fs.writeFile(filename, builder.join(NEWLINE) + NEWLINE, F.error());
 	}, 50, 100);
 	return self;
 };
@@ -960,7 +964,7 @@ Database.prototype.$meta = function(write) {
 
 	if (write) {
 		self.readonly && self.throwReadonly();
-		Fs.writeFile(self.filenameMeta, JSON.stringify(self.metadata), NOOP);
+		Fs.writeFile(self.filenameMeta, JSON.stringify(self.metadata), F.error());
 		return self;
 	}
 
@@ -990,6 +994,9 @@ Database.prototype.$append = function() {
 			json.push(items[i].doc);
 
 		Fs.appendFile(self.filename, json.join(NEWLINE) + NEWLINE, function(err) {
+
+			err && F.error(err, 'NoSQL insert: ' + self.name);
+
 			for (var i = 0, length = items.length; i < length; i++) {
 				items[i].builder.$options.log && items[i].builder.log();
 				var callback = items[i].builder.$callback;
@@ -1305,7 +1312,7 @@ Database.prototype.$reader2 = function(filename, items, callback, reader) {
 	if (self.readonly) {
 		if (reader === undefined) {
 			U.download(filename, FLAGS_READ, function(err, response) {
-				err && F.error(err, 'NoSQL database: ' + self.name);
+				err && F.error(err, 'NoSQL database download: ' + self.name);
 				self.$reader2(filename, items, callback, err ? null : response);
 			});
 			return self;
@@ -2044,7 +2051,7 @@ DatabaseBuilder2.prototype.log = function(msg, user) {
 		F.datetime = new Date();
 		self.$options.log = (self.$options.log ? self.$options.log : '') + F.datetime.format('yyyy-MM-dd HH:mm:ss') + ' | ' + (user ? user.padRight(20) + ' | ' : '') + msg + NEWLINE;
 	} else if (self.$options.log) {
-		self.db.filenameLog && Fs.appendFile(self.db.filenameLog, self.$options.log, NOOP);
+		self.db.filenameLog && Fs.appendFile(self.db.filenameLog, self.$options.log, F.error());
 		self.$options.log = '';
 	}
 	return self;
@@ -2101,7 +2108,7 @@ DatabaseBuilder.prototype.log = function(msg, user) {
 		F.datetime = new Date();
 		self.$options.log = (self.$options.log ? self.$options.log : '') + F.datetime.format('yyyy-MM-dd HH:mm:ss') + ' | ' + (user ? user.padRight(20) + ' | ' : '') + msg + NEWLINE;
 	} else if (self.$options.log) {
-		self.db.filenameLog && Fs.appendFile(self.db.filenameLog, self.$options.log, NOOP);
+		self.db.filenameLog && Fs.appendFile(self.db.filenameLog, self.$options.log, F.error());
 		self.$options.log = '';
 	}
 	return self;
@@ -2325,7 +2332,7 @@ DatabaseBuilder.prototype.backup = function(user) {
 };
 
 DatabaseBuilder.prototype.$backupdoc = function(doc) {
-	this.db.filenameBackup && Fs.appendFile(this.db.filenameBackup, F.datetime.format('yyyy-MM-dd HH:mm') + ' | ' + this.$options.backup.padRight(20) + ' | ' + JSON.stringify(doc) + NEWLINE, NOOP);
+	this.db.filenameBackup && Fs.appendFile(this.db.filenameBackup, F.datetime.format('yyyy-MM-dd HH:mm') + ' | ' + this.$options.backup.padRight(20) + ' | ' + JSON.stringify(doc) + NEWLINE, F.error());
 	return this;
 };
 
@@ -4105,17 +4112,39 @@ Binary.prototype.all = function(callback) {
 
 function Storage(db, directory) {
 	this.db = db;
+	this.directory = directory;
 	this.pending = [];
 	this.locked_writer = 0;
 	this.locked_reader = false;
+	this.exists = false;
 	if (!FORK) {
 		this.$mapreducefile = Path.join(db.directory, db.name + EXTENSION_MAPREDUCE);
 		this.$mapreduce = [];
-		try {
-			this.$mapreduce = Fs.readFileSync(this.$mapreducefile).toString('utf8').parseJSON(true);
-		} catch (e) {}
+		this.refresh();
 	}
 }
+
+Storage.prototype.refresh = function() {
+	try {
+		this.$mapreduce = Fs.readFileSync(this.$mapreducefile).toString('utf8').parseJSON(true);
+	} catch (e) {}
+	return this;
+};
+
+Storage.prototype.check = function() {
+
+	var self = this;
+	if (self.exists)
+		return self;
+
+	self.exists = true;
+
+	try {
+		Fs.mkdirSync(self.directory);
+	} catch (err) {}
+
+	return self;
+};
 
 Storage.prototype.insert = function(doc) {
 
@@ -4125,7 +4154,9 @@ Storage.prototype.insert = function(doc) {
 		if (self.pending.length) {
 			var dt = F.datetime.format('yyyyMMdd');
 			self.locked_reader = true;
-			Fs.appendFile(self.db.filenameStorage.format(dt), self.pending.join(NEWLINE) + NEWLINE, function() {
+			self.check();
+			Fs.appendFile(self.db.filenameStorage.format(dt), self.pending.join(NEWLINE) + NEWLINE, function(err) {
+				err && F.error(err, 'NoSQL storage insert: ' + self.db.name);
 				self.locked_reader = false;
 			});
 			self.pending = [];
@@ -4148,8 +4179,9 @@ Storage.prototype.insert = function(doc) {
 		return self;
 	}
 
+	self.check();
 	Fs.appendFile(self.db.filenameStorage.format(F.datetime.format('yyyyMMdd')), JSON.stringify(doc) + NEWLINE, function(err) {
-		err && F.error(err, 'NoSQL.storage');
+		err && F.error(err, 'NoSQL storage insert: ' + self.db.name);
 		self.locked_reader = false;
 	});
 
@@ -4196,7 +4228,7 @@ Storage.prototype.mapreduce = function(name, fn) {
 		item.repository = repository;
 		item.ready = true;
 		self.$mapreducesave();
-	});
+	}, true);
 
 	return self;
 };
@@ -4207,54 +4239,9 @@ Storage.prototype.$mapreducesave = function() {
 	return self;
 };
 
-Storage.prototype.clear = function(callback) {
-	var self = this;
-	U.ls(self.db.directory, function(files) {
-
-		var count = 0;
-
-		var remove = function(filename, callback, attemp) {
-			Fs.unlink(filename, function(err) {
-				if (err) {
-					if (err.toString().indexOf('no such file') === -1) {
-						if (attemp > 5)
-							callback();
-						else
-							setTimeout(() => remove(filename, callback, (attemp || 0) + 1), 100);
-					} else
-						callback();
-				} else {
-					count++;
-					callback();
-				}
-			});
-		};
-
-		files.wait((filename, next) => remove(filename, next), function() {
-			remove(self.$mapreducefile, function() {
-				callback(null, count);
-			});
-		});
-
-	}, (path, is) => is ? false : path.substring(self.db.directory.length + 1).startsWith(self.db.name + '-') && path.endsWith(EXTENSION_STORAGE));
-	return self;
-};
-
-Storage.prototype.scan = function(beg, end, mapreduce, callback) {
-
-	if (typeof(beg) === 'function') {
-		mapreduce = beg;
-		callback = end;
-		beg = null;
-		end = null;
-	} else if (typeof(end) === 'function') {
-		callback = mapreduce;
-		mapreduce = end;
-		end = null;
-	}
+Storage.prototype.listing = function(beg, end, callback) {
 
 	var tmp;
-
 	if (beg) {
 
 		if (typeof(beg) === 'string') {
@@ -4293,23 +4280,50 @@ Storage.prototype.scan = function(beg, end, mapreduce, callback) {
 
 	var self = this;
 
-	U.ls(self.db.directory, function(files) {
-
+	U.ls(self.directory, function(files) {
 		var storage = [];
-		var repository = {};
-		var stats = {};
-
 		for (var i = 0, length = files.length; i < length; i++) {
 			var item = files[i];
-			var skip = item.length - EXTENSION_STORAGE.length;
+			var skip = item.length - EXTENSION.length;
 			var date = +item.substring(skip - 8, skip);
 			if ((beg && beg > date) || (end && end < date))
 				continue;
 			storage.push({ filename: item, date: date });
 		}
+		callback(null, storage);
+	}, (path, is) => is ? false : path.endsWith(EXTENSION));
+
+	return self;
+};
+
+Storage.prototype.scan = function(beg, end, mapreduce, callback, reverse) {
+	var self = this;
+
+	if (typeof(beg) === 'function') {
+		reverse = mapreduce;
+		mapreduce = beg;
+		callback = end;
+		beg = null;
+		end = null;
+	} else if (typeof(end) === 'function') {
+		reverse = callback;
+		callback = mapreduce;
+		mapreduce = end;
+		end = null;
+	}
+
+	if (typeof(callback) === 'boolean') {
+		reverse = callback;
+		callback = null;
+	}
+
+	self.listing(beg, end, function(err, storage) {
+
+		var repository = {};
+		var stats = {};
 
 		// Desc
-		storage.quicksort('date', false);
+		storage.quicksort('date', reverse == true);
 
 		stats.files = storage.length;
 		stats.documents = 0;
@@ -4389,9 +4403,53 @@ Storage.prototype.scan = function(beg, end, mapreduce, callback) {
 			callback && callback(null, repository, stats);
 		});
 
-	}, (path, is) => is ? false : path.substring(self.db.directory.length + 1).startsWith(self.db.name + '-') && path.endsWith(EXTENSION_STORAGE));
+	});
+
 	return self;
 }
+
+Storage.prototype.clear = function(beg, end, callback) {
+	var self = this;
+
+	if (typeof(beg) === 'function') {
+		mapreduce = beg;
+		callback = end;
+		beg = null;
+		end = null;
+	} else if (typeof(end) === 'function') {
+		callback = mapreduce;
+		mapreduce = end;
+		end = null;
+	}
+
+	self.listing(beg, end, function(err, files) {
+
+		var count = 0;
+
+		var remove = function(filename, callback, attemp) {
+			Fs.unlink(filename, function(err) {
+				if (err) {
+					if (err.toString().indexOf('no such file') === -1) {
+						if (attemp > 5)
+							callback();
+						else
+							setTimeout(() => remove(filename, callback, (attemp || 0) + 1), 100);
+					} else
+						callback();
+				} else {
+					count++;
+					callback();
+				}
+			});
+		};
+
+		files.wait((filename, next) => remove(filename, next), function() {
+			remove(self.$mapreducefile, () => callback && callback(null, count));
+		});
+
+	});
+	return self;
+};
 
 function Backuper(filename) {
 	this.filename = filename;

@@ -176,7 +176,7 @@ process.on('message', function(msg) {
 			});
 			break;
 		case 'storage.clear':
-			db.storage.clear(function(err, response) {
+			db.storage.clear(msg.arg[0], msg.arg[1], function(err, response) {
 				RESSTORAGECLEAR.id = msg.id;
 				RESSTORAGECLEAR.response = response;
 				RESSTORAGECLEAR.err = err;
