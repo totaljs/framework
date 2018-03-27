@@ -1900,6 +1900,8 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 					tmp.push(flag);
 					method += (method ? ',' : '') + flag;
 					corsflags.push(flag);
+					PERF[flag.toUpperCase()] = true;
+					PERF[flag] = true;
 					break;
 				default:
 					if (flag[0] === '@')
