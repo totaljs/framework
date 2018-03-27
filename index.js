@@ -2066,6 +2066,12 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 	if (!F._request_check_POST && (flags.indexOf('delete') !== -1 || flags.indexOf('post') !== -1 || flags.indexOf('put') !== -1 || flags.indexOf('upload') !== -1 || flags.indexOf('json') !== -1 || flags.indexOf('patch') !== -1 || flags.indexOf('options') !== -1))
 		F._request_check_POST = true;
 
+	var arr = method ? method.split(',') : EMPTYARRAY;
+	for (var i = 0; i < arr.length; i++) {
+		PERF[arr[i]] = true;
+		PERF[arr[i].toUpperCase()] = true;
+	}
+
 	var isMULTIPLE = false;
 
 	if (method.indexOf(',') !== -1)
@@ -2157,12 +2163,6 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 		PERF.auth = true;
 	if (r.MEMBER === 2)
 		PERF.unauth = true;
-
-	var arr = method ? method.split(',') : EMPTYARRAY;
-	for (var i = 0; i < arr.length; i++) {
-		PERF[arr[i]] = true;
-		PERF[arr[i].toLowerCase()] = true;
-	}
 
 	if (r.isSYSTEM)
 		F.routes.system[url.substring(1)] = r;
