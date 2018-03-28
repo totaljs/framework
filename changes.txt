@@ -55,6 +55,7 @@
 - fixed: `U.atob()`
 - fixed: `U.btoa()`
 - fixed: schema field can be changed dynamically
+- fixed: `String.arg()`
 
 - improved: `debug` mode timing with improved consumption
 - improved: NoSQL embedded database

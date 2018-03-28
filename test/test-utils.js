@@ -266,6 +266,8 @@ function prototypeString() {
 	assert.ok('á'.localeCompare2('a') === 1, 'localeCompare2 - 1');
 	assert.ok('á'.localeCompare2('b') === -1, 'localeCompare2 - 2');
 	assert.ok('č'.localeCompare2('b') === 1, 'localeCompare2 - 3');
+
+	assert.ok('Hello {{ what }}!'.arg({ what: 'world' }) === 'Hello world!', 'String.arg()');
 }
 
 function prototypeArray() {
