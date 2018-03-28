@@ -337,11 +337,29 @@ exports.worker = function() {
 	};
 
 	Storage.prototype.stats = function(name, callback) {
+
+		if (typeof(name) === 'function') {
+			callback = name;
+			name = undefined;
+		}
+
 		send(this.db, 'storage.stats', name).callback = callback;
 		return this;
 	};
 
 	Storage.prototype.clear = function(beg, end, callback) {
+
+		if (typeof(beg) === 'function') {
+			mapreduce = beg;
+			callback = end;
+			beg = null;
+			end = null;
+		} else if (typeof(end) === 'function') {
+			callback = mapreduce;
+			mapreduce = end;
+			end = null;
+		}
+
 		send(this.db, 'storage.clear', beg, end).callback = callback;
 		return this;
 	};
