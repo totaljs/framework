@@ -90,6 +90,7 @@ function runwatching() {
 	const REG_RELOAD = /\.(js|css|html|htm|jpg|png|gif|ico|svg|resource)$/i;
 	const isRELOAD = !!options.livereload;
 	const SPEED = isRELOAD ? 1000 : 1500;
+	const ARGV = CLONE(process.argv);
 
 	function copyFile(oldname, newname, callback) {
 		var writer = Fs.createWriteStream(newname);
@@ -226,12 +227,6 @@ function runwatching() {
 				dir = fn.substring(index, fn.indexOf('/', index + 1) + 1);
 			}
 
-			if (dir !== F.config['components']) {
-				var ext = fn.substring(fn.lastIndexOf('.') + 1);
-				if (ext && ext !== 'js' && ext !== 'package' && ext !== 'bundle' && ext !== 'resource')
-					return fn;
-			}
-
 			return F.config['directory-views'] === dir || F.config['directory-public'] === dir ? fn : '';
 		}
 
@@ -327,7 +322,8 @@ function runwatching() {
 				app = null;
 			}
 
-			var arr = process.argv;
+			var arr = ARGV.slice(2);
+
 			var port = arr.pop();
 
 			if (process.execArgv.indexOf('--debug') !== -1 || options.debugger) {
@@ -346,7 +342,7 @@ function runwatching() {
 				arr.push('restart');
 
 			arr.push('debugging');
-			arr.push(port);
+			port && arr.push(port);
 
 			app = fork(Path.join(directory, FILENAME), arr);
 
