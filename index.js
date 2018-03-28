@@ -10814,7 +10814,15 @@ Controller.prototype.$helper = function() {
 	return this.helper.apply(this, arguments);
 };
 
-function querystring_encode(value, def) {
+function querystring_encode(value, def, key) {
+
+	if (value instanceof Array) {
+		var tmp = '';
+		for (var i = 1; i < value.length; i++)
+			tmp += (tmp ? '&' : '') + key + '=' + querystring_encode(value[i], def);
+		return querystring_encode(value[0], def) + (tmp ? tmp : '');
+	}
+
 	return value != null ? value instanceof Date ? encodeURIComponent(value.format()) : typeof(value) === 'string' ? encodeURIComponent(value) : value.toString() : def || '';
 }
 
@@ -10839,6 +10847,7 @@ Controller.prototype.href = function(key, value) {
 		if (!str) {
 
 			obj = U.copy(self.query);
+
 			for (var i = 2; i < arguments.length; i++)
 				obj[arguments[i]] = undefined;
 
@@ -10847,13 +10856,18 @@ Controller.prototype.href = function(key, value) {
 			var arr = Object.keys(obj);
 			for (var i = 0, length = arr.length; i < length; i++) {
 				var val = obj[arr[i]];
-				if (val !== undefined)
-					str += (str ? '&' : '') + arr[i] + '=' + (key === arr[i] ? '\0' : querystring_encode(val));
+				if (val !== undefined) {
+					if (val instanceof Array) {
+						for (var j = 0; j < val.length; j++)
+							str += (str ? '&' : '') + arr[i] + '=' + (key === arr[i] ? '\0' : querystring_encode(val[j]));
+					} else
+						str += (str ? '&' : '') + arr[i] + '=' + (key === arr[i] ? '\0' : querystring_encode(val));
+				}
 			}
 			self[cachekey] = str;
 		}
 
-		str = str.replace('\0', querystring_encode(value, self.query[key]));
+		str = str.replace('\0', querystring_encode(value, self.query[key], key));
 
 		for (var i = 2; i < arguments.length; i++) {
 			var beg = str.indexOf(arguments[i] + '=');

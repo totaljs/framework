@@ -56,6 +56,7 @@
 - fixed: `U.btoa()`
 - fixed: schema field can be changed dynamically
 - fixed: `String.arg()`
+- fixed: `controller.href()` with Array values
 
 - improved: `debug` mode timing with improved consumption
 - improved: NoSQL embedded database
