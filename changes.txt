@@ -18,6 +18,7 @@
 - added: `SchemaOptions.next()` alias to `$.model.$next()`
 - added: `SchemaOptions.output()` alias to `$.model.$output()`
 - added: `SchemaOptions.clean()` alias to `$.model.$clean()`
+- added: `SchemaOptions.response()` alias to `$.model.$response([index])`
 - added: a new route flag type `&group` something like `roles` but groups aren't evaluated
 - added: `route.groups` with defined groups
 - added: `DatabaseBuilder.insert(fn(doc))` can modify a document after `update` or `modify` has `insert` mode
@@ -30,6 +31,10 @@
 - added: `NOSQLSTORAGE(name)` alias for `NOSQL(name).storage`
 - added: `GUID()` a global alias for `U.GUID()`
 - added: `SchemaBuilderEntity.$response([index])` returns a specific response from an operation in `async` queue
+- added: `$SAVE(schema, model, [options], [callback], [controller])` performs `schema.save()`
+- added: `$INSERT(schema, model, [options], [callback], [controller])` performs `schema.insert()`
+- added: `$UPDATE(schema, model, [options], [callback], [controller])` performs `schema.update()`
+- added: `$REMOVE(schema, [options], [callback], [controller])` performs `schema.remove()`
 
 - updated: `GROUP()` by adding a new argument `url_prefix`
 - updated: `NEWSCHEMA()` supports `NEWSCHEMA('group/name')`

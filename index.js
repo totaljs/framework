@@ -359,6 +359,45 @@ global.$TRANSFORM = function(schema, name, options, callback, controller) {
 	return !!o;
 };
 
+global.$REMOVE = function(schema, options, callback, controller) {
+	schema = parseSchema(schema);
+	var o = framework_builders.getschema(schema[0], schema[1]);
+	o && o.remove(options, callback, controller);
+	return !!o;
+};
+
+global.$SAVE = function(schema, model, options, callback, controller) {
+	return performschema('$save', schema, model, options, callback, controller);
+};
+
+global.$INSERT = function(schema, model, options, callback, controller) {
+	return performschema('$insert', schema, model, options, callback, controller);
+};
+
+global.$UPDATE = function(schema, model, options, callback, controller) {
+	return performschema('$update', schema, model, options, callback, controller);
+};
+
+function performschema(type, schema, model, options, callback, controller) {
+
+	if (typeof(options) === 'function') {
+		controller = callback;
+		callback = options;
+		options = null;
+	}
+
+	schema = parseSchema(schema);
+	var o = framework_builders.getschema(schema[0], schema[1]);
+	o.make(model, function(err, model) {
+		if (err)
+			callback(err);
+		else
+			model[type](options, callback);
+	});
+
+	return !!o;
+}
+
 global.$ASYNC = function(schema, callback, index, controller) {
 
 	if (index && typeof(index) === 'object') {

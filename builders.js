@@ -111,6 +111,10 @@ SchemaOptions.prototype.stop = function() {
 	return this.model.$stop();
 };
 
+SchemaOptions.prototype.response = function(index) {
+	return this.model.$response(index);
+};
+
 SchemaOptions.prototype.DB = function() {
 	return F.database(this.error);
 };
@@ -1075,6 +1079,9 @@ SchemaBuilderEntity.prototype.execute = function(TYPE, model, options, callback,
 			break;
 	}
 
+	if (!self[TYPE])
+		return callback(new Error('Operation "{0}/{1}" not found'.format(self.name, $type)));
+
 	self.$prepare(model, function(err, model) {
 
 		if (err) {
@@ -1230,6 +1237,9 @@ SchemaBuilderEntity.prototype.remove = function(options, callback, controller) {
 	var self = this;
 	var builder = new ErrorBuilder();
 	var $type = 'remove';
+
+	if (!self.onRemove)
+		return callback(new Error('Operation "{0}/{1}" not found'.format(self.name, $type)));
 
 	self.resourceName && builder.setResource(self.resourceName);
 	self.resourcePrefix && builder.setPrefix(self.resourcePrefix);
@@ -2487,7 +2497,7 @@ function async_continue(self) {
 }
 
 SchemaInstance.prototype.$response = function(index) {
-	return this.$$result[index == null ? this.$$index : index];
+	return this.$$index == undefined ? this.$$result : this.$$result[index === 'prev' ? this.$$index : index];
 };
 
 SchemaInstance.prototype.$repository = function(name, value) {
