@@ -185,6 +185,7 @@ function runwatching() {
 				return isDirectory ? SRC !== path : !blacklist[path.substring(directory.length)];
 			if (isRELOAD)
 				return isDirectory ? true : REG_RELOAD.test(path);
+			path = normalize(path);
 			return isDirectory && REG_THEMES.test(path) ? REG_THEMES_INDEX.test(path) : isDirectory ? true : REG_EXTENSION.test(path) || REG_COMPONENTS.test(path) || REG_CONFIGS.test(path);
 		}
 
