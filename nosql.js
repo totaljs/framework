@@ -375,7 +375,7 @@ function Database(name, filename) {
 	self.filenameTemp = filename + EXTENSION_TMP;
 	self.filenameLog = self.readonly ? '' : filename + EXTENSION_LOG;
 	self.filenameBackup = self.readonly ? '' : filename + EXTENSION_BACKUP;
-	self.filenameStorage = self.readonly ? '' : filename + '-storage/' + name + '-{0}' + EXTENSION;
+	self.filenameStorage = self.readonly ? '' : filename + '-storage/{0}' + EXTENSION;
 	self.filenameMeta = filename + EXTENSION_META;
 	self.directory = Path.dirname(filename);
 	self.filenameBackup2 = framework_utils.join(self.directory, name + '_backup' + EXTENSION);
