@@ -272,7 +272,7 @@ exports.worker = function() {
 		return this;
 	};
 
-	Counter.prototype.inc = Counter.prototype.hit = function(id, count) {
+	Counter.prototype.sum = Counter.prototype.inc = Counter.prototype.hit = function(id, count) {
 		notify(this.db, 'counter.hit', id, count);
 		return this;
 	};
