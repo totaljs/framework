@@ -350,13 +350,11 @@ exports.worker = function() {
 	Storage.prototype.clear = function(beg, end, callback) {
 
 		if (typeof(beg) === 'function') {
-			mapreduce = beg;
 			callback = end;
 			beg = null;
 			end = null;
 		} else if (typeof(end) === 'function') {
-			callback = mapreduce;
-			mapreduce = end;
+			callback = end;
 			end = null;
 		}
 
@@ -2299,15 +2297,16 @@ DatabaseBuilder.prototype.make = function(fn) {
 
 DatabaseBuilder.prototype.filter = function(fn) {
 	var self = this;
-	var opt = self.$options;
-	var key = 'fil' + (self.$counter++);
+
 	if (!self.$functions)
 		self.$functions = [];
-	var index = self.$functions.push(fn) - 1;
 
+	var index = self.$functions.push(fn) - 1;
 	var code = '$is=!!fn[{0}].call($F,doc,index,repository);'.format(index);
+
 	if (self.$scope)
 		code = 'if(!$is){' + code + '}';
+
 	self.$code.push(code);
 	!self.$scope && self.$code.push('if(!$is)return;');
 	return self;
@@ -2696,14 +2695,16 @@ DatabaseBuilder.prototype.code = function(code) {
 
 DatabaseBuilder.prototype.prepare = function(fn) {
 	var self = this;
-	var opt = self.$options;
-	var key = 'pre' + (self.$counter++);
+
 	if (!self.$functions)
 		self.$functions = [];
+
 	var index = self.$functions.push(fn) - 1;
 	var code = '$tmp=fn[{0}].call($F,U.clone(doc),index,repository);if(typeof($tmp)==\'boolean\'){$is=$tmp}else{doc=$tmp;$is=$tmp!=null}'.format(index);
+
 	if (self.$scope)
 		code = 'if(!$is){' + code + '}';
+
 	self.$code.push(code);
 	!self.$scope && self.$code.push('if(!$is)return;');
 	return this;
@@ -4362,7 +4363,7 @@ Storage.prototype.scan = function(beg, end, mapreduce, callback, reverse) {
 			stats.current = item.date;
 			stats.index = index;
 
-			reader.on('data', framework_utils.streamer(NEWLINEBUF, function(value, index) {
+			reader.on('data', framework_utils.streamer(NEWLINEBUF, function(value) {
 
 				if (value[0] !== '{')
 					return;
@@ -4424,19 +4425,17 @@ Storage.prototype.scan = function(beg, end, mapreduce, callback, reverse) {
 	});
 
 	return self;
-}
+};
 
 Storage.prototype.clear = function(beg, end, callback) {
 	var self = this;
 
 	if (typeof(beg) === 'function') {
-		mapreduce = beg;
 		callback = end;
 		beg = null;
 		end = null;
 	} else if (typeof(end) === 'function') {
-		callback = mapreduce;
-		mapreduce = end;
+		callback = end;
 		end = null;
 	}
 

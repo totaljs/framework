@@ -378,7 +378,8 @@ global.$UPDATE = function(schema, model, options, callback, controller) {
 	return performschema('$update', schema, model, options, callback, controller);
 };
 
-function performschema(type, schema, model, options, callback, controller) {
+// type, schema, model, options, callback, controller
+function performschema(type, schema, model, options, callback) {
 
 	if (typeof(options) === 'function') {
 		controller = callback;
@@ -5463,7 +5464,8 @@ F.usage = function(detailed) {
  * @param {Object} model
  * @return {String}
  */
-F.onCompileView = function(name, html, model) {
+// name, html, model
+F.onCompileView = function(name, html) {
 	return html;
 };
 

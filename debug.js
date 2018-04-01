@@ -68,9 +68,9 @@ function runapp() {
 		F.http('debug', options);
 
 	if (first)
-		F.emit('debug-start');
+		EMIT('debug-start');
 	else
-		F.emit('debug-restart');
+		EMIT('debug-restart');
 }
 
 function runwatching() {
