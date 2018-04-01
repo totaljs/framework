@@ -78,7 +78,7 @@ function runwatching() {
 	!options && (options = {});
 	require('./index');
 
-	const FILENAME = U.getName(process.argv[1]);
+    const FILENAME = U.getName(process.argv[1] || 'debug.js');
 	const directory = process.cwd();
 	const VERSION = F.version_header;
 	const REG_CONFIGS = /configs\//g;
