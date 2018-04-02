@@ -80,6 +80,43 @@ exports.worker = function() {
 	if (FORK)
 		return;
 
+	// Clears unhandled callbacks
+	ON('service', function() {
+
+		var keys = Object.keys(FORKCALLBACKS);
+		var time = Date.now();
+
+		for (var i = 0, length = keys.length; i < length; i++) {
+			var key = keys[i];
+			var item = FORKCALLBACKS[key];
+			if (item && item.time) {
+				var diff = time - item.time;
+				if (diff >= 60000) {
+
+					delete FORKCALLBACKS[key];
+
+					var err = new Error('NoSQL worker timeout.');
+					switch (item.type) {
+						case 'find':
+							item.builder && item.builder.$callback2(err, EMPTYARRAY, 0, EMPTYOBJECT);
+							break;
+						case 'count':
+							item.builder && item.builder.$callback2(err, EMPTYOBJECT, 0, EMPTYOBJECT);
+							break;
+						case 'insert':
+						case 'update':
+						case 'remove':
+							item.builder && item.builder.$callback(err, EMPTYOBJECT, EMPTYOBJECT);
+							break;
+						default:
+							item.callback && item.callback(err, EMPTYOBJECT, EMPTYOBJECT);
+							break;
+					}
+				}
+			}
+		}
+	});
+
 	FORKCALLBACKS = {};
 	FORK = require('child_process').fork(module.filename.replace(/\.js$/, '') + 'worker.js', [], { cwd: F.directory });
 
