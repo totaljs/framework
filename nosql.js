@@ -84,6 +84,9 @@ exports.worker = function() {
 	ON('service', function() {
 
 		var keys = Object.keys(FORKCALLBACKS);
+		if (!keys.length)
+			return;
+			
 		var time = Date.now();
 
 		for (var i = 0, length = keys.length; i < length; i++) {
@@ -94,7 +97,6 @@ exports.worker = function() {
 				if (diff >= 60000) {
 
 					delete FORKCALLBACKS[key];
-
 					var err = new Error('NoSQL worker timeout.');
 					switch (item.type) {
 						case 'find':
@@ -133,7 +135,7 @@ exports.worker = function() {
 				break;
 			case 'insert':
 				var obj = FORKCALLBACKS[msg.id];
-				obj && obj.builder.$callback(msg.err, msg.response, msg.repository);
+				obj && obj.builder.$callback && obj.builder.$callback(msg.err, msg.response, msg.repository);
 				break;
 			case 'update':
 				var obj = FORKCALLBACKS[msg.id];
@@ -347,7 +349,7 @@ exports.worker = function() {
 	};
 
 	Storage.prototype.insert = function(doc) {
-		send(this.db, 'storage.insert', doc);
+		notify(this.db, 'storage.insert', doc);
 		return this;
 	};
 
