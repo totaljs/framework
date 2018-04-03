@@ -54,7 +54,7 @@ const regexpDiacritics = /[^\u0000-\u007e]/g;
 const regexpXML = /\w+=".*?"/g;
 const regexpDECODE = /&#?[a-z0-9]+;/g;
 const regexpPARAM = /\{{2}[^}\n]*\}{2}/g;
-const regexpARG = /\{{2}.*?\}{2}/g;
+const regexpARG = /\{{1,2}[a-z0-9_.-]+\}{1,2}/gi;
 const regexpINTEGER = /(^-|\s-)?[0-9]+/g;
 const regexpFLOAT = /(^-|\s-)?[0-9.,]+/g;
 const regexpALPHA = /^[A-Za-z0-9]+$/;
@@ -3273,7 +3273,9 @@ String.prototype.urlDecode = function() {
 
 String.prototype.arg = function(obj) {
 	return this.replace(regexpARG, function(text) {
-		var val = obj[text.substring(2, text.length - 2).trim()];
+		// Is double?
+		var l = text[1] === '{' ? 2 : 1;
+		var val = obj[text.substring(l, text.length - l).trim()];
 		return val == null ? text : val;
 	});
 };
