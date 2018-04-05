@@ -1502,7 +1502,7 @@ SchemaBuilderEntity.prototype.default = function() {
 				break;
 			// string
 			case 3:
-				item[property] = type.isArray ? [] : '';
+				item[property] = type.isArray ? [] : type.subtype === 'email' ? '@' : '';
 				break;
 			// boolean
 			case 4:
