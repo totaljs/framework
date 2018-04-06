@@ -63,7 +63,7 @@ const COMPARER = global.Intl ? global.Intl.Collator().compare : function(a, b) {
 const NEWLINEBUF = framework_utils.createBuffer('\n', 'utf8');
 const CACHE = {};
 
-var JSONBUFFER = process.argv.findIndex(n => n.endsWith('nosqlworker.js')) === -1 ? 20 : 50;
+var JSONBUFFER = process.argv.findIndex(n => n.endsWith('nosqlworker.js')) === -1 ? 20 : 40;
 var FORK;
 var FORKCALLBACKS;
 
