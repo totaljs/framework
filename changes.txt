@@ -64,7 +64,7 @@
 - fixed: `controller.href()` with Array values
 
 - improved: `debug` mode timing with improved consumption
-- improved: NoSQL embedded database
+- improved: performance (+20%) NoSQL embedded database
 
 ======= 2.9.4 (HOTFIX)
 

@@ -62,6 +62,8 @@ const COMPARER = global.Intl ? global.Intl.Collator().compare : function(a, b) {
 
 const NEWLINEBUF = framework_utils.createBuffer('\n', 'utf8');
 const CACHE = {};
+
+var JSONBUFFER = process.argv.findIndex(n => n.endsWith('nosqlworker.js')) === -1 ? 20 : 50;
 var FORK;
 var FORKCALLBACKS;
 
@@ -86,7 +88,7 @@ exports.worker = function() {
 		var keys = Object.keys(FORKCALLBACKS);
 		if (!keys.length)
 			return;
-			
+
 		var time = Date.now();
 
 		for (var i = 0, length = keys.length; i < length; i++) {
@@ -1116,49 +1118,67 @@ Database.prototype.$update = function() {
 		fil.filter = { repository: fil.builder.$repository, options: fil.builder.$options, arg: fil.builder.$params, fn: fil.builder.$functions };
 	}
 
-	reader.on('data', framework_utils.streamer(NEWLINEBUF, function(value, index) {
+	var buf = '[';
+	var bufcount = 0;
+	var indexer = 0;
+
+	var processing = function(docs) {
+		for (var j = 0; j < docs.length; j++) {
+			indexer++;
+			var doc = docs[j];
+			for (var i = 0; i < length; i++) {
+				var item = filter[i];
+				var builder = item.builder;
+
+				item.filter.index = indexer;
+				var output = item.compare(doc, item.filter, indexer);
+
+				if (output) {
+					builder.$options.backup && builder.$backupdoc(output);
+					if (item.keys) {
+						for (var j = 0, jl = item.keys.length; j < jl; j++) {
+							var val = item.doc[item.keys[j]];
+							if (val !== undefined) {
+								if (typeof(val) === 'function')
+									output[item.keys[j]] = val(output[item.keys[j]], output);
+								else
+									output[item.keys[j]] = val;
+							} else
+								output[item.keys[j]] = undefined;
+						}
+					} else
+						output = typeof(item.doc) === 'function' ? item.doc(output) : item.doc;
+
+					var e = item.keys ? 'modify' : 'update';
+					self.$events[e] && self.emit(e, output);
+					item.count++;
+					if (!change)
+						change = true;
+					doc = output;
+				}
+			}
+
+			writer.write(JSON.stringify(doc) + NEWLINE);
+		}
+	};
+
+	reader.on('data', framework_utils.streamer(NEWLINEBUF, function(value) {
 
 		if (value[0] !== '{')
 			return;
 
-		var doc = JSON.parse(value.substring(0, value.length - 1), jsonparser);
+		buf += (bufcount ? ',' : '') + value.substring(0, value.length - 1);
+		bufcount++;
 
-		for (var i = 0; i < length; i++) {
-			var item = filter[i];
-			var builder = item.builder;
-
-			item.filter.index = index;
-			var output = item.compare(doc, item.filter, i);
-
-			if (output) {
-				builder.$options.backup && builder.$backupdoc(output);
-				if (item.keys) {
-					for (var j = 0, jl = item.keys.length; j < jl; j++) {
-						var val = item.doc[item.keys[j]];
-						if (val !== undefined) {
-							if (typeof(val) === 'function')
-								output[item.keys[j]] = val(output[item.keys[j]], output);
-							else
-								output[item.keys[j]] = val;
-						} else
-							output[item.keys[j]] = undefined;
-					}
-				} else
-					output = typeof(item.doc) === 'function' ? item.doc(output) : item.doc;
-
-				var e = item.keys ? 'modify' : 'update';
-				self.$events[e] && self.emit(e, output);
-				item.count++;
-				change = true;
-				doc = output;
-			}
+		if (bufcount % JSONBUFFER === 0) {
+			bufcount = 0;
+			processing(JSON.parse(buf + ']', jsonparser));
+			buf = '[';
 		}
 
-		writer.write(JSON.stringify(doc) + NEWLINE);
 	}));
 
 	var finish = function() {
-
 		// No change
 		if (!change) {
 			Fs.unlink(self.filenameTemp, function() {
@@ -1210,9 +1230,19 @@ Database.prototype.$update = function() {
 		});
 	};
 
-
 	CLEANUP(writer, finish);
-	CLEANUP(reader, () => writer.end());
+
+	CLEANUP(reader, function() {
+
+		if (bufcount) {
+			bufcount = 0;
+			processing(JSON.parse(buf + ']', jsonparser));
+			buf = null;
+		}
+
+		writer.end();
+	});
+
 	return self;
 };
 
@@ -1379,6 +1409,8 @@ Database.prototype.$reader2 = function(filename, items, callback, reader) {
 	var filter = items;
 	var length = filter.length;
 	var first = true;
+	var canceled = false;
+	var indexer = 0;
 
 	for (var i = 0; i < length; i++) {
 		var fil = filter[i];
@@ -1389,98 +1421,125 @@ Database.prototype.$reader2 = function(filename, items, callback, reader) {
 		fil.filter = { repository: fil.builder.$repository, options: fil.builder.$options, arg: fil.builder.$params, fn: fil.builder.$functions };
 	}
 
+	var processing = function(docs) {
+
+		var val;
+
+		for (var j = 0; j < docs.length; j++) {
+			var json = docs[j];
+			indexer++;
+			for (var i = 0; i < length; i++) {
+				var item = filter[i];
+				var builder = item.builder;
+				item.filter.index = indexer;
+				var output = item.compare(json, item.filter, indexer);
+				if (!output)
+					continue;
+
+				item.count++;
+
+				if (!builder.$inlinesort && ((builder.$options.skip && builder.$options.skip >= item.count) || (builder.$options.take && builder.$options.take <= item.counter)))
+					continue;
+
+				item.counter++;
+
+				if (item.type)
+					continue;
+
+				switch (builder.$options.scalar) {
+					case 'count':
+						item.scalar = item.scalar ? item.scalar + 1 : 1;
+						break;
+					case 'sum':
+						val = output[builder.$options.scalarfield] || 0;
+						item.scalar = item.scalar ? item.scalar + val : val;
+						break;
+					case 'min':
+						val = output[builder.$options.scalarfield] || 0;
+						if (val != null) {
+							if (item.scalar) {
+								if (item.scalar > val)
+									item.scalar = val;
+							} else
+								item.scalar = val;
+						}
+						break;
+					case 'max':
+						val = output[builder.$options.scalarfield];
+						if (val != null) {
+							if (item.scalar) {
+								if (item.scalar < val)
+									item.scalar = val;
+							} else
+								item.scalar = val;
+						}
+						break;
+					case 'avg':
+						val = output[builder.$options.scalarfield];
+						if (val != null) {
+							item.scalar = item.scalar ? item.scalar + val : val;
+							item.scalarcount++;
+						}
+						break;
+					case 'group':
+						!item.scalar && (item.scalar = {});
+						val = output[builder.$options.scalarfield];
+						if (val != null) {
+							if (item.scalar[val])
+								item.scalar[val]++;
+							else
+								item.scalar[val] = 1;
+						}
+						break;
+					default:
+						if (builder.$inlinesort)
+							nosqlinlinesorter(item, builder, output);
+						else if (item.response)
+							item.response.push(output);
+						else
+							item.response = [output];
+						break;
+				}
+
+				if (first && !canceled) {
+					canceled = true;
+					return;
+				}
+			}
+		}
+	};
+
 	if (first && length > 1)
 		first = false;
 
-	reader && reader.on('data', framework_utils.streamer(NEWLINEBUF, function(value, index) {
+	var buf = '[';
+	var bufcount = 0;
+
+	reader && reader.on('data', framework_utils.streamer(NEWLINEBUF, function(value) {
 
 		if (value[0] !== '{')
 			return;
 
-		var json = JSON.parse(value.substring(0, value.length - 1), jsonparser);
-		var val;
+		buf += (bufcount ? ',' : '') + value.substring(0, value.length - 1);
+		bufcount++;
 
-		for (var i = 0; i < length; i++) {
-			var item = filter[i];
-			var builder = item.builder;
-			item.filter.index = index;
-			var output = item.compare(json, item.filter, index);
-			if (!output)
-				continue;
-
-			item.count++;
-
-			if (!builder.$inlinesort && ((builder.$options.skip && builder.$options.skip >= item.count) || (builder.$options.take && builder.$options.take <= item.counter)))
-				continue;
-
-			item.counter++;
-
-			if (item.type)
-				continue;
-
-			switch (builder.$options.scalar) {
-				case 'count':
-					item.scalar = item.scalar ? item.scalar + 1 : 1;
-					break;
-				case 'sum':
-					val = output[builder.$options.scalarfield] || 0;
-					item.scalar = item.scalar ? item.scalar + val : val;
-					break;
-				case 'min':
-					val = output[builder.$options.scalarfield] || 0;
-					if (val != null) {
-						if (item.scalar) {
-							if (item.scalar > val)
-								item.scalar = val;
-						} else
-							item.scalar = val;
-					}
-					break;
-				case 'max':
-					val = output[builder.$options.scalarfield];
-					if (val != null) {
-						if (item.scalar) {
-							if (item.scalar < val)
-								item.scalar = val;
-						} else
-							item.scalar = val;
-					}
-					break;
-				case 'avg':
-					val = output[builder.$options.scalarfield];
-					if (val != null) {
-						item.scalar = item.scalar ? item.scalar + val : val;
-						item.scalarcount++;
-					}
-					break;
-				case 'group':
-					!item.scalar && (item.scalar = {});
-					val = output[builder.$options.scalarfield];
-					if (val != null) {
-						if (item.scalar[val])
-							item.scalar[val]++;
-						else
-							item.scalar[val] = 1;
-					}
-					break;
-				default:
-					if (builder.$inlinesort)
-						nosqlinlinesorter(item, builder, output);
-					else if (item.response)
-						item.response.push(output);
-					else
-						item.response = [output];
-					break;
-			}
-
-			if (first && reader.destroy) {
-				reader.destroy();
-				return false;
-			}
+		if (bufcount % JSONBUFFER === 0) {
+			bufcount = 0;
+			processing(JSON.parse(buf + ']', jsonparser));
+			buf = '[';
 		}
+
+		if (canceled) {
+			reader.destroy && reader.destroy();
+			return false;
+		}
+
 	}));
 
 	var finish = function() {
+
+		bufcount && processing(JSON.parse(buf + ']', jsonparser));
+
 		for (var i = 0; i < length; i++) {
 			var item = filter[i];
 			var builder = item.builder;
@@ -1764,29 +1823,55 @@ Database.prototype.$views = function() {
 
 	var reader = Fs.createReadStream(self.filename);
 
-	reader.on('data', framework_utils.streamer(NEWLINEBUF, function(value, index) {
+	var buf = '[';
+	var bufcount = 0;
+	var indexer = 0;
+
+	var processing = function(docs) {
+		for (var i = 0; i < docs.length; i++) {
+			var json = docs[i];
+			for (var j = 0; j < length; j++) {
+				var item = self.views[views[j]];
+				var res = response[j];
+				res.filter.index = indexer;
+				var output = res.compare(json, res.filter, indexer);
+				if (!output)
+					continue;
+				res.count++;
+				if (!res.filter.options.sort && ((res.filter.options.skip && res.filter.options.skip >= res.count) || (res.filter.options.take && res.filter.options.take <= res.counter)))
+					continue;
+				res.counter++;
+				!item.type && res.response.push(output);
+			}
+		}
+	};
+
+	reader.on('data', framework_utils.streamer(NEWLINEBUF, function(value) {
+
+		indexer++;
 
 		if (value[0] !== '{')
 			return;
 
-		var json = JSON.parse(value.substring(0, value.length - 1), jsonparser);
+		buf += (bufcount ? ',' : '') + value.substring(0, value.length - 1);
+		bufcount++;
 
-		for (var j = 0; j < length; j++) {
-			var item = self.views[views[j]];
-			var res = response[j];
-			res.filter.index = index;
-			var output = res.compare(json, res.filter, index);
-			if (!output)
-				continue;
-			res.count++;
-			if (!res.filter.options.sort && ((res.filter.options.skip && res.filter.options.skip >= res.count) || (res.filter.options.take && res.filter.options.take <= res.counter)))
-				continue;
-			res.counter++;
-			!item.type && res.response.push(output);
+		if (bufcount % JSONBUFFER === 0) {
+			bufcount = 0;
+			processing(JSON.parse(buf + ']', jsonparser));
+			buf = '[';
 		}
+
 	}));
 
 	CLEANUP(reader, function() {
+
+		if (bufcount) {
+			processing(JSON.parse(buf + ']', jsonparser));
+			bufcount = 0;
+			buf = null;
+		}
+
 		response.wait(function(item, next) {
 
 			var builder = item.builder;
@@ -1914,6 +1999,9 @@ Database.prototype.$remove = function() {
 	var filter = self.pending_remove.splice(0);
 	var length = filter.length;
 	var change = false;
+	var buf = [];
+	var bufcount = 0;
+	var indexer = 0;
 
 	for (var i = 0; i < length; i++) {
 		var fil = filter[i];
@@ -1921,41 +2009,58 @@ Database.prototype.$remove = function() {
 		fil.filter = { repository: fil.builder.$repository, options: fil.builder.$options, arg: fil.builder.$params, fn: fil.builder.$functions };
 	}
 
-	reader && reader.on('data', framework_utils.streamer(NEWLINEBUF, function(value, index) {
+	var processing = function(docs, raw) {
+
+		for (var j = 0; j < docs.length; j++) {
+
+			indexer++;
+			var removed = false;
+			var json = docs[j];
+
+			for (var i = 0; i < length; i++) {
+				var item = filter[i];
+				var builder = item.builder;
+				item.filter.index = indexer;
+
+				var output = item.compare(json, item.filter, indexer);
+				if (output) {
+					builder.$options.backup && builder.$backupdoc(output);
+					removed = true;
+					json = output;
+					break;
+				}
+			}
+
+			if (removed) {
+				for (var i = 0; i < length; i++) {
+					var item = filter[i];
+					item.backup && item.backup.write(raw[j] + NEWLINE);
+					item.count++;
+				}
+				self.$events.remove && self.emit('remove', json);
+				change = true;
+			} else
+				writer.write(raw[j] + NEWLINE);
+		}
+	};
+
+	reader && reader.on('data', framework_utils.streamer(NEWLINEBUF, function(value) {
 
 		if (value[0] !== '{')
 			return;
 
-		var json = JSON.parse(value.substring(0, value.length - 1), jsonparser);
-		var removed = false;
+		buf.push(value.substring(0, value.length - 1));
+		bufcount++;
 
-		for (var i = 0; i < length; i++) {
-			var item = filter[i];
-			var builder = item.builder;
-			item.filter.index = index;
-			var output = item.compare(json, item.filter, index);
-			if (output) {
-				builder.$options.backup && builder.$backupdoc(output);
-				removed = true;
-				json = output;
-				break;
-			}
+		if (bufcount % JSONBUFFER === 0) {
+			bufcount = 0;
+			processing(JSON.parse('[' + buf.join(',') + ']', jsonparser), buf);
+			buf = [];
 		}
 
-		if (removed) {
-			for (var i = 0; i < length; i++) {
-				var item = filter[i];
-				item.backup && item.backup.write(value);
-				item.count++;
-			}
-			self.$events.remove && self.emit('remove', json);
-			change = true;
-		} else
-			writer.write(value);
 	}));
 
 	var finish = function() {
-
 
 		// No change
 		if (!change) {
@@ -1996,7 +2101,17 @@ Database.prototype.$remove = function() {
 	};
 
 	CLEANUP(writer, finish);
-	CLEANUP(reader, () => writer.end());
+
+	CLEANUP(reader, function() {
+
+		if (bufcount) {
+			bufcount = 0;
+			processing(JSON.parse('[' + buf.join(',') + ']', jsonparser), buf);
+			buf = null;
+		}
+
+		writer.end();
+	});
 };
 
 Database.prototype.$remove_inmemory = function() {
@@ -4238,9 +4353,12 @@ Storage.prototype.insert = function(doc) {
 	}
 
 	self.check();
+	self.locked_writer = true;
 	Fs.appendFile(self.db.filenameStorage.format(F.datetime.format('yyyyMMdd')), JSON.stringify(doc) + NEWLINE, function(err) {
-		err && F.error(err, 'NoSQL storage insert: ' + self.db.name);
+		self.locked_writer = false;
 		self.locked_reader = false;
+		self.pending.length && self.insert();
+		err && F.error(err, 'NoSQL storage insert: ' + self.db.name);
 	});
 
 	return self;
@@ -4398,27 +4516,54 @@ Storage.prototype.scan = function(beg, end, mapreduce, callback, reverse) {
 			}
 
 			var reader = Fs.createReadStream(item.filename);
-
 			stats.current = item.date;
 			stats.index = index;
+
+			var buf = '[';
+			var bufcount = 0;
+			var canceled = false;
+
+			var processing = function(docs) {
+				for (var j = 0; j < docs.length; j++) {
+					stats.documents++;
+					var json = docs[j];
+					var end = mapreduce(json, repository, stats) === false;
+					if (end) {
+						canceled = true;
+						return;
+					}
+				}
+			};
 
 			reader.on('data', framework_utils.streamer(NEWLINEBUF, function(value) {
 
 				if (value[0] !== '{')
 					return;
 
-				stats.documents++;
+				buf += (bufcount ? ',' : '') + value.substring(0, value.length - 1);
+				bufcount++;
 
-				var json = JSON.parse(value.substring(0, value.length - 1), jsonparser);
-				var end = mapreduce(json, repository, stats) === false;
-				if (end && reader.destroy) {
+				if (bufcount % JSONBUFFER === 0) {
+					bufcount = 0;
+					processing(JSON.parse(buf + ']', jsonparser));
+					buf = '[';
+				}
+
+				if (canceled) {
 					stats.canceled = true;
-					reader.destroy();
+					reader.destroy && reader.destroy();
 					return false;
 				}
+
 			}));
 
 			var finish = function() {
+
+				if (bufcount) {
+					bufcount = 0;
+					processing(JSON.parse(buf + ']', jsonparser));
+					buf = null;
+				}
 
 				stats.processed++;
 
