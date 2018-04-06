@@ -1202,7 +1202,7 @@ Database.prototype.$update = function() {
 		self.renaming = true;
 
 		// Maybe is reading?
-		if (self.step && self.step !== 9) {
+		if (self.step && self.step !== 9 && self.step !== 2) {
 			self.next(0);
 			return setTimeout(finish, 100);
 		}
@@ -2078,7 +2078,7 @@ Database.prototype.$remove = function() {
 		self.renaming = true;
 
 		// Maybe is reading?
-		if (self.step && self.step !== 9) {
+		if (self.step && self.step !== 9 && self.step !== 3) {
 			self.next(0);
 			return setTimeout(finish, 100);
 		}
