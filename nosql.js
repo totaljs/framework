@@ -1123,9 +1123,10 @@ Database.prototype.$update = function() {
 	var indexer = 0;
 
 	var processing = function(docs) {
-		for (var j = 0; j < docs.length; j++) {
+
+		for (var a = 0; a < docs.length; a++) {
 			indexer++;
-			var doc = docs[j];
+			var doc = docs[a];
 			for (var i = 0; i < length; i++) {
 				var item = filter[i];
 				var builder = item.builder;
@@ -1179,6 +1180,7 @@ Database.prototype.$update = function() {
 	}));
 
 	var finish = function() {
+
 		// No change
 		if (!change) {
 			Fs.unlink(self.filenameTemp, function() {
@@ -1230,8 +1232,6 @@ Database.prototype.$update = function() {
 		});
 	};
 
-	CLEANUP(writer, finish);
-
 	CLEANUP(reader, function() {
 
 		if (bufcount) {
@@ -1242,6 +1242,8 @@ Database.prototype.$update = function() {
 
 		writer.end();
 	});
+
+	CLEANUP(writer, finish);
 
 	return self;
 };
