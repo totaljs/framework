@@ -35,6 +35,9 @@
 - added: `$INSERT(schema, model, [options], [callback], [controller])` performs `schema.insert()`
 - added: `$UPDATE(schema, model, [options], [callback], [controller])` performs `schema.update()`
 - added: `$REMOVE(schema, [options], [callback], [controller])` performs `schema.remove()`
+- added: `HTTP()` global alias for `F.http()`
+- added: `HTTPS()` global alias for `F.https()`
+- added: `LOAD()` global alias for `F.load()`
 
 - updated: `GROUP()` by adding a new argument `url_prefix`
 - updated: `NEWSCHEMA()` supports `NEWSCHEMA('group/name')`

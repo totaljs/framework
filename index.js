@@ -450,7 +450,13 @@ global.NEWTRANSFORM = function() {
 	return TransformBuilder.addTransform.apply(F, arguments);
 };
 
-global.NEWSCHEMA = function(group, name) {
+global.NEWSCHEMA = function(group, name, make) {
+
+	if (typeof(name) === 'function') {
+		make = name;
+		name = undefined;
+	}
+
 	if (!name) {
 		var arr = group.split('/');
 		if (arr.length === 2) {
@@ -461,7 +467,10 @@ global.NEWSCHEMA = function(group, name) {
 			group = 'default';
 		}
 	}
-	return framework_builders.newschema(group, name);
+
+	var schema = framework_builders.newschema(group, name);
+	make && make.call(schema, schema);
+	return schema;
 };
 
 global.CLEANUP = function(stream, callback) {
@@ -6385,7 +6394,7 @@ F.responseRedirect = function(req, res, url, permanent) {
 	return F;
 };
 
-F.load = function(debug, types, pwd) {
+global.LOAD = F.load = function(debug, types, pwd) {
 
 	if (pwd && pwd[0] === '.' && pwd.length < 4)
 		F.directory = directory = U.$normalize(Path.normalize(directory + '/..'));
@@ -6630,7 +6639,7 @@ function connection_tunning(socket) {
  * @param {Function(listen)} middleware A middleware for manual calling of HTTP listener
  * @return {Framework}
  */
-F.http = function(mode, options, middleware) {
+global.HTTP = F.http = function(mode, options, middleware) {
 	F.consoledebug('begin');
 
 	if (typeof(options) === 'function') {
@@ -6657,7 +6666,7 @@ F.http = function(mode, options, middleware) {
  * @param {Function(listen)} middleware A middleware for manual calling of HTTP listener
  * @return {Framework}
  */
-F.https = function(mode, options, middleware) {
+global.HTTPS = F.https = function(mode, options, middleware) {
 	F.consoledebug('begin');
 	var http = require('http');
 
