@@ -379,7 +379,7 @@ global.$UPDATE = function(schema, model, options, callback, controller) {
 };
 
 // type, schema, model, options, callback, controller
-function performschema(type, schema, model, options, callback) {
+function performschema(type, schema, model, options, callback, controller) {
 
 	if (typeof(options) === 'function') {
 		controller = callback;
@@ -392,8 +392,10 @@ function performschema(type, schema, model, options, callback) {
 	o.make(model, function(err, model) {
 		if (err)
 			callback(err);
-		else
+		else {
+			model.$$controller = controller;
 			model[type](options, callback);
+		}
 	});
 
 	return !!o;
