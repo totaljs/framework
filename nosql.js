@@ -1276,8 +1276,8 @@ Database.prototype.$update_inmemory = function() {
 
 		var data = self.inmemory['#'];
 
-		for (var j = 0, jl = data.length; j < jl; j++) {
-			var doc = data[j];
+		for (var a = 0, al = data.length; a < al; a++) {
+			var doc = data[a];
 			for (var i = 0; i < length; i++) {
 
 				var item = filter[i];
