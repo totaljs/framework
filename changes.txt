@@ -4,6 +4,7 @@
 - added: (IMPORTANT) Total.js components can have async delegate
 - added: (IMPORTANT) NoSQL worker
 - added: (IMPORTANT) NoSQL embedded storage for smaller big data / IoT
+- added: (IMPORTANT) NoSQL indexes
 - added: `debugging` supports live reloading
 - added: new schema operations: `schema.setInsert()` and `schema.setUpdate()`
 - added: `RESTBuilder.patch([data])`
@@ -29,6 +30,7 @@
 - added: config `nosql-worker' for enabling worker for NoSQL embedded database (default: `false`)
 - added: config `nosql-inmemory' can contain name of databases e.g. (`users, products`) or String Array
 - added: `NOSQLSTORAGE(name)` alias for `NOSQL(name).storage`
+- added: `NOSQLINDEXES(name)` alias for `NOSQL(name).indexes`
 - added: `GUID()` a global alias for `U.GUID()`
 - added: `SchemaBuilderEntity.$response([index])` returns a specific response from an operation in `async` queue
 - added: `$SAVE(schema, model, [options], [callback], [controller])` performs `schema.save()`
@@ -38,6 +40,7 @@
 - added: `HTTP()` global alias for `F.http()`
 - added: `HTTPS()` global alias for `F.https()`
 - added: `LOAD()` global alias for `F.load()`
+- added: `U.streamer2()` same functionality as `U.streamer()` but it returns `Buffer` instead of `String`
 
 - updated: `GROUP()` by adding a new argument `url_prefix`
 - updated: `NEWSCHEMA()` supports `NEWSCHEMA('group/name')`
@@ -48,6 +51,8 @@
 - updated: `@{import('livereload')}` or `@{import('livereload wss://mywebsite.com')}` supports `livereload` value and it's rendered in `debug` mode only
 - updated: information after the framework is started
 - updated: `schema.define('name', null)` removes a schema field
+- updated: Chunker supports `compression`, default `true`
+- updated: Chunker supports `autoremove` processed files in `each()` or `read()` method, default `true`
 
 - fixed: mail attachments
 - fixed: mail `message.manually()`
