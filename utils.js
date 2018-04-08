@@ -56,7 +56,7 @@ const regexpDiacritics = /[^\u0000-\u007e]/g;
 const regexpXML = /\w+=".*?"/g;
 const regexpDECODE = /&#?[a-z0-9]+;/g;
 const regexpPARAM = /\{{2}[^}\n]*\}{2}/g;
-const regexpARG = /\{{1,2}[a-z0-9_.-]+\}{1,2}/gi;
+const regexpARG = /\{{1,2}[a-z0-9_.-\s]+\}{1,2}/gi;
 const regexpINTEGER = /(^-|\s-)?[0-9]+/g;
 const regexpFLOAT = /(^-|\s-)?[0-9.,]+/g;
 const regexpALPHA = /^[A-Za-z0-9]+$/;
