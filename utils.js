@@ -35,6 +35,8 @@ const Path = require('path');
 const Fs = require('fs');
 const Events = require('events');
 const Crypto = require('crypto');
+const Zlib = require('zlib');
+
 const CONCAT = [null, null];
 const COMPARER = global.Intl ? global.Intl.Collator().compare : function(a, b) {
 	return a.removeDiacritics().localeCompare(b.removeDiacritics());
@@ -1603,7 +1605,7 @@ exports.isRelative = function(url) {
  * @param {String/Buffer} end
  * @param {Function(value, index)} callback
  */
-exports.streamer = function(beg, end, callback, skip, stream) {
+exports.streamer = function(beg, end, callback, skip, stream, raw) {
 
 	if (typeof(end) === 'function') {
 		stream = skip;
@@ -1651,7 +1653,7 @@ exports.streamer = function(beg, end, callback, skip, stream) {
 				if (skip)
 					skip--;
 				else {
-					if (callback(buffer.toString('utf8', 0, index + length), indexer++) === false)
+					if (callback(raw ? buffer.slice(0, index + length) : buffer.toString('utf8', 0, index + length), indexer++) === false)
 						canceled = true;
 				}
 
@@ -1702,7 +1704,7 @@ exports.streamer = function(beg, end, callback, skip, stream) {
 			if (skip)
 				skip--;
 			else {
-				if (callback(buffer.toString('utf8', bi, ei + elength), indexer++) === false)
+				if (callback(raw ? buffer.slice(bi, ei + elength) : buffer.toString('utf8', bi, ei + elength), indexer++) === false)
 					canceled = true;
 			}
 
@@ -1723,6 +1725,10 @@ exports.streamer = function(beg, end, callback, skip, stream) {
 
 	stream && stream.on('end', () => fn(end));
 	return fn;
+};
+
+exports.streamer2 = function(beg, end, callback, skip, stream) {
+	return exports.streamer(beg, end, callback, skip, stream, true);
 };
 
 /**
@@ -5560,11 +5566,14 @@ function Chunker(name, max) {
 	this.name = name;
 	this.max = max || 50;
 	this.index = 0;
-	this.filename = 'chunker_{0}-'.format(name);
+	this.filename = '{0}-'.format(name);
 	this.stack = [];
 	this.flushing = 0;
 	this.pages = 0;
 	this.count = 0;
+	this.percentage = 0;
+	this.autoremove = true;
+	this.compress = true;
 	this.filename = F.path.temp(this.filename);
 }
 
@@ -5576,10 +5585,20 @@ Chunker.prototype.append = Chunker.prototype.write = function(obj) {
 	var tmp = self.stack.length;
 
 	if (tmp >= self.max) {
+
 		self.flushing++;
 		self.pages++;
 		self.count += tmp;
-		Fs.writeFile(self.filename + (self.index++) + '.json', JSON.stringify(self.stack), () => self.flushing--);
+
+		var index = (self.index++);
+
+		if (self.compress) {
+			Zlib.deflate(exports.createBuffer(JSON.stringify(self.stack), ENCODING), function(err, buffer) {
+				Fs.writeFile(self.filename + index + '.chunker', buffer, () => self.flushing--);
+			});
+		} else
+			Fs.writeFile(self.filename + index + '.chunker', JSON.stringify(self.stack), () => self.flushing--);
+
 		self.stack = [];
 	}
 
@@ -5593,7 +5612,16 @@ Chunker.prototype.end = function() {
 		self.flushing++;
 		self.pages++;
 		self.count += tmp;
-		Fs.writeFile(self.filename + (self.index++) + '.json', JSON.stringify(self.stack), () => self.flushing--);
+
+		var index = (self.index++);
+
+		if (self.compress) {
+			Zlib.deflate(exports.createBuffer(JSON.stringify(self.stack), ENCODING), function(err, buffer) {
+				Fs.writeFile(self.filename + index + '.chunker', buffer, () => self.flushing--);
+			});
+		} else
+			Fs.writeFile(self.filename + index + '.chunker', JSON.stringify(self.stack), () => self.flushing--);
+
 		self.stack = [];
 	}
 
@@ -5604,13 +5632,16 @@ Chunker.prototype.each = function(onItem, onEnd, indexer) {
 
 	var self = this;
 
-	if (indexer === undefined)
+	if (indexer == null) {
+		self.percentage = 0;
 		indexer = 0;
+	}
 
 	if (indexer >= self.index)
 		return onEnd && onEnd();
 
 	self.read(indexer++, function(err, items) {
+		self.percentage = Math.ceil((indexer / self.pages) * 100);
 		onItem(items, () => self.each(onItem, onEnd, indexer), indexer - 1);
 	});
 
@@ -5625,19 +5656,37 @@ Chunker.prototype.read = function(index, callback) {
 		return;
 	}
 
-	Fs.readFile(self.filename + index + '.json', function(err, data) {
-		if (err)
+	var filename = self.filename + index + '.chunker';
+
+	Fs.readFile(filename, function(err, data) {
+
+		if (err) {
 			callback(null, EMPTYARRAY);
-		else
+			return;
+		}
+
+		if (self.compress) {
+			Zlib.inflate(data, function(err, data) {
+				if (err) {
+					callback(null, EMPTYARRAY);
+				} else {
+					self.autoremove && Fs.unlink(filename, NOOP);
+					callback(null, data.toString('utf8').parseJSON(true));
+				}
+			});
+		} else {
+			self.autoremove && Fs.unlink(filename, NOOP);
 			callback(null, data.toString('utf8').parseJSON(true));
+		}
 	});
+
 	return self;
 };
 
 Chunker.prototype.clear = function() {
 	var files = [];
 	for (var i = 0; i < this.index; i++)
-		files.push(this.filename + i + '.json');
+		files.push(this.filename + i + '.chunker');
 	files.wait((filename, next) => Fs.unlink(filename, next));
 	return this;
 };
