@@ -1206,6 +1206,7 @@ Database.prototype.$update = function() {
 
 			var doc = docs[a];
 			var is = false;
+			var copy = self.indexes && self.indexes.indexes.length ? CLONE(doc) : null;
 
 			for (var i = 0; i < length; i++) {
 				var item = filter[i];
@@ -1241,7 +1242,7 @@ Database.prototype.$update = function() {
 			}
 
 			if (is && self.indexes && self.indexes.indexes.length)
-				self.indexes.update(doc);
+				self.indexes.update(doc, copy);
 
 			writer.write(JSON.stringify(doc) + NEWLINE);
 		}
@@ -4833,7 +4834,7 @@ Indexes.prototype.insert = function(doc, reindex) {
 	return self;
 };
 
-Indexes.prototype.update = function(doc) {
+Indexes.prototype.update = function(doc, old) {
 	var self = this;
 
 	for (var i = 0; i < self.indexes.length; i++) {
@@ -4842,14 +4843,19 @@ Indexes.prototype.update = function(doc) {
 		var values = self.makeindex(index, doc);
 
 		if (values.length) {
-			var key = self.index(values);
+			var key = self.$index(index, values);
 			if (!key)
 				continue;
 			var item = self.findchanges(index, key, values);
 			if (item)
 				item.doc = doc;
-			else
+			else {
+				var oldvalues = self.makeindex(index, old);
+				var oldkey = self.$index(index, oldvalues);
 				self.changes.push({ update: true, key: key, doc: doc, name: index.name, properties: index.properties, value: values });
+				if (oldkey !== key && oldkey)
+					self.changes.push({ remove: true, key: oldkey, name: index.name, properties: index.properties, value: oldvalues });
+			}
 		}
 	}
 
@@ -4926,7 +4932,7 @@ Indexes.prototype.flush = function() {
 
 		if (item.update) {
 			count++;
-			var builder = self.instances[item.key].update(item.doc).callback(function() {
+			var builder = self.instances[item.key].update(item.doc, item.doc).callback(function() {
 				if (self.instances[item.key].PENDING)
 					self.instances[item.key].PENDING--;
 				count--;
