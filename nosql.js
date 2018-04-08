@@ -28,6 +28,7 @@
 
 const Fs = require('fs');
 const Path = require('path');
+const Zlib = require('zlib');
 
 if (!global.framework_utils)
 	global.framework_utils = require('./utils');
@@ -56,6 +57,9 @@ const REG_CLEAN = /^[\s]+|[\s]+$/g;
 const INMEMORY = {};
 const FLAGS_READ = ['get'];
 const COUNTER_MMA = [0, 0];
+const REGNUMBER = /^\d+$/;
+const REGINDEXCHAR = /[a-z]{1,2}/;
+
 const COMPARER = global.Intl ? global.Intl.Collator().compare : function(a, b) {
 	return a.removeDiacritics().localeCompare(b.removeDiacritics());
 };
@@ -154,6 +158,9 @@ exports.worker = function() {
 			case 'counter.clear':
 			case 'storage.stats':
 			case 'storage.clear':
+			case 'indexes.clear':
+			case 'indexes.reindex':
+			case 'indexes.get':
 				var obj = FORKCALLBACKS[msg.id];
 				obj && obj.callback && obj.callback(msg.err, msg.response);
 				break;
@@ -403,38 +410,70 @@ exports.worker = function() {
 		return this;
 	};
 
+	Indexes.prototype.create = function(name, properties, type) {
+		notify(this.db, 'indexes.create', name, properties, type);
+		return this;
+	};
+
+	Indexes.prototype.get = Indexes.prototype.read = function(name, value, callback) {
+		send(this.db, 'indexes.get', name, value).callback = callback;
+		return this;
+	};
+
+	Indexes.prototype.find = function(name, value) {
+		return send(this.db, 'indexes.find', name, value).builder = new DatabaseBuilder(this.db);
+	};
+
+	Indexes.prototype.clear = function(callback) {
+		send(this.db, 'indexes.clear').callback = callback;
+		return this;
+	};
+
+	Indexes.prototype.reindex = function(callback) {
+		send(this.db, 'indexes.reindex').callback = callback;
+		return this;
+	};
+
 };
 
-function Database(name, filename) {
+function Database(name, filename, readonly) {
 	var self = this;
 	var http = filename.substring(0, 6);
 	self.readonly = http === 'http:/' || http === 'https:';
 	self.filename = self.readonly ? filename.format('') : filename + EXTENSION;
-	self.filenameCounter = self.readonly ? filename.format('counter', '-') : filename + EXTENSION + EXTENSION_COUNTER;
+
+	if (!readonly) {
+		self.filenameCounter = self.readonly ? filename.format('counter', '-') : filename + EXTENSION + EXTENSION_COUNTER;
+		self.filenameLog = self.readonly || readonly === true ? '' : filename + EXTENSION_LOG;
+		self.filenameBackup = self.readonly || readonly === true ? '' : filename + EXTENSION_BACKUP;
+		self.filenameStorage = self.readonly || readonly === true ? '' : filename + '-storage/{0}' + EXTENSION;
+		self.filenameIndexes = self.readonly || readonly === true ? '' : filename + '-indexes/{0}' + EXTENSION;
+		self.filenameMeta = filename + EXTENSION_META;
+		self.filenameBackup2 = framework_utils.join(self.directory, name + '_backup' + EXTENSION);
+		self.inmemory = {};
+		self.inmemorylastusage;
+		// self.metadata;
+		self.$meta();
+	}
+
 	self.filenameTemp = filename + EXTENSION_TMP;
-	self.filenameLog = self.readonly ? '' : filename + EXTENSION_LOG;
-	self.filenameBackup = self.readonly ? '' : filename + EXTENSION_BACKUP;
-	self.filenameStorage = self.readonly ? '' : filename + '-storage/{0}' + EXTENSION;
-	self.filenameMeta = filename + EXTENSION_META;
 	self.directory = Path.dirname(filename);
-	self.filenameBackup2 = framework_utils.join(self.directory, name + '_backup' + EXTENSION);
 	self.name = name;
 	self.pending_update = [];
 	self.pending_append = [];
 	self.pending_reader = [];
-	self.pending_reader_view = [];
+	self.pending_streamer = [];
 	self.pending_remove = [];
+	self.pending_reader_view = readonly ? EMPTYARRAY : [];
 	self.views = {};
 	self.step = 0;
 	self.pending_drops = false;
 	self.pending_views = false;
-	self.binary = self.readonly ? null : new Binary(self, self.directory + '/' + self.name + '-binary/');
-	self.storage = self.readonly ? null : new Storage(self, self.directory + '/' + self.name + '-storage/');
-	self.counter = new Counter(self);
-	self.inmemory = {};
-	self.inmemorylastusage;
-	self.metadata;
-	self.$meta();
+	self.binary = self.readonly || readonly === true ? null : new Binary(self, self.directory + '/' + self.name + '-binary/');
+	self.storage = self.readonly || readonly === true ? null : new Storage(self, self.directory + '/' + self.name + '-storage/');
+	self.indexes = self.readonly || readonly === true ? null : new Indexes(self, self.directory + '/' + self.name + '-indexes/');
+	self.counter = readonly === true ? null : new Counter(self);
+
 	self.$timeoutmeta;
 	self.$events = {};
 	self.$free = true;
@@ -594,7 +633,7 @@ Database.prototype.insert = function(doc, unique) {
 
 	builder = new DatabaseBuilder2(self);
 	var json = framework_builders.isSchema(doc) ? doc.$clean() : doc;
-	self.pending_append.push({ doc: JSON.stringify(json), builder: builder });
+	self.pending_append.push({ doc: JSON.stringify(json), raw: doc, builder: builder });
 	setImmediate(next_operation, self, 1);
 	self.$events.insert && self.emit('insert', json);
 	return builder;
@@ -778,6 +817,9 @@ Database.prototype.free = function(force) {
 	self.counter.removeAllListeners(true);
 	self.binary.removeAllListeners(true);
 	self.removeAllListeners(true);
+	self.indexes = null;
+	self.binary = null;
+	self.counter = null;
 	delete F.databases[self.name];
 	return self;
 };
@@ -816,6 +858,30 @@ Database.prototype.find = function(view) {
 	}
 
 	return builder;
+};
+
+Database.prototype.load = function(take, skip, callback) {
+	var self = this;
+
+	if (typeof(take) === 'function') {
+		callback = take;
+		take = 0;
+		skip = 0;
+	} else if (typeof(skip) === 'function') {
+		callback = skip;
+		skip = 0;
+	}
+
+	self.pending_loader.push({ take: take, skip: skip, callback: callback, counter: 0, count: 0, response: [] });
+	setImmediate(next_operation, self, 10);
+	return self;
+};
+
+Database.prototype.streamer = function(fn, callback) {
+	var self = this;
+	self.pending_streamer.push({ fn: fn, callback: callback, repository: {} });
+	setImmediate(next_operation, self, 10);
+	return self;
 };
 
 Database.prototype.throwReadonly = function() {
@@ -942,6 +1008,11 @@ Database.prototype.next = function(type) {
 		return;
 	}
 
+	if (this.step !== 10 && this.pending_streamer.length) {
+		this.$streamer();
+		return;
+	}
+
 	if (this.step !== type) {
 		this.step = 0;
 		setImmediate(next_operation, this, 0);
@@ -1044,13 +1115,17 @@ Database.prototype.$append = function() {
 		return;
 	}
 
-	self.pending_append.splice(0).limit(20, function(items, next) {
-		var json = [];
+	self.pending_append.splice(0).limit(JSONBUFFER, function(items, next) {
 
-		for (var i = 0, length = items.length; i < length; i++)
-			json.push(items[i].doc);
+		var json = '';
+		for (var i = 0, length = items.length; i < length; i++) {
+			json += items[i].doc + NEWLINE;
 
-		Fs.appendFile(self.filename, json.join(NEWLINE) + NEWLINE, function(err) {
+			if (self.indexes && self.indexes.indexes.length)
+				self.indexes.insert(items[i].raw);
+		}
+
+		Fs.appendFile(self.filename, json, function(err) {
 
 			err && F.error(err, 'NoSQL insert: ' + self.name);
 
@@ -1059,6 +1134,7 @@ Database.prototype.$append = function() {
 				var callback = items[i].builder.$callback;
 				callback && callback(err, 1);
 			}
+
 			next();
 		});
 
@@ -1125,8 +1201,12 @@ Database.prototype.$update = function() {
 	var processing = function(docs) {
 
 		for (var a = 0; a < docs.length; a++) {
+
 			indexer++;
+
 			var doc = docs[a];
+			var is = false;
+
 			for (var i = 0; i < length; i++) {
 				var item = filter[i];
 				var builder = item.builder;
@@ -1156,8 +1236,12 @@ Database.prototype.$update = function() {
 					if (!change)
 						change = true;
 					doc = output;
+					is = true;
 				}
 			}
+
+			if (is && self.indexes && self.indexes.indexes.length)
+				self.indexes.update(doc);
 
 			writer.write(JSON.stringify(doc) + NEWLINE);
 		}
@@ -1277,7 +1361,10 @@ Database.prototype.$update_inmemory = function() {
 		var data = self.inmemory['#'];
 
 		for (var a = 0, al = data.length; a < al; a++) {
+
 			var doc = data[a];
+			var is = false;
+
 			for (var i = 0; i < length; i++) {
 
 				var item = filter[i];
@@ -1304,9 +1391,14 @@ Database.prototype.$update_inmemory = function() {
 					var e = item.keys ? 'modify' : 'update';
 					self.$events[e] && self.emit(e, doc);
 					item.count++;
-					change = true;
+					if (!change)
+						change = true;
+					is = true;
 				}
 			}
+
+			if (is && self.indexes && self.indexes.indexes.length)
+				self.indexes.update(doc);
 		}
 
 		self.$save('#');
@@ -1406,7 +1498,6 @@ Database.prototype.$reader2 = function(filename, items, callback, reader) {
 		}
 	} else
 		reader = Fs.createReadStream(filename);
-
 
 	var filter = items;
 	var length = filter.length;
@@ -1586,6 +1677,168 @@ Database.prototype.$reader2 = function(filename, items, callback, reader) {
 			builder.done();
 		}
 		callback();
+	};
+
+	if (reader)
+		CLEANUP(reader, finish);
+	else
+		finish();
+
+	return self;
+};
+
+Database.prototype.$streamer = function() {
+
+	var self = this;
+	self.step = 10;
+
+	if (!self.pending_streamer.length) {
+		self.next(0);
+		return self;
+	}
+
+	var filter = self.pending_streamer.splice(0);
+	var reader = Fs.createReadStream(self.filename);
+	var length = filter.length;
+	var count = 0;
+
+	var processing = function(docs) {
+		for (var j = 0; j < docs.length; j++) {
+			var json = docs[j];
+			count++;
+			for (var i = 0; i < length; i++)
+				filter[i].fn(json, filter[i].repository, count);
+		}
+	};
+
+	var buf = '[';
+	var bufcount = 0;
+
+	reader && reader.on('data', framework_utils.streamer(NEWLINEBUF, function(value) {
+
+		if (value[0] !== '{')
+			return;
+
+		buf += (bufcount ? ',' : '') + value.substring(0, value.length - 1);
+		bufcount++;
+
+		if (bufcount % JSONBUFFER === 0) {
+			bufcount = 0;
+			processing(JSON.parse(buf + ']', jsonparser));
+			buf = '[';
+		}
+
+	}));
+
+	var finish = function() {
+		bufcount && processing(JSON.parse(buf + ']', jsonparser));
+		for (var i = 0; i < length; i++)
+			filter[i].callback && filter[i].callback(null, filter[i].repository, count);
+		self.next(0);
+	};
+
+	if (reader)
+		CLEANUP(reader, finish);
+	else
+		finish();
+
+	return self;
+};
+
+Database.prototype.$loader2 = function() {
+
+	var self = this;
+	self.step = 10;
+
+	if (!self.pending_loader.length) {
+		self.next(0);
+		return self;
+	}
+
+	var filter = self.pending_loader.splice(0);
+	var length = filter.length;
+	var canceled = false;
+	var skip = null;
+
+	for (var i = 0; i < length; i++)
+		skip = skip == null ? filter[i].skip : skip > filter[i].skip ? filter[i].skip : skip;
+
+	if (skip) {
+		for (var i = 0; i < length; i++)
+			filter[i].count = skip - 1;
+	}
+
+	var reader = Fs.createReadStream(self.filename);
+
+	var processing = function(docs) {
+
+		for (var j = 0; j < docs.length; j++) {
+
+			var json = docs[j];
+			var cancel = length;
+
+			for (var i = 0; i < length; i++) {
+				var item = filter[i];
+
+				if (item.take && item.counter >= item.take) {
+					cancel--;
+					continue;
+				}
+
+				item.count++;
+
+				if (item.skip && item.skip > item.count)
+					continue;
+
+				item.counter++;
+				item.response.push(json);
+			}
+
+			if (!cancel) {
+				canceled = true;
+				return;
+			}
+		}
+	};
+
+	var buf = '[';
+	var bufcount = 0;
+
+	reader && reader.on('data', framework_utils.streamer(NEWLINEBUF, function(value) {
+
+		if (value[0] !== '{')
+			return;
+
+		var len = value.length - 1;
+
+		if (self.$documentsize == null)
+			self.$documentsize = len;
+		else if (self.$documentsize > len)
+			self.$documentsize = len;
+
+		buf += (bufcount ? ',' : '') + value.substring(0, len);
+		bufcount++;
+
+		if (bufcount % JSONBUFFER === 0) {
+			bufcount = 0;
+			processing(JSON.parse(buf + ']', jsonparser));
+			buf = '[';
+		}
+
+		if (canceled) {
+			reader.destroy && reader.destroy();
+			return false;
+		}
+
+	}, skip));
+
+	var finish = function() {
+		bufcount && processing(JSON.parse(buf + ']', jsonparser));
+		for (var i = 0; i < length; i++) {
+			var item = filter[i];
+			item.callback(null, item.response);
+		}
+		self.next(0);
 	};
 
 	if (reader)
@@ -2256,6 +2509,7 @@ function DatabaseBuilder(db) {
 	this.$callback = NOOP;
 	// this.$scalar;
 	// this.$scalarfield;
+	// this.$done; --> internal for indexes
 
 	this.$code = [];
 	this.$params = {};
@@ -2291,6 +2545,7 @@ DatabaseBuilder.prototype.$callback2 = function(err, response, count, repository
 
 	if (err || !self.$join) {
 		self.$options.log && self.log();
+		self.$done && setImmediate(self.$done);
 		return self.$callback(err, response, count, repository);
 	}
 
@@ -2319,6 +2574,7 @@ DatabaseBuilder.prototype.$callback2 = function(err, response, count, repository
 
 	self.$options.log && self.log();
 	self.$callback(err, response, count, repository);
+	self.$done && setImmediate(self.$done);
 	return self;
 };
 
@@ -4285,6 +4541,436 @@ Binary.prototype.all = function(callback) {
 	return self;
 };
 
+function Indexes(db, directory) {
+	this.db = db;
+	this.directory = directory;
+	this.indexes = [];
+	this.changes = [];
+	this.flushing = false;
+	this.instances = {};
+	this.reindexing = false;
+}
+
+Indexes.prototype.create = function(name, properties, type) {
+
+	if (typeof(properties) === 'string') {
+		type = properties;
+		properties = null;
+	}
+
+	!this.indexes.findItem('name', name) && this.indexes.push({ name: name, properties: properties ? properties : [name], type: type });
+	return this;
+};
+
+Indexes.prototype.$index = function(index, value) {
+
+	var key = '';
+	var number = false;
+	var num = value.length > 1 ?  2 : 3;
+
+	for (var i = 0; i < value.length; i++) {
+		var val = value[i];
+
+		switch (typeof(val)) {
+			case 'number':
+				if (index.type === 'reverse') {
+					val = val.toString();
+					val = val.substring(val.length - num).padLeft(num);
+				} else
+					val = val.toString().substring(0, num).padLeft(num);
+				number = true;
+				break;
+			case 'boolean':
+				val = val ? '1' : '0';
+				break;
+			case 'string':
+				if (REGNUMBER.test(val)) {
+					val = +val;
+					if (index.type === 'reverse') {
+						val = val.toString();
+						val = val.substring(val.length - num).padLeft(num);
+					} else
+						val = val.toString().substring(0, num).padLeft(num);
+					number = true;
+				} else {
+					if (val.isUID()) {
+						val = val.substring(4, 6) + val.substring(2, 4) + val.substring(0, 2);
+						number = true;
+					} else {
+						val = val.toLowerCase().removeDiacritics().match(REGINDEXCHAR);
+						if (val) {
+							val = val.toString();
+							if (index.type === 'reverse')
+								val = val.substring(val.length - 2);
+							else
+								val = val.substring(0, 2);
+						}
+					}
+				}
+				break;
+			case 'object':
+				val = val instanceof Date ? (val.getFullYear().toString().substring(2) + val.format('MM')) : '';
+				break;
+		}
+
+		if (val == null)
+			continue;
+
+		if (val)
+			key += val;
+	}
+
+	return key ? (index.name + '_' + (number && value.length === 1 ? key : key)) : null;
+};
+
+Indexes.prototype.get = Indexes.prototype.read = function(name, value, callback) {
+
+	var self = this;
+	var index = self.indexes.findItem('name', name);
+
+	if (!index) {
+		callback(new Error('Index not found.'));
+		return self;
+	}
+
+	if (!(value instanceof Array))
+		value = [value];
+
+	var key = self.$index(index, value);
+	if (!key) {
+		callback(new Error('Bad value for generating index.'));
+		return self;
+	}
+
+	if (self.changes.length) {
+		var change = self.findchanges(index, key, value);
+		if (change) {
+			callback(null, CLONE(change.doc));
+			return self;
+		}
+	}
+
+	if (self.instances[key]) {
+		self.instances[key].PENDING++;
+	} else {
+		self.instances[key] = new Database(key, self.directory + key, true);
+		self.instances[key].PENDING = 0;
+	}
+
+	var builder = self.instances[key].one();
+
+	for (var i = 0; i < index.properties.length; i++)
+		builder.where(index.properties[i], value[i]);
+
+	builder.callback(function(err, response) {
+
+		if (self.instances[key].PENDING)
+			self.instances[key].PENDING--;
+		else
+			delete self.instances[key];
+
+		callback(err, response);
+	});
+
+	return self;
+};
+
+Indexes.prototype.find = function(name, value) {
+
+	var self = this;
+	var index = self.indexes.findItem('name', name);
+
+	if (!index)
+		throw new Error('Index not found.');
+
+	if (!(value instanceof Array))
+		value = [value];
+
+	var key = self.$index(index, value);
+	if (!key)
+		throw new Error('Bad value for generating index.');
+
+	if (self.instances[key]) {
+		self.instances[key].PENDING++;
+	} else {
+		self.instances[key] = new Database(key, self.directory + key, true);
+		self.instances[key].PENDING = 0;
+	}
+
+	var builder = self.instances[key].find();
+
+	builder.$done = function() {
+		if (self.instances[key].PENDING)
+			self.instances[key].PENDING--;
+		else
+			delete self.instances[key];
+	};
+
+	return builder;
+};
+
+Indexes.prototype.clear = function(callback) {
+	var self = this;
+	Fs.readdir(self.directory, function(err, files) {
+
+		if (err) {
+			callback();
+			return;
+		}
+
+		files.wait(function(item, next) {
+			Fs.unlink(Path.join(self.directory, item), next);
+		}, callback);
+	});
+	return self;
+};
+
+Indexes.prototype.reindex = function(callback) {
+	var self = this;
+
+	if (self.reindexing) {
+		callback(new Error('Reindex is running.'));
+		return self;
+	}
+
+	self.reindexing = true;
+	self.clear(function() {
+		var chunker = U.chunker(self.db.name + '_reindex', 10000);
+		self.db.streamer(function(doc) {
+			chunker.write(doc);
+		}, function(err, repository, count) {
+			chunker.end();
+			chunker.each(function(docs, next) {
+				self.db.$events.indexing && self.db.emit('indexing', chunker.percentage, chunker.count);
+				for (var i = 0; i < docs.length; i++)
+					self.insert(docs[i], true);
+				self.$reindexingnext = next;
+			}, function() {
+				self.reindexing = false;
+				callback && callback(null, count);
+			});
+		});
+	});
+
+	return self;
+};
+
+Indexes.prototype.check = function() {
+
+	var self = this;
+	if (self.exists)
+		return self;
+
+	self.exists = true;
+
+	try {
+		Fs.mkdirSync(self.directory);
+	} catch (err) {}
+
+	return self;
+};
+
+Indexes.prototype.makeindex = function(index, doc) {
+
+	var arr = [];
+
+	for (var i = 0; i < index.properties.length; i++) {
+		var val = doc[index.properties[i]];
+		arr.push(val);
+	}
+
+	return arr;
+};
+
+Indexes.prototype.findchanges = function(index, key, values) {
+	var self = this;
+	for (var i = 0, length = self.changes.length; i < length; i++) {
+		var item = self.changes[i];
+		if (item.key !== key || item.value.length !== values.length)
+			continue;
+
+		var is = true;
+
+		for (var j = 0; j < values.length; j++) {
+			if (values[j] !== item.value[j]) {
+				is = false;
+				break;
+			}
+		}
+
+		if (is)
+			return item;
+	}
+};
+
+Indexes.prototype.insert = function(doc, reindex) {
+
+	var self = this;
+
+	for (var i = 0; i < self.indexes.length; i++) {
+
+		var index = self.indexes[i];
+		var values = self.makeindex(index, doc);
+
+		if (values.length) {
+			var key = self.$index(index, values);
+			if (!key)
+				continue;
+
+			if (!reindex) {
+				var item = self.findchanges(index, key, values);
+				if (item) {
+					item.doc = doc;
+					return self;
+				}
+			}
+
+			self.changes.push({ insert: true, key: key, doc: doc, name: index.name, value: values });
+		}
+	}
+
+	self.changes.length && self.flush();
+	return self;
+};
+
+Indexes.prototype.update = function(doc) {
+	var self = this;
+
+	for (var i = 0; i < self.indexes.length; i++) {
+
+		var index = self.indexes[i];
+		var values = self.makeindex(index, doc);
+
+		if (values.length) {
+			var key = self.index(values);
+			if (!key)
+				continue;
+			var item = self.findchanges(index, key, values);
+			if (item)
+				item.doc = doc;
+			else
+				self.changes.push({ update: true, key: key, doc: doc, name: index.name, properties: index.properties, value: values });
+		}
+	}
+
+	self.changes.length && self.flush();
+	return self;
+};
+
+
+Indexes.prototype.remove = function(doc) {
+	var self = this;
+
+	for (var i = 0; i < self.indexes.length; i++) {
+
+		var index = self.indexes[i];
+		var values = self.makeindex(index, doc);
+
+		if (values.length) {
+			var key = self.$index(index, values);
+			if (!key)
+				continue;
+
+			var item = self.findchanges(index, key, values);
+			if (!item)
+				self.changes.push({ remove: true, key: key, name: index.name, properties: index.properties, value: values });
+		}
+	}
+
+	self.changes.length && self.flush();
+	return self;
+};
+
+Indexes.prototype.flush = function() {
+
+	var self = this;
+
+	if (self.flushing)
+		return self;
+
+	self.check();
+	self.flushing = true;
+
+	var count = 0;
+
+	var fn = function() {
+
+		if (count > 0)
+			return;
+
+		self.flushing = false;
+		self.$free();
+
+		if (!self.changes.length) {
+			if (self.$reindexingnext) {
+				self.$reindexingnext();
+				self.$reindexingnext = null;
+			}
+		}
+
+		self.changes.length && setImmediate(() => self.flush());
+	};
+
+	var arr = self.changes.splice(0);
+
+	for (var i = 0; i < arr.length; i++) {
+
+		var item = arr[i];
+
+		if (self.instances[item.key]) {
+			self.instances[item.key].PENDING++;
+		} else {
+			self.instances[item.key] = new Database(item.key, self.directory + item.key, true);
+			self.instances[item.key].PENDING = 0;
+		}
+
+		if (item.update) {
+			count++;
+			var builder = self.instances[item.key].update(item.doc).callback(function() {
+				if (self.instances[item.key].PENDING)
+					self.instances[item.key].PENDING--;
+				count--;
+				fn();
+			});
+
+			for (var j = 0; j < item.properties.length; j++)
+				builder.where(item.properties[j], item.value[j]);
+
+		} else if (item.insert) {
+			count++;
+			self.instances[item.key].insert(item.doc).callback(function() {
+				if (self.instances[item.key].PENDING)
+					self.instances[item.key].PENDING--;
+				count--;
+				fn();
+			});
+
+		} else {
+			count++;
+			var builder = self.instances[item.key].remove().callback(function() {
+				if (self.instances[item.key].PENDING)
+					self.instances[item.key].PENDING--;
+				count--;
+				fn();
+			});
+
+			for (var j = 0; j < item.properties.length; j++)
+				builder.where(item.properties[j], item.value[j]);
+		}
+	}
+};
+
+Indexes.prototype.$free = function() {
+	var self = this;
+	var keys = Object.keys(self.instances);
+	for (var i = 0; i < keys.length; i++) {
+		var db = self.instances[keys[i]];
+		if (!db && db.PENDING)
+			delete self.instances[keys[i]];
+	}
+	return self;
+};
+
 function Storage(db, directory) {
 	this.db = db;
 	this.directory = directory;
@@ -4381,7 +5067,7 @@ Storage.prototype.stats = function(name, fn) {
 	return this;
 };
 
-Storage.prototype.mapreduce = function(name, fn) {
+Storage.prototype.mapreduce = function(name, fn, def) {
 
 	var self = this;
 
@@ -4395,7 +5081,7 @@ Storage.prototype.mapreduce = function(name, fn) {
 	} else {
 		item = {};
 		item.name = name;
-		item.repository = {};
+		item.repository = def || {};
 		item.reduce = fn;
 		item.ready = false;
 		self.$mapreduce.push(item);
