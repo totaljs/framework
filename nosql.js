@@ -4469,7 +4469,7 @@ Indexes.prototype.$index = function(index, value) {
 					number = true;
 				} else {
 					if (val.isUID()) {
-						val = val.substring(4, 6) + val.substring(2, 4) + val.substring(0, 2);
+						val = val.substring(0, 2) + val.substring(2, 4);
 						number = true;
 					} else {
 						val = val.toLowerCase().removeDiacritics().match(REGINDEXCHAR);
@@ -4756,16 +4756,19 @@ Indexes.prototype.update = function(doc, old) {
 			var key = self.$index(index, values);
 			if (!key)
 				continue;
+
+			var oldvalues = self.makeindex(index, old);
+			var oldkey = self.$index(index, oldvalues);
+
 			var item = self.findchanges(index, key, values);
 			if (item)
 				item.doc = doc;
-			else {
-				var oldvalues = self.makeindex(index, old);
-				var oldkey = self.$index(index, oldvalues);
+			else
 				self.changes.push({ update: true, key: key, doc: doc, name: index.name, properties: index.properties, value: values });
-				if (oldkey !== key && oldkey)
-					self.changes.push({ remove: true, key: oldkey, name: index.name, properties: index.properties, value: oldvalues });
-			}
+
+			if (oldkey !== key && oldkey)
+				self.changes.push({ remove: true, key: oldkey, name: index.name, properties: index.properties, value: oldvalues });
+
 		}
 	}
 
