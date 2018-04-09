@@ -1642,9 +1642,18 @@ exports.streamer = function(beg, end, callback, skip, stream, raw) {
 
 			CONCAT[0] = buffer;
 			CONCAT[1] = chunk;
+
+			var f = 0;
+
+			if (buffer.length) {
+				f = buffer.length - beg.length;
+				if (f < 0)
+					f = 0;
+			}
+
 			buffer = Buffer.concat(CONCAT);
 
-			var index = buffer.indexOf(beg);
+			var index = buffer.indexOf(beg, f);
 			if (index === -1)
 				return;
 
@@ -1687,7 +1696,10 @@ exports.streamer = function(beg, end, callback, skip, stream, raw) {
 		buffer = Buffer.concat(CONCAT);
 
 		if (!is) {
-			bi = buffer.indexOf(beg);
+			var f = CONCAT[0].length - beg.length;
+			if (f < 0)
+				f = 0;
+			bi = buffer.indexOf(beg, f);
 			if (bi === -1)
 				return;
 			is = true;
