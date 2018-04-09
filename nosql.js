@@ -1928,7 +1928,7 @@ Database.prototype.$views = function() {
 		response.push({ response: [], name: views[i], compare: builder.compile(), filter: { repository: builder.$repository, options: builder.$options, arg: builder.$params, fn: builder.$functions }, builder: builder, count: 0, counter: 0, repository: {} });
 	}
 
-	var fs = NoSQLStream(self.filename);
+	var fs = new NoSQLStream(self.filename);
 	var indexer = 0;
 
 	fs.ondocuments = function() {
@@ -1953,7 +1953,6 @@ Database.prototype.$views = function() {
 
 	fs.openread(function() {
 		fs.read(function() {
-			fs.close(F.errorcallback);
 			response.wait(function(item, next) {
 
 				var builder = item.builder;
