@@ -14981,6 +14981,19 @@ function extend_response(PROTO) {
 	};
 
 	PROTO.binary = function(body, type, encoding, download, headers) {
+
+		if (typeof(encoding) === 'object') {
+			var tmp = encoding;
+			encoding = download;
+			download = headers;
+			headers = tmp;
+		}
+
+		if (typeof(download) === 'object') {
+			headers = download;
+			download = headers;
+		}
+
 		this.options.type = type;
 		this.options.body = body;
 		this.options.encoding = encoding;
