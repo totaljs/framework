@@ -4758,7 +4758,7 @@ Indexes.prototype.flush = function() {
 		self.changes.length && setImmediate(() => self.flush());
 	};
 
-	var arr = self.changes.splice(0);
+	var arr = self.changes.splice(0, 50);
 
 	for (var i = 0; i < arr.length; i++) {
 
