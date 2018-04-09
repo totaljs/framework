@@ -27,8 +27,8 @@
 require('./index');
 
 const Fs = require('fs');
-const BUFFERSIZE = 1024 * 16;
-const BUFFERDOCS = 10;
+const BUFFERSIZE = 1024 * 32;
+const BUFFERDOCS = 15;
 const NEWLINEBUFFER = framework_utils.createBuffer('\n', 'utf8');
 const NEWLINE = '\n';
 const DEFSTATS = { size: 0 };
@@ -123,7 +123,7 @@ NoSQLStream.prototype.openstream = function(stream, callback) {
 			self.cache[1] = chunk;
 			self.buffer = Buffer.concat(self.cache);
 
-			beg = self.buffer.length - 1;
+			beg = self.cache[0].length - 1;
 
 			if (beg < 0)
 				beg = 0;
@@ -134,11 +134,14 @@ NoSQLStream.prototype.openstream = function(stream, callback) {
 		var index = self.buffer.indexOf(NEWLINEBUFFER, beg);
 		while (index !== -1) {
 
-			self.docs += (self.docs ? ',' : '') + self.buffer.toString('utf8', 0, index);
+			var tmp = self.buffer.toString('utf8', 0, index).trim();
+
+			self.docs += (self.docs ? ',' : '') + tmp;
 			self.docscount++;
 			self.indexer++;
 
 			if (self.docscount >= BUFFERDOCS) {
+
 				if (self.ondocuments() === false)
 					self.canceled = true;
 
