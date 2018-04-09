@@ -50,6 +50,7 @@ const EXTENSION_MAPREDUCE = '.nosql-mapreduce';
 const EXTENSION_BACKUP = '.nosql-backup';
 const EXTENSION_META = '.meta';
 const EXTENSION_COUNTER = '-counter2';
+const EXTENSION_INDEXES = '-indexes';
 const BINARY_HEADER_LENGTH = 2000;
 const NEWLINE = '\n';
 const EMPTYARRAY = [];
@@ -218,7 +219,7 @@ exports.worker = function() {
 	var CP = Counter.prototype;
 
 	DP.once = DP.on = DP.emit = DP.removeListener = DP.removeAllListeners = CP.on = CP.once = CP.emit = CP.removeListener = CP.removeAllListeners = function() {
-		console.log('ERROR --> NoSQL events are not supported in fork mode.');
+		PRINTLN('ERROR --> NoSQL events are not supported in fork mode.');
 	};
 
 	Database.prototype.find = function(view) {
@@ -431,6 +432,11 @@ exports.worker = function() {
 
 	Indexes.prototype.reindex = function(callback) {
 		send(this.db, 'indexes.reindex').callback = callback;
+		return this;
+	};
+
+	Indexes.prototype.noreindex = function() {
+		notify(this.db, 'indexes.noreindex');
 		return this;
 	};
 
@@ -4378,16 +4384,52 @@ function Indexes(db, directory) {
 	this.flushing = false;
 	this.instances = {};
 	this.reindexing = false;
+	this.meta = { $version: 1 };
+	try {
+		this.meta = Fs.readFileSync(this.db.filename + EXTENSION_INDEXES).toString('utf8').parseJSON(true) || {};
+	} catch (e) {}
 }
 
 Indexes.prototype.create = function(name, properties, type) {
+
+	var self = this;
 
 	if (typeof(properties) === 'string') {
 		type = properties;
 		properties = null;
 	}
 
-	!this.indexes.findItem('name', name) && this.indexes.push({ name: name, properties: properties ? properties : [name], type: type });
+	var prop = properties ? properties : [name];
+	var key = prop.join(',') + (type ? ('=' + type) : '');
+
+	!self.indexes.findItem('name', name) && self.indexes.push({ name: name, properties: prop, type: type });
+
+	var meta = self.meta[name];
+	var reindex = false;
+
+	if (meta) {
+		if (meta.key !== key) {
+			reindex = true;
+			meta.key = key;
+		}
+	} else {
+		self.meta[name] = { key: key, documents: 0 };
+		reindex = true;
+	}
+
+	reindex && setTimeout2(self.db.name + '_reindex', () => self.reindex(), 1000);
+	return self;
+};
+
+Indexes.prototype.noreindex = function() {
+	var self = this;
+	clearTimeout2(self.db.name + '_reindex');
+	return self;
+};
+
+Indexes.prototype.$meta = function() {
+	var self = this;
+	Fs.writeFile(self.db.filename + EXTENSION_INDEXES, JSON.stringify(this.meta), NOOP);
 	return this;
 };
 
@@ -4557,8 +4599,10 @@ Indexes.prototype.clear = function(callback) {
 Indexes.prototype.reindex = function(callback) {
 	var self = this;
 
+	clearTimeout2(self.db.name + '_reindex');
+
 	if (self.reindexing) {
-		callback(new Error('Reindexing is running.'));
+		callback && callback(new Error('Re-indexing is running.'));
 		return self;
 	}
 
@@ -4572,6 +4616,20 @@ Indexes.prototype.reindex = function(callback) {
 
 	self.db.pending_reindex = true;
 	self.reindexing = true;
+	var now = Date.now();
+
+	PRINTLN('NoSQL embedded "{0}" re-indexing (beg)'.format(self.db.name));
+
+	var keys = Object.keys(self.meta);
+
+	for (var i = 0; i < self.indexes.length; i++)
+		self.meta[self.indexes[i].name].documents = 0;
+
+	// Clears non-exist indexes
+	for (var i = 0; i < keys.length; i++) {
+		if (self.indexes.findItem('name', keys[i]) == null)
+			delete self.meta[keys[i]];
+	}
 
 	self.clear(function() {
 		self.db.$events['indexing-begin'] && self.db.emit('indexing-begin');
@@ -4586,10 +4644,13 @@ Indexes.prototype.reindex = function(callback) {
 					self.insert(docs[i], true);
 				self.$reindexingnext = next;
 			}, function() {
+				self.$meta();
 				self.db.$events['indexing-end'] && self.db.emit('indexing-end');
 				self.reindexing = false;
 				self.db.pending_reindex = false;
+				self.db.next(0);
 				callback && callback(null, count);
+				PRINTLN('NoSQL embedded "{0}" re-indexing (end, {1}s)'.format(self.db.name, (((Date.now() - now) / 1000) >> 0)));
 			});
 		});
 	});
@@ -4655,7 +4716,9 @@ Indexes.prototype.insert = function(doc, reindex) {
 		var values = self.makeindex(index, doc);
 
 		if (values.length) {
+
 			var key = self.$index(index, values);
+
 			if (!key)
 				continue;
 
@@ -4784,7 +4847,12 @@ Indexes.prototype.flush = function() {
 				builder.where(item.properties[j], item.value[j]);
 
 		} else if (item.insert) {
+
 			count++;
+
+			if (self.meta[item.name])
+				self.meta[item.name].documents++;
+
 			self.instances[item.key].insert(item.doc).callback(function() {
 				if (self.instances[item.key].PENDING)
 					self.instances[item.key].PENDING--;
@@ -4793,7 +4861,12 @@ Indexes.prototype.flush = function() {
 			});
 
 		} else {
+
 			count++;
+
+			if (self.meta[item.name])
+				self.meta[item.name].documents--;
+
 			var builder = self.instances[item.key].remove().callback(function() {
 				if (self.instances[item.key].PENDING)
 					self.instances[item.key].PENDING--;

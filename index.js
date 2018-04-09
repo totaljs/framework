@@ -3136,6 +3136,10 @@ F.problem = F.wtf = function(message, name, uri, ip) {
 	return F;
 };
 
+global.PRINTLN = function(msg) {
+	console.log('------>', '[' + new Date().format('yyyy-MM-dd HH:mm:ss') + ']', msg);
+};
+
 /**
  * Registers a new change
  * @param {String} message

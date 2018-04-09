@@ -249,5 +249,8 @@ process.on('message', function(msg) {
 				process.send(RESINDEXESREINDEX);
 			});
 			break;
+		case 'indexes.noreindex':
+			db.indexes.noreindex();
+			break;
 	}
 });
