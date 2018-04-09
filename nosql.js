@@ -443,6 +443,7 @@ exports.worker = function() {
 };
 
 function Database(name, filename, readonly) {
+
 	var self = this;
 	var http = filename.substring(0, 6);
 	self.readonly = http === 'http:/' || http === 'https:';
@@ -1601,7 +1602,7 @@ Database.prototype.$reader2 = function(filename, items, callback, reader) {
 	};
 
 	var cb = function() {
-		fs.read(function() {
+		fs.readreverse(function() {
 			for (var i = 0; i < length; i++) {
 				var item = filter[i];
 				var builder = item.builder;
@@ -4393,7 +4394,7 @@ Indexes.prototype.create = function(name, properties, type) {
 
 	var self = this;
 
-	if (typeof(properties) === 'string') {
+	if (type == null && typeof(properties) === 'string') {
 		type = properties;
 		properties = null;
 	}
@@ -4443,7 +4444,9 @@ Indexes.prototype.$index = function(index, value) {
 
 		switch (typeof(val)) {
 			case 'number':
-				if (index.type === 'reverse') {
+				if (index.type === 'first')
+					val = val.toString()[0];
+				else if (index.type === 'reverse') {
 					val = val.toString();
 					val = val.substring(val.length - num).padLeft(num, '0');
 				} else
@@ -4456,7 +4459,9 @@ Indexes.prototype.$index = function(index, value) {
 			case 'string':
 				if (REGNUMBER.test(val)) {
 					val = +val;
-					if (index.type === 'reverse') {
+					if (index.type === 'first')
+						val = val.toString()[0];
+					else if (index.type === 'reverse') {
 						val = val.toString();
 						val = val.substring(val.length - num).padLeft(num, '0');
 					} else
@@ -4470,7 +4475,9 @@ Indexes.prototype.$index = function(index, value) {
 						val = val.toLowerCase().removeDiacritics().match(REGINDEXCHAR);
 						if (val) {
 							val = val.toString();
-							if (index.type === 'reverse')
+							if (index.type === 'first')
+								val = val[0];
+							else if (index.type === 'reverse')
 								val = val.substring(val.length - 2);
 							else
 								val = val.substring(0, 2);
@@ -5213,7 +5220,7 @@ Storage.prototype.clear = function(beg, end, callback) {
 			});
 		};
 
-		files.wait((filename, next) => remove(filename, next), function() {
+		files.wait((item, next) => remove(item.filename, next), function() {
 			remove(self.$mapreducefile, () => callback && callback(null, count));
 		});
 
