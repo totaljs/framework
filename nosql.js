@@ -551,6 +551,8 @@ exports.DatabaseBuilder = DatabaseBuilder;
 exports.DatabaseBuilder2 = DatabaseBuilder2;
 exports.DatabaseCounter = Counter;
 exports.DatabaseBinary = Binary;
+exports.DatabaseIndexes = Indexes;
+exports.DatabaseStorage = Storage;
 
 exports.load = function(name, filename) {
 	return new Database(name, filename);
