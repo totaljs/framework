@@ -311,7 +311,12 @@ exports.worker = function() {
 		return this;
 	};
 
-	Database.prototype.clear = Database.prototype.remove = function(filename) {
+	Database.prototype.clear = function(callback) {
+		send(this, 'clear').callback = callback;
+		return this;
+	};
+
+	Database.prototype.remove = function(filename) {
 		return send(this, 'remove', filename).builder = new DatabaseBuilder(this);
 	};
 
@@ -477,6 +482,7 @@ function Database(name, filename, readonly) {
 	self.pending_reader2 = readonly ? EMPTYARRAY : [];
 	self.pending_streamer = [];
 	self.pending_remove = readonly ? EMPTYARRAY : [];
+	self.pending_clear = readonly ? EMPTYARRAY : [];
 	self.views = null;
 	self.step = 0;
 	self.pending_drops = false;
@@ -845,6 +851,13 @@ Database.prototype.release = function() {
 	return self;
 };
 
+Database.prototype.clear = function(callback) {
+	var self = this;
+	self.pending_clear.push(callback || NOOP);
+	setImmediate(next_operation, self, 12);
+	return self;
+};
+
 Database.prototype.remove = function(filename) {
 	var self = this;
 	self.readonly && self.throwReadonly();
@@ -974,6 +987,7 @@ Database.prototype.next = function(type) {
 	}
 
 	if (this.step < 2 && !this.pending_reindex) {
+
 		if (this.step !== 2 && this.pending_update.length) {
 			if (INMEMORY[this.name])
 				this.$update_inmemory();
@@ -989,6 +1003,15 @@ Database.prototype.next = function(type) {
 				this.$remove();
 			return;
 		}
+
+		if (this.step !== 12 && this.pending_clear.length) {
+			if (INMEMORY[this.name])
+				this.$clear_inmemory();
+			else
+				this.$clear();
+			return;
+		}
+
 	}
 
 	if (this.step !== 6 && this.pending_reader_view.length) {
@@ -2394,6 +2417,34 @@ Database.prototype.$remove = function() {
 	});
 };
 
+Database.prototype.$clear = function() {
+
+	var self = this;
+	self.step = 12;
+
+	if (!self.pending_clear.length) {
+		self.next(0);
+		return;
+	}
+
+	var filter = self.pending_clear.splice(0);
+	Fs.unlink(self.filename, function() {
+		if (self.indexes.length) {
+			self.indexes.clear(function() {
+				for (var i = 0; i < filter.length; i++)
+					filter[i]();
+				self.views && setImmediate(views_refresh, self);
+				self.next(0);
+			});
+		} else {
+			for (var i = 0; i < filter.length; i++)
+				filter[i]();
+			self.views && setImmediate(views_refresh, self);
+			self.next(0);
+		}
+	});
+};
+
 Database.prototype.$remove_inmemory = function() {
 
 	var self = this;
@@ -2456,7 +2507,31 @@ Database.prototype.$remove_inmemory = function() {
 		}
 
 		self.next(0);
-		change && setImmediate(views_refresh, self);
+		change && self.views && setImmediate(views_refresh, self);
+	});
+};
+
+Database.prototype.$clear_inmemory = function() {
+
+	var self = this;
+	self.step = 12;
+
+	if (!self.pending_clear.length) {
+		self.next(0);
+		return self;
+	}
+
+	var filter = self.pending_clear.splice(0);
+	return self.$inmemory('#', function() {
+
+		self.inmemory['#'] = [];
+		self.$save('#');
+
+		for (var i = 0; i < length; i++)
+			filter[i](null);
+
+		self.next(0);
+		self.views && setImmediate(views_refresh, self);
 	});
 };
 
