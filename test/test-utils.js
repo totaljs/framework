@@ -397,6 +397,10 @@ function other() {
 	utils.copy({ name: 'A', age: -1 }, obj);
 	assert.ok(obj.name === 'A' && obj.age === -1, 'utils.copy(rewrite=true)');
 
+	assert.ok(U.get(obj, 'arr').join(',') === '1,2,3,4', 'utils.get()');
+	U.set(obj, 'address.city', 'Banská Bystrica');
+	assert.ok(obj.address.city === 'Banská Bystrica', 'utils.set()');
+
 	var a = utils.reduce(obj, ['name']);
 	var b = utils.reduce(obj, ['name'], true);
 
@@ -627,7 +631,7 @@ function other() {
 
 function Utils_Ls2_StringFilter() {
 	var result;
-	var async = new Utils.Async();
+	var async = new U.Async();
 
 	async.await('U.ls2', function(next) {
 		U.ls2(
@@ -650,7 +654,7 @@ function Utils_Ls2_StringFilter() {
 
 function Utils_Ls_RegExpFilter() {
 	var result;
-	var async = new Utils.Async();
+	var async = new U.Async();
 
 	async.await('U.ls', function(next) {
 		U.ls(
