@@ -69,6 +69,16 @@ process.on('message', function(msg) {
 				process.send(RESFIND);
 			});
 			break;
+		case 'find2':
+			db.find().parse(msg.data).callback(function(err, response, count, repository) {
+				RESFIND.err = err;
+				RESFIND.response = response;
+				RESFIND.count = count;
+				RESFIND.repository = repository;
+				RESFIND.id = msg.id;
+				process.send(RESFIND);
+			});
+			break;
 		case 'one':
 			db.one(msg.arg ? msg.arg[0] : undefined).parse(msg.data).callback(function(err, response, count, repository) {
 				RESFIND.err = err;

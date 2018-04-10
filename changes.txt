@@ -23,6 +23,7 @@
 - added: a new route flag type `&group` something like `roles` but groups aren't evaluated
 - added: `route.groups` with defined groups
 - added: `DatabaseBuilder.insert(fn(doc))` can modify a document after `update` or `modify` has `insert` mode
+- added: `Database.find2()` performs faster and reverse reading of documents (from end to begin of the file)
 - added: new directory `schemas` with a new configuration item `directory-schemas'
 - added: new directory `operations` with a new configuration item `directory-operations'
 - added: `String.crc32([unsigned])`
@@ -41,6 +42,8 @@
 - added: `HTTPS()` global alias for `F.https()`
 - added: `LOAD()` global alias for `F.load()`
 - added: `U.streamer2()` same functionality as `U.streamer()` but it returns `Buffer` instead of `String`
+- added: `GET(obj, path)` alias for `U.get()`
+- added: `SET(obj, path, value)` alias for `U.set()`
 
 - updated: `GROUP()` by adding a new argument `url_prefix`
 - updated: `NEWSCHEMA()` supports `NEWSCHEMA('group/name')`
@@ -70,6 +73,8 @@
 - fixed: schema field can be changed dynamically
 - fixed: `String.arg()`
 - fixed: `controller.href()` with Array values
+- fixed: `U.get()` a problem with path with `-`
+- fixed: `U.set()` a problem with path with `-`
 
 - improved: `debug` mode timing with improved consumption
 - improved: performance (+20%) NoSQL embedded database
