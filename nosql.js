@@ -1620,10 +1620,10 @@ Database.prototype.$reader2 = function(filename, items, callback, reader) {
 							item.response = [output];
 						break;
 				}
-			}
 
-			if (first)
-				return false;
+				if (first)
+					return false;
+			}
 		}
 	};
 
@@ -1688,7 +1688,6 @@ Database.prototype.$reader2 = function(filename, items, callback, reader) {
 
 Database.prototype.$reader3 = function() {
 
-	var self = this;
 	var self = this;
 
 	self.step = 11;
@@ -1811,9 +1810,12 @@ Database.prototype.$reader3 = function() {
 							item.response = [output];
 						break;
 				}
+
+				if (first)
+					return false;
 			}
 
-			if (first || done)
+			if (done)
 				return false;
 		}
 	};
