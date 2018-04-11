@@ -5426,7 +5426,7 @@ exports.parseTheme = function(value) {
 	return value === '?' ? F.config['default-theme'] : value;
 };
 
-global.SET = exports.set = function(obj, path, value) {
+exports.set = function(obj, path, value) {
 	var cachekey = 'S+' + path;
 
 	if (F.temporary.other[cachekey])
@@ -5447,7 +5447,7 @@ global.SET = exports.set = function(obj, path, value) {
 	fn(obj, value, path);
 };
 
-global.GET = exports.get = function(obj, path) {
+exports.get = function(obj, path) {
 
 	var cachekey = 'G=' + path;
 
