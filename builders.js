@@ -2497,7 +2497,7 @@ function async_continue(self) {
 }
 
 SchemaInstance.prototype.$response = function(index) {
-	return this.$$index == undefined ? this.$$result : this.$$result[index === 'prev' ? this.$$index : index];
+	return index == undefined ? this.$$result : this.$$result[index === 'prev' ? (this.$$result.length - 1) : index];
 };
 
 SchemaInstance.prototype.$repository = function(name, value) {
@@ -2528,7 +2528,7 @@ SchemaInstance.prototype.$callback = function(callback) {
 	return this;
 };
 
-SchemaInstance.prototype.$response = SchemaInstance.prototype.$output = function() {
+SchemaInstance.prototype.$output = function() {
 	this.$$index = this.$$result.length;
 	return this;
 };
