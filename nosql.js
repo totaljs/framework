@@ -706,6 +706,7 @@ Database.prototype.restore = function(filename, callback) {
 			self.type = 0;
 			if (!err) {
 				self.$meta();
+				self.binary.$refresh();
 				if (self.indexes && self.indexes.indexes.length) {
 					self.indexes.reindex(function() {
 						self.refresh();
@@ -4309,14 +4310,19 @@ Counter.prototype.clear = function(callback) {
 };
 
 function Binary(db, directory) {
-
 	this.db = db;
 	this.directory = directory;
 	this.$events = {};
 	this.metafile = directory + 'meta.json';
-	this.meta = { $version: 1, index: 0, count: 0, free: [], updated: F.datetime };
+	this.meta = { $version: 1, updated: F.datetime };
 	this.cachekey = 'nobin_' + db.name + '_';
+	this.$refresh();
+}
 
+Binary.prototype.$refresh = function() {
+	this.meta.index = 0;
+	this.meta.count = 0;
+	this.meta.free = [];
 	try {
 		var json = Fs.readFileSync(this.metafile, 'utf8').toString();
 		if (json.length) {
@@ -4327,7 +4333,7 @@ function Binary(db, directory) {
 			this.meta.updated = config.updated || F.datetime;
 		}
 	} catch(e) {}
-}
+};
 
 Binary.prototype.$save = function() {
 	var self = this;
