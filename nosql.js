@@ -60,6 +60,10 @@ const FLAGS_READ = ['get'];
 const COUNTER_MMA = [0, 0];
 const REGNUMBER = /^\d+$/;
 const REGINDEXCHAR = /[a-z]{1,2}/;
+const DIRECTORYLENGTH = 9;
+const IMAGES = { gif: 1, jpg: 1, jpeg: 1, png: 1, svg: 1 };
+const BINARYREADDATA = { start: BINARY_HEADER_LENGTH };
+const BINARYREADMETA = { start: 0, end: BINARY_HEADER_LENGTH - 1, encoding: 'binary' };
 
 const COMPARER = global.Intl ? global.Intl.Collator().compare : function(a, b) {
 	return a.removeDiacritics().localeCompare(b.removeDiacritics());
@@ -700,13 +704,18 @@ Database.prototype.restore = function(filename, callback) {
 
 		F.restore(filename, F.path.root(), function(err, response) {
 			self.type = 0;
-
 			if (!err) {
 				self.$meta();
-				self.refresh();
-				self.storage && self.storage.refresh();
+				if (self.indexes && self.indexes.indexes.length) {
+					self.indexes.reindex(function() {
+						self.refresh();
+						self.storage && self.storage.refresh();
+					});
+				} else {
+					self.refresh();
+					self.storage && self.storage.refresh();
+				}
 			}
-
 			callback && callback(err, response);
 		});
 
@@ -4300,11 +4309,49 @@ Counter.prototype.clear = function(callback) {
 };
 
 function Binary(db, directory) {
+
 	this.db = db;
 	this.directory = directory;
-	this.exists = false;
 	this.$events = {};
+	this.metafile = directory + 'meta.json';
+	this.meta = { $version: 1, index: 0, count: 0, free: [], updated: F.datetime };
+	this.cachekey = 'nobin_' + db.name + '_';
+
+	try {
+		var json = Fs.readFileSync(this.metafile, 'utf8').toString();
+		if (json.length) {
+			var config = JSON.parse(json, jsonparser);
+			this.meta.index = config.index;
+			this.meta.count = config.count;
+			this.meta.free = config.free || [];
+			this.meta.updated = config.updated || F.datetime;
+		}
+	} catch(e) {}
 }
+
+Binary.prototype.$save = function() {
+	var self = this;
+	self.check();
+	self.meta.updated = F.datetime;
+	Fs.writeFile(self.metafile, JSON.stringify(self.meta), F.error());
+	return self;
+};
+
+Binary.prototype.$directoryindex = function(index) {
+	return Math.floor(index / 1000) + 1;
+};
+
+Binary.prototype.$directory = function(index, dir) {
+	var self = this;
+	var id = (dir ? index : self.$directoryindex(index)).toString().padLeft(DIRECTORYLENGTH, '0');
+	var length = id.length;
+	var directory = '';
+
+	for (var i = 0; i < length; i++)
+		directory += (i % 3 === 0 && i > 0 ? '-' : '') + id[i];
+
+	return Path.join(self.directory, directory);
+};
 
 Binary.prototype.emit = function(name, a, b, c, d, e, f, g) {
 	var evt = this.$events[name];
@@ -4380,19 +4427,17 @@ Binary.prototype.insert = function(name, buffer, callback) {
 
 		var reader = Fs.createReadStream(name);
 		CLEANUP(reader);
-		return self.insert_stream(null, framework_utils.getName(name), type, reader, callback);
+		return self.insertstream(null, framework_utils.getName(name), type, reader, callback);
 	}
 
 	if (typeof(buffer) === 'string')
 		buffer = framework_utils.createBuffer(buffer, 'base64');
 	else if (buffer.resume)
-		return self.insert_stream(null, name, type, buffer, callback);
+		return self.insertstream(null, name, type, buffer, callback);
 
 	var size = buffer.length;
 	var dimension;
 	var ext = framework_utils.getExtension(name);
-
-	self.check();
 
 	switch (ext) {
 		case 'gif':
@@ -4413,51 +4458,145 @@ Binary.prototype.insert = function(name, buffer, callback) {
 	if (!dimension)
 		dimension = { width: 0, height: 0 };
 
-	var h = { name: name, size: size, type: type, width: dimension.width, height: dimension.height, created: F.created };
+	var time = F.datetime.format('yyyyMMdd');
+	var h = { name: name, size: size, type: type, width: dimension.width, height: dimension.height, date: time };
 	var header = framework_utils.createBufferSize(BINARY_HEADER_LENGTH);
 	header.fill(' ');
 	header.write(JSON.stringify(h));
 
-	var id = F.datetime.format('yyMMddHHmm') + 'T' + framework_utils.GUID(5);
-	var key = self.db.name + '#' + id;
-	var stream = Fs.createWriteStream(Path.join(self.directory, key + EXTENSION_BINARY));
+	var id;
+
+	if (self.meta.free.length) {
+		id = self.meta.free.shift();
+	} else {
+		self.meta.index++;
+		id = self.meta.index;
+	}
+
+	self.meta.count++;
+
+	var path = self.$directory(id);
+	self.check(path);
+	self.$save();
+
+	var filename = id.toString().padLeft(DIRECTORYLENGTH, '0');
+	var stream = Fs.createWriteStream(Path.join(path, filename + EXTENSION_BINARY));
 
 	stream.write(header, 'binary');
 	stream.end(buffer);
 	CLEANUP(stream);
+
+	id = 'B' + time + 'T' + filename;
 	callback && callback(null, id, h);
 	self.$events.insert && self.emit('insert', id, h);
+
 	return id;
 };
 
-Binary.prototype.insert_stream = function(id, name, type, stream, callback) {
+Binary.prototype.insertstream = function(id, name, type, stream, callback) {
 
 	var self = this;
-	self.check();
-
-	var h = { name: name, size: 0, type: type, width: 0, height: 0 };
+	var time = F.datetime.format('yyyyMMdd');
+	var h = { name: name, size: 0, type: type, width: 0, height: 0, date: time };
 	var header = framework_utils.createBufferSize(BINARY_HEADER_LENGTH);
+
 	header.fill(' ');
 	header.write(JSON.stringify(h));
 
-	if (!id)
-		id = F.datetime.format('yyMMddHHmm') + 'T' + framework_utils.GUID(5);
+	var isnew = false;
+	var cacheid = id;
 
-	var key = self.db.name + '#' + id;
-	var writer = Fs.createWriteStream(framework_utils.join(self.directory, key + EXTENSION_BINARY));
+	if (id) {
+		// check if it's new implementation
+		if (id > 0) {
+			isnew = true;
+		} else if (id[0] === 'B' || id[0] === 'b') {
+			isnew = true;
+			id = +id.substring(id.length - DIRECTORYLENGTH);
+		}
+	} else {
+		isnew = true;
+		if (self.meta.free.length) {
+			id = self.meta.free.shift();
+		} else {
+			self.meta.index++;
+			id = self.meta.index;
+		}
+		self.meta.count++;
+		self.$save();
+	}
 
+	var filepath;
+	var filename;
+
+	if (isnew) {
+		var path = self.$directory(id);
+		self.check(path);
+		filename = id.toString().padLeft(DIRECTORYLENGTH, '0');
+		filepath = Path.join(path, filename + EXTENSION_BINARY);
+	} else
+		filepath = framework_utils.join(self.directory, self.db.name + '#' + id + EXTENSION_BINARY);
+
+	var writer = Fs.createWriteStream(filepath);
 	writer.write(header, 'binary');
+
+	var ext = framework_utils.getExtension(name);
+	var dimension = null;
+
+	IMAGES[ext] && stream.once('data', function(buffer) {
+		switch (ext) {
+			case 'gif':
+				dimension = framework_image.measureGIF(buffer);
+				break;
+			case 'png':
+				dimension = framework_image.measurePNG(buffer);
+				break;
+			case 'jpg':
+			case 'jpeg':
+				dimension = framework_image.measureJPG(buffer);
+				break;
+			case 'svg':
+				dimension = framework_image.measureSVG(buffer);
+				break;
+		}
+	});
+
 	stream.pipe(writer);
-	CLEANUP(writer);
-	callback && callback(null, id, h);
-	self.$events.insert && self.emit('insert', id, h);
-	return id;
+
+	if (isnew)
+		id = 'B' + time + 'T' + filename;
+
+	CLEANUP(writer, function() {
+
+		if (dimension) {
+			h.width = dimension.width;
+			h.height = dimension.height;
+		}
+
+		h.size = writer.bytesWritten;
+
+		Fs.open(filepath, 'a', function(err, fd) {
+			if (!err) {
+				var header = framework_utils.createBufferSize(BINARY_HEADER_LENGTH);
+				header.fill(' ');
+				header.write(JSON.stringify(h));
+				Fs.write(fd, header, 0, header.length, 0, () => Fs.close(fd, NOOP));
+			}
+		});
+
+		callback && callback(null, cacheid || id, h);
+		self.$events.insert && self.emit('insert', cacheid || id, h);
+	});
+
+	return cacheid || id;
 };
 
 Binary.prototype.update = function(id, name, buffer, callback) {
 
 	var type = framework_utils.getContentType(framework_utils.getExtension(name));
+	var self = this;
 	var isfn = typeof(buffer) === 'function';
+
 	if (isfn || !buffer) {
 
 		if (isfn) {
@@ -4467,21 +4606,41 @@ Binary.prototype.update = function(id, name, buffer, callback) {
 
 		var reader = Fs.createReadStream(name);
 		CLEANUP(reader);
-		return self.insert_stream(id, framework_utils.getName(name), type, reader, callback);
+		return self.insertstream(id, framework_utils.getName(name), type, reader, callback);
 	}
 
 	if (typeof(buffer) === 'string')
 		buffer = framework_utils.createBuffer(buffer, 'base64');
 
 	if (buffer.resume)
-		return this.insert_stream(id, name, type, buffer, callback);
+		return self.insertstream(id, name, type, buffer, callback);
 
-	var self = this;
+	var isnew = false;
+	var time = F.datetime.format('yyyyMMdd');
 	var size = buffer.length;
-	var dimension;
 	var ext = framework_utils.getExtension(name);
+	var dimension;
+	var filepath;
+	var filename;
+	var cacheid = id;
 
-	self.check();
+	// check if it's new implementation
+	if (id > 0)
+		isnew = true;
+	else if (id[0] === 'B' || id[0] === 'b') {
+		isnew = true;
+		id = +id.substring(id.length - DIRECTORYLENGTH);
+	}
+
+	if (isnew) {
+		var path = self.$directory(id);
+		self.check(path);
+		filename = id.toString().padLeft(DIRECTORYLENGTH, '0');
+		filepath = Path.join(path, filename + EXTENSION_BINARY);
+	} else {
+		self.check();
+		filepath = framework_utils.join(self.directory, self.db.name + '#' + id + EXTENSION_BINARY);
+	}
 
 	switch (ext) {
 		case 'gif':
@@ -4502,38 +4661,47 @@ Binary.prototype.update = function(id, name, buffer, callback) {
 	if (!dimension)
 		dimension = { width: 0, height: 0 };
 
-	var h = { name: name, size: size, type: type, width: dimension.width, height: dimension.height, created: F.datetime };
+	var h = { name: name, size: size, type: type, width: dimension.width, height: dimension.height, date: time };
 	var header = framework_utils.createBufferSize(BINARY_HEADER_LENGTH);
-	var key = self.db.name + '#' + id;
 
 	header.fill(' ');
 	header.write(JSON.stringify(h));
 
-	var stream = Fs.createWriteStream(framework_utils.join(self.directory, key + EXTENSION_BINARY));
+	var stream = Fs.createWriteStream(filepath);
 	stream.write(header, 'binary');
 	stream.end(buffer);
 	CLEANUP(stream);
-	callback && callback(null, id, h);
-	self.$events.insert && self.emit('insert', id, h);
-	return id;
+	callback && callback(null, cacheid, h);
+	self.$events.insert && self.emit('insert', cacheid, h);
+	return cacheid;
 };
 
 Binary.prototype.read = function(id, callback) {
 
 	var self = this;
+	var isnew = false;
 
-	self.check();
-
-	if (id.indexOf('#') === -1)
+	if (id > 0)
+		isnew = true;
+	else if (id[0] === 'B' || id[0] === 'b') {
+		id = +id.substring(id.length - DIRECTORYLENGTH);
+		isnew = true;
+	} else if (id.indexOf('#') === -1)
 		id = self.db.name + '#' + id;
 
-	var filename = framework_utils.join(self.directory, id + EXTENSION_BINARY);
-	var stream = Fs.createReadStream(filename, { start: 0, end: BINARY_HEADER_LENGTH - 1, encoding: 'binary' });
+	var filename;
 
+	if (isnew) {
+		var path = self.$directory(id);
+		filename = Path.join(path, id.toString().padLeft(DIRECTORYLENGTH, '0') + EXTENSION_BINARY);
+	} else
+		filename = framework_utils.join(self.directory, id + EXTENSION_BINARY);
+
+	var stream = Fs.createReadStream(filename, BINARYREADMETA);
 	stream.on('error', err => callback(err));
 	stream.on('data', function(buffer) {
 		var json = framework_utils.createBuffer(buffer, 'binary').toString('utf8').replace(REG_CLEAN, '');
-		stream = Fs.createReadStream(filename, { start: BINARY_HEADER_LENGTH });
+		stream = Fs.createReadStream(filename, BINARYREADDATA);
 		callback(null, stream, JSON.parse(json, jsonparser));
 		CLEANUP(stream);
 	});
@@ -4544,35 +4712,61 @@ Binary.prototype.read = function(id, callback) {
 Binary.prototype.remove = function(id, callback) {
 
 	var self = this;
-	var key = id;
+	var cacheid = id;
+	var isnew = false;
+	var filename;
 
-	self.check();
+	if (id > 0)
+		isnew = true;
+	else if (id[0] === 'B' || id[0] === 'b') {
+		isnew = true;
+		id = +id.substring(id.length - DIRECTORYLENGTH);
+	} else if (id.indexOf('#') === -1)
+		id = self.db.name + '#' + id;
 
-	if (key.indexOf('#') === -1)
-		key = self.db.name + '#' + key;
+	if (isnew) {
+		var path = self.$directory(id);
+		filename = Path.join(path, id.toString().padLeft(DIRECTORYLENGTH, '0') + EXTENSION_BINARY);
+	} else
+		filename = framework_utils.join(self.directory, id + EXTENSION_BINARY);
 
-	var filename = framework_utils.join(self.directory, key + EXTENSION_BINARY);
-	Fs.unlink(filename, (err) => callback && callback(null, err ? false : true));
-	self.$events.remove && self.emit('remove', id);
+	Fs.unlink(filename, function(err) {
+
+		if (isnew && !err) {
+			self.meta.count--;
+			self.meta.free.push(id);
+			self.$save();
+		}
+
+		callback && callback(null, err ? false : true);
+	});
+
+	self.$events.remove && self.emit('remove', cacheid);
 	return self;
 };
 
-Binary.prototype.check = function() {
+Binary.prototype.check = function(path) {
 
 	var self = this;
-	if (self.exists)
+	var key = self.cachekey + (path == null ? 'root' : path.substring(path.length - (DIRECTORYLENGTH + 2)));
+
+	if (F.temporary.other[key])
 		return self;
 
-	self.exists = true;
+	if (path != null && !F.temporary.other[self.cachekey + 'root'])
+		self.check();
+
+	F.temporary.other[key] = true;
 
 	try {
-		Fs.mkdirSync(self.directory);
+		Fs.mkdirSync(path ? path : self.directory);
 	} catch (err) {}
 
 	return self;
 };
 
 Binary.prototype.clear = function(callback) {
+
 	var self = this;
 
 	Fs.readdir(self.directory, function(err, response) {
@@ -4581,16 +4775,81 @@ Binary.prototype.clear = function(callback) {
 			return callback(err);
 
 		var pending = [];
+		var directories =[];
 		var key = self.db.name + '#';
 		var l = key.length;
 		var target = framework_utils.join(self.directory);
 
-		for (var i = 0, length = response.length; i < length; i++)
-			response[i].substring(0, l) === key && pending.push(target + '/' + response[i]);
+		for (var i = 0, length = response.length; i < length; i++) {
+			var p = response[i];
+			if (p.substring(0, l) === key)
+				pending.push(target + '/' + p);
+			else if (p[3] === '-' && p[7] === '-')
+				directories.push(target + '/' + p);
+		}
 
+		pending.push(target + '/meta.json');
 		self.$events.clear && self.emit('clear', pending.length);
-		F.unlink(pending, callback);
+		pending.length && F.unlink(pending, F.errorhandling);
+		directories.wait(function(path, next) {
+			Fs.readdir(path, function(err, files) {
+				for (var i = 0; i < files.length; i++)
+					files[i] = path + '/' + files[i];
+				F.unlink(files, () => Fs.unlink(path, next));
+			});
+		}, callback);
 	});
+
+	return self;
+};
+
+Binary.prototype.browse = function(directory, callback) {
+	var self = this;
+
+	if (typeof(directory) === 'function') {
+		Fs.readdir(self.directory, function(err, files) {
+			var dirs = [];
+			for (var i = 0; i < files.length; i++) {
+				var p = files[i];
+				if (p[3] === '-' && p[7] === '-')
+					dirs.push(p);
+			}
+			directory(null, dirs);
+		});
+	} else {
+		Fs.readdir(Path.join(self.directory, directory), function(err, response) {
+
+			var target = framework_utils.join(self.directory, directory);
+			var output = [];
+			var le = EXTENSION_BINARY.length;
+
+			response.wait(function(item, next) {
+				Fs.stat(target + '/' + item, function(err, stat) {
+
+					if (err)
+						return next();
+
+					var stream = Fs.createReadStream(target + '/' + item, BINARYREADMETA);
+
+					stream.on('data', function(buffer) {
+						var json = framework_utils.createBuffer(buffer, 'binary').toString('utf8').replace(REG_CLEAN, '').parseJSON(true);
+						if (json) {
+							json.id = item.substring(0, item.length - le);
+							json.id = +json.id.substring(json.id.length - DIRECTORYLENGTH);
+							json.ctime = stat.ctime;
+							json.mtime = stat.mtime;
+							output.push(json);
+						}
+					});
+
+					CLEANUP(stream, next);
+
+				});
+
+			}, () => callback(null, output), 2);
+
+		});
+	}
 
 	return self;
 };
@@ -4622,7 +4881,7 @@ Binary.prototype.all = function(callback) {
 				if (err)
 					return next();
 
-				var stream = Fs.createReadStream(target + '/' + item, { start: 0, end: BINARY_HEADER_LENGTH - 1, encoding: 'binary' });
+				var stream = Fs.createReadStream(target + '/' + item, BINARYREADMETA);
 
 				stream.on('data', function(buffer) {
 					var json = framework_utils.createBuffer(buffer, 'binary').toString('utf8').replace(REG_CLEAN, '').parseJSON(true);
@@ -4637,7 +4896,20 @@ Binary.prototype.all = function(callback) {
 				CLEANUP(stream, next);
 
 			});
-		}, () => callback(null, output), 2);
+
+		}, function() {
+			if (self.meta.count) {
+				self.browse(function(err, directories) {
+					directories.wait(function(item, next) {
+						self.browse(item, function(err, files) {
+							files.length && output.push.apply(output, files);
+							next();
+						});
+					}, () => callback(null, output));
+				});
+			} else
+				callback(null, output);
+		}, 2);
 	});
 
 	return self;
