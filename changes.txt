@@ -38,9 +38,6 @@
 - added: `$INSERT(schema, model, [options], [callback], [controller])` performs `schema.insert()`
 - added: `$UPDATE(schema, model, [options], [callback], [controller])` performs `schema.update()`
 - added: `$REMOVE(schema, [options], [callback], [controller])` performs `schema.remove()`
-- added: `HTTP()` global alias for `F.http()`
-- added: `HTTPS()` global alias for `F.https()`
-- added: `LOAD()` global alias for `F.load()`
 - added: `U.streamer2()` same functionality as `U.streamer()` but it returns `Buffer` instead of `String`
 
 - updated: (IMPORTANT) NoSQL binary divides files to independent directories for 1000 files per directory

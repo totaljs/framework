@@ -6648,7 +6648,7 @@ function connection_tunning(socket) {
  * @param {Function(listen)} middleware A middleware for manual calling of HTTP listener
  * @return {Framework}
  */
-global.HTTP = F.http = function(mode, options, middleware) {
+F.http = function(mode, options, middleware) {
 	F.consoledebug('begin');
 
 	if (typeof(options) === 'function') {
@@ -6675,7 +6675,7 @@ global.HTTP = F.http = function(mode, options, middleware) {
  * @param {Function(listen)} middleware A middleware for manual calling of HTTP listener
  * @return {Framework}
  */
-global.HTTPS = F.https = function(mode, options, middleware) {
+F.https = function(mode, options, middleware) {
 	F.consoledebug('begin');
 	var http = require('http');
 
