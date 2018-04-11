@@ -284,7 +284,7 @@ var U = global.Utils = global.utils = global.U = global.framework_utils;
 global.Mail = framework_mail;
 
 global.WTF = (message, name, uri) => F.problem(message, name, uri);
-global.NOBIN = (name) => F.nosql(name).binary;
+global.NOBIN = global.NOSQLBINARY = (name) => F.nosql(name).binary;
 global.NOSQLSTORAGE = (name) => F.nosql(name).storage;
 global.NOSQLINDEXES = (name) => F.nosql(name).indexes;
 global.NOCOUNTER = global.NOSQLCOUNTER = (name) => F.nosql(name).counter;
