@@ -671,6 +671,8 @@ function Framework() {
 		'disable-clear-temporary-directory': false,
 		'nosql-worker': false,
 		'nosql-inmemory': null, // String Array
+		'nosql-cleaner': 1440,
+		'nosql-logger': true,
 
 		// Used in F.service()
 		// All values are in minutes
@@ -748,6 +750,7 @@ function Framework() {
 
 	this.workers = {};
 	this.databases = {};
+	this.databasescleaner = {};
 	this.directory = HEADERS.workers.cwd = directory;
 	this.isLE = Os.endianness ? Os.endianness() === 'LE' : true;
 	this.isHTTPS = false;
@@ -6991,6 +6994,12 @@ F.service = function(count) {
 	// Update expires date
 	count % 1000 === 0 && (DATE_EXPIRES = F.datetime.add('y', 1).toUTCString());
 
+	if (count % F.config['nosql-cleaner'] === 0 && F.config['nosql-cleaner']) {
+		var keys = Object.keys(F.databasescleaner);
+		for (var i = 0; i < keys.length; i++)
+			NOSQL(keys[i]).clean();
+	}
+
 	F.$events.service && F.emit('service', count);
 
 	if (F.config['allow-debug']) {
@@ -8564,6 +8573,7 @@ F.$configure_configs = function(arr, rewrite) {
 			case 'default-maximum-file-descriptors':
 			case 'default-interval-clear-dnscache':
 			case 'default-dependency-timeout':
+			case 'nosql-cleaner':
 				obj[name] = U.parseInt(value);
 				break;
 			case 'default-image-consumption':
@@ -8621,6 +8631,7 @@ F.$configure_configs = function(arr, rewrite) {
 			case 'trace':
 			case 'allow-cache-snapshot':
 			case 'nosql-worker':
+			case 'nosql-logger':
 				obj[name] = value.toLowerCase() === 'true' || value === '1' || value === 'on';
 				break;
 

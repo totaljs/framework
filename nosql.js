@@ -64,6 +64,7 @@ const DIRECTORYLENGTH = 9;
 const IMAGES = { gif: 1, jpg: 1, jpeg: 1, png: 1, svg: 1 };
 const BINARYREADDATA = { start: BINARY_HEADER_LENGTH };
 const BINARYREADMETA = { start: 0, end: BINARY_HEADER_LENGTH - 1, encoding: 'binary' };
+const CLEANDBTICKS = 86400000 * 2; // 48 hours
 
 const COMPARER = global.Intl ? global.Intl.Collator().compare : function(a, b) {
 	return a.removeDiacritics().localeCompare(b.removeDiacritics());
@@ -479,14 +480,15 @@ function Database(name, filename, readonly) {
 	self.filenameTemp = filename + EXTENSION_TMP;
 	self.directory = Path.dirname(filename);
 	self.name = name;
-	self.pending_update = readonly ? EMPTYARRAY : [];
-	self.pending_append = readonly ? EMPTYARRAY : [];
+	self.pending_update = [];
+	self.pending_append = [];
 	self.pending_reader = [];
+	self.pending_remove = [];
 	self.pending_reader_view = readonly ? EMPTYARRAY : [];
-	self.pending_reader2 = readonly ? EMPTYARRAY : [];
+	self.pending_reader2 = [];
 	self.pending_streamer = [];
-	self.pending_remove = readonly ? EMPTYARRAY : [];
-	self.pending_clear = readonly ? EMPTYARRAY : [];
+	self.pending_clean = [];
+	self.pending_clear = [];
 	self.views = null;
 	self.step = 0;
 	self.pending_drops = false;
@@ -499,7 +501,6 @@ function Database(name, filename, readonly) {
 	self.$timeoutmeta;
 	self.$events = {};
 	self.$free = true;
-	self.renaming = false;
 }
 
 Database.prototype.emit = function(name, a, b, c, d, e, f, g) {
@@ -868,6 +869,13 @@ Database.prototype.clear = function(callback) {
 	return self;
 };
 
+Database.prototype.clean = function(callback) {
+	var self = this;
+	self.pending_clean.push(callback || NOOP);
+	setImmediate(next_operation, self, 13);
+	return self;
+};
+
 Database.prototype.remove = function(filename) {
 	var self = this;
 	self.readonly && self.throwReadonly();
@@ -987,41 +995,36 @@ Database.prototype.view = function(name) {
 
 Database.prototype.next = function(type) {
 
-	// 9: renaming file (by updating/removing)
-	if (type && this.step === 9)
+	if (type && this.step)
 		return;
 
-	if (this.renaming) {
-		!type && (this.step = 0);
+	if (this.step !== 2 && this.pending_update.length) {
+		if (INMEMORY[this.name])
+			this.$update_inmemory();
+		else
+			this.$update();
 		return;
 	}
 
-	if (this.step < 2 && !this.pending_reindex) {
+	if (this.step !== 3 && this.pending_remove.length) {
+		if (INMEMORY[this.name])
+			this.$remove_inmemory();
+		else
+			this.$remove();
+		return;
+	}
 
-		if (this.step !== 2 && this.pending_update.length) {
-			if (INMEMORY[this.name])
-				this.$update_inmemory();
-			else
-				this.$update();
-			return;
-		}
+	if (this.step !== 12 && this.pending_clear.length) {
+		if (INMEMORY[this.name])
+			this.$clear_inmemory();
+		else
+			this.$clear();
+		return;
+	}
 
-		if (this.step !== 3 && this.pending_remove.length) {
-			if (INMEMORY[this.name])
-				this.$remove_inmemory();
-			else
-				this.$remove();
-			return;
-		}
-
-		if (this.step !== 12 && this.pending_clear.length) {
-			if (INMEMORY[this.name])
-				this.$clear_inmemory();
-			else
-				this.$clear();
-			return;
-		}
-
+	if (this.step !== 13 && this.pending_clean.length) {
+		this.$clean();
+		return;
 	}
 
 	if (this.step !== 6 && this.pending_reader_view.length) {
@@ -1039,16 +1042,16 @@ Database.prototype.next = function(type) {
 		return;
 	}
 
+	if (this.step !== 7 && !this.pending_reindex && this.pending_drops) {
+		this.$drop();
+		return;
+	}
+
 	if (this.step !== 1 && !this.pending_reindex && this.pending_append.length) {
 		if (INMEMORY[this.name])
 			this.$append_inmemory();
 		else
 			this.$append();
-		return;
-	}
-
-	if (this.step !== 7 && !this.pending_reindex && this.pending_drops) {
-		this.$drop();
 		return;
 	}
 
@@ -1233,30 +1236,40 @@ Database.prototype.$update = function() {
 		return self;
 	}
 
+	var filter = self.pending_update.splice(0);
+	var length = filter.length;
+	var backup = false;
+
+	for (var i = 0; i < length; i++) {
+		var fil = filter[i];
+		fil.compare = fil.builder.compile();
+		fil.filter = { repository: fil.builder.$repository, options: fil.builder.$options, arg: fil.builder.$params, fn: fil.builder.$functions };
+		if (fil.backup || fil.builder.$options.backup)
+			backup = true;
+	}
+
 	var indexer = 0;
 	var fs = new NoSQLStream(self.filename);
 
 	fs.ondocuments = function() {
+
 		var docs = JSON.parse('[' + fs.docs + ']', jsonparser);
-		var updated = false;
 
 		for (var a = 0; a < docs.length; a++) {
-
+			var doc = docs[a];
 			indexer++;
 
-			var doc = docs[a];
 			var is = false;
 			var copy = self.indexes && self.indexes.indexes.length ? CLONE(doc) : null;
+			var rec = fs.docsbuffer[a];
 
 			for (var i = 0; i < length; i++) {
 				var item = filter[i];
-				var builder = item.builder;
 
 				item.filter.index = indexer;
 				var output = item.compare(doc, item.filter, indexer);
 
 				if (output) {
-					builder.$options.backup && builder.$backupdoc(output);
 					if (item.keys) {
 						for (var j = 0, jl = item.keys.length; j < jl; j++) {
 							var val = item.doc[item.keys[j]];
@@ -1274,72 +1287,49 @@ Database.prototype.$update = function() {
 					var e = item.keys ? 'modify' : 'update';
 					self.$events[e] && self.emit(e, output);
 					item.count++;
-					if (!fs.changed)
-						fs.changed = true;
-					docs[a] = output;
+					doc = output;
 					is = true;
-					if (!updated)
-						updated = true;
 				}
 			}
 
-			if (is && self.indexes && self.indexes.indexes.length)
-				self.indexes.update(doc, copy);
-		}
+			if (is) {
 
-		if (updated) {
-			var tmp = '';
-			for (var i = 0; i < docs.length; i++)
-				tmp += JSON.stringify(docs[i]) + NEWLINE;
-			fs.write(tmp);
-		} else
-			fs.write(fs.docscache);
+				if (self.indexes && self.indexes.indexes.length)
+					self.indexes.update(doc, copy);
+
+				if (backup) {
+					for (var i = 0; i < length; i++) {
+						var item = filter[i];
+						item.backup && item.backup.write(rec.doc + NEWLINE);
+						item.builder.$options.backup && item.builder.$backupdoc(rec.doc);
+					}
+				}
+
+				var upd = JSON.stringify(doc);
+				var was = true;
+
+				if (rec.doc.length === upd.length) {
+					var b = Buffer.byteLength(upd);
+					if (rec.length === b) {
+						fs.write(upd + NEWLINE, rec.position);
+						was = false;
+					}
+				}
+
+				if (was) {
+					var tmp = '-' + rec.doc.substring(1) + NEWLINE;
+					fs.write(tmp, rec.position);
+					fs.write2(upd + NEWLINE);
+				}
+			}
+		}
 	};
 
-	var filter = self.pending_update.splice(0);
-	var length = filter.length;
-
-	for (var i = 0; i < length; i++) {
-		var fil = filter[i];
-		fil.compare = fil.builder.compile();
-		fil.filter = { repository: fil.builder.$repository, options: fil.builder.$options, arg: fil.builder.$params, fn: fil.builder.$functions };
-	}
-
 	var finish = function() {
+		fs.flush(function() {
 
-		if (!fs.changed) {
-
-			for (var i = 0; i < length; i++) {
-				var item = filter[i];
-				if (item.insert && !item.count) {
-					item.builder.$insertcallback && item.builder.$insertcallback(item.insert);
-					self.insert(item.insert).$callback = item.builder.$callback;
-				} else {
-					item.builder.$options.log && item.builder.log();
-					item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count, item.filter.repository);
-				}
-			}
-
-			fs.flush(function() {
-				fs = null;
-				self.next(0);
-			});
-			return;
-		}
-
-		self.renaming = true;
-
-		// Maybe is reading?
-		if (self.step && self.step !== 9 && self.step !== 2) {
-			self.next(0);
-			return setTimeout(finish, 100);
-		}
-
-		self.step = 9;
-		fs.flush(function(err) {
-
-			err && F.error(err);
-			self.renaming = false;
+			if (self.indexes)
+				F.databasescleaner[self.name] = (F.databasescleaner[self.name] || 0) + 1;
 
 			for (var i = 0; i < length; i++) {
 				var item = filter[i];
@@ -1359,7 +1349,7 @@ Database.prototype.$update = function() {
 	};
 
 	fs.openupdate(function() {
-		fs.read(finish, true);
+		fs.readupdate(finish, true);
 	});
 
 	return self;
@@ -2313,119 +2303,72 @@ Database.prototype.$remove = function() {
 		var fil = filter[i];
 		fil.compare = fil.builder.compile();
 		fil.filter = { repository: fil.builder.$repository, options: fil.builder.$options, arg: fil.builder.$params, fn: fil.builder.$functions };
-		if (fil.backup)
+		if (fil.backup || fil.builder.$options.backup)
 			backup = true;
 	}
 
 	fs.ondocuments = function() {
 
 		var docs = JSON.parse('[' + fs.docs + ']', jsonparser);
-		var is = false;
-		var deleted = {};
 
 		for (var j = 0; j < docs.length; j++) {
 
 			indexer++;
 			var removed = false;
-			var json = docs[j];
+			var doc = docs[j];
+			var rec = fs.docsbuffer[j];
 
 			for (var i = 0; i < length; i++) {
 				var item = filter[i];
-				var builder = item.builder;
 				item.filter.index = indexer;
-				var output = item.compare(json, item.filter, indexer);
+				var output = item.compare(doc, item.filter, indexer);
 				if (output) {
-					item.count++;
-					builder.$options.backup && builder.$backupdoc(output);
 					removed = true;
-					json = output;
+					doc = output;
 					break;
 				}
 			}
 
 			if (removed) {
 
-				deleted[j] = 1;
-				var tmp = null;
-
 				if (backup) {
 					for (var i = 0; i < length; i++) {
 						var item = filter[i];
-						if (item.backup) {
-							if (!tmp)
-								tmp = JSON.stringify(docs[j]) + NEWLINE;
-							item.backup.write(tmp);
-						}
-						item.count++;
+						item.backup && item.backup.write(rec.doc + NEWLINE);
+						item.builder.$options.backup && item.builder.$backupdoc(rec.doc);
 					}
 				}
-				self.$events.remove && self.emit('remove', json);
 
-				if (!fs.changed)
-					fs.changed = true;
-				if (!is)
-					is = true;
+				item.count++;
+				self.$events.remove && self.emit('remove', doc);
 
 				if (self.indexes && self.indexes.indexes.length)
-					self.indexes.remove(json);
+					self.indexes.remove(doc);
+
+				fs.write('-' + rec.doc.substring(1) + NEWLINE, rec.position);
 			}
 		}
-
-		if (is) {
-			var tmp = '';
-			for (var j = 0; j < docs.length; j++) {
-				if (deleted[j] == null)
-					tmp += JSON.stringify(docs[j]) + NEWLINE;
-			}
-			tmp && fs.write(tmp);
-		} else
-			fs.write(fs.docscache);
 	};
 
 	var finish = function() {
-
-		// No change
-		if (!fs.changed) {
-			fs.flush(function() {
-				for (var i = 0; i < length; i++) {
-					var item = filter[i];
-					item.builder.$options.log && item.builder.log();
-					item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count, item.filter.repository);
-				}
-				fs = null;
-				self.next(0);
-			});
-			return;
-		}
-
-		self.renaming = true;
-
-		// Maybe is reading?
-		if (self.step && self.step !== 9 && self.step !== 3) {
-			self.next(0);
-			return setTimeout(finish, 100);
-		}
-
-		self.step = 9;
-
 		fs.flush(function() {
+
+			if (self.indexes)
+				F.databasescleaner[self.name] = (F.databasescleaner[self.name] || 0) + 1;
 
 			for (var i = 0; i < length; i++) {
 				var item = filter[i];
 				item.builder.$options.log && item.builder.log();
 				item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count, item.filter.repository);
 			}
-
-			setImmediate(function() {
-				self.renaming = false;
-				self.next(0);
-				change && self.views && setImmediate(views_refresh, self);
-			});
+			fs = null;
+			self.next(0);
+			change && self.views && setImmediate(views_refresh, self);
 		});
 	};
 
 	fs.openupdate(function() {
-		fs.read(finish, true);
+		fs.readupdate(finish, true);
 	});
 };
 
@@ -2455,6 +2398,42 @@ Database.prototype.$clear = function() {
 			self.next(0);
 		}
 	});
+};
+
+Database.prototype.$clean = function() {
+
+	var self = this;
+	self.step = 13;
+
+	if (!self.clean.length) {
+		self.next(0);
+		return;
+	}
+
+	var filter = self.pending_clean.splice(0);
+	var length = filter.length;
+	var now = Date.now();
+
+	F.config['nosql-logger'] && PRINTLN('NoSQL embedded "{0}" cleaning (beg)'.format(self.name));
+
+	var fs = new NoSQLStream(self.filename);
+	var writer = Fs.createWriteStream(self.filename + '-tmp');
+
+	fs.divider = NEWLINE;
+	fs.ondocuments = () => writer.write(fs.docs + NEWLINE);
+
+	writer.on('finish', function() {
+		Fs.rename(self.filename + '-tmp', self.filename, function() {
+			F.config['nosql-logger'] && PRINTLN('NoSQL embedded "{0}" cleaning (end, {1}s)'.format(self.name, (((Date.now() - now) / 1000) >> 0)));
+			for (var i = 0; i < length; i++)
+				filter[i]();
+			self.$events.clean && self.emit('clean');
+			self.next(0);
+			fs = null;
+		});
+	});
+
+	fs.openread(() => fs.read(() => writer.end()));
 };
 
 Database.prototype.$remove_inmemory = function() {
@@ -2873,7 +2852,7 @@ DatabaseBuilder.prototype.backup = function(user) {
 };
 
 DatabaseBuilder.prototype.$backupdoc = function(doc) {
-	this.db.filenameBackup && Fs.appendFile(this.db.filenameBackup, F.datetime.format('yyyy-MM-dd HH:mm') + ' | ' + this.$options.backup.padRight(20) + ' | ' + JSON.stringify(doc) + NEWLINE, F.errorcallback);
+	this.db.filenameBackup && Fs.appendFile(this.db.filenameBackup, F.datetime.format('yyyy-MM-dd HH:mm') + ' | ' + this.$options.backup.padRight(20) + ' | ' + (typeof(doc) === 'string' ? doc : JSON.stringify(doc)) + NEWLINE, F.errorcallback);
 	return this;
 };
 
@@ -4958,7 +4937,7 @@ Indexes.prototype.create = function(name, properties, type) {
 			meta.key = key;
 		}
 	} else {
-		self.meta[name] = { key: key, documents: 0 };
+		self.meta[name] = { key: key, documents: 0, changes: 0, cleaned: F.datetime.getTime() };
 		reindex = true;
 	}
 
@@ -4974,6 +4953,7 @@ Indexes.prototype.noreindex = function() {
 
 Indexes.prototype.$meta = function() {
 	var self = this;
+	self.$metachanged = false;
 	Fs.writeFile(self.db.filename + EXTENSION_INDEXES, JSON.stringify(this.meta), NOOP);
 	return this;
 };
@@ -5169,12 +5149,16 @@ Indexes.prototype.reindex = function(callback) {
 	self.reindexing = true;
 	var now = Date.now();
 
-	PRINTLN('NoSQL embedded "{0}" re-indexing (beg)'.format(self.db.name));
+	F.config['nosql-logger'] && PRINTLN('NoSQL embedded "{0}" re-indexing (beg)'.format(self.db.name));
 
 	var keys = Object.keys(self.meta);
+	var ticks = F.datetime.getTime();
 
-	for (var i = 0; i < self.indexes.length; i++)
-		self.meta[self.indexes[i].name].documents = 0;
+	for (var i = 0; i < self.indexes.length; i++) {
+		var item = self.meta[self.indexes[i].name];
+		item.documents = 0;
+		item.cleaned = ticks;
+	}
 
 	// Clears non-exist indexes
 	for (var i = 0; i < keys.length; i++) {
@@ -5201,7 +5185,7 @@ Indexes.prototype.reindex = function(callback) {
 				self.db.pending_reindex = false;
 				self.db.next(0);
 				callback && callback(null, count);
-				PRINTLN('NoSQL embedded "{0}" re-indexing (end, {1}s)'.format(self.db.name, (((Date.now() - now) / 1000) >> 0)));
+				F.config['nosql-logger'] && PRINTLN('NoSQL embedded "{0}" re-indexing (end, {1}s)'.format(self.db.name, (((Date.now() - now) / 1000) >> 0)));
 			});
 		});
 	});
@@ -5305,6 +5289,10 @@ Indexes.prototype.update = function(doc, old) {
 			var oldvalues = self.makeindex(index, old);
 			var oldkey = self.$index(index, oldvalues);
 
+			// Because of cleaning
+			self.meta[index.name].changes++;
+			self.$metachanged = true;
+
 			var item = self.findchanges(index, key, values);
 			if (item)
 				item.doc = doc;
@@ -5321,7 +5309,6 @@ Indexes.prototype.update = function(doc, old) {
 	return self;
 };
 
-
 Indexes.prototype.remove = function(doc) {
 	var self = this;
 
@@ -5334,6 +5321,10 @@ Indexes.prototype.remove = function(doc) {
 			var key = self.$index(index, values);
 			if (!key)
 				continue;
+
+			// Because of cleaning
+			self.meta[index.name].changes++;
+			self.$metachanged = true;
 
 			var item = self.findchanges(index, key, values);
 			if (!item)
@@ -5363,6 +5354,7 @@ Indexes.prototype.flush = function() {
 			return;
 
 		self.flushing = false;
+		self.$metachanged && self.$meta();
 		self.$free();
 
 		if (!self.changes.length) {
@@ -5376,6 +5368,7 @@ Indexes.prototype.flush = function() {
 	};
 
 	var arr = self.changes.splice(0, 50);
+	var ticks = F.datetime.getTime() - CLEANDBTICKS;
 
 	for (var i = 0; i < arr.length; i++) {
 
@@ -5386,6 +5379,7 @@ Indexes.prototype.flush = function() {
 		} else {
 			self.instances[item.key] = new Database(item.key, self.directory + item.key, true);
 			self.instances[item.key].PENDING = 0;
+			self.instances[item.key].CLEANDB = self.meta[item.name].changes > 0 && self.meta[item.name].cleaned < ticks ? item.name : null;
 		}
 
 		if (item.update) {
@@ -5439,8 +5433,22 @@ Indexes.prototype.$free = function() {
 	var keys = Object.keys(self.instances);
 	for (var i = 0; i < keys.length; i++) {
 		var db = self.instances[keys[i]];
-		if (!db && db.PENDING)
-			delete self.instances[keys[i]];
+		if (!db || !db.PENDING) {
+			// Cleans removed/changed documents
+			if (db && db.CLEANDB) {
+				db.PENDING++;
+				db.clean(function() {
+					db.PENDING--;
+					var a = self.meta[db.CLEANDB];
+					a.cleaned = F.datetime.getTime();
+					a.changes = 0;
+					db.CLEANDB = null;
+					self.$meta();
+					delete self.instances[keys[i]];
+				});
+			} else
+				delete self.instances[keys[i]];
+		}
 	}
 	return self;
 };
