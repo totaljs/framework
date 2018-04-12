@@ -3090,7 +3090,7 @@ DatabaseBuilder.prototype.repository = function(key, value) {
 DatabaseBuilder.prototype.compile = function() {
 	var self = this;
 	var raw = self.$code.join('');
-	var code = 'var repository=$F.repository;var options=$F.options;var arg=$F.arg;var fn=$F.fn;var $is=false;var $tmp;' + raw + (self.$code.length && raw.substring(raw.length - 7) !== 'return;' ? 'if(!$is)return;' : '') + 'if(!options.fields)return doc;var $doc={};for(var $i=0;$i<options.fields.length;$i++){var prop=options.fields[$i];$doc[prop]=doc[prop];}return $doc;';
+	var code = 'var repository=$F.repository;var options=$F.options;var arg=$F.arg;var fn=$F.fn;var $is=false;var $tmp;' + raw + (self.$code.length && raw.substring(raw.length - 7) !== 'return;' ? 'if(!$is)return;' : '') + 'if(!options.fields)return doc;var $doc={};for(var $i=0;$i<options.fields.length;$i++){var prop=options.fields[$i];$doc[prop]=doc[prop]}if(options.sort)$doc[options.sort.name]=doc[options.sort.name];return $doc;';
 	var opt = self.$options;
 	self.$inlinesort = !!(opt.take && opt.sort && opt.sort !== null);
 	self.$limit = (opt.take || 0) + (opt.skip || 0);
