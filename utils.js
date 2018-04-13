@@ -3160,12 +3160,19 @@ String.prototype.localeCompare2 = function(value) {
 /**
  * Parse configuration from a string
  * @param {Object} def
+ * @onerr {Function} error handling
  * @return {Object}
  */
-String.prototype.parseConfig = function(def) {
+String.prototype.parseConfig = function(def, onerr) {
+
+	if (typeof(def) === 'function') {
+		onerr = def;
+		def = null;
+	}
+
 	var arr = this.split('\n');
 	var length = arr.length;
-	var obj = exports.extend({}, def);
+	var obj = def ? exports.extend({}, def) : {};
 	var subtype;
 	var name;
 	var index;
@@ -3214,7 +3221,14 @@ String.prototype.parseConfig = function(def) {
 			case 'eval':
 			case 'object':
 			case 'array':
-				obj[name] = new Function('return ' + value)();
+				try {
+					obj[name] = new Function('return ' + value)();
+				} catch (e) {
+					if (onerr)
+						onerr(e, arr[i]);
+					else
+						throw new Error('A value of "{0}" can\'t be converted to "{1}": '.format(name, subtype) + e.toString());
+				}
 				break;
 			case 'json':
 				obj[name] = value.parseJSON(true);
