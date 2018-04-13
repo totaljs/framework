@@ -501,6 +501,8 @@ function Database(name, filename, readonly) {
 	self.$timeoutmeta;
 	self.$events = {};
 	self.$free = true;
+	self.$writting = false;
+	self.$reading = false;
 }
 
 Database.prototype.emit = function(name, a, b, c, d, e, f, g) {
@@ -993,79 +995,105 @@ Database.prototype.view = function(name) {
 	return builder;
 };
 
+//  1 append
+//  2 update
+//  3 remove
+//  4 reader
+//  5 views
+//  6 reader views
+//  7 drop
+//  8 backup
+//  9 restore
+// 10 streamer
+// 11 reader reverse
+// 12 clear
+// 13 clean
+
+const NEXTWAIT = { 7: true, 8: true, 9: true, 12: true, 13: true };
+
 Database.prototype.next = function(type) {
 
-	if (type && this.step)
+	if (type && NEXTWAIT[this.step])
 		return;
 
-	if (this.step !== 2 && this.pending_update.length) {
-		if (INMEMORY[this.name])
-			this.$update_inmemory();
-		else
-			this.$update();
-		return;
+	if (!this.$writting && !this.$reading) {
+
+		if (this.step !== 12 && this.pending_clear.length) {
+			if (INMEMORY[this.name])
+				this.$clear_inmemory();
+			else
+				this.$clear();
+			return;
+		}
+
+		if (this.step !== 13 && this.pending_clean.length) {
+			this.$clean();
+			return;
+		}
+
+		if (this.step !== 7 && !this.pending_reindex && this.pending_drops) {
+			this.$drop();
+			return;
+		}
 	}
 
-	if (this.step !== 3 && this.pending_remove.length) {
-		if (INMEMORY[this.name])
-			this.$remove_inmemory();
-		else
-			this.$remove();
-		return;
+	if (!this.$writting) {
+
+		if (this.step !== 1 && !this.pending_reindex && this.pending_append.length) {
+			if (INMEMORY[this.name])
+				this.$append_inmemory();
+			else
+				this.$append();
+			return;
+		}
+
+		if (this.step !== 2 && !this.$writting && this.pending_update.length) {
+			if (INMEMORY[this.name])
+				this.$update_inmemory();
+			else
+				this.$update();
+			return;
+		}
+
+		if (this.step !== 3 && !this.$writting && this.pending_remove.length) {
+			if (INMEMORY[this.name])
+				this.$remove_inmemory();
+			else
+				this.$remove();
+			return;
+		}
+
 	}
 
-	if (this.step !== 12 && this.pending_clear.length) {
-		if (INMEMORY[this.name])
-			this.$clear_inmemory();
-		else
-			this.$clear();
-		return;
-	}
+	if (!this.$reading) {
 
-	if (this.step !== 13 && this.pending_clean.length) {
-		this.$clean();
-		return;
-	}
+		if (this.step !== 4 && this.pending_reader.length) {
+			this.$reader();
+			return;
+		}
 
-	if (this.step !== 6 && this.pending_reader_view.length) {
-		this.$readerview();
-		return;
-	}
+		if (this.step !== 11 && this.pending_reader2.length) {
+			this.$reader3();
+			return;
+		}
 
-	if (this.step !== 4 && this.pending_reader.length) {
-		this.$reader();
-		return;
-	}
+		if (this.step !== 10 && this.pending_streamer.length) {
+			this.$streamer();
+			return;
+		}
 
-	if (this.step !== 11 && this.pending_reader2.length) {
-		this.$reader3();
-		return;
-	}
+		if (this.step !== 6 && this.pending_reader_view.length) {
+			this.$readerview();
+			return;
+		}
 
-	if (this.step !== 7 && !this.pending_reindex && this.pending_drops) {
-		this.$drop();
-		return;
-	}
-
-	if (this.step !== 1 && !this.pending_reindex && this.pending_append.length) {
-		if (INMEMORY[this.name])
-			this.$append_inmemory();
-		else
-			this.$append();
-		return;
-	}
-
-	if (this.step !== 5 && this.pending_views) {
-		if (INMEMORY[this.name])
-			this.$views_inmemory();
-		else
-			this.$views();
-		return;
-	}
-
-	if (this.step !== 10 && this.pending_streamer.length) {
-		this.$streamer();
-		return;
+		if (this.step !== 5 && this.pending_views) {
+			if (INMEMORY[this.name])
+				this.$views_inmemory();
+			else
+				this.$views();
+			return;
+		}
 	}
 
 	if (this.step !== type) {
@@ -1170,6 +1198,8 @@ Database.prototype.$append = function() {
 		return;
 	}
 
+	self.$writting = true;
+
 	self.pending_append.splice(0).limit(JSONBUFFER, function(items, next) {
 
 		var json = '';
@@ -1197,6 +1227,7 @@ Database.prototype.$append = function() {
 };
 
 function next_append(self) {
+	self.$writting = false;
 	self.next(0);
 	self.views && setImmediate(views_refresh, self);
 }
@@ -1235,6 +1266,8 @@ Database.prototype.$update = function() {
 		self.next(0);
 		return self;
 	}
+
+	self.$writting = true;
 
 	var filter = self.pending_update.splice(0);
 	var length = filter.length;
@@ -1343,6 +1376,7 @@ Database.prototype.$update = function() {
 			}
 
 			fs = null;
+			self.$writting = false;
 			self.next(0);
 			self.views && setImmediate(views_refresh, self);
 		});
@@ -1457,10 +1491,15 @@ Database.prototype.$reader = function() {
 	}
 
 	var list = self.pending_reader.splice(0);
-	if (INMEMORY[self.name])
+	if (INMEMORY[self.name]) {
 		self.$reader2_inmemory('#', list, () => self.next(0));
-	else
-		self.$reader2(self.filename, list, () => self.next(0));
+	} else {
+		self.$reading = true;
+		self.$reader2(self.filename, list, function() {
+			self.$reading = false;
+			self.next(0);
+		});
+	}
 
 	return self;
 };
@@ -1697,6 +1736,8 @@ Database.prototype.$reader3 = function() {
 		return self;
 	}
 
+	self.$reading = true;
+
 	var filter = self.pending_reader2.splice(0);
 	var length = filter.length;
 	var first = true;
@@ -1866,6 +1907,7 @@ Database.prototype.$reader3 = function() {
 				builder.done();
 			}
 
+			self.$reading = false;
 			fs = null;
 			self.next(0);
 		});
@@ -1884,6 +1926,8 @@ Database.prototype.$streamer = function() {
 		self.next(0);
 		return self;
 	}
+
+	self.$reading = true;
 
 	var filter = self.pending_streamer.splice(0);
 	var length = filter.length;
@@ -1904,6 +1948,7 @@ Database.prototype.$streamer = function() {
 		fs.read(function() {
 			for (var i = 0; i < length; i++)
 				filter[i].callback && filter[i].callback(null, filter[i].repository, count);
+			self.$reading = false;
 			self.next(0);
 			fs = null;
 		});
@@ -2147,6 +2192,8 @@ Database.prototype.$views = function() {
 	var fs = new NoSQLStream(self.filename);
 	var indexer = 0;
 
+	self.$reading = true;
+
 	fs.ondocuments = function() {
 		var docs = JSON.parse('[' + fs.docs + ']', jsonparser);
 		for (var i = 0; i < docs.length; i++) {
@@ -2201,7 +2248,10 @@ Database.prototype.$views = function() {
 						next();
 					});
 				});
-			}, () => self.next(0), 5);
+			}, function() {
+				self.$reading = false;
+				self.next(0);
+			}, 5);
 		});
 	});
 
@@ -2292,6 +2342,8 @@ Database.prototype.$remove = function() {
 		return;
 	}
 
+	self.$writting = true;
+
 	var fs = new NoSQLStream(self.filename);
 	var filter = self.pending_remove.splice(0);
 	var length = filter.length;
@@ -2362,6 +2414,7 @@ Database.prototype.$remove = function() {
 				item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count, item.filter.repository);
 			}
 			fs = null;
+			self.$writting = false;
 			self.next(0);
 			change && self.views && setImmediate(views_refresh, self);
 		});
@@ -2420,7 +2473,9 @@ Database.prototype.$clean = function() {
 	var writer = Fs.createWriteStream(self.filename + '-tmp');
 
 	fs.divider = NEWLINE;
-	fs.ondocuments = () => writer.write(fs.docs + NEWLINE);
+	fs.ondocuments = function() {
+		writer.write(fs.docs + NEWLINE);
+	};
 
 	writer.on('finish', function() {
 		Fs.rename(self.filename + '-tmp', self.filename, function() {
