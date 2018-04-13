@@ -9646,6 +9646,7 @@ function Controller(name, req, res, currentView) {
 	if (req) {
 		this.language = req.$language;
 		this.req = req;
+		this.route = req.$total_route;
 	} else
 		this.req = EMPTYREQUEST;
 
@@ -9693,27 +9694,23 @@ Controller.prototype = {
 	},
 
 	get schema() {
-		return this.req.$total_route.schema[0] === 'default' ? this.req.$total_route.schema[1] : this.req.$total_route.schema.join('/');
+		return this.route.schema[0] === 'default' ? this.route.schema[1] : this.route.schema.join('/');
 	},
 
 	get workflow() {
-		return this.req.$total_route.schema_workflow;
+		return this.route.schema_workflow;
 	},
 
 	get sseID() {
 		return this.req.headers['last-event-id'] || null;
 	},
 
-	get route() {
-		return this.req.$total_route;
-	},
-
 	get options() {
-		return this.req.$total_route.options;
+		return this.route.options;
 	},
 
 	get flags() {
-		return this.req.$total_route.flags;
+		return this.route.flags;
 	},
 
 	get path() {
@@ -9824,7 +9821,7 @@ Controller.prototype = {
 	get params() {
 		if (this.$params)
 			return this.$params;
-		var route = this.req.$total_route;
+		var route = this.route;
 		var names = route.paramnames;
 		if (names) {
 			var obj = {};
@@ -10001,7 +9998,7 @@ Controller.prototype.$async = function(callback, index) {
 };
 
 Controller.prototype.getSchema = function() {
-	var route = this.req.$total_route;
+	var route = this.route;
 	if (!route.schema || !route.schema[1])
 		throw new Error('The controller\'s route does not define any schema.');
 	var schema = GETSCHEMA(route.schema[0], route.schema[1]);
@@ -10310,7 +10307,7 @@ Controller.prototype.transfer = function(url, flags) {
 	// Hidden variable
 	self.req.$path = framework_internal.routeSplit(url, true);
 
-	self.req.$total_route = selected;
+	self.route = self.req.$total_route = selected;
 	self.req.$total_execute(404);
 	return true;
 };
@@ -12287,7 +12284,7 @@ Controller.prototype.sse = function(data, eventname, id, retry) {
 		self.type = 1;
 
 		if (retry === undefined)
-			retry = self.req.$total_route.timeout;
+			retry = self.route.timeout;
 
 		self.req.$total_success();
 		self.req.on('close', () => self.close());
