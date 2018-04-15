@@ -352,16 +352,16 @@ NoSQLStream.prototype.writehelpers = function() {
 				break;
 		}
 
-		if (self.bufferstack.length || self.bufferstacknew.length) {
-			// @TODO: add helper
-			var fn = function() {
-				if (self.bufferstack.length || self.bufferstacknew.length)
-					setImmediate(fn);
-				else
-					self.readupdate();
-			};
-			setImmediate(fn);
-		} else
+		if (self.bufferstack.length || self.bufferstacknew.length)
+			setImmediate(self.cb_writeticks);
+		else
+			self.readupdate();
+	};
+
+	self.cb_writeticks = function() {
+		if (self.bufferstack.length || self.bufferstacknew.length)
+			setImmediate(self.cb_writeticks);
+		else
 			self.readupdate();
 	};
 };
