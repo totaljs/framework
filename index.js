@@ -6996,8 +6996,9 @@ F.service = function(count) {
 
 	if (count % F.config['nosql-cleaner'] === 0 && F.config['nosql-cleaner']) {
 		var keys = Object.keys(F.databasescleaner);
-		for (var i = 0; i < keys.length; i++)
-			NOSQL(keys[i]).clean();
+		keys.wait(function(item, next) {
+			NOSQL(item).clean(next);
+		});
 	}
 
 	F.$events.service && F.emit('service', count);
