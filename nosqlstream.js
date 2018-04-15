@@ -49,6 +49,7 @@ function NoSQLStream(filename) {
 	// this.indexer = 0;
 }
 
+// Because of performance
 NoSQLStream.prototype.readhelpers = function() {
 
 	var self = this;
@@ -250,6 +251,7 @@ NoSQLStream.prototype.readhelpers = function() {
 
 };
 
+// Because of performance
 NoSQLStream.prototype.writehelpers = function() {
 
 	var self = this;
