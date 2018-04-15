@@ -71,7 +71,7 @@ process.on('message', function(msg) {
 			});
 			break;
 		case 'find2':
-			db.find().parse(msg.data).callback(function(err, response, count, repository) {
+			db.find2().parse(msg.data).callback(function(err, response, count, repository) {
 				RESFIND.err = err;
 				RESFIND.response = response;
 				RESFIND.count = count;

@@ -235,12 +235,20 @@ exports.worker = function() {
 		PRINTLN('ERROR --> NoSQL events are not supported in fork mode.');
 	};
 
-	Database.prototype.find = function(view) {
-		return send(this, 'find', view).builder = new DatabaseBuilder(this);
+	Database.prototype.find = function(view, builder) {
+		if (builder)
+			builder.db = this;
+		else
+			builder = new DatabaseBuilder(this);
+		return send(this, 'find', view).builder = builder;
 	};
 
-	Database.prototype.find2 = function(view) {
-		return send(this, 'find2', view).builder = new DatabaseBuilder(this);
+	Database.prototype.find2 = function(builder) {
+		if (builder)
+			builder.db = this;
+		else
+			builder = new DatabaseBuilder(this);
+		return send(this, 'find2').builder = builder;
 	};
 
 	Database.prototype.top = function(max, view) {
@@ -913,9 +921,13 @@ Database.prototype.remove = function(filename) {
 	return builder;
 };
 
-Database.prototype.find = function(view) {
+Database.prototype.find = function(view, builder) {
 	var self = this;
-	var builder = new DatabaseBuilder(self);
+
+	if (builder)
+		builder.db = self;
+	else
+		builder = new DatabaseBuilder(self);
 
 	if (view) {
 		self.pending_reader_view.push({ builder: builder, count: 0, counter: 0, view: view });
@@ -928,13 +940,17 @@ Database.prototype.find = function(view) {
 	return builder;
 };
 
-Database.prototype.find2 = function() {
+Database.prototype.find2 = function(builder) {
 	var self = this;
 
-	if (self.readonly)
-		return self.find();
+	if (builder)
+		builder.db = self;
+	else
+		builder = new DatabaseBuilder(self);
 
-	var builder = new DatabaseBuilder(self);
+	if (self.readonly)
+		return self.find(null, builder);
+
 	self.pending_reader2.push({ builder: builder, count: 0, counter: 0 });
 	setImmediate(next_operation, self, 11);
 	return builder;
@@ -2693,7 +2709,6 @@ function DatabaseBuilder(db) {
 	this.$scope = 0;
 	// this.$fields;
 	// this.$join;
-	// this.$joincount;
 	this.$callback = NOOP;
 	// this.$scalar;
 	// this.$scalarfield;
@@ -2728,6 +2743,69 @@ DatabaseBuilder.prototype.log = function(msg, user) {
 	return self;
 };
 
+DatabaseBuilder.prototype.$callbackjoin = function(callback) {
+	var self = this;
+
+	Object.keys(self.$join).wait(function(key, next) {
+		var join = self.$join[key];
+		var response = self.$response;
+		var unique = [];
+
+		for (var i = 0; i < response.length; i++) {
+			var item = response[i];
+			var val = item[join.b];
+			if (val !== undefined)
+				if (unique.indexOf(val) === -1)
+					unique.push(val);
+		}
+
+		var db = NOSQL(join.name);
+
+		if (join.scalartype) {
+			join.items = [];
+			join.count = unique.length;
+			for (var i = 0; i < unique.length; i++) {
+				(function(val) {
+					var builder = db.scalar(join.scalartype, join.scalarfield, join.view).callback(function(err, response) {
+						join.items.push({ id: val, response: response });
+						join.count--;
+						if (join.count === 0) {
+							join.count = -1;
+							next();
+						}
+					});
+
+					if (join.builder.$counter) {
+						builder.$counter = join.builder.$counter;
+						builder.$code = join.builder.$code.slice(0);
+						U.extend_headers2(builder.$options, join.builder.$options);
+						builder.$repository = join.builder.$repository;
+						builder.$params = CLONE(join.builder.$params);
+					}
+
+					builder.$take = join.builder.$take;
+					builder.$skip = join.builder.$skip;
+					builder.$filter = join.builder.$filter;
+					builder.$scope = join.builder.$scope;
+					builder.where(join.a, val);
+
+				})(unique[i]);
+			}
+
+		} else {
+			join.builder.$options.fields && join.builder.$options.fields.push(join.a);
+			join.builder.$callback = function(err, docs) {
+				join.items = docs;
+				next();
+			};
+			db.find(join.view, join.builder).in(join.a, unique);
+		}
+
+	}, callback);
+
+	return self;
+};
+
 DatabaseBuilder.prototype.$callback2 = function(err, response, count, repository) {
 	var self = this;
 
@@ -2737,86 +2815,48 @@ DatabaseBuilder.prototype.$callback2 = function(err, response, count, repository
 		return self.$callback(err, response, count, repository);
 	}
 
-	if (self.$joincount) {
-		setImmediate(() => self.$callback2(err, response, count, repository));
-		return self;
-	}
+	self.$response = response;
+	self.$callbackjoin(function() {
 
-	var keys = Object.keys(self.$join);
-	var jl = keys.length;
+		var keys = Object.keys(self.$join);
 
-	if (response instanceof Array) {
-		for (var i = 0, length = response.length; i < length; i++) {
-			var item = response[i];
+		var jl = keys.length;
+		if (response instanceof Array) {
+			for (var i = 0, length = response.length; i < length; i++) {
+				var item = response[i];
+				for (var j = 0; j < jl; j++) {
+					var join = self.$join[keys[j]];
+					item[join.field] = join.scalartype ? findScalar(join.items, item[join.b]) : join.first ? findItem(join.items, join.a, item[join.b]) : findItems(join.items, join.a, item[join.b]);
+				}
+			}
+		} else if (response) {
 			for (var j = 0; j < jl; j++) {
 				var join = self.$join[keys[j]];
-				item[join.field] = join.scalar ? scalar(join.items, join.scalar, join.scalarfield, join.a, join.b != null ? item[join.b] : undefined) : join.first ? findItem(join.items, join.a, item[join.b], join.scalar, join.scalarfield) : findItems(join.items, join.a, item[join.b]);
+				response[join.field] = join.scalartype ? findScalar(join.items, item[join.b]) : join.first ? findItem(join.items, join.a, response[join.b]) : findItems(join.items, join.a, response[join.b]);
 			}
 		}
-	} else if (response) {
-		for (var j = 0; j < jl; j++) {
-			var join = self.$join[keys[j]];
-			response[join.field] = join.scalar ? scalar(join.items, join.scalar, join.scalarfield, join.a, join.b != null ? response[join.b] : undefined) : join.first ? findItem(join.items, join.a, response[join.b], join.scalar, join.scalarfield) : findItems(join.items, join.a, response[join.b]);
-		}
-	}
 
-	self.$options.log && self.log();
-	self.$callback(err, response, count, repository);
-	self.$done && setImmediate(self.$done);
+		self.$options.log && self.log();
+		self.$callback(err, response, count, repository);
+		self.$done && setImmediate(self.$done);
+	});
+
 	return self;
 };
-
-function scalar(items, type, field, where, value) {
-
-	if (type === 'count' && !where)
-		return items.length;
-
-	var val = type !== 'min' && type !== 'max' ? type === 'group' ? {} : 0 : null;
-	var count = 0;
-
-	for (var i = 0, length = items.length; i < length; i++) {
-		var item = items[i];
-
-		if (where && item[where] !== value)
-			continue;
-
-		switch (type) {
-			case 'count':
-				val++;
-				break;
-			case 'sum':
-				val += item[field] || 0;
-				break;
-			case 'avg':
-				val += item[field] || 0;
-				count++;
-				break;
-			case 'min':
-				val = val === null ? item[field] : (val > item[field] ? item[field] : val);
-				break;
-			case 'group':
-				if (val[item[field]])
-					val[item[field]]++;
-				else
-					val[item[field]] = 1;
-				break;
-			case 'max':
-				val = val === null ? item[field] : (val < item[field] ? item[field] : val);
-				break;
-		}
-	}
-
-	if (type === 'avg')
-		val = val / count;
-
-	return val || 0;
-}
 
 function findItem(items, field, value) {
 	for (var i = 0, length = items.length; i < length; i++) {
 		if (items[i][field] === value)
 			return items[i];
 	}
+}
+
+function findScalar(items, value) {
+	for (var i = 0, length = items.length; i < length; i++) {
+		if (items[i].id === value)
+			return items[i].response || null;
+	}
+	return null;
 }
 
 function findItems(items, field, value) {
@@ -2831,24 +2871,25 @@ function findItems(items, field, value) {
 DatabaseBuilder.prototype.join = function(field, name, view) {
 	var self = this;
 
-	if (!self.$join) {
+	if (!self.$join)
 		self.$join = {};
-		self.$joincount = 0;
-	}
 
 	var key = name + '.' + (view || '') + '.' + field;
 	var join = self.$join[key];
 	if (join)
 		return join;
 
-	self.$join[key] = {};
-	self.$join[key].field = field;
-	self.$join[key].pending = true;
-	self.$joincount++;
-
-	join = NOSQL(name).find(view);
+	var item = self.$join[key] = {};
+	item.field = field;
+	item.name = name;
+	item.view = view;
+	item.builder = join = new DatabaseBuilder(self.db);
 
 	join.on = function(a, b) {
+
+		if (self.$options.fields)
+			self.$options.fields.push(b);
+
 		self.$join[key].a = a;
 		self.$join[key].b = b;
 		return join;
@@ -2856,31 +2897,25 @@ DatabaseBuilder.prototype.join = function(field, name, view) {
 
 	join.$where = self.where;
 
-	join.where = function(a, b, c) {
-		return c === undefined && typeof(b) === 'string' ? join.on(a, b) : join.$where(a, b, c);
+	// join.where = function(a, b, c) {
+	// 	return c === undefined && typeof(b) === 'string' ? join.on(a, b) : join.$where(a, b, c);
+	// };
+
+	join.first = function() {
+		item.first = true;
+		return join;
 	};
 
 	join.scalar = function(type, field) {
-		self.$join[key].scalar = type;
-		self.$join[key].scalarfield = field;
+		item.scalartype = type;
+		item.scalarfield = field;
 		return join;
 	};
 
-	join.first = function() {
-		self.$join[key].first = true;
+	join.callback = function(a, b) {
+		self.callback(a, b);
 		return join;
 	};
-
-	join.callback(function(err, docs) {
-		self.$join[key].pending = false;
-		self.$join[key].items = docs;
-		self.$joincount--;
-	});
-
-	setImmediate(function() {
-		join.$fields && join.fields(self.$join[key].b);
-		join.$fields && self.$join[key].scalarfield && join.fields(self.$join[key].scalarfield);
-	});
 
 	return join;
 };
@@ -2909,6 +2944,7 @@ DatabaseBuilder.prototype.filter = function(fn) {
 
 	self.$code.push(code);
 	!self.$scope && self.$code.push('if(!$is)return;');
+	self.$counter++;
 	return self;
 };
 
@@ -2927,6 +2963,7 @@ DatabaseBuilder.prototype.contains = function(name) {
 		code = 'if(!$is){' + code + '}';
 	self.$code.push(code);
 	!self.$scope && self.$code.push('if(!$is)return;');
+	self.$counter++;
 	return self;
 };
 
@@ -2937,6 +2974,7 @@ DatabaseBuilder.prototype.empty = function(name) {
 		code = 'if(!$is){' + code + '}';
 	self.$code.push(code);
 	!self.$scope && self.$code.push('if(!$is)return;');
+	self.$counter++;
 	return self;
 };
 
