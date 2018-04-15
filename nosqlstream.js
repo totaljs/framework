@@ -49,248 +49,15 @@ function NoSQLStream(filename) {
 	// this.indexer = 0;
 }
 
-NoSQLStream.prototype.openread = function(callback) {
-	var self = this;
-	self.type = 'r';
-	self.position = 0;
-	self.open(callback);
-	return self;
-};
-
-NoSQLStream.prototype.openupdate = function(callback) {
-	var self = this;
-	self.type = 'r+';
-	self.open(function(err) {
-
-		// File may not exist
-		if (err) {
-			callback();
-			return;
-		}
-
-		self.position = 0;
-		self.positionappend = self.stats.size;
-		self.positionupdate = 0;
-		self.bufferstack = [];
-		self.bufferstacknew = [];
-		self.docsbuffer = [];
-
-		callback && callback();
-	});
-
-	return self;
-};
-
-NoSQLStream.prototype.openinsert = function(callback) {
-	var self = this;
-	self.type = 'a';
-	self.open(callback);
-	return self;
-};
-
-// For e.g. files on URL address
-NoSQLStream.prototype.openstream = function(stream, callback) {
+NoSQLStream.prototype.readhelpers = function() {
 
 	var self = this;
 
-	self.docs = '';
-	self.docscount = 0;
+	self.cb_read = function() {
+		self.read();
+	};
 
-	self.stream = stream;
-	self.stream.on('end', function() {
-		if (self.docscount) {
-			self.ondocuments();
-			self.docscount = 0;
-			self.docs = '';
-		}
-		callback && callback();
-	});
-
-	self.stream.on('data', function(chunk) {
-
-		var beg = 0;
-
-		if (self.buffer) {
-			self.cache[0] = self.buffer;
-			self.cache[1] = chunk;
-			self.buffer = Buffer.concat(self.cache);
-
-			beg = self.cache[0].length - 1;
-
-			if (beg < 0)
-				beg = 0;
-
-		} else
-			self.buffer = chunk;
-
-		var index = self.buffer.indexOf(NEWLINEBUFFER, beg);
-		while (index !== -1) {
-
-			var tmp = self.buffer.toString('utf8', 0, index).trim();
-
-			self.docs += (self.docs ? self.divider : '') + tmp;
-			self.docscount++;
-			self.indexer++;
-
-			if (self.docscount >= BUFFERDOCS) {
-
-				if (self.ondocuments() === false)
-					self.canceled = true;
-
-				self.docs = '';
-				self.docscount = 0;
-
-				if (self.canceled) {
-					self.close();
-					self.stream.destroy && self.stream.destroy();
-					return;
-				}
-
-			}
-
-			self.buffer = self.buffer.slice(index + 1);
-			index = self.buffer.indexOf(NEWLINEBUFFER);
-			if (index === -1)
-				break;
-		}
-	});
-
-	return self;
-};
-
-NoSQLStream.prototype.open = function(callback) {
-	var self = this;
-	Fs.open(self.filename, self.type, function(err, fd) {
-
-		if (err) {
-			callback && callback.call(err);
-			return;
-		}
-
-		Fs.fstat(fd, function(err, stats) {
-			self.docs = '';
-			self.docscount = 0;
-			self.fd = fd;
-			self.stats = stats;
-			self.position = 0;
-			callback && callback(err);
-		});
-	});
-};
-
-NoSQLStream.prototype.close = function(callback) {
-
-	var self = this;
-
-	if (self.fd) {
-
-		self.stream = null;
-
-		Fs.close(self.fd, function(err) {
-			err && F.error(err);
-			callback && callback();
-		});
-
-		if (self.buffer) {
-			self.buffer = null;
-			self.cache[0] = null;
-			self.cache[1] = null;
-			self.bytesread = 0;
-		}
-
-		self.canceled = false;
-		self.fd = null;
-		self.type = null;
-		self.docscache = null;
-		self.docs = null;
-
-	} else if (callback)
-		callback();
-
-	return self;
-};
-
-NoSQLStream.prototype.write = function(doc, position) {
-	var self = this;
-	self.bufferstack.push({ position: position, data: doc });
-	!self.writing && self.$write();
-	return self;
-};
-
-NoSQLStream.prototype.write2 = function(doc) {
-	var self = this;
-	self.bufferstacknew.push(U.createBuffer(doc));
-	!self.writing && self.$write();
-	return self;
-};
-
-NoSQLStream.prototype.$write = function() {
-	var self = this;
-	if (self.bufferstacknew.length && self.bufferstack.length) {
-		self.writing = true;
-		var buf = self.bufferstacknew.splice(0, 5);
-		buf = buf.length > 1 ? Buffer.concat(buf) : buf[0];
-		Fs.write(self.fd, buf, 0, buf.length, self.positionappend, function(err, size) {
-			self.positionappend += size;
-			var item = self.bufferstack.shift();
-			Fs.write(self.fd, item.data, item.position, 'utf8', function() {
-				self.writing = false;
-				self.$write();
-			});
-		});
-	} else if (self.bufferstacknew.length) {
-		self.writing = true;
-		var buf = self.bufferstacknew.splice(0, 5);
-		buf = buf.length > 1 ? Buffer.concat(buf) : buf[0];
-		Fs.write(self.fd, buf, 0, buf.length, self.positionappend, function(err, size) {
-			self.positionappend += size;
-			self.writing = false;
-			self.$write();
-		});
-	} else if (self.bufferstack.length) {
-		self.writing = true;
-		var item = self.bufferstack.shift();
-		Fs.write(self.fd, item.data, item.position, 'utf8', function() {
-			self.writing = false;
-			self.$write();
-		});
-	}
-};
-
-NoSQLStream.prototype.flush = function(callback) {
-	var self = this;
-	if (self.writing) {
-		setTimeout((self, callback) => self.flush(callback), 100, self, callback);
-	} else
-		self.close(callback || NOOP);
-	return self;
-};
-
-NoSQLStream.prototype.read = function(callback, noclose) {
-
-	var self = this;
-	var size = self.stats.size - self.position;
-
-	if (!self.fd || size <= 0 || self.canceled) {
-
-		if (self.docscount) {
-			self.ondocuments();
-			self.docscount = 0;
-			self.docs = '';
-		}
-
-		if (noclose)
-			callback && callback();
-		else
-			self.close(err => callback && callback(err));
-
-		return;
-	}
-
-	size = size < BUFFERSIZE ? size : BUFFERSIZE;
-	var buffer = framework_utils.createBufferSize(size);
-
-	Fs.read(self.fd, buffer, 0, size, self.position, function(err, size, chunk) {
+	self.cb_readbuffer = function(err, size, chunk) {
 
 		self.position += size;
 
@@ -335,7 +102,7 @@ NoSQLStream.prototype.read = function(callback, noclose) {
 				self.docscount = 0;
 
 				if (self.canceled) {
-					self.read(callback, noclose);
+					self.read(self.$callback, self.$noclose);
 					return;
 				}
 			}
@@ -349,50 +116,20 @@ NoSQLStream.prototype.read = function(callback, noclose) {
 		self.ticks++;
 
 		if (self.ticks % 5 === 0)
-			setImmediate(readnext, self, callback, noclose);
+			setImmediate(self.cb_readticks);
 		else
-			self.read(callback, noclose);
-	});
-};
+			self.read();
+	};
 
-function readnext(self, callback, close) {
-	self.read(callback, close);
-}
+	self.cb_readticks = function() {
+		self.read();
+	};
 
-function readnextreverse(self, callback, close) {
-	self.readreverse(callback, close, true);
-}
+	self.cb_readreverse = function() {
+		self.readreverse2();
+	};
 
-NoSQLStream.prototype.readreverse = function(callback, noclose, repeat) {
-
-	var self = this;
-
-	if (repeat == null)
-		self.position = self.stats.size;
-
-	if (!self.fd || self.position <= 0 || self.canceled) {
-
-		if (self.docscount) {
-			self.ondocuments();
-			self.docs = '';
-			self.docscount = 0;
-		}
-
-		if (noclose)
-			callback && callback();
-		else
-			self.close(err => callback && callback(err));
-
-		return;
-	}
-
-	var size = self.stats.size - self.bytesread;
-	size = size < BUFFERSIZE ? size : BUFFERSIZE;
-
-	self.position -= size;
-	var buffer = framework_utils.createBufferSize(size);
-
-	Fs.read(self.fd, buffer, 0, size, self.position, function(err, size, chunk) {
+	self.cb_readreversebuffer = function(err, size, chunk) {
 
 		self.bytesread += size;
 
@@ -427,7 +164,7 @@ NoSQLStream.prototype.readreverse = function(callback, noclose, repeat) {
 			}
 
 			if (self.canceled) {
-				self.readreverse(callback, noclose, true);
+				self.readreverse2();
 				return;
 			}
 
@@ -453,37 +190,125 @@ NoSQLStream.prototype.readreverse = function(callback, noclose, repeat) {
 		self.ticks++;
 
 		if (self.ticks % 5 === 0)
-			setImmediate(readnextreverse, self, callback, noclose);
+			setImmediate(self.cb_readreverseticks);
 		else
-			self.readreverse(callback, noclose, true);
-	});
+			self.readreverse2();
+	};
+
+	self.cb_readreverseticks = function() {
+		self.readreverse2();
+	};
+
+	self.cb_readstream = function(chunk) {
+
+		var beg = 0;
+
+		if (self.buffer) {
+
+			self.cache[0] = self.buffer;
+			self.cache[1] = chunk;
+			self.buffer = Buffer.concat(self.cache);
+
+			beg = self.cache[0].length - 1;
+
+			if (beg < 0)
+				beg = 0;
+
+		} else
+			self.buffer = chunk;
+
+		var index = self.buffer.indexOf(NEWLINEBUFFER, beg);
+		while (index !== -1) {
+
+			var tmp = self.buffer.toString('utf8', 0, index).trim();
+
+			self.docs += (self.docs ? self.divider : '') + tmp;
+			self.docscount++;
+			self.indexer++;
+
+			if (self.docscount >= BUFFERDOCS) {
+
+				if (self.ondocuments() === false)
+					self.canceled = true;
+
+				self.docs = '';
+				self.docscount = 0;
+
+				if (self.canceled) {
+					self.stream.destroy && self.stream.destroy();
+					return;
+				}
+
+			}
+
+			self.buffer = self.buffer.slice(index + 1);
+			index = self.buffer.indexOf(NEWLINEBUFFER);
+			if (index === -1)
+				break;
+		}
+	};
+
 };
 
-NoSQLStream.prototype.readupdate = function(callback, noclose) {
+NoSQLStream.prototype.writehelpers = function() {
 
 	var self = this;
-	var size = self.stats.size - self.position;
 
-	if (!self.fd || size <= 0 || self.canceled) {
-
-		if (self.docsbuffer.length) {
-			self.ondocuments();
-			self.docsbuffer = [];
-			self.docs = '';
+	self.cb_writeAddUpdAdd = function(err, size) {
+		if (err) {
+			console.log('ERROR --> NoSQLstream.writer (add)', err);
+			self.canceled = true;
+			self.bufferstacknew.length = 0;
+			self.bufferstack.length = 0;
+			self.writing = false;
+		} else {
+			self.positionappend += size;
+			var item = self.bufferstack.shift();
+			Fs.write(self.fd, item.data, item.position, 'utf8', self.cb_writeAddUpdUpd);
 		}
+	};
 
-		if (noclose)
-			callback && callback();
-		else
-			self.close(err => callback && callback(err));
+	self.cb_writeAddUpdUpd = function(err) {
 
-		return;
-	}
+		self.writing = false;
 
-	size = size < BUFFERSIZE ? size : BUFFERSIZE;
-	var buffer = framework_utils.createBufferSize(size);
+		if (err) {
+			console.log('ERROR --> NoSQLstream.writer (upd)', err);
+			self.canceled = true;
+			self.bufferstack.length = 0;
+			self.bufferstacknew.length = 0;
+		} else
+			self.$write();
+	};
 
-	Fs.read(self.fd, buffer, 0, size, self.position, function(err, size, chunk) {
+	self.cb_writeAdd = function(err, size) {
+
+		self.writing = false;
+		self.positionappend += size;
+
+		if (err) {
+			console.log('ERROR --> NoSQLstream.writer (add)', err);
+			self.canceled = true;
+		} else
+			self.$write();
+	};
+
+	self.cb_writeUpd = function(err) {
+
+		self.writing = false;
+
+		if (err) {
+			console.log('ERROR --> NoSQLstream.writer (upd)', err);
+			self.canceled = true;
+		} else
+			self.$write();
+	};
+
+	self.cb_flush = function() {
+		self.flush();
+	};
+
+	self.cb_readwritebuffer = function(err, size, chunk) {
 
 		self.position += size;
 
@@ -506,9 +331,7 @@ NoSQLStream.prototype.readupdate = function(callback, noclose) {
 		var index = self.buffer.indexOf(NEWLINEBUFFER, beg);
 
 		while (index !== -1) {
-
 			var tmp = self.buffer.toString('utf8', 0, index);
-
 			if (tmp[0] !== '-') {
 				self.docs += (self.docs ? ',' : '') + tmp;
 				self.docsbuffer.push({ length: index, doc: tmp, position: self.positionupdate });
@@ -523,22 +346,275 @@ NoSQLStream.prototype.readupdate = function(callback, noclose) {
 			self.positionupdate += Buffer.byteLength(tmp, 'utf8') + 1;
 			self.buffer = self.buffer.slice(index + 1);
 			index = self.buffer.indexOf(NEWLINEBUFFER);
-
 			if (index === -1)
 				break;
 		}
 
 		if (self.bufferstack.length || self.bufferstacknew.length) {
+			// @TODO: add helper
 			var fn = function() {
 				if (self.bufferstack.length || self.bufferstacknew.length)
 					setImmediate(fn);
 				else
-					self.readupdate(callback, noclose);
+					self.readupdate();
 			};
 			setImmediate(fn);
 		} else
-			self.readupdate(callback, noclose);
+			self.readupdate();
+	};
+};
+
+NoSQLStream.prototype.openread = function() {
+	var self = this;
+	self.type = 'r';
+	self.position = 0;
+	self.open();
+	return self;
+};
+
+NoSQLStream.prototype.openreadreverse = function() {
+	var self = this;
+	self.type = 'r';
+	self.position = 0;
+	self.$reverse = true;
+	self.open();
+	return self;
+};
+
+NoSQLStream.prototype.openupdate = function() {
+	var self = this;
+	self.type = 'r+';
+	Fs.open(self.filename, self.type, function(err, fd) {
+
+		if (err) {
+			self.$callback(err);
+			return;
+		}
+
+		Fs.fstat(fd, function(err, stats) {
+
+			self.docs = '';
+			self.docscount = 0;
+
+			if (err) {
+				Fs.close(fd, NOOP);
+				self.$callback(err);
+				return;
+			}
+
+			self.docs = '';
+			self.docscount = 0;
+			self.fd = fd;
+			self.stats = stats;
+			self.position = 0;
+			self.positionappend = self.stats.size;
+			self.positionupdate = 0;
+			self.bufferstack = [];
+			self.bufferstacknew = [];
+			self.docsbuffer = [];
+			self.writehelpers();
+			self.readupdate();
+		});
 	});
+
+	return self;
+};
+
+// For e.g. files on URL address
+NoSQLStream.prototype.openstream = function(stream) {
+
+	var self = this;
+
+	var close = function() {
+		if (self.docscount) {
+			self.ondocuments();
+			self.docscount = 0;
+			self.docs = '';
+		}
+		self.$callback && self.$callback();
+		self.$callback = null;
+	};
+
+	self.docs = '';
+	self.docscount = 0;
+	self.readhelpers();
+	self.stream = stream;
+	self.stream.on('error', close);
+	self.stream.on('end', close);
+	self.stream.on('data', self.cb_readstream);
+	return self;
+};
+
+NoSQLStream.prototype.open = function() {
+	var self = this;
+	Fs.open(self.filename, self.type, function(err, fd) {
+
+		if (err) {
+			self.$callback(err);
+			return;
+		}
+
+		Fs.fstat(fd, function(err, stats) {
+			self.docs = '';
+			self.docscount = 0;
+			self.fd = fd;
+			self.stats = stats;
+			self.position = 0;
+
+			if (err) {
+				Fs.close(fd, NOOP);
+				self.$callback(err);
+				return;
+			}
+
+			self.readhelpers();
+
+			if (self.$reverse)
+				self.readreverse();
+			else
+				self.read();
+		});
+	});
+};
+
+NoSQLStream.prototype.close = function() {
+
+	var self = this;
+
+	if (self.fd) {
+
+		self.stream = null;
+
+		Fs.close(self.fd, function(err) {
+			err && F.error(err);
+			self.$callback && self.$callback();
+		});
+
+		if (self.buffer) {
+			self.buffer = null;
+			self.cache[0] = null;
+			self.cache[1] = null;
+			self.bytesread = 0;
+		}
+
+		self.canceled = false;
+		self.fd = null;
+		self.type = null;
+		self.docscache = null;
+		self.docs = null;
+
+	} else if (self.$callback)
+		self.$callback && self.$callback();
+
+	return self;
+};
+
+NoSQLStream.prototype.write = function(doc, position) {
+	var self = this;
+	self.bufferstack.push({ position: position, data: doc });
+	!self.writing && self.$write();
+	return self;
+};
+
+NoSQLStream.prototype.write2 = function(doc) {
+	var self = this;
+	self.bufferstacknew.push(U.createBuffer(doc));
+	!self.writing && self.$write();
+	return self;
+};
+
+NoSQLStream.prototype.$write = function() {
+	var self = this;
+	if (self.bufferstacknew.length && self.bufferstack.length) {
+		self.writing = true;
+		var buf = self.bufferstacknew.splice(0, 5);
+		buf = buf.length > 1 ? Buffer.concat(buf) : buf[0];
+		Fs.write(self.fd, buf, 0, buf.length, self.positionappend, self.cb_writeAddUpdAdd);
+	} else if (self.bufferstacknew.length) {
+		self.writing = true;
+		var buf = self.bufferstacknew.splice(0, 5);
+		buf = buf.length > 1 ? Buffer.concat(buf) : buf[0];
+		Fs.write(self.fd, buf, 0, buf.length, self.positionappend, self.cb_writeAdd);
+	} else if (self.bufferstack.length) {
+		self.writing = true;
+		var item = self.bufferstack.shift();
+		Fs.write(self.fd, item.data, item.position, 'utf8', self.cb_writeUpd);
+	}
+};
+
+NoSQLStream.prototype.flush = function() {
+	var self = this;
+	if (self.writing)
+		setTimeout(self.cb_flush, 100);
+	else
+		self.close();
+	return self;
+};
+
+NoSQLStream.prototype.read = function() {
+
+	var self = this;
+	var size = self.stats.size - self.position;
+
+	if (!self.fd || size <= 0 || self.canceled) {
+
+		if (self.docscount) {
+			self.ondocuments();
+			self.docscount = 0;
+			self.docs = '';
+		}
+
+		self.close();
+
+	} else {
+		size = size < BUFFERSIZE ? size : BUFFERSIZE;
+		var buffer = framework_utils.createBufferSize(size);
+		Fs.read(self.fd, buffer, 0, size, self.position, self.cb_readbuffer);
+	}
+};
+
+NoSQLStream.prototype.readreverse = function() {
+	var self = this;
+	self.position = self.stats.size;
+	self.readreverse2();
+	return self;
+};
+
+NoSQLStream.prototype.readreverse2 = function() {
+	var self = this;
+	if (!self.fd || self.position <= 0 || self.canceled) {
+		if (self.docscount) {
+			self.ondocuments();
+			self.docs = '';
+			self.docscount = 0;
+		}
+		self.close();
+	} else {
+		var size = self.stats.size - self.bytesread;
+		size = size < BUFFERSIZE ? size : BUFFERSIZE;
+		self.position -= size;
+		var buffer = framework_utils.createBufferSize(size);
+		Fs.read(self.fd, buffer, 0, size, self.position, self.cb_readreversebuffer);
+	}
+};
+
+NoSQLStream.prototype.readupdate = function() {
+	var self = this;
+	var size = self.stats.size - self.position;
+	if (!self.fd || size <= 0 || self.canceled) {
+
+		if (self.docsbuffer.length) {
+			self.ondocuments();
+			self.docsbuffer = [];
+			self.docs = '';
+		}
+
+		self.flush();
+	} else {
+		size = size < BUFFERSIZE ? size : BUFFERSIZE;
+		var buffer = framework_utils.createBufferSize(size);
+		Fs.read(self.fd, buffer, 0, size, self.position, self.cb_readwritebuffer);
+	}
 };
 
 module.exports = NoSQLStream;

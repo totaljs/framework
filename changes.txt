@@ -24,6 +24,7 @@
 - added: `route.groups` with defined groups
 - added: `DatabaseBuilder.insert(fn(doc))` can modify a document after `update` or `modify` has `insert` mode
 - added: `Database.find2()` performs faster and reverse reading of documents (from end to begin of the file)
+- added: `Database.lock(callback(next))` locks all internal DB operations
 - added: new directory `schemas` with a new configuration item `directory-schemas'
 - added: new directory `operations` with a new configuration item `directory-operations'
 - added: `String.crc32([unsigned])`

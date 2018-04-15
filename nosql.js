@@ -107,7 +107,6 @@ exports.worker = function() {
 			if (item && item.time) {
 				var diff = time - item.time;
 				if (diff >= 60000) {
-
 					delete FORKCALLBACKS[key];
 					var err = new Error('NoSQL worker timeout.');
 					switch (item.type) {
@@ -121,6 +120,10 @@ exports.worker = function() {
 						case 'update':
 						case 'remove':
 							item.builder && item.builder.$callback(err, EMPTYOBJECT, EMPTYOBJECT);
+							break;
+						case 'clean':
+						case 'clear':
+							item.callback && item.callback(err);
 							break;
 						default:
 							item.callback && item.callback(err, EMPTYOBJECT, EMPTYOBJECT);
@@ -174,6 +177,11 @@ exports.worker = function() {
 				var obj = FORKCALLBACKS[msg.id];
 				obj && obj.callback && obj.callback(msg.err, msg.response, msg.repository);
 				break;
+			case 'callback':
+				var obj = FORKCALLBACKS[msg.id];
+				obj && obj.callback && obj.callback(msg.err);
+				break;
+
 		}
 		delete FORKCALLBACKS[msg.id];
 	});
@@ -318,6 +326,11 @@ exports.worker = function() {
 
 	Database.prototype.clear = function(callback) {
 		send(this, 'clear').callback = callback;
+		return this;
+	};
+
+	Database.prototype.clean = function(callback) {
+		send(this, 'clean').callback = callback;
 		return this;
 	};
 
@@ -489,6 +502,7 @@ function Database(name, filename, readonly) {
 	self.pending_streamer = [];
 	self.pending_clean = [];
 	self.pending_clear = [];
+	self.pending_locks = [];
 	self.views = null;
 	self.step = 0;
 	self.pending_drops = false;
@@ -878,6 +892,13 @@ Database.prototype.clean = function(callback) {
 	return self;
 };
 
+Database.prototype.lock = function(callback) {
+	var self = this;
+	self.pending_locks.push(callback || NOOP);
+	setImmediate(next_operation, self, 14);
+	return self;
+};
+
 Database.prototype.remove = function(filename) {
 	var self = this;
 	self.readonly && self.throwReadonly();
@@ -909,6 +930,10 @@ Database.prototype.find = function(view) {
 
 Database.prototype.find2 = function() {
 	var self = this;
+
+	if (self.readonly)
+		return self.find();
+
 	var builder = new DatabaseBuilder(self);
 	self.pending_reader2.push({ builder: builder, count: 0, counter: 0 });
 	setImmediate(next_operation, self, 11);
@@ -1008,8 +1033,9 @@ Database.prototype.view = function(name) {
 // 11 reader reverse
 // 12 clear
 // 13 clean
+// 14 locks
 
-const NEXTWAIT = { 7: true, 8: true, 9: true, 12: true, 13: true };
+const NEXTWAIT = { 7: true, 8: true, 9: true, 12: true, 13: true, 14: true };
 
 Database.prototype.next = function(type) {
 
@@ -1033,6 +1059,11 @@ Database.prototype.next = function(type) {
 
 		if (this.step !== 7 && !this.pending_reindex && this.pending_drops) {
 			this.$drop();
+			return;
+		}
+
+		if (this.step !== 14 && this.pending_locks.length) {
+			this.$lock();
 			return;
 		}
 	}
@@ -1304,15 +1335,16 @@ Database.prototype.$update = function() {
 
 				if (output) {
 					if (item.keys) {
-						for (var j = 0, jl = item.keys.length; j < jl; j++) {
-							var val = item.doc[item.keys[j]];
+						for (var j = 0; j < item.keys.length; j++) {
+							var key = item.keys[j];
+							var val = item.doc[key];
 							if (val !== undefined) {
 								if (typeof(val) === 'function')
-									output[item.keys[j]] = val(output[item.keys[j]], output);
+									output[key] = val(output[key], output);
 								else
-									output[item.keys[j]] = val;
+									output[key] = val;
 							} else
-								output[item.keys[j]] = undefined;
+								output[key] = undefined;
 						}
 					} else
 						output = typeof(item.doc) === 'function' ? item.doc(output) : item.doc;
@@ -1358,34 +1390,29 @@ Database.prototype.$update = function() {
 		}
 	};
 
-	var finish = function() {
-		fs.flush(function() {
+	fs.$callback = function() {
 
-			if (self.indexes)
-				F.databasescleaner[self.name] = (F.databasescleaner[self.name] || 0) + 1;
+		if (self.indexes)
+			F.databasescleaner[self.name] = (F.databasescleaner[self.name] || 0) + 1;
 
-			for (var i = 0; i < length; i++) {
-				var item = filter[i];
-				if (item.insert && !item.count) {
-					item.builder.$insertcallback && item.builder.$insertcallback(item.insert);
-					self.insert(item.insert).$callback = item.builder.$callback;
-				} else {
-					item.builder.$options.log && item.builder.log();
-					item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count, item.filter.repository);
-				}
+		for (var i = 0; i < length; i++) {
+			var item = filter[i];
+			if (item.insert && !item.count) {
+				item.builder.$insertcallback && item.builder.$insertcallback(item.insert);
+				self.insert(item.insert).$callback = item.builder.$callback;
+			} else {
+				item.builder.$options.log && item.builder.log();
+				item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count, item.filter.repository);
 			}
+		}
 
-			fs = null;
-			self.$writting = false;
-			self.next(0);
-			self.views && setImmediate(views_refresh, self);
-		});
+		fs = null;
+		self.$writting = false;
+		self.next(0);
+		self.views && setImmediate(views_refresh, self);
 	};
 
-	fs.openupdate(function() {
-		fs.readupdate(finish, true);
-	});
-
+	fs.openupdate();
 	return self;
 };
 
@@ -1666,61 +1693,59 @@ Database.prototype.$reader2 = function(filename, items, callback, reader) {
 		}
 	};
 
-	var cb = function() {
-		fs.read(function() {
-			for (var i = 0; i < length; i++) {
-				var item = filter[i];
-				var builder = item.builder;
-				var output;
+	fs.$callback = function() {
+		for (var i = 0; i < length; i++) {
+			var item = filter[i];
+			var builder = item.builder;
+			var output;
 
-				if (builder.$options.scalar || !builder.$options.sort) {
+			if (builder.$options.scalar || !builder.$options.sort) {
 
-					if (builder.$options.scalar)
-						output = builder.$options.scalar === 'avg' ? item.scalar / item.scalarcount : item.scalar;
-					else if (builder.$options.first)
-						output = item.response ? item.response[0] : undefined;
-					else
-						output = item.response || EMPTYARRAY;
-
-					builder.$callback2(errorhandling(null, builder, output), item.type === 1 ? item.count : output, item.count);
-					continue;
-				}
-
-				if (item.count) {
-					if (builder.$options.sort.name) {
-						if (!builder.$inlinesort || builder.$options.take !== item.response.length)
-							item.response.quicksort(builder.$options.sort.name, builder.$options.sort.asc);
-					} else if (builder.$options.sort === null)
-						item.response.random();
-					else
-						item.response.sort(builder.$options.sort);
-
-					if (builder.$options.skip && builder.$options.take)
-						item.response = item.response.splice(builder.$options.skip, builder.$options.take);
-					else if (builder.$options.skip)
-						item.response = item.response.splice(builder.$options.skip);
-					else if (!builder.$inlinesort && builder.$options.take)
-						item.response = item.response.splice(0, builder.$options.take);
-				}
-
-				if (builder.$options.first)
+				if (builder.$options.scalar)
+					output = builder.$options.scalar === 'avg' ? item.scalar / item.scalarcount : item.scalar;
+				else if (builder.$options.first)
 					output = item.response ? item.response[0] : undefined;
 				else
 					output = item.response || EMPTYARRAY;
 
 				builder.$callback2(errorhandling(null, builder, output), item.type === 1 ? item.count : output, item.count);
-				builder.done();
+				continue;
 			}
 
-			fs = null;
-			callback();
-		});
+			if (item.count) {
+				if (builder.$options.sort.name) {
+					if (!builder.$inlinesort || builder.$options.take !== item.response.length)
+						item.response.quicksort(builder.$options.sort.name, builder.$options.sort.asc);
+				} else if (builder.$options.sort === null)
+					item.response.random();
+				else
+					item.response.sort(builder.$options.sort);
+
+				if (builder.$options.skip && builder.$options.take)
+					item.response = item.response.splice(builder.$options.skip, builder.$options.take);
+				else if (builder.$options.skip)
+					item.response = item.response.splice(builder.$options.skip);
+				else if (!builder.$inlinesort && builder.$options.take)
+					item.response = item.response.splice(0, builder.$options.take);
+			}
+
+			if (builder.$options.first)
+				output = item.response ? item.response[0] : undefined;
+			else
+				output = item.response || EMPTYARRAY;
+
+			builder.$callback2(errorhandling(null, builder, output), item.type === 1 ? item.count : output, item.count);
+			builder.done();
+		}
+
+		fs = null;
+		callback();
 	};
 
 	if (reader)
-		fs.openstream(reader, cb);
+		fs.openstream(reader);
 	else
-		fs.openread(cb);
+		fs.openread();
 
 	return self;
 };
@@ -1861,59 +1886,58 @@ Database.prototype.$reader3 = function() {
 		}
 	};
 
-	var cb = function() {
-		fs.readreverse(function() {
-			for (var i = 0; i < length; i++) {
-				var item = filter[i];
-				var builder = item.builder;
-				var output;
+	fs.$callback = function() {
 
-				if (builder.$options.scalar || !builder.$options.sort) {
+		for (var i = 0; i < length; i++) {
+			var item = filter[i];
+			var builder = item.builder;
+			var output;
 
-					if (builder.$options.scalar)
-						output = builder.$options.scalar === 'avg' ? item.scalar / item.scalarcount : item.scalar;
-					else if (builder.$options.first)
-						output = item.response ? item.response[0] : undefined;
-					else
-						output = item.response || EMPTYARRAY;
+			if (builder.$options.scalar || !builder.$options.sort) {
 
-					builder.$callback2(errorhandling(null, builder, output), item.type === 1 ? item.count : output, item.count);
-					continue;
-				}
-
-				if (item.count) {
-					if (builder.$options.sort.name) {
-						if (!builder.$inlinesort || builder.$options.take !== item.response.length)
-							item.response.quicksort(builder.$options.sort.name, builder.$options.sort.asc);
-					} else if (builder.$options.sort === null)
-						item.response.random();
-					else
-						item.response.sort(builder.$options.sort);
-
-					if (builder.$options.skip && builder.$options.take)
-						item.response = item.response.splice(builder.$options.skip, builder.$options.take);
-					else if (builder.$options.skip)
-						item.response = item.response.splice(builder.$options.skip);
-					else if (!builder.$inlinesort && builder.$options.take)
-						item.response = item.response.splice(0, builder.$options.take);
-				}
-
-				if (builder.$options.first)
+				if (builder.$options.scalar)
+					output = builder.$options.scalar === 'avg' ? item.scalar / item.scalarcount : item.scalar;
+				else if (builder.$options.first)
 					output = item.response ? item.response[0] : undefined;
 				else
 					output = item.response || EMPTYARRAY;
 
 				builder.$callback2(errorhandling(null, builder, output), item.type === 1 ? item.count : output, item.count);
-				builder.done();
+				continue;
 			}
 
-			self.$reading = false;
-			fs = null;
-			self.next(0);
-		});
+			if (item.count) {
+				if (builder.$options.sort.name) {
+					if (!builder.$inlinesort || builder.$options.take !== item.response.length)
+						item.response.quicksort(builder.$options.sort.name, builder.$options.sort.asc);
+				} else if (builder.$options.sort === null)
+					item.response.random();
+				else
+					item.response.sort(builder.$options.sort);
+
+				if (builder.$options.skip && builder.$options.take)
+					item.response = item.response.splice(builder.$options.skip, builder.$options.take);
+				else if (builder.$options.skip)
+					item.response = item.response.splice(builder.$options.skip);
+				else if (!builder.$inlinesort && builder.$options.take)
+					item.response = item.response.splice(0, builder.$options.take);
+			}
+
+			if (builder.$options.first)
+				output = item.response ? item.response[0] : undefined;
+			else
+				output = item.response || EMPTYARRAY;
+
+			builder.$callback2(errorhandling(null, builder, output), item.type === 1 ? item.count : output, item.count);
+			builder.done();
+		}
+
+		self.$reading = false;
+		fs = null;
+		self.next(0);
 	};
 
-	fs.openread(cb);
+	fs.openreadreverse();
 	return self;
 };
 
@@ -1944,16 +1968,15 @@ Database.prototype.$streamer = function() {
 		}
 	};
 
-	fs.openread(function() {
-		fs.read(function() {
-			for (var i = 0; i < length; i++)
-				filter[i].callback && filter[i].callback(null, filter[i].repository, count);
-			self.$reading = false;
-			self.next(0);
-			fs = null;
-		});
-	});
+	fs.$callback = function() {
+		for (var i = 0; i < length; i++)
+			filter[i].callback && filter[i].callback(null, filter[i].repository, count);
+		self.$reading = false;
+		self.next(0);
+		fs = null;
+	};
 
+	fs.openread();
 	return self;
 };
 
@@ -2214,47 +2237,46 @@ Database.prototype.$views = function() {
 		}
 	};
 
-	fs.openread(function() {
-		fs.read(function() {
-			response.wait(function(item, next) {
+	fs.$callback = function() {
+		response.wait(function(item, next) {
 
-				var builder = item.builder;
+			var builder = item.builder;
 
-				if (builder.$options.sort) {
-					if (builder.$options.sort.name)
-						item.response.quicksort(builder.$options.sort.name, builder.$options.sort.asc);
-					else if (builder.$options.sort === EMPTYOBJECT)
-						item.response.random();
-					else
-						item.response.sort(builder.$options.sort);
-					if (builder.$options.skip && builder.$options.take)
-						item.response = item.response.splice(builder.$options.skip, builder.$options.take);
-					else if (builder.$options.skip)
-						item.response = item.response.splice(builder.$options.skip);
-					else if (builder.$options.take)
-						item.response = item.response.splice(0, builder.$options.take);
-				}
+			if (builder.$options.sort) {
+				if (builder.$options.sort.name)
+					item.response.quicksort(builder.$options.sort.name, builder.$options.sort.asc);
+				else if (builder.$options.sort === EMPTYOBJECT)
+					item.response.random();
+				else
+					item.response.sort(builder.$options.sort);
+				if (builder.$options.skip && builder.$options.take)
+					item.response = item.response.splice(builder.$options.skip, builder.$options.take);
+				else if (builder.$options.skip)
+					item.response = item.response.splice(builder.$options.skip);
+				else if (builder.$options.take)
+					item.response = item.response.splice(0, builder.$options.take);
+			}
 
-				var filename = builder.$filename;
-				Fs.unlink(filename, function() {
-					item.response.limit(20, function(items, next) {
-						var builder = [];
-						for (var i = 0, length = items.length; i < length; i++)
-							builder.push(JSON.stringify(items[i]));
-						Fs.appendFile(filename, builder.join(NEWLINE) + NEWLINE, next);
-					}, function() {
-						// clears in-memory
-						self.inmemory[item.name] = undefined;
-						next();
-					});
+			var filename = builder.$filename;
+			Fs.unlink(filename, function() {
+				item.response.limit(20, function(items, next) {
+					var builder = [];
+					for (var i = 0, length = items.length; i < length; i++)
+						builder.push(JSON.stringify(items[i]));
+					Fs.appendFile(filename, builder.join(NEWLINE) + NEWLINE, next);
+				}, function() {
+					// clears in-memory
+					self.inmemory[item.name] = undefined;
+					next();
 				});
-			}, function() {
-				self.$reading = false;
-				self.next(0);
-			}, 5);
-		});
-	});
+			});
+		}, function() {
+			self.$reading = false;
+			self.next(0);
+		}, 5);
+	};
 
+	fs.openread();
 };
 
 Database.prototype.$views_inmemory = function() {
@@ -2402,27 +2424,24 @@ Database.prototype.$remove = function() {
 		}
 	};
 
-	var finish = function() {
-		fs.flush(function() {
+	fs.$callback = function() {
 
-			if (self.indexes)
-				F.databasescleaner[self.name] = (F.databasescleaner[self.name] || 0) + 1;
+		if (self.indexes)
+			F.databasescleaner[self.name] = (F.databasescleaner[self.name] || 0) + 1;
 
-			for (var i = 0; i < length; i++) {
-				var item = filter[i];
-				item.builder.$options.log && item.builder.log();
-				item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count, item.filter.repository);
-			}
-			fs = null;
-			self.$writting = false;
-			self.next(0);
-			change && self.views && setImmediate(views_refresh, self);
-		});
+		for (var i = 0; i < length; i++) {
+			var item = filter[i];
+			item.builder.$options.log && item.builder.log();
+			item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count, item.filter.repository);
+		}
+
+		fs = null;
+		self.$writting = false;
+		self.next(0);
+		change && self.views && setImmediate(views_refresh, self);
 	};
 
-	fs.openupdate(function() {
-		fs.readupdate(finish, true);
-	});
+	fs.openupdate();
 };
 
 Database.prototype.$clear = function() {
@@ -2458,7 +2477,7 @@ Database.prototype.$clean = function() {
 	var self = this;
 	self.step = 13;
 
-	if (!self.clean.length) {
+	if (!self.pending_clean.length) {
 		self.next(0);
 		return;
 	}
@@ -2473,8 +2492,13 @@ Database.prototype.$clean = function() {
 	var writer = Fs.createWriteStream(self.filename + '-tmp');
 
 	fs.divider = NEWLINE;
+
 	fs.ondocuments = function() {
 		writer.write(fs.docs + NEWLINE);
+	};
+
+	fs.$callback = function() {
+		writer.end();
 	};
 
 	writer.on('finish', function() {
@@ -2488,7 +2512,25 @@ Database.prototype.$clean = function() {
 		});
 	});
 
-	fs.openread(() => fs.read(() => writer.end()));
+	fs.openread();
+};
+
+Database.prototype.$lock = function() {
+
+	var self = this;
+	self.step = 14;
+
+	if (!self.pending_locks.length) {
+		self.next(0);
+		return;
+	}
+
+	var filter = self.pending_locks.splice(0);
+	filter.wait(function(fn, next) {
+		fn.call(self, next);
+	}, function() {
+		self.next(0);
+	});
 };
 
 Database.prototype.$remove_inmemory = function() {
@@ -5757,18 +5799,17 @@ Storage.prototype.scan = function(beg, end, mapreduce, callback, reverse) {
 				}
 			};
 
-			reader.openread(function() {
-				reader.read(function() {
-					stats.processed++;
-					if (item.date === today) {
-						self.locked_writer--;
-						if (self.locked_writer <= 0 && self.pending.length)
-							self.insert();
-					}
-					setImmediate(next);
-				});
-			});
+			reader.$callback = function() {
+				stats.processed++;
+				if (item.date === today) {
+					self.locked_writer--;
+					if (self.locked_writer <= 0 && self.pending.length)
+						self.insert();
+				}
+				setImmediate(next);
+			};
 
+			reader.openread();
 		};
 
 		storage.wait(function(item, next, index) {

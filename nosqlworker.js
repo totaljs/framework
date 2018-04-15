@@ -33,6 +33,7 @@ const RESUPDATE = { TYPE: 'update' };
 const RESBACKUP = { TYPE: 'backup' };
 const RESRESTORE = { TYPE: 'restore' };
 const RESREMOVE = { TYPE: 'remove' };
+const RESCALLBACK = { TYPE: 'callback' };
 const RESCOUNTERREAD = { TYPE: 'counter.read' };
 const RESCOUNTERSTATS = { TYPE: 'counter.stats' };
 const RESCOUNTERCLEAR = { TYPE: 'counter.clear' };
@@ -261,6 +262,14 @@ process.on('message', function(msg) {
 			break;
 		case 'indexes.noreindex':
 			db.indexes.noreindex();
+			break;
+		case 'clean':
+		case 'clear':
+			db[msg.TYPE](function(err) {
+				RESCALLBACK.id = msg.id;
+				RESCALLBACK.err = err;
+				process.send(RESCALLBACK);
+			});
 			break;
 	}
 });
