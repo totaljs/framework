@@ -5372,6 +5372,7 @@ F.usage = function(detailed) {
 	var staticRange = Object.keys(F.temporary.range);
 	var redirects = Object.keys(F.routes.redirects);
 	var output = {};
+	var nosqlcleaner = Object.keys(F.databasescleaner);
 
 	output.framework = {
 		id: F.id,
@@ -5417,7 +5418,8 @@ F.usage = function(detailed) {
 		streaming: staticRange.length,
 		modificator:  F.modificators ? F.modificators.length : 0,
 		viewphrases: $VIEWCACHE.length,
-		uptodates: F.uptodates ? F.uptodates.length : 0
+		uptodates: F.uptodates ? F.uptodates.length : 0,
+		nosqlcleaner: nosqlcleaner.length
 	};
 
 	output.routing = {
@@ -5463,17 +5465,18 @@ F.usage = function(detailed) {
 		output.models.push({ name: key, usage: item.usage ? item.usage() : null });
 	}
 
-	output.uptodates = F.uptodates;
-	output.helpers = helpers;
 	output.cache = cache;
-	output.resources = resources;
-	output.errors = F.errors;
-	output.problems = F.problems;
 	output.changes = F.changes;
-	output.traces = F.traces;
+	output.errors = F.errors;
 	output.files = staticFiles;
-	output.streaming = staticRange;
+	output.helpers = helpers;
+	output.nosqlcleaner = nosqlcleaner;
 	output.other = Object.keys(F.temporary.other);
+	output.problems = F.problems;
+	output.resources = resources;
+	output.streaming = staticRange;
+	output.traces = F.traces;
+	output.uptodates = F.uptodates;
 
 	return output;
 };
