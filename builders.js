@@ -1399,37 +1399,6 @@ SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourc
 		path = '';
 
 	framework_utils.validate_builder.call(self, model, builder, self.name, self.parent.collection, self.name, index, filter, path);
-
-	/*
-	if (!self.dependencies)
-		return builder;
-
-	for (var i = 0, length = self.dependencies.length; i < length; i++) {
-		var key = self.dependencies[i];
-		var schema = self.schema[key];
-		var s = self.parent.collection[schema.raw];
-
-		if (!s) {
-			F.error(new Error('Schema "{0}" not found (validation).'.format(schema.raw)));
-			continue;
-		}
-
-
-		if (schema.isArray) {
-			var arr = model[key];
-			for (var j = 0, jl = arr.length; j < jl; j++) {
-				if (model[key][j] != null || schema.required) {
-					if (!schema.can || schema.can(model))
-						s.validate(model[key][j], resourcePrefix, resourceName, builder, filter, path + key + '[' + j + ']', j);
-				}
-			}
-		} else if (model[key] != null || schema.required) {
-			if (!schema.can || schema.can(model))
-				s.validate(model[key], resourcePrefix, resourceName, builder, filter, path + key, -1);
-		}
-	}
-	*/
-
 	return builder;
 };
 
@@ -1452,7 +1421,7 @@ SchemaBuilderEntity.prototype.Create = function() {
  * @return {Object}
  */
 SchemaBuilderEntity.prototype.$make = function(obj) {
-	return obj; // TODO remove
+	return obj;
 };
 
 SchemaBuilderEntity.prototype.$prepare = function(obj, callback) {
