@@ -3024,6 +3024,20 @@ DatabaseBuilder.prototype.where = function(name, operator, value) {
 	return self;
 };
 
+DatabaseBuilder.prototype.query = function(code) {
+	var self = this;
+
+	code = '$is=(' + code + ');';
+
+	if (self.$scope)
+		code = 'if(!$is){' + code + '}';
+
+	self.$code.push(code);
+	!self.$scope && self.$code.push('if(!$is)return;');
+	self.$counter++;
+	return self;
+};
+
 DatabaseBuilder.prototype.month = function(name, operator, value) {
 	var self = this;
 	var key = 'dm' + (self.$counter++);
