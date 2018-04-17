@@ -57,6 +57,7 @@
 - updated: Chunker supports `compression`, default `true`
 - updated: Chunker supports `autoremove` processed files in `each()` or `read()` method, default `true`
 - updated: `String.parseConfig(def, [onError])` can handle errors better
+- updated: `middleware`, now Total.js supports new declaration `F.middleware(function($) {})`
 
 - fixed: mail attachments
 - fixed: mail `message.manually()`

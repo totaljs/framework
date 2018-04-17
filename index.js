@@ -51,6 +51,7 @@ const REG_ROBOT = /search|agent|bot|crawler|spider/i;
 const REG_VERSIONS = /(href|src)="[a-zA-Z0-9/:\-.]+\.(jpg|js|css|png|gif|svg|html|ico|json|less|sass|scss|swf|txt|webp|woff|woff2|xls|xlsx|xml|xsl|xslt|zip|rar|csv|doc|docx|eps|gzip|jpe|jpeg|manifest|mov|mp3|flac|mp4|ogg|package|pdf)"/gi;
 const REG_COMPILECSS = /url\(.*?\)/g;
 const REG_ROUTESTATIC = /^(\/\/|https:|http:)+/;
+const REG_NEWIMPL = /^(async\s)?function(\s)?\([a-zA-Z0-9$]+\)|^function anonymous\(\$/;
 const REG_RANGE = /bytes=/;
 const REG_EMPTY = /\s/g;
 const REG_ACCEPTCLEANER = /\s|\./g;
@@ -910,6 +911,7 @@ F.prototypes = function(fn) {
 	proto.HttpResponse = PROTORES;
 	proto.Image = framework_image.Image.prototype;
 	proto.Message = Mail.Message.prototype;
+	proto.MiddlewareOptions = MiddlewareOptions;
 	proto.OperationOptions = framework_builders.OperationOptions.prototype;
 	proto.Page = framework_builders.Page.prototype;
 	proto.Pagination = framework_builders.Pagination.prototype;
@@ -2840,7 +2842,7 @@ F.websocket = function(url, funcInitialize, flags, length) {
 
 F.initwebsocket = function() {
 	if (F.routes.websockets.length && F.config['allow-websocket'] && F.server) {
-		F.server.on('upgrade', F._upgrade);
+		F.server.on('upgrade', F.$upgrade);
 		F.initwebsocket = null;
 	}
 };
@@ -3657,6 +3659,9 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 
 		F.routes.middleware[name] = typeof(declaration) === 'function' ? declaration : eval(declaration);
 		F._length_middleware = Object.keys(F.routes.middleware).length;
+
+		if (REG_NEWIMPL.test(F.routes.middleware[name].toString()))
+			F.routes.middleware[name].$newversion = true;
 
 		next && next();
 		callback && callback(null, name);
@@ -7102,6 +7107,8 @@ F.listener = function(req, res) {
 };
 
 function requestcontinue_middleware(req, res)  {
+	if (req.$total_middleware)
+		req.$total_middleware = null;
 	F.$requestcontinue(req, res, req.headers);
 }
 
@@ -7444,7 +7451,7 @@ F.$cors = function(req, res, fn, arg) {
  * @param {Socket} socket
  * @param {Buffer} head
  */
-F._upgrade = function(req, socket, head) {
+F.$upgrade = function(req, socket, head) {
 
 	if ((req.headers.upgrade || '').toLowerCase() !== 'websocket')
 		return;
@@ -7481,6 +7488,8 @@ F._upgrade = function(req, socket, head) {
 };
 
 function websocketcontinue_middleware(req) {
+	if (req.$total_middleware)
+		req.$total_middleware = null;
 	F.$websocketcontinue(req, req.$wspath, req.headers);
 }
 
@@ -7529,6 +7538,9 @@ F.$websocketcontinue_process = function(route, req, path) {
 		socket.type = 3;
 
 	var next = function() {
+
+		if (req.$total_middleware)
+			req.$total_middleware = null;
 
 		if (F.connections[id]) {
 			socket.upgrade(F.connections[id]);
@@ -7898,19 +7910,7 @@ F.decrypt = function(value, key, jsonConvert) {
 		jsonConvert = true;
 
 	var response = (value || '').decrypt(F.config.secret + '=' + key);
-	if (!response)
-		return null;
-
-	if (jsonConvert) {
-		if (response.isJSON()) {
-			try {
-				return response.parseJSON(true);
-			} catch (ex) {}
-		}
-		return null;
-	}
-
-	return response;
+	return response ? (jsonConvert ? (response.isJSON() ? response.parseJSON(true) : null) : response) : null;
 };
 
 /**
@@ -9386,9 +9386,9 @@ FrameworkCache.prototype.init = function() {
 	clearInterval(self.interval);
 	self.interval = setInterval(() => F.cache.recycle(), 1000 * 60);
 	if (F.config['allow-cache-snapshot'])
-		self.load(() => self.loadPersist());
+		self.load(() => self.loadpersistent());
 	else
-		self.loadPersist();
+		self.loadpersistent();
 	return self;
 };
 
@@ -9428,7 +9428,7 @@ FrameworkCache.prototype.savePersist = function() {
 	return this;
 };
 
-FrameworkCache.prototype.loadPersist = function(callback) {
+FrameworkCache.prototype.loadpersistent = function(callback) {
 	var self = this;
 	Fs.readFile(F.path.temp((F.id ? 'i-' + F.id + '_' : '') + 'framework_cachepersist.jsoncache'), function(err, data) {
 		if (!err) {
@@ -9626,6 +9626,8 @@ function subscribe_timeout(req) {
 }
 
 function subscribe_timeout_middleware(req) {
+	if (req.$total_middleware)
+		req.$total_middleware = null;
 	req.$total_execute2();
 }
 
@@ -10117,6 +10119,10 @@ Controller.prototype.middleware = function(names, options, callback) {
 		options = EMPTYOBJECT;
 
 	var self = this;
+
+	if (self.req.$total_middleware)
+		self.req.$total_middleware = null;
+
 	async_middleware(0, self.req, self.res, names, () => callback && callback(), options, self);
 	return self;
 };
@@ -14633,42 +14639,45 @@ function extend_request(PROTO) {
 		for (var i = 0; i < F._length_files; i++) {
 
 			var file = F.routes.files[i];
-			try {
+			// try {
 
-				if (file.extensions && !file.extensions[req.extension])
+			if (file.extensions && !file.extensions[req.extension])
+				continue;
+
+			if (file.url) {
+				var skip = false;
+				var length = file.url.length;
+
+				if (!file.wildcard && !file.fixedfile && length !== req.path.length - 1)
 					continue;
 
-				if (file.url) {
-					var skip = false;
-					var length = file.url.length;
-
-					if (!file.wildcard && !file.fixedfile && length !== req.path.length - 1)
+				for (var j = 0; j < length; j++) {
+					if (file.url[j] === req.path[j])
 						continue;
+					skip = true;
+					break;
+				}
 
-					for (var j = 0; j < length; j++) {
-						if (file.url[j] === req.path[j])
-							continue;
-						skip = true;
-						break;
-					}
-
-					if (skip)
-						continue;
-
-				} else if (file.onValidate && !file.onValidate.call(F, req, res, true))
+				if (skip)
 					continue;
 
-				if (file.middleware)
-					req.$total_endfilemiddleware(file);
-				else
-					file.execute.call(F, req, res, false);
-				return;
+			} else if (file.onValidate && !file.onValidate(req, res, true))
+				continue;
 
+			if (file.middleware)
+				req.$total_endfilemiddleware(file);
+			else
+				file.execute(req, res, false);
+
+			return;
+
+			/*
 			} catch (err) {
 				F.error(err, file.controller, req.uri);
 				res.throw500();
 				return;
 			}
+			*/
 		}
 
 		res.continue();
@@ -14723,8 +14732,12 @@ function extend_request(PROTO) {
 }
 
 function total_endmiddleware(req) {
+
+	if (req.total_middleware)
+		req.total_middleware = null;
+
 	try {
-		req.$total_filemiddleware.execute.call(F, req, req.res, false);
+		req.$total_filemiddleware.execute(req, req.res, false);
 	} catch (err) {
 		F.error(err, req.$total_filemiddleware.controller + ' :: ' + req.$total_filemiddleware.name, req.uri);
 		req.res.throw500();
@@ -16064,6 +16077,57 @@ function createTemporaryKey(req) {
 	return (req.uri ? req.uri.pathname : req).replace(REG_TEMPORARY, '-').substring(1);
 }
 
+function MiddlewareOptions() {}
+
+MiddlewareOptions.prototype = {
+
+	get user() {
+		return this.req.user;
+	},
+
+	get session() {
+		return this.req.session;
+	},
+
+	get language() {
+		return this.req.$language;
+	},
+
+	get ip() {
+		return this.req.ip;
+	},
+
+	get id() {
+		return this.controller ? this.controller.id : null;
+	},
+
+	get params() {
+		return this.controller ? this.controller.params : null;
+	},
+
+	get files() {
+		return this.req.files;
+	},
+
+	get body() {
+		return this.req.body;
+	},
+
+	get query() {
+		return this.req.query;
+	}
+};
+
+MiddlewareOptions.prototype.callback = MiddlewareOptions.prototype.resume = function() {
+	this.next();
+	return this;
+};
+
+MiddlewareOptions.prototype.cancel = function() {
+	this.next(false);
+	return this;
+};
+
 process.on('SIGTERM', () => F.stop());
 process.on('SIGINT', () => F.stop());
 process.on('exit', () => F.stop());
@@ -16163,22 +16227,48 @@ function async_middleware(index, req, res, middleware, callback, options, contro
 		return async_middleware(index, req, res, middleware, callback, options, controller);
 	}
 
-	var output = item.call(framework, req, res, function(err) {
+	var output;
 
-		if (err === false) {
-			req.$total_route && req.$total_success();
-			callback = null;
-			return;
+	if (item.$newversion) {
+		var opt = req.$total_middleware;
+		if (!index || !opt) {
+			opt = req.$total_middleware = new MiddlewareOptions();
+			opt.req = req;
+			opt.res = res;
+			opt.middleware = middleware;
+			opt.options = options;
+			opt.controller = controller;
+			opt.callback2 = callback;
+			opt.next = function(err) {
+				var mid = req.$total_middleware;
+				if (err === false) {
+					req.$total_route && req.$total_success();
+					req.$total_middleware = null;
+					callback = null;
+				} else if (err instanceof Error || err instanceof ErrorBuilder) {
+					res.throw500(err);
+					req.$total_middleware = null;
+					callback = null;
+				} else
+					async_middleware(mid.index, mid.req, mid.res, mid.middleware, mid.callback2, mid.options, mid.controller);
+			};
 		}
 
-		if (err instanceof Error || err instanceof ErrorBuilder) {
-			res.throw500(err);
-			callback = null;
-			return;
-		}
+		opt.index = index;
+		output = item(opt);
 
-		async_middleware(index, req, res, middleware, callback, options, controller);
-	}, options, controller);
+	} else {
+		output = item.call(framework, req, res, function(err) {
+			if (err === false) {
+				req.$total_route && req.$total_success();
+				callback = null;
+			} else if (err instanceof Error || err instanceof ErrorBuilder) {
+				res.throw500(err);
+				callback = null;
+			} else
+				async_middleware(index, req, res, middleware, callback, options, controller);
+		}, options, controller);
+	}
 
 	if (output !== false)
 		return;
