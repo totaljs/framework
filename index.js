@@ -16118,7 +16118,7 @@ MiddlewareOptions.prototype = {
 	}
 };
 
-MiddlewareOptions.prototype.callback = MiddlewareOptions.prototype.resume = function() {
+MiddlewareOptions.prototype.callback = function() {
 	this.next();
 	return this;
 };
