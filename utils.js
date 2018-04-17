@@ -2264,7 +2264,6 @@ exports.parseJSON = function(value, date) {
 	try {
 		return JSON.parse(value, date ? jsonparser : undefined);
 	} catch(e) {
-		return null;
 	}
 };
 
