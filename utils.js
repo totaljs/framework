@@ -3805,6 +3805,11 @@ Number.prototype.padRight = function(max, c) {
 	return this.toString().padRight(max, c || '0');
 };
 
+Number.prototype.round = function(precision) {
+	var m = Math.pow(10, precision) || 1;
+	return Math.round(this * m) / m;
+};
+
 /**
  * Async decrements
  * @param {Function(index, next)} fn
