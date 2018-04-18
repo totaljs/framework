@@ -48,6 +48,14 @@ function killprocess() {
 	process.exit(0);
 }
 
+// One day cleaner
+setInterval(function() {
+	var keys = Object.keys(F.databasescleaner);
+	keys.length && keys.wait(function(item, next) {
+		NOSQL(item).clean(next);
+	});
+}, 60000 * 60 * 24);
+
 process.on('disconnect', killprocess);
 process.on('close', killprocess);
 process.on('exit', killprocess);
