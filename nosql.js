@@ -5149,12 +5149,19 @@ Indexes.prototype.$index = function(index, value) {
 						val = val.toLowerCase().removeDiacritics().match(REGINDEXCHAR);
 						if (val) {
 							val = val.toString();
-							if (index.type === 'first')
-								val = val[0];
-							else if (index.type === 'reverse')
-								val = val.substring(val.length - 2);
-							else
-								val = val.substring(0, 2);
+							switch (index.type) {
+								case 'first':
+									val = val[0];
+									break;
+								case 'reverse':
+									val = val.substring(val.length - 2);
+									break;
+								case 'soundex':
+									val = val.soundex();
+									break;
+								default:
+									val = val.substring(0, 2);
+							}
 						}
 					}
 				}
