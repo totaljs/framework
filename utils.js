@@ -2550,8 +2550,6 @@ Date.prototype.extend = function(date) {
 	var dt = new Date(this);
 	var match = date.match(regexpDATE);
 
-	console.log(match);
-
 	if (!match)
 		return dt;
 
