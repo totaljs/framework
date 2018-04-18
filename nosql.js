@@ -2895,12 +2895,6 @@ DatabaseBuilder.prototype.join = function(field, name, view) {
 		return join;
 	};
 
-	join.$where = self.where;
-
-	// join.where = function(a, b, c) {
-	// 	return c === undefined && typeof(b) === 'string' ? join.on(a, b) : join.$where(a, b, c);
-	// };
-
 	join.first = function() {
 		item.first = true;
 		return join;
