@@ -1479,7 +1479,7 @@ SchemaBuilderEntity.prototype.default = function() {
 				break;
 			// date
 			case 5:
-				item[property] = type.isArray ? [] : F.datetime;
+				item[property] = type.isArray ? [] : NOW;
 				break;
 			// schema
 			case 7:
@@ -4227,7 +4227,7 @@ RESTBuilder.prototype.exec = function(callback) {
 		output.headers = headers;
 		output.hostname = hostname;
 		output.cache = false;
-		output.datetime = F.datetime;
+		output.datetime = NOW;
 
 		if (self.$schema) {
 

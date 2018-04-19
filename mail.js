@@ -483,7 +483,7 @@ Mailer.prototype.send = function(smtp, options, messages, callback) {
 	obj.count = 0;
 	obj.socket;
 	obj.tls = false;
-	obj.date = global.F ? global.F.datetime : new Date();
+	obj.date = global.NOW ? global.NOW : new Date();
 
 	smtp = smtp || null;
 

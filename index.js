@@ -97,6 +97,8 @@ Object.freeze(EMPTYREQUEST);
 
 global.EMPTYOBJECT = EMPTYOBJECT;
 global.EMPTYARRAY = EMPTYARRAY;
+global.NOW = new Date();
+
 var PROTORES, PROTOREQ;
 
 var RANGE = { start: 0, end: 0 };
@@ -543,7 +545,7 @@ global.TRY = function(fn, err) {
 };
 
 global.OBSOLETE = function(name, message) {
-	console.log(F.datetime.format('yyyy-MM-dd HH:mm:ss') + ' :: OBSOLETE / IMPORTANT ---> "' + name + '"', message);
+	console.log(NOW.format('yyyy-MM-dd HH:mm:ss') + ' :: OBSOLETE / IMPORTANT ---> "' + name + '"', message);
 	if (global.F)
 		F.stats.other.obsolete++;
 };
@@ -772,7 +774,6 @@ function Framework() {
 	this.directory = HEADERS.workers.cwd = directory;
 	this.isLE = Os.endianness ? Os.endianness() === 'LE' : true;
 	this.isHTTPS = false;
-	this.datetime = new Date();
 
 	// It's hidden
 	// this.waits = {};
@@ -885,6 +886,12 @@ function Framework() {
 // ======================================================
 
 Framework.prototype = {
+	get datetime() {
+		return global.NOW;
+	},
+	set datetime(val) {
+		global.NOW = val;
+	},
 	get cluster() {
 		return require('./cluster');
 	},
@@ -1348,7 +1355,7 @@ F.schedule = function(date, repeat, fn) {
 
 	if (type === 'string') {
 		date = date.parseDate();
-		repeat && date < F.datetime && (date = F.datetime.add(repeat));
+		repeat && date < NOW && (date = NOW.add(repeat));
 	} else if (type === 'number')
 		date = new Date(date);
 
@@ -3120,8 +3127,8 @@ F.error = function(err, name, uri) {
 		return F;
 
 	if (F.errors) {
-		F.datetime = new Date();
-		F.errors.push({ error: err.stack, name: name, url: uri ? typeof(uri) === 'string' ? uri : Parser.format(uri) : undefined, date: F.datetime });
+		NOW = new Date();
+		F.errors.push({ error: err.stack, name: name, url: uri ? typeof(uri) === 'string' ? uri : Parser.format(uri) : undefined, date: NOW });
 		F.errors.length > 50 && F.errors.shift();
 	}
 
@@ -3211,11 +3218,11 @@ F.trace = function(message, name, uri, ip) {
 	else if (typeof(message) === 'object')
 		message = JSON.stringify(message);
 
-	F.datetime = new Date();
-	var obj = { message: message, name: name, url: uri ? typeof(uri) === 'string' ? uri : Parser.format(uri) : undefined, ip: ip, date: F.datetime };
+	NOW = new Date();
+	var obj = { message: message, name: name, url: uri ? typeof(uri) === 'string' ? uri : Parser.format(uri) : undefined, ip: ip, date: NOW };
 	F.logger('traces', obj.message, 'url: ' + obj.url, 'source: ' + obj.name, 'ip: ' + obj.ip);
 
-	F.config['trace-console'] && console.log(F.datetime.format('yyyy-MM-dd HH:mm:ss'), '[trace]', message, '|', 'url: ' + obj.url, 'source: ' + obj.name, 'ip: ' + obj.ip);
+	F.config['trace-console'] && console.log(NOW.format('yyyy-MM-dd HH:mm:ss'), '[trace]', message, '|', 'url: ' + obj.url, 'source: ' + obj.name, 'ip: ' + obj.ip);
 
 	if (F.traces) {
 		F.traces.push(obj);
@@ -3519,7 +3526,7 @@ F.uptodate = function(type, url, options, interval, callback, next) {
 		options = null;
 	}
 
-	var obj = { type: type, name: '', url: url, interval: interval, options: options, count: 0, updated: F.datetime, errors: [], callback: callback };
+	var obj = { type: type, name: '', url: url, interval: interval, options: options, count: 0, updated: NOW, errors: [], callback: callback };
 
 	if (!F.uptodates)
 		F.uptodates = [];
@@ -3573,7 +3580,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 	var content;
 	var err;
 
-	F.datetime = new Date();
+	NOW = new Date();
 
 	if (t === 'object') {
 		t = typeof(options);
@@ -3686,9 +3693,9 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 		key = type + '.' + name;
 
 		if (F.dependencies[key]) {
-			F.dependencies[key].updated = F.datetime;
+			F.dependencies[key].updated = NOW;
 		} else {
-			F.dependencies[key] = { name: name, type: type, installed: F.datetime, updated: null, count: 0 };
+			F.dependencies[key] = { name: name, type: type, installed: NOW, updated: null, count: 0 };
 			if (internal)
 				F.dependencies[key].url = internal;
 		}
@@ -3698,7 +3705,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 		setTimeout(function() {
 			F.emit(type + '#' + name);
 			F.emit('install', type, name);
-			F.temporary.ready[type + '#' + name] = F.datetime;
+			F.temporary.ready[type + '#' + name] = NOW;
 		}, 500);
 
 		F.consoledebug('install', type + '#' + name);
@@ -3711,7 +3718,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 			delete F.temporary['mail-settings'];
 			F.emit(type + '#' + name, F.config);
 			F.emit('install', type, name);
-			F.temporary.ready[type + '#' + name] = F.datetime;
+			F.temporary.ready[type + '#' + name] = NOW;
 		}, 500);
 
 		F.consoledebug('install', type + '#' + name);
@@ -3726,7 +3733,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 		setTimeout(function() {
 			F.emit(type + '#' + name);
 			F.emit('install', type, name);
-			F.temporary.ready[type + '#' + name] = F.datetime;
+			F.temporary.ready[type + '#' + name] = NOW;
 		}, 500);
 
 		F.consoledebug('install', type + '#' + name);
@@ -3741,7 +3748,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 		setTimeout(function() {
 			F.emit(type + '#' + name);
 			F.emit('install', type, name);
-			F.temporary.ready[type + '#' + name] = F.datetime;
+			F.temporary.ready[type + '#' + name] = NOW;
 			F.consoledebug('install', type + '#' + name);
 		}, 500);
 
@@ -3756,7 +3763,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 		setTimeout(function() {
 			F.emit(type + '#' + name);
 			F.emit('install', type, name);
-			F.temporary.ready[type + '#' + name] = F.datetime;
+			F.temporary.ready[type + '#' + name] = NOW;
 			F.consoledebug('install', type + '#' + name);
 		}, 500);
 
@@ -3794,7 +3801,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 		F.components.has = true;
 
 		var link = F.config['static-url-components'];
-		F.components.version = F.datetime.getTime();
+		F.components.version = NOW.getTime();
 		F.components.links = (F.components.js ? '<script src="{0}js?version={1}"></script>'.format(link, F.components.version) : '') + (F.components.css ? '<link type="text/css" rel="stylesheet" href="{0}css?version={1}" />'.format(link, F.components.version) : '');
 
 		if (content.install) {
@@ -3853,14 +3860,14 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 				tmp.css = true;
 			}
 
-			tmp.version = F.datetime.getTime();
+			tmp.version = NOW.getTime();
 			tmp.links = (tmp.js ? '<script src="{0}js?group={2}&version={1}"></script>'.format(link, tmp.version, key) : '') + (tmp.css ? '<link type="text/css" rel="stylesheet" href="{0}css?group={2}&version={1}" />'.format(link, tmp.version, key) : '');
 		}
 
 		!skipEmit && setTimeout(function() {
 			F.emit(type + '#' + name);
 			F.emit('install', type, name);
-			F.temporary.ready[type + '#' + name] = F.datetime;
+			F.temporary.ready[type + '#' + name] = NOW;
 		}, 500);
 
 		F.consoledebug('install', type + '#' + name);
@@ -3890,8 +3897,8 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 					F.emit(type + '#' + name);
 					F.emit('install', 'module', name);
 					F.emit('install', type, name);
-					F.temporary.ready['package#' + name] = F.datetime;
-					F.temporary.ready['module#' + name] = F.datetime;
+					F.temporary.ready['package#' + name] = NOW;
+					F.temporary.ready['module#' + name] = NOW;
 				}, 500);
 				F.consoledebug('install', 'package#' + name);
 				callback && callback(err, name);
@@ -3914,7 +3921,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 		!skipEmit && setTimeout(function() {
 			F.emit(type + '#' + name);
 			F.emit('install', type, name);
-			F.temporary.ready[type + '#' + name] = F.datetime;
+			F.temporary.ready[type + '#' + name] = NOW;
 		}, 500);
 
 		F.consoledebug('install', type + '#' + name);
@@ -3940,8 +3947,8 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 				F.emit(type + '#' + name);
 				F.emit('install', type, name);
 				F.emit('install', 'module', name);
-				F.temporary.ready['package#' + name] = F.datetime;
-				F.temporary.ready['module#' + name] = F.datetime;
+				F.temporary.ready['package#' + name] = NOW;
+				F.temporary.ready['module#' + name] = NOW;
 			}, 500);
 			F.consoledebug('install', 'package#' + name);
 			callback && callback(err, name);
@@ -3970,7 +3977,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 		setTimeout(function() {
 			F.emit(type + '#' + name);
 			F.emit('install', type, name);
-			F.temporary.ready[type + '#' + name] = F.datetime;
+			F.temporary.ready[type + '#' + name] = NOW;
 		}, 500);
 
 		F.consoledebug('install', type + '#' + name);
@@ -4020,7 +4027,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 		setTimeout(function() {
 			F.emit(type + '#' + name);
 			F.emit('install', type, name);
-			F.temporary.ready[type + '#' + name] = F.datetime;
+			F.temporary.ready[type + '#' + name] = NOW;
 		}, 500);
 
 		return F;
@@ -4089,7 +4096,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 		setTimeout(function() {
 			F.emit(type + '#' + name, obj);
 			F.emit('install', type, name, obj);
-			F.temporary.ready[type + '#' + name] = F.datetime;
+			F.temporary.ready[type + '#' + name] = NOW;
 		}, 500);
 
 		return F;
@@ -4166,10 +4173,10 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 
 		if (tmp) {
 			F.dependencies[key] = tmp;
-			F.dependencies[key].updated = F.datetime;
+			F.dependencies[key].updated = NOW;
 		}
 		else {
-			F.dependencies[key] = { name: name, type: type, installed: F.datetime, updated: null, count: 0 };
+			F.dependencies[key] = { name: name, type: type, installed: NOW, updated: null, count: 0 };
 			if (internal)
 				F.dependencies[key].url = internal;
 		}
@@ -4191,7 +4198,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 		!skipEmit && setTimeout(function() {
 			F.emit(type + '#' + name, obj);
 			F.emit('install', type, name, obj);
-			F.temporary.ready[type + '#' + name] = F.datetime;
+			F.temporary.ready[type + '#' + name] = NOW;
 		}, 500);
 
 		F.consoledebug('install', type + '#' + name);
@@ -4300,10 +4307,10 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 
 		if (tmp) {
 			F.dependencies[key] = tmp;
-			F.dependencies[key].updated = F.datetime;
+			F.dependencies[key].updated = NOW;
 		}
 		else {
-			F.dependencies[key] = { name: name, type: type, installed: F.datetime, updated: null, count: 0, _id: _ID };
+			F.dependencies[key] = { name: name, type: type, installed: NOW, updated: null, count: 0, _id: _ID };
 			if (internal)
 				F.dependencies[key].url = internal;
 		}
@@ -4587,7 +4594,7 @@ F.install_make = function(key, name, obj, options, callback, skipEmit, type) {
 		setTimeout(function() {
 			F.emit(type + '#' + name, obj);
 			F.emit('install', type, name, obj);
-			F.temporary.ready[type + '#' + name] = F.datetime;
+			F.temporary.ready[type + '#' + name] = NOW;
 		}, 500);
 	}
 
@@ -4844,12 +4851,12 @@ F.uninstall = function(type, name, options, skipEmit, packageName) {
 					}
 				}
 
-				tmp.version = F.datetime.getTime();
+				tmp.version = NOW.getTime();
 			}
 		}
 
 		if (is)
-			F.components.version = F.datetime.getTime();
+			F.components.version = NOW.getTime();
 
 		F.consoledebug('uninstall', type + '#' + name);
 	}
@@ -4981,8 +4988,8 @@ F.eval = function(script) {
  * @return {Framework}
  */
 F.onError = function(err, name, uri) {
-	F.datetime = new Date();
-	console.log('======= ' + (F.datetime.format('yyyy-MM-dd HH:mm:ss')) + ': ' + (name ? name + ' ---> ' : '') + err.toString() + (uri ? ' (' + Parser.format(uri) + ')' : ''), err.stack);
+	NOW = new Date();
+	console.log('======= ' + (NOW.format('yyyy-MM-dd HH:mm:ss')) + ': ' + (name ? name + ' ---> ' : '') + err.toString() + (uri ? ' (' + Parser.format(uri) + ')' : ''), err.stack);
 	return F;
 };
 
@@ -5315,9 +5322,9 @@ F.onMeta = function() {
 // @arguments {Object params}
 global.LOG = F.log = function() {
 
-	F.datetime = new Date();
-	var filename = F.datetime.getFullYear() + '-' + (F.datetime.getMonth() + 1).toString().padLeft(2, '0') + '-' + F.datetime.getDate().toString().padLeft(2, '0');
-	var time = F.datetime.getHours().toString().padLeft(2, '0') + ':' + F.datetime.getMinutes().toString().padLeft(2, '0') + ':' + F.datetime.getSeconds().toString().padLeft(2, '0');
+	NOW = new Date();
+	var filename = NOW.getFullYear() + '-' + (NOW.getMonth() + 1).toString().padLeft(2, '0') + '-' + NOW.getDate().toString().padLeft(2, '0');
+	var time = NOW.getHours().toString().padLeft(2, '0') + ':' + NOW.getMinutes().toString().padLeft(2, '0') + ':' + NOW.getSeconds().toString().padLeft(2, '0');
 	var str = '';
 	var length = arguments.length;
 
@@ -5338,8 +5345,8 @@ global.LOG = F.log = function() {
 };
 
 global.LOGGER = F.logger = function() {
-	F.datetime = new Date();
-	var dt = F.datetime.getFullYear() + '-' + (F.datetime.getMonth() + 1).toString().padLeft(2, '0') + '-' + F.datetime.getDate().toString().padLeft(2, '0') + ' ' + F.datetime.getHours().toString().padLeft(2, '0') + ':' + F.datetime.getMinutes().toString().padLeft(2, '0') + ':' + F.datetime.getSeconds().toString().padLeft(2, '0');
+	NOW = new Date();
+	var dt = NOW.getFullYear() + '-' + (NOW.getMonth() + 1).toString().padLeft(2, '0') + '-' + NOW.getDate().toString().padLeft(2, '0') + ' ' + NOW.getHours().toString().padLeft(2, '0') + ':' + NOW.getMinutes().toString().padLeft(2, '0') + ':' + NOW.getSeconds().toString().padLeft(2, '0');
 	var str = '';
 	var length = arguments.length;
 
@@ -5398,7 +5405,7 @@ F.usage = function(detailed) {
 
 	output.framework = {
 		id: F.id,
-		datetime: F.datetime,
+		datetime: NOW,
 		pid: process.pid,
 		node: process.version,
 		version: 'v' + F.version_header,
@@ -6861,7 +6868,7 @@ F.console = function() {
 	console.log('Name        : ' + F.config.name);
 	console.log('Version     : ' + F.config.version);
 	console.log('Author      : ' + F.config.author);
-	console.log('Date        : ' + F.datetime.format('yyyy-MM-dd HH:mm:ss'));
+	console.log('Date        : ' + NOW.format('yyyy-MM-dd HH:mm:ss'));
 	console.log('Mode        : ' + (F.config.debug ? 'debug' : 'release'));
 	console.log('====================================================\n');
 	console.log('{2}://{0}:{1}/'.format(F.ip, F.port, F.isHTTPS ? 'https' : 'http'));
@@ -6906,7 +6913,7 @@ F.reconnect = function() {
  */
 F.service = function(count) {
 
-	UIDGENERATOR.date = F.datetime.format('yyMMddHHmm');
+	UIDGENERATOR.date = NOW.format('yyMMddHHmm');
 	UIDGENERATOR.index = 1;
 
 	var keys;
@@ -6934,7 +6941,7 @@ F.service = function(count) {
 		// Clears command cache
 		Image.clear();
 
-		var dt = F.datetime.add('-5 minutes');
+		var dt = NOW.add('-5 minutes');
 		for (var key in F.databases)
 			F.databases[key] && F.databases[key].inmemorylastusage < dt && F.databases[key].release();
 
@@ -6974,10 +6981,10 @@ F.service = function(count) {
 		var hasUpdate = false;
 		F.uptodates.wait(function(item, next) {
 
-			if (item.updated.add(item.interval) > F.datetime)
+			if (item.updated.add(item.interval) > NOW)
 				return next();
 
-			item.updated = F.datetime;
+			item.updated = NOW;
 			item.count++;
 
 			setTimeout(function() {
@@ -7025,7 +7032,7 @@ F.service = function(count) {
 	}
 
 	// Update expires date
-	count % 1000 === 0 && (DATE_EXPIRES = F.datetime.add('y', 1).toUTCString());
+	count % 1000 === 0 && (DATE_EXPIRES = NOW.add('y', 1).toUTCString());
 
 	if (count % F.config['nosql-cleaner'] === 0 && F.config['nosql-cleaner']) {
 		keys = Object.keys(F.databasescleaner);
@@ -7050,7 +7057,7 @@ F.service = function(count) {
 	if (!F.schedules.length)
 		return F;
 
-	var expire = F.datetime.getTime();
+	var expire = NOW.getTime();
 	var index = 0;
 
 	while (true) {
@@ -7063,7 +7070,7 @@ F.service = function(count) {
 		index--;
 
 		if (schedule.repeat)
-			schedule.expire = F.datetime.add(schedule.repeat);
+			schedule.expire = NOW.add(schedule.repeat);
 		else
 			F.schedules.splice(index, 1);
 
@@ -9463,7 +9470,7 @@ FrameworkCache.prototype.loadpersistent = function(callback) {
 				for (var i = 0, length = keys.length; i < length; i++) {
 					var key = keys[i];
 					var item = data[key];
-					if (item.expire >= F.datetime)
+					if (item.expire >= NOW)
 						self.items[key] = item;
 				}
 			} catch (e) {}
@@ -9489,7 +9496,8 @@ FrameworkCache.prototype.recycle = function() {
 
 	var items = this.items;
 	var isPersist = false;
-	F.datetime = new Date();
+
+	NOW = new Date();
 
 	this.count++;
 
@@ -9497,7 +9505,7 @@ FrameworkCache.prototype.recycle = function() {
 		var value = items[o];
 		if (!value)
 			delete items[o];
-		else if (value.expire < F.datetime) {
+		else if (value.expire < NOW) {
 			if (value.persist)
 				isPersist = true;
 			F.emit('cache-expire', o, value.value);
@@ -9530,7 +9538,7 @@ FrameworkCache.prototype.set = FrameworkCache.prototype.add = function(name, val
 			expire = expire.parseDateExpiration();
 			break;
 		case 'undefined':
-			expire = F.datetime.add('m', 5);
+			expire = NOW.add('m', 5);
 			break;
 	}
 
@@ -9552,9 +9560,9 @@ FrameworkCache.prototype.read = FrameworkCache.prototype.get = function(key, def
 	if (!value)
 		return def;
 
-	F.datetime = new Date();
+	NOW = new Date();
 
-	if (value.expire < F.datetime) {
+	if (value.expire < NOW) {
 		this.items[key] = undefined;
 		F.$events['cache-expire'] && F.emit('cache-expire', key, value.value);
 		return def;
@@ -9569,7 +9577,7 @@ FrameworkCache.prototype.read2 = FrameworkCache.prototype.get2 = function(key, d
 	if (!value)
 		return def;
 
-	if (value.expire < F.datetime) {
+	if (value.expire < NOW) {
 		this.items[key] = undefined;
 		F.$events['cache-expire'] && F.emit('cache-expire', key, value.value);
 		return def;

@@ -1185,7 +1185,7 @@ Database.prototype.$inmemory = function(view, callback) {
 	self.readonly && self.throwReadonly();
 
 	// Last usage
-	self.inmemorylastusage = global.F ? global.F.datetime : undefined;
+	self.inmemorylastusage = global.F ? global.NOW : undefined;
 
 	if (self.inmemory[view])
 		return callback();
@@ -2694,8 +2694,8 @@ function DatabaseBuilder2(db) {
 DatabaseBuilder2.prototype.log = function(msg, user) {
 	var self = this;
 	if (msg) {
-		F.datetime = new Date();
-		self.$options.log = (self.$options.log ? self.$options.log : '') + F.datetime.format('yyyy-MM-dd HH:mm:ss') + ' | ' + (user ? user.padRight(20) + ' | ' : '') + msg + NEWLINE;
+		NOW = new Date();
+		self.$options.log = (self.$options.log ? self.$options.log : '') + NOW.format('yyyy-MM-dd HH:mm:ss') + ' | ' + (user ? user.padRight(20) + ' | ' : '') + msg + NEWLINE;
 	} else if (self.$options.log) {
 		self.db.filenameLog && Fs.appendFile(self.db.filenameLog, self.$options.log, F.errorcallback);
 		self.$options.log = '';
@@ -2751,8 +2751,8 @@ DatabaseBuilder.prototype.insert = function(fn) {
 DatabaseBuilder.prototype.log = function(msg, user) {
 	var self = this;
 	if (msg) {
-		F.datetime = new Date();
-		self.$options.log = (self.$options.log ? self.$options.log : '') + F.datetime.format('yyyy-MM-dd HH:mm:ss') + ' | ' + (user ? user.padRight(20) + ' | ' : '') + msg + NEWLINE;
+		NOW = new Date();
+		self.$options.log = (self.$options.log ? self.$options.log : '') + NOW.format('yyyy-MM-dd HH:mm:ss') + ' | ' + (user ? user.padRight(20) + ' | ' : '') + msg + NEWLINE;
 	} else if (self.$options.log) {
 		self.db.filenameLog && Fs.appendFile(self.db.filenameLog, self.$options.log, F.errorcallback);
 		self.$options.log = '';
@@ -2998,7 +2998,7 @@ DatabaseBuilder.prototype.backup = function(user) {
 };
 
 DatabaseBuilder.prototype.$backupdoc = function(doc) {
-	this.db.filenameBackup && Fs.appendFile(this.db.filenameBackup, F.datetime.format('yyyy-MM-dd HH:mm') + ' | ' + this.$options.backup.padRight(20) + ' | ' + (typeof(doc) === 'string' ? doc : JSON.stringify(doc)) + NEWLINE, F.errorcallback);
+	this.db.filenameBackup && Fs.appendFile(this.db.filenameBackup, NOW.format('yyyy-MM-dd HH:mm') + ' | ' + this.$options.backup.padRight(20) + ' | ' + (typeof(doc) === 'string' ? doc : JSON.stringify(doc)) + NEWLINE, F.errorcallback);
 	return this;
 };
 
@@ -3467,7 +3467,7 @@ Counter.prototype.min = function(id, count) {
 		return self;
 	}
 
-	var key = 'mma' + F.datetime.getFullYear() + '' + id;
+	var key = 'mma' + NOW.getFullYear() + '' + id;
 
 	if (!self.cache || !self.cache[key])
 		self.empty(key, count);
@@ -3494,7 +3494,7 @@ Counter.prototype.max = function(id, count) {
 		return self;
 	}
 
-	var key = 'mma' + F.datetime.getFullYear() + '' + id;
+	var key = 'mma' + NOW.getFullYear() + '' + id;
 	if (!self.cache || !self.cache[key])
 		self.empty(key, count);
 	else {
@@ -3520,7 +3520,7 @@ Counter.prototype.inc = Counter.prototype.hit = function(id, count) {
 		return self;
 	}
 
-	var key = 'sum' + F.datetime.getFullYear() + '' + id;
+	var key = 'sum' + NOW.getFullYear() + '' + id;
 	if (!self.cache || !self.cache[key])
 		self.empty(key, count || 1);
 	else
@@ -4316,7 +4316,7 @@ Counter.prototype.save = function() {
 	var filename = self.db.filename + EXTENSION_COUNTER;
 	var reader = Fs.createReadStream(filename);
 	var writer = Fs.createWriteStream(filename + '-tmp');
-	var dt = F.datetime.format('MMdd') + '=';
+	var dt = NOW.format('MMdd') + '=';
 	var cache = self.cache;
 	var counter = 0;
 
@@ -4453,7 +4453,7 @@ function Binary(db, directory) {
 	this.directory = directory;
 	this.$events = {};
 	this.metafile = directory + 'meta.json';
-	this.meta = { $version: 1, updated: F.datetime };
+	this.meta = { $version: 1, updated: NOW };
 	this.cachekey = 'nobin_' + db.name + '_';
 	this.$refresh();
 }
@@ -4469,7 +4469,7 @@ Binary.prototype.$refresh = function() {
 			this.meta.index = config.index;
 			this.meta.count = config.count;
 			this.meta.free = config.free || [];
-			this.meta.updated = config.updated || F.datetime;
+			this.meta.updated = config.updated || NOW;
 		}
 	} catch(e) {}
 };
@@ -4477,7 +4477,7 @@ Binary.prototype.$refresh = function() {
 Binary.prototype.$save = function() {
 	var self = this;
 	self.check();
-	self.meta.updated = F.datetime;
+	self.meta.updated = NOW;
 	Fs.writeFile(self.metafile, JSON.stringify(self.meta), F.error());
 	return self;
 };
@@ -4603,7 +4603,7 @@ Binary.prototype.insert = function(name, buffer, callback) {
 	if (!dimension)
 		dimension = { width: 0, height: 0 };
 
-	var time = F.datetime.format('yyyyMMdd');
+	var time = NOW.format('yyyyMMdd');
 	var h = { name: name, size: size, type: type, width: dimension.width, height: dimension.height, date: time };
 	var header = framework_utils.createBufferSize(BINARY_HEADER_LENGTH);
 	header.fill(' ');
@@ -4641,7 +4641,7 @@ Binary.prototype.insert = function(name, buffer, callback) {
 Binary.prototype.insertstream = function(id, name, type, stream, callback) {
 
 	var self = this;
-	var time = F.datetime.format('yyyyMMdd');
+	var time = NOW.format('yyyyMMdd');
 	var h = { name: name, size: 0, type: type, width: 0, height: 0, date: time };
 	var header = framework_utils.createBufferSize(BINARY_HEADER_LENGTH);
 
@@ -4761,7 +4761,7 @@ Binary.prototype.update = function(id, name, buffer, callback) {
 		return self.insertstream(id, name, type, buffer, callback);
 
 	var isnew = false;
-	var time = F.datetime.format('yyyyMMdd');
+	var time = NOW.format('yyyyMMdd');
 	var size = buffer.length;
 	var ext = framework_utils.getExtension(name);
 	var dimension;
@@ -5097,7 +5097,7 @@ Indexes.prototype.create = function(name, properties, type) {
 			meta.key = key;
 		}
 	} else {
-		self.meta[name] = { key: key, documents: 0, changes: 0, cleaned: F.datetime.getTime() };
+		self.meta[name] = { key: key, documents: 0, changes: 0, cleaned: NOW.getTime() };
 		reindex = true;
 	}
 
@@ -5319,7 +5319,7 @@ Indexes.prototype.reindex = function(callback) {
 	F.config['nosql-logger'] && PRINTLN('NoSQL embedded "{0}" re-indexing (beg)'.format(self.db.name));
 
 	var keys = Object.keys(self.meta);
-	var ticks = F.datetime.getTime();
+	var ticks = NOW.getTime();
 
 	for (var i = 0; i < self.indexes.length; i++) {
 		var item = self.meta[self.indexes[i].name];
@@ -5535,7 +5535,7 @@ Indexes.prototype.flush = function() {
 	};
 
 	var arr = self.changes.splice(0, 50);
-	var ticks = F.datetime.getTime() - CLEANDBTICKS;
+	var ticks = NOW.getTime() - CLEANDBTICKS;
 
 	for (var i = 0; i < arr.length; i++) {
 
@@ -5607,7 +5607,7 @@ Indexes.prototype.$free = function() {
 				db.clean(function() {
 					db.PENDING--;
 					var a = self.meta[db.CLEANDB];
-					a.cleaned = F.datetime.getTime();
+					a.cleaned = NOW.getTime();
 					a.changes = 0;
 					db.CLEANDB = null;
 					self.$meta();
@@ -5662,7 +5662,7 @@ Storage.prototype.insert = function(doc) {
 
 	if (doc == null) {
 		if (self.pending.length) {
-			var dt = F.datetime.format('yyyyMMdd');
+			var dt = NOW.format('yyyyMMdd');
 			self.locked_reader = true;
 			self.check();
 			Fs.appendFile(self.db.filenameStorage.format(dt), self.pending.join(NEWLINE) + NEWLINE, function(err) {
@@ -5691,7 +5691,7 @@ Storage.prototype.insert = function(doc) {
 
 	self.check();
 	self.locked_writer = true;
-	Fs.appendFile(self.db.filenameStorage.format(F.datetime.format('yyyyMMdd')), JSON.stringify(doc) + NEWLINE, function(err) {
+	Fs.appendFile(self.db.filenameStorage.format(NOW.format('yyyyMMdd')), JSON.stringify(doc) + NEWLINE, function(err) {
 		self.locked_writer = false;
 		self.locked_reader = false;
 		self.pending.length && self.insert();
@@ -5844,7 +5844,7 @@ Storage.prototype.scan = function(beg, end, mapreduce, callback, reverse) {
 		stats.processed = 0;
 		stats.canceled = false;
 
-		var today = +F.datetime.format('yyyyMMdd');
+		var today = +NOW.format('yyyyMMdd');
 		var process = function(item, next, index) {
 
 			if (self.locked_read) {
