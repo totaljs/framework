@@ -339,9 +339,15 @@ NoSQLStream.prototype.writehelpers = function() {
 				self.docsbuffer.push({ length: index, doc: tmp, position: self.positionupdate });
 				self.docscount++;
 				if (self.docsbuffer.length >= BUFFERDOCS) {
-					self.ondocuments();
+
+					if (self.ondocuments() === false)
+						self.canceled = true;
+
 					self.docsbuffer = [];
 					self.docs = '';
+
+					if (self.canceled)
+						break;
 				}
 			}
 

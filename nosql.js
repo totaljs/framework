@@ -1319,6 +1319,7 @@ Database.prototype.$update = function() {
 	var filter = self.pending_update.splice(0);
 	var length = filter.length;
 	var backup = false;
+	var filters = 0;
 
 	for (var i = 0; i < length; i++) {
 		var fil = filter[i];
@@ -1336,20 +1337,30 @@ Database.prototype.$update = function() {
 		var docs = JSON.parse('[' + fs.docs + ']', jsonparser);
 
 		for (var a = 0; a < docs.length; a++) {
-			var doc = docs[a];
+
 			indexer++;
 
+			var doc = docs[a];
 			var is = false;
 			var copy = self.indexes && self.indexes.indexes.length ? CLONE(doc) : null;
 			var rec = fs.docsbuffer[a];
 
 			for (var i = 0; i < length; i++) {
+
 				var item = filter[i];
+				if (item.skip)
+					continue;
 
 				item.filter.index = indexer;
-				var output = item.compare(doc, item.filter, indexer);
 
+				var output = item.compare(doc, item.filter, indexer);
 				if (output) {
+
+					if (item.filter.options.first) {
+						item.skip = true;
+						filters++;
+					}
+
 					if (item.keys) {
 						for (var j = 0; j < item.keys.length; j++) {
 							var key = item.keys[j];
@@ -1387,6 +1398,9 @@ Database.prototype.$update = function() {
 				}
 
 				var upd = JSON.stringify(doc);
+				if (upd === rec.doc)
+					continue;
+
 				var was = true;
 
 				if (rec.doc.length === upd.length) {
@@ -1403,6 +1417,9 @@ Database.prototype.$update = function() {
 					fs.write2(upd + NEWLINE);
 				}
 			}
+
+			if (filters === length)
+				return false;
 		}
 	};
 
