@@ -423,7 +423,7 @@ exports.keywords = function(content, forSearch, alternative, max_count, max_leng
  * @param  {Number} timeout Request timeout.
  * return {Boolean}
  */
-exports.request = function(url, flags, data, callback, cookies, headers, encoding, timeout, files) {
+global.REQUEST = exports.request = function(url, flags, data, callback, cookies, headers, encoding, timeout, files) {
 
 	// No data (data is optional argument)
 	if (typeof(data) === 'function') {
