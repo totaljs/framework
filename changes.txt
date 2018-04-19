@@ -44,6 +44,7 @@
 - added: `$REMOVE(schema, [options], [callback], [controller])` performs `schema.remove()`
 - added: `U.streamer2()` same functionality as `U.streamer()` but it returns `Buffer` instead of `String`
 - added: `Number.round([precision])`
+- added: `UID([type])` supports custom types, e.g. `UID('users')` or `UID('orders')`
 
 - updated: (IMPORTANT) NoSQL binary divides files to independent directories for 1000 files per directory
 - updated: `GROUP()` by adding a new argument `url_prefix`

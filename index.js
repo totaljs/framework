@@ -307,7 +307,24 @@ global.ROUTING = (name) => F.routing(name);
 global.SCHEDULE = (date, each, fn, param) => F.schedule(date, each, fn, param);
 global.FINISHED = framework_internal.onFinished;
 global.DESTROY = framework_internal.destroyStream;
-global.UID = () => UIDGENERATOR.date + (++UIDGENERATOR.index).padLeft(4, '0') + UIDGENERATOR.instance + (UIDGENERATOR.index % 2 ? 1 : 0);
+
+global.UID = function(type) {
+
+	var index;
+
+	if (type) {
+		if (UIDGENERATOR.types[type])
+			index = UIDGENERATOR.types[type] = UIDGENERATOR.types[type] + 1;
+		else {
+			UIDGENERATOR.multiple = true;
+			index = UIDGENERATOR.types[type] = 1;
+		}
+	} else
+		index = UIDGENERATOR.index++;
+
+	return UIDGENERATOR.date + index.padLeft(4, '0') + UIDGENERATOR.instance + (index % 2 ? 1 : 0);
+};
+
 global.ROUTE = (a, b, c, d, e) => F.route(a, b, c, d, e);
 global.WEBSOCKET = (a, b, c, d) => F.websocket(a, b, c, d);
 global.FILE = (a, b, c) => F.file(a, b, c);
@@ -544,7 +561,7 @@ var DATE_EXPIRES = new Date().add('y', 1).toUTCString();
 
 const WEBSOCKET_COMPRESS = U.createBuffer([0x00, 0x00, 0xFF, 0xFF]);
 const WEBSOCKET_COMPRESS_OPTIONS = { windowBits: Zlib.Z_DEFAULT_WINDOWBITS };
-const UIDGENERATOR = { date: new Date().format('yyMMddHHmm'), instance: 'abcdefghijklmnoprstuwxy'.split('').random().join('').substring(0, 3), index: 1 };
+const UIDGENERATOR = { date: new Date().format('yyMMddHHmm'), instance: 'abcdefghijklmnoprstuwxy'.split('').random().join('').substring(0, 3), index: 1, types: {} };
 const EMPTYBUFFER = U.createBufferSize(0);
 global.EMPTYBUFFER = EMPTYBUFFER;
 
@@ -6892,6 +6909,14 @@ F.service = function(count) {
 	UIDGENERATOR.date = F.datetime.format('yyMMddHHmm');
 	UIDGENERATOR.index = 1;
 
+	var keys;
+
+	if (UIDGENERATOR.multiple) {
+		keys = Object.keys(UIDGENERATOR.types);
+		for (var i = 0; i < keys.length; i++)
+			UIDGENERATOR.types[keys[i]] = 0;
+	}
+
 	var releasegc = false;
 
 	// clears temporary memory for non-exist files
@@ -7003,7 +7028,7 @@ F.service = function(count) {
 	count % 1000 === 0 && (DATE_EXPIRES = F.datetime.add('y', 1).toUTCString());
 
 	if (count % F.config['nosql-cleaner'] === 0 && F.config['nosql-cleaner']) {
-		var keys = Object.keys(F.databasescleaner);
+		keys = Object.keys(F.databasescleaner);
 		keys.wait(function(item, next) {
 			NOSQL(item).clean(next);
 		});
