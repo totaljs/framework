@@ -8688,9 +8688,9 @@ F.$configure_configs = function(arr, rewrite) {
 				if (subtype === 'string')
 					obj[name] = value;
 				else if (subtype === 'number' || subtype === 'currency' || subtype === 'float' || subtype === 'double')
-					obj[name] = value.isNumber(true) ? value.parseFloat() : value.parseInt();
+					obj[name] = value.isNumber(true) ? value.parseFloat2() : value.parseInt2();
 				else if (subtype === 'boolean' || subtype === 'bool')
-					obj[name] = value.parseBoolean();
+					obj[name] = (/true|on|1|enabled/i).test(value);
 				else if (subtype === 'eval' || subtype === 'object' || subtype === 'array') {
 					try {
 						obj[name] = new Function('return ' + value)();

@@ -3206,11 +3206,11 @@ String.prototype.parseConfig = function(def, onerr) {
 			case 'float':
 			case 'double':
 			case 'currency':
-				obj[name] = value.isNumber(true) ? value.parseFloat() : value.parseInt();
+				obj[name] = value.isNumber(true) ? value.parseFloat2() : value.parseInt2();
 				break;
 			case 'boolean':
 			case 'bool':
-				obj[name] = value.parseBoolean();
+				obj[name] = (/true|on|1|enabled/i).test(value);
 				break;
 			case 'config':
 				obj[name] = F.config[value];
