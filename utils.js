@@ -4109,7 +4109,6 @@ Number.prototype.VAT = function(percentage, decimals, includedVAT) {
 
 	if (!percentage || !num)
 		return num;
-
 	return includedVAT ? (num / ((percentage / 100) + 1)).floor(decimals) : (num * ((percentage / 100) + 1)).floor(decimals);
 };
 
