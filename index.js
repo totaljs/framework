@@ -45,6 +45,7 @@ const CT_TEXT = 'text/plain';
 const CT_HTML = 'text/html';
 const CT_JSON = 'application/json';
 const COMPRESSION = { 'text/plain': true, 'text/javascript': true, 'text/css': true, 'text/jsx': true, 'application/javascript': true, 'application/x-javascript': true, 'application/json': true, 'text/xml': true, 'image/svg+xml': true, 'text/x-markdown': true, 'text/html': true };
+const COMPRESSIONSPECIAL = { 'js': 1, 'css': 1 };
 const REG_TEMPORARY = /\//g;
 const REG_MOBILE = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet/i;
 const REG_ROBOT = /search|agent|bot|crawler|spider/i;
@@ -5727,11 +5728,18 @@ F.compile_virtual = function(res) {
 			return;
 		}
 
-		if (!res.noCompress && (req.extension === 'js' || req.extension === 'css') && F.config['allow-compile'] && !REG_NOCOMPRESS.test(res.options.filename)) {
+		if (!res.noCompress && COMPRESSIONSPECIAL[req.extension] && F.config['allow-compile'] && !REG_NOCOMPRESS.test(res.options.filename)) {
 			res.options.filename = tmpname;
-			compile_file(res);
+			return compile_file(res);
+		}
+
+		var tmp = F.temporary.path[req.$key] = [tmpname, size, stats.mtime.toUTCString()];
+		if (F.config['allow-gzip'] && COMPRESSION[U.getContentType(req.extension)]) {
+			compile_gzip(tmp, function() {
+				delete F.temporary.processing[req.$key];
+				res.$file();
+			});
 		} else {
-			F.temporary.path[req.$key] = [tmpname, size, stats.mtime.toUTCString()];
 			delete F.temporary.processing[req.$key];
 			res.$file();
 		}
@@ -5754,7 +5762,7 @@ function compile_check(res) {
 
 		if (e) {
 
-			if (!res.noCompress && (req.extension === 'js' || req.extension === 'css') && F.config['allow-compile'] && !REG_NOCOMPRESS.test(res.options.filename))
+			if (!res.noCompress && COMPRESSIONSPECIAL[req.extension] && F.config['allow-compile'] && !REG_NOCOMPRESS.test(res.options.filename))
 				return compile_file(res);
 
 			var tmp = F.temporary.path[req.$key] = [res.options.filename, size, stats.mtime.toUTCString()];
@@ -16073,7 +16081,7 @@ function fsFileExists(filename, callback, a, b, c) {
 	});
 }
 
-function fsStreamRead(filename, options, callback, req, res) {
+function fsStreamRead(filename, options, callback, res) {
 
 	if (!callback) {
 		callback = options;
@@ -16097,7 +16105,7 @@ function fsStreamRead(filename, options, callback, req, res) {
 	U.queue('F.files', F.config['default-maximum-file-descriptors'], function(next) {
 		var stream = Fs.createReadStream(filename, opt);
 		stream.on('error', NOOP);
-		callback(stream, next, req, res);
+		callback(stream, next, res);
 	}, filename);
 }
 
