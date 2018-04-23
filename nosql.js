@@ -1370,8 +1370,7 @@ Database.prototype.$update = function() {
 									output[key] = val(output[key], output);
 								else
 									output[key] = val;
-							} else
-								output[key] = undefined;
+							}
 						}
 					} else
 						output = typeof(item.doc) === 'function' ? item.doc(output) : item.doc;
@@ -1495,12 +1494,12 @@ Database.prototype.$update_inmemory = function() {
 					if (item.keys) {
 						for (var j = 0, jl = item.keys.length; j < jl; j++) {
 							var val = item.doc[item.keys[j]];
-							if (val === undefined)
-								continue;
-							if (typeof(val) === 'function')
-								doc[item.keys[j]] = val(doc[item.keys[j]], doc);
-							else
-								doc[item.keys[j]] = val;
+							if (val !== undefined) {
+								if (typeof(val) === 'function')
+									doc[item.keys[j]] = val(doc[item.keys[j]], doc);
+								else
+									doc[item.keys[j]] = val;
+							}
 						}
 					} else
 						doc = typeof(item.doc) === 'function' ? item.doc(doc) : item.doc;
