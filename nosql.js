@@ -2708,6 +2708,8 @@ function DatabaseBuilder2(db) {
 	this.$options = {};
 }
 
+DatabaseBuilder2.prototype.promise = promise;
+
 DatabaseBuilder2.prototype.log = function(msg, user) {
 	var self = this;
 	if (msg) {
@@ -2754,6 +2756,19 @@ function DatabaseBuilder(db) {
 	this.$repository = {};
 	this.$counter = 0;
 }
+
+function promise(fn) {
+	return new Promise(function(resolve, reject) {
+		this.callback(function(err, result) {
+			if (err)
+				reject(err);
+			else
+				resolve(fn == null ? result : fn(result));
+		});
+	});
+}
+
+DatabaseBuilder.prototype.promise = promise;
 
 DatabaseBuilder.prototype.id = function(id) {
 	this.$options.id = id;
@@ -3400,6 +3415,7 @@ function Counter(db) {
 	self.$events = {};
 }
 
+Counter.prototype.promise = promise;
 Counter.prototype.emit = function(name, a, b, c, d, e, f, g) {
 	var evt = this.$events[name];
 	if (evt) {
@@ -4475,6 +4491,7 @@ function Binary(db, directory) {
 	this.$refresh();
 }
 
+Binary.prototype.promise = promise;
 Binary.prototype.$refresh = function() {
 	this.meta.index = 0;
 	this.meta.count = 0;
@@ -5092,6 +5109,7 @@ function Indexes(db, directory) {
 	} catch (e) {}
 }
 
+Indexes.prototype.promise = promise;
 Indexes.prototype.create = function(name, properties, type) {
 
 	var self = this;
@@ -5657,6 +5675,7 @@ function Storage(db, directory) {
 	}
 }
 
+Storage.prototype.promise = promise;
 Storage.prototype.refresh = function() {
 	try {
 		this.$mapreduce = Fs.readFileSync(this.$mapreducefile).toString('utf8').parseJSON(true);
