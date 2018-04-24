@@ -77,6 +77,17 @@ var JSONBUFFER = process.argv.findIndex(n => n.endsWith('nosqlworker.js')) === -
 var FORK;
 var FORKCALLBACKS;
 
+function promise(fn) {
+	return new Promise(function(resolve, reject) {
+		this.callback(function(err, result) {
+			if (err)
+				reject(err);
+			else
+				resolve(fn == null ? result : fn(result));
+		});
+	});
+}
+
 Object.freeze(EMPTYARRAY);
 
 exports.kill = function(signal) {
@@ -2755,17 +2766,6 @@ function DatabaseBuilder(db) {
 	this.$options = {};
 	this.$repository = {};
 	this.$counter = 0;
-}
-
-function promise(fn) {
-	return new Promise(function(resolve, reject) {
-		this.callback(function(err, result) {
-			if (err)
-				reject(err);
-			else
-				resolve(fn == null ? result : fn(result));
-		});
-	});
 }
 
 DatabaseBuilder.prototype.promise = promise;
