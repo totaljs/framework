@@ -26,6 +26,7 @@
 - added: `DatabaseBuilder.query(code)` can contain a raw JS condition in the form e.g. `doc.age > 18 && doc.age < 33`
 - added: `Database.find2()` performs faster and reverse reading of documents (from end to begin of the file)
 - added: `Database.lock(callback(next))` locks all internal DB operations
+- added: `Database.ready(callback)` executes a callback when DB is ready to use (only for special cases if you use indexes)
 - added: new directory `schemas` with a new configuration item `directory-schemas'
 - added: new directory `operations` with a new configuration item `directory-operations'
 - added: `String.crc32([unsigned])`

@@ -342,6 +342,11 @@ exports.worker = function() {
 		return this;
 	};
 
+	Database.prototype.ready = function(callback) {
+		send(this, 'ready').callback = callback;
+		return this;
+	};
+
 	Database.prototype.remove = function(filename) {
 		return send(this, 'remove', filename).builder = new DatabaseBuilder(this);
 	};
@@ -653,6 +658,19 @@ Database.prototype.backups = function(filter, callback) {
 function next_operation(self, type) {
 	self.next(type);
 }
+
+Database.prototype.ready = function(fn) {
+	var self = this;
+
+	if (!self.indexes)
+		fn.call(self);
+	else if (self.indexes.isreindex || self.indexes.reindexing)
+		setTimeout((self, fn) => self.ready(fn), 500, self, fn);
+	else
+		fn.call(self);
+
+	return self;
+};
 
 Database.prototype.insert = function(doc, unique) {
 
@@ -5067,6 +5085,7 @@ function Indexes(db, directory) {
 	this.flushing = false;
 	this.instances = {};
 	this.reindexing = false;
+	this.isreindex = false;
 	this.meta = { $version: 1 };
 	try {
 		this.meta = Fs.readFileSync(this.db.filename + EXTENSION_INDEXES).toString('utf8').parseJSON(true) || {};
@@ -5100,12 +5119,16 @@ Indexes.prototype.create = function(name, properties, type) {
 		reindex = true;
 	}
 
+	if (!self.isreindex && reindex)
+		self.isreindex = reindex;
+
 	reindex && setTimeout2(self.db.name + '_reindex', () => self.reindex(), 1000);
 	return self;
 };
 
 Indexes.prototype.noreindex = function() {
 	var self = this;
+	self.isreindex = false;
 	clearTimeout2(self.db.name + '_reindex');
 	return self;
 };
@@ -5345,6 +5368,7 @@ Indexes.prototype.reindex = function(callback) {
 					self.insert(docs[i], true);
 				self.$reindexingnext = next;
 			}, function() {
+				self.isreindex = false;
 				self.$meta();
 				self.db.$events['indexing-end'] && self.db.emit('indexing-end');
 				self.reindexing = false;

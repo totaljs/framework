@@ -273,6 +273,7 @@ process.on('message', function(msg) {
 			break;
 		case 'clean':
 		case 'clear':
+		case 'ready':
 			db[msg.TYPE](function(err) {
 				RESCALLBACK.id = msg.id;
 				RESCALLBACK.err = err;
