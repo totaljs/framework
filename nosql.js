@@ -5013,8 +5013,9 @@ Binary.prototype.browse = function(directory, callback) {
 					stream.on('data', function(buffer) {
 						var json = framework_utils.createBuffer(buffer, 'binary').toString('utf8').replace(REG_CLEAN, '').parseJSON(true);
 						if (json) {
-							json.id = item.substring(0, item.length - le);
-							json.id = +json.id.substring(json.id.length - DIRECTORYLENGTH);
+							var id = item.substring(0, item.length - le);
+							json.id = 'B' + json.date + 'T' + id;
+							json.index = +id.substring(id.length - DIRECTORYLENGTH);
 							json.ctime = stat.ctime;
 							json.mtime = stat.mtime;
 							output.push(json);
