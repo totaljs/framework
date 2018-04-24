@@ -1734,6 +1734,10 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 				// object
 				case 6:
 					item[property] = self.$onprepare(property, model[property], undefined, model);
+
+					if (item[property] === undefined)
+						item[property] = null;
+
 					break;
 
 				// enum

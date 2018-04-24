@@ -2038,6 +2038,7 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 	var prepare = entity.onValidate || F.onValidate || NOOP;
 	var current = path === undefined ? '' : path + '.';
 	var properties = entity.properties;
+	var result;
 
 	if (!pluspath)
 		pluspath = '';
@@ -2052,7 +2053,6 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 			continue;
 
 		var TYPE = collection[schema].schema[name];
-
 		if (TYPE.can && !TYPE.can(model))
 			continue;
 
@@ -2068,36 +2068,28 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 
 		if (TYPE.isArray) {
 
-			if (!(value instanceof Array) || !value.length) {
-				error.push(pluspath + name, '@', current + name, index, prefix);
-				continue;
-			}
-
-			for (var j = 0, jl = value.length; j < jl; j++) {
-				if (TYPE.type === 7) {
-					// Another schema
+			if (TYPE.type === 7 && value instanceof Array && value.length) {
+				for (var j = 0, jl = value.length; j < jl; j++)
 					exports.validate_builder(value[j], error, TYPE.raw, collection, current + name + '[' + j + ']', j, undefined, pluspath);
-				} else {
+			} else {
 
-					// Basic types
-					var result = TYPE.validate ? TYPE.validate(value[j], model) : prepare(name, value, current + name + '[' + j + ']', model, schema, TYPE);
-					if (result == null) {
-						result = validate_builder_default(name, value[j], TYPE);
-						if (result == null || result === true)
-							continue;
-					}
-
-					type = typeof(result);
-					if (type === 'string') {
-						if (result[0] === '@')
-							error.push(pluspath + name, '@', current + name + '[' + j + ']', j, entity.resourcePrefix + result.substring(1));
-						else
-							error.push(pluspath + name, result, current + name + '[' + j + ']', j, prefix);
-					} else if (type === 'boolean') {
-						!result && error.push(pluspath + name, '@', current + name + '[' + j + ']', j, prefix);
-					} else if (result.isValid === false)
-						error.push(pluspath + name, result.error, current + name + '[' + j + ']', j, prefix);
+				result = TYPE.validate ? TYPE.validate(value, model) : prepare(name, value, current + name, model, schema, TYPE);
+				if (result == null) {
+					result = validate_builder_default(name, value[j], TYPE);
+					if (result == null || result === true)
+						continue;
 				}
+
+				type = typeof(result);
+				if (type === 'string') {
+					if (result[0] === '@')
+						error.push(pluspath + name, '@', current + name, index, entity.resourcePrefix + result.substring(1));
+					else
+						error.push(pluspath + name, result, current + name, index, prefix);
+				} else if (type === 'boolean') {
+					!result && error.push(pluspath + name, '@', current + name, index, prefix);
+				} else if (result.isValid === false)
+					error.push(pluspath + name, result.error, current + name, index, prefix);
 			}
 			continue;
 		}
@@ -2108,7 +2100,7 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 			continue;
 		}
 
-		var result = TYPE.validate ? TYPE.validate(value, model) : prepare(name, value, current + name, model, schema, TYPE);
+		result = TYPE.validate ? TYPE.validate(value, model) : prepare(name, value, current + name, model, schema, TYPE);
 		if (result == null) {
 			result = validate_builder_default(name, value, TYPE);
 			if (result == null || result === true)
