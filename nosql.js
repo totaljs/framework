@@ -78,8 +78,9 @@ var FORK;
 var FORKCALLBACKS;
 
 function promise(fn) {
+	var self = this;
 	return new Promise(function(resolve, reject) {
-		this.callback(function(err, result) {
+		self.callback(function(err, result) {
 			if (err)
 				reject(err);
 			else
