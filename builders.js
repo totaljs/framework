@@ -4180,8 +4180,8 @@ RESTBuilder.prototype.raw = function(value) {
 	return this;
 };
 
-RESTBuilder.prototype.custom = function() {
-	this.$custom = true;
+RESTBuilder.prototype.plain = function() {
+	this.$plain = true;
 	return this;
 };
 
@@ -4315,7 +4315,7 @@ RESTBuilder.prototype.exec = function(callback) {
 				type = type.substring(0, index).trim();
 		}
 
-		if (self.$custom) {
+		if (self.$plain) {
 			output.value = response;
 		} else {
 			switch (type.toLowerCase()) {
