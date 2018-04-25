@@ -48,6 +48,8 @@
 - added: `UID([type])` supports custom types, e.g. `UID('users')` or `UID('orders')`
 - added: `REQUEST()` global method, it's alias to `U.request()`
 - added: `NOW` global property, it's alias to `F.datetime`
+- added: `DatabaseBuilder.promise()`
+- added: `RESTBuilder.promise()`
 
 - updated: (IMPORTANT) NoSQL binary divides files to independent directories for 1000 files per directory
 - updated: `GROUP()` by adding a new argument `url_prefix`

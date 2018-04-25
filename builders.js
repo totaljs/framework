@@ -3956,6 +3956,18 @@ RESTBuilder.setDefaultTransform = function(name) {
 		delete transforms['restbuilder_default'];
 };
 
+RESTBuilder.prototype.promise = function(fn) {
+	var self = this;
+	return new Promise(function(resolve, reject) {
+		self.exec(function(err, result) {
+			if (err)
+				reject(err);
+			else
+				resolve(fn == null ? result : fn(result));
+		});
+	});
+};
+
 RESTBuilder.prototype.setTransform = function(name) {
 	this.$transform = name;
 	return this;
