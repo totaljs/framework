@@ -4180,6 +4180,11 @@ RESTBuilder.prototype.raw = function(value) {
 	return this;
 };
 
+RESTBuilder.prototype.custom = function() {
+	this.$custom = true;
+	return this;
+};
+
 RESTBuilder.prototype.cook = function(value) {
 	this.$flags = null;
 	this.$persistentcookies = value !== false;
@@ -4293,7 +4298,7 @@ RESTBuilder.prototype.exec = function(callback) {
 		var data = F.cache.read2(key);
 		if (data) {
 			var evt = new framework_utils.EventEmitter2();
-			process.nextTick(exec_removelisteners, evt);
+			setImmediate(exec_removelisteners, evt);
 			callback(null, self.maketransform(this.$schema ? this.$schema.make(data.value) : data.value, data), data);
 			return evt;
 		}
@@ -4304,19 +4309,31 @@ RESTBuilder.prototype.exec = function(callback) {
 		var type = err ? '' : headers['content-type'] || '';
 		var output = new RESTBuilderResponse();
 
-		switch (type.toLowerCase()) {
-			case 'text/xml':
-				output.value = response.parseXML();
-				break;
-			case 'application/x-www-form-urlencoded':
-				output.value = F.onParseQuery(response);
-				break;
-			case 'application/json':
-				output.value = response.parseJSON(true);
-				break;
-			default:
-				output.value = response.isJSON() ? response.parseJSON(true) : null;
-				break;
+		if (type) {
+			var index = type.lastIndexOf(';');
+			if (index !== 1)
+				type = type.substring(0, index).trim();
+		}
+
+		if (self.$custom) {
+			output.value = response;
+		} else {
+			switch (type.toLowerCase()) {
+				case 'text/xml':
+				case 'application/xml':
+					output.value = response.parseXML();
+					break;
+				case 'application/x-www-form-urlencoded':
+					output.value = F.onParseQuery(response);
+					break;
+				case 'application/json':
+				case 'text/json':
+					output.value = response.parseJSON(true);
+					break;
+				default:
+					output.value = response.isJSON() ? response.parseJSON(true) : null;
+					break;
+			}
 		}
 
 		if (output.value == null)
@@ -4340,12 +4357,11 @@ RESTBuilder.prototype.exec = function(callback) {
 				output.cache = true;
 			});
 
-			return;
+		} else {
+			!err && key && F.cache.add(key, output, self.$cache_expire);
+			callback(err, self.maketransform(output.value, output), output);
+			output.cache = true;
 		}
-
-		!err && key && F.cache.add(key, output, self.$cache_expire);
-		callback(err, self.maketransform(output.value, output), output);
-		output.cache = true;
 
 	}, self.$cookies, self.$headers, undefined, self.$timeout, self.$files);
 };
