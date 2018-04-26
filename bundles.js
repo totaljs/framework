@@ -159,7 +159,13 @@ function cleanFiles(callback) {
 	blacklist[F.config['directory-private']] = 1;
 	blacklist[F.config['directory-databases']] = 1;
 
-	var meta = U.parseJSON(Fs.readFileSync(Path.join(path, 'bundle.json')).toString('utf8'), true) || {};
+	var meta;
+
+	try {
+		meta = U.parseJSON(Fs.readFileSync(Path.join(path, 'bundle.json')).toString('utf8'), true) || {};
+	} catch (e) {
+		meta = {};
+	}
 
 	if (meta.files && meta.files.length) {
 		for (var i = 0, length = meta.files.length; i < length; i++) {
