@@ -4878,9 +4878,18 @@ Binary.prototype.read = function(id, callback) {
 	var stream = Fs.createReadStream(filename, BINARYREADMETA);
 	stream.on('error', err => callback(err));
 	stream.on('data', function(buffer) {
+
 		var json = framework_utils.createBuffer(buffer, 'binary').toString('utf8').replace(REG_CLEAN, '');
+		var meta;
+
 		stream = Fs.createReadStream(filename, BINARYREADDATA);
-		callback(null, stream, JSON.parse(json, jsonparser));
+		try {
+			meta = JSON.parse(json, jsonparser);
+			callback(null, stream, meta);
+		} catch (e) {
+			F.error(e, 'nosql.binary.read', filename);
+			callback(e);
+		}
 		CLEANUP(stream);
 	});
 
