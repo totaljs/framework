@@ -2336,7 +2336,7 @@ global.MERGE = F.merge = function(url) {
 		url = '/' + url;
 
 	var filename = F.path.temp((F.id ? 'i-' + F.id + '_' : '') + 'merged_' + createTemporaryKey(url));
-	F.routes.merge[url] = { filename: filename.replace(/\.(js|css)$/g, ext => '.min' + ext), files: arr };
+	F.routes.merge[url] = { filename: filename.replace(/\.(js|css)$/g, ext => '.min' + ext), files: arr, stamp: 0 };
 	Fs.unlink(F.routes.merge[url].filename, NOOP);
 	F.owners.push({ type: 'merge', owner: _owner, id: url });
 	return F;
@@ -6419,10 +6419,10 @@ F.response501 = function(req, res, problem) {
 F.response503 = function(req, res) {
 	var keys = '';
 	for (var m in F.waits)
-		keys += (res.options.body ? ', ' : '') + '<u>' + m + '</u>';
+		keys += '<tr><td>' + m + '</td><td>&#10711;</td></tr>';
 	res.options.code = 503;
 	res.options.headers = HEADERS.response503;
-	res.options.body = '<html><head><meta charset="utf-8" /></head><body style="font:normal normal 11px Arial;color:gray;line-height:16px;padding:10px;background-color:white"><div style="font-size:14px;color:#505050">Please wait (<span id="time">10</span>) for <b>' + (F.config.name + ' v' + F.config.version) + '</b> application.</div>The application is waiting for: ' + keys + '.<script>var i=10;setInterval(function(){i--;if(i<0)return;document.getElementById("time").innerHTML=(i===0?"refreshing":i);if(i===0)window.location.reload();},1000);</script></body></html>';
+	res.options.body = '<html><head><title>Please wait</title><meta charset="utf-8" /><style>html,body{font:normal normal 14px Arial;background-color:white;height:100%;margin:0;padding:0;font-smoothing:antialiased;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:antialiased}.table{display:table;width:100%;height:100%}.cell{display:table-cell;vertical-align:middle;text-align:center}table{max-width:300px;margin:20px auto;width:100%;border:1px solid #E0E0E0;border-collapse:collapse;font-size:12px}table td{border:1px solid #E0E0E0;padding:6px 8px;text-align:center}table td:first-child{text-align:left;width:85%}.anim{animation:anim 2s infinite}@keyframes anim{0%{transform:scale(1)}50%{transform:scale(1.5) rotate(180deg);color:gray}100%{transform:scale(1)}}</style></head><body><div class="table"><div class="cell"><div id="time" style="font-size:60px;font-weight:bold;margin-bottom:10px">10</div><div style="color:#A0A0A0;font-size:10px;margin-bottom:3px">PLEASE WAIT</div><div><b>Application is starting &hellip;</b></div><table>' + keys + '</table></div></div> <script>var i=10;setInterval(function(){i--;if(i<0)return;var el=document.getElementById("time");if(!i)el.style.fontSize="40px";el.innerHTML=(i===0?"REFRESHING":i);if(i===0)setTimeout(function(){window.location.reload()},1000)},1000);</script></body></html>';
 	res.$throw();
 	return F;
 };
@@ -8511,12 +8511,53 @@ F.$configure_versions = function(arr, clean) {
 		var len = ismap ? 3 : 2;
 		var key = str.substring(0, index).trim();
 		var filename = str.substring(index + len).trim();
-		F.versions[key] = filename;
-		ismap && F.map(filename, F.path.public(key));
+
+		if (filename === 'auto') {
+
+			if (ismap)
+				throw new Error('/versions: "auto" value can\'t be used with mapping');
+
+			(function(key, filename) {
+				ON('ready', function() {
+					F.consoledebug('"versions" is getting checksum of ' + key);
+					makehash(key, function(hash) {
+						F.consoledebug('"versions" is getting checksum of ' + key + ' (done)');
+						if (hash) {
+							var index = key.lastIndexOf('.');
+							filename = key.substring(0, index) + '-' + hash + key.substring(index);
+							F.versions[key] = filename;
+						}
+					});
+				});
+			})(key, filename);
+		} else {
+			F.versions[key] = filename;
+			ismap && F.map(filename, F.path.public(key));
+		}
 	}
 
 	return F;
 };
+
+function makehash(url, callback) {
+	url = 'http://' + (F.ip === 'auto' ? '0.0.0.0' : F.ip) + ':' + F.port + url;
+	U.download(url, ['get'], function(err, stream, status) {
+
+		if (status !== 200) {
+			callback('');
+			return;
+		}
+
+		var hash = Crypto.createHash('md5');
+		hash.setEncoding('hex');
+		stream.pipe(hash);
+		stream.on('end', function() {
+			hash.end();
+			callback(hash.read().crc32(true));
+		});
+		stream.on('error', () => callback(''));
+	});
+}
 
 F.$configure_configs = function(arr, rewrite) {
 

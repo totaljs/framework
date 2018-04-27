@@ -51,6 +51,7 @@
 - added: `DatabaseBuilder.promise()`
 - added: `RESTBuilder.promise()`
 - added: `RESTBuilder.plain()` it returns a raw string from the response body
+- added: `versions` file supports `auto` value for generating auto-checksum of files
 
 - updated: (IMPORTANT) NoSQL binary divides files to independent directories for 1000 files per directory
 - updated: `GROUP()` by adding a new argument `url_prefix`
@@ -66,6 +67,7 @@
 - updated: Chunker supports `autoremove` processed files in `each()` or `read()` method, default `true`
 - updated: `String.parseConfig(def, [onError])` can handle errors better
 - updated: `middleware`, now Total.js supports new declaration `F.middleware(function($) {})`
+- updated: `F.wait()` HTML template
 
 - fixed: mail attachments
 - fixed: mail `message.manually()`
