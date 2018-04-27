@@ -2075,7 +2075,7 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 
 				result = TYPE.validate ? TYPE.validate(value, model) : prepare(name, value, current + name, model, schema, TYPE);
 				if (result == null) {
-					result = value[j] instanceof Array ? value[j].length > 0 : false;
+					result = value instanceof Array ? value.length > 0 : false;
 					if (result == null || result === true)
 						continue;
 				}
