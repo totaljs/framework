@@ -52,7 +52,7 @@ const REG_ROBOT = /search|agent|bot|crawler|spider/i;
 const REG_VERSIONS = /(href|src)="[a-zA-Z0-9/:\-.]+\.(jpg|js|css|png|gif|svg|html|ico|json|less|sass|scss|swf|txt|webp|woff|woff2|xls|xlsx|xml|xsl|xslt|zip|rar|csv|doc|docx|eps|gzip|jpe|jpeg|manifest|mov|mp3|flac|mp4|ogg|package|pdf)"/gi;
 const REG_COMPILECSS = /url\(.*?\)/g;
 const REG_ROUTESTATIC = /^(\/\/|https:|http:)+/;
-const REG_NEWIMPL = /^(async\s)?function(\s)?\([a-zA-Z0-9$]+\)|^function anonymous\(\$/;
+const REG_NEWIMPL = /^(async\s)?function(\s)?([a-zA-Z$][a-zA-Z0-9$]+)?(\s)?\([a-zA-Z0-9$]+\)|^function anonymous\(\$/;
 const REG_RANGE = /bytes=/;
 const REG_EMPTY = /\s/g;
 const REG_ACCEPTCLEANER = /\s|\./g;

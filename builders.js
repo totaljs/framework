@@ -31,7 +31,7 @@ const DEFAULT_SCHEMA = 'default';
 const SKIP = { $$schema: true, $$async: true, $$repository: true, $$controller: true };
 const REGEXP_CLEAN_EMAIL = /\s/g;
 const REGEXP_CLEAN_PHONE = /\s|\.|-|\(|\)/g;
-const REGEXP_NEWOPERATION = /^(async\s)?function(\s)?\([a-zA-Z0-9$]+\)|^function anonymous\(\$/;
+const REGEXP_NEWOPERATION = /^(async\s)?function(\s)?([a-zA-Z$][a-zA-Z0-9$]+)?(\s)?\([a-zA-Z0-9$]+\)|^function anonymous\(\$/;
 const hasOwnProperty = Object.prototype.hasOwnProperty;
 const Qs = require('querystring');
 
