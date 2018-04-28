@@ -1258,6 +1258,11 @@ global.NOSQL = F.nosql = function(name) {
 
 F.stop = F.kill = function(signal) {
 
+	if (F.isKilled)
+		return F;
+
+	F.isKilled = true;
+
 	if (!signal)
 		signal = 'SIGTERM';
 
@@ -4463,7 +4468,6 @@ F.$restart = function() {
 		F.controllers = {};
 		F.dependencies = {};
 		F.isomorphic = {};
-		F.tests = [];
 		F.errors = [];
 		F.problems = [];
 		F.changes = [];
@@ -6453,10 +6457,37 @@ global.LOAD = F.load = function(debug, types, pwd) {
 	else if (pwd)
 		F.directory = directory = U.$normalize(pwd);
 
-	if (debug === 'release')
-		debug = false;
-	else if (debug === 'debug')
-		debug = true;
+	if (typeof(debug) === 'string') {
+		switch (debug.toLowerCase().replace(/\.|\s/g, '-')) {
+			case 'release':
+			case 'production':
+				break;
+
+			case 'debug':
+			case 'develop':
+			case 'development':
+				debug = true;
+				break;
+
+			case 'test-debug':
+			case 'debug-test':
+			case 'testing-debug':
+				debug = true;
+				F.isTest = true;
+				break;
+
+			case 'test':
+			case 'testing':
+			case 'test-release':
+			case 'release-test':
+			case 'testing-release':
+			case 'test-production':
+			case 'testing-production':
+				debug = false;
+				F.isTest = true;
+				break;
+		}
+	}
 
 	F.isWorker = true;
 	F.config.debug = debug;
@@ -6503,11 +6534,17 @@ global.LOAD = F.load = function(debug, types, pwd) {
 					F.removeAllListeners('load');
 					F.removeAllListeners('ready');
 
-					// clear unnecessary items
-					delete F.tests;
-					delete F.test;
-					delete F.testing;
-					delete F.assert;
+					if (F.isTest) {
+						F.console();
+						F.test();
+						return F;
+					}
+
+					setTimeout(function() {
+						if (!F.isTest)
+							delete F.test;
+					}, 5000);
+
 				}, 500);
 
 				if (F.config['allow-debug']) {
@@ -6660,17 +6697,13 @@ F.initialize = function(http, debug, options, restart) {
 
 				if (F.isTest) {
 					var sleep = options.sleep || options.delay || 1000;
-					setTimeout(() => F.test(true, options.tests || options.test), sleep);
+					setTimeout(F.test, sleep);
 					return F;
 				}
 
 				setTimeout(function() {
-					if (F.isTest)
-						return;
-					delete F.tests;
-					delete F.test;
-					delete F.testing;
-					delete F.assert;
+					if (!F.isTest)
+						delete F.test;
 				}, 5000);
 			});
 		}, true);
@@ -6879,8 +6912,10 @@ F.console = function() {
 	console.log('Date        : ' + NOW.format('yyyy-MM-dd HH:mm:ss'));
 	console.log('Mode        : ' + (F.config.debug ? 'debug' : 'release'));
 	console.log('====================================================\n');
-	console.log('{2}://{0}:{1}/'.format(F.ip, F.port, F.isHTTPS ? 'https' : 'http'));
-	console.log('');
+	if (!F.isWorker) {
+		console.log('{2}://{0}:{1}/'.format(F.ip, F.port, F.isHTTPS ? 'https' : 'http'));
+		console.log('');
+	}
 };
 
 F.usagesnapshot = function(filename) {
