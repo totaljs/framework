@@ -1,4 +1,4 @@
-// Copyright 2012-2018 (c) Peter Širka <petersirka@gmail.com>
+// Copyright 2018 (c) Peter Širka <petersirka@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the
@@ -326,7 +326,6 @@ NoSQLStream.prototype.writehelpers = function() {
 				beg = 0;
 
 			self.buffer = Buffer.concat(self.cache);
-
 		} else
 			self.buffer = chunk;
 
@@ -566,6 +565,12 @@ NoSQLStream.prototype.read = function() {
 
 	if (!self.fd || size <= 0 || self.canceled) {
 
+		if (self.buffer.length && !self.canceled) {
+			self.cb_readbuffer(null, 1, NEWLINEBUFFER);
+			self.buffer = framework_utils.createBufferSize(0);
+			return;
+		}
+
 		if (self.docscount) {
 			self.ondocuments();
 			self.docscount = 0;
@@ -590,13 +595,23 @@ NoSQLStream.prototype.readreverse = function() {
 
 NoSQLStream.prototype.readreverse2 = function() {
 	var self = this;
+
 	if (!self.fd || self.position <= 0 || self.canceled) {
+
+		if (self.buffer.length && !self.canceled) {
+			self.cb_readreversebuffer(null, 1, NEWLINEBUFFER);
+			self.buffer = framework_utils.createBufferSize(0);
+			return;
+		}
+
 		if (self.docscount) {
 			self.ondocuments();
 			self.docs = '';
 			self.docscount = 0;
 		}
+
 		self.close();
+
 	} else {
 		var size = self.stats.size - self.bytesread;
 		size = size < BUFFERSIZE ? size : BUFFERSIZE;
@@ -607,9 +622,18 @@ NoSQLStream.prototype.readreverse2 = function() {
 };
 
 NoSQLStream.prototype.readupdate = function() {
+
 	var self = this;
 	var size = self.stats.size - self.position;
+
 	if (!self.fd || size <= 0 || self.canceled) {
+
+		if (self.buffer.length && !self.canceled) {
+			self.positionappend++;
+			self.cb_readwritebuffer(null, 1, NEWLINEBUFFER);
+			self.buffer = framework_utils.createBufferSize(0);
+			return;
+		}
 
 		if (self.docsbuffer.length) {
 			self.ondocuments();
