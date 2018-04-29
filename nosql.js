@@ -4590,22 +4590,29 @@ Binary.prototype.removeAllListeners = function(name) {
 	return this;
 };
 
-Binary.prototype.insert = function(name, buffer, callback) {
+Binary.prototype.insert = function(name, buffer, custom, callback) {
 
 	var self = this;
 	var type = framework_utils.getContentType(framework_utils.getExtension(name));
-	var isfn = typeof(buffer) === 'function';
 
-	if (isfn || !buffer) {
-
-		if (isfn) {
+	if (buffer && !(buffer instanceof Buffer)) {
+		if (typeof(buffer) === 'function') {
 			callback = buffer;
-			buffer = undefined;
+			buffer = custom = null;
+		} else {
+			callback = custom;
+			custom = buffer;
+			buffer = null;
 		}
+	} else if (typeof(custom) === 'function') {
+		callback = custom;
+		custom = null;
+	}
 
+	if (!buffer) {
 		var reader = Fs.createReadStream(name);
 		CLEANUP(reader);
-		return self.insertstream(null, framework_utils.getName(name), type, reader, callback);
+		return self.insertstream(null, framework_utils.getName(name), type, reader, callback, custom);
 	}
 
 	if (typeof(buffer) === 'string')
@@ -4633,11 +4640,20 @@ Binary.prototype.insert = function(name, buffer, callback) {
 			break;
 	}
 
-	if (!dimension)
-		dimension = { width: 0, height: 0 };
-
 	var time = NOW.format('yyyyMMdd');
-	var h = { name: name, size: size, type: type, width: dimension.width, height: dimension.height, date: time };
+	var h = { name: name, size: size, type: type, date: time };
+
+	if (custom)
+		h.custom = custom;
+
+	if (dimension) {
+		if (dimension.width)
+			h.width = dimension.width;
+
+		if (dimension.height)
+			h.height = dimension.height;
+	}
+
 	var header = framework_utils.createBufferSize(BINARY_HEADER_LENGTH);
 	header.fill(' ');
 	header.write(JSON.stringify(h));
@@ -4671,11 +4687,15 @@ Binary.prototype.insert = function(name, buffer, callback) {
 	return id;
 };
 
-Binary.prototype.insertstream = function(id, name, type, stream, callback) {
+Binary.prototype.insertstream = function(id, name, type, stream, callback, custom) {
 
 	var self = this;
 	var time = NOW.format('yyyyMMdd');
-	var h = { name: name, size: 0, type: type, width: 0, height: 0, date: time };
+	var h = { name: name, size: 0, type: type, date: time };
+
+	if (custom)
+		h.custom = custom;
+
 	var header = framework_utils.createBufferSize(BINARY_HEADER_LENGTH);
 
 	header.fill(' ');
@@ -4747,8 +4767,10 @@ Binary.prototype.insertstream = function(id, name, type, stream, callback) {
 	CLEANUP(writer, function() {
 
 		if (dimension) {
-			h.width = dimension.width;
-			h.height = dimension.height;
+			if (dimension.width)
+				h.width = dimension.width;
+			if (dimension.height)
+				h.height = dimension.height;
 		}
 
 		h.size = writer.bytesWritten;
@@ -4769,13 +4791,27 @@ Binary.prototype.insertstream = function(id, name, type, stream, callback) {
 	return cacheid || id;
 };
 
-Binary.prototype.update = function(id, name, buffer, callback) {
+Binary.prototype.update = function(id, name, buffer, custom, callback) {
 
 	var type = framework_utils.getContentType(framework_utils.getExtension(name));
 	var self = this;
 	var isfn = typeof(buffer) === 'function';
 
-	if (isfn || !buffer) {
+	if (buffer && !(buffer instanceof Buffer)) {
+		if (typeof(buffer) === 'function') {
+			callback = buffer;
+			buffer = custom = null;
+		} else {
+			callback = custom;
+			custom = buffer;
+			buffer = null;
+		}
+	} else if (typeof(custom) === 'function') {
+		callback = custom;
+		custom = null;
+	}
+
+	if (!buffer) {
 
 		if (isfn) {
 			callback = buffer;
@@ -4784,7 +4820,7 @@ Binary.prototype.update = function(id, name, buffer, callback) {
 
 		var reader = Fs.createReadStream(name);
 		CLEANUP(reader);
-		return self.insertstream(id, framework_utils.getName(name), type, reader, callback);
+		return self.insertstream(id, framework_utils.getName(name), type, reader, callback, custom);
 	}
 
 	if (typeof(buffer) === 'string')
@@ -4836,10 +4872,19 @@ Binary.prototype.update = function(id, name, buffer, callback) {
 			break;
 	}
 
-	if (!dimension)
-		dimension = { width: 0, height: 0 };
+	var h = { name: name, size: size, type: type, date: time };
 
-	var h = { name: name, size: size, type: type, width: dimension.width, height: dimension.height, date: time };
+	if (custom)
+		h.custom = custom;
+
+	if (dimension) {
+		if (dimension.width)
+			h.width = dimension.width;
+
+		if (dimension.height)
+			h.height = dimension.height;
+	}
+
 	var header = framework_utils.createBufferSize(BINARY_HEADER_LENGTH);
 
 	header.fill(' ');
