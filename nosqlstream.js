@@ -565,7 +565,7 @@ NoSQLStream.prototype.read = function() {
 
 	if (!self.fd || size <= 0 || self.canceled) {
 
-		if (self.buffer.length && !self.canceled) {
+		if (!self.canceled && self.buffer && self.buffer.length) {
 			self.cb_readbuffer(null, 1, NEWLINEBUFFER);
 			self.buffer = framework_utils.createBufferSize(0);
 			return;
@@ -598,7 +598,7 @@ NoSQLStream.prototype.readreverse2 = function() {
 
 	if (!self.fd || self.position <= 0 || self.canceled) {
 
-		if (self.buffer.length && !self.canceled) {
+		if (!self.canceled && self.buffer && self.buffer.length) {
 			self.cb_readreversebuffer(null, 1, NEWLINEBUFFER);
 			self.buffer = framework_utils.createBufferSize(0);
 			return;
@@ -628,7 +628,7 @@ NoSQLStream.prototype.readupdate = function() {
 
 	if (!self.fd || size <= 0 || self.canceled) {
 
-		if (self.buffer.length && !self.canceled) {
+		if (!self.canceled && self.buffer && self.buffer.length) {
 			self.positionappend++;
 			self.cb_readwritebuffer(null, 1, NEWLINEBUFFER);
 			self.buffer = framework_utils.createBufferSize(0);
