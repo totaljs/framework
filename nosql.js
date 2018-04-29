@@ -288,8 +288,11 @@ exports.worker = function() {
 			builder.callback(function(err, d) {
 				if (d)
 					callback && callback(null, 0);
-				else
-					self.insert(doc).callback(callback);
+				else {
+					var tmp = self.insert(doc);
+					tmp.callback(callback);
+					tmp.$options.log = builder.$options.log;
+				}
 			});
 
 			builder.callback = function(fn) {
@@ -1461,7 +1464,9 @@ Database.prototype.$update = function() {
 			var item = filter[i];
 			if (item.insert && !item.count) {
 				item.builder.$insertcallback && item.builder.$insertcallback(item.insert);
-				self.insert(item.insert).$callback = item.builder.$callback;
+				var tmp = self.insert(item.insert);
+				tmp.$callback = item.builder.$callback;
+				tmp.$options.log = item.builder.$options.log;
 			} else {
 				item.builder.$options.log && item.builder.log();
 				item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count, item.filter.repository);
@@ -1553,7 +1558,9 @@ Database.prototype.$update_inmemory = function() {
 			var item = filter[i];
 			if (item.insert && !item.count) {
 				item.builder.$insertcallback && item.builder.$insertcallback(item.insert);
-				self.insert(item.insert).$callback = item.builder.$callback;
+				var tmp = self.insert(item.insert);
+				tmp.$callback = item.builder.$callback;
+				tmp.$options.log = item.builder.$options.log;
 			} else {
 				var e = item.keys ? 'modify' : 'update';
 				item.count && self.$events[e] && self.emit(e, item.doc);
