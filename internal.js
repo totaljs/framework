@@ -1243,10 +1243,11 @@ function minify_javascript(data) {
 	return output.join('').trim();
 }
 
-exports.compile_css = function(value, filename) {
+exports.compile_css = function(value, filename, nomarkup) {
 
 	// Internal markup
-	value = markup(value);
+	if (!nomarkup)
+		value = markup(value);
 
 	if (global.F) {
 		value = modificators(value, filename, 'style');
@@ -1271,10 +1272,11 @@ exports.compile_css = function(value, filename) {
 	}
 };
 
-exports.compile_javascript = function(source, filename) {
+exports.compile_javascript = function(source, filename, nomarkup) {
 
 	// Internal markup
-	source = markup(source);
+	if (!nomarkup)
+		source = markup(source);
 
 	if (global.F) {
 		source = modificators(source, filename, 'script');
@@ -1722,10 +1724,10 @@ function view_parse(content, minify, filename, controller) {
 	}).trim();
 
 	if (!nocompressJS)
-		content = compressJS(content, 0, filename);
+		content = compressJS(content, 0, filename, true);
 
 	if (!nocompressCSS)
-		content = compressCSS(content, 0, filename);
+		content = compressCSS(content, 0, filename, true);
 
 	content = F.$versionprepare(content);
 
@@ -2524,7 +2526,7 @@ function compressView(html, minify) {
  * @param  {Number} index Last index.
  * @return {String}
  */
-function compressJS(html, index, filename) {
+function compressJS(html, index, filename, nomarkup) {
 
 	if (!F.config['allow-compile-script'])
 		return html;
@@ -2550,12 +2552,12 @@ function compressJS(html, index, filename) {
 		return html;
 
 	var val = js.substring(strFrom.length, js.length - strTo.length).trim();
-	var compiled = exports.compile_javascript(val, filename);
+	var compiled = exports.compile_javascript(val, filename, nomarkup);
 	html = html.replacer(js, strFrom + compiled.trim() + strTo.trim());
-	return compressJS(html, indexBeg + compiled.length + 9, filename);
+	return compressJS(html, indexBeg + compiled.length + 9, filename, nomarkup);
 }
 
-function compressCSS(html, index, filename) {
+function compressCSS(html, index, filename, nomarkup) {
 
 	if (!F.config['allow-compile-style'])
 		return html;
@@ -2577,9 +2579,9 @@ function compressCSS(html, index, filename) {
 
 	var css = html.substring(indexBeg, indexEnd + strTo.length);
 	var val = css.substring(strFrom.length, css.length - strTo.length).trim();
-	var compiled = exports.compile_css(val, filename);
+	var compiled = exports.compile_css(val, filename, nomarkup);
 	html = html.replacer(css, (strFrom + compiled.trim() + strTo).trim());
-	return compressCSS(html, indexBeg + compiled.length + 8, filename);
+	return compressCSS(html, indexBeg + compiled.length + 8, filename, nomarkup);
 }
 
 function variablesCSS(content) {
