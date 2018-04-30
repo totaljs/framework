@@ -3077,7 +3077,7 @@ global.LOCALIZE = F.localize = function(url, flags, minify) {
 			if (err)
 				return res.throw404();
 
-			content = F.translator(req.$language, framework_internal.modificators(content.toString(ENCODING), filename, 'static'));
+			content = framework_internal.markup(F.translator(req.$language, framework_internal.modificators(content.toString(ENCODING), filename, 'static')));
 
 			Fs.lstat(filename, function(err, stats) {
 

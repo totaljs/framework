@@ -1245,6 +1245,9 @@ function minify_javascript(data) {
 
 exports.compile_css = function(value, filename) {
 
+	// Internal markup
+	value = markup(value);
+
 	if (global.F) {
 		value = modificators(value, filename, 'style');
 		if (F.onCompileStyle)
@@ -1255,10 +1258,7 @@ exports.compile_css = function(value, filename) {
 
 		var isVariable = false;
 
-		value = nested(value, '', function() {
-			isVariable = true;
-		});
-
+		value = nested(value, '', () => isVariable = true);
 		value = compile_autovendor(value);
 
 		if (isVariable)
@@ -1266,12 +1266,15 @@ exports.compile_css = function(value, filename) {
 
 		return value;
 	} catch (ex) {
-		F.error(new Error('CSS compiler exception: ' + ex.message));
+		F.error(new Error('CSS compiler error: ' + ex.message));
 		return '';
 	}
 };
 
 exports.compile_javascript = function(source, filename) {
+
+	// Internal markup
+	source = markup(source);
 
 	if (global.F) {
 		source = modificators(source, filename, 'script');
@@ -1973,7 +1976,7 @@ function view_parse(content, minify, filename, controller) {
 					}
 				} catch (e) {
 
-					console.log('VIEW EXCEPTION --->', filename, e, tmp);
+					console.log('A view compilation error --->', filename, e, tmp);
 					F.errors.push({ error: e.stack, name: filename, url: null, date: new Date() });
 
 					if (view_parse_plus(builder))
@@ -2301,7 +2304,7 @@ function view_prepare(command, dynamicCommand, functions, controller) {
 		case 'hidden':
 		case 'textarea':
 		case 'password':
-			return 'self.$' + exports.appendModel(command);
+			return 'self.$' + appendModel(command);
 
 		default:
 			return F.helpers[name] ? ('helpers.' + view_insert_call(command)) : ('$STRING(' + (functions.indexOf(name) === -1 ? command[0] === '!' ? command.substring(1) + ')' : command + ').encode()' : command + ')'));
@@ -2387,7 +2390,7 @@ function view_is_assign(value) {
 	return false;
 }
 
-function view_find_command(content, index) {
+function view_find_command(content, index, entire) {
 
 	index = content.indexOf('@{', index);
 	if (index === -1)
@@ -2417,12 +2420,12 @@ function view_find_command(content, index) {
 		if (command[0] === '{')
 			return view_find_command(content, index + 1);
 
-		return {
-			beg: index,
-			end: i,
-			line: view_line_counter(content.substr(0, index)),
-			command: command
-		};
+		var obj = { beg: index, end: i, line: view_line_counter(content.substr(0, index)), command: command };
+
+		if (entire)
+			obj.phrase = content.substring(index, i + 1);
+
+		return obj;
 	}
 
 	return null;
@@ -3022,13 +3025,13 @@ function viewengine_dynamic(content, language, controller, cachekey) {
 	return generator;
 }
 
-exports.appendModel = function(str) {
+function appendModel(str) {
 	var index = str.indexOf('(');
 	if (index === -1)
 		return str;
 	var end = str.substring(index + 1);
 	return str.substring(0, index) + '(model' + (end[0] === ')' ? end : ',' + end);
-};
+}
 
 function cleanURL(url, index) {
 	var o = url.substring(0, index);
@@ -3287,6 +3290,43 @@ exports.restart = function() {
 	INDEXFILE = 0;
 };
 
+function markup(body) {
+	var command = view_find_command(body, 0, true);
+	if (!command)
+		return body;
+
+	var G = F.global;
+	var config = F.config;
+	var resource = F.resource;
+	var r = [];
+
+	while (command) {
+		var cmd = command.command;
+
+		switch (cmd) {
+			case 'author':
+				cmd = 'F.config.author';
+				break;
+			case 'root':
+				cmd = 'F.config[\'default-root\']';
+				break;
+		}
+
+		try {
+			r.push({ cmd: command.phrase, value: eval('(' + cmd + ')') });
+		} catch (e) {
+			console.log('A markup compilation error -->', cmd, e);
+		}
+
+		command = view_find_command(body, command.end, true);
+	}
+
+	for (var i = 0; i < r.length; i++)
+		body = body.replace(r[i].cmd, r[i].value);
+
+	return body;
+}
+
 global.HttpFile = HttpFile;
 exports.HttpFile = HttpFile;
 exports.viewEngineCompile = viewengine_dynamic;
@@ -3296,3 +3336,4 @@ exports.findLocalization = view_find_localization;
 exports.destroyStream = destroyStream;
 exports.onFinished = onFinished;
 exports.modificators = modificators;
+exports.markup = markup;
