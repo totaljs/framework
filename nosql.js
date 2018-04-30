@@ -60,6 +60,8 @@ const FLAGS_READ = ['get'];
 const COUNTER_MMA = [0, 0];
 const REGNUMBER = /^\d+$/;
 const REGINDEXCHAR = /[a-z]{1,2}/;
+const REGBOOL = /":true/; // for updates of boolean types
+const JSONBOOL = '":true ';
 const DIRECTORYLENGTH = 9;
 const IMAGES = { gif: 1, jpg: 1, jpeg: 1, png: 1, svg: 1 };
 const BINARYREADDATA = { start: BINARY_HEADER_LENGTH };
@@ -715,7 +717,7 @@ Database.prototype.insert = function(doc, unique) {
 
 	builder = new DatabaseBuilder2(self);
 	var json = framework_builders.isSchema(doc) ? doc.$clean() : doc;
-	self.pending_append.push({ doc: JSON.stringify(json), raw: doc, builder: builder });
+	self.pending_append.push({ doc: JSON.stringify(json).replace(REGBOOL, JSONBOOL), raw: doc, builder: builder });
 	setImmediate(next_operation, self, 1);
 	self.$events.insert && self.emit('insert', json);
 	return builder;
@@ -1201,7 +1203,7 @@ Database.prototype.$save = function(view) {
 		var data = self.inmemory[view] || EMPTYARRAY;
 		var builder = [];
 		for (var i = 0, length = data.length; i < length; i++)
-			builder.push(JSON.stringify(data[i]));
+			builder.push(JSON.stringify(data[i]).replace(REGBOOL, JSONBOOL));
 
 		var filename = self.filename;
 		if (view !== '#')
@@ -1429,7 +1431,7 @@ Database.prototype.$update = function() {
 					}
 				}
 
-				var upd = JSON.stringify(doc);
+				var upd = JSON.stringify(doc).replace(REGBOOL, JSONBOOL);
 				if (upd === rec.doc)
 					continue;
 
@@ -2331,7 +2333,7 @@ Database.prototype.$views = function() {
 				item.response.limit(20, function(items, next) {
 					var builder = [];
 					for (var i = 0, length = items.length; i < length; i++)
-						builder.push(JSON.stringify(items[i]));
+						builder.push(JSON.stringify(items[i]).replace(REGBOOL, JSONBOOL));
 					Fs.appendFile(filename, builder.join(NEWLINE) + NEWLINE, next);
 				}, function() {
 					// clears in-memory
