@@ -2850,14 +2850,18 @@ DatabaseBuilder.prototype.$callbackjoin = function(callback) {
 
 				})(unique[i]);
 			}
-
 		} else {
-			join.builder.$options.fields && join.builder.$options.fields.push(join.a);
-			join.builder.$callback = function(err, docs) {
-				join.items = docs;
+			if (unique.length) {
+				join.builder.$options.fields && join.builder.$options.fields.push(join.a);
+				join.builder.$callback = function(err, docs) {
+					join.items = docs;
+					next();
+				};
+				db.find(join.view, join.builder).in(join.a, unique);
+			} else {
+				join.items = join.builder.$options.first ? null : EMPTYARRAY;
 				next();
-			};
-			db.find(join.view, join.builder).in(join.a, unique);
+			}
 		}
 
 	}, callback);
