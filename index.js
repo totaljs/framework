@@ -9833,6 +9833,10 @@ Controller.prototype = {
 		return this.route.options;
 	},
 
+	get split() {
+		return this.req.split;
+	},
+
 	get flags() {
 		return this.route.flags;
 	},

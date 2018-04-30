@@ -56,6 +56,7 @@
 - added: NoSQL binary supports `custom` small data attributes
 - added: `@{root}` for getting sub-root path
 - added: CSS and JS supports a simple View Engine markup (config + resources + F.global)
+- added: `controller.split` alias to `controller.req.split`
 
 - updated: (IMPORTANT) NoSQL binary divides files to independent directories for 1000 files per directory
 - updated: `GROUP()` by adding a new argument `url_prefix`
