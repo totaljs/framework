@@ -1917,7 +1917,7 @@ function view_parse(content, minify, filename, controller) {
 
 			} else {
 				counter--;
-				builder += '}return $output;})()';
+				builder += '}return $output})()';
 				newCommand = '';
 			}
 
@@ -2080,6 +2080,10 @@ function view_prepare(command, dynamicCommand, functions, controller) {
 			return '$STRING(' + command + ')';
 		case '!isomorphic':
 			return '$STRING(' + command + ')';
+
+		case 'root':
+			var r = F.config['default-root'];
+			return '\'' + (r ? r.substring(0, r.length - 1) : r) + '\'';
 
 		case 'M':
 		case 'R':
