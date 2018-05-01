@@ -2761,16 +2761,9 @@ function DatabaseBuilder(db) {
 	this.$take = 0;
 	this.$skip = 0;
 	this.$filter = [];
-	// this.$sort;
 	this.$first = false;
 	this.$scope = 0;
-	// this.$fields;
-	// this.$join;
 	this.$callback = NOOP;
-	// this.$scalar;
-	// this.$scalarfield;
-	// this.$done; --> internal for indexes
-
 	this.$code = [];
 	this.$params = {};
 	this.$options = {};
@@ -3296,7 +3289,7 @@ DatabaseBuilder.prototype.repository = function(key, value) {
 DatabaseBuilder.prototype.compile = function() {
 	var self = this;
 	var raw = self.$code.join('');
-	var code = 'var repository=$F.repository;var options=$F.options;var arg=$F.arg;var fn=$F.fn;var $is=false;var $tmp;' + raw + (self.$code.length && raw.substring(raw.length - 7) !== 'return;' ? 'if(!$is)return;' : '') + 'if(!options.fields)return doc;var $doc={};for(var $i=0;$i<options.fields.length;$i++){var prop=options.fields[$i];$doc[prop]=doc[prop]}if(options.sort)$doc[options.sort.name]=doc[options.sort.name];return $doc;';
+	var code = 'var repository=$F.repository;var options=$F.options;var arg=$F.arg;var fn=$F.fn;var $is=false;var $tmp;' + raw + (self.$code.length && raw.substring(raw.length - 7) !== 'return;' ? 'if(!$is)return;' : '') + 'if(options.fields){var $doc={};for(var $i=0;$i<options.fields.length;$i++){var prop=options.fields[$i];$doc[prop]=doc[prop]}if(options.sort)$doc[options.sort.name]=doc[options.sort.name];return $doc}else if(options.fields2){var $doc={};var $keys=Object.keys(doc);for(var $i=0;$i<$keys.length;$i++){var prop=$keys[$i];!options.fields2[prop]&&($doc[prop]=doc[prop])}return $doc}else{return doc}';
 	var opt = self.$options;
 	self.$inlinesort = !!(opt.take && opt.sort && opt.sort !== null);
 	self.$limit = (opt.take || 0) + (opt.skip || 0);
@@ -3376,10 +3369,16 @@ DatabaseBuilder.prototype.cache = function() {
 DatabaseBuilder.prototype.fields = function() {
 	var self = this;
 	var opt = self.$options;
-	if (!opt.fields)
-		opt.fields = [];
-	for (var i = 0, length = arguments.length; i < length; i++)
-		opt.fields.push(arguments[i]);
+	for (var i = 0, length = arguments.length; i < length; i++) {
+		var name = arguments[i];
+		if (name[0] === '-') {
+			!opt.fields2 && (opt.fields2 = {});
+			opt.fields2[name.substring(1)] = 1;
+		} else {
+			!opt.fields && (opt.fields = []);
+			opt.fields.push(name);
+		}
+	}
 	return self;
 };
 
@@ -3651,7 +3650,7 @@ Counter.prototype.yearly = Counter.prototype.yearly_sum = function(id, callback)
 	return this.read(options, callback);
 };
 
-Counter.prototype.monthly= Counter.prototype.monthly_sum = function(id, callback) {
+Counter.prototype.monthly = Counter.prototype.monthly_sum = function(id, callback) {
 
 	if (typeof(id) === 'function') {
 		callback = id;
