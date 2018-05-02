@@ -1146,11 +1146,12 @@ function minify_javascript(data) {
 	var alpha = /[0-9a-z$]/i;
 	var white = /\W/;
 	var skip = { '$': true, '_': true };
+	var newlines = { '\n': 1, '\r': 1 };
 	var regexp = false;
-	var scope;
-	var prev;
-	var next;
-	var last;
+	var scope, prev, next, last;
+	var vtmp = false;
+	var regvar = /^(\s)*var /;
+	var vindex = 0;
 
 	while (true) {
 
@@ -1181,7 +1182,7 @@ function minify_javascript(data) {
 				if (c === '/' && next === '/') {
 					isCI = true;
 					continue;
-				} else if (isCI && (c === '\n' || c === '\r')) {
+				} else if (isCI && newlines[c]) {
 					isCI = false;
 					alpha.test(last) && output.push(' ');
 					last = '';
@@ -1192,7 +1193,7 @@ function minify_javascript(data) {
 					continue;
 			}
 
-			if (c === '\t' || c === '\n' || c === '\r') {
+			if (c === '\t' || newlines[c]) {
 				if (!last || !alpha.test(last))
 					continue;
 				output.push(' ');
@@ -1201,8 +1202,11 @@ function minify_javascript(data) {
 			}
 
 			if (!regexp && (c === ' ' && (white.test(prev) || white.test(next)))) {
-				if (!skip[prev] && !skip[next])
-					continue;
+				// if (!skip[prev] && !skip[next])
+				if (!skip[prev]) {
+					if (!skip[next] || !alpha.test(prev))
+						continue;
+				}
 			}
 
 			if (regexp) {
@@ -1231,6 +1235,36 @@ function minify_javascript(data) {
 				scope = 0;
 			else
 				scope = c;
+		}
+
+		// var
+		if (!scope && c === 'v' && next === 'a') {
+			var v = c + data[index] + data[index + 1] + data[index + 2];
+			if (v === 'var ') {
+				if (vtmp && output[output.length - 1] === ';') {
+					output.pop();
+					output.push(',');
+				} else
+					output.push('var ');
+				index += 3;
+				vtmp = true;
+				continue;
+			}
+		} else {
+			if (vtmp) {
+
+
+				vindex = index + 1;
+
+				while (true) {
+					if (!data[vindex] || !white.test(data[vindex]))
+						break;
+					vindex++;
+				}
+
+				if (c === '(' || c === ')' || (c === ';' && !regvar.test(data.substring(vindex, vindex + 20))))
+					vtmp = false;
+			}
 		}
 
 		if ((c === '}' && last === ';') || ((c === '}' || c === ']') && output[output.length - 1] === ' ' && alpha.test(output[output.length - 2])))
