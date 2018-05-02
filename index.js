@@ -8788,8 +8788,14 @@ F.$configure_configs = function(arr, rewrite) {
 					obj[name] = value.parseDate();
 				else if (subtype === 'env' || subtype === 'environment')
 					obj[name] = process.env[value];
-				else
-					obj[name] = value.isNumber() ? U.parseInt(value) : value.isNumber(true) ? U.parseFloat(value) : value.isBoolean() ? value.toLowerCase() === 'true' : value;
+				else {
+					if (value.isNumber()) {
+						obj[name] = value[0] !== '0' ? U.parseInt(value) : value;
+					} else if (value.isNumber(true))
+						obj[name] = value.indexOf(',') === -1 && !(/^0{2,}/).test(value) ? U.parseFloat(value) : value;
+					else
+						obj[name] = value.isBoolean() ? value.toLowerCase() === 'true' : value;
+				}
 				break;
 		}
 	}
