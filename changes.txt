@@ -73,6 +73,7 @@
 - updated: `String.parseConfig(def, [onError])` can handle errors better
 - updated: `middleware`, now Total.js supports new declaration `F.middleware(function($) {})`
 - updated: `F.wait()` HTML template
+- updated: JavaScript compressor, now optimizes multiple `var` declarations
 
 - fixed: mail attachments
 - fixed: mail `message.manually()`
