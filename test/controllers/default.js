@@ -549,8 +549,8 @@ function viewViews() {
 	assert.ok(output.contains('<div>4</div><div>4</div><div>FOREACH</div>'), name + 'foreach');
 	assert.ok(output.contains('<div>3</div><div>3</div><div></div><div>C:10</div><div>C:11</div><div>C:12</div>'), name + 'foreach - nested');
 	assert.ok(output.contains('<INLINE>5</INLINE>'), name + 'Inline assign value');
-	assert.ok(output.contains('var d="$\'"'), name + 'JS script special chars 1');
-	assert.ok(output.contains("var e='$\\'';"), name + "JS script special chars 2");
+	assert.ok(output.contains(',d="$\'"'), name + 'JS script special chars 1');
+	assert.ok(output.contains(",e='$\\'',"), name + "JS script special chars 2");
 	assert.ok(output.contains('<script type="text/template"><textarea>\na</textarea>a</script>') || output.contains('<script type="text/template"><textarea>\r\na</textarea>a</script>'), name + ' minify html');
 	assert.ok(output.contains('#tag-encode&lt;b&gt;A&lt;/b&gt;#'), name + 'encode value');
 	assert.ok(output.contains('#tag-raw<b>A</b>#'), name + 'raw value');

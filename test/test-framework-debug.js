@@ -79,7 +79,6 @@ function test_view_functions(next) {
 
 		if (error)
 			assert.ok(false, 'test_view_functions: ' + error.toString());
-
 		assert.ok(data === '{"r":true}', 'json');
 		next();
 	});
@@ -754,7 +753,7 @@ function test_routing(next) {
 		utils.request(url + 'merge-blocks-a.js', [], function(error, data, code, headers) {
 			if (error)
 				throw error;
-			assert(data.indexOf('var common=true;var a=true;') !== -1, 'merge blocks - A');
+			assert(data.indexOf('var common=true,a=true;') !== -1, 'merge blocks - A');
 			complete();
 		});
 	});
@@ -763,7 +762,7 @@ function test_routing(next) {
 		utils.request(url + 'merge-blocks-b.js', [], function(error, data, code, headers) {
 			if (error)
 				throw error;
-			assert(data.indexOf('var common=true;var b=true;') !== -1, 'merge blocks - B');
+			assert(data.indexOf('var common=true,b=true;') !== -1, 'merge blocks - B');
 			complete();
 		});
 	});
@@ -772,7 +771,7 @@ function test_routing(next) {
 		utils.request(url + 'blocks-a.js', [], function(error, data, code, headers) {
 			if (error)
 				throw error;
-			assert(data.indexOf('var common=true;var a=true;') !== -1, 'mapping blocks - A');
+			assert(data.indexOf('var common=true,a=true;') !== -1, 'mapping blocks - A');
 			complete();
 		});
 	});
@@ -781,7 +780,7 @@ function test_routing(next) {
 		utils.request(url + 'blocks-b.js', [], function(error, data, code, headers) {
 			if (error)
 				throw error;
-			assert(data.indexOf('var common=true;var b=true;') !== -1, 'mapping blocks - B');
+			assert(data.indexOf('var common=true,b=true;') !== -1, 'mapping blocks - B');
 			complete();
 		});
 	});
@@ -790,7 +789,7 @@ function test_routing(next) {
 		utils.request(url + 'blocks-c.js', [], function(error, data, code, headers) {
 			if (error)
 				throw error;
-			assert(data.indexOf('var common=true;var a=true;var b=true;') !== -1, 'mapping blocks - C');
+			assert(data.indexOf('var common=true,a=true,b=true;') !== -1, 'mapping blocks - C');
 			complete();
 		});
 	});
