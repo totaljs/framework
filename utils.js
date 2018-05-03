@@ -2096,7 +2096,21 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 
 		if (TYPE.type === 7) {
 			// Another schema
-			exports.validate_builder(value, error, TYPE.raw, collection, current + name, undefined, undefined, pluspath);
+			result = TYPE.validate ? TYPE.validate(value, model) : null;
+			if (result == null)
+				exports.validate_builder(value, error, TYPE.raw, collection, current + name, undefined, undefined, pluspath);
+			else {
+				type = typeof(result);
+				if (type === 'string') {
+					if (result[0] === '@')
+						error.push(pluspath + name, '@', current + name, index, entity.resourcePrefix + result.substring(1));
+					else
+						error.push(pluspath + name, result, current + name, index, prefix);
+				} else if (type === 'boolean') {
+					!result && error.push(pluspath + name, '@', current + name, index, prefix);
+				} else if (result.isValid === false)
+					error.push(pluspath + name, result.error, current + name, index, prefix);
+			}
 			continue;
 		}
 
