@@ -16135,6 +16135,10 @@ function $decodeURIComponent(value) {
 
 global.Controller = Controller;
 
+process.on('unhandledRejection', function(e) {
+	F.error(e, '', null);
+});
+
 process.on('uncaughtException', function(e) {
 
 	var err = e.toString();
