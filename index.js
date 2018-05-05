@@ -91,6 +91,7 @@ const CLUSTER_CACHE_REMOVEALL = { TYPE: 'cache-remove-all' };
 const CLUSTER_CACHE_CLEAR = { TYPE: 'cache-clear' };
 const GZIPFILE = { memLevel: 9 };
 const GZIPSTREAM = { memLevel: 1 };
+const MODELERROR = {};
 
 Object.freeze(EMPTYOBJECT);
 Object.freeze(EMPTYARRAY);
@@ -850,9 +851,11 @@ function Framework() {
 			error403: 0,
 			error404: 0,
 			error408: 0,
+			error409: 0,
 			error431: 0,
 			error500: 0,
-			error501: 0
+			error501: 0,
+			error503: 0
 		}
 	};
 
@@ -12319,6 +12322,15 @@ Controller.prototype.throw501 = Controller.prototype.view501 = function(problem)
 };
 
 /**
+ * Throw 501 - Not implemented
+ * @param  {String} problem Description of the problem (optional)
+ * @return {Controller}
+ */
+Controller.prototype.throw503 = Controller.prototype.view501 = function(problem) {
+	return controller_error_status(this, 503, problem);
+};
+
+/**
  * Creates a redirect
  * @param {String} url
  * @param {Boolean} permanent Is permanent? Default: `false`
@@ -14522,8 +14534,14 @@ function extend_request(PROTO) {
 				res.options.type = this.$total_exception.contentType;
 				res.$text();
 			} else {
-				res.options.body = U.httpStatus(status) + prepare_error(this.$total_exception);
-				res.options.type = CT_TEXT;
+
+				MODELERROR.code = status;
+				MODELERROR.status = U.httpStatus(status, false);
+				MODELERROR.error = this.$total_exception ? prepare_error(this.$total_exception) : null;
+
+				var path = require.resolve('./index');
+				res.options.body = F.view('.' + path.substring(0, path.length - 8) + 'error', MODELERROR);
+				res.options.type = CT_HTML;
 				res.options.code = status || 404;
 				res.$text();
 			}
