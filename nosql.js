@@ -1665,7 +1665,7 @@ Database.prototype.$reader2 = function(filename, items, callback, reader) {
 
 	for (var i = 0; i < length; i++) {
 		var fil = filter[i];
-		if (!fil.builder.$options.first)
+		if (!fil.builder.$options.first || fil.builder.$options.sort)
 			first = false;
 		fil.scalarcount = 0;
 		fil.compare = fil.builder.compile();
@@ -2557,6 +2557,7 @@ Database.prototype.$clean = function() {
 	var length = filter.length;
 	var now = Date.now();
 
+	F.databasescleaner[self.name] = undefined;
 	F.config['nosql-logger'] && PRINTLN('NoSQL embedded "{0}" cleaning (beg)'.format(self.name));
 
 	var fs = new NoSQLStream(self.filename);
@@ -4944,7 +4945,8 @@ Binary.prototype.read = function(id, callback) {
 			meta = JSON.parse(json, jsonparser);
 			callback(null, stream, meta);
 		} catch (e) {
-			F.error(e, 'nosql.binary.read', filename);
+			F.error(e, 'nosql.binary.read', filename + ' --> ' + json);
+			console.log(e, filename, json, BINARYREADDATA);
 			callback(e);
 		}
 		CLEANUP(stream);
