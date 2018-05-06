@@ -12322,11 +12322,11 @@ Controller.prototype.throw501 = Controller.prototype.view501 = function(problem)
 };
 
 /**
- * Throw 501 - Not implemented
+ * Throw 503 - Service unavailable
  * @param  {String} problem Description of the problem (optional)
  * @return {Controller}
  */
-Controller.prototype.throw503 = Controller.prototype.view501 = function(problem) {
+Controller.prototype.throw503 = Controller.prototype.view503 = function(problem) {
 	return controller_error_status(this, 503, problem);
 };
 
