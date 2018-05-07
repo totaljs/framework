@@ -1398,7 +1398,7 @@ SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourc
 	else
 		path = '';
 
-	framework_utils.validate_builder.call(self, model, builder, self.name, self.parent.collection, self.name, index, filter, path);
+	framework_utils.validate_builder.call(self, model, builder, self.name, self.parent.collection, '', index, filter, path);
 	return builder;
 };
 

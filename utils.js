@@ -2036,7 +2036,7 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 
 	var entity = collection[schema];
 	var prepare = entity.onValidate || F.onValidate || NOOP;
-	var current = path === undefined ? '' : path + '.';
+	var current = path ? path + '.' : '';
 	var properties = entity.properties;
 	var result;
 
