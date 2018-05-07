@@ -175,19 +175,6 @@ NoSQLStream.prototype.readhelpers = function() {
 				break;
 		}
 
-		if (self.position === 0 && self.buffer.length) {
-			var tmp = self.buffer.toString('utf8');
-			if (tmp[0] !== '"') {
-				self.docs += (self.docs ? self.divider : '') + tmp;
-				self.docscount++;
-				if (self.docscount >= BUFFERDOCS) {
-					self.ondocuments();
-					self.docs = '';
-					self.docscount = 0;
-				}
-			}
-		}
-
 		self.ticks++;
 
 		if (self.ticks % 5 === 0)
