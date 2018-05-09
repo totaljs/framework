@@ -16313,10 +16313,9 @@ function prepare_error(e) {
 	if (!e)
 		return '';
 	else if (e instanceof ErrorBuilder)
-		return ' :: ' + e.plain();
-	else if (e.stack)
-		return RELEASE ? '' : e.stack;
-	return RELEASE ? '' : ' :: ' + e.toString();
+		return e.plain();
+	else if (DEBUG)
+		return e.stack ? e.stack : e.toString();
 }
 
 function prepare_filename(name) {

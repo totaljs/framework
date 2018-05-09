@@ -35,7 +35,7 @@
 				<b>@{model.code}</b>
 				<div class="status">@{model.status}</div>
 				<div id="url"></div>
-				@{if model.error}<div class="error">@{model.error}</div>@{fi}
+				@{if model.error}<div class="error">@{model.error.replace(/\n/g, '<br>')}</div>@{fi}
 			</div>
 		</div>
 	</div>
