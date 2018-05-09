@@ -446,9 +446,9 @@ function test_Schema() {
 		});
 
 		schema.make({ enum_int: '5', 'keyvalue': 'luciaa', enum_string: 'Širkaa' }, function(err) {
-			assert.ok(err.items[0].path === 'EnumKeyValue.enum_int', 'Schema enums (int) 2');
-			assert.ok(err.items[1].path === 'EnumKeyValue.enum_string', 'Schema enums (string) 2');
-			assert.ok(err.items[2].path === 'EnumKeyValue.keyvalue', 'Schema keyvalue 2');
+			assert.ok(err.items[0].path === 'enum_int', 'Schema enums (int) 2');
+			assert.ok(err.items[1].path === 'enum_string', 'Schema enums (string) 2');
+			assert.ok(err.items[2].path === 'keyvalue', 'Schema keyvalue 2');
 		});
 
 	});
