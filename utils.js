@@ -467,18 +467,8 @@ global.REQUEST = exports.request = function(url, flags, data, callback, cookies,
 
 			if (flags[i][0] === 'p' && flags[i][4] === 'y') {
 				// proxy
-				proxy = {};
-
 				var p = flags[i].substring(6);
-				var index = p.indexOf('@');
-				if (index !== -1) {
-					// auth
-					var t = p.substring(0, index).split(':');
-					p.username = t[0];
-					p.password = t[1];
-					p = p.substring(index + 1);
-				}
-
+				proxy = {};
 				proxy.protocol = p.substring(0, 7);
 				if (proxy.protocol === 'http://') {
 					proxy.protocol = 'http:';
@@ -489,8 +479,16 @@ global.REQUEST = exports.request = function(url, flags, data, callback, cookies,
 				} else
 					proxy.protocol = 'http:';
 
-				index = p.lastIndexOf(':');
+				var index = p.indexOf('@');
+				if (index !== -1) {
+					// auth
+					var t = p.substring(0, index).split(':');
+					proxy.username = t[0];
+					proxy.password = t[1];
+					p = p.substring(index + 1);
+				}
 
+				index = p.lastIndexOf(':');
 				proxy.hostname = p.substring(0, index);
 				proxy.port = p.substring(index + 1);
 				proxy.method = 'CONNECT';
@@ -629,6 +627,9 @@ function request_proxy(options) {
 	var proxy = options.proxy;
 	proxy.path = options.uri.hostname;
 	proxy.headers = { host: options.uri.hostname };
+
+	if (proxy.username && proxy.password)
+		proxy.headers.authorization = 'Basic ' + U.createBuffer(proxy.username + ':' + proxy.password).toString('base64');
 
 	var req = proxy.protocol === 'http:' ? Http.request(proxy) : Https.request(proxy);
 
