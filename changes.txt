@@ -35,6 +35,7 @@
 - added: config `nosql-inmemory' can contain name of databases e.g. (`users, products`) or String Array
 - added: config `nosql-cleaner` for cleaning databases from removed documents (default: `1440` === 24 hours)
 - added: config `nosql-logger` (default `true`) enables simple logs when re-indexing and cleaning
+- added: config `security.txt` for auto-generating security.txt content (more in docs)
 - added: `NOSQLSTORAGE(name)` alias for `NOSQL(name).storage`
 - added: `NOSQLINDEXES(name)` alias for `NOSQL(name).indexes`
 - added: `GUID()` a global alias for `U.GUID()`

@@ -609,6 +609,7 @@ function Framework() {
 		author: '',
 		secret: Os.hostname() + '-' + Os.platform() + '-' + Os.arch(),
 
+		'security.txt': 'Contact: mailto:support@totaljs.com\nContact: https://www.totaljs.com/contact/',
 		'default-xpoweredby': 'Total.js',
 		'etag-version': '',
 		'directory-src': '/.src/',
@@ -8770,6 +8771,10 @@ F.$configure_configs = function(arr, rewrite) {
 				obj[name] = value;
 				break;
 
+			case 'security.txt':
+				obj[name] = value ? value.split(',').trim().join('\n') : '';
+				break;
+
 			default:
 
 				if (subtype === 'string')
@@ -15290,6 +15295,8 @@ function extend_response(PROTO) {
 		return res.$text();
 	};
 
+	const SECURITYTXT = { '/security.txt': 1, '/.well-known/security.txt': 1 };
+
 	PROTO.continue = function(callback) {
 
 		var res = this;
@@ -15303,6 +15310,11 @@ function extend_response(PROTO) {
 		if (!F.config['static-accepts'][req.extension]) {
 			res.throw404();
 			return res;
+		}
+
+		if (SECURITYTXT[req.url] && F.config['security.txt']) {
+			res.send(200, F.config['security.txt'], 'text/plain');
+			return;
 		}
 
 		req.$key = createTemporaryKey(req);
@@ -15887,18 +15899,22 @@ function extend_response(PROTO) {
 			return res;
 
 		var req = res.req;
-		res.options.problem && F.problem(res.options.problem, 'response' + res.options.code + '()', req.uri, req.ip);
-		res.writeHead(res.options.code || 501, res.options.headers || HEADERS.responseCode);
-
-		if (req.method === 'HEAD')
-			res.end();
-		else
-			res.end(res.options.body || U.httpStatus(res.options.code) + prepare_error(res.options && res.options.problem));
-
 		var key = 'error' + res.options.code;
+
+		res.options.problem && F.problem(res.options.problem, 'response' + res.options.code + '()', req.uri, req.ip);
+
+		if (req.method === 'HEAD') {
+			res.writeHead(res.options.code || 501, res.options.headers || HEADERS.responseCode);
+			res.end();
+			F.stats.response[key]++;
+			response_end(res);
+		} else {
+			req.$total_route = F.lookup(req, '#' + res.options.code, EMPTYARRAY, 0);
+			req.$total_exception = res.options.problem;
+			req.$total_execute(res.options.code, true);
+		}
+
 		F.$events[key] && F.emit(key, req, res, res.options.problem);
-		F.stats.response[key]++;
-		response_end(res);
 		return res;
 	};
 }
