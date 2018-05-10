@@ -443,6 +443,7 @@ global.REQUEST = exports.request = function(url, flags, data, callback, cookies,
 	var type = 0;
 	var isCookies = false;
 	var def;
+	var proxy;
 
 	if (headers) {
 		headers = exports.extend({}, headers);
@@ -461,6 +462,38 @@ global.REQUEST = exports.request = function(url, flags, data, callback, cookies,
 
 			if (flags[i][0] === '<') {
 				options.max = flags[i].substring(1).trim().parseInt() * 1024; // kB
+				continue;
+			}
+
+			if (flags[i][0] === 'p' && flags[i][4] === 'y') {
+				// proxy
+				proxy = {};
+
+				var p = flags[i].substring(6);
+				var index = p.indexOf('@');
+				if (index !== -1) {
+					// auth
+					var t = p.substring(0, index).split(':');
+					p.username = t[0];
+					p.password = t[1];
+					p = p.substring(index + 1);
+				}
+
+				proxy.protocol = p.substring(0, 7);
+				if (proxy.protocol === 'http://') {
+					proxy.protocol = 'http:';
+					p = p.substring(7);
+				} else if (proxy.protocol === 'https:') {
+					proxy.protocol = 'https:';
+					p = p.substring(8);
+				} else
+					proxy.protocol = 'http:';
+
+				index = p.lastIndexOf(':');
+
+				proxy.hostname = p.substring(0, index);
+				proxy.port = p.substring(index + 1);
+				proxy.method = 'CONNECT';
 				continue;
 			}
 
@@ -573,10 +606,14 @@ global.REQUEST = exports.request = function(url, flags, data, callback, cookies,
 
 	var uri = Url.parse(url);
 	uri.method = method;
-	uri.agent = false;
+	// uri.agent = false;
 	uri.headers = headers;
+	options.uri = uri;
 
-	if (options.resolve) {
+	if (proxy) {
+		options.proxy = proxy;
+		request_proxy(options);
+	} else if (options.resolve) {
 		exports.resolve(url, function(err, u) {
 			!err && (uri.host = u.host);
 			request_call(uri, options);
@@ -586,6 +623,34 @@ global.REQUEST = exports.request = function(url, flags, data, callback, cookies,
 
 	return options.evt;
 };
+
+function request_proxy(options) {
+
+	var proxy = options.proxy;
+	proxy.path = options.uri.hostname;
+	proxy.headers = { host: options.uri.hostname };
+
+	var req = proxy.protocol === 'http:' ? Http.request(proxy) : Https.request(proxy);
+
+	req.on('error', function(e) {
+		options.callback(new Error('Proxy error: ' + e.toString()), '', 0, EMPTYOBJECT, proxy.hostname, EMPTYOBJECT);
+		options.callback = null;
+	});
+
+	req.on('connect', function(res, socket) {
+		if (res.statusCode === 200) {
+			options.uri.agent = options.uri.protocol === 'http:' ? new Http.Agent() : new Https.Agent();
+			options.uri.agent.reuseSocket(socket, req);
+			options.socket = socket;
+			request_call(options.uri, options);
+		} else {
+			options.callback(new Error((res.statusMessage || 'Proxy error') + ': ' + res.statusCode), '', res.statusCode, res.headers, proxy.hostname, EMPTYOBJECT);
+			options.callback = null;
+		}
+	});
+
+	req.end();
+}
 
 function request_call(uri, options) {
 
@@ -775,6 +840,12 @@ function request_response(res, uri, options) {
 	});
 
 	res.on('end', function() {
+
+		if (options.socket) {
+			options.uri.agent.destroy();
+			options.socket.destroy();
+		}
+
 		var self = this;
 		var str = self._buffer ? self._buffer.toString(options.encoding) : '';
 		self._buffer = undefined;

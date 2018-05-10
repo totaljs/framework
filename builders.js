@@ -3968,6 +3968,11 @@ RESTBuilder.prototype.promise = function(fn) {
 	});
 };
 
+RESTBuilder.prototype.proxy = function(value) {
+	this.$proxy = value;
+	return this;
+};
+
 RESTBuilder.prototype.setTransform = function(name) {
 	this.$transform = name;
 	return this;
@@ -4276,6 +4281,7 @@ RESTBuilder.prototype.exec = function(callback) {
 		self.$persistentcookies && flags.push('cookies');
 		self.$length && flags.push('<' + self.$length);
 		self.$redirect === false && flags.push('noredirect');
+		self.$proxy && flags.push('proxy ' + self.$proxy);
 
 		if (self.$files) {
 			flags.push('upload');
