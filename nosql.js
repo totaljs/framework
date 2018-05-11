@@ -4967,26 +4967,21 @@ Binary.prototype.read = function(id, callback, count) {
 	var filename;
 
 	if (isnew) {
-		var path = self.$directory(id);
-		filename = Path.join(path, id.toString().padLeft(DIRECTORYLENGTH, '0') + EXTENSION_BINARY);
+		filename = Path.join(self.$directory(id), id.toString().padLeft(DIRECTORYLENGTH, '0') + EXTENSION_BINARY);
 	} else
 		filename = framework_utils.join(self.directory, id + EXTENSION_BINARY);
 
 	var stream = Fs.createReadStream(filename, BINARYREADMETA);
 	stream.on('error', err => callback(err));
 	stream.on('data', function(buffer) {
-
 		var json = buffer.toString('utf8').replace(REG_CLEAN, '');
-
-		if (!json) {
+		if (json) {
+			var meta = JSON.parse(json, jsonparser);
+			stream = Fs.createReadStream(filename, BINARYREADDATA);
+			callback(null, stream, meta);
+			CLEANUP(stream);
+		} else
 			setTimeout(readfileattempt, 100, self, id, callback, count || 1);
-			return;
-		}
-
-		var meta = JSON.parse(json, jsonparser);
-		stream = Fs.createReadStream(filename, BINARYREADDATA);
-		callback(null, stream, meta);
-		CLEANUP(stream);
 	});
 
 	return self;
