@@ -2798,18 +2798,23 @@ DatabaseBuilder.prototype.log = function(msg, user) {
 
 DatabaseBuilder.prototype.$callbackjoin = function(callback) {
 	var self = this;
-
 	Object.keys(self.$join).wait(function(key, next) {
+
 		var join = self.$join[key];
 		var response = self.$response;
 		var unique = [];
 
-		for (var i = 0; i < response.length; i++) {
-			var item = response[i];
-			var val = item[join.b];
-			if (val !== undefined)
-				if (unique.indexOf(val) === -1)
+		if (response instanceof Array && response.length) {
+			for (var i = 0; i < response.length; i++) {
+				var item = response[i];
+				var val = item[join.b];
+				if (val !== undefined && unique.indexOf(val) === -1)
 					unique.push(val);
+			}
+		} else if (response) {
+			var val = response[join.b];
+			if (val !== undefined && unique.indexOf(val) === -1)
+				unique.push(val);
 		}
 
 		var db = NOSQL(join.name);
@@ -2845,6 +2850,7 @@ DatabaseBuilder.prototype.$callbackjoin = function(callback) {
 				})(unique[i]);
 			}
 		} else {
+
 			if (unique.length) {
 				join.builder.$options.fields && join.builder.$options.fields.push(join.a);
 				join.builder.$callback = function(err, docs) {
@@ -2858,7 +2864,7 @@ DatabaseBuilder.prototype.$callbackjoin = function(callback) {
 			}
 		}
 
-	}, callback);
+	}, callback, 2);
 
 	return self;
 };
