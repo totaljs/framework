@@ -777,6 +777,7 @@ Database.prototype.restore = function(filename, callback) {
 					self.storage && self.storage.refresh();
 				}
 			}
+			self.$events.change && self.emit('change', 'restore');
 			callback && callback(err, response);
 		});
 
@@ -1311,6 +1312,7 @@ Database.prototype.$append = function() {
 function next_append(self) {
 	self.$writting = false;
 	self.next(0);
+	self.$events.change && self.emit('change', 'insert');
 	self.views && setImmediate(views_refresh, self);
 }
 
@@ -1355,6 +1357,7 @@ Database.prototype.$update = function() {
 	var length = filter.length;
 	var backup = false;
 	var filters = 0;
+	var change = false;
 
 	for (var i = 0; i < length; i++) {
 		var fil = filter[i];
@@ -1437,6 +1440,9 @@ Database.prototype.$update = function() {
 
 				var was = true;
 
+				if (!change)
+					change = true;
+
 				if (rec.doc.length === upd.length) {
 					var b = Buffer.byteLength(upd);
 					if (rec.length === b) {
@@ -1478,7 +1484,11 @@ Database.prototype.$update = function() {
 		fs = null;
 		self.$writting = false;
 		self.next(0);
-		self.views && setImmediate(views_refresh, self);
+
+		if (change) {
+			self.$events.change && self.emit('change', 'update');
+			self.views && setImmediate(views_refresh, self);
+		}
 	};
 
 	fs.openupdate();
@@ -1573,7 +1583,12 @@ Database.prototype.$update_inmemory = function() {
 
 		setImmediate(function() {
 			self.next(0);
-			change && self.views && setImmediate(views_refresh, self);
+
+			if (change) {
+				self.$events.change && self.emit('change', 'update');
+				self.views && setImmediate(views_refresh, self);
+			}
+
 		});
 	});
 };
@@ -2484,6 +2499,9 @@ Database.prototype.$remove = function() {
 					}
 				}
 
+				if (!change)
+					change = true;
+
 				item.count++;
 				self.$events.remove && self.emit('remove', doc);
 
@@ -2509,7 +2527,11 @@ Database.prototype.$remove = function() {
 		fs = null;
 		self.$writting = false;
 		self.next(0);
-		change && self.views && setImmediate(views_refresh, self);
+
+		if (change) {
+			self.views && setImmediate(views_refresh, self);
+			self.$events.change && self.emit('change', 'remove');
+		}
 	};
 
 	fs.openupdate();
@@ -2538,6 +2560,7 @@ Database.prototype.$clear = function() {
 			for (var i = 0; i < filter.length; i++)
 				filter[i]();
 			self.views && setImmediate(views_refresh, self);
+			self.$events.change && self.emit('change', 'clear');
 			self.next(0);
 		}
 	});
@@ -2667,7 +2690,10 @@ Database.prototype.$remove_inmemory = function() {
 		}
 
 		self.next(0);
-		change && self.views && setImmediate(views_refresh, self);
+		if (change) {
+			self.views && setImmediate(views_refresh, self);
+			self.$events.change && self.emit('change', 'remove');
+		}
 	});
 };
 
@@ -2717,6 +2743,7 @@ Database.prototype.$drop = function() {
 	remove.wait((filename, next) => Fs.unlink(filename, next), function() {
 		self.next(0);
 		self.free(true);
+		self.$events.change && self.emit('change', 'drop');
 	}, 5);
 
 	Object.keys(self.inmemory).forEach(function(key) {
@@ -4918,9 +4945,15 @@ Binary.prototype.update = function(id, name, buffer, custom, callback) {
 	return cacheid;
 };
 
-Binary.prototype.read = function(id, callback) {
+Binary.prototype.read = function(id, callback, count) {
 
 	var self = this;
+
+	if (count > 3) {
+		callback(new Error('File not found.'));
+		return self;
+	}
+
 	var isnew = false;
 
 	if (id > 0)
@@ -4943,23 +4976,25 @@ Binary.prototype.read = function(id, callback) {
 	stream.on('error', err => callback(err));
 	stream.on('data', function(buffer) {
 
-		var json = framework_utils.createBuffer(buffer, 'binary').toString('utf8').replace(REG_CLEAN, '');
-		var meta;
+		var json = buffer.toString('utf8').replace(REG_CLEAN, '');
 
-		stream = Fs.createReadStream(filename, BINARYREADDATA);
-		try {
-			meta = JSON.parse(json, jsonparser);
-			callback(null, stream, meta);
-		} catch (e) {
-			F.error(e, 'nosql.binary.read', filename + ' --> ' + json);
-			console.log(e, filename, json, BINARYREADDATA);
-			callback(e);
+		if (!json) {
+			setTimeout(readfileattempt, 100, self, id, callback, count || 1);
+			return;
 		}
+
+		var meta = JSON.parse(json, jsonparser);
+		stream = Fs.createReadStream(filename, BINARYREADDATA);
+		callback(null, stream, meta);
 		CLEANUP(stream);
 	});
 
 	return self;
 };
+
+function readfileattempt(self, id, callback, count) {
+	self.read(id, callback, count + 1);
+}
 
 Binary.prototype.remove = function(id, callback) {
 
