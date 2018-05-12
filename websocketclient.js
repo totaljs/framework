@@ -33,7 +33,6 @@ const Http = require('http');
 const Url = require('url');
 const Zlib = require('zlib');
 const ENCODING = 'utf8';
-const REG_WEBSOCKET_ERROR = /ECONNRESET|EHOSTUNREACH|EPIPE|is closed/i;
 const WEBSOCKET_COMPRESS = U.createBuffer([0x00, 0x00, 0xFF, 0xFF]);
 const WEBSOCKET_COMPRESS_OPTIONS = { windowBits: Zlib.Z_DEFAULT_WINDOWBITS };
 const CONCAT = [null, null];
@@ -489,15 +488,11 @@ WebSocketClient.prototype.parseInflate = function() {
 };
 
 WebSocketClient.prototype.$onerror = function(err) {
-
-	if (this.isClosed)
-		return;
-
-	if (REG_WEBSOCKET_ERROR.test(err.stack) || err.code === 'HPE_INVALID_CONSTANT') {
+	this.$events.error && this.emit('error', err);
+	if (!this.isClosed) {
 		this.isClosed = true;
 		this.$onclose();
-	} else
-		this.$events.error && this.emit('error', err);
+	}
 };
 
 WebSocketClient.prototype.$onclose = function() {
