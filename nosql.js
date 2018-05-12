@@ -3335,7 +3335,7 @@ DatabaseBuilder.prototype.in = function(name, value) {
 	var self = this;
 	var key = 'in' + (self.$counter++);
 	self.$params[key] = value instanceof Array ? value : [value];
-	var code = '$tmp=doc.{0};if($tmp instanceof Array){for(var $i=0;$i<$tmp.length;$i++){if(arg.{1}.indexOf($tmp[$i])!==-1){$is=true;break}}}else{if(arg.{1}.indexOf($tmp)!==-1)$is=true}'.format(name, key);
+	var code = 'if($is)$is=false;$tmp=doc.{0};if($tmp instanceof Array){for(var $i=0;$i<$tmp.length;$i++){if(arg.{1}.indexOf($tmp[$i])!==-1){$is=true;break}}}else{if(arg.{1}.indexOf($tmp)!==-1)$is=true}'.format(name, key);
 	if (self.$scope)
 		code = 'if(!$is){' + code + '}';
 	self.$code.push(code);
