@@ -493,7 +493,7 @@ WebSocketClient.prototype.$onerror = function(err) {
 	if (this.isClosed)
 		return;
 
-	if (REG_WEBSOCKET_ERROR.test(err.stack)) {
+	if (REG_WEBSOCKET_ERROR.test(err.stack) || err.code === 'HPE_INVALID_CONSTANT') {
 		this.isClosed = true;
 		this.$onclose();
 	} else
