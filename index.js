@@ -653,6 +653,7 @@ function Framework() {
 
 		'default-layout': 'layout',
 		'default-theme': '',
+		'default-proxy': '',
 
 		// default maximum request size / length
 		// default 10 kB
