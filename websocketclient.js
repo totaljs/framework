@@ -21,7 +21,7 @@
 
 /**
  * @module WebSocketClient
- * @version 2.9.0
+ * @version 3.0.0
  */
 
 if (!global.framework_utils)
@@ -290,7 +290,7 @@ WebSocketClient.prototype.$ondata = function(data) {
 
 		case 0x08:
 			// close
-			this.close();
+			this.close(true);
 			break;
 
 		case 0x09:
@@ -496,6 +496,7 @@ WebSocketClient.prototype.$onerror = function(err) {
 };
 
 WebSocketClient.prototype.$onclose = function() {
+
 	if (this._isClosed)
 		return;
 
@@ -515,7 +516,7 @@ WebSocketClient.prototype.$onclose = function() {
 	}
 
 	this.$events.close && this.emit('close');
-	this.socket.removeAllListeners();
+	this.socket && this.socket.removeAllListeners();
 };
 
 /**
@@ -605,6 +606,12 @@ function websocket_deflate(data) {
  * @return {WebSocketClient}
  */
 WebSocketClient.prototype.close = function(message, code) {
+
+	if (message !== true) {
+		this.options.reconnect = 0;
+	} else
+		message = undefined;
+
 	if (!this.isClosed) {
 		this.isClosed = true;
 		this.socket.end(U.getWebSocketFrame(code || 1000,  message ? (this.options.encodedecode ? encodeURIComponent(message) : message) : '', 0x08));
