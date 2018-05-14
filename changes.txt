@@ -37,6 +37,7 @@
 - added: config `nosql-logger` (default `true`) enables simple logs when re-indexing and cleaning
 - added: config `security.txt` for auto-generating security.txt content (more in docs)
 - added: config `default-proxy` for default web proxy server
+- added: config `allow-cache` disables clearing temporary cache (default: `false`)
 - added: `NOSQLSTORAGE(name)` alias for `NOSQL(name).storage`
 - added: `NOSQLINDEXES(name)` alias for `NOSQL(name).indexes`
 - added: `GUID()` a global alias for `U.GUID()`
@@ -99,6 +100,12 @@
 - fixed: `controller.href()` with Array values
 - fixed: `U.get()` a problem with path with `-`
 - fixed: `U.set()` a problem with path with `-`
+
+- replaced: config `disable-clear-temporary-directory` to `allow-clear-temp : true|false`
+- replaced: config `disable-strict-server-certificate-validation` to `allow-ssc-validation : true|false`
+- replaced: config `default-websocket-request-length` to `default-websocket-maxlength`
+- replaced: config `default-request-length` to `default-request-maxlength`
+- replaced: config `default-maximum-file-descriptors` to `default-maxopenfiles`
 
 - improved: `debug` mode timing with improved consumption
 - improved: performance (+20%) NoSQL embedded database

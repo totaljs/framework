@@ -610,7 +610,6 @@ function Framework() {
 		secret: Os.hostname() + '-' + Os.platform() + '-' + Os.arch(),
 
 		'security.txt': 'Contact: mailto:support@totaljs.com\nContact: https://www.totaljs.com/contact/',
-		'default-xpoweredby': 'Total.js',
 		'etag-version': '',
 		'directory-src': '/.src/',
 		'directory-bundles': '/bundles/',
@@ -651,16 +650,17 @@ function Framework() {
 
 		// 'static-accepts-custom': [],
 
+		'default-xpoweredby': 'Total.js',
 		'default-layout': 'layout',
 		'default-theme': '',
 		'default-proxy': '',
 
 		// default maximum request size / length
 		// default 10 kB
-		'default-request-length': 10,
-		'default-websocket-request-length': 2,
+		'default-request-maxlength': 10,
+		'default-websocket-maxlength': 2,
 		'default-websocket-encodedecode': true,
-		'default-maximum-file-descriptors': 0,
+		'default-maxopenfiles': 0,
 		'default-timezone': '',
 		'default-root': '',
 		'default-response-maxage': '11111111',
@@ -694,8 +694,8 @@ function Framework() {
 		'allow-debug': false,
 		'allow-head': false,
 		'allow-filter-errors': true,
-		'disable-strict-server-certificate-validation': true,
-		'disable-clear-temporary-directory': false,
+		'allow-clear-temp': true,
+		'allow-ssc-validation': false,
 		'nosql-worker': false,
 		'nosql-inmemory': null, // String Array
 		'nosql-cleaner': 1440,
@@ -705,9 +705,9 @@ function Framework() {
 		// All values are in minutes
 		'default-interval-clear-resources': 20,
 		'default-interval-clear-cache': 10,
+		'default-interval-clear-dnscache': 120,
 		'default-interval-precompile-views': 61,
 		'default-interval-websocket-ping': 3,
-		'default-interval-clear-dnscache': 120,
 		'default-interval-uptodate': 5
 	};
 
@@ -2207,7 +2207,7 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 	r.flags2 = flags_to_object(flags);
 	r.method = method;
 	r.execute = funcExecute;
-	r.length = (length || F.config['default-request-length']) * 1024;
+	r.length = (length || F.config['default-request-maxlength']) * 1024;
 	r.middleware = middleware;
 	r.timeout = timeout === undefined ? (isDELAY ? 0 : F.config['default-request-timeout']) : timeout;
 	r.isGET = flags.indexOf('get') !== -1;
@@ -2853,7 +2853,7 @@ F.websocket = function(url, funcInitialize, flags, length) {
 	r.onInitialize = funcInitialize;
 	r.protocols = protocols || EMPTYARRAY;
 	r.allow = allow || [];
-	r.length = (length || F.config['default-websocket-request-length']) * 1024;
+	r.length = (length || F.config['default-websocket-maxlength']) * 1024;
 	r.isWEBSOCKET = true;
 	r.MEMBER = membertype;
 	r.isJSON = isJSON;
@@ -5192,7 +5192,8 @@ F.$onParseXML = function(req) {
  * @return {Object}
  */
 F.onParseJSON = function(value) {
-	return JSON.parse(value);
+	if (value)
+		return JSON.parse(value);
 };
 F.onParseJSON.$def = true;
 
@@ -6904,18 +6905,21 @@ F.custom = function(mode, http, request, response, options) {
 F.console = function() {
 	var memory = process.memoryUsage();
 	console.log('====================================================');
-	console.log('PID         : ' + process.pid);
-	console.log('Node.js     : ' + process.version);
-	console.log('Total.js    : v' + F.version_header);
-	console.log('OS          : ' + Os.platform() + ' ' + Os.release());
-	F.config['nosql-worker'] && console.log('NoSQL PID   : ' + framework_nosql.pid());
-	console.log('Memory      : ' + memory.heapUsed.filesize(2) + ' / ' + memory.heapTotal.filesize(2));
+	console.log('PID           : ' + process.pid);
+	console.log('Node.js       : ' + process.version);
+	console.log('Total.js      : v' + F.version_header);
+	console.log('OS            : ' + Os.platform() + ' ' + Os.release());
+	F.config['nosql-worker'] && console.log('NoSQL PID     : ' + framework_nosql.pid());
+	console.log('Memory        : ' + memory.heapUsed.filesize(2) + ' / ' + memory.heapTotal.filesize(2));
 	console.log('====================================================');
-	console.log('Name        : ' + F.config.name);
-	console.log('Version     : ' + F.config.version);
-	console.log('Author      : ' + F.config.author);
-	console.log('Date        : ' + NOW.format('yyyy-MM-dd HH:mm:ss'));
-	console.log('Mode        : ' + (F.config.debug ? 'debug' : 'release'));
+	console.log('Name          : ' + F.config.name);
+	console.log('Version       : ' + F.config.version);
+	console.log('Author        : ' + F.config.author);
+	console.log('Date          : ' + NOW.format('yyyy-MM-dd HH:mm:ss'));
+	console.log('Mode          : ' + (F.config.debug ? 'debug' : 'release'));
+	console.log('====================================================');
+	console.log('Directory     : ' + process.cwd());
+	console.log('node_modules  : ' + PATHMODULES);
 	console.log('====================================================\n');
 	if (!F.isWorker) {
 		console.log('{2}://{0}:{1}/'.format(F.ip, F.port, F.isHTTPS ? 'https' : 'http'));
@@ -7828,12 +7832,11 @@ F.test = function() {
  * @return {Framework}
  */
 F.clear = function(callback, isInit) {
-
 	var dir = F.path.temp();
 	var plus = F.id ? 'i-' + F.id + '_' : '';
 
 	if (isInit) {
-		if (F.config['disable-clear-temporary-directory']) {
+		if (!F.config['allow-clear-temp']) {
 			// clears only JS and CSS files
 			U.ls(dir, function(files) {
 				F.unlink(files, function() {
@@ -8686,16 +8689,27 @@ F.$configure_configs = function(arr, rewrite) {
 			subtype = '';
 
 		switch (name) {
-			case 'default-cors-maxage':
 			case 'default-request-length':
+				OBSOLETE(name, 'You need to use "default-request-maxlength"');
+				obj['default-request-maxlength'] = U.parseInt(value);
+				break;
 			case 'default-websocket-request-length':
+				OBSOLETE(name, 'You need to use "default-websocket-maxlength"');
+				obj['default-websocket-maxlength'] = U.parseInt(value);
+				break;
+			case 'default-maximum-file-descriptors':
+				OBSOLETE(name, 'You need to use "default-maxopenfiles"');
+				obj['default-maxopenfiles'] = U.parseInt(value);
+				break;
+			case 'default-cors-maxage':
 			case 'default-request-timeout':
+			case 'default-request-maxlength':
+			case 'default-websocket-maxlength':
 			case 'default-interval-clear-cache':
 			case 'default-interval-clear-resources':
 			case 'default-interval-precompile-views':
 			case 'default-interval-uptodate':
 			case 'default-interval-websocket-ping':
-			case 'default-maximum-file-descriptors':
 			case 'default-interval-clear-dnscache':
 			case 'default-dependency-timeout':
 			case 'nosql-cleaner':
@@ -8743,18 +8757,28 @@ F.$configure_configs = function(arr, rewrite) {
 				obj['allow-static-files'] = true;
 				break;
 
+			case 'disable-clear-temporary-directory':
+				OBSOLETE('disable-clear-temporary-directory', 'You need to use "allow-clear-temp : true|false"');
+				obj['allow-clear-temp'] = !(value.toLowerCase() === 'true' || value === '1' || value === 'on');
+				break;
+
+			case 'disable-strict-server-certificate-validation':
+				OBSOLETE('disable-strict-server-certificate-validation', 'You need to use "allow-ssc-validation : true|false"');
+				obj['allow-ssc-validation'] = !(value.toLowerCase() === 'true' || value === '1' || value === 'on');
+				break;
+
 			case 'allow-compile-html':
 			case 'allow-compile-script':
 			case 'allow-compile-style':
+			case 'allow-ssc-validation':
 			case 'allow-debug':
 			case 'allow-gzip':
 			case 'allow-performance':
 			case 'allow-static-files':
 			case 'allow-websocket':
-			case 'disable-strict-server-certificate-validation':
-			case 'disable-clear-temporary-directory':
-			case 'trace':
+			case 'allow-clear-temp':
 			case 'allow-cache-snapshot':
+			case 'trace':
 			case 'nosql-worker':
 			case 'nosql-logger':
 				obj[name] = value.toLowerCase() === 'true' || value === '1' || value === 'on';
@@ -8829,7 +8853,7 @@ F.$configure_configs = function(arr, rewrite) {
 	F.config['nosql-inmemory'] && F.config['nosql-inmemory'].forEach(n => framework_nosql.inmemory(n));
 	accepts && accepts.length && accepts.forEach(accept => F.config['static-accepts'][accept] = true);
 
-	if (F.config['disable-strict-server-certificate-validation'] === true)
+	if (F.config['allow-ssc-validation'] === false)
 		process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 	if (F.config['allow-performance'])
@@ -12057,7 +12081,13 @@ Controller.prototype.custom = function() {
  * @return {Controller}
  */
 Controller.prototype.noClear = function(enable) {
+	OBSOLETE('controller.noClear()', 'You need to use controller.autoclear(false)');
 	this.req._manual = enable === undefined ? true : enable;
+	return this;
+};
+
+Controller.prototype.autoclear = function(enable) {
+	this.req._manual = enable === true;
 	return this;
 };
 
@@ -16188,7 +16218,7 @@ process.on('uncaughtException', function(e) {
 });
 
 function fsFileRead(filename, callback, a, b, c) {
-	U.queue('F.files', F.config['default-maximum-file-descriptors'], function(next) {
+	U.queue('F.files', F.config['default-maxopenfiles'], function(next) {
 		Fs.readFile(filename, function(err, result) {
 			next();
 			callback(err, result, a, b, c);
@@ -16197,7 +16227,7 @@ function fsFileRead(filename, callback, a, b, c) {
 }
 
 function fsFileExists(filename, callback, a, b, c) {
-	U.queue('F.files', F.config['default-maximum-file-descriptors'], function(next) {
+	U.queue('F.files', F.config['default-maxopenfiles'], function(next) {
 		Fs.lstat(filename, function(err, stats) {
 			next();
 			callback(!err && stats.isFile(), stats ? stats.size : 0, stats ? stats.isFile() : false, stats, a, b, c);
@@ -16226,7 +16256,7 @@ function fsStreamRead(filename, options, callback, res) {
 	} else
 		opt = HEADERS.fsStreamRead;
 
-	U.queue('F.files', F.config['default-maximum-file-descriptors'], function(next) {
+	U.queue('F.files', F.config['default-maxopenfiles'], function(next) {
 		var stream = Fs.createReadStream(filename, opt);
 		stream.on('error', NOOP);
 		callback(stream, next, res);

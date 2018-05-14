@@ -3326,7 +3326,7 @@ String.prototype.parseConfig = function(def, onerr) {
 		if (!str || str[0] === '#' || str.substring(0, 2) === '//')
 			continue;
 
-		index = str.indexOf(' :');
+		index = str.indexOf(':');
 		if (index === -1) {
 			index = str.indexOf('\t:');
 			if (index === -1)
