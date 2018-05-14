@@ -36,6 +36,7 @@ const Fs = require('fs');
 const Events = require('events');
 const Crypto = require('crypto');
 const Zlib = require('zlib');
+const Tls = require('tls');
 
 const CONCAT = [null, null];
 const COMPARER = global.Intl ? global.Intl.Collator().compare : function(a, b) {
@@ -81,6 +82,8 @@ const CT = 'Content-Type';
 const CRC32TABLE = '00000000,77073096,EE0E612C,990951BA,076DC419,706AF48F,E963A535,9E6495A3,0EDB8832,79DCB8A4,E0D5E91E,97D2D988,09B64C2B,7EB17CBD,E7B82D07,90BF1D91,1DB71064,6AB020F2,F3B97148,84BE41DE,1ADAD47D,6DDDE4EB,F4D4B551,83D385C7,136C9856,646BA8C0,FD62F97A,8A65C9EC,14015C4F,63066CD9,FA0F3D63,8D080DF5,3B6E20C8,4C69105E,D56041E4,A2677172,3C03E4D1,4B04D447,D20D85FD,A50AB56B,35B5A8FA,42B2986C,DBBBC9D6,ACBCF940,32D86CE3,45DF5C75,DCD60DCF,ABD13D59,26D930AC,51DE003A,C8D75180,BFD06116,21B4F4B5,56B3C423,CFBA9599,B8BDA50F,2802B89E,5F058808,C60CD9B2,B10BE924,2F6F7C87,58684C11,C1611DAB,B6662D3D,76DC4190,01DB7106,98D220BC,EFD5102A,71B18589,06B6B51F,9FBFE4A5,E8B8D433,7807C9A2,0F00F934,9609A88E,E10E9818,7F6A0DBB,086D3D2D,91646C97,E6635C01,6B6B51F4,1C6C6162,856530D8,F262004E,6C0695ED,1B01A57B,8208F4C1,F50FC457,65B0D9C6,12B7E950,8BBEB8EA,FCB9887C,62DD1DDF,15DA2D49,8CD37CF3,FBD44C65,4DB26158,3AB551CE,A3BC0074,D4BB30E2,4ADFA541,3DD895D7,A4D1C46D,D3D6F4FB,4369E96A,346ED9FC,AD678846,DA60B8D0,44042D73,33031DE5,AA0A4C5F,DD0D7CC9,5005713C,270241AA,BE0B1010,C90C2086,5768B525,206F85B3,B966D409,CE61E49F,5EDEF90E,29D9C998,B0D09822,C7D7A8B4,59B33D17,2EB40D81,B7BD5C3B,C0BA6CAD,EDB88320,9ABFB3B6,03B6E20C,74B1D29A,EAD54739,9DD277AF,04DB2615,73DC1683,E3630B12,94643B84,0D6D6A3E,7A6A5AA8,E40ECF0B,9309FF9D,0A00AE27,7D079EB1,F00F9344,8708A3D2,1E01F268,6906C2FE,F762575D,806567CB,196C3671,6E6B06E7,FED41B76,89D32BE0,10DA7A5A,67DD4ACC,F9B9DF6F,8EBEEFF9,17B7BE43,60B08ED5,D6D6A3E8,A1D1937E,38D8C2C4,4FDFF252,D1BB67F1,A6BC5767,3FB506DD,48B2364B,D80D2BDA,AF0A1B4C,36034AF6,41047A60,DF60EFC3,A867DF55,316E8EEF,4669BE79,CB61B38C,BC66831A,256FD2A0,5268E236,CC0C7795,BB0B4703,220216B9,5505262F,C5BA3BBE,B2BD0B28,2BB45A92,5CB36A04,C2D7FFA7,B5D0CF31,2CD99E8B,5BDEAE1D,9B64C2B0,EC63F226,756AA39C,026D930A,9C0906A9,EB0E363F,72076785,05005713,95BF4A82,E2B87A14,7BB12BAE,0CB61B38,92D28E9B,E5D5BE0D,7CDCEFB7,0BDBDF21,86D3D2D4,F1D4E242,68DDB3F8,1FDA836E,81BE16CD,F6B9265B,6FB077E1,18B74777,88085AE6,FF0F6A70,66063BCA,11010B5C,8F659EFF,F862AE69,616BFFD3,166CCF45,A00AE278,D70DD2EE,4E048354,3903B3C2,A7672661,D06016F7,4969474D,3E6E77DB,AED16A4A,D9D65ADC,40DF0B66,37D83BF0,A9BCAE53,DEBB9EC5,47B2CF7F,30B5FFE9,BDBDF21C,CABAC28A,53B39330,24B4A3A6,BAD03605,CDD70693,54DE5729,23D967BF,B3667A2E,C4614AB8,5D681B02,2A6F2B94,B40BBE37,C30C8EA1,5A05DF1B,2D02EF8D'.split(',').map(s => parseInt(s, 16));
 const REGISARR = /\[\d+\]$/;
 const PROXYBLACKLIST = { 'localhost': 1, '127.0.0.1': 1, '0.0.0.0': 1 };
+const PROXYOPTIONS = {};
+const PROXYHEADERS = {};
 
 exports.MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 exports.DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -413,40 +416,19 @@ exports.keywords = function(content, forSearch, alternative, max_count, max_leng
 };
 
 function parseProxy(p) {
-
 	var key = 'proxy_' + p;
-
 	if (F.temporary.other[key])
 		return F.temporary.other[key];
 
-	var proxy = {};
+	if (p.indexOf('://') === -1)
+		p = 'http://' + p;
 
-	proxy.protocol = p.substring(0, 7);
+	var obj = Url.parse(p);
 
-	if (proxy.protocol === 'http://') {
-		proxy.protocol = 'http:';
-		p = p.substring(7);
-	} else if (proxy.protocol === 'https:') {
-		proxy.protocol = 'https:';
-		p = p.substring(8);
-	} else
-		proxy.protocol = 'http:';
+	if (obj.auth)
+		obj._auth = 'Basic ' + U.createBuffer(obj.auth).toString('base64');
 
-	var index = p.indexOf('@');
-	if (index !== -1) {
-		// auth
-		var t = p.substring(0, index).split(':');
-		proxy.username = t[0];
-		proxy.password = t[1];
-		p = p.substring(index + 1);
-	}
-
-	index = p.lastIndexOf(':');
-	proxy.hostname = p.substring(0, index);
-	proxy.port = p.substring(index + 1);
-	proxy.method = 'CONNECT';
-
-	return F.temporary.other[key] = proxy;
+	return F.temporary.other[key] = obj;
 }
 
 /**
@@ -617,7 +599,6 @@ global.REQUEST = exports.request = function(url, flags, data, callback, cookies,
 
 	var uri = Url.parse(url);
 	uri.method = method;
-	// uri.agent = false;
 	uri.headers = headers;
 	options.uri = uri;
 
@@ -626,7 +607,10 @@ global.REQUEST = exports.request = function(url, flags, data, callback, cookies,
 
 	if (proxy) {
 		options.proxy = proxy;
-		request_proxy(options, request_call);
+		if (uri.protocol === 'http:')
+			request_call(uri, options);
+		else
+			request_proxy(options, request_call);
 	} else if (options.resolve) {
 		exports.resolve(url, function(err, u) {
 			!err && (uri.host = u.host);
@@ -640,14 +624,17 @@ global.REQUEST = exports.request = function(url, flags, data, callback, cookies,
 
 function request_proxy(options, callback) {
 
+	PROXYHEADERS.host = options.uri.hostname;
+
 	var proxy = options.proxy;
-	proxy.path = options.uri.hostname;
-	proxy.headers = { host: options.uri.hostname };
+	proxy.path = options.uri.hostname + ':443';
+	proxy.headers = PROXYHEADERS;
+	proxy.method = 'CONNECT';
 
-	if (proxy.username && proxy.password)
-		proxy.headers.authorization = 'Basic ' + U.createBuffer(proxy.username + ':' + proxy.password).toString('base64');
+	if (proxy._auth)
+		proxy.headers['Proxy-Authorization'] = proxy._auth;
 
-	var req = proxy.protocol === 'http:' ? Http.request(proxy) : Https.request(proxy);
+	var req = Http.request(proxy);
 
 	req.on('error', function(e) {
 		options.callback(new Error('Proxy error: ' + e.toString()), '', 0, EMPTYOBJECT, proxy.hostname, EMPTYOBJECT);
@@ -656,10 +643,17 @@ function request_proxy(options, callback) {
 
 	req.on('connect', function(res, socket) {
 		if (res.statusCode === 200) {
-			options.uri.agent = options.uri.protocol === 'http:' ? new Http.Agent() : new Https.Agent();
-			options.uri.agent.reuseSocket(socket, req);
-			options.socket = socket;
-			callback(options.uri, options);
+			var tls = Tls.connect(0, { servername: options.uri.hostname, headers: options.uri.headers, socket: socket });
+
+			tls.on('secureConnect', function() {
+				options.uri.agent = options.uri.protocol === 'http:' ? new Http.Agent() : new Https.Agent();
+				options.uri.agent.reuseSocket(tls, req);
+				//req.onSocket(tls);
+				options.socket = tls;
+				options.proxy.tls = tls;
+				callback(options.uri, options);
+			});
+
 		} else {
 			options.callback(new Error((res.statusMessage || 'Proxy error') + ': ' + res.statusCode), '', res.statusCode, res.headers, proxy.hostname, EMPTYOBJECT);
 			options.callback = null;
@@ -672,7 +666,23 @@ function request_proxy(options, callback) {
 function request_call(uri, options) {
 
 	var connection = uri.protocol === 'https:' ? Https : Http;
-	var req = options.post ? connection.request(uri, (res) => request_response(res, uri, options)) : connection.get(uri, (res) => request_response(res, uri, options));
+	var opt;
+
+	if (options.proxy && !options.proxy.tls) {
+		opt = PROXYOPTIONS;
+		opt.port = options.proxy.port;
+		opt.host = options.proxy.hostname;
+		opt.path = uri.href;
+		opt.headers = uri.headers;
+		opt.method = uri.method;
+
+		if (options.proxy._auth)
+			opt.headers['Proxy-Authorization'] = options.proxy._auth;
+
+	} else
+		opt = uri;
+
+	var req = options.post ? connection.request(opt, (res) => request_response(res, uri, options)) : connection.get(opt, (res) => request_response(res, uri, options));
 
 	if (!options.callback) {
 		req.on('error', NOOP);
@@ -702,7 +712,6 @@ function request_call(uri, options) {
 	if (options.upload) {
 		options.first = true;
 		options.files.wait(function(file, next) {
-			// next();
 			request_writefile(req, options, file, next);
 		}, function() {
 
@@ -798,6 +807,13 @@ function request_response(res, uri, options) {
 
 		res.req.removeAllListeners();
 		res.req = null;
+
+		if (options.proxy && tmp.protocol === 'https:') {
+			// TLS?
+			options.uri = tmp;
+			request_proxy(options, request_call);
+			return
+		}
 
 		if (!options.resolve) {
 			res.removeAllListeners();
@@ -1065,7 +1081,10 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 
 	if (proxy) {
 		options.proxy = proxy;
-		request_proxy(options, download_call);
+		if (uri.protocol === 'http:')
+			download_call(uri, options);
+		else
+			request_proxy(options, download_call);
 	} else if (options.resolve) {
 		exports.resolve(url, function(err, u) {
 			!err && (uri.host = u.host);
@@ -1079,10 +1098,24 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 
 function download_call(uri, options) {
 
+	var opt;
 	options.length = 0;
 
+	if (options.proxy && !options.proxy.tls) {
+		opt = PROXYOPTIONS;
+		opt.port = options.proxy.port;
+		opt.host = options.proxy.hostname;
+		opt.path = uri.href;
+		opt.headers = uri.headers;
+		opt.method = uri.method;
+
+		if (options.proxy._auth)
+			opt.headers['Proxy-Authorization'] = options.proxy._auth;
+	} else
+		opt = uri;
+
 	var connection = uri.protocol === 'https:' ? Https : Http;
-	var req = options.post ? connection.request(uri, (res) => download_response(res, uri, options)) : connection.get(uri, (res) => download_response(res, uri, options));
+	var req = options.post ? connection.request(opt, (res) => download_response(res, uri, options)) : connection.get(opt, (res) => download_response(res, uri, options));
 
 	if (!options.callback) {
 		req.on('error', NOOP);
@@ -1090,21 +1123,21 @@ function download_call(uri, options) {
 	}
 
 	req.on('error', function(err) {
-		if (!options.callback)
-			return;
-		options.callback(err);
-		options.callback = null;
-		options.evt.removeAllListeners();
-		options.evt = null;
+		if (options.callback) {
+			options.callback(err);
+			options.callback = null;
+			options.evt.removeAllListeners();
+			options.evt = null;
+		}
 	});
 
 	req.setTimeout(options.timeout, function() {
-		if (!options.callback)
-			return;
-		options.callback(new Error(exports.httpStatus(408)));
-		options.callback = null;
-		options.evt.removeAllListeners();
-		options.evt = null;
+		if (options.callback) {
+			options.callback(new Error(exports.httpStatus(408)));
+			options.callback = null;
+			options.evt.removeAllListeners();
+			options.evt = null;
+		}
 	});
 
 	req.on('response', function(response) {
@@ -1140,6 +1173,13 @@ function download_response(res, uri, options) {
 		tmp.method = uri.method;
 		res.req.removeAllListeners();
 		res.req = null;
+
+		if (options.proxy && tmp.protocol === 'https:') {
+			// TLS?
+			options.uri = tmp;
+			download_call(options, request_call);
+			return
+		}
 
 		if (!options.resolve) {
 			res.removeAllListeners();
@@ -5876,6 +5916,32 @@ if (NODEVERSION > 699) {
 	exports.createBufferSize = (size) => new Buffer(size || 0);
 	exports.createBuffer = (val, type) => new Buffer(val || '', type);
 }
+
+function Callback(count, callback) {
+	this.pending = count;
+	this.$callback = callback;
+}
+
+Callback.prototype.done = function(callback) {
+	this.$callback = callback;
+	return this;
+};
+
+Callback.prototype.next = function() {
+	var self = this;
+	self.pending--;
+	if (!self.pending && self.$callback) {
+		self.$callback();
+		self.$callback = null;
+	}
+	return self;
+};
+
+global.Callback = Callback;
+
+exports.Callback = function(count, callback) {
+	return new Callback(count, callback);
+};
 
 global.WAIT = exports.wait;
 !global.F && require('./index');
