@@ -84,6 +84,7 @@ const REGISARR = /\[\d+\]$/;
 const PROXYBLACKLIST = { 'localhost': 1, '127.0.0.1': 1, '0.0.0.0': 1 };
 const PROXYOPTIONS = {};
 const PROXYHEADERS = {};
+const PROXYTLS = {};
 
 exports.MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 exports.DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -643,7 +644,13 @@ function request_proxy(options, callback) {
 
 	req.on('connect', function(res, socket) {
 		if (res.statusCode === 200) {
-			var tls = Tls.connect(0, { servername: options.uri.hostname, headers: options.uri.headers, socket: socket });
+
+			PROXYTLS.servername = options.uri.hostname;
+			PROXYTLS.headers = options.uri.headers || {};
+			PROXYTLS.headers.host = options.uri.hostname;
+			PROXYTLS.socket = socket;
+
+			var tls = Tls.connect(443, PROXYTLS);
 
 			tls.on('secureConnect', function() {
 				options.uri.agent = options.uri.protocol === 'http:' ? new Http.Agent() : new Https.Agent();
