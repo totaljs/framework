@@ -603,6 +603,9 @@ global.REQUEST = exports.request = function(url, flags, data, callback, cookies,
 	uri.headers = headers;
 	options.uri = uri;
 
+	if (options.resolve && (uri.hostname === 'localhost' || uri.hostname.charCodeAt(0) < 64))
+		options.resolve = null;
+
 	if (F.config['default-proxy'] && !proxy && !PROXYBLACKLIST[uri.hostname])
 		proxy = parseProxy(F.config['default-proxy']);
 
@@ -820,7 +823,7 @@ function request_response(res, uri, options) {
 			// TLS?
 			options.uri = tmp;
 			request_proxy(options, request_call);
-			return
+			return;
 		}
 
 		if (!options.resolve) {
@@ -1078,6 +1081,9 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 	uri.agent = false;
 	uri.headers = headers;
 	options.uri = uri;
+
+	if (options.resolve && (uri.hostname === 'localhost' || uri.hostname.charCodeAt(0) < 64))
+		options.resolve = null;
 
 	if (data.length) {
 		options.data = exports.createBuffer(data, ENCODING);
