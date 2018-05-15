@@ -25,6 +25,7 @@
 - added: `DatabaseBuilder.insert(fn(doc))` can modify a document after `update` or `modify` has `insert` mode
 - added: `DatabaseBuilder.query(code)` can contain a raw JS condition in the form e.g. `doc.age > 18 && doc.age < 33`
 - added: `Database.find2()` performs faster and reverse reading of documents (from end to begin of the file)
+- added: `Database.stream(fn, [repository], [callback(err, repository, count)])` for streaming documents
 - added: `Database.lock(callback(next))` locks all internal DB operations
 - added: `Database.ready(callback)` executes a callback when DB is ready to use (only for special cases if you use indexes)
 - added: new directory `schemas` with a new configuration item `directory-schemas'
@@ -105,6 +106,7 @@
 - replaced: config `default-websocket-request-length` to `default-websocket-maxlength`
 - replaced: config `default-request-length` to `default-request-maxlength`
 - replaced: config `default-maximum-file-descriptors` to `default-maxopenfiles`
+- replaced: `controller.proxy()` functionality (the name remains) via `controller.proxy2()` functionality
 
 - improved: `debug` mode timing with improved consumption
 - improved: performance (+20%) NoSQL embedded database
