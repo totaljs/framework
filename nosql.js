@@ -3214,21 +3214,54 @@ DatabaseBuilder.prototype.like = DatabaseBuilder.prototype.search = function(nam
 			code = '$is=doc.{0}?doc.{0}.endsWith(arg.{1}):false;';
 			break;
 		case '*':
-			code = '$is=false;if(doc.{0}&&doc.{0}.toLowerCase){if(doc.{0} instanceof Array){for(var $i=0;$i<doc.{0}.length;$i++){if(doc.{0}.toLowerCase().indexOf(arg.{1})!==-1){$is=true;break;}}}else{$is=doc.{0}.toLowerCase().indexOf(arg.{1})!==-1}}';
-			if (value instanceof Array) {
-				for (var i = 0, length = value.length; i < length; i++)
-					value[i] = value[i].toLowerCase();
-			} else
-				value = value.toLowerCase();
+			code = '$is=false;if(doc.{0}){if(doc.{0} instanceof Array){for(var $i=0;$i<doc.{0}.length;$i++){if(doc.{0}[$i].toLowerCase().indexOf(arg.{1})!==-1){$is=true;break;}}}else{$is=doc.{0}.toLowerCase?doc.{0}.toLowerCase().indexOf(arg.{1})!==-1:false}}';
+			value = value.toLowerCase();
 			break;
 	}
 
 	self.$params[key] = value;
+
 	if (self.$scope)
 		code = 'if(!$is){' + code + '}';
+
 	self.$code.push(code.format(name, key));
 	!self.$scope && self.$code.push('if(!$is)return;');
-	return this;
+	return self;
+};
+
+DatabaseBuilder.prototype.regexp = function(name, value) {
+	var self = this;
+	var code = '$is=false;if(doc.{0}&&doc.{0}.toLowerCase){$is=({1}).test(doc.{0})}';
+	if (self.$scope)
+		code = 'if(!$is){' + code + '}';
+	self.$code.push(code.format(name, value.toString()));
+	!self.$scope && self.$code.push('if(!$is)return;');
+	return self;
+};
+
+DatabaseBuilder.prototype.fulltext = function(name, value, weight) {
+
+	var self = this;
+	var key = 'l' + (self.$counter++);
+
+	if (value instanceof Array) {
+		for (var i = 0; i < value.length; i++)
+			value[i] = value[i].toLowerCase();
+	} else
+		value = value.toLowerCase().split(' ');
+
+	var count = 1;
+
+	if (weight)
+		count = ((value.length / 100) * weight) >> 0;
+
+	var code = '$is=false;if(doc.{0}&&doc.{0}.toLowerCase){var $a={2},$b=doc.{0}.toLowerCase();for(var $i=0;$i<arg.{1}.length;$i++){if($b.indexOf(arg.{1}[$i])!==-1){$a--;if(!$a){$is=true;break}}}}';
+	self.$params[key] = value;
+	if (self.$scope)
+		code = 'if(!$is){' + code + '}';
+	self.$code.push(code.format(name, key, count || 1));
+	!self.$scope && self.$code.push('if(!$is)return;');
+	return self;
 };
 
 DatabaseBuilder2.prototype.stringify = DatabaseBuilder.prototype.stringify = function() {
