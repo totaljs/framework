@@ -66,7 +66,6 @@ const REG_TEXTAPPLICATION = /text|application/;
 const REG_ENCODINGCLEANER = /[;\s]charset=utf-8/g;
 const REG_SKIPERROR = /epipe|invalid\sdistance/i;
 const REG_UTF8 = /[^\x20-\x7E]+/;
-const FLAGS_PROXY = ['post', 'json'];
 const FLAGS_INSTALL = ['get'];
 const FLAGS_DOWNLOAD = ['get', 'dnscache'];
 const QUERYPARSEROPTIONS = { maxKeys: 69 };
@@ -128,8 +127,6 @@ HEADERS.mmr[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
 HEADERS.mmr['Pragma'] = 'no-cache';
 HEADERS.mmr['Expires'] = '-1';
 HEADERS.mmr['X-Powered-By'] = 'Total.js';
-HEADERS.proxy = {};
-HEADERS.proxy['X-Proxy'] = 'total.js';
 HEADERS.file_lastmodified = {};
 HEADERS.file_lastmodified['Access-Control-Allow-Origin'] = '*';
 HEADERS.file_lastmodified[HEADER_CACHE] = 'public, max-age=11111111';
@@ -2129,11 +2126,6 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 	if (url.indexOf('#') !== -1)
 		priority -= 100;
 
-	if (flags.indexOf('proxy') !== -1) {
-		isJSON = true;
-		priority++;
-	}
-
 	if ((isJSON || flags.indexOf('xml') !== -1 || isRaw) && (flags.indexOf('delete') === -1 && flags.indexOf('post') === -1 && flags.indexOf('put') === -1) && flags.indexOf('patch') === -1) {
 		flags.push('post');
 		method += (method ? ',' : '') + 'post';
@@ -2228,7 +2220,6 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 	r.isHTTP = flags.indexOf('http') !== -1;
 	r.isDEBUG = flags.indexOf('debug') !== -1;
 	r.isRELEASE = flags.indexOf('release') !== -1;
-	r.isPROXY = flags.indexOf('proxy') !== -1;
 	r.isBOTH = isNOXHR ? false : true;
 	r.isXHR = flags.indexOf('xhr') !== -1;
 	r.isUPLOAD = flags.indexOf('upload') !== -1;
@@ -7236,12 +7227,6 @@ F.$requestcontinue = function(req, res, headers) {
 	var flags = [req.method.toLowerCase()];
 	var multipart;
 
-	if (headers['x-proxy'] === 'total.js') {
-		req.isProxy = true;
-		req.$flags += 'f';
-		flags.push('proxy');
-	}
-
 	if (F._request_check_mobile && req.mobile) {
 		req.$flags += 'a';
 		F.stats.request.mobile++;
@@ -9927,10 +9912,6 @@ Controller.prototype = {
 		return F.controllers;
 	},
 
-	get isProxy() {
-		return this.req.isProxy === true;
-	},
-
 	get isDebug() {
 		return F.config.debug;
 	},
@@ -12580,40 +12561,6 @@ Controller.prototype.close = function(end) {
 };
 
 /**
- * Sends an object to another total.js application (POST + JSON)
- * @param {String} url
- * @param {Object} obj
- * @param {Function(err, data, code, headers)} callback
- * @param {Number} timeout Timeout, optional default 10 seconds.
- * @return {EventEmitter}
- */
-Controller.prototype.proxy = function(url, obj, callback, timeout) {
-
-	var self = this;
-	var tmp;
-
-	if (typeof(callback) === 'number') {
-		tmp = timeout;
-		timeout = callback;
-		callback = tmp;
-	}
-
-	if (typeof(obj) === 'function') {
-		tmp = callback;
-		callback = obj;
-		obj = tmp;
-	}
-
-	return U.request(url, FLAGS_PROXY, obj, function(err, data, code, headers) {
-		if (!callback)
-			return;
-		if ((headers['content-type'] || '').lastIndexOf('/json') !== -1)
-			data = F.onParseJSON(data);
-		callback.call(self, err, data, code, headers);
-	}, null, HEADERS.proxy, ENCODING, timeout || 10000);
-};
-
-/**
  * Creates a proxy between current request and new URL
  * @param {String} url
  * @param {Function(err, response, headers)} callback Optional.
@@ -12621,7 +12568,7 @@ Controller.prototype.proxy = function(url, obj, callback, timeout) {
  * @param {Number} timeout Optional, timeout (default: 10000)
  * @return {EventEmitter}
  */
-Controller.prototype.proxy2 = function(url, callback, headers, timeout) {
+Controller.prototype.proxy = Controller.prototype.proxy2 = function(url, callback, headers, timeout) {
 
 	if (typeof(callback) === 'object') {
 		timeout = headers;
@@ -12687,6 +12634,7 @@ Controller.prototype.proxy2 = function(url, callback, headers, timeout) {
 		self.status = code;
 		callback && callback(err, data, code, headers);
 		self.content(data, (headers['content-type'] || 'text/plain').replace(REG_ENCODINGCLEANER, ''));
+
 	}, null, h, ENCODING, timeout || 10000);
 };
 
@@ -15272,10 +15220,10 @@ function extend_response(PROTO) {
 			});
 
 			client.on('close', function() {
-				if (res.success)
-					return;
-				F.stats.response.pipe++;
-				response_end(res);
+				if (!res.success) {
+					F.stats.response.pipe++;
+					response_end(res);
+				}
 			});
 		});
 

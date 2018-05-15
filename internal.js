@@ -683,11 +683,6 @@ exports.routeCompareFlags2 = function(req, route, membertype) {
 					continue;
 				return 0;
 
-			case 'proxy':
-				if (!route.isPROXY)
-					return 0;
-				continue;
-
 			case 'debug':
 				if (!route.isDEBUG && route.isRELEASE)
 					return 0;
