@@ -43,6 +43,7 @@ const RESSTORAGECLEAR = { TYPE: 'storage.clear' };
 const RESINDEXESGET = { TYPE: 'indexes.get' };
 const RESINDEXESCLEAR = { TYPE: 'indexes.clear' };
 const RESINDEXESREINDEX = { TYPE: 'indexes.reindex' };
+const RESSTREAM = { TYPE: 'stream' };
 
 function killprocess() {
 	process.exit(0);
@@ -270,6 +271,15 @@ process.on('message', function(msg) {
 			break;
 		case 'indexes.noreindex':
 			db.indexes.noreindex();
+			break;
+		case 'stream':
+			db[msg.TYPE](eval('(' + msg.arg[0] + ')'), msg.arg[1], function(err, repository, count) {
+				RESSTREAM.id = msg.id;
+				RESSTREAM.err = err;
+				RESSTREAM.repository = repository;
+				RESSTREAM.count = count;
+				process.send(RESSTREAM);
+			});
 			break;
 		case 'clean':
 		case 'clear':

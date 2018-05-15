@@ -139,6 +139,9 @@ exports.worker = function() {
 						case 'clear':
 							item.callback && item.callback(err);
 							break;
+						case 'stream':
+							item.callback && item.callback(err, EMPTYOBJECT, 0);
+							break;
 						default:
 							item.callback && item.callback(err, EMPTYOBJECT, EMPTYOBJECT);
 							break;
@@ -186,6 +189,10 @@ exports.worker = function() {
 			case 'indexes.get':
 				var obj = FORKCALLBACKS[msg.id];
 				obj && obj.callback && obj.callback(msg.err, msg.response);
+				break;
+			case 'stream':
+				var obj = FORKCALLBACKS[msg.id];
+				obj && obj.callback && obj.callback(msg.err, msg.response || {}, msg.count);
 				break;
 			case 'storage.scan':
 				var obj = FORKCALLBACKS[msg.id];
@@ -366,6 +373,17 @@ exports.worker = function() {
 
 	Database.prototype.remove = function(filename) {
 		return send(this, 'remove', filename).builder = new DatabaseBuilder(this);
+	};
+
+	Database.prototype.stream = function(fn, repository, callback) {
+
+		if (typeof(repository) === 'function')  {
+			callback = repository;
+			repository = undefined;
+		}
+
+		send(this, 'stream', fn.toString(), repository).callback = callback;
+		return this;
 	};
 
 	Counter.prototype.min = function(id, count) {
@@ -992,7 +1010,7 @@ Database.prototype.find2 = function(builder) {
 	return builder;
 };
 
-Database.prototype.streamer = function(fn, repository, callback) {
+Database.prototype.stream = function(fn, repository, callback) {
 	var self = this;
 
 	if (typeof(repository) === 'function') {
@@ -5479,7 +5497,7 @@ Indexes.prototype.reindex = function(callback) {
 	self.clear(function() {
 		self.db.$events['indexing-begin'] && self.db.emit('indexing-begin');
 		var chunker = U.chunker(self.db.name + '_reindex', 10000);
-		self.db.streamer(function(doc) {
+		self.db.stream(function(doc) {
 			chunker.write(doc);
 		}, function(err, repository, count) {
 			chunker.end();
