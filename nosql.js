@@ -192,7 +192,7 @@ exports.worker = function() {
 				break;
 			case 'stream':
 				var obj = FORKCALLBACKS[msg.id];
-				obj && obj.callback && obj.callback(msg.err, msg.response || {}, msg.count);
+				obj && obj.callback && obj.callback(msg.err, msg.repository || {}, msg.count);
 				break;
 			case 'storage.scan':
 				var obj = FORKCALLBACKS[msg.id];
