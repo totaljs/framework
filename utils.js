@@ -625,7 +625,7 @@ global.REQUEST = exports.request = function(url, flags, data, callback, cookies,
 
 function request_proxy(options, callback) {
 
-	PROXYHEADERS.host = options.uri.hostname;
+	PROXYHEADERS.host = options.uri.hostname + ':443';
 
 	var proxy = options.proxy;
 	proxy.path = options.uri.hostname + ':443';
@@ -653,9 +653,10 @@ function request_proxy(options, callback) {
 			var tls = Tls.connect(443, PROXYTLS);
 
 			tls.on('secureConnect', function() {
-				options.uri.agent = options.uri.protocol === 'http:' ? new Http.Agent() : new Https.Agent();
-				options.uri.agent.reuseSocket(tls, req);
-				//req.onSocket(tls);
+				var a = options.uri.agent = new Https.Agent();
+				a.defaultPort = 443;
+				a.reuseSocket(tls, req);
+				req.onSocket(tls);
 				options.socket = tls;
 				options.proxy.tls = tls;
 				callback(options.uri, options);
