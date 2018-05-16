@@ -650,7 +650,7 @@ function request_proxy(options, callback) {
 
 			PROXYTLS.servername = options.uri.hostname;
 			PROXYTLS.headers = options.uri.headers || {};
-			PROXYTLS.headers.host = options.uri.hostname;
+			PROXYTLS.headers.host = options.uri.hostname + ':' + (options.uri.port || '443');
 			PROXYTLS.socket = socket;
 
 			var tls = Tls.connect(443, PROXYTLS);
