@@ -686,6 +686,7 @@ function request_call(uri, options) {
 		opt.path = uri.href;
 		opt.headers = uri.headers;
 		opt.method = uri.method;
+		opt.headers.host = options.uri.host;
 
 		if (options.proxy._auth)
 			opt.headers['Proxy-Authorization'] = options.proxy._auth;
@@ -812,6 +813,7 @@ function request_response(res, uri, options) {
 		options.redirect++;
 
 		var tmp = Url.parse(res.headers['location']);
+
 		tmp.headers = uri.headers;
 		tmp.agent = false;
 		tmp.method = uri.method;
