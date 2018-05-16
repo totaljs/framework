@@ -66,6 +66,7 @@
 - added: `RESTBuilder.proxy(proxy)` for HTTP proxy
 - added: `U.request()` supports a new flag `proxy`, for example `proxy 127.0.0.1:8080`
 - added: NoSQL database a new event `change`, more in docs
+- added: `schema.define()(DEFAULT_VALUE)` added `DEFAULT_VALUE`
 
 - updated: (IMPORTANT) NoSQL binary divides files to independent directories for 1000 files per directory
 - updated: `GROUP()` by adding a new argument `url_prefix`
