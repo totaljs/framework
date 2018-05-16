@@ -1627,11 +1627,11 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 		if (!hasOwnProperty.call(model, property))
 			val = undefined;
 
-		var def = type.def != undefined ? typeof(type.def) === 'function' ? type.def() : type.def : undefined;
+		var def = type.def != undefined ? typeof(type.def) === 'function' ? true : false : undefined;
 
 		if (val === undefined) {
 			if (type.def !== undefined)
-				val = def;
+				val = def ? type.def() : type.def;
 			else if (defaults)
 				val = self.$ondefault(property, false, self.name);
 		}
@@ -1652,11 +1652,11 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 					break;
 				// number: integer
 				case 1:
-					item[property] = self.$onprepare(property, framework_utils.parseInt(val, def || 0), undefined, model);
+					item[property] = self.$onprepare(property, framework_utils.parseInt(val, (def ? type.def() : type.def) || 0), undefined, model);
 					break;
 				// number: float
 				case 2:
-					item[property] = self.$onprepare(property, framework_utils.parseFloat(val, def || 0), undefined, model);
+					item[property] = self.$onprepare(property, framework_utils.parseFloat(val, (def ? type.def() : type.def) || 0), undefined, model);
 					break;
 
 				// string
@@ -1716,7 +1716,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 					}
 
 					if (type.def && !tmp)
-						tmp = def;
+						tmp = def ? type.def() : type.def;
 
 					item[property] = self.$onprepare(property, tmp, undefined, model);
 					break;
@@ -1726,7 +1726,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 					tmp = val ? val.toString().toLowerCase() : null;
 
 					if (type.def && (tmp == null || tmp === ''))
-						tmp = def;
+						tmp = def ? type.def() : type.def;
 
 					item[property] = self.$onprepare(property, tmp === 'true' || tmp === '1' || tmp === 'on', undefined, model);
 					break;
@@ -1748,7 +1748,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 						tmp = self.$onprepare(property, tmp, undefined, model);
 					else {
 						if (type.def !== undefined)
-							tmp = def;
+							tmp = def ? type.def() : type.def;
 						else
 							tmp = (defaults ? isUndefined(self.$ondefault(property, false, self.name), null) : null);
 					}
@@ -1784,7 +1784,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 				case 7:
 
 					if (!val) {
-						val = (type.def === undefined ? defaults ? isUndefined(self.$ondefault(property, false, self.name), null) : null : def);
+						val = (type.def === undefined ? defaults ? isUndefined(self.$ondefault(property, false, self.name), null) : null : (def ? type.def() : type.def));
 						if (val === null) {
 							item[property] = null;
 							break;
@@ -1813,7 +1813,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 
 		// ARRAY:
 		if (!(val instanceof Array)) {
-			item[property] = (type.def === undefined ? defaults ? isUndefined(self.$ondefault(property, false, self.name), EMPTYARRAY) : [] : def);
+			item[property] = (type.def === undefined ? defaults ? isUndefined(self.$ondefault(property, false, self.name), EMPTYARRAY) : [] : (def ? type.def() : type.def));
 			continue;
 		}
 
