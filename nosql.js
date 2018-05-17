@@ -3215,6 +3215,8 @@ DatabaseBuilder.prototype.like = DatabaseBuilder.prototype.search = function(nam
 			break;
 		case '*':
 			code = '$is=false;if(doc.{0}){if(doc.{0} instanceof Array){for(var $i=0;$i<doc.{0}.length;$i++){if(doc.{0}[$i].toLowerCase().indexOf(arg.{1})!==-1){$is=true;break;}}}else{$is=doc.{0}.toLowerCase?doc.{0}.toLowerCase().indexOf(arg.{1})!==-1:false}}';
+			if (value instanceof Array)
+				value = value.join(' ');
 			value = value.toLowerCase();
 			break;
 	}
