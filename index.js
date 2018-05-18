@@ -553,7 +553,6 @@ global.OBSOLETE = function(name, message) {
 };
 
 global.DEBUG = false;
-global.TEST = false;
 global.RELEASE = false;
 global.is_client = false;
 global.is_server = true;
@@ -14829,10 +14828,8 @@ function extend_request(PROTO) {
 	};
 
 	PROTO.$total_prepare = function() {
-
 		var req = this;
 		var length = req.flags.length;
-
 		if (F.onAuthorize) {
 			F.onAuthorize(req, req.res, req.flags, function(isAuthorized, user) {
 				var hasRoles = length !== req.flags.length;

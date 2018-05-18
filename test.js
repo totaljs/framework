@@ -129,6 +129,18 @@ global.OK = function(is, description) {
 	T.immediate = setImmediate(NEXT);
 };
 
+global.TESTUSER = function(user) {
+	if (!T.auth)
+		T.auth = F.onAuthorize;
+	T.user = user;
+	if (user) {
+		F.onAuthorize = function(req, res, flags, next) {
+			next(true, F.tests.user);
+		};
+	} else
+		F.onAuthorize = T.auth;
+};
+
 exports.load = function() {
 	U.ls(F.path.tests(), function(files) {
 		files.waitFor(function(filename, next) {
