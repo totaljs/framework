@@ -283,9 +283,8 @@ function runwatching() {
 
 				isLoaded = true;
 
-				reload && livereload();
-
 				if (status !== 1 || !force) {
+					reload && livereload();
 					if (counter % 150 === 0)
 						speed = isRELOAD ? 3000 : 6000;
 					setTimeout(refresh_directory, speed);
@@ -303,7 +302,6 @@ function runwatching() {
 
 				changes = [];
 				force = false;
-				livereload();
 			}, 3);
 		}
 
@@ -354,7 +352,6 @@ function runwatching() {
 			app.on('message', function(msg) {
 				switch (msg) {
 					case 'total:eaddrinuse':
-						console.log('OK2');
 						process.exit(1);
 						break;
 					case 'total:ready':
@@ -362,6 +359,7 @@ function runwatching() {
 							app.send('total:debug');
 							status = 1;
 						}
+						livereload();
 						break;
 				}
 			});
@@ -371,7 +369,6 @@ function runwatching() {
 				// checks unexpected exit
 				if (isSkip === false) {
 					app = null;
-					console.log('OK');
 					process.exit();
 					return;
 				}
