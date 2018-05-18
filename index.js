@@ -553,6 +553,7 @@ global.OBSOLETE = function(name, message) {
 };
 
 global.DEBUG = false;
+global.TEST = false;
 global.RELEASE = false;
 global.is_client = false;
 global.is_server = true;
