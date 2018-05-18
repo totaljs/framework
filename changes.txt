@@ -20,6 +20,7 @@
 - added: `SchemaOptions.output()` alias to `$.model.$output()`
 - added: `SchemaOptions.clean()` alias to `$.model.$clean()`
 - added: `SchemaOptions.response()` alias to `$.model.$response([index])`
+- added: `SchemaOptions.$async(callback, [index])` alias to `$.model.$async()`
 - added: `SchemaOptions.$get([options], [callback])` alias to `$.model.$get()`
 - added: `SchemaOptions.$insert([options], [callback])` alias to `$.model.$insert()`
 - added: `SchemaOptions.$query([options], [callback])` alias to `$.model.$query()`

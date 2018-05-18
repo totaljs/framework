@@ -95,6 +95,11 @@ SchemaOptions.prototype.clean = function() {
 	return this.model.$clean();
 };
 
+SchemaOptions.prototype.$async = function(callback, index) {
+	this.model.$async(callback, index);
+	return this;
+};
+
 SchemaOptions.prototype.$workflow = function(name, helper, callback, async) {
 	this.model.$workflow(name, helper, callback, async);
 	return this;
