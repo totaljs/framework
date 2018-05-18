@@ -118,15 +118,27 @@ global.TEST = function(name, url, scope) {
 };
 
 global.FAIL = function(is, description) {
-	logger(is ? true : false, T.currentname, description);
-	T.immediate && clearImmediate(T.immediate);
-	T.immediate = setImmediate(NEXT);
+	if (arguments.length) {
+		logger(is ? true : false, T.currentname, description);
+		T.immediate && clearImmediate(T.immediate);
+		T.immediate = setImmediate(NEXT);
+	} else {
+		return function(err) {
+			FAIL(err == null);
+		};
+	}
 };
 
 global.OK = function(is, description) {
-	logger(is ? false : true, T.currentname, description);
-	T.immediate && clearImmediate(T.immediate);
-	T.immediate = setImmediate(NEXT);
+	if (arguments.length) {
+		logger(is ? false : true, T.currentname, description);
+		T.immediate && clearImmediate(T.immediate);
+		T.immediate = setImmediate(NEXT);
+	} else {
+		return function(err) {
+			OK(err == null);
+		};
+	}
 };
 
 global.TESTUSER = function(user) {
