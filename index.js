@@ -1285,7 +1285,7 @@ F.stop = F.kill = function(signal) {
 	F.cache.stop();
 	F.server && F.server.close && F.server.close();
 
-	setTimeout(() => process.exit(signal), TEST ? 2000 : 100);
+	setTimeout(() => process.exit(signal), global.TEST ? 2000 : 100);
 	return F;
 };
 
