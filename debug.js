@@ -319,6 +319,10 @@ function runwatching() {
 				{
 					isSkip = true;
 					process.kill(app.pid);
+					if (options.inspector) {
+						setTimeout(restart, 1000);
+						return;
+					}
 				} catch (err) {}
 				app = null;
 			}
@@ -350,6 +354,7 @@ function runwatching() {
 			app.on('message', function(msg) {
 				switch (msg) {
 					case 'total:eaddrinuse':
+						console.log('OK2');
 						process.exit(1);
 						break;
 					case 'total:ready':
@@ -366,6 +371,7 @@ function runwatching() {
 				// checks unexpected exit
 				if (isSkip === false) {
 					app = null;
+					console.log('OK');
 					process.exit();
 					return;
 				}
