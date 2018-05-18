@@ -95,6 +95,56 @@ SchemaOptions.prototype.clean = function() {
 	return this.model.$clean();
 };
 
+SchemaOptions.prototype.$workflow = function(name, helper, callback, async) {
+	this.model.$workflow(name, helper, callback, async);
+	return this;
+};
+
+SchemaOptions.prototype.$transform = function(name, helper, callback, async) {
+	this.model.$transform(name, helper, callback, async);
+	return this;
+};
+
+SchemaOptions.prototype.$operation = function(name, helper, callback, async) {
+	this.model.$operation(name, helper, callback, async);
+	return this;
+};
+
+SchemaOptions.prototype.$hook = function(name, helper, callback, async) {
+	this.model.$hook(name, helper, callback, async);
+	return this;
+};
+
+SchemaOptions.prototype.$save = function(helper, callback, async) {
+	this.model.$save(helper, callback, async);
+	return this;
+};
+
+SchemaOptions.prototype.$insert = function(helper, callback, async) {
+	this.model.$insert(helper, callback, async);
+	return this;
+};
+
+SchemaOptions.prototype.$update = function(helper, callback, async) {
+	this.model.$update(helper, callback, async);
+	return this;
+};
+
+SchemaOptions.prototype.$query = function(helper, callback, async) {
+	this.model.$query(helper, callback, async);
+	return this;
+};
+
+SchemaOptions.prototype.$delete = SchemaOptions.prototype.$remove = function(helper, callback, async) {
+	this.model.$remove(helper, callback, async);
+	return this;
+};
+
+SchemaOptions.prototype.$get = SchemaOptions.prototype.$read = function(helper, callback, async) {
+	this.model.$get(helper, callback, async);
+	return this;
+};
+
 SchemaOptions.prototype.push = function(type, name, helper, first) {
 	return this.model.$push(type, name, helper, first);
 };

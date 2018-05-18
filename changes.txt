@@ -20,6 +20,17 @@
 - added: `SchemaOptions.output()` alias to `$.model.$output()`
 - added: `SchemaOptions.clean()` alias to `$.model.$clean()`
 - added: `SchemaOptions.response()` alias to `$.model.$response([index])`
+- added: `SchemaOptions.$get([options], [callback])` alias to `$.model.$get()`
+- added: `SchemaOptions.$insert([options], [callback])` alias to `$.model.$insert()`
+- added: `SchemaOptions.$query([options], [callback])` alias to `$.model.$query()`
+- added: `SchemaOptions.$remove([options], [callback])` alias to `$.model.$remove()`
+- added: `SchemaOptions.$save([options], [callback])` alias to `$.model.$save()`
+- added: `SchemaOptions.$update([options], [callback])` alias to `$.model.$update()`
+- added: `SchemaOptions.$workflow(name, [options], [callback])` alias to `$.model.$workflow()`
+- added: `SchemaOptions.$transform(name, [options], [callback])` alias to `$.model.$transform()`
+- added: `SchemaOptions.$operation(name, [options], [callback])` alias to `$.model.$operation()`
+- added: `SchemaOptions.$hook(name, [options], [callback])` alias to `$.model.$hook()`
+- added: `SchemaOptions.stop()` alias to `$.model.$stop()`
 - added: a new route flag type `&group` something like `roles` but groups aren't evaluated
 - added: `route.groups` with defined groups
 - added: `DatabaseBuilder.insert(fn(doc))` can modify a document after `update` or `modify` has `insert` mode
