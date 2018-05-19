@@ -141,12 +141,26 @@ global.OK = function(is, description) {
 	}
 };
 
-global.TESTUSER = function(user) {
+global.TESTUSER = function(user, flags) {
+
 	if (!T.auth)
 		T.auth = F.onAuthorize;
+
 	T.user = user;
+	T.flags = flags;
+
 	if (user) {
 		F.onAuthorize = function(req, res, flags, next) {
+
+			if (T.flags && T.flags.length) {
+				for (var i = 0; i < T.flags.length; i++) {
+					var f = T.flags[i];
+					if (f[0] !== '@')
+						f = '@' + f;
+					flags.push(f);
+				}
+			}
+
 			next(true, F.tests.user);
 		};
 	} else
