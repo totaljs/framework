@@ -76,9 +76,11 @@ const REG_CSS_8 = /\s\{/g;
 const REG_CSS_9 = /;\}/g;
 const REG_CSS_10 = /\$[a-z0-9-_]+:.*?;/gi;
 const REG_CSS_11 = /\$[a-z0-9-_]+/gi;
+const REG_CSS_12 = /(margin|padding|border-radius):.*?(;|})/g;
 const AUTOVENDOR = ['filter', 'appearance', 'column-count', 'column-gap', 'column-rule', 'display', 'transform', 'transform-style', 'transform-origin', 'transition', 'user-select', 'animation', 'perspective', 'animation-name', 'animation-duration', 'animation-timing-function', 'animation-delay', 'animation-iteration-count', 'animation-direction', 'animation-play-state', 'opacity', 'background', 'background-image', 'font-smoothing', 'text-size-adjust', 'backface-visibility', 'box-sizing', 'overflow-scrolling'];
 const WRITESTREAM = { flags: 'w' };
 const EMPTYBUFFER = framework_utils.createBufferSize(0);
+const ALLOWEDMARKUP = { G: 1, M: 1, R: 1, repository: 1, model: 1, config: 1, global: 1, resource: 1, RESOURCE: 1, CONFIG: 1, author: 1, root: 1, functions: 1, NOW: 1, F: 1 };
 
 var INDEXFILE = 0;
 var INDEXMIXED = 0;
@@ -905,13 +907,58 @@ function compile_autovendor(css) {
 	var isAuto = css.substring(0, 100).indexOf(avp) !== -1;
 	if (isAuto)
 		css = autoprefixer(css.replace(avp, ''));
+
 	return css.replace(REG_CSS_1, '').replace(REG_CSS_2, '{').replace(REG_CSS_3, '}').replace(REG_CSS_4, ':').replace(REG_CSS_5, ';').replace(REG_CSS_6, function(search, index, text) {
 		for (var i = index; i > 0; i--) {
 			if ((text[i] === '\'' || text[i] === '"') && (text[i - 1] === ':'))
 				return search;
 		}
 		return ',';
-	}).replace(REG_CSS_7, '}').replace(REG_CSS_8, '{').replace(REG_CSS_9, '}').trim();
+	}).replace(REG_CSS_7, '}').replace(REG_CSS_8, '{').replace(REG_CSS_9, '}').replace(REG_CSS_12, cssmarginpadding).trim();
+}
+
+function cssmarginpadding(text) {
+
+	// margin
+	// padding
+
+	var prop = '';
+	var val;
+	var l = text.length - 1;
+	var last = text[l];
+
+	if (text[0] === 'm') {
+		prop = 'margin:';
+		val = text.substring(7, l);
+	} else {
+		prop = 'padding:';
+		val = text.substring(8, l);
+	}
+
+	var a = val.split(' ');
+
+	for (var i = 0; i < a.length; i++) {
+		if (a[i][0] === '0' && a[i].charCodeAt(1) > 58)
+			a[i] = '0';
+	}
+
+	// 0 0 0 0 --> 0
+	if (a[0] === '0' && a[1] === '0' && a[2] === '0' && a[3] === '0')
+		return prop + '0' + last;
+
+	// 20px 0 0 0 --> 20px 0 0
+	if (a[0] !== '0' && a[1] === '0' && a[2] === '0' && a[3] === '0')
+		return prop + a[0] + ' 0 0' + last;
+
+	// 20px 30px 20px 30px --> 20px 30px
+	if (a[1] && a[2] && a[3] && a[0] === a[3] && a[1] === a[2])
+		return prop + a[0] + ' ' + a[1] + last;
+
+	// 20px 30px 10px 30px --> 20px 30px 10px
+	if (a[2] && a[3] && a[1] === a[3] && a[0] !== a[2])
+		return prop + a[0] + ' ' + a[1] + ' ' + a[2] + last;
+
+	return text;
 }
 
 function autoprefixer(value) {
@@ -945,7 +992,8 @@ function autoprefixer(value) {
 				continue;
 
 			// text-transform
-			var isPrefix = value.substring(index - 1, index) === '-';
+			var before = value.substring(index - 1, index);
+			var isPrefix = before === '-';
 			if (isPrefix)
 				continue;
 
@@ -955,7 +1003,7 @@ function autoprefixer(value) {
 			if (end === -1 || css.substring(0, end + 1).replace(/\s/g, '') !== property + ':')
 				continue;
 
-			builder.push({ name: property, property: css });
+			builder.push({ name: property, property: before + css, css: css });
 		}
 	}
 
@@ -965,7 +1013,10 @@ function autoprefixer(value) {
 	for (var i = 0; i < length; i++) {
 
 		var name = builder[i].name;
-		property = builder[i].property;
+		var replace = builder[i].property;
+		var before = replace[0];
+
+		property = builder[i].css.trim();
 
 		var plus = property;
 		var delimiter = ';';
@@ -973,11 +1024,11 @@ function autoprefixer(value) {
 
 		if (name === 'opacity') {
 			var opacity = +plus.replace('opacity', '').replace(':', '').replace(/\s/g, '');
-			if (isNaN(opacity))
-				continue;
-			updated += 'filter:alpha(opacity=' + Math.floor(opacity * 100) + ')';
-			value = value.replacer(property, '@[[' + output.length + ']]');
-			output.push(updated);
+			if (!isNaN(opacity)) {
+				updated += 'filter:alpha(opacity=' + Math.floor(opacity * 100) + ')';
+				value = value.replacer(replace, before + '@[[' + output.length + ']]');
+				output.push(updated);
+			}
 			continue;
 		}
 
@@ -985,7 +1036,7 @@ function autoprefixer(value) {
 			updated = plus + delimiter;
 			updated += plus.replacer('font-smoothing', '-webkit-font-smoothing') + delimiter;
 			updated += plus.replacer('font-smoothing', '-moz-osx-font-smoothing');
-			value = value.replacer(property, '@[[' + output.length + ']]');
+			value = value.replacer(replace, before + '@[[' + output.length + ']]');
 			output.push(updated);
 			continue;
 		}
@@ -996,50 +1047,49 @@ function autoprefixer(value) {
 				updated += plus.replacer('repeating-linear-', '-moz-repeating-linear-') + delimiter;
 				updated += plus.replacer('repeating-linear-', '-ms-repeating-linear-') + delimiter;
 				updated += plus;
-				value = value.replacer(property, '@[[' + output.length + ']]');
+				value = value.replacer(replace, before + '@[[' + output.length + ']]');
 				output.push(updated);
 			} else if (property.indexOf('repeating-radial-gradient') !== -1) {
 				updated = plus.replacer('repeating-radial-', '-webkit-repeating-radial-') + delimiter;
 				updated += plus.replacer('repeating-radial-', '-moz-repeating-radial-') + delimiter;
 				updated += plus.replacer('repeating-radial-', '-ms-repeating-radial-') + delimiter;
 				updated += plus;
-				value = value.replacer(property, '@[[' + output.length + ']]');
+				value = value.replacer(replace, before + '@[[' + output.length + ']]');
 				output.push(updated);
 			} else if (property.indexOf('linear-gradient') !== -1) {
 				updated = plus.replacer('linear-', '-webkit-linear-') + delimiter;
 				updated += plus.replacer('linear-', '-moz-linear-') + delimiter;
 				updated += plus.replacer('linear-', '-ms-linear-') + delimiter;
 				updated += plus;
-				value = value.replacer(property, '@[[' + output.length + ']]');
+				value = value.replacer(replace, before + '@[[' + output.length + ']]');
 				output.push(updated);
 			} else if (property.indexOf('radial-gradient') !== -1) {
 				updated = plus.replacer('radial-', '-webkit-radial-') + delimiter;
 				updated += plus.replacer('radial-', '-moz-radial-') + delimiter;
 				updated += plus.replacer('radial-', '-ms-radial-') + delimiter;
 				updated += plus;
-				value = value.replacer(property, '@[[' + output.length + ']]');
+				value = value.replacer(replace, before + '@[[' + output.length + ']]');
 				output.push(updated);
 			}
-
 			continue;
 		}
 
 		if (name === 'text-overflow') {
 			updated = plus + delimiter;
 			updated += plus.replacer('text-overflow', '-ms-text-overflow');
-			value = value.replacer(property, '@[[' + output.length + ']]');
+			value = value.replacer(replace, before + '@[[' + output.length + ']]');
 			output.push(updated);
 			continue;
 		}
 
 		if (name === 'display') {
-			if (property.indexOf('box') === -1)
-				continue;
-			updated = plus + delimiter;
-			updated += plus.replacer('box', '-webkit-box') + delimiter;
-			updated += plus.replacer('box', '-moz-box');
-			value = value.replacer(property, '@[[' + output.length + ']]');
-			output.push(updated);
+			if (property.indexOf('box') !== -1) {
+				updated = plus + delimiter;
+				updated += plus.replacer('box', '-webkit-box') + delimiter;
+				updated += plus.replacer('box', '-moz-box');
+				value = value.replacer(replace, before + '@[[' + output.length + ']]');
+				output.push(updated);
+			}
 			continue;
 		}
 
@@ -1049,7 +1099,7 @@ function autoprefixer(value) {
 		if (name.indexOf('animation') === -1)
 			updated += delimiter + '-ms-' + plus;
 
-		value = value.replacer(property, '@[[' + output.length + ']]');
+		value = value.replacer(replace, before + '@[[' + output.length + ']]');
 		output.push(updated);
 	}
 
@@ -3323,6 +3373,7 @@ exports.restart = function() {
 };
 
 function markup(body) {
+
 	var command = view_find_command(body, 0, true);
 	if (!command)
 		return body;
@@ -3333,21 +3384,39 @@ function markup(body) {
 	var r = [];
 
 	while (command) {
-		var cmd = command.command;
 
-		switch (cmd) {
-			case 'author':
-				cmd = 'F.config.author';
-				break;
-			case 'root':
-				cmd = 'F.config[\'default-root\']';
-				break;
+		var cmd = command.command;
+		var name = cmd;
+
+		if (name.substring(0, 2) === '\'%') {
+			name = 'config';
+			cmd = 'config[\'' + cmd.substring(2) + ']';
+		} else {
+			var index = name.indexOf('.');
+			if (index !== -1)
+				name = name.substring(0, index);
+			else {
+				index = name.indexOf('(');
+				if (index !== -1)
+					name = name.substring(0, index);
+			}
 		}
 
-		try {
-			r.push({ cmd: command.phrase, value: eval('(' + cmd + ')') });
-		} catch (e) {
-			console.log('A markup compilation error -->', cmd, e);
+		if (ALLOWEDMARKUP[name]) {
+			switch (cmd) {
+				case 'author':
+					cmd = 'F.config.author';
+					break;
+				case 'root':
+					cmd = 'F.config[\'default-root\']';
+					break;
+			}
+
+			try {
+				r.push({ cmd: command.phrase, value: eval('(' + cmd + ')') });
+			} catch (e) {
+				console.log('A markup compilation error -->', cmd, e);
+			}
 		}
 
 		command = view_find_command(body, command.end, true);
