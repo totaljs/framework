@@ -127,6 +127,7 @@
 - improved: `debug` mode timing with improved consumption
 - improved: performance (+20%) NoSQL embedded database
 - improved: reading performance (+5%) in `U.streamer()`
+- improved: CSS compressor
 
 ======= 2.9.4 (HOTFIX)
 
