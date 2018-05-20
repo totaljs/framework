@@ -951,7 +951,7 @@ function cssmarginpadding(text) {
 		return prop + a[0] + ' 0 0' + last;
 
 	// 20px 30px 20px 30px --> 20px 30px
-	if (a[1] && a[2] && a[3] && a[0] === a[3] && a[1] === a[2])
+	if (a[1] && a[2] && a[3] && a[0] === a[2] && a[1] === a[3])
 		return prop + a[0] + ' ' + a[1] + last;
 
 	// 20px 30px 10px 30px --> 20px 30px 10px
