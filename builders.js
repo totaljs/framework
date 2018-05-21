@@ -96,58 +96,47 @@ SchemaOptions.prototype.clean = function() {
 };
 
 SchemaOptions.prototype.$async = function(callback, index) {
-	this.model.$async(callback, index);
-	return this;
+	return this.model.$async(callback, index);
 };
 
 SchemaOptions.prototype.$workflow = function(name, helper, callback, async) {
-	this.model.$workflow(name, helper, callback, async);
-	return this;
+	return this.model.$workflow(name, helper, callback, async);
 };
 
 SchemaOptions.prototype.$transform = function(name, helper, callback, async) {
-	this.model.$transform(name, helper, callback, async);
-	return this;
+	return this.model.$transform(name, helper, callback, async);
 };
 
 SchemaOptions.prototype.$operation = function(name, helper, callback, async) {
-	this.model.$operation(name, helper, callback, async);
-	return this;
+	return this.model.$operation(name, helper, callback, async);
 };
 
 SchemaOptions.prototype.$hook = function(name, helper, callback, async) {
-	this.model.$hook(name, helper, callback, async);
-	return this;
+	return this.model.$hook(name, helper, callback, async);
 };
 
 SchemaOptions.prototype.$save = function(helper, callback, async) {
-	this.model.$save(helper, callback, async);
-	return this;
+	return this.model.$save(helper, callback, async);
 };
 
 SchemaOptions.prototype.$insert = function(helper, callback, async) {
-	this.model.$insert(helper, callback, async);
-	return this;
+	return this.model.$insert(helper, callback, async);
 };
 
 SchemaOptions.prototype.$update = function(helper, callback, async) {
-	this.model.$update(helper, callback, async);
-	return this;
+	return this.model.$update(helper, callback, async);
 };
 
 SchemaOptions.prototype.$query = function(helper, callback, async) {
-	this.model.$query(helper, callback, async);
-	return this;
+	return this.model.$query(helper, callback, async);
 };
 
 SchemaOptions.prototype.$delete = SchemaOptions.prototype.$remove = function(helper, callback, async) {
-	this.model.$remove(helper, callback, async);
-	return this;
+	return this.model.$remove(helper, callback, async);
 };
 
 SchemaOptions.prototype.$get = SchemaOptions.prototype.$read = function(helper, callback, async) {
-	this.model.$get(helper, callback, async);
-	return this;
+	return this.model.$get(helper, callback, async);
 };
 
 SchemaOptions.prototype.push = function(type, name, helper, first) {
@@ -2543,6 +2532,7 @@ SchemaInstance.prototype.$async = function(callback, index) {
 	a.pending = 0;
 
 	a.next = function() {
+		a.running = true;
 		var fn = a.fn ? a.fn.shift() : null;
 		if (fn) {
 			a.pending++;
@@ -2552,6 +2542,7 @@ SchemaInstance.prototype.$async = function(callback, index) {
 	};
 
 	a.done = function() {
+		a.running = false;
 		a.pending--;
 		if (a.fn.length)
 			setImmediate(a.next);
@@ -2712,9 +2703,14 @@ SchemaInstance.prototype.$controller = function(controller) {
 };
 
 SchemaInstance.prototype.$save = function(helper, callback, async) {
-	if (this.$$async) {
 
-		if (callback === true) {
+	if (this.$$async && !this.$$async.running) {
+
+		if (typeof(helper) === 'function') {
+			async = callback;
+			callback = helper;
+			helper = null;
+		} else if (callback === true) {
 			var a = async;
 			async = true;
 			callback = a;
@@ -2728,9 +2724,14 @@ SchemaInstance.prototype.$save = function(helper, callback, async) {
 };
 
 SchemaInstance.prototype.$insert = function(helper, callback, async) {
-	if (this.$$async) {
 
-		if (callback === true) {
+	if (this.$$async && !this.$$async.running) {
+
+		if (typeof(helper) === 'function') {
+			async = callback;
+			callback = helper;
+			helper = null;
+		} else if (callback === true) {
 			var a = async;
 			async = true;
 			callback = a;
@@ -2744,9 +2745,14 @@ SchemaInstance.prototype.$insert = function(helper, callback, async) {
 };
 
 SchemaInstance.prototype.$update = function(helper, callback, async) {
-	if (this.$$async) {
 
-		if (callback === true) {
+	if (this.$$async && !this.$$async.running) {
+
+		if (typeof(helper) === 'function') {
+			async = callback;
+			callback = helper;
+			helper = null;
+		} else if (callback === true) {
 			var a = async;
 			async = true;
 			callback = a;
@@ -2760,9 +2766,14 @@ SchemaInstance.prototype.$update = function(helper, callback, async) {
 };
 
 SchemaInstance.prototype.$query = function(helper, callback, async) {
-	if (this.$$async) {
 
-		if (callback === true) {
+	if (this.$$async && !this.$$async.running) {
+
+		if (typeof(helper) === 'function') {
+			async = callback;
+			callback = helper;
+			helper = null;
+		} else if (callback === true) {
 			var a = async;
 			async = true;
 			callback = a;
@@ -2771,14 +2782,19 @@ SchemaInstance.prototype.$query = function(helper, callback, async) {
 		this.$push('query', null, helper, null, async, callback);
 	} else
 		this.$$schema.query(this, helper, callback, this.$$controller);
+
 	return this;
 };
 
 SchemaInstance.prototype.$read = SchemaInstance.prototype.$get = function(helper, callback, async) {
 
-	if (this.$$async) {
+	if (this.$$async && !this.$$async.running) {
 
-		if (callback === true) {
+		if (typeof(helper) === 'function') {
+			async = callback;
+			callback = helper;
+			helper = null;
+		} else if (callback === true) {
 			var a = async;
 			async = true;
 			callback = a;
@@ -2793,9 +2809,13 @@ SchemaInstance.prototype.$read = SchemaInstance.prototype.$get = function(helper
 
 SchemaInstance.prototype.$delete = SchemaInstance.prototype.$remove = function(helper, callback, async) {
 
-	if (this.$$async) {
+	if (this.$$async && !this.$$async.running) {
 
-		if (callback === true) {
+		if (typeof(helper) === 'function') {
+			async = callback;
+			callback = helper;
+			helper = null;
+		} else if (callback === true) {
 			var a = async;
 			async = true;
 			callback = a;
@@ -2819,9 +2839,13 @@ SchemaInstance.prototype.$destroy = function() {
 
 SchemaInstance.prototype.$transform = function(name, helper, callback, async) {
 
-	if (this.$$async) {
+	if (this.$$async && !this.$$async.running) {
 
-		if (callback === true) {
+		if (typeof(helper) === 'function') {
+			async = callback;
+			callback = helper;
+			helper = null;
+		} else if (callback === true) {
 			var a = async;
 			async = true;
 			callback = a;
@@ -2837,9 +2861,13 @@ SchemaInstance.prototype.$transform = function(name, helper, callback, async) {
 
 SchemaInstance.prototype.$workflow = function(name, helper, callback, async) {
 
-	if (this.$$async) {
+	if (this.$$async && !this.$$async.running) {
 
-		if (callback === true) {
+		if (typeof(helper) === 'function') {
+			async = callback;
+			callback = helper;
+			helper = null;
+		} else if (callback === true) {
 			var a = async;
 			async = true;
 			callback = a;
@@ -2855,9 +2883,13 @@ SchemaInstance.prototype.$workflow = function(name, helper, callback, async) {
 
 SchemaInstance.prototype.$hook = function(name, helper, callback, async) {
 
-	if (this.$$async) {
+	if (this.$$async && !this.$$async.running) {
 
-		if (callback === true) {
+		if (typeof(helper) === 'function') {
+			async = callback;
+			callback = helper;
+			helper = null;
+		} else if (callback === true) {
 			var a = async;
 			async = true;
 			callback = a;
@@ -2873,9 +2905,20 @@ SchemaInstance.prototype.$hook = function(name, helper, callback, async) {
 
 SchemaInstance.prototype.$operation = function(name, helper, callback, async) {
 
-	if (this.$$async)
+	if (this.$$async && !this.$$async.running) {
+
+		if (typeof(helper) === 'function') {
+			async = callback;
+			callback = helper;
+			helper = null;
+		} else if (callback === true) {
+			var a = async;
+			async = true;
+			callback = a;
+		}
+
 		this.$push('operation', name, helper, null, async, callback);
-	else
+	} else
 		this.$$schema.operation(name, this, helper, callback, undefined, this.$$controller);
 
 	return this;
