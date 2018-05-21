@@ -194,11 +194,8 @@ const hasOwnProperty = Object.prototype.hasOwnProperty;
  */
 exports.isEmpty = function(obj) {
 
-	if (!obj)
+	if (!obj || obj instanceof Array)
 		return true;
-
-	if (obj.length)
-		return false;
 
 	for (var key in obj) {
 		if (hasOwnProperty.call(obj, key))
