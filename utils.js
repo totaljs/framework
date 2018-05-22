@@ -638,12 +638,15 @@ function request_proxy(options, callback) {
 
 	var req = Http.request(proxy);
 
+	req.setTimeout(2000);
+
 	req.on('error', function(e) {
 		options.callback(new Error('Proxy error: ' + e.toString()), '', 0, EMPTYOBJECT, proxy.hostname, EMPTYOBJECT);
 		options.callback = null;
 	});
 
 	req.on('connect', function(res, socket) {
+
 		if (res.statusCode === 200) {
 
 			PROXYTLS.servername = options.uri.hostname;
@@ -651,15 +654,14 @@ function request_proxy(options, callback) {
 			PROXYTLS.headers.host = options.uri.hostname + ':' + (options.uri.port || '443');
 			PROXYTLS.socket = socket;
 
-			var tls = Tls.connect(443, PROXYTLS);
+			var tls = Tls.connect(0, PROXYTLS);
+
+			options.proxy.tls = tls;
+			req.agent.defaultPort = 443;
+			req.onSocket(tls);
 
 			tls.on('secureConnect', function() {
-				var a = options.uri.agent = new Https.Agent();
-				a.defaultPort = 443;
-				a.reuseSocket(tls, req);
-				req.onSocket(tls);
-				options.socket = tls;
-				options.proxy.tls = tls;
+				tls.end();
 				callback(options.uri, options);
 			});
 
