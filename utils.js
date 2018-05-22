@@ -609,7 +609,7 @@ global.REQUEST = exports.request = function(url, flags, data, callback, cookies,
 
 	options.proxy = proxy;
 
-	if (uri.protocol === 'https:') {
+	if (proxy && uri.protocol === 'https:') {
 		proxy.tls = true;
 		uri.agent = new ProxyAgent(options);
 		uri.agent.request = Http.request;
@@ -1125,7 +1125,7 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 
 	options.proxy = proxy;
 
-	if (uri.protocol === 'https:') {
+	if (proxy && uri.protocol === 'https:') {
 		proxy.tls = true;
 		uri.agent = new ProxyAgent(options);
 		uri.agent.request = Http.request;
