@@ -631,6 +631,7 @@ function request_proxy(options, callback) {
 	proxy.path = options.uri.hostname + ':443';
 	proxy.headers = PROXYHEADERS;
 	proxy.method = 'CONNECT';
+	proxy.agent = false;
 
 	if (proxy._auth)
 		proxy.headers['Proxy-Authorization'] = proxy._auth;
