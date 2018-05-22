@@ -6424,7 +6424,7 @@ F.response503 = function(req, res) {
 	res.options.code = 503;
 	res.options.headers = HEADERS.response503;
 	res.options.body = F.view('.' + PATHMODULES + '503', F.waits);
-	res.$throw();
+	res.$text();
 	return F;
 };
 
