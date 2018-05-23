@@ -131,6 +131,7 @@
 - improved: performance (+20%) NoSQL embedded database
 - improved: reading performance (+5%) in `U.streamer()`
 - improved: CSS compressor
+- improved: CORS processing
 
 ======= 2.9.4 (HOTFIX)
 
