@@ -3260,6 +3260,8 @@ ErrorBuilder.prototype.add = function(name, error, path, index) {
 	return this.push(name, error, path, index);
 };
 
+const ERRORBUILDERWHITE = { ' ': 1, ':': 1, ',': 1 };
+
 /**
  * Add an error (@alias for add)
  * @param {String} name  Property name.
@@ -3311,8 +3313,21 @@ ErrorBuilder.prototype.push = function(name, error, path, index, prefix) {
 		path = undefined;
 	}
 
-	if (!error)
+	if (!error && typeof(name) === 'string') {
+		var m = name.length;
+		if (m > 15)
+			m = 15;
+
 		error = '@';
+
+		for (var i = 0; i < m; i++) {
+			if (ERRORBUILDERWHITE[name[i]]) {
+				error = name;
+				name = '';
+				break;
+			}
+		}
+	}
 
 	if (error instanceof Error) {
 		// Why? The answer is in controller.callback(); It's a reason for throwing 500 - internal server error
