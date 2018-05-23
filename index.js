@@ -1622,8 +1622,10 @@ global.CORS = F.cors = function(url, flags, credentials) {
 	route.isWILDCARD = url.lastIndexOf('*') !== -1;
 
 	var index = url.indexOf('{');
-	if (index !== -1)
+	if (index !== -1) {
+		route.isWILDCARD = true;
 		url = url.substring(0, index);
+	}
 
 	if (route.isWILDCARD)
 		url = url.replace('*', '');
