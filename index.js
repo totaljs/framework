@@ -730,6 +730,7 @@ function Framework() {
 		system: {},
 		files: [],
 		cors: [],
+		corsall: false,
 		websockets: [],
 		middleware: {},
 		redirects: {},
@@ -1561,6 +1562,12 @@ F.restful2 = function(url, flags, onQuery, onGet, onSave, onDelete) {
  */
 global.CORS = F.cors = function(url, flags, credentials) {
 
+	if (!arguments.length) {
+		F.routes.corsall = true;
+		PERF.OPTIONS = true;
+		return F;
+	}
+
 	var route = {};
 	var origins = [];
 	var methods = [];
@@ -1614,11 +1621,17 @@ global.CORS = F.cors = function(url, flags, credentials) {
 
 	route.isWILDCARD = url.lastIndexOf('*') !== -1;
 
+	var index = url.indexOf('{');
+	if (index !== -1)
+		url = url.substring(0, index);
+
 	if (route.isWILDCARD)
 		url = url.replace('*', '');
 
-	url = framework_internal.preparePath(framework_internal.encodeUnicodeURL(url.trim()));
+	if (url[url.length - 1] !== '/')
+		url += '/';
 
+	url = framework_internal.preparePath(framework_internal.encodeUnicodeURL(url.trim()));
 	route.hash = url.hash();
 	route.owner = _owner;
 	route.url = framework_internal.routeSplitCreate(url);
@@ -1627,9 +1640,36 @@ global.CORS = F.cors = function(url, flags, credentials) {
 	route.headers = headers.length ? headers : null;
 	route.credentials = credentials;
 	route.age = age || F.config['default-cors-maxage'];
-	route.id = id;
 
-	F.routes.cors.push(route);
+	var e = F.routes.cors.findItem(function(item) {
+		return item.hash === route.hash;
+	});
+
+	if (e) {
+
+		// Extends existing
+		if (route.origins && e.origins)
+			corsextend(route.origins, e.origins);
+		else if (e.origins && !route.origins)
+			e.origins = null;
+
+		if (route.methods && e.methods)
+			corsextend(route.methods, e.methods);
+
+		if (route.headers && e.headers)
+			corsextend(route.headers, e.headers);
+
+		if (route.credentials && !e.credentials)
+			e.credentials = true;
+
+		if (route.isWILDCARD && !e.isWILDCARD)
+			e.isWILDCARD = true;
+
+	} else {
+		F.routes.cors.push(route);
+		route.id = id;
+	}
+
 	F._length_cors = F.routes.cors.length;
 
 	F.routes.cors.sort(function(a, b) {
@@ -1641,6 +1681,11 @@ global.CORS = F.cors = function(url, flags, credentials) {
 	PERF.OPTIONS = true;
 	return F;
 };
+
+function corsextend(a, b) {
+	for (var i = 0; i < a.length; i++)
+		b.indexOf(a[i]) === -1 && b.push(a[i]);
+}
 
 global.GROUP = F.group = function() {
 
@@ -4431,6 +4476,7 @@ F.$restart = function() {
 			system: {},
 			files: [],
 			cors: [],
+			corsall: false,
 			websockets: [],
 			middleware: {},
 			redirects: {},
@@ -7317,7 +7363,7 @@ F.$requestcontinue = function(req, res, headers) {
 	req.flags = flags;
 	F.$events['request-begin'] && F.emit('request-begin', req, res);
 
-	var isCORS = F._length_cors && req.headers['origin'];
+	var isCORS = (F._length_cors || F.routes.corsall) && req.headers['origin'] != null;
 
 	switch (first) {
 		case 'G':
@@ -7408,90 +7454,90 @@ F.$requestcontinue_mmr = function(req, res, header) {
 
 F.$cors = function(req, res, fn, arg) {
 
-	var isAllowed = false;
-	var cors;
-
-	for (var i = 0; i < F._length_cors; i++) {
-		cors = F.routes.cors[i];
-		if (framework_internal.routeCompare(req.path, cors.url, false, cors.isWILDCARD)) {
-			isAllowed = true;
-			break;
-		}
-	}
-
-	if (!isAllowed)
-		return fn(req, res, arg);
-
-	var stop = false;
+	var isAllowed = F.routes.corsall;
+	var cors, origin;
 	var headers = req.headers;
-
-	if (!isAllowed)
-		stop = true;
-
-	isAllowed = false;
-
-	if (!stop && cors.headers) {
-		isAllowed = false;
-		for (var i = 0, length = cors.headers.length; i < length; i++) {
-			if (headers[cors.headers[i]]) {
+	if (!isAllowed) {
+		for (var i = 0; i < F._length_cors; i++) {
+			cors = F.routes.cors[i];
+			if (framework_internal.routeCompare(req.path, cors.url, false, cors.isWILDCARD)) {
 				isAllowed = true;
 				break;
 			}
 		}
+
+		if (!isAllowed)
+			return fn(req, res, arg);
+
+		var stop = false;
+
 		if (!isAllowed)
 			stop = true;
-	}
 
-	if (!stop && cors.methods) {
 		isAllowed = false;
-		var current = headers['access-control-request-method'] || req.method;
-		if (current !== 'OPTIONS') {
-			for (var i = 0, length = cors.methods.length; i < length; i++) {
-				if (current.indexOf(cors.methods[i]) !== -1) {
+
+		if (!stop && cors.headers) {
+			isAllowed = false;
+			for (var i = 0, length = cors.headers.length; i < length; i++) {
+				if (headers[cors.headers[i]]) {
 					isAllowed = true;
 					break;
 				}
 			}
+			if (!isAllowed)
+				stop = true;
+		}
 
+		if (!stop && cors.methods) {
+			isAllowed = false;
+			var current = headers['access-control-request-method'] || req.method;
+			if (current !== 'OPTIONS') {
+				for (var i = 0, length = cors.methods.length; i < length; i++) {
+					if (current === cors.methods[i]) {
+						isAllowed = true;
+						break;
+					}
+				}
+				if (!isAllowed)
+					stop = true;
+			}
+		}
+
+		origin = headers['origin'].toLowerCase();
+		if (!stop && cors.origins) {
+			isAllowed = false;
+			for (var i = 0, length = cors.origins.length; i < length; i++) {
+				if (cors.origins[i].indexOf(origin) !== -1) {
+					isAllowed = true;
+					break;
+				}
+			}
 			if (!isAllowed)
 				stop = true;
 		}
 	}
 
-	var origin = headers['origin'].toLowerCase();
-	if (!stop && cors.origins) {
-		isAllowed = false;
-		for (var i = 0, length = cors.origins.length; i < length; i++) {
-			if (cors.origins[i].indexOf(origin) !== -1) {
-				isAllowed = true;
-				break;
-			}
-		}
-		if (!isAllowed)
-			stop = true;
-	}
+	res.setHeader('Access-Control-Allow-Origin', F.routes.corsall ? headers['origin'] : (cors.origins ? cors.origins : cors.credentials ? isAllowed ? origin : cors.origins ? cors.origins : origin : headers['origin']));
 
-	var name;
+	if (!cors || cors.credentials)
+		res.setHeader('Access-Control-Allow-Credentials', 'true');
+
+	var name = 'Access-Control-Allow-Methods';
 	var isOPTIONS = req.method === 'OPTIONS';
 
-	res.setHeader('Access-Control-Allow-Origin', cors.origins ? cors.origins : cors.credentials ? isAllowed ? origin : cors.origins ? cors.origins : origin : headers['origin']);
-	cors.credentials && res.setHeader('Access-Control-Allow-Credentials', 'true');
-
-	name = 'Access-Control-Allow-Methods';
-
-	if (cors.methods)
+	if (cors && cors.methods)
 		res.setHeader(name, cors.methods.join(', '));
 	else
 		res.setHeader(name, isOPTIONS ? headers['access-control-request-method'] || '*' : req.method);
 
 	name = 'Access-Control-Allow-Headers';
 
-	if (cors.headers)
+	if (cors && cors.headers)
 		res.setHeader(name, cors.headers.join(', '));
 	else
 		res.setHeader(name, headers['access-control-request-headers'] || '*');
 
-	cors.age && res.setHeader('Access-Control-Max-Age', cors.age);
+	cors && cors.age && res.setHeader('Access-Control-Max-Age', cors.age);
 
 	if (stop) {
 		fn = null;
