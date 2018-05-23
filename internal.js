@@ -1820,6 +1820,7 @@ function view_parse(content, minify, filename, controller) {
 	var isFirst = false;
 	var txtindex = -1;
 	var index = 0;
+	var isCookie = false;
 
 	if ((controller.$hasComponents || REG_COMPONENTS.test(content)) && REG_HEAD.test(content)) {
 
@@ -1897,6 +1898,9 @@ function view_parse(content, minify, filename, controller) {
 	var text;
 
 	while (command) {
+
+		if (!isCookie && command.command.indexOf('cookie') !== -1)
+			isCookie = true;
 
 		if (old) {
 			text = content.substring(old.end + 1, command.beg);
@@ -2087,7 +2091,7 @@ function view_parse(content, minify, filename, controller) {
 	if (RELEASE)
 		builder = builder.replace(/(\+\$EMPTY\+)/g, '+').replace(/(\$output=\$EMPTY\+)/g, '$output=').replace(/(\$output\+=\$EMPTY\+)/g, '$output+=').replace(/(\}\$output\+=\$EMPTY)/g, '}').replace(/(\{\$output\+=\$EMPTY;)/g, '{').replace(/(\+\$EMPTY\+)/g, '+').replace(/(>'\+'<)/g, '><').replace(/'\+'/g, '');
 
-	var fn = '(function(self,repository,model,session,query,body,url,global,helpers,user,config,functions,index,output,files,mobile,settings){var get=query;var post=body;var G=F.global;var R=this.repository;var M=model;var theme=this.themeName;var language=this.language;var sitemap=this.repository.$sitemap;var cookie=function(name){return self.req.cookie(name)};' + (functions.length ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})';
+	var fn = '(function(self,repository,model,session,query,body,url,global,helpers,user,config,functions,index,output,files,mobile,settings){var get=query;var post=body;var G=F.global;var R=this.repository;var M=model;var theme=this.themeName;var language=this.language;var sitemap=this.repository.$sitemap;' + (isCookie ? 'var cookie=function(name){return self.req.cookie(name)};' : '') + (functions.length ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})';
 	try {
 		fn = eval(fn);
 	} catch (e) {
@@ -2273,7 +2277,10 @@ function view_prepare(command, dynamicCommand, functions, controller) {
 			return 'self.' + command;
 
 		case 'sitemap':
+		case 'breadcrumb':
 		case 'place':
+			if (name === 'breadcrumb')
+				name = 'sitemap';
 			return command.indexOf('(') === -1 ? '(repository[\'$' + command + '\'] || \'\')' : 'self.$' + command;
 
 		case 'meta':
