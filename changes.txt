@@ -80,6 +80,7 @@
 - added: NoSQL database a new event `change`, more in docs
 - added: `schema.define()(DEFAULT_VALUE)` added `DEFAULT_VALUE`
 - added: `TESTUSER([user])` for faking of `F.onAuthorize` delegate, targeted for unit-testing only
+- added: `G` as a global alias for `F.global`
 
 - updated: (IMPORTANT) NoSQL binary divides files to independent directories for 1000 files per directory
 - updated: `GROUP()` by adding a new argument `url_prefix`

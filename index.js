@@ -708,7 +708,7 @@ function Framework() {
 		'default-interval-uptodate': 5
 	};
 
-	this.global = {};
+	global.G = this.global = {};
 	this.resources = {};
 	this.connections = {};
 	this.functions = {};
@@ -4412,7 +4412,7 @@ F.$restart = function() {
 		F.cache.clear();
 		F.cache.stop();
 		F.$events = {};
-		F.global = {};
+		global.G = F.global = {};
 		F.resources = {};
 		F.connections = {};
 		F.functions = {};
