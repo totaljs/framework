@@ -2051,6 +2051,13 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 					break;
 			}
 		}
+
+		if (isROLE && !membertype) {
+			tmp.push('authorize');
+			priority += 2;
+			membertype = 1;
+		}
+
 		flags = tmp;
 		priority += (count * 2);
 	} else {
@@ -2863,6 +2870,12 @@ F.websocket = function(url, funcInitialize, flags, length) {
 				protocols.push(flag);
 				break;
 		}
+	}
+
+	if (isROLE && !membertype) {
+		tmp.push('authorize');
+		membertype = 1;
+		priority++;
 	}
 
 	flags = tmp;
