@@ -2056,6 +2056,7 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 			tmp.push('authorize');
 			priority += 2;
 			membertype = 1;
+			count++;
 		}
 
 		flags = tmp;
@@ -2876,6 +2877,7 @@ F.websocket = function(url, funcInitialize, flags, length) {
 		tmp.push('authorize');
 		membertype = 1;
 		priority++;
+		count++;
 	}
 
 	flags = tmp;
@@ -9056,7 +9058,7 @@ F.lookup = function(req, url, flags, membertype) {
 	req.$isAuthorized = true;
 
 	if (!isSystem) {
-		key = '1' + url + '$' + membertype + req.$flags + (subdomain ? '$' + subdomain : '');
+		key = '1' + url + '$' + membertype + req.$flags + (subdomain ? '$' + subdomain : '') + (req.$roles ? 'R' : '');
 		if (F.temporary.other[key])
 			return F.temporary.other[key];
 	}
@@ -9114,7 +9116,7 @@ F.lookup = function(req, url, flags, membertype) {
 				continue;
 		}
 
-		if (key && route.isCACHE && req.$isAuthorized)
+		if (key && route.isCACHE && (req.$isAuthorized || membertype === 1))
 			F.temporary.other[key] = route;
 
 		return route;
@@ -14895,8 +14897,12 @@ function extend_request(PROTO) {
 		if (F.onAuthorize) {
 			F.onAuthorize(req, req.res, req.flags, function(isAuthorized, user) {
 				var hasRoles = length !== req.flags.length;
-				if (hasRoles)
+
+				if (hasRoles) {
 					req.$flags += req.flags.slice(length).join('');
+					req.$roles = true;
+				}
+
 				if (typeof(isAuthorized) !== 'boolean') {
 					user = isAuthorized;
 					isAuthorized = !user;
