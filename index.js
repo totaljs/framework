@@ -1750,6 +1750,7 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 		url = '/';
 
 	if (url) {
+		url = url.replace(/\t/g, ' ');
 		var index = url.indexOf(' ');
 		if (index !== -1) {
 			method = url.substring(0, index).toLowerCase().trim();
@@ -1896,8 +1897,9 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 				continue;
 			}
 
-			var first = flags[i][0];
+			flags[i] = flags[i].replace(/\t/g, ' ');
 
+			var first = flags[i][0];
 			if (first === '&') {
 				groups.push(flags[i].substring(1).trim());
 				continue;
