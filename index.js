@@ -1744,6 +1744,11 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 		return F;
 	}
 
+	if (typeof(flags) === 'number') {
+		length = flags;
+		flags = null;
+	}
+
 	var method = '';
 	var CUSTOM = typeof(url) === 'function' ? url : null;
 	if (CUSTOM)
