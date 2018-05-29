@@ -65,7 +65,8 @@ const REG_NOCOMPRESS = /@\{nocompress\s\w+}/gi;
 const REG_TAGREMOVE = /[^>](\r)\n\s{1,}$/;
 const REG_HELPERS = /helpers\.[a-z0-9A-Z_$]+\(.*?\)+/g;
 const REG_SITEMAP = /\s+(sitemap_navigation\(|sitemap\()+/g;
-const REG_CSS_1 = /\n|\s{2,}/g;
+const REG_CSS_0 = /\s{2,}/g;
+const REG_CSS_1 = /\n/g;
 const REG_CSS_2 = /\s?\{\s{1,}/g;
 const REG_CSS_3 = /\s?\}\s{1,}/g;
 const REG_CSS_4 = /\s?:\s{1,}/g;
@@ -909,8 +910,7 @@ function compile_autovendor(css) {
 	var isAuto = css.substring(0, 100).indexOf(avp) !== -1;
 	if (isAuto)
 		css = autoprefixer(css.replace(avp, ''));
-
-	return css.replace(REG_CSS_1, '').replace(REG_CSS_2, '{').replace(REG_CSS_3, '}').replace(REG_CSS_4, ':').replace(REG_CSS_5, ';').replace(REG_CSS_6, function(search, index, text) {
+	return css.replace(REG_CSS_0, ' ').replace(REG_CSS_1, '').replace(REG_CSS_2, '{').replace(REG_CSS_3, '}').replace(REG_CSS_4, ':').replace(REG_CSS_5, ';').replace(REG_CSS_6, function(search, index, text) {
 		for (var i = index; i > 0; i--) {
 			if ((text[i] === '\'' || text[i] === '"') && (text[i - 1] === ':'))
 				return search;
