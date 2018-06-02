@@ -65,6 +65,7 @@ const JSONBOOL = '":true ';
 const DIRECTORYLENGTH = 9;
 const IMAGES = { gif: 1, jpg: 1, jpeg: 1, png: 1, svg: 1 };
 const BINARYREADDATA = { start: BINARY_HEADER_LENGTH };
+const BINARYREADDATABASE64 = { start: BINARY_HEADER_LENGTH, encoding: 'base64' };
 const BINARYREADMETA = { start: 0, end: BINARY_HEADER_LENGTH - 1, encoding: 'binary' };
 const CLEANDBTICKS = 86400000 * 2; // 48 hours
 
@@ -3376,7 +3377,7 @@ DatabaseBuilder.prototype.repository = function(key, value) {
 DatabaseBuilder.prototype.compile = function() {
 	var self = this;
 	var raw = self.$code.join('');
-	var code = 'var repository=$F.repository;var options=$F.options;var arg=$F.arg;var fn=$F.fn;var $is=false;var $tmp;' + raw + (self.$code.length && raw.substring(raw.length - 7) !== 'return;' ? 'if(!$is)return;' : '') + 'if(options.fields){var $doc={};for(var $i=0;$i<options.fields.length;$i++){var prop=options.fields[$i];$doc[prop]=doc[prop]}if(options.sort)$doc[options.sort.name]=doc[options.sort.name];return $doc}else if(options.fields2){var $doc={};var $keys=Object.keys(doc);for(var $i=0;$i<$keys.length;$i++){var prop=$keys[$i];!options.fields2[prop]&&($doc[prop]=doc[prop])}return $doc}else{return doc}';
+	var code = 'var repository=$F.repository,options=$F.options,arg=$F.arg,fn=$F.fn,$is=false,$tmp;var R=repository;' + raw + (self.$code.length && raw.substring(raw.length - 7) !== 'return;' ? 'if(!$is)return;' : '') + 'if(options.fields){var $doc={};for(var $i=0;$i<options.fields.length;$i++){var prop=options.fields[$i];$doc[prop]=doc[prop]}if(options.sort)$doc[options.sort.name]=doc[options.sort.name];return $doc}else if(options.fields2){var $doc={};var $keys=Object.keys(doc);for(var $i=0;$i<$keys.length;$i++){var prop=$keys[$i];!options.fields2[prop]&&($doc[prop]=doc[prop])}return $doc}else{return doc}';
 	var opt = self.$options;
 	self.$inlinesort = !!(opt.take && opt.sort && opt.sort !== null);
 	self.$limit = (opt.take || 0) + (opt.skip || 0);
@@ -5039,6 +5040,49 @@ Binary.prototype.read = function(id, callback, count) {
 
 	return self;
 };
+
+Binary.prototype.readbase64 = function(id, callback, count) {
+
+	var self = this;
+
+	if (count > 3) {
+		callback(new Error('File not found.'));
+		return self;
+	}
+
+	var isnew = false;
+
+	if (id > 0)
+		isnew = true;
+	else if (id[0] === 'B' || id[0] === 'b') {
+		id = +id.substring(id.length - DIRECTORYLENGTH);
+		isnew = true;
+	} else if (id.indexOf('#') === -1)
+		id = self.db.name + '#' + id;
+
+	var filename;
+
+	if (isnew) {
+		filename = Path.join(self.$directory(id), id.toString().padLeft(DIRECTORYLENGTH, '0') + EXTENSION_BINARY);
+	} else
+		filename = framework_utils.join(self.directory, id + EXTENSION_BINARY);
+
+	var stream = Fs.createReadStream(filename, BINARYREADMETA);
+	stream.on('error', err => callback(err));
+	stream.on('data', function(buffer) {
+		var json = buffer.toString('utf8').replace(REG_CLEAN, '');
+		if (json) {
+			var meta = JSON.parse(json, jsonparser);
+			stream = Fs.createReadStream(filename, BINARYREADDATABASE64);
+			callback(null, stream, meta);
+			CLEANUP(stream);
+		} else
+			setTimeout(readfileattempt, 100, self, id, callback, count || 1);
+	});
+
+	return self;
+};
+
 
 function readfileattempt(self, id, callback, count) {
 	self.read(id, callback, count + 1);

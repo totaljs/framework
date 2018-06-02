@@ -267,6 +267,21 @@ Message.prototype.attachment = function(filename, name) {
 	return this;
 };
 
+Message.prototype.attachmentnosql = function(db, id, name) {
+
+	var extension;
+	var type;
+
+	if (name) {
+		extension = framework_utils.getExtension(name);
+		type = framework_utils.getContentType(extension);
+	}
+
+	!this.files && (this.files = []);
+	this.files.push({ nosql: db, name: name, filename: id, type: type, extension: extension });
+	return this;
+};
+
 /**
  * Clears a timeout for sending emails (if the email is sent through the F.onMail)
  * @return {Message}
@@ -368,6 +383,7 @@ Mailer.prototype.destroy = function(obj) {
 };
 
 const ATTACHMENT_SO = { encoding: 'base64' };
+const ATTACHMENT_SO_NOSQL = { encoding: 'base64', start: 2000 };
 
 Mailer.prototype.$writeattachment = function(obj) {
 
@@ -379,11 +395,37 @@ Mailer.prototype.$writeattachment = function(obj) {
 		return this;
 	}
 
+	var stream;
+
+	if (attachment.nosql) {
+		NOSQL(attachment.nosql).binary.readbase64(attachment.filename, function(err, stream, meta) {
+			if (err) {
+				F.error(err, 'Mail.attachment()', attachment.filename);
+				mailer.$writeattachment(obj);
+			} else {
+
+				if (!attachment.name) {
+					attachment.name = meta.name;
+					attachment.type = meta.type;
+					attachment.extension = U.getExtension(meta.name);
+				}
+
+				writeattachemnt_stream(attachment, obj, stream);
+			}
+		});
+	} else {
+		stream = Fs.createReadStream(attachment.filename, ATTACHMENT_SO);
+		writeattachemnt_stream(attachment, obj, stream);
+	}
+
+	return this;
+};
+
+function writeattachemnt_stream(attachment, obj, stream) {
+
 	var name = attachment.name;
-	var stream = Fs.createReadStream(attachment.filename, ATTACHMENT_SO);
+	var isCalendar = attachment.extension === 'ics';
 	var message = [];
-	var extension = attachment.extension;
-	var isCalendar = extension === 'ics';
 
 	message.push('--' + obj.boundary);
 
@@ -409,8 +451,7 @@ Mailer.prototype.$writeattachment = function(obj) {
 		mailer.$writeattachment(obj);
 	});
 
-	return this;
-};
+}
 
 function writeattachment_data(chunk) {
 
