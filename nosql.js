@@ -52,17 +52,18 @@ const EXTENSION_META = '.meta';
 const EXTENSION_COUNTER = '-counter2';
 const EXTENSION_INDEXES = '-indexes';
 const BINARY_HEADER_LENGTH = 2000;
-const NEWLINE = '\n';
-const EMPTYARRAY = [];
-const REG_CLEAN = /^[\s]+|[\s]+$/g;
-const INMEMORY = {};
-const FLAGS_READ = ['get'];
 const COUNTER_MMA = [0, 0];
-const REGNUMBER = /^\d+$/;
-const REGINDEXCHAR = /[a-z]{1,2}/;
-const REGBOOL = /":true/g; // for updates of boolean types
-const JSONBOOL = '":true ';
 const DIRECTORYLENGTH = 9;
+const EMPTYARRAY = [];
+const FLAGS_READ = ['get'];
+const INMEMORY = {};
+const JSONBOOL = '":true ';
+const NEWLINE = '\n';
+const REGBOOL = /":true/g; // for updates of boolean types
+const REGCHINA = /[\u3400-\u9FBF]/;
+const REGCLEAN = /^[\s]+|[\s]+$/g;
+const REGINDEXCHAR = /[a-z]{1,2}/;
+const REGNUMBER = /^\d+$/;
 const IMAGES = { gif: 1, jpg: 1, jpeg: 1, png: 1, svg: 1 };
 const BINARYREADDATA = { start: BINARY_HEADER_LENGTH };
 const BINARYREADDATABASE64 = { start: BINARY_HEADER_LENGTH, encoding: 'base64' };
@@ -3250,8 +3251,12 @@ DatabaseBuilder.prototype.fulltext = function(name, value, weight) {
 	if (value instanceof Array) {
 		for (var i = 0; i < value.length; i++)
 			value[i] = value[i].toLowerCase();
-	} else
-		value = value.toLowerCase().split(' ');
+	} else {
+		if (REGCHINA.test(value))
+			value = value.split('');
+		else
+			value = value.toLowerCase().split(' ');
+	}
 
 	var count = 1;
 
@@ -5028,7 +5033,7 @@ Binary.prototype.read = function(id, callback, count) {
 	var stream = Fs.createReadStream(filename, BINARYREADMETA);
 	stream.on('error', err => callback(err));
 	stream.on('data', function(buffer) {
-		var json = buffer.toString('utf8').replace(REG_CLEAN, '');
+		var json = buffer.toString('utf8').replace(REGCLEAN, '');
 		if (json) {
 			var meta = JSON.parse(json, jsonparser);
 			stream = Fs.createReadStream(filename, BINARYREADDATA);
@@ -5070,7 +5075,7 @@ Binary.prototype.readbase64 = function(id, callback, count) {
 	var stream = Fs.createReadStream(filename, BINARYREADMETA);
 	stream.on('error', err => callback(err));
 	stream.on('data', function(buffer) {
-		var json = buffer.toString('utf8').replace(REG_CLEAN, '');
+		var json = buffer.toString('utf8').replace(REGCLEAN, '');
 		if (json) {
 			var meta = JSON.parse(json, jsonparser);
 			stream = Fs.createReadStream(filename, BINARYREADDATABASE64);
@@ -5211,7 +5216,7 @@ Binary.prototype.browse = function(directory, callback) {
 					var stream = Fs.createReadStream(target + '/' + item, BINARYREADMETA);
 
 					stream.on('data', function(buffer) {
-						var json = framework_utils.createBuffer(buffer, 'binary').toString('utf8').replace(REG_CLEAN, '').parseJSON(true);
+						var json = framework_utils.createBuffer(buffer, 'binary').toString('utf8').replace(REGCLEAN, '').parseJSON(true);
 						if (json) {
 							var id = item.substring(0, item.length - le);
 							json.id = 'B' + json.date + 'T' + id;
@@ -5264,7 +5269,7 @@ Binary.prototype.all = function(callback) {
 				var stream = Fs.createReadStream(target + '/' + item, BINARYREADMETA);
 
 				stream.on('data', function(buffer) {
-					var json = framework_utils.createBuffer(buffer, 'binary').toString('utf8').replace(REG_CLEAN, '').parseJSON(true);
+					var json = framework_utils.createBuffer(buffer, 'binary').toString('utf8').replace(REGCLEAN, '').parseJSON(true);
 					if (json) {
 						json.id = item.substring(l, item.length - le);
 						json.ctime = stat.ctime;

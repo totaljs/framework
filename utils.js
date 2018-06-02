@@ -66,6 +66,10 @@ const regexpDECRYPT = /-|_/g;
 const regexpENCRYPT = /\/|\+/g;
 const regexpUNICODE = /\\u([\d\w]{4})/gi;
 const regexpTERMINAL = /[\w\S]+/g;
+const regexpY = /y/g;
+const regexpN = /\n/g;
+const regexpCHARS = /\W|_/g;
+const regexpCHINA = /[\u3400-\u9FBF]/;
 const SOUNDEX = { a: '', e: '', i: '', o: '', u: '', b: 1, f: 1, p: 1, v: 1, c: 2, g: 2, j: 2, k: 2, q: 2, s: 2, x: 2, z: 2, d: 3, t: 3, l: 4, m: 5, n: 5, r: 6 };
 const ENCODING = 'utf8';
 const NEWLINE = '\r\n';
@@ -353,14 +357,14 @@ exports.keywords = function(content, forSearch, alternative, max_count, max_leng
 		for (var i = 0, length = content.length; i < length; i++) {
 			if (!content[i])
 				continue;
-			var tmp = (forSearch ? content[i].removeDiacritics().toLowerCase().replace(/y/g, 'i') : content[i].toLowerCase()).replace(/\n/g, ' ').split(' ');
+			var tmp = (forSearch ? content[i].removeDiacritics().toLowerCase().replace(regexpY, 'i') : content[i].toLowerCase()).replace(regexpN, ' ').split(' ');
 			if (!tmp || !tmp.length)
 				continue;
 			for (var j = 0, jl = tmp.length; j < jl; j++)
 				words.push(tmp[j]);
 		}
 	} else
-		words = (forSearch ? content.removeDiacritics().toLowerCase().replace(/y/g, 'i') : content.toLowerCase()).replace(/\n/g, ' ').split(' ');
+		words = (forSearch ? content.removeDiacritics().toLowerCase().replace(regexpY, 'i') : content.toLowerCase()).replace(regexpN, ' ').split(' ');
 
 	if (!words)
 		words = [];
@@ -369,16 +373,33 @@ exports.keywords = function(content, forSearch, alternative, max_count, max_leng
 	var counter = 0;
 
 	for (var i = 0, length = words.length; i < length; i++) {
-		var word = words[i].trim();
+
+		var word = words[i].trim().replace(regexpCHARS, keywordscleaner);
+
+		if (regexpCHINA.test(word)) {
+
+			var tmpw = word.split('', max_count);
+
+			for (var j = 0; j < tmpw.length; j++) {
+				word = tmpw[j];
+				if (dic[word])
+					dic[word]++;
+				else
+					dic[word] = 1;
+				counter++;
+			}
+
+			if (counter >= max_count)
+				break;
+
+			continue;
+		}
 
 		if (word.length < min_length)
 			continue;
 
 		if (counter >= max_count)
 			break;
-
-		if (forSearch)
-			word = word.replace(/\W|_/g, '');
 
 		// Gets 80% length of word
 		if (alternative) {
@@ -412,6 +433,10 @@ exports.keywords = function(content, forSearch, alternative, max_count, max_leng
 
 	return keys;
 };
+
+function keywordscleaner(c) {
+	return c.charCodeAt(0) < 200 ? '' : c;
+}
 
 function parseProxy(p) {
 	var key = 'proxy_' + p;
@@ -638,11 +663,11 @@ function ProxyAgent(options) {
 }
 
 ProxyAgent.prototype.createConnection = function(pending) {
-	var self = this
+	var self = this;
 	self.createSocket(pending, function(socket) {
 		pending.request.onSocket(socket);
 	});
-}
+};
 
 ProxyAgent.prototype.createSocket = function(options, callback) {
 
@@ -661,16 +686,12 @@ ProxyAgent.prototype.createSocket = function(options, callback) {
 
 	req.setTimeout(3000);
 	req.on('response', proxyagent_response);
-	req.on('upgrade', function(res, socket, head) {
-		setImmediate(onConnect, res, socket, head)
-	});
-
-	req.on('connect', function(res, socket, head) {
+	req.on('connect', function(res, socket) {
 		if (res.statusCode === 200) {
 			callback(socket);
 		} else {
-      		var err = new Error('Proxy could not be established, code: ' + res.statusCode);
-      		err.code = 'ECONNRESET';
+			var err = new Error('Proxy could not be established, code: ' + res.statusCode);
+			err.code = 'ECONNRESET';
 			options.request.emit('error', err);
 		}
 	});
@@ -680,15 +701,15 @@ ProxyAgent.prototype.createSocket = function(options, callback) {
 	});
 
 	req.end();
-}
+};
 
-function proxyagent_response() {
+function proxyagent_response(res) {
 	res.upgrade = true;
 }
 
 ProxyAgent.prototype.addRequest = function(req, options) {
 	this.createConnection({ host: options.host, port: options.port, request: req });
-}
+};
 
 function createSecureSocket(options, callback) {
 	var self = this;

@@ -101,6 +101,7 @@
 - updated: JavaScript compressor, now optimizes multiple `var` declarations
 - updated: `CORS()` without arguments for all routes, methods and origins
 - updated: `CORS()` tries to join multiple same preferences to one
+- updated: `U.keywords()` for Chinese/Japan characters
 
 - fixed: mail attachments
 - fixed: mail `message.manually()`
