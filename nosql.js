@@ -54,7 +54,6 @@ const EXTENSION_INDEXES = '-indexes';
 const BINARY_HEADER_LENGTH = 2000;
 const COUNTER_MMA = [0, 0];
 const DIRECTORYLENGTH = 9;
-const EMPTYARRAY = [];
 const FLAGS_READ = ['get'];
 const INMEMORY = {};
 const JSONBOOL = '":true ';
@@ -92,8 +91,6 @@ function promise(fn) {
 		});
 	});
 }
-
-Object.freeze(EMPTYARRAY);
 
 exports.kill = function(signal) {
 	FORK && TRY(() => FORK && FORK.kill && FORK.kill(signal || 'SIGTERM'));
