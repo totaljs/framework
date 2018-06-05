@@ -2375,6 +2375,19 @@ global.MERGE = F.merge = function(url) {
 	if (url[0] === '#')
 		url = sitemapurl(url.substring(1));
 
+	url = F.$version(url);
+
+	if (url === 'auto') {
+		// auto-generating
+		var arg = arguments;
+		setTimeout(function(arg) {
+			F.merge.apply(F, arg);
+		}, 500, arg);
+		return F;
+	}
+
+	url = framework_internal.preparePath(url);
+
 	var arr = [];
 
 	for (var i = 1, length = arguments.length; i < length; i++) {
@@ -2395,8 +2408,6 @@ global.MERGE = F.merge = function(url) {
 			arr.push(fn);
 		}
 	}
-
-	url = framework_internal.preparePath(F.$version(url));
 
 	if (url[0] !== '/')
 		url = '/' + url;
@@ -5897,7 +5908,7 @@ function compile_content(extension, content, filename) {
 				for (var i = 0, length = matches.length; i < length; i++) {
 					var key = matches[i];
 					var url = key.substring(4, key.length - 1);
-					content = content.replace(key, 'url(' + F.$version(url) + ')');
+					content = content.replace(key, 'url(' + F.$version(url, true) + ')');
 				}
 			}
 			return content;
@@ -8615,6 +8626,8 @@ F.$configure_versions = function(arr, clean) {
 			if (ismap)
 				throw new Error('/versions: "auto" value can\'t be used with mapping');
 
+			F.versions[key] = filename;
+
 			(function(key, filename) {
 				ON('ready', function() {
 					F.consoledebug('"versions" is getting checksum of ' + key);
@@ -8628,6 +8641,7 @@ F.$configure_versions = function(arr, clean) {
 					});
 				});
 			})(key, filename);
+
 		} else {
 			F.versions[key] = filename;
 			ismap && F.map(filename, F.path.public(key));
@@ -8653,6 +8667,7 @@ function makehash(url, callback) {
 			hash.end();
 			callback(hash.read().crc32(true));
 		});
+
 		stream.on('error', () => callback(''));
 	});
 }
@@ -9001,22 +9016,23 @@ F.$routeStatic = function(name, directory, theme) {
 	if (REG_ROUTESTATIC.test(name))
 		filename = name;
 	else if (name[0] === '/')
-		filename = U.join(theme, F.$version(name));
+		filename = U.join(theme, F.$version(name, true));
 	else {
-		filename = U.join(theme, directory, F.$version(name));
+		filename = U.join(theme, directory, F.$version(name, true));
 		if (REG_HTTPHTTPS.test(filename) && filename[0] === '/')
 			filename = filename.substring(1);
 	}
 
-	return F.temporary.other[key] = framework_internal.preparePath(F.$version(filename));
+	return F.temporary.other[key] = framework_internal.preparePath(F.$version(filename, true));
 };
 
-F.$version = function(name) {
+F.$version = function(name, def) {
+	var tmp;
 	if (F.versions)
-		name = F.versions[name] || name;
+		tmp = F.versions[name] || name;
 	if (F.onVersion)
-		name = F.onVersion(name) || name;
-	return name;
+		tmp = F.onVersion(name) || name;
+	return tmp === 'auto' && def ? name : (tmp || name);
 };
 
 F.$versionprepare = function(html) {
@@ -9034,7 +9050,7 @@ F.$versionprepare = function(html) {
 			end = 6;
 
 		var name = src.substring(end, src.length - 1);
-		html = html.replace(match[i], src.substring(0, end) + F.$version(name) + '"');
+		html = html.replace(match[i], src.substring(0, end) + F.$version(name, true) + '"');
 	}
 
 	return html;
