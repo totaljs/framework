@@ -1809,7 +1809,7 @@ Database.prototype.$reader2 = function(filename, items, callback, reader) {
 				else if (builder.$options.first)
 					output = item.response ? item.response[0] : undefined;
 				else
-					output = item.response || EMPTYARRAY;
+					output = item.response || [];
 
 				builder.$callback2(errorhandling(null, builder, output), item.type === 1 ? item.count : output, item.count);
 				continue;
@@ -1835,7 +1835,7 @@ Database.prototype.$reader2 = function(filename, items, callback, reader) {
 			if (builder.$options.first)
 				output = item.response ? item.response[0] : undefined;
 			else
-				output = item.response || EMPTYARRAY;
+				output = item.response || [];
 
 			builder.$callback2(errorhandling(null, builder, output), item.type === 1 ? item.count : output, item.count);
 			builder.done();
@@ -2003,7 +2003,7 @@ Database.prototype.$reader3 = function() {
 				else if (builder.$options.first)
 					output = item.response ? item.response[0] : undefined;
 				else
-					output = item.response || EMPTYARRAY;
+					output = item.response || [];
 
 				builder.$callback2(errorhandling(null, builder, output), item.type === 1 ? item.count : output, item.count);
 				continue;
@@ -2029,7 +2029,7 @@ Database.prototype.$reader3 = function() {
 			if (builder.$options.first)
 				output = item.response ? item.response[0] : undefined;
 			else
-				output = item.response || EMPTYARRAY;
+				output = item.response || [];
 
 			builder.$callback2(errorhandling(null, builder, output), item.type === 1 ? item.count : output, item.count);
 			builder.done();
@@ -2248,7 +2248,7 @@ Database.prototype.$reader2_inmemory = function(name, items, callback) {
 				else if (builder.$options.first)
 					output = item.response ? item.response[0] : undefined;
 				else
-					output = item.response || EMPTYARRAY;
+					output = item.response || [];
 
 				builder.$callback2(errorhandling(null, builder, output), item.type === 1 ? item.count : output, item.count);
 				continue;
@@ -2273,7 +2273,7 @@ Database.prototype.$reader2_inmemory = function(name, items, callback) {
 			if (builder.$options.first)
 				output = item.response ? item.response[0] : undefined;
 			else
-				output = item.response || EMPTYARRAY;
+				output = item.response || [];
 
 			builder.$callback2(errorhandling(null, builder, output), item.type === 1 ? item.count : output, item.count);
 			builder.done();
@@ -2903,7 +2903,7 @@ DatabaseBuilder.prototype.$callbackjoin = function(callback) {
 				};
 				db.find(join.view, join.builder).in(join.a, unique);
 			} else {
-				join.items = join.builder.$options.first ? null : EMPTYARRAY;
+				join.items = join.builder.$options.first ? null : [];
 				next();
 			}
 		}
