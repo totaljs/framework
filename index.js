@@ -9436,31 +9436,44 @@ FrameworkPath.prototype.verify = function(name) {
 
 FrameworkPath.prototype.mkdir = function(p) {
 
-	if (p[0] === '/')
-		p = p.substring(1);
-
 	var is = F.isWindows;
+	var s = '';
+
+	if (p[0] === '/') {
+		s = is ? '\\' : '/';
+		p = p.substring(1);
+	}
+
 	var l = p.length - 1;
+	var beg = 0;
 
 	if (is) {
 		if (p[l] === '\\')
 			p = p.substring(0, l);
+
+		if (p[1] === ':')
+			beg = 1;
+
 	} else {
 		if (p[l] === '/')
 			p = p.substring(0, l);
 	}
 
 	var arr = is ? p.replace(/\//g, '\\').split('\\') : p.split('/');
-	var directory = is ? '' : '/';
+	var directory = s;
 
 	for (var i = 0, length = arr.length; i < length; i++) {
 		var name = arr[i];
 		if (is)
-			directory += (directory ? '\\' : '') + name;
+			directory += (i && directory ? '\\' : '') + name;
 		else
-			directory += (directory ? '/' : '') + name;
-		!existsSync(directory) && Fs.mkdirSync(directory);
+			directory += (i && directory ? '/' : '') + name;
+
+		if (i >= beg && !existsSync(directory))
+			Fs.mkdirSync(directory);
 	}
+
+	return F;
 };
 
 FrameworkPath.prototype.exists = function(path, callback) {
