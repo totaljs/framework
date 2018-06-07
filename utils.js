@@ -856,11 +856,10 @@ function request_response(res, uri, options) {
 		var loc = res.headers['location'];
 		var proto = loc.substring(0, 6);
 
-		if (proto !== 'http:/' && proto !== 'https:/')
+		if (proto !== 'http:/' && proto !== 'https:')
 			loc = uri.protocol + '//' + uri.hostname + loc;
 
 		var tmp = Url.parse(loc);
-
 		tmp.headers = uri.headers;
 		tmp.agent = false;
 		tmp.method = uri.method;
