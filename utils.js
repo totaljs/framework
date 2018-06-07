@@ -853,7 +853,13 @@ function request_response(res, uri, options) {
 
 		options.redirect++;
 
-		var tmp = Url.parse(res.headers['location']);
+		var loc = res.headers['location'];
+		var proto = loc.substring(0, 6);
+
+		if (proto !== 'http:/' && proto !== 'https:/')
+			loc = uri.protocol + '//' + uri.hostname + loc;
+
+		var tmp = Url.parse(loc);
 
 		tmp.headers = uri.headers;
 		tmp.agent = false;
@@ -868,8 +874,8 @@ function request_response(res, uri, options) {
 			options.uri = tmp;
 			options.uri.agent = new ProxyAgent(options);
 			options.uri.agent.request = Http.request;
-	  		options.uri.agent.createSocket = createSecureSocket;
-	  		options.uri.agent.defaultPort = 443;
+			options.uri.agent.createSocket = createSecureSocket;
+			options.uri.agent.defaultPort = 443;
 		}
 
 		if (!options.resolve) {
@@ -878,7 +884,7 @@ function request_response(res, uri, options) {
 			return request_call(tmp, options);
 		}
 
-		exports.resolve(res.headers['location'], function(err, u) {
+		exports.resolve(tmp, function(err, u) {
 			if (!err)
 				tmp.host = u.host;
 			res.removeAllListeners();
