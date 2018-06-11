@@ -1768,8 +1768,7 @@ function localize(language, command) {
 
 function view_parse(content, minify, filename, controller) {
 
-	if (minify)
-		content = removeComments(content);
+	content = removeComments(content);
 
 	var nocompressHTML = false;
 	var nocompressJS = false;
@@ -1867,6 +1866,10 @@ function view_parse(content, minify, filename, controller) {
 
 		if (!value)
 			return '$EMPTY';
+
+		if (!minify) {
+
+		}
 
 		if (!nocompressHTML && is)
 			value += ' ';
