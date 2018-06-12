@@ -1823,7 +1823,10 @@ function view_parse(content, minify, filename, controller) {
 	var index = 0;
 	var isCookie = false;
 
-	if ((controller.$hasComponents || REG_COMPONENTS.test(content)) && REG_HEAD.test(content)) {
+	if (!controller.$hasComponents)
+		controller.$hasComponents = REG_COMPONENTS.test(content) && REG_HEAD.test(content);
+
+	if (controller.$hasComponents) {
 
 		index = content.indexOf('@{import(');
 

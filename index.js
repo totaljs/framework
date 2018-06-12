@@ -3864,7 +3864,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 
 		F.uninstall(type, uptodateName || name, uptodateName ? 'uptodate' : undefined);
 
-		var hash = '\n/*' + name.hash() + '*/\n';
+		var hash = '\n/*' + name.crc32(true) + '*/\n';
 		var temporary = (F.id ? 'i-' + F.id + '_' : '') + 'components';
 
 		content = parseComponent(internal ? declaration : Fs.readFileSync(declaration).toString(ENCODING), name);
@@ -3929,7 +3929,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 		}
 
 		if (obj && obj.group) {
-			key = obj.group.hash();
+			key = obj.group.crc32(true);
 			temporary += '_g' + key;
 			tmp = F.components.groups[obj.group];
 			if (!tmp)
