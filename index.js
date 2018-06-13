@@ -2087,7 +2087,7 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 	}
 
 	if (workflow && workflow[0] === '@') {
-		var tmpa = workflow.split('@').trim();
+		var tmpa = workflow.replace(/,/g, ' ').split('@').trim();
 		var rindex = null;
 		for (var i = 0; i < tmpa.length; i++) {
 			var a = tmpa[i].split(' ');

@@ -47,7 +47,7 @@ function SchemaBuilder(name) {
 function SchemaOptions(error, model, options, callback, controller) {
 	this.error = error;
 	this.value = this.model = model;
-	this.options = options;
+	this.options = options || EMPTYOBJECT;
 	this.callback = this.next = callback;
 	this.controller = controller;
 }
