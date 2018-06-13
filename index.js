@@ -755,7 +755,7 @@ function Framework() {
 	this.controllers = {};
 	this.dependencies = {};
 	this.isomorphic = {};
-	this.components = { has: false, css: false, js: false, views: {}, instances: {}, version: null, links: '', groups: {} };
+	this.components = { has: false, css: false, js: false, views: {}, instances: {}, version: null, links: '', groups: {}, files: {} };
 	this.convertors = [];
 	this.convertors2 = null;
 	this.tests = [];
@@ -3875,6 +3875,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 		var temporary = (F.id ? 'i-' + F.id + '_' : '') + 'components';
 
 		content = parseComponent(internal ? declaration : Fs.readFileSync(declaration).toString(ENCODING), name);
+
 		content.js && Fs.appendFileSync(F.path.temp(temporary + '.js'), hash + (F.config.debug ? component_debug(name, content.js, 'js') : content.js) + hash.substring(0, hash.length - 1));
 		content.css && Fs.appendFileSync(F.path.temp(temporary + '.css'), hash + (F.config.debug ? component_debug(name, content.css, 'css') : content.css) + hash.substring(0, hash.length - 1));
 
@@ -3883,6 +3884,11 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 
 		if (content.css)
 			F.components.css = true;
+
+		if (content.files)
+			F.components.files[name] = content.files;
+		else
+			delete F.components.files[name];
 
 		if (content.body) {
 			F.components.views[name] = '.' + F.path.temp('component_' + name);
@@ -4509,7 +4515,7 @@ F.$restart = function() {
 		F.schedules = [];
 		F.isLoaded = false;
 		F.isRestarted = false;
-		F.components = { has: false, css: false, js: false, views: {}, instances: {}, version: null, links: '', groups: {} };
+		F.components = { has: false, css: false, js: false, views: {}, instances: {}, version: null, links: '', groups: {}, files: {} };
 		PERF = {};
 
 		F.routes = {
@@ -4889,6 +4895,7 @@ F.uninstall = function(type, name, options, skipEmit, packageName) {
 
 		delete F.components.instances[name];
 		delete F.components.views[name];
+		delete F.components.files[name];
 		delete F.temporary.ready[type + '#' + name];
 
 		var temporary = (F.id ? 'i-' + F.id + '_' : '') + 'components';
@@ -5129,8 +5136,11 @@ F.onMapping = function(url, def, ispublic, encode) {
 		url = '/' + url;
 
 	// component files
-	if (url[1] === '~')
-		return F.path.temp() + url.substring(1);
+	if (url[1] === '~') {
+		var index = url.indexOf('/', 2);
+		var name = url.substring(2, index);
+		return F.components.files[name] && F.components.files[name][url.substring(index + 1)] ? (F.path.temp() + url.substring(1)) : null;
+	}
 
 	if (F._length_themes) {
 		var index = url.indexOf('/', 2);
@@ -15449,6 +15459,11 @@ function extend_response(PROTO) {
 				filename = F.onMapping(name, name, true, true);
 		} else
 			filename = F.onMapping(name, name, true, true);
+
+		if (!filename) {
+			res.throw404();
+			return;
+		}
 
 		if (!canresize) {
 
