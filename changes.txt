@@ -57,6 +57,7 @@
 - added: `NOSQLSTORAGE(name)` alias for `NOSQL(name).storage`
 - added: `NOSQLINDEXES(name)` alias for `NOSQL(name).indexes`
 - added: `GUID()` a global alias for `U.GUID()`
+- added: `VIEW()` a global alias for `F.view()`
 - added: `SchemaBuilderEntity.$response([index])` returns a specific response from an operation in `async` queue
 - added: `$SAVE(schema, model, [options], [callback], [controller])` performs `schema.save()`
 - added: `$INSERT(schema, model, [options], [callback], [controller])` performs `schema.insert()`
@@ -90,6 +91,7 @@
 - updated: `NEWSCHEMA()` supports `NEWSCHEMA('group/name')`
 - updated: `ROUTE()`, extended syntax for schemas, for example: `Schema --> @name` (more in docs.)
 - updated: `ROUTE()` supports a new HTTP method definition `ROUTE('GET /api/users/')`, `ROUTE('POST /api/users/')`, etc.
+- updated: `ROUTE()` supports a schema definition directly in the URL `ROUTE('GET /api/users/ *User --> @save')`, etc.
 - updated: `tpm` supports a new command called `bundle`, for example: `tpm bundle cms`
 - updated: `F.restore()` filter can return a new filename (for files only)
 - updated: `@{import('livereload')}` or `@{import('livereload wss://mywebsite.com')}` supports `livereload` value and it's rendered in `debug` mode only

@@ -1768,6 +1768,12 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 			method = url.substring(0, index).toLowerCase().trim();
 			url = url.substring(index + 1).trim();
 		}
+
+		url = url.replace(/\s\*[a-z0-9].*?$/i, function(text) {
+			!flags && (flags = []);
+			flags.push(text.trim());
+			return '';
+		});
 	}
 
 	if (url[0] === '#') {
@@ -2080,8 +2086,17 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 		method = 'get';
 	}
 
-	if (workflow && workflow[0] === '@')
-		workflow = { id: workflow.substring(1) };
+	if (workflow && workflow[0] === '@') {
+		var tmpa = workflow.split('@').trim();
+		var rindex = null;
+		for (var i = 0; i < tmpa.length; i++) {
+			var a = tmpa[i].split(' ');
+			if (a[1] && (/response|res/i).test(a[1]))
+				rindex = i;
+			tmpa[i] = a[0];
+		}
+		workflow = { id: tmpa.length > 1 ? tmpa : tmpa[0], index: rindex };
+	}
 
 	if (type === 'string') {
 		viewname = funcExecute;
@@ -2145,7 +2160,7 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 				};
 			})(viewname, sitemap, language);
 		} else if (workflow)
-			funcExecute = controller_json_workflow;
+			funcExecute = workflow.id instanceof Array ? controller_json_workflow_multiple : controller_json_workflow;
 	}
 
 	if (!isGENERATOR)
@@ -7844,7 +7859,7 @@ global.MAIL = F.mail = function(address, subject, view, model, callback, languag
  * @param {String} language Optional.
  * @return {String}
  */
-F.view = function(name, model, layout, repository, language) {
+global.VIEW = F.view = function(name, model, layout, repository, language) {
 
 	var controller = EMPTYCONTROLLER;
 
@@ -16717,6 +16732,44 @@ function controller_json_workflow(id) {
 				self[w.type](self.callback());
 			else
 				self.throw500('Operation @' + w.id + ' not found.');
+		}
+	} else
+		self.$exec(w, null, self.callback());
+}
+
+// Default action for workflow routing
+function controller_json_workflow_multiple(id) {
+	var self = this;
+	self.id = id;
+	var w = self.route.workflow;
+	if (w instanceof Object) {
+		if (!w.type) {
+			var schema = GETSCHEMA(self.route.schema[0], self.route.schema[1]);
+			var op = [];
+			for (var i = 0; i < w.id.length; i++) {
+				var id = w.id[i];
+				if (schema.meta[id] !== undefined) {
+					op.push({ name: '$' + id });
+				} else if (schema.meta['workflow#' + id] !== undefined) {
+					op.push({ name: '$workflow', id: id });
+				} else if (schema.meta['workflow#' + id] !== undefined) {
+					op.push({ name: '$transform', id: id });
+				} else if (schema.meta['operation#' + id] !== undefined) {
+					op.push({ name: '$operation', id: id });
+				} else if (schema.meta['hook#' + id] !== undefined) {
+					op.push({ name: '$hook', id: id });
+				}
+			}
+			w.async = op;
+		}
+
+		var async = self.$async(self.callback(), w.index);
+		for (var i = 0; i < w.async.length; i++) {
+			var a = w.async[i];
+			if (a.id)
+				async[a.name](a.id);
+			else
+				async[a.name]();
 		}
 	} else
 		self.$exec(w, null, self.callback());
