@@ -118,6 +118,8 @@ var CONTENTTYPES = {
 	'geojson': 'application/json',
 	'gif': 'image/gif',
 	'gzip': 'application/x-gzip',
+	'heic': 'image/heic',
+	'heif': 'image/heif',
 	'htm': 'text/html',
 	'html': 'text/html',
 	'ico': 'image/x-icon',

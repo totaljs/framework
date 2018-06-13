@@ -645,6 +645,24 @@ function test_routing(next) {
 		});
 	});
 
+	async.await('component-filename-1', function(complete) {
+		utils.request(url + '~contactform/a.txt', [], function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(code === 200 && data === 'Total.js v3', 'problem with component files 1');
+			complete();
+		});
+	});
+
+	async.await('component-filename-2', function(complete) {
+		utils.request(url + '~contactform/b.txt', [], function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(code === 200 && data === 'Peter Sirka', 'problem with component files 2');
+			complete();
+		});
+	});
+
 	async.await('static-file-notfound-because-directory1', function(complete) {
 		utils.request(url + 'directory.txt', [], function(error, data, code, headers) {
 			if (error)

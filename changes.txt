@@ -2,6 +2,7 @@
 
 - added: (IMPORTANT) bundles
 - added: (IMPORTANT) Total.js components can have async delegate
+- added: (IMPORTANT) Total.js components support nested public files encoded in base64
 - added: (IMPORTANT) NoSQL worker
 - added: (IMPORTANT) NoSQL embedded storage for smaller big data / IoT
 - added: (IMPORTANT) NoSQL indexes
@@ -82,6 +83,7 @@
 - added: `schema.define()(DEFAULT_VALUE)` added `DEFAULT_VALUE`
 - added: `TESTUSER([user])` for faking of `F.onAuthorize` delegate, targeted for unit-testing only
 - added: `G` as a global alias for `F.global`
+- added: a simple support for `.heic` and `.heif` image format
 
 - updated: (IMPORTANT) NoSQL binary divides files to independent directories for 1000 files per directory
 - updated: `GROUP()` by adding a new argument `url_prefix`

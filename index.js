@@ -49,7 +49,7 @@ const COMPRESSIONSPECIAL = { 'js': 1, 'css': 1 };
 const REG_TEMPORARY = /\//g;
 const REG_MOBILE = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet/i;
 const REG_ROBOT = /search|agent|bot|crawler|spider/i;
-const REG_VERSIONS = /(href|src)="[a-zA-Z0-9/:\-.]+\.(jpg|js|css|png|gif|svg|html|ico|json|less|sass|scss|swf|txt|webp|woff|woff2|xls|xlsx|xml|xsl|xslt|zip|rar|csv|doc|docx|eps|gzip|jpe|jpeg|manifest|mov|mp3|flac|mp4|ogg|package|pdf)"/gi;
+const REG_VERSIONS = /(href|src)="[a-zA-Z0-9/:\-.]+\.(jpg|js|css|png|apng|gif|svg|html|ico|json|less|sass|scss|swf|txt|webp|heif|heic|jpeg|woff|woff2|xls|xlsx|xml|xsl|xslt|zip|rar|csv|doc|docx|eps|gzip|jpe|jpeg|manifest|mov|mp3|flac|mp4|ogg|package|pdf)"/gi;
 const REG_COMPILECSS = /url\(.*?\)/g;
 const REG_ROUTESTATIC = /^(\/\/|https:|http:)+/;
 const REG_NEWIMPL = /^(async\s)?function(\s)?([a-zA-Z$][a-zA-Z0-9$]+)?(\s)?\([a-zA-Z0-9$]+\)|^function anonymous\(\$/;
@@ -91,6 +91,7 @@ const CLUSTER_CACHE_CLEAR = { TYPE: 'cache-clear' };
 const GZIPFILE = { memLevel: 9 };
 const GZIPSTREAM = { memLevel: 1 };
 const MODELERROR = {};
+const IMAGES = { jpg: 1, png: 1, gif: 1, apng: 1, jpeg: 1, heif: 1, heic: 1, webp: 1 };
 
 var PATHMODULES = require.resolve('./index');
 PATHMODULES = PATHMODULES.substring(0, PATHMODULES.length - 8);
@@ -643,7 +644,7 @@ function Framework() {
 		'static-url-font': '/fonts/',
 		'static-url-download': '/download/',
 		'static-url-components': '/components.',
-		'static-accepts': { 'flac': true, 'jpg': true, 'jpeg': true, 'png': true, 'gif': true, 'ico': true, 'js': true, 'css': true, 'txt': true, 'xml': true, 'woff': true, 'woff2': true, 'otf': true, 'ttf': true, 'eot': true, 'svg': true, 'zip': true, 'rar': true, 'pdf': true, 'docx': true, 'xlsx': true, 'doc': true, 'xls': true, 'html': true, 'htm': true, 'appcache': true, 'manifest': true, 'map': true, 'ogv': true, 'ogg': true, 'mp4': true, 'mp3': true, 'webp': true, 'webm': true, 'swf': true, 'package': true, 'json': true, 'md': true, 'm4v': true, 'jsx': true },
+		'static-accepts': { flac: true, jpg: true, jpeg: true, png: true, gif: true, ico: true, js: true, css: true, txt: true, xml: true, woff: true, woff2: true, otf: true, ttf: true, eot: true, svg: true, zip: true, rar: true, pdf: true, docx: true, xlsx: true, doc: true, xls: true, html: true, htm: true, appcache: true, manifest: true, map: true, ogv: true, ogg: true, mp4: true, mp3: true, webp: true, webm: true, swf: true, package: true, json: true, md: true, m4v: true, jsx: true, heif: true, heic: true },
 
 		// 'static-accepts-custom': [],
 
@@ -1401,7 +1402,7 @@ F.resize = function(url, fn, flags) {
 		fn = tmp;
 	}
 
-	var ext = url.match(/\*.\*$|\*?\.(jpg|png|gif|jpeg)$/gi);
+	var ext = url.match(/\*.\*$|\*?\.(jpg|png|gif|jpeg|heif|heic|apng)$/gi);
 	if (ext) {
 		url = url.replace(ext, '');
 		switch (ext.toString().toLowerCase()) {
@@ -1411,6 +1412,9 @@ F.resize = function(url, fn, flags) {
 			case '*.jpg':
 			case '*.gif':
 			case '*.png':
+			case '*.heif':
+			case '*.heic':
+			case '*.apng':
 			case '*.jpeg':
 				extensions[ext.toString().toLowerCase().replace(/\*/g, '').substring(1)] = true;
 				break;
@@ -1436,6 +1440,9 @@ F.resize = function(url, fn, flags) {
 		extensions['jpeg'] = true;
 		extensions['png'] = true;
 		extensions['gif'] = true;
+		extensions['heic'] = true;
+		extensions['heif'] = true;
+		extensions['apng'] = true;
 	}
 
 	if (extensions['jpg'] && !extensions['jpeg'])
@@ -5121,8 +5128,12 @@ F.onMapping = function(url, def, ispublic, encode) {
 	if (url[0] !== '/')
 		url = '/' + url;
 
+	// component files
+	if (url[1] === '~')
+		return F.path.temp() + url.substring(1);
+
 	if (F._length_themes) {
-		var index = url.indexOf('/', 1);
+		var index = url.indexOf('/', 2);
 		if (index !== -1) {
 			var themeName = url.substring(1, index);
 			if (F.themes[themeName])
@@ -7936,8 +7947,19 @@ F.clear = function(callback, isInit) {
 					continue;
 				(filename.indexOf('/') === -1 || filename.indexOf('.package/') !== -1) && !filename.endsWith('.jsoncache') && arr.push(files[i]);
 			}
+
 			files = arr;
-			directories = directories.remove(n => n.indexOf('.package') === -1);
+			directories = directories.remove(function(name) {
+				name = U.getName(name);
+
+				if (name[0] === '~')
+					return false;
+
+				if (name.endsWith('.package'))
+					return false;
+
+				return true;
+			});
 		}
 
 		F.unlink(files, () => F.rmdir(directories, callback));
@@ -11702,6 +11724,10 @@ Controller.prototype.$import = function() {
 			case '.svg':
 			case '.png':
 			case '.jpeg':
+			case '.heif':
+			case '.webp':
+			case '.heic':
+			case '.apng':
 				builder += self.routeImage(filename);
 				break;
 			case '.mp4':
@@ -15404,24 +15430,27 @@ function extend_response(PROTO) {
 			return res;
 		}
 
-		var name = req.uri.pathname;
-		var index = name.lastIndexOf('/');
-		var resizer = F.routes.resize[name.substring(0, index + 1)];
-		var canResize = false;
+		var canresize = false;
 		var filename = null;
+		var name = req.uri.pathname;
 
-		if (resizer) {
-			name = name.substring(index + 1);
-			canResize = resizer.extension['*'] || resizer.extension[req.extension];
-			if (canResize) {
-				name = resizer.path + $decodeURIComponent(name);
-				filename = F.onMapping(name, name, false, false);
+		if (IMAGES[req.extension]) {
+			var index = name.lastIndexOf('/');
+			var resizer = F.routes.resize[name.substring(0, index + 1)];
+			if (resizer) {
+				name = name.substring(index + 1);
+				canresize = resizer.extension['*'] || resizer.extension[req.extension];
+				if (canresize) {
+					name = resizer.path + $decodeURIComponent(name);
+					filename = F.onMapping(name, name, false, false);
+				} else
+					filename = F.onMapping(name, name, true, true);
 			} else
 				filename = F.onMapping(name, name, true, true);
 		} else
 			filename = F.onMapping(name, name, true, true);
 
-		if (!canResize) {
+		if (!canresize) {
 
 			if (F.components.has && F.components[req.extension] && req.uri.pathname === F.config['static-url-components'] + req.extension) {
 				res.noCompress = true;
@@ -16557,9 +16586,39 @@ function parseComponent(body, filename) {
 	response.css = '';
 	response.js = '';
 	response.install = '';
+	response.files = {};
 
 	var beg = 0;
 	var end = 0;
+	var comname = U.getName(filename);
+
+	// Files
+	while (true) {
+		beg = body.indexOf('<file name="');
+		if (beg === -1)
+			break;
+
+		end = body.indexOf('</file>', beg);
+		if (end === -1)
+			break;
+
+		var base64 = body.substring(beg, end);
+
+		body = body.substring(0, beg) + body.substring(end + 7);
+
+		// Creates directory
+		var p = F.path.temp() + '~' + comname;
+		try {
+			Fs.mkdirSync(p);
+		} catch (e) {}
+
+		var tmp = base64.indexOf('>');
+		var name = base64.substring(base64.lastIndexOf('name="', tmp), tmp);
+		name = name.substring(6, name.length - 1);
+		base64 = base64.substring(tmp + 1);
+		Fs.writeFile(U.join(p, name), base64, 'base64', NOOP);
+		response.files[name] = 1;
+	}
 
 	while (true) {
 		beg = body.indexOf('<script type="text/totaljs">');
