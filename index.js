@@ -9916,6 +9916,37 @@ Controller.prototype.header = function(name, value) {
 	return this;
 };
 
+
+/**
+ * HTTP2Push
+ * 0 - Disabled
+ * 1 - Hint subresources (nopush)
+ * 2 - CacheAwarePush
+ */
+F.config['HTTP2Push'] = 2; // These options might be moved somewhere else...
+F.config['HTTP2PushCache'] = 86200;
+
+/**
+ * Add file to link header
+ * @param {String} filepath or link
+ * @param {String} as
+ * @param {String} rel
+ * @param {Boolean} push
+ * @return {Controller}
+ */ 
+Controller.prototype.link = function(filepath, as, rel, push) {
+	let self = this,
+		res = this.res;
+		
+	if(F.config['HTTP2Push'] === 0) {
+		return this;
+	}
+	
+	if(res.links === undefined) res.links = [];
+	res.links.push([filepath, as, rel, push]);
+	return this;
+};
+
 /**
  * Gets a hostname
  * @param {String} path
@@ -15261,6 +15292,7 @@ function extend_response(PROTO) {
 			res.writeHead(options.code || 200, headers);
 			res.end();
 		} else {
+			this.handlePush(res);
 			if (gzip) {
 				res.writeHead(options.code || 200, headers);
 				Zlib.gzip(options.body instanceof Buffer ? options.body : U.createBuffer(options.body), (err, data) => res.end(data, res.options.encoding || ENCODING));
@@ -15273,7 +15305,57 @@ function extend_response(PROTO) {
 		response_end(res);
 		return res;
 	};
+	
+	PROTO.handlePush = function(res) {
+		var links = res.links,
+			forceNoPush = false,
+			req = res.req,
+			cache = undefined,
+			pushNow = false,
+			header = "";
+		
+		if(links === undefined || links.length === 0) return this;
+		if(F.config['HTTP2Push'] === 1) {
+			forceNoPush = true;
+		} else if(F.config['HTTP2Push'] === 2) {
+			cache = req.cookie('PushResourceCache');
+			if(cache != "") {
+				cache = JSON.parse(cache);
+			} else {
+				cache = {}; // initialize cache
+			}
+		}
+		for(var i = 0; i < links.length; i++) {
+			var link = links[i];	
 
+			var filepath = link[0],
+				as = link[1],
+				rel = link[2],
+				push = link[3];
+				
+			pushNow = false;
+			if(F.config['HTTP2Push'] === 2 && push === true) {
+				var cacheData = cache[link[0]];
+				// Check if cache not exists or expired
+				if(cacheData === undefined || cacheData+F.config['HTTP2PushCache'] < Date.now()) {
+					pushNow = true; // We can push now..
+					cache[link[0]] = Date.now();
+				}
+			}
+
+			if(header !== "") {
+				header += ", ";
+			}
+			header += `<${filepath}>; as=${as}; rel=${rel}`;
+			if(forceNoPush || !pushNow) {
+				header += "; nopush";
+			}
+			
+		}
+		res.setHeader('Link',header);
+		res.cookie('PushResourceCache', JSON.stringify(cache), new Date(Date.now()+F.config['HTTP2PushCache']));
+	};
+	
 	PROTO.throw400 = function(problem) {
 		this.options.code = 400;
 		problem && (this.options.problem = problem);
