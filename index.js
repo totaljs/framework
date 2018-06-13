@@ -2204,7 +2204,7 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 			regIndex.push(i);
 		});
 
-		priority -= arr.length;
+		priority -= arr.length + 1;
 	}
 
 	if (url.indexOf('#') !== -1)
