@@ -4291,10 +4291,19 @@ RESTBuilder.prototype.urlencoded = function(data) {
 };
 
 RESTBuilder.prototype.accept = function(ext) {
-	var type = framework_utils.getContentType(ext);
+
+	var type;
+
+	if (ext.length > 8)
+		type = ext;
+	else
+		type = framework_utils.getContentType(ext);
+
 	if (this.$headers['Accept'] !== type)
 		this.$flags = null;
+
 	this.$headers['Accept'] = type;
+
 	return this;
 };
 
