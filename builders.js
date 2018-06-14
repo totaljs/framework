@@ -4299,10 +4299,11 @@ RESTBuilder.prototype.accept = function(ext) {
 	else
 		type = framework_utils.getContentType(ext);
 
-	if (this.$headers['Accept'] !== type)
+	if (this.$headers.Accept !== type)
 		this.$flags = null;
 
-	this.$headers['Accept'] = type;
+	this.$flags = null;
+	this.$headers.Accept = type;
 
 	return this;
 };
