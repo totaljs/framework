@@ -522,6 +522,7 @@ function Database(name, filename, readonly) {
 	var http = filename.substring(0, 6);
 	self.readonly = http === 'http:/' || http === 'https:';
 	self.filename = self.readonly ? filename.format('') : filename + EXTENSION;
+	self.directory = Path.dirname(filename);
 
 	if (!readonly) {
 		self.filenameCounter = self.readonly ? filename.format('counter', '-') : filename + EXTENSION + EXTENSION_COUNTER;
@@ -538,7 +539,6 @@ function Database(name, filename, readonly) {
 	}
 
 	self.filenameTemp = filename + EXTENSION_TMP;
-	self.directory = Path.dirname(filename);
 	self.name = name;
 	self.pending_update = [];
 	self.pending_append = [];
