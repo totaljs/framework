@@ -1299,18 +1299,25 @@ function minify_javascript(data) {
 			}
 		} else {
 			if (vtmp) {
-
-
 				vindex = index + 1;
-
 				while (true) {
 					if (!data[vindex] || !white.test(data[vindex]))
 						break;
 					vindex++;
 				}
-
 				if (c === '(' || c === ')' || (c === ';' && !regvar.test(data.substring(vindex, vindex + 20))))
 					vtmp = false;
+			}
+		}
+
+		if (c === '+' || c === '-' && next === ' ') {
+			if (data[index + 1] === c) {
+				index += 2;
+				output.push(c);
+				output.push(' ');
+				output.push(c);
+				last = c;
+				continue;
 			}
 		}
 
