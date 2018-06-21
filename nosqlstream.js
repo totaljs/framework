@@ -147,8 +147,8 @@ NoSQLStream.prototype.readhelpers = function() {
 
 			var tmp = self.buffer.toString('utf8', index);
 			if (tmp[1] === '-') {
-				self.buffer = self.buffer.slice(index + 1);
-				index = self.buffer.indexOf(NEWLINEBUFFER);
+				self.buffer = self.buffer.slice(0, index);
+				index = self.buffer.lastIndexOf(NEWLINEBUFFER);
 				if (index === -1)
 					break;
 				continue;
