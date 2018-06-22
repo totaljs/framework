@@ -14525,7 +14525,7 @@ function extend_request(PROTO) {
 
 		var req = this;
 
-		auth(req, req.res, req.flags, function(isAuthorized, user) {
+		auth(req, req.res, req.flags || [], function(isAuthorized, user) {
 			if (typeof(isAuthorized) !== 'boolean') {
 				user = isAuthorized;
 				isAuthorized = !user;
