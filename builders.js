@@ -3193,6 +3193,10 @@ ErrorBuilder.prototype = {
 		var self = this;
 		!self.isPrepared && self.prepare();
 		return self._transform();
+	},
+
+	get is() {
+		return this.items.length > 0;
 	}
 };
 
