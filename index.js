@@ -10143,16 +10143,34 @@ Controller.prototype = {
 // Schema operations
 
 Controller.prototype.$get = Controller.prototype.$read = function(helper, callback) {
+
+	if (callback == null && typeof(helper) === 'function') {
+		callback = helper;
+		helper = null;
+	}
+
 	this.getSchema().get(helper, callback, this);
 	return this;
 };
 
 Controller.prototype.$query = function(helper, callback) {
+
+	if (callback == null && typeof(helper) === 'function') {
+		callback = helper;
+		helper = null;
+	}
+
 	this.getSchema().query(helper, callback, this);
 	return this;
 };
 
 Controller.prototype.$save = function(helper, callback) {
+
+	if (callback == null && typeof(helper) === 'function') {
+		callback = helper;
+		helper = null;
+	}
+
 	var self = this;
 	if (framework_builders.isSchema(self.body)) {
 		self.body.$$controller = self;
@@ -10166,6 +10184,12 @@ Controller.prototype.$save = function(helper, callback) {
 };
 
 Controller.prototype.$insert = function(helper, callback) {
+
+	if (callback == null && typeof(helper) === 'function') {
+		callback = helper;
+		helper = null;
+	}
+
 	var self = this;
 	if (framework_builders.isSchema(self.body)) {
 		self.body.$$controller = self;
@@ -10179,6 +10203,12 @@ Controller.prototype.$insert = function(helper, callback) {
 };
 
 Controller.prototype.$update = function(helper, callback) {
+
+	if (callback == null && typeof(helper) === 'function') {
+		callback = helper;
+		helper = null;
+	}
+
 	var self = this;
 	if (framework_builders.isSchema(self.body)) {
 		self.body.$$controller = self;
@@ -10192,6 +10222,12 @@ Controller.prototype.$update = function(helper, callback) {
 };
 
 Controller.prototype.$remove = function(helper, callback) {
+
+	if (callback == null && typeof(helper) === 'function') {
+		callback = helper;
+		helper = null;
+	}
+
 	var self = this;
 	self.getSchema().remove(helper, callback, self);
 	return this;
@@ -10199,6 +10235,12 @@ Controller.prototype.$remove = function(helper, callback) {
 
 Controller.prototype.$workflow = function(name, helper, callback) {
 	var self = this;
+
+	if (callback == null && typeof(helper) === 'function') {
+		callback = helper;
+		helper = null;
+	}
+
 	if (framework_builders.isSchema(self.body)) {
 		self.body.$$controller = self;
 		self.body.$workflow(name, helper, callback);
@@ -10208,6 +10250,12 @@ Controller.prototype.$workflow = function(name, helper, callback) {
 };
 
 Controller.prototype.$workflow2 = function(name, helper, callback) {
+
+	if (callback == null && typeof(helper) === 'function') {
+		callback = helper;
+		helper = null;
+	}
+
 	var self = this;
 	self.getSchema().workflow2(name, helper, callback, self);
 	return self;
@@ -10215,21 +10263,40 @@ Controller.prototype.$workflow2 = function(name, helper, callback) {
 
 Controller.prototype.$hook = function(name, helper, callback) {
 	var self = this;
+
+	if (callback == null && typeof(helper) === 'function') {
+		callback = helper;
+		helper = EMPTYOBJECT;
+	}
+
 	if (framework_builders.isSchema(self.body)) {
 		self.body.$$controller = self;
 		self.body.$hook(name, helper, callback);
 	} else
 		self.getSchema().hook2(name, helper, callback, self);
+
 	return self;
 };
 
 Controller.prototype.$hook2 = function(name, helper, callback) {
+
+	if (callback == null && typeof(helper) === 'function') {
+		callback = helper;
+		helper = EMPTYOBJECT;
+	}
+
 	var self = this;
 	self.getSchema().hook2(name, helper, callback, self);
 	return self;
 };
 
 Controller.prototype.$transform = function(name, helper, callback) {
+
+	if (callback == null && typeof(helper) === 'function') {
+		callback = helper;
+		helper = EMPTYOBJECT;
+	}
+
 	var self = this;
 	if (framework_builders.isSchema(self.body)) {
 		self.body.$$controller = self;
@@ -10240,12 +10307,24 @@ Controller.prototype.$transform = function(name, helper, callback) {
 };
 
 Controller.prototype.$transform2 = function(name, helper, callback) {
+
+	if (callback == null && typeof(helper) === 'function') {
+		callback = helper;
+		helper = EMPTYOBJECT;
+	}
+
 	var self = this;
 	self.getSchema().transform2(name, helper, callback, self);
 	return self;
 };
 
 Controller.prototype.$operation = function(name, helper, callback) {
+
+	if (callback == null && typeof(helper) === 'function') {
+		callback = helper;
+		helper = EMPTYOBJECT;
+	}
+
 	var self = this;
 	if (framework_builders.isSchema(self.body)) {
 		self.body.$$controller = self;
@@ -10256,6 +10335,12 @@ Controller.prototype.$operation = function(name, helper, callback) {
 };
 
 Controller.prototype.$operation2 = function(name, helper, callback) {
+
+	if (callback == null && typeof(helper) === 'function') {
+		callback = helper;
+		helper = EMPTYOBJECT;
+	}
+
 	var self = this;
 	self.getSchema().operation2(name, helper, callback, self);
 	return self;
@@ -10264,7 +10349,7 @@ Controller.prototype.$operation2 = function(name, helper, callback) {
 Controller.prototype.$exec = function(name, helper, callback) {
 	var self = this;
 
-	if (typeof(helper) === 'function') {
+	if (callback == null && typeof(helper) === 'function') {
 		callback = helper;
 		helper = EMPTYOBJECT;
 	}
