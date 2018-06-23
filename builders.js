@@ -2002,6 +2002,7 @@ SchemaBuilderEntity.prototype.transform = function(name, model, options, callbac
 SchemaBuilderEntity.prototype.transform2 = function(name, options, callback, controller) {
 
 	if (typeof(options) === 'function') {
+		controller = callback;
 		callback = options;
 		options = undefined;
 	}
@@ -2051,6 +2052,7 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, options, callback
 SchemaBuilderEntity.prototype.workflow2 = function(name, options, callback, controller) {
 
 	if (typeof(options) === 'function') {
+		controller = callback;
 		callback = options;
 		options = undefined;
 	}
@@ -2190,6 +2192,7 @@ SchemaBuilderEntity.prototype.hook = function(name, model, options, callback, sk
 SchemaBuilderEntity.prototype.hook2 = function(name, options, callback, controller) {
 
 	if (typeof(options) === 'function') {
+		controller = callback;
 		callback = options;
 		options = undefined;
 	}
@@ -2419,6 +2422,7 @@ SchemaBuilderEntity.prototype.operation = function(name, model, options, callbac
 SchemaBuilderEntity.prototype.operation2 = function(name, options, callback, controller) {
 
 	if (typeof(options) === 'function') {
+		controller = callback;
 		callback = options;
 		options = undefined;
 	}

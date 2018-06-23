@@ -386,6 +386,13 @@ global.$TRANSFORM = function(schema, name, options, callback, controller) {
 global.$REMOVE = function(schema, options, callback, controller) {
 	schema = parseSchema(schema);
 	var o = framework_builders.getschema(schema[0], schema[1]);
+
+	if (typeof(options) === 'function') {
+		controller = callback;
+		callback = options;
+		options = EMPTYOBJECT;
+	}
+
 	o && o.remove(options, callback, controller);
 	return !!o;
 };
