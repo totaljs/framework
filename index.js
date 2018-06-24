@@ -61,7 +61,7 @@ const REG_WEBSOCKET_ERROR = /ECONNRESET|EHOSTUNREACH|EPIPE|is closed/i;
 const REG_WINDOWSPATH = /\\/g;
 const REG_SCRIPTCONTENT = /<|>|;/;
 const REG_HTTPHTTPS = /^(\/)?(http|https):\/\//i;
-const REG_NOCOMPRESS = /[.|-]+min(@\d+)?\.(css|js)$/i;
+const REG_NOCOMPRESS = /[.|-]+min(@[a-z0-9]*)?\.(css|js)$/i;
 const REG_TEXTAPPLICATION = /text|application/;
 const REG_ENCODINGCLEANER = /[;\s]charset=utf-8/g;
 const REG_SKIPERROR = /epipe|invalid\sdistance/i;
