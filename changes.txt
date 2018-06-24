@@ -106,6 +106,7 @@
 - updated: `CORS()` without arguments for all routes, methods and origins
 - updated: `CORS()` tries to join multiple same preferences to one
 - updated: `U.keywords()` for Chinese/Japan characters
+- updated: `@{import()}` by adding `manifest` value linked to `/manifest.json`
 
 - fixed: mail attachments
 - fixed: mail `message.manually()`

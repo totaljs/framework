@@ -11805,6 +11805,11 @@ Controller.prototype.$import = function() {
 			continue;
 		}
 
+		if (filename === 'manifest' || filename === 'manifest.json') {
+			builder += '<link rel="manifest" href="' + F.$version('/manifest.json') + '">';
+			continue;
+		}
+
 		if (filename === 'favicon.ico' || filename === 'favicon.png') {
 			builder += self.$favicon(filename);
 			continue;
