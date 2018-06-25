@@ -292,7 +292,6 @@ global.Mail = framework_mail;
 global.WTF = (message, name, uri) => F.problem(message, name, uri);
 global.NOBIN = global.NOSQLBINARY = (name) => F.nosql(name).binary;
 global.NOSQLSTORAGE = (name) => F.nosql(name).storage;
-global.NOSQLINDEXES = (name) => F.nosql(name).indexes;
 global.NOCOUNTER = global.NOSQLCOUNTER = (name) => F.nosql(name).counter;
 global.NOMEM = global.NOSQLMEMORY = (name, view) => global.framework_nosql.inmemory(name, view);
 global.CONFIG = (name) => F.config[name];
@@ -312,6 +311,10 @@ global.ROUTING = (name) => F.routing(name);
 global.SCHEDULE = (date, each, fn, param) => F.schedule(date, each, fn, param);
 global.FINISHED = framework_internal.onFinished;
 global.DESTROY = framework_internal.destroyStream;
+global.FILESTORAGE = function(name) {
+	var key = 'storage_' + name;
+	return F.databases[key] ? F.databases[key] : (F.databases[key] = new framework_nosql.DatabaseBinary({ name: name }, F.path.databases('fs-' + name + '/'), '.file'));
+};
 
 global.UID = function(type) {
 
@@ -942,8 +945,8 @@ F.prototypes = function(fn) {
 	proto.DatabaseBuilder = framework_nosql.DatabaseBuilder.prototype;
 	proto.DatabaseBuilder2 = framework_nosql.DatabaseBuilder2.prototype;
 	proto.DatabaseCounter = framework_nosql.DatabaseCounter.prototype;
-	proto.DatabaseIndexes = framework_nosql.DatabaseIndexes.prototype;
 	proto.DatabaseStorage = framework_nosql.DatabaseStorage.prototype;
+	proto.DatabaseTable = framework_nosql.DatabaseTable.prototype;
 	proto.ErrorBuilder = framework_builders.ErrorBuilder.prototype;
 	proto.HttpFile = framework_internal.HttpFile.prototype;
 	proto.HttpRequest = PROTOREQ;

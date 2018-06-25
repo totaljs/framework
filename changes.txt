@@ -5,7 +5,6 @@
 - added: (IMPORTANT) Total.js components support nested public files encoded in base64
 - added: (IMPORTANT) NoSQL worker
 - added: (IMPORTANT) NoSQL embedded storage for smaller big data / IoT
-- added: (IMPORTANT) NoSQL indexes
 - added: `debugging` supports live reloading
 - added: new schema operations: `schema.setInsert()` and `schema.setUpdate()`
 - added: `RESTBuilder.patch([data])`
@@ -55,7 +54,6 @@
 - added: config `security.txt` for auto-generating security.txt content (more in docs)
 - added: config `default-proxy` for default web proxy server
 - added: `NOSQLSTORAGE(name)` alias for `NOSQL(name).storage`
-- added: `NOSQLINDEXES(name)` alias for `NOSQL(name).indexes`
 - added: `GUID()` a global alias for `U.GUID()`
 - added: `VIEW()` a global alias for `F.view()`
 - added: `SchemaBuilderEntity.$response([index])` returns a specific response from an operation in `async` queue

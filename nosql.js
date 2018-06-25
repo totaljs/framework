@@ -51,7 +51,6 @@ const EXTENSION_MAPREDUCE = '.nosql-mapreduce';
 const EXTENSION_BACKUP = '.nosql-backup';
 const EXTENSION_META = '.meta';
 const EXTENSION_COUNTER = '-counter2';
-const EXTENSION_INDEXES = '-indexes';
 const BINARY_HEADER_LENGTH = 2000;
 const COUNTER_MMA = [0, 0];
 const DIRECTORYLENGTH = 9;
@@ -185,9 +184,6 @@ exports.worker = function() {
 			case 'counter.clear':
 			case 'storage.stats':
 			case 'storage.clear':
-			case 'indexes.clear':
-			case 'indexes.reindex':
-			case 'indexes.get':
 				var obj = FORKCALLBACKS[msg.id];
 				obj && obj.callback && obj.callback(msg.err, msg.response);
 				break;
@@ -492,35 +488,6 @@ exports.worker = function() {
 		return this;
 	};
 
-	Indexes.prototype.create = function(name, properties, type) {
-		notify(this.db, 'indexes.create', name, properties, type);
-		return this;
-	};
-
-	Indexes.prototype.get = Indexes.prototype.read = function(name, value, callback) {
-		send(this.db, 'indexes.get', name, value).callback = callback;
-		return this;
-	};
-
-	Indexes.prototype.find = function(name, value) {
-		return send(this.db, 'indexes.find', name, value).builder = new DatabaseBuilder(this.db);
-	};
-
-	Indexes.prototype.clear = function(callback) {
-		send(this.db, 'indexes.clear').callback = callback;
-		return this;
-	};
-
-	Indexes.prototype.reindex = function(callback) {
-		send(this.db, 'indexes.reindex').callback = callback;
-		return this;
-	};
-
-	Indexes.prototype.noreindex = function() {
-		notify(this.db, 'indexes.noreindex');
-		return this;
-	};
-
 	Table.prototype.find = function(builder) {
 		if (builder)
 			builder.db = this;
@@ -641,7 +608,6 @@ function Database(name, filename, readonly) {
 		self.filenameLog = self.readonly || readonly === true ? '' : filename + EXTENSION_LOG;
 		self.filenameBackup = self.readonly || readonly === true ? '' : filename + EXTENSION_BACKUP;
 		self.filenameStorage = self.readonly || readonly === true ? '' : filename + '-storage/{0}' + EXTENSION;
-		self.filenameIndexes = self.readonly || readonly === true ? '' : filename + '-indexes/{0}' + EXTENSION;
 		self.filenameMeta = filename + EXTENSION_META;
 		self.filenameBackup2 = framework_utils.join(self.directory, name + '_backup' + EXTENSION);
 		self.inmemory = {};
@@ -669,7 +635,6 @@ function Database(name, filename, readonly) {
 	self.pending_reindex = false;
 	self.binary = self.readonly || readonly === true ? null : new Binary(self, self.directory + '/' + self.name + '-binary/');
 	self.storage = self.readonly || readonly === true ? null : new Storage(self, self.directory + '/' + self.name + '-storage/');
-	self.indexes = self.readonly || readonly === true ? null : new Indexes(self, self.directory + '/' + self.name + '-indexes/');
 	self.counter = readonly === true ? null : new Counter(self);
 	self.$timeoutmeta;
 	self.$events = {};
@@ -742,7 +707,6 @@ exports.DatabaseBuilder = DatabaseBuilder;
 exports.DatabaseBuilder2 = DatabaseBuilder2;
 exports.DatabaseCounter = Counter;
 exports.DatabaseBinary = Binary;
-exports.DatabaseIndexes = Indexes;
 exports.DatabaseStorage = Storage;
 exports.DatabaseTable = Table;
 
@@ -812,14 +776,7 @@ function next_operation(self, type) {
 
 Database.prototype.ready = function(fn) {
 	var self = this;
-
-	if (!self.indexes)
-		fn.call(self);
-	else if (self.indexes.isreindex || self.indexes.reindexing)
-		setTimeout((self, fn) => self.ready(fn), 500, self, fn);
-	else
-		fn.call(self);
-
+	fn.call(self);
 	return self;
 };
 
@@ -901,15 +858,8 @@ Database.prototype.restore = function(filename, callback) {
 			if (!err) {
 				self.$meta();
 				self.binary.$refresh();
-				if (self.indexes && self.indexes.indexes.length) {
-					self.indexes.reindex(function() {
-						self.refresh();
-						self.storage && self.storage.refresh();
-					});
-				} else {
-					self.refresh();
-					self.storage && self.storage.refresh();
-				}
+				self.refresh();
+				self.storage && self.storage.refresh();
 			}
 			self.$events.change && self.emit('change', 'restore');
 			callback && callback(err, response);
@@ -1042,7 +992,6 @@ Database.prototype.free = function(force) {
 	self.counter.removeAllListeners(true);
 	self.binary.removeAllListeners(true);
 	self.removeAllListeners(true);
-	self.indexes = null;
 	self.binary = null;
 	self.counter = null;
 	delete F.databases[self.name];
@@ -1422,9 +1371,6 @@ Database.prototype.$append = function() {
 		var json = '';
 		for (var i = 0, length = items.length; i < length; i++) {
 			json += items[i].doc + NEWLINE;
-
-			if (self.indexes && self.indexes.indexes.length)
-				self.indexes.insert(items[i].raw);
 		}
 
 		Fs.appendFile(self.filename, json, function(err) {
@@ -1514,7 +1460,6 @@ Database.prototype.$update = function() {
 
 			var doc = docs[a];
 			var is = false;
-			var copy = self.indexes && self.indexes.indexes.length ? CLONE(doc) : null;
 			var rec = fs.docsbuffer[a];
 
 			for (var i = 0; i < length; i++) {
@@ -1557,9 +1502,6 @@ Database.prototype.$update = function() {
 
 			if (is) {
 
-				if (self.indexes && self.indexes.indexes.length)
-					self.indexes.update(doc, copy);
-
 				if (backup) {
 					for (var i = 0; i < length; i++) {
 						var item = filter[i];
@@ -1598,10 +1540,6 @@ Database.prototype.$update = function() {
 	};
 
 	fs.$callback = function() {
-
-		if (self.indexes)
-			F.databasescleaner[self.name] = (F.databasescleaner[self.name] || 0) + 1;
-
 		for (var i = 0; i < length; i++) {
 			var item = filter[i];
 			if (item.insert && !item.count) {
@@ -1693,9 +1631,6 @@ Database.prototype.$update_inmemory = function() {
 					is = true;
 				}
 			}
-
-			if (is && self.indexes && self.indexes.indexes.length)
-				self.indexes.update(doc);
 		}
 
 		self.$save('#');
@@ -2638,20 +2573,12 @@ Database.prototype.$remove = function() {
 
 				item.count++;
 				self.$events.remove && self.emit('remove', doc);
-
-				if (self.indexes && self.indexes.indexes.length)
-					self.indexes.remove(doc);
-
 				fs.write('-' + rec.doc.substring(1) + NEWLINE, rec.position);
 			}
 		}
 	};
 
 	fs.$callback = function() {
-
-		if (self.indexes)
-			F.databasescleaner[self.name] = (F.databasescleaner[self.name] || 0) + 1;
-
 		for (var i = 0; i < length; i++) {
 			var item = filter[i];
 			item.builder.$options.log && item.builder.log();
@@ -2683,20 +2610,11 @@ Database.prototype.$clear = function() {
 
 	var filter = self.pending_clear.splice(0);
 	Fs.unlink(self.filename, function() {
-		if (self.indexes.length) {
-			self.indexes.clear(function() {
-				for (var i = 0; i < filter.length; i++)
-					filter[i]();
-				self.views && setImmediate(views_refresh, self);
-				self.next(0);
-			});
-		} else {
-			for (var i = 0; i < filter.length; i++)
-				filter[i]();
-			self.views && setImmediate(views_refresh, self);
-			self.$events.change && self.emit('change', 'clear');
-			self.next(0);
-		}
+		for (var i = 0; i < filter.length; i++)
+			filter[i]();
+		self.views && setImmediate(views_refresh, self);
+		self.$events.change && self.emit('change', 'clear');
+		self.next(0);
 	});
 };
 
@@ -4757,14 +4675,16 @@ Counter.prototype.clear = function(callback) {
 	return self;
 };
 
-function Binary(db, directory) {
-	this.db = db;
-	this.directory = directory;
-	this.$events = {};
-	this.metafile = directory + 'meta.json';
-	this.meta = { $version: 1, updated: NOW };
-	this.cachekey = 'nobin_' + db.name + '_';
-	this.$refresh();
+function Binary(db, directory, ext) {
+	var t = this;
+	t.db = db;
+	t.ext = ext || EXTENSION_BINARY;
+	t.directory = directory;
+	t.$events = {};
+	t.metafile = directory + 'meta.json';
+	t.meta = { $version: 1, updated: NOW };
+	t.cachekey = 'nobin_' + db.name + '_';
+	t.$refresh();
 }
 
 Binary.prototype.$refresh = function() {
@@ -4950,7 +4870,7 @@ Binary.prototype.insert = function(name, buffer, custom, callback) {
 	self.$save();
 
 	var filename = id.toString().padLeft(DIRECTORYLENGTH, '0');
-	var stream = Fs.createWriteStream(Path.join(path, filename + EXTENSION_BINARY));
+	var stream = Fs.createWriteStream(Path.join(path, filename + self.ext));
 
 	stream.write(header, 'binary');
 	stream.end(buffer);
@@ -5007,9 +4927,9 @@ Binary.prototype.insertstream = function(id, name, type, stream, callback, custo
 		var path = self.$directory(id);
 		self.check(path);
 		filename = id.toString().padLeft(DIRECTORYLENGTH, '0');
-		filepath = Path.join(path, filename + EXTENSION_BINARY);
+		filepath = Path.join(path, filename + self.ext);
 	} else
-		filepath = framework_utils.join(self.directory, self.db.name + '#' + id + EXTENSION_BINARY);
+		filepath = framework_utils.join(self.directory, self.db.name + '#' + id + self.ext);
 
 	var writer = Fs.createWriteStream(filepath);
 	writer.write(header, 'binary');
@@ -5126,10 +5046,10 @@ Binary.prototype.update = function(id, name, buffer, custom, callback) {
 		var path = self.$directory(id);
 		self.check(path);
 		filename = id.toString().padLeft(DIRECTORYLENGTH, '0');
-		filepath = Path.join(path, filename + EXTENSION_BINARY);
+		filepath = Path.join(path, filename + self.ext);
 	} else {
 		self.check();
-		filepath = framework_utils.join(self.directory, self.db.name + '#' + id + EXTENSION_BINARY);
+		filepath = framework_utils.join(self.directory, self.db.name + '#' + id + self.ext);
 	}
 
 	switch (ext) {
@@ -5197,9 +5117,9 @@ Binary.prototype.read = function(id, callback, count) {
 	var filename;
 
 	if (isnew) {
-		filename = Path.join(self.$directory(id), id.toString().padLeft(DIRECTORYLENGTH, '0') + EXTENSION_BINARY);
+		filename = Path.join(self.$directory(id), id.toString().padLeft(DIRECTORYLENGTH, '0') + self.ext);
 	} else
-		filename = framework_utils.join(self.directory, id + EXTENSION_BINARY);
+		filename = framework_utils.join(self.directory, id + self.ext);
 
 	var stream = Fs.createReadStream(filename, BINARYREADMETA);
 	stream.on('error', err => callback(err));
@@ -5239,9 +5159,9 @@ Binary.prototype.readbase64 = function(id, callback, count) {
 	var filename;
 
 	if (isnew) {
-		filename = Path.join(self.$directory(id), id.toString().padLeft(DIRECTORYLENGTH, '0') + EXTENSION_BINARY);
+		filename = Path.join(self.$directory(id), id.toString().padLeft(DIRECTORYLENGTH, '0') + self.ext);
 	} else
-		filename = framework_utils.join(self.directory, id + EXTENSION_BINARY);
+		filename = framework_utils.join(self.directory, id + self.ext);
 
 	var stream = Fs.createReadStream(filename, BINARYREADMETA);
 	stream.on('error', err => callback(err));
@@ -5281,9 +5201,9 @@ Binary.prototype.remove = function(id, callback) {
 
 	if (isnew) {
 		var path = self.$directory(id);
-		filename = Path.join(path, id.toString().padLeft(DIRECTORYLENGTH, '0') + EXTENSION_BINARY);
+		filename = Path.join(path, id.toString().padLeft(DIRECTORYLENGTH, '0') + self.ext);
 	} else
-		filename = framework_utils.join(self.directory, id + EXTENSION_BINARY);
+		filename = framework_utils.join(self.directory, id + self.ext);
 
 	Fs.unlink(filename, function(err) {
 
@@ -5376,7 +5296,7 @@ Binary.prototype.browse = function(directory, callback) {
 
 			var target = framework_utils.join(self.directory, directory);
 			var output = [];
-			var le = EXTENSION_BINARY.length;
+			var le = self.ext.length;
 
 			response.wait(function(item, next) {
 				Fs.stat(target + '/' + item, function(err, stat) {
@@ -5429,7 +5349,7 @@ Binary.prototype.all = function(callback) {
 
 		var target = framework_utils.join(self.directory);
 		var output = [];
-		var le = EXTENSION_BINARY.length;
+		var le = self.ext.length;
 
 		pending.wait(function(item, next) {
 			Fs.stat(target + '/' + item, function(err, stat) {
@@ -5468,572 +5388,6 @@ Binary.prototype.all = function(callback) {
 		}, 2);
 	});
 
-	return self;
-};
-
-function Indexes(db, directory) {
-	this.db = db;
-	this.directory = directory;
-	this.indexes = [];
-	this.changes = [];
-	this.flushing = false;
-	this.instances = {};
-	this.reindexing = false;
-	this.isreindex = false;
-	this.meta = { $version: 1 };
-	try {
-		this.meta = Fs.readFileSync(this.db.filename + EXTENSION_INDEXES).toString('utf8').parseJSON(true) || {};
-	} catch (e) {}
-}
-
-Indexes.prototype.create = function(name, properties, type) {
-
-	var self = this;
-
-	if (type == null && typeof(properties) === 'string') {
-		type = properties;
-		properties = null;
-	}
-
-	var prop = properties ? properties : [name];
-	var key = prop.join(',') + (type ? ('=' + type) : '');
-
-	!self.indexes.findItem('name', name) && self.indexes.push({ name: name, properties: prop, type: type });
-
-	var meta = self.meta[name];
-	var reindex = false;
-
-	if (meta) {
-		if (meta.key !== key) {
-			reindex = true;
-			meta.key = key;
-		}
-	} else {
-		self.meta[name] = { key: key, documents: 0, changes: 0, cleaned: NOW.getTime() };
-		reindex = true;
-	}
-
-	if (!self.isreindex && reindex)
-		self.isreindex = reindex;
-
-	reindex && setTimeout2(self.db.name + '_reindex', () => self.reindex(), 1000);
-	return self;
-};
-
-Indexes.prototype.noreindex = function() {
-	var self = this;
-	self.isreindex = false;
-	clearTimeout2(self.db.name + '_reindex');
-	return self;
-};
-
-Indexes.prototype.$meta = function() {
-	var self = this;
-	self.$metachanged = false;
-	Fs.writeFile(self.db.filename + EXTENSION_INDEXES, JSON.stringify(this.meta), NOOP);
-	return this;
-};
-
-Indexes.prototype.$index = function(index, value) {
-
-	var key = '';
-	var number = false;
-	var num = 2;
-
-	for (var i = 0; i < value.length; i++) {
-		var val = value[i];
-
-		switch (typeof(val)) {
-			case 'number':
-				if (index.type === 'first')
-					val = val.toString()[0];
-				else if (index.type === 'reverse') {
-					val = val.toString();
-					val = val.substring(val.length - num).padLeft(num, '0');
-				} else
-					val = val.toString().substring(0, num).padLeft(num, '0');
-				number = true;
-				break;
-			case 'boolean':
-				val = val ? '1' : '0';
-				break;
-			case 'string':
-				if (REGNUMBER.test(val)) {
-					val = +val;
-					if (index.type === 'first')
-						val = val.toString()[0];
-					else if (index.type === 'reverse') {
-						val = val.toString();
-						val = val.substring(val.length - num).padLeft(num, '0');
-					} else
-						val = val.toString().substring(0, num).padLeft(num, '0');
-					number = true;
-				} else {
-					if (val.isUID()) {
-						val = val.substring(0, 2) + val.substring(2, 4);
-						number = true;
-					} else {
-						val = val.toLowerCase().removeDiacritics().match(REGINDEXCHAR);
-						if (val) {
-							val = val.toString();
-							switch (index.type) {
-								case 'first':
-									val = val[0];
-									break;
-								case 'reverse':
-									val = val.substring(val.length - 2);
-									break;
-								case 'soundex':
-									val = val.soundex();
-									break;
-								default:
-									val = val.substring(0, 2);
-							}
-						}
-					}
-				}
-				break;
-			case 'object':
-				val = val instanceof Date ? (val.getFullYear().toString().substring(2) + val.format('MM')) : '';
-				break;
-		}
-
-		if (val == null)
-			continue;
-
-		if (val)
-			key += val;
-	}
-
-	return key ? (index.name + '_' + (number && value.length === 1 ? key : key)) : null;
-};
-
-Indexes.prototype.get = Indexes.prototype.read = function(name, value, callback) {
-
-	var self = this;
-	var index = self.indexes.findItem('name', name);
-
-	if (!index) {
-		callback(new Error('Index not found.'));
-		return self;
-	}
-
-	if (!(value instanceof Array))
-		value = [value];
-
-	var key = self.$index(index, value);
-	if (!key) {
-		callback(new Error('Bad value for generating index.'));
-		return self;
-	}
-
-	if (self.changes.length) {
-		var change = self.findchanges(index, key, value);
-		if (change) {
-			callback(null, CLONE(change.doc));
-			return self;
-		}
-	}
-
-	if (self.instances[key]) {
-		self.instances[key].PENDING++;
-	} else {
-		self.instances[key] = new Database(key, self.directory + key, true);
-		self.instances[key].PENDING = 0;
-	}
-
-	var builder = self.instances[key].one();
-
-	for (var i = 0; i < index.properties.length; i++)
-		builder.where(index.properties[i], value[i]);
-
-	builder.callback(function(err, response) {
-
-		if (self.instances[key].PENDING)
-			self.instances[key].PENDING--;
-		else
-			delete self.instances[key];
-
-		callback(err, response);
-	});
-
-	return self;
-};
-
-Indexes.prototype.find = function(name, value) {
-
-	var self = this;
-	var index = self.indexes.findItem('name', name);
-
-	if (!index)
-		throw new Error('Index not found.');
-
-	if (!(value instanceof Array))
-		value = [value];
-
-	var key = self.$index(index, value);
-	if (!key)
-		throw new Error('Bad value for generating index.');
-
-	if (self.instances[key]) {
-		self.instances[key].PENDING++;
-	} else {
-		self.instances[key] = new Database(key, self.directory + key, true);
-		self.instances[key].PENDING = 0;
-	}
-
-	var builder = self.instances[key].find();
-
-	builder.$done = function() {
-		if (self.instances[key].PENDING)
-			self.instances[key].PENDING--;
-		else
-			delete self.instances[key];
-	};
-
-	return builder;
-};
-
-Indexes.prototype.clear = function(callback) {
-	var self = this;
-	Fs.readdir(self.directory, function(err, files) {
-
-		if (err) {
-			callback();
-			return;
-		}
-
-		files.wait(function(item, next) {
-			Fs.unlink(Path.join(self.directory, item), next);
-		}, callback);
-	});
-	return self;
-};
-
-Indexes.prototype.reindex = function(callback) {
-	var self = this;
-
-	clearTimeout2(self.db.name + '_reindex');
-
-	if (self.reindexing) {
-		callback && callback(new Error('Re-indexing is running.'));
-		return self;
-	}
-
-	if (self.db.step === 1 || self.db.step === 2 || self.db.step === 3 || self.db.step === 7) {
-		// We need to wait
-		setTimeout(function(self, callback) {
-			self.reindex(callback);
-		}, 500, self, callback);
-		return self;
-	}
-
-	self.db.pending_reindex = true;
-	self.reindexing = true;
-	var now = Date.now();
-
-	F.config['nosql-logger'] && PRINTLN('NoSQL embedded "{0}" re-indexing (beg)'.format(self.db.name));
-
-	var keys = Object.keys(self.meta);
-	var ticks = NOW.getTime();
-
-	for (var i = 0; i < self.indexes.length; i++) {
-		var item = self.meta[self.indexes[i].name];
-		item.documents = 0;
-		item.cleaned = ticks;
-	}
-
-	// Clears non-exist indexes
-	for (var i = 0; i < keys.length; i++) {
-		if (self.indexes.findItem('name', keys[i]) == null)
-			delete self.meta[keys[i]];
-	}
-
-	self.clear(function() {
-		self.db.$events['indexing-begin'] && self.db.emit('indexing-begin');
-		var chunker = U.chunker(self.db.name + '_reindex', 10000);
-		self.db.stream(function(doc) {
-			chunker.write(doc);
-		}, function(err, repository, count) {
-			chunker.end();
-			chunker.each(function(docs, next) {
-				self.db.$events.indexing && self.db.emit('indexing', chunker.percentage, chunker.count);
-				for (var i = 0; i < docs.length; i++)
-					self.insert(docs[i], true);
-				self.$reindexingnext = next;
-			}, function() {
-				self.isreindex = false;
-				self.$meta();
-				self.db.$events['indexing-end'] && self.db.emit('indexing-end');
-				self.reindexing = false;
-				self.db.pending_reindex = false;
-				self.db.next(0);
-				callback && callback(null, count);
-				F.config['nosql-logger'] && PRINTLN('NoSQL embedded "{0}" re-indexing (end, {1}s)'.format(self.db.name, (((Date.now() - now) / 1000) >> 0)));
-			});
-		});
-	});
-
-	return self;
-};
-
-Indexes.prototype.check = function() {
-
-	var self = this;
-	if (self.exists)
-		return self;
-
-	self.exists = true;
-
-	try {
-		Fs.mkdirSync(self.directory);
-	} catch (err) {}
-
-	return self;
-};
-
-Indexes.prototype.makeindex = function(index, doc) {
-
-	var arr = [];
-
-	for (var i = 0; i < index.properties.length; i++) {
-		var val = doc[index.properties[i]];
-		arr.push(val);
-	}
-
-	return arr;
-};
-
-Indexes.prototype.findchanges = function(index, key, values) {
-	var self = this;
-	for (var i = 0, length = self.changes.length; i < length; i++) {
-		var item = self.changes[i];
-		if (item.key !== key || item.value.length !== values.length)
-			continue;
-
-		var is = true;
-
-		for (var j = 0; j < values.length; j++) {
-			if (values[j] !== item.value[j]) {
-				is = false;
-				break;
-			}
-		}
-
-		if (is)
-			return item;
-	}
-};
-
-Indexes.prototype.insert = function(doc, reindex) {
-
-	var self = this;
-
-	for (var i = 0; i < self.indexes.length; i++) {
-
-		var index = self.indexes[i];
-		var values = self.makeindex(index, doc);
-
-		if (values.length) {
-
-			var key = self.$index(index, values);
-
-			if (!key)
-				continue;
-
-			if (!reindex) {
-				var item = self.findchanges(index, key, values);
-				if (item) {
-					item.doc = doc;
-					return self;
-				}
-			}
-
-			self.changes.push({ insert: true, key: key, doc: doc, name: index.name, value: values });
-		}
-	}
-
-	self.changes.length && self.flush();
-	return self;
-};
-
-Indexes.prototype.update = function(doc, old) {
-	var self = this;
-
-	for (var i = 0; i < self.indexes.length; i++) {
-
-		var index = self.indexes[i];
-		var values = self.makeindex(index, doc);
-
-		if (values.length) {
-			var key = self.$index(index, values);
-			if (!key)
-				continue;
-
-			var oldvalues = self.makeindex(index, old);
-			var oldkey = self.$index(index, oldvalues);
-
-			// Because of cleaning
-			self.meta[index.name].changes++;
-			self.$metachanged = true;
-
-			var item = self.findchanges(index, key, values);
-			if (item)
-				item.doc = doc;
-			else
-				self.changes.push({ update: true, key: key, doc: doc, name: index.name, properties: index.properties, value: values });
-
-			if (oldkey !== key && oldkey)
-				self.changes.push({ remove: true, key: oldkey, name: index.name, properties: index.properties, value: oldvalues });
-
-		}
-	}
-
-	self.changes.length && self.flush();
-	return self;
-};
-
-Indexes.prototype.remove = function(doc) {
-	var self = this;
-
-	for (var i = 0; i < self.indexes.length; i++) {
-
-		var index = self.indexes[i];
-		var values = self.makeindex(index, doc);
-
-		if (values.length) {
-			var key = self.$index(index, values);
-			if (!key)
-				continue;
-
-			// Because of cleaning
-			self.meta[index.name].changes++;
-			self.$metachanged = true;
-
-			var item = self.findchanges(index, key, values);
-			if (!item)
-				self.changes.push({ remove: true, key: key, name: index.name, properties: index.properties, value: values });
-		}
-	}
-
-	self.changes.length && self.flush();
-	return self;
-};
-
-Indexes.prototype.flush = function() {
-
-	var self = this;
-
-	if (self.flushing)
-		return self;
-
-	self.check();
-	self.flushing = true;
-
-	var count = 0;
-
-	var fn = function() {
-
-		if (count > 0)
-			return;
-
-		self.flushing = false;
-		self.$metachanged && self.$meta();
-		self.$free();
-
-		if (!self.changes.length) {
-			if (self.$reindexingnext) {
-				self.$reindexingnext();
-				self.$reindexingnext = null;
-			}
-		}
-
-		self.changes.length && setImmediate(() => self.flush());
-	};
-
-	var arr = self.changes.splice(0, 50);
-	var ticks = NOW.getTime() - CLEANDBTICKS;
-
-	for (var i = 0; i < arr.length; i++) {
-
-		var item = arr[i];
-
-		if (self.instances[item.key]) {
-			self.instances[item.key].PENDING++;
-		} else {
-			self.instances[item.key] = new Database(item.key, self.directory + item.key, true);
-			self.instances[item.key].PENDING = 0;
-			self.instances[item.key].CLEANDB = self.meta[item.name].changes > 0 && self.meta[item.name].cleaned < ticks ? item.name : null;
-		}
-
-		if (item.update) {
-			count++;
-			var builder = self.instances[item.key].update(item.doc, item.doc).callback(function() {
-				if (self.instances[item.key].PENDING)
-					self.instances[item.key].PENDING--;
-				count--;
-				fn();
-			});
-
-			for (var j = 0; j < item.properties.length; j++)
-				builder.where(item.properties[j], item.value[j]);
-
-		} else if (item.insert) {
-
-			count++;
-
-			if (self.meta[item.name])
-				self.meta[item.name].documents++;
-
-			self.instances[item.key].insert(item.doc).callback(function() {
-				if (self.instances[item.key].PENDING)
-					self.instances[item.key].PENDING--;
-				count--;
-				fn();
-			});
-
-		} else {
-
-			count++;
-
-			if (self.meta[item.name])
-				self.meta[item.name].documents--;
-
-			var builder = self.instances[item.key].remove().callback(function() {
-				if (self.instances[item.key].PENDING)
-					self.instances[item.key].PENDING--;
-				count--;
-				fn();
-			});
-
-			for (var j = 0; j < item.properties.length; j++)
-				builder.where(item.properties[j], item.value[j]);
-		}
-	}
-};
-
-Indexes.prototype.$free = function() {
-	var self = this;
-	var keys = Object.keys(self.instances);
-	for (var i = 0; i < keys.length; i++) {
-		var db = self.instances[keys[i]];
-		if (!db || !db.PENDING) {
-			// Cleans removed/changed documents
-			if (db && db.CLEANDB) {
-				db.PENDING++;
-				db.clean(function() {
-					db.PENDING--;
-					var a = self.meta[db.CLEANDB];
-					a.cleaned = NOW.getTime();
-					a.changes = 0;
-					db.CLEANDB = null;
-					self.$meta();
-					delete self.instances[keys[i]];
-				});
-			} else
-				delete self.instances[keys[i]];
-		}
-	}
 	return self;
 };
 
@@ -6960,9 +6314,6 @@ Table.prototype.$update = function() {
 
 	fs.$callback = function() {
 
-		if (self.indexes)
-			F.databasescleaner[self.$name] = (F.databasescleaner[self.$name] || 0) + 1;
-
 		for (var i = 0; i < length; i++) {
 			var item = filter[i];
 			if (item.insert && !item.count) {
@@ -7065,9 +6416,6 @@ Table.prototype.$remove = function() {
 	};
 
 	fs.$callback = function() {
-
-		if (self.indexes)
-			F.databasescleaner[self.$name] = (F.databasescleaner[self.$name] || 0) + 1;
 
 		for (var i = 0; i < length; i++) {
 			var item = filter[i];

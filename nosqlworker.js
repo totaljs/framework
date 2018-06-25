@@ -40,9 +40,6 @@ const RESCOUNTERCLEAR = { TYPE: 'counter.clear' };
 const RESTORAGESCAN = { TYPE: 'storage.scan' };
 const RESTORAGESTATS = { TYPE: 'storage.stats' };
 const RESSTORAGECLEAR = { TYPE: 'storage.clear' };
-const RESINDEXESGET = { TYPE: 'indexes.get' };
-const RESINDEXESCLEAR = { TYPE: 'indexes.clear' };
-const RESINDEXESREINDEX = { TYPE: 'indexes.reindex' };
 const RESSTREAM = { TYPE: 'stream' };
 
 function killprocess() {
@@ -232,46 +229,6 @@ process.on('message', function(msg) {
 				RESSTORAGECLEAR.err = err;
 				process.send(RESSTORAGECLEAR);
 			});
-			break;
-		case 'indexes.create':
-			db.indexes.create(msg.arg[0], msg.arg[1], msg.arg[2]);
-			break;
-		case 'indexes.get':
-			db.indexes.get(msg.arg[0], msg.arg[1], function(err, response) {
-				RESINDEXESGET.id = msg.id;
-				RESINDEXESGET.response = response;
-				RESINDEXESGET.err = err;
-				process.send(RESINDEXESGET);
-			});
-			break;
-		case 'indexes.find':
-			db.indexes.find(msg.arg[0], msg.arg[1]).parse(msg.data).callback(function(err, response, count, repository) {
-				RESFIND.err = err;
-				RESFIND.response = response;
-				RESFIND.count = count;
-				RESFIND.repository = repository;
-				RESFIND.id = msg.id;
-				process.send(RESFIND);
-			});
-			break;
-		case 'indexes.clear':
-			db.indexes.clear(function(err, response) {
-				RESINDEXESCLEAR.id = msg.id;
-				RESINDEXESCLEAR.response = response;
-				RESINDEXESCLEAR.err = err;
-				process.send(RESINDEXESCLEAR);
-			});
-			break;
-		case 'indexes.reindex':
-			db.indexes.reindex(function(err, response) {
-				RESINDEXESREINDEX.id = msg.id;
-				RESINDEXESREINDEX.response = response;
-				RESINDEXESREINDEX.err = err;
-				process.send(RESINDEXESREINDEX);
-			});
-			break;
-		case 'indexes.noreindex':
-			db.indexes.noreindex();
 			break;
 		case 'stream':
 			db[msg.TYPE](eval('(' + msg.arg[0] + ')'), msg.arg[1], function(err, repository, count) {
