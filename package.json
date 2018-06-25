@@ -95,6 +95,9 @@
     }, {
         "name": "Pedro Costa",
         "email": "pedro@pmcdigital.pt"
+    }, {
+        "name": "Sarp Aykent",
+        "email": "shackhers@gmail.com"
     }],
     "version": "3.0.0-80",
     "homepage": "http://www.totaljs.com",
