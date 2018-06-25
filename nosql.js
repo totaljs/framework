@@ -61,13 +61,12 @@ const NEWLINE = '\n';
 const REGBOOL = /":true/g; // for updates of boolean types
 const REGCHINA = /[\u3400-\u9FBF]/;
 const REGCLEAN = /^[\s]+|[\s]+$/g;
-const REGINDEXCHAR = /[a-z]{1,2}/;
-const REGNUMBER = /^\d+$/;
+const REGTESCAPE = /\|/g;
+const REGTUNESCAPE = /%7C/g;
 const IMAGES = { gif: 1, jpg: 1, jpeg: 1, png: 1, svg: 1 };
 const BINARYREADDATA = { start: BINARY_HEADER_LENGTH };
 const BINARYREADDATABASE64 = { start: BINARY_HEADER_LENGTH, encoding: 'base64' };
 const BINARYREADMETA = { start: 0, end: BINARY_HEADER_LENGTH - 1, encoding: 'binary' };
-const CLEANDBTICKS = 86400000 * 2; // 48 hours
 const BOOLEAN = { '1': 1, 'true': 1, 'on': 1 };
 
 const COMPARER = global.Intl ? global.Intl.Collator().compare : function(a, b) {
@@ -6304,7 +6303,6 @@ Table.prototype.$update = function() {
 				}
 
 				var upd = self.stringify(doc);
-
 				if (upd === rec.doc)
 					continue;
 
@@ -6638,6 +6636,7 @@ Table.prototype.parseData = function(data) {
 
 	var self = this;
 	var obj = {};
+	var esc = false;
 	var val;
 
 	for (var i = 0; i < data.keys.length; i++) {
@@ -6647,11 +6646,16 @@ Table.prototype.parseData = function(data) {
 		if (meta == null)
 			continue;
 
+		if (i === 0)
+			esc = data.line[0] === '*';
+
 		var pos = meta.pos + 1;
 
 		switch (meta.type) {
 			case 1: // String
 				obj[key] = data.line[pos];
+				if (esc && obj[key])
+					obj[key] = obj[key].replace(REGTUNESCAPE, '|');
 				break;
 			case 2: // Number
 				obj[key] = +data.line[pos];
@@ -6666,6 +6670,8 @@ Table.prototype.parseData = function(data) {
 				break;
 			case 5: // Object
 				val = data.line[pos];
+				if (esc && val)
+					val = val.replace(REGTUNESCAPE, '|');
 				obj[key] = val ? val.parseJSON(true) : null;
 				break;
 		}
@@ -6676,7 +6682,8 @@ Table.prototype.parseData = function(data) {
 Table.prototype.stringify = function(doc) {
 
 	var self = this;
-	var output = '+';
+	var output = '';
+	var esc = false;
 
 	for (var i = 0; i < self.$keys.length; i++) {
 		var key = self.$keys[i];
@@ -6701,10 +6708,18 @@ Table.prototype.stringify = function(doc) {
 				break;
 		}
 
+		if (!esc && (meta.type === 1 || meta.type === 5)) {
+			val += '';
+			if (val.indexOf('|') !== -1) {
+				esc = true;
+				val = val.replace(REGTESCAPE, '%7C');
+			}
+		}
+
 		output += '|' + val;
 	}
 
-	return output;
+	return (esc ? '*' : '+') + output;
 };
 
 Table.prototype.free = function(force) {
