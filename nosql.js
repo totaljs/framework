@@ -581,6 +581,7 @@ function Table(name, filename) {
 	t.$events = {};
 
 	t.step = 0;
+	t.stopped = false;
 	t.ready = false;
 	t.$free = true;
 	t.$writting = false;
@@ -591,7 +592,16 @@ function Table(name, filename) {
 		t.ready = true;
 		t.next(0);
 	}).on('error', function() {
-		throw new Error('Table "{0}" doesn\'t contain schema'.format(name));
+		t.stopped = true;
+		t.pending_reader.length && (t.pending_reader = []);
+		t.pending_update.length && (t.pending_update = []);
+		t.pending_append.length && (t.pending_append = []);
+		t.pending_reader.length && (t.pending_reader = []);
+		t.pending_remove.length && (t.pending_remove = []);
+		t.pending_streamer.length && (t.pending_streamer = []);
+		t.pending_clean.length && (t.pending_clean = []);
+		t.pending_clear.length && (t.pending_clear = []);
+		t.throwStopped();
 	});
 }
 
@@ -5760,7 +5770,7 @@ Table.prototype.insert = function(doc, unique) {
 	var self = this;
 	var builder;
 
-	self.readonly && self.throwReadonly();
+	self.stopped && self.throwStopped();
 
 	if (unique) {
 
@@ -5791,7 +5801,7 @@ Table.prototype.insert = function(doc, unique) {
 
 Table.prototype.update = function(doc, insert) {
 	var self = this;
-	self.readonly && self.throwReadonly();
+	self.stopped && self.throwStopped();
 	var builder = new DatabaseBuilder(self);
 	self.pending_update.push({ builder: builder, doc: doc, count: 0, insert: insert === true ? doc : insert });
 	setImmediate(next_operation, self, 2);
@@ -5800,7 +5810,7 @@ Table.prototype.update = function(doc, insert) {
 
 Table.prototype.modify = function(doc, insert) {
 	var self = this;
-	self.readonly && self.throwReadonly();
+	self.stopped && self.throwStopped();
 	var builder = new DatabaseBuilder(self);
 	var data = framework_builders.isSchema(doc) ? doc.$clean() : doc;
 	var keys = Object.keys(data);
@@ -5815,7 +5825,7 @@ Table.prototype.modify = function(doc, insert) {
 
 Table.prototype.remove = function() {
 	var self = this;
-	self.readonly && self.throwReadonly();
+	self.stopped && self.throwStopped();
 	var builder = new DatabaseBuilder(self);
 	self.pending_remove.push({ builder: builder, count: 0 });
 	setImmediate(next_operation, self, 3);
@@ -5824,6 +5834,7 @@ Table.prototype.remove = function() {
 
 Table.prototype.find = function(builder) {
 	var self = this;
+	self.stopped && self.throwStopped();
 	if (builder)
 		builder.db = self;
 	else
@@ -5835,6 +5846,7 @@ Table.prototype.find = function(builder) {
 
 Table.prototype.stream = function(fn, repository, callback) {
 	var self = this;
+	self.stopped && self.throwStopped();
 
 	if (typeof(repository) === 'function') {
 		callback = repository;
@@ -5850,12 +5862,17 @@ Table.prototype.throwReadonly = function() {
 	throw new Error('Table "{0}" is readonly.'.format(this.name));
 };
 
+Table.prototype.throwStopped = function() {
+	throw new Error('Table "{0}" doesn\'t contain schema'.format(this.name));
+};
+
 Table.prototype.scalar = function(type, field) {
 	return this.find().scalar(type, field);
 };
 
 Table.prototype.count = function() {
 	var self = this;
+	self.stopped && self.throwStopped();
 	var builder = new DatabaseBuilder(self);
 	self.pending_reader.push({ builder: builder, count: 0, type: 1 });
 	setImmediate(next_operation, self, 4);
@@ -5864,6 +5881,7 @@ Table.prototype.count = function() {
 
 Table.prototype.one = function() {
 	var self = this;
+	self.stopped && self.throwStopped();
 	var builder = new DatabaseBuilder(self);
 	builder.first();
 	self.pending_reader.push({ builder: builder, count: 0 });
@@ -5873,6 +5891,7 @@ Table.prototype.one = function() {
 
 Table.prototype.top = function(max) {
 	var self = this;
+	self.stopped && self.throwStopped();
 	var builder = new DatabaseBuilder(self);
 	builder.take(max);
 	self.pending_reader.push({ builder: builder, count: 0, counter: 0 });
@@ -5882,6 +5901,7 @@ Table.prototype.top = function(max) {
 
 Table.prototype.clean = function(callback) {
 	var self = this;
+	self.stopped && self.throwStopped();
 	self.pending_clean.push(callback || NOOP);
 	setImmediate(next_operation, self, 13);
 	return self;
@@ -5889,6 +5909,7 @@ Table.prototype.clean = function(callback) {
 
 Table.prototype.clear = function(callback) {
 	var self = this;
+	self.stopped && self.throwStopped();
 	self.pending_clear.push(callback || NOOP);
 	setImmediate(next_operation, self, 12);
 	return self;
