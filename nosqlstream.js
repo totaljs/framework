@@ -43,6 +43,7 @@ function NoSQLStream(filename) {
 	this.cache = [null, null];
 	this.buffer = null;
 	this.divider = ',';
+	this.remchar = '-';
 	// this.canceled = false;
 	// this.docs = '';
 	// this.docscount = 0;
@@ -82,7 +83,7 @@ NoSQLStream.prototype.readhelpers = function() {
 		while (index !== -1) {
 
 			var tmp = self.buffer.toString('utf8', 0, index);
-			if (tmp[0] === '-') {
+			if (tmp[0] === self.remchar) {
 				self.buffer = self.buffer.slice(index + 1);
 				index = self.buffer.indexOf(NEWLINEBUFFER);
 				if (index === -1)
@@ -146,7 +147,7 @@ NoSQLStream.prototype.readhelpers = function() {
 		while (index !== -1) {
 
 			var tmp = self.buffer.toString('utf8', index);
-			if (tmp[1] === '-') {
+			if (tmp[1] === self.remchar) {
 				self.buffer = self.buffer.slice(0, index);
 				index = self.buffer.lastIndexOf(NEWLINEBUFFER);
 				if (index === -1)
@@ -320,8 +321,8 @@ NoSQLStream.prototype.writehelpers = function() {
 
 		while (index !== -1) {
 			var tmp = self.buffer.toString('utf8', 0, index);
-			if (tmp[0] !== '-') {
-				self.docs += (self.docs ? ',' : '') + tmp;
+			if (tmp[0] !== self.remchar) {
+				self.docs += (self.docs ? self.divider : '') + tmp;
 				self.docsbuffer.push({ length: index, doc: tmp, position: self.positionupdate });
 				self.docscount++;
 				if (self.docsbuffer.length >= BUFFERDOCS) {

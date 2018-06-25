@@ -1270,6 +1270,16 @@ global.NOSQL = F.nosql = function(name) {
 	return db;
 };
 
+global.TABLE = function(name) {
+	var db = F.databases['$' + name];
+	if (db)
+		return db;
+	F.path.verify('databases');
+	db = framework_nosql.table(name, F.path.databases(name));
+	F.databases['$' + name] = db;
+	return db;
+};
+
 F.stop = F.kill = function(signal) {
 
 	if (F.isKilled)
@@ -7204,7 +7214,10 @@ F.service = function(count) {
 	if (count % F.config['nosql-cleaner'] === 0 && F.config['nosql-cleaner']) {
 		keys = Object.keys(F.databasescleaner);
 		keys.wait(function(item, next) {
-			NOSQL(item).clean(next);
+			if (item[0] === '$')
+				TABLE(item).clean(next);
+			else
+				NOSQL(item).clean(next);
 		});
 	}
 

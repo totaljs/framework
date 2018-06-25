@@ -67,7 +67,8 @@ process.on('message', function(msg) {
 		return;
 	}
 
-	var db = NOSQL(msg.name);
+	var db = msg.t ? TABLE(msg.name) : NOSQL(msg.name);
+
 	switch (msg.TYPE) {
 		case 'find':
 			db.find(msg.arg ? msg.arg[0] : undefined).parse(msg.data).callback(function(err, response, count, repository) {
