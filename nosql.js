@@ -358,12 +358,12 @@ exports.worker = function() {
 		return this;
 	};
 
-	DP.clear = function(callback) {
+	TP.clear = DP.clear = function(callback) {
 		send(this, 'clear').callback = callback;
 		return this;
 	};
 
-	DP.clean = function(callback) {
+	TP.clean = DP.clean = function(callback) {
 		send(this, 'clean').callback = callback;
 		return this;
 	};
@@ -488,7 +488,7 @@ exports.worker = function() {
 		return this;
 	};
 
-	Table.prototype.find = function(builder) {
+	TP.find = function(builder) {
 		if (builder)
 			builder.db = this;
 		else
@@ -496,19 +496,19 @@ exports.worker = function() {
 		return send(this, 'find').builder = builder;
 	};
 
-	Table.prototype.top = function(max) {
+	TP.top = function(max) {
 		var builder = new DatabaseBuilder(this);
 		builder.take(max);
 		return send(this, 'find').builder = builder;
 	};
 
-	Table.prototype.one = function() {
+	TP.one = function() {
 		var builder = new DatabaseBuilder(this);
 		builder.first();
 		return send(this, 'one').builder = builder;
 	};
 
-	Table.prototype.insert = function(doc, unique) {
+	TP.insert = function(doc, unique) {
 
 		var self = this;
 		var builder;
@@ -539,27 +539,17 @@ exports.worker = function() {
 		return send(self, 'insert', framework_builders.isSchema(doc) ? doc.$clean() : doc).builder = new DatabaseBuilder2(self);
 	};
 
-	Table.prototype.count = function() {
+	TP.count = function() {
 		var builder = new DatabaseBuilder(this);
 		return send(this, 'count').builder = builder;
 	};
 
-	Table.prototype.update = function(doc, insert) {
+	TP.update = function(doc, insert) {
 		return send(this, 'update', framework_builders.isSchema(doc) ? doc.$clean() : doc, insert).builder = new DatabaseBuilder(this);
 	};
 
-	Table.prototype.modify = function(doc, insert) {
+	TP.modify = function(doc, insert) {
 		return send(this, 'modify', framework_builders.isSchema(doc) ? doc.$clean() : doc, insert).builder = new DatabaseBuilder(this);
-	};
-
-	Table.prototype.clear = function(callback) {
-		send(this, 'clear').callback = callback;
-		return this;
-	};
-
-	Table.prototype.clean = function(callback) {
-		send(this, 'clean').callback = callback;
-		return this;
 	};
 };
 
