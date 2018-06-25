@@ -1481,7 +1481,7 @@ Database.prototype.$update = function() {
 
 				var output = item.compare(doc, item.filter, indexer);
 				if (output) {
-
+					var oldDocument = Object.assign({}, output);
 					if (item.filter.options.first) {
 						item.skip = true;
 						filters++;
@@ -1502,7 +1502,7 @@ Database.prototype.$update = function() {
 						output = typeof(item.doc) === 'function' ? item.doc(output) : item.doc;
 
 					var e = item.keys ? 'modify' : 'update';
-					self.$events[e] && self.emit(e, output);
+					self.$events[e] && self.emit(e, output, oldDocument);
 					item.count++;
 					doc = output;
 					is = true;
@@ -1616,7 +1616,7 @@ Database.prototype.$update_inmemory = function() {
 				item.filter.index = j;
 				var output = item.compare(doc, item.filter, j);
 				if (output) {
-
+					var oldDocument = Object.assign({}, output);
 					builder.$options.backup && builder.$backupdoc(doc);
 
 					if (item.keys) {
@@ -1633,7 +1633,7 @@ Database.prototype.$update_inmemory = function() {
 						doc = typeof(item.doc) === 'function' ? item.doc(doc) : item.doc;
 
 					var e = item.keys ? 'modify' : 'update';
-					self.$events[e] && self.emit(e, doc);
+					self.$events[e] && self.emit(e, doc, oldDocument);
 					item.count++;
 					if (!change)
 						change = true;
