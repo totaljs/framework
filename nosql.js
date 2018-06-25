@@ -44,6 +44,7 @@ if (!global.framework_builders)
 
 const EXTENSION = '.nosql';
 const EXTENSION_TABLE = '.table';
+const EXTENSION_TABLE_BACKUP = '.table-backup';
 const EXTENSION_BINARY = '.nosql-binary';
 const EXTENSION_TMP = '.nosql-tmp';
 const EXTENSION_LOG = '.nosql-log';
@@ -556,6 +557,7 @@ exports.worker = function() {
 function Table(name, filename) {
 	var t = this;
 	t.filename = filename + EXTENSION_TABLE;
+	t.filenameBackup = filename + EXTENSION_TABLE_BACKUP;
 	t.directory = Path.dirname(filename);
 	t.name = name;
 	t.$name = '$' + name;
@@ -595,6 +597,7 @@ function Table(name, filename) {
 			t.pending_reader.length && (t.pending_reader = []);
 			t.pending_remove.length && (t.pending_remove = []);
 			t.pending_streamer.length && (t.pending_streamer = []);
+			t.pending_locks.length && (t.pending_locks = []);
 			t.pending_clean.length && (t.pending_clean = []);
 			t.pending_clear.length && (t.pending_clear = []);
 			t.throwReadonly();
@@ -754,7 +757,7 @@ TP.meta = DP.meta = function(name, value) {
 	return self;
 };
 
-DP.backups = function(filter, callback) {
+TP.backups = DP.backups = function(filter, callback) {
 
 	if (callback === undefined) {
 		callback = filter;
@@ -762,15 +765,28 @@ DP.backups = function(filter, callback) {
 	}
 
 	var self = this;
+	var isTable = self instanceof Table;
+
+	if (isTable && !self.ready) {
+		setTimeout((self, filter, callback) => self.backups(filter, callback), 500, self, filter, callback);
+		return self;
+	}
+
 	var stream = Fs.createReadStream(self.filenameBackup);
 	var output = [];
+	var tmp = {};
+
+	tmp.keys = self.$keys;
 
 	stream.on('data', U.streamer(NEWLINEBUF, function(item, index) {
 		var end = item.indexOf('|', item.indexOf('|') + 2);
 		var meta = item.substring(0, end);
 		var arr = meta.split('|');
 		var dv = arr[0].trim().replace(' ', 'T') + ':00.000Z';
-		var obj = { id: index + 1, date: dv.parseDate(), user: arr[1].trim(), data: item.substring(end + 1).trim().parseJSON(true) };
+		tmp.line = item.substring(end + 1).trim();
+		if (isTable)
+			tmp.line = tmp.line.split('|');
+		var obj = { id: index + 1, date: dv.parseDate(), user: arr[1].trim(), data: self instanceof Table ? self.parseData(tmp) : tmp.line.parseJSON(true) };
 		if (!filter || filter(obj))
 			output.push(obj);
 	}), stream);
@@ -1033,6 +1049,7 @@ TP.clean = DP.clean = function(callback) {
 
 TP.lock = DP.lock = function(callback) {
 	var self = this;
+	self.readonly && self.throwReadonly();
 	self.pending_locks.push(callback || NOOP);
 	setImmediate(next_operation, self, 14);
 	return self;
@@ -5843,6 +5860,79 @@ TP.stream = function(fn, repository, callback) {
 	return self;
 };
 
+TP.extend = function(schema, callback) {
+	var self = this;
+	self.readonly && self.throwReadonly();
+	self.lock(function(next) {
+
+		var olds = self.$schema;
+		var oldk = self.$keys;
+
+		self.parseSchema(schema.replace(/;|,/g, '|').trim().split('|'));
+
+		var meta = self.stringifySchema() + NEWLINE;
+		var news = self.$schema;
+		var newk = self.$keys;
+
+		self.$schema = olds;
+		self.$keys = oldk;
+
+		var count = 0;
+		var fs = new NoSQLStream(self.filename);
+		var data = {};
+
+		var tmp = self.filename + '-tmp';
+		var writer = Fs.createWriteStream(tmp);
+
+		writer.write(meta, 'utf8');
+		writer.on('finish', function() {
+			Fs.rename(tmp, self.filename, function() {
+				next();
+				callback && callback();
+			});
+		});
+
+		data.keys = self.$keys;
+		fs.divider = '\n';
+
+		fs.ondocuments = function() {
+
+			var lines = fs.docs.split(fs.divider);
+			var items = [];
+
+			self.$schema = olds;
+			self.$keys = oldk;
+
+			for (var a = count ? 0 : 1; a < lines.length; a++) {
+				data.line = lines[a].split('|');
+				data.index = count++;
+				var doc = self.parseData(data);
+				items.push(doc);
+			}
+
+			self.$schema = news;
+			self.$keys = newk;
+
+			var buffer = '';
+			for (var i = 0; i < items.length; i++)
+				buffer += self.stringify(items[i]) + NEWLINE;
+			buffer && writer.write(buffer, 'utf8');
+		};
+
+		fs.$callback = function() {
+			self.$schema = news;
+			self.$keys = newk;
+			writer.end();
+			fs = null;
+		};
+
+		fs.openread();
+	});
+
+	return self;
+};
+
+
 TP.throwReadonly = function() {
 	throw new Error('Table "{0}" doesn\'t contain any schema'.format(this.name));
 };
@@ -5878,14 +5968,6 @@ TP.top = function(max) {
 	self.pending_reader.push({ builder: builder, count: 0, counter: 0 });
 	setImmediate(next_operation, self, 4);
 	return builder;
-};
-
-TP.lock = function(callback) {
-	var self = this;
-	self.readonly && self.throwReadonly();
-	self.pending_locks.push(callback || NOOP);
-	setImmediate(next_operation, self, 14);
-	return self;
 };
 
 TP.next = function(type) {
