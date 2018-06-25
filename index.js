@@ -542,7 +542,7 @@ global.SUCCESS = function(success, value) {
 		success = true;
 
 	SUCCESSHELPER.success = !!success;
-	SUCCESSHELPER.value = value == null ? undefined : value;
+	SUCCESSHELPER.value = value == null ? undefined : (framework_builders.isSchema(value) ? value.$clean() : value);
 	SUCCESSHELPER.error = err ? err : undefined;
 	return SUCCESSHELPER;
 };
