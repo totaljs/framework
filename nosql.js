@@ -1481,7 +1481,10 @@ Database.prototype.$update = function() {
 
 				var output = item.compare(doc, item.filter, indexer);
 				if (output) {
-					var oldDocument = Object.assign({}, output);
+
+					var e = item.keys ? 'modify' : 'update';
+					var old = self.$events[e] ? CLONE(output) : 0;
+
 					if (item.filter.options.first) {
 						item.skip = true;
 						filters++;
@@ -1501,8 +1504,7 @@ Database.prototype.$update = function() {
 					} else
 						output = typeof(item.doc) === 'function' ? item.doc(output) : item.doc;
 
-					var e = item.keys ? 'modify' : 'update';
-					self.$events[e] && self.emit(e, output, oldDocument);
+					self.$events[e] && self.emit(e, output, old);
 					item.count++;
 					doc = output;
 					is = true;
@@ -1607,7 +1609,6 @@ Database.prototype.$update_inmemory = function() {
 		for (var a = 0, al = data.length; a < al; a++) {
 
 			var doc = data[a];
-			var is = false;
 
 			for (var i = 0; i < length; i++) {
 
@@ -1616,7 +1617,10 @@ Database.prototype.$update_inmemory = function() {
 				item.filter.index = j;
 				var output = item.compare(doc, item.filter, j);
 				if (output) {
-					var oldDocument = Object.assign({}, output);
+
+					var e = item.keys ? 'modify' : 'update';
+					var old = self.$events[e] ? CLONE(output) : 0;
+
 					builder.$options.backup && builder.$backupdoc(doc);
 
 					if (item.keys) {
@@ -1632,12 +1636,10 @@ Database.prototype.$update_inmemory = function() {
 					} else
 						doc = typeof(item.doc) === 'function' ? item.doc(doc) : item.doc;
 
-					var e = item.keys ? 'modify' : 'update';
-					self.$events[e] && self.emit(e, doc, oldDocument);
+					self.$events[e] && self.emit(e, doc, old);
 					item.count++;
 					if (!change)
 						change = true;
-					is = true;
 				}
 			}
 		}
@@ -6264,6 +6266,9 @@ Table.prototype.$update = function() {
 						data.keys = tmp;
 					}
 
+					var e = item.keys ? 'modify' : 'update';
+					var old = self.$events[e] ? CLONE(output) : 0;
+
 					if (item.keys) {
 						for (var j = 0; j < item.keys.length; j++) {
 							var key = item.keys[j];
@@ -6278,8 +6283,7 @@ Table.prototype.$update = function() {
 					} else
 						output = typeof(item.doc) === 'function' ? item.doc(output) : item.doc;
 
-					var e = item.keys ? 'modify' : 'update';
-					self.$events[e] && self.emit(e, output);
+					self.$events[e] && self.emit(e, output, old);
 					item.count++;
 					doc = output;
 					is = true;
