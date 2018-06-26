@@ -1137,10 +1137,14 @@ SchemaBuilderEntity.prototype.execute = function(TYPE, model, options, callback,
 			return;
 		}
 
+		if (controller instanceof SchemaOptions)
+			controller = controller.controller;
+
 		if (model && !controller && model.$$controller)
 			controller = model.$$controller;
 
 		var builder = new ErrorBuilder();
+
 		self.resourceName && builder.setResource(self.resourceName);
 		self.resourcePrefix && builder.setPrefix(self.resourcePrefix);
 
@@ -1219,6 +1223,9 @@ SchemaBuilderEntity.prototype.get = SchemaBuilderEntity.prototype.read = functio
 	self.resourceName && builder.setResource(self.resourceName);
 	self.resourcePrefix && builder.setPrefix(self.resourcePrefix);
 
+	if (controller instanceof SchemaOptions)
+		controller = controller.controller;
+
 	var output = self.default();
 	var $type = 'get';
 
@@ -1289,6 +1296,9 @@ SchemaBuilderEntity.prototype.remove = function(options, callback, controller) {
 	if (!self.onRemove)
 		return callback(new Error('Operation "{0}/{1}" not found'.format(self.name, $type)));
 
+	if (controller instanceof SchemaOptions)
+		controller = controller.controller;
+
 	self.resourceName && builder.setResource(self.resourceName);
 	self.resourcePrefix && builder.setPrefix(self.resourcePrefix);
 
@@ -1352,6 +1362,9 @@ SchemaBuilderEntity.prototype.query = function(options, callback, controller) {
 		callback = options;
 		options = undefined;
 	}
+
+	if (controller instanceof SchemaOptions)
+		controller = controller.controller;
 
 	var self = this;
 	var builder = new ErrorBuilder();
@@ -2100,6 +2113,9 @@ SchemaBuilderEntity.prototype.hook = function(name, model, options, callback, sk
 		return self;
 	}
 
+	if (controller instanceof SchemaOptions)
+		controller = controller.controller;
+
 	if (model && !controller && model.$$controller)
 		controller = model.$$controller;
 
@@ -2232,6 +2248,9 @@ SchemaBuilderEntity.prototype.$execute = function(type, name, model, options, ca
 		callback(new ErrorBuilder().push('', type.capitalize() + ' "{0}" not found.'.format(name)));
 		return self;
 	}
+
+	if (controller instanceof SchemaOptions)
+		controller = controller.controller;
 
 	if (model && !controller && model.$$controller)
 		controller = model.$$controller;
@@ -2367,6 +2386,9 @@ SchemaBuilderEntity.prototype.operation = function(name, model, options, callbac
 
 	self.resourceName && builder.setResource(self.resourceName);
 	self.resourcePrefix && builder.setPrefix(self.resourcePrefix);
+
+	if (controller instanceof SchemaOptions)
+		controller = controller.controller;
 
 	if (model && !controller && model.$$controller)
 		controller = model.$$controller;
