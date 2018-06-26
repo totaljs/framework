@@ -594,7 +594,7 @@ function Table(name, filename) {
 		t.ready = true;
 		t.next(0);
 
-		if (t.stringifySchema() !== schema)
+		if (schema && t.stringifySchema() !== schema)
 			t.extend(schema);
 
 	}).on('error', function() {
