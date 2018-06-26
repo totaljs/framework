@@ -62,8 +62,9 @@ const NEWLINE = '\n';
 const REGBOOL = /":true/g; // for updates of boolean types
 const REGCHINA = /[\u3400-\u9FBF]/;
 const REGCLEAN = /^[\s]+|[\s]+$/g;
-const REGTESCAPE = /\|/g;
-const REGTUNESCAPE = /%7C/g;
+const REGTESCAPE = /\||\n|\r/g;
+const REGTUNESCAPE = /%7C|%0D|%0A/g;
+const REGTESCAPETEST = /\||\n|\r/;
 const IMAGES = { gif: 1, jpg: 1, jpeg: 1, png: 1, svg: 1 };
 const BINARYREADDATA = { start: BINARY_HEADER_LENGTH };
 const BINARYREADDATABASE64 = { start: BINARY_HEADER_LENGTH, encoding: 'base64' };
@@ -582,14 +583,14 @@ function Table(name, filename) {
 
 	var schema = F.config['table.' + name];
 
-	Fs.createReadStream(t.filename, { end: 10 }).once('data', function(chunk) {
+	Fs.createReadStream(t.filename, { end: 1000 }).once('data', function(chunk) {
 
 		if (schema) {
 			t.parseSchema(schema.replace(/;|,/g, '|').trim().split('|'));
 			schema = t.stringifySchema();
 		}
 
-		t.parseSchema(chunk.toString('utf8').split('\n')[0].split('|'));
+		t.parseSchema(chunk.toString('utf8').split('\n', 1)[0].split('|'));
 
 		t.ready = true;
 		t.next(0);
@@ -876,7 +877,24 @@ DP.modify = function(doc, insert) {
 	var keys = Object.keys(data);
 
 	if (keys.length) {
-		self.pending_update.push({ builder: builder, doc: data, count: 0, keys: keys, insert: insert === true ? data : insert });
+		var inc = null;
+		for (var i = 0; i < keys.length; i++) {
+			var key = keys[i];
+			switch (key[0]) {
+				case '+':
+				case '-':
+				case '*':
+				case '/':
+					!inc && (inc = {});
+					var tmp = key.substring(1);
+					inc[tmp] = key[0];
+					doc[tmp] = doc[key];
+					doc[key] = undefined;
+					keys[i] = tmp;
+					break;
+			}
+		}
+		self.pending_update.push({ builder: builder, doc: data, count: 0, keys: keys, inc: inc, insert: insert === true ? data : insert });
 		setImmediate(next_operation, self, 2);
 	}
 
@@ -1531,7 +1549,22 @@ DP.$update = function() {
 							if (val !== undefined) {
 								if (typeof(val) === 'function')
 									output[key] = val(output[key], output);
-								else
+								else if (item.inc && item.inc[key]) {
+									switch (item.inc[key]) {
+										case '+':
+											output[key] = (output[key] || 0) + val;
+											break;
+										case '-':
+											output[key] = (output[key] || 0) - val;
+											break;
+										case '*':
+											output[key] = (output[key] || 0) + val;
+											break;
+										case '/':
+											output[key] = (output[key] || 0) / val;
+											break;
+									}
+								} else
 									output[key] = val;
 							}
 						}
@@ -5830,12 +5863,27 @@ TP.modify = function(doc, insert) {
 	var builder = new DatabaseBuilder(self);
 	var data = framework_builders.isSchema(doc) ? doc.$clean() : doc;
 	var keys = Object.keys(data);
-
 	if (keys.length) {
-		self.pending_update.push({ builder: builder, doc: data, count: 0, keys: keys, insert: insert === true ? data : insert });
+		var inc = null;
+		for (var i = 0; i < keys.length; i++) {
+			var key = keys[i];
+			switch (key[0]) {
+				case '+':
+				case '-':
+				case '*':
+				case '/':
+					!inc && (inc = {});
+					var tmp = key.substring(1);
+					inc[tmp] = key[0];
+					doc[tmp] = doc[key];
+					doc[key] = undefined;
+					keys[i] = tmp;
+					break;
+			}
+		}
+		self.pending_update.push({ builder: builder, doc: data, count: 0, keys: keys, inc: inc, insert: insert === true ? data : insert });
 		setImmediate(next_operation, self, 2);
 	}
-
 	return builder;
 };
 
@@ -6368,7 +6416,22 @@ TP.$update = function() {
 							if (val !== undefined) {
 								if (typeof(val) === 'function')
 									output[key] = val(output[key], output);
-								else
+								else if (item.inc && item.inc[key]) {
+									switch (item.inc[key]) {
+										case '+':
+											output[key] = (output[key] || 0) + val;
+											break;
+										case '-':
+											output[key] = (output[key] || 0) - val;
+											break;
+										case '*':
+											output[key] = (output[key] || 0) + val;
+											break;
+										case '/':
+											output[key] = (output[key] || 0) / val;
+											break;
+									}
+								} else
 									output[key] = val;
 							}
 						}
@@ -6778,7 +6841,7 @@ TP.parseData = function(data, cache) {
 			case 1: // String
 				obj[key] = data.line[pos];
 				if (esc && obj[key])
-					obj[key] = obj[key].replace(REGTUNESCAPE, '|');
+					obj[key] = obj[key].replace(REGTUNESCAPE, regtescapereverse);
 				break;
 			case 2: // Number
 				obj[key] = +data.line[pos];
@@ -6794,7 +6857,7 @@ TP.parseData = function(data, cache) {
 			case 5: // Object
 				val = data.line[pos];
 				if (esc && val)
-					val = val.replace(REGTUNESCAPE, '|');
+					val = val.replace(REGTUNESCAPE, regtescapereverse);
 				obj[key] = val ? val.parseJSON(true) : null;
 				break;
 		}
@@ -6833,9 +6896,9 @@ TP.stringify = function(doc) {
 
 		if (!esc && (meta.type === 1 || meta.type === 5)) {
 			val += '';
-			if (val.indexOf('|') !== -1) {
+			if (REGTESCAPETEST.test(val)) {
 				esc = true;
-				val = val.replace(REGTESCAPE, '%7C');
+				val = val.replace(REGTESCAPE, regtescape);
 			}
 		}
 
@@ -6844,6 +6907,30 @@ TP.stringify = function(doc) {
 
 	return (esc ? '*' : '+') + output;
 };
+
+function regtescapereverse(c) {
+	switch (c) {
+		case '%0A':
+			return '\n';
+		case '%0D':
+			return '\r';
+		case '%7C':
+			return '|';
+	}
+	return c;
+}
+
+function regtescape(c) {
+	switch (c) {
+		case '\n':
+			return '%0A';
+		case '\r':
+			return '%0D';
+		case '|':
+			return '%7C';
+	}
+	return c;
+}
 
 TP.free = function(force) {
 	var self = this;
