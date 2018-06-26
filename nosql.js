@@ -580,15 +580,29 @@ function Table(name, filename) {
 
 	t.$meta();
 
+	var schema = F.config['table.' + name];
+
 	Fs.createReadStream(t.filename, { end: 2048 }).on('data', function(chunk) {
+
+		if (schema) {
+			t.parseSchema(schema.replace(/;|,/g, '|').trim().split('|'));
+			schema = t.stringifySchema();
+		}
+
 		t.parseSchema(chunk.toString('utf8').split('\n')[0].split('|'));
+
 		t.ready = true;
 		t.next(0);
+
+		if (t.stringifySchema() !== schema)
+			t.extend(schema);
+
 	}).on('error', function() {
-		var schema = F.config['table.' + name];
 		if (schema) {
 			t.parseSchema(schema.replace(/;|,/g, '|').trim().split('|'));
 			Fs.writeFileSync(t.filename, t.stringifySchema() + NEWLINE, 'utf8');
+			t.ready = true;
+			t.next(0);
 		} else {
 			t.readonly = true;
 			t.pending_reader.length && (t.pending_reader = []);
