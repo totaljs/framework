@@ -364,7 +364,7 @@ global.$QUERY = function(schema, options, callback, controller) {
 	if (o)
 		o.query(options, callback, controller);
 	else
-		callback && callback(new Error('Schema {0}/{1} not found.'.format(schema[0], schema[1])));
+		callback && callback(new Error('Schema "{0}" not found.'.format(getSchemaName(schema))));
 	return !!o;
 };
 
@@ -374,7 +374,7 @@ global.$GET = function(schema, options, callback, controller) {
 	if (o)
 		o.get(options, callback, controller);
 	else
-		callback && callback(new Error('Schema {0}/{1} not found.'.format(schema[0], schema[1])));
+		callback && callback(new Error('Schema "{0}" not found.'.format(getSchemaName(schema))));
 	return !!o;
 };
 
@@ -384,7 +384,7 @@ global.$WORKFLOW = function(schema, name, options, callback, controller) {
 	if (o)
 		o.workflow2(name, options, callback, controller);
 	else
-		callback && callback(new Error('Schema {0}/{1} not found.'.format(schema[0], schema[1])));
+		callback && callback(new Error('Schema "{0}" not found.'.format(getSchemaName(schema))));
 	return !!o;
 };
 
@@ -394,7 +394,7 @@ global.$TRANSFORM = function(schema, name, options, callback, controller) {
 	if (o)
 		o.transform2(name, options, callback, controller);
 	else
-		callback && callback(new Error('Schema {0}/{1} not found.'.format(schema[0], schema[1])));
+		callback && callback(new Error('Schema "{0}" not found.'.format(getSchemaName(schema))));
 	return !!o;
 };
 
@@ -411,7 +411,7 @@ global.$REMOVE = function(schema, options, callback, controller) {
 	if (o)
 		o.remove(options, callback, controller);
 	else
-		callback && callback(new Error('Schema {0}/{1} not found.'.format(schema[0], schema[1])));
+		callback && callback(new Error('Schema "{0}" not found.'.format(getSchemaName(schema))));
 	return !!o;
 };
 
@@ -440,7 +440,7 @@ function performschema(type, schema, model, options, callback, controller) {
 	var o = framework_builders.getschema(schema[0], schema[1]);
 
 	if (!o) {
-		callback && callback(new Error('Schema {0}/{1} not found.'.format(schema[0], schema[1])));
+		callback && callback(new Error('Schema "{0}" not found.'.format(getSchemaName(schema))));
 		return false;
 	}
 
@@ -467,7 +467,7 @@ global.$ASYNC = function(schema, callback, index, controller) {
 	var o = framework_builders.getschema(schema[0], schema[1]).default();
 
 	if (!o) {
-		callback && callback(new Error('Schema {0}/{1} not found.'.format(schema[0], schema[1])));
+		callback && callback(new Error('Schema "{0}" not found.'.format(getSchemaName(schema))));
 		return EMPTYOBJECT;
 	}
 
@@ -481,7 +481,7 @@ global.$OPERATION = function(schema, name, options, callback, controller) {
 	if (o)
 		o.operation2(name, options, callback, controller);
 	else
-		callback && callback(new Error('Schema {0}/{1} not found.'.format(schema[0], schema[1])));
+		callback && callback(new Error('Schema "{0}" not found.'.format(getSchemaName(schema))));
 	return !!o;
 };
 
@@ -16844,6 +16844,10 @@ function parseComponent(body, filename) {
 	return response;
 }
 
+function getSchemaName(schema) {
+	return schema[0] === 'default' ? schema[1] : schema[0] + '/' + schema[1];
+}
+
 // Default action for workflow routing
 function controller_json_workflow(id) {
 	var self = this;
@@ -16852,6 +16856,12 @@ function controller_json_workflow(id) {
 	if (w instanceof Object) {
 		if (!w.type) {
 			var schema = GETSCHEMA(self.route.schema[0], self.route.schema[1]);
+
+			if (!schema) {
+				self.throw500('Schema "{0}" not found.'.format(getSchemaName(self.route.schema)));
+				return;
+			}
+
 			if (schema.meta[w.id] !== undefined) {
 				w.type = '$' + w.id;
 			} else if (schema.meta['workflow#' + w.id] !== undefined) {
@@ -16888,6 +16898,12 @@ function controller_json_workflow_multiple(id) {
 	if (w instanceof Object) {
 		if (!w.type) {
 			var schema = GETSCHEMA(self.route.schema[0], self.route.schema[1]);
+
+			if (!schema) {
+				self.throw500('Schema "{0}" not found.'.format(getSchemaName(self.route.schema)));
+				return;
+			}
+
 			var op = [];
 			for (var i = 0; i < w.id.length; i++) {
 				var id = w.id[i];
