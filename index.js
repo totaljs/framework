@@ -12319,6 +12319,9 @@ Controller.prototype.callback = function(view) {
 	var self = this;
 	return function(err, data) {
 
+		if (self.res && self.res.success)
+			return;
+
 		var is = err instanceof framework_builders.ErrorBuilder;
 
 		// NoSQL embedded database
