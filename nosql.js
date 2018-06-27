@@ -6937,7 +6937,7 @@ TP.parseData = function(data, cache) {
 				break;
 			case 4: // Date
 				val = data.line[pos];
-				obj[key] = val ? new Date(val) : null;
+				obj[key] = val ? new Date(val[10] === 'T' ? val : +val) : null;
 				break;
 			case 5: // Object
 				val = data.line[pos];
@@ -6972,7 +6972,8 @@ TP.stringify = function(doc) {
 				val = (val == true ? '1' : '0');
 				break;
 			case 4: // Date
-				val = val ? val.toISOString() : '';
+				// val = val ? val.toISOString() : '';
+				val = val ? val.getTime() : '';
 				break;
 			case 5: // Object
 				val = val ? JSON.stringify(val) : '';
