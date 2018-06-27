@@ -579,6 +579,7 @@ function Table(name, filename) {
 	var t = this;
 	t.filename = filename + EXTENSION_TABLE;
 	t.filenameBackup = filename + EXTENSION_TABLE_BACKUP;
+	t.filenameCounter = filename + EXTENSION_TABLE + EXTENSION_COUNTER;
 	t.directory = Path.dirname(filename);
 	t.name = name;
 	t.$name = '$' + name;
@@ -599,6 +600,7 @@ function Table(name, filename) {
 	t.$writting = false;
 	t.$reading = false;
 
+	t.counter = new Counter(t);
 	t.$meta();
 
 	var schema = F.config['table.' + name];
@@ -3725,7 +3727,7 @@ function Counter(db) {
 	t.TIMEOUT = 30000;
 	t.db = db;
 	t.cache;
-	t.key = 'nosql' + db.name.hash();
+	t.key = (db instanceof Table ? 'table' : 'nosql') + db.name.hash();
 	t.type = 0; // 1 === saving, 2 === reading
 	t.$events = {};
 }
@@ -6843,10 +6845,7 @@ TP.parseSchema = function() {
 	for (var i = 0; i < arr.length; i++) {
 		var arg = arr[i].split(':');
 		var type = 0;
-		switch (arg[1].toLowerCase().trim()) {
-			case 'string':
-				type = 1;
-				break;
+		switch ((arg[1] || '').toLowerCase().trim()) {
 			case 'number':
 				type = 2;
 				break;
@@ -6859,6 +6858,10 @@ TP.parseSchema = function() {
 				break;
 			case 'object':
 				type = 5;
+				break;
+			case 'string':
+			default:
+				type = 1;
 				break;
 		}
 		var name = arg[0].trim();
