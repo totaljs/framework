@@ -260,6 +260,16 @@ exports.worker = function() {
 		PRINTLN('ERROR --> NoSQL events are not supported in fork mode.');
 	};
 
+	DP.listing = function(view, builder) {
+		if (builder)
+			builder.db = this;
+		else
+			builder = new DatabaseBuilder(this);
+		builder.$options.listing = true;
+		builder.$take = builder.$options.take = 100;
+		return send(this, 'find', view).builder = builder;
+	};
+
 	DP.find = function(view, builder) {
 		if (builder)
 			builder.db = this;
@@ -496,6 +506,16 @@ exports.worker = function() {
 		else
 			builder = new DatabaseBuilder(this);
 		return send(this, 'find').builder = builder;
+	};
+
+	TP.listing = function(view, builder) {
+		if (builder)
+			builder.db = this;
+		else
+			builder = new DatabaseBuilder(this);
+		builder.$options.listing = true;
+		builder.$take = builder.$options.take = 100;
+		return send(this, 'find', view).builder = builder;
 	};
 
 	TP.top = function(max) {
@@ -1098,6 +1118,28 @@ DP.remove = function(filename) {
 
 	self.pending_remove.push({ builder: builder, count: 0, backup: backup });
 	setImmediate(next_operation, self, 3);
+	return builder;
+};
+
+DP.listing = function(view, builder) {
+	var self = this;
+
+	if (builder)
+		builder.db = self;
+	else
+		builder = new DatabaseBuilder(self);
+
+	builder.$options.listing = true;
+	builder.$take = builder.$options.take = 100;
+
+	if (view) {
+		self.pending_reader_view.push({ builder: builder, count: 0, counter: 0, view: view });
+		setImmediate(next_operation, self, 6);
+	} else {
+		self.pending_reader.push({ builder: builder, count: 0, counter: 0 });
+		setImmediate(next_operation, self, 4);
+	}
+
 	return builder;
 };
 
@@ -1806,6 +1848,14 @@ DP.$readerview = function() {
 	return self;
 };
 
+function listing(builder, item) {
+
+	var skip = builder.$options.skip || 0;
+	var take = builder.$options.take || 0;
+
+	return { page: ((skip / take) + 1), pages: item.count ? Math.ceil(item.count / take) : 0, limit: take, count: item.count, items: item.response || [] };
+}
+
 DP.$reader2 = function(filename, items, callback, reader) {
 
 	var self = this;
@@ -1927,6 +1977,7 @@ DP.$reader2 = function(filename, items, callback, reader) {
 	};
 
 	fs.$callback = function() {
+
 		for (var i = 0; i < length; i++) {
 			var item = filter[i];
 			var builder = item.builder;
@@ -1938,6 +1989,8 @@ DP.$reader2 = function(filename, items, callback, reader) {
 					output = builder.$options.scalar === 'avg' ? item.scalar / item.scalarcount : item.scalar;
 				else if (builder.$options.first)
 					output = item.response ? item.response[0] : undefined;
+				else if (builder.$options.listing)
+					output = listing(builder, item);
 				else
 					output = item.response || [];
 
@@ -1964,8 +2017,12 @@ DP.$reader2 = function(filename, items, callback, reader) {
 
 			if (builder.$options.first)
 				output = item.response ? item.response[0] : undefined;
-			else
-				output = item.response || [];
+			else {
+				if (builder.$options.listing)
+					output = listing(builder, item);
+				else
+					output = item.response || [];
+			}
 
 			builder.$callback2(errorhandling(null, builder, output), item.type === 1 ? item.count : output, item.count);
 			builder.done();
@@ -2132,6 +2189,8 @@ DP.$reader3 = function() {
 					output = builder.$options.scalar === 'avg' ? item.scalar / item.scalarcount : item.scalar;
 				else if (builder.$options.first)
 					output = item.response ? item.response[0] : undefined;
+				else if (builder.$options.listing)
+					output = listing(builder, item);
 				else
 					output = item.response || [];
 
@@ -2158,6 +2217,8 @@ DP.$reader3 = function() {
 
 			if (builder.$options.first)
 				output = item.response ? item.response[0] : undefined;
+			else if (builder.$options.listing)
+				output = listing(builder, item);
 			else
 				output = item.response || [];
 
@@ -2377,6 +2438,8 @@ DP.$reader2_inmemory = function(name, items, callback) {
 					output = builder.$options.scalar === 'avg' ? item.scalar / item.counter : item.scalar;
 				else if (builder.$options.first)
 					output = item.response ? item.response[0] : undefined;
+				else if (builder.$options.listing)
+					output = listing(builder, item);
 				else
 					output = item.response || [];
 
@@ -2402,6 +2465,8 @@ DP.$reader2_inmemory = function(name, items, callback) {
 
 			if (builder.$options.first)
 				output = item.response ? item.response[0] : undefined;
+			else if (builder.$options.listing)
+				output = listing(builder, item);
 			else
 				output = item.response || [];
 
@@ -3451,8 +3516,9 @@ DatabaseBuilder.prototype.limit = function(count) {
 };
 
 DatabaseBuilder.prototype.page = function(page, limit) {
-	this.$take = this.$options.take = limit;
-	this.$skip = this.$options.skip = page * limit;
+	if (limit)
+		this.$take = this.$options.take = limit;
+	this.$skip = this.$options.skip = page * this.$take;
 	return this;
 };
 
@@ -5896,6 +5962,20 @@ TP.remove = function() {
 	return builder;
 };
 
+TP.listing = function(builder) {
+	var self = this;
+	self.readonly && self.throwReadonly();
+	if (builder)
+		builder.db = self;
+	else
+		builder = new DatabaseBuilder(self);
+	builder.$options.listing = true;
+	builder.$take = builder.$options.take = 100;
+	self.pending_reader.push({ builder: builder, count: 0, counter: 0 });
+	setImmediate(next_operation, self, 4);
+	return builder;
+};
+
 TP.find = function(builder) {
 	var self = this;
 	self.readonly && self.throwReadonly();
@@ -6281,6 +6361,8 @@ TP.$reader = function() {
 					output = builder.$options.scalar === 'avg' ? item.scalar / item.scalarcount : item.scalar;
 				else if (builder.$options.first)
 					output = item.response ? item.response[0] : undefined;
+				else if (builder.$options.listing)
+					output = listing(builder, item);
 				else
 					output = item.response || [];
 
@@ -6307,6 +6389,8 @@ TP.$reader = function() {
 
 			if (builder.$options.first)
 				output = item.response ? item.response[0] : undefined;
+			else if (builder.$options.listing)
+				output = listing(builder, item);
 			else
 				output = item.response || [];
 
@@ -6764,6 +6848,7 @@ TP.parseSchema = function() {
 				type = 2;
 				break;
 			case 'boolean':
+			case 'bool':
 				type = 3;
 				break;
 			case 'date':
@@ -6797,7 +6882,7 @@ TP.stringifySchema = function() {
 				type = 'number';
 				break;
 			case 3:
-				type = 'boolean';
+				type = 'bool';
 				break;
 			case 4:
 				type = 'date';
