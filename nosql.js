@@ -580,6 +580,7 @@ function Table(name, filename) {
 	t.filename = filename + EXTENSION_TABLE;
 	t.filenameBackup = filename + EXTENSION_TABLE_BACKUP;
 	t.filenameCounter = filename + EXTENSION_TABLE + EXTENSION_COUNTER;
+	t.filenameMeta = filename + EXTENSION_TABLE + '-meta';
 	t.directory = Path.dirname(filename);
 	t.name = name;
 	t.$name = '$' + name;
@@ -6545,6 +6546,7 @@ TP.$update = function() {
 				}
 
 				var upd = self.stringify(doc);
+				console.log(upd, doc);
 				if (upd === rec.doc)
 					continue;
 
@@ -6908,7 +6910,7 @@ TP.parseData = function(data, cache) {
 
 	var self = this;
 	var obj = {};
-	var esc = false;
+	var esc = data.line[0] === '*';
 	var val;
 
 	for (var i = 0; i < data.keys.length; i++) {
@@ -6922,9 +6924,6 @@ TP.parseData = function(data, cache) {
 		var meta = self.$schema[key];
 		if (meta == null)
 			continue;
-
-		if (i === 0)
-			esc = data.line[0] === '*';
 
 		var pos = meta.pos + 1;
 
