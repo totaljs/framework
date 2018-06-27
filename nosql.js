@@ -4920,7 +4920,7 @@ Binary.prototype.insert = function(name, buffer, custom, callback) {
 		if (typeof(buffer) === 'function') {
 			callback = buffer;
 			buffer = custom = null;
-		} else {
+		} else if (!buffer.resume) {
 			callback = custom;
 			custom = buffer;
 			buffer = null;
@@ -5122,7 +5122,7 @@ Binary.prototype.update = function(id, name, buffer, custom, callback) {
 		if (typeof(buffer) === 'function') {
 			callback = buffer;
 			buffer = custom = null;
-		} else {
+		} else if (!buffer.resume) {
 			callback = custom;
 			custom = buffer;
 			buffer = null;
