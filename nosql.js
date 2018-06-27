@@ -6232,14 +6232,16 @@ TP.$reader = function() {
 		var fil = filter[i];
 		if (!fil.builder.$options.first || fil.builder.$options.sort)
 			first = false;
-
-		if (fil.builder.$keys == null)
+		if (fil.builder.$keys == null && keys)
 			keys = null;
-		else {
-			for (var j = 0; j < fil.builder.$keys.length; j++) {
-				keyscount++;
-				keys[fil.builder.$keys[j]] = 1;
-			}
+		else if (keys) {
+			if (fil.builder.$options.fields) {
+				for (var j = 0; j < fil.builder.$keys.length; j++) {
+					keyscount++;
+					keys[fil.builder.$keys[j]] = 1;
+				}
+			} else
+				keys = null;
 		}
 
 		fil.scalarcount = 0;
@@ -6274,6 +6276,7 @@ TP.$reader = function() {
 				var item = filter[i];
 				var builder = item.builder;
 				item.filter.index = indexer;
+
 				var output = item.compare(obj, item.filter, indexer);
 				if (!output)
 					continue;
