@@ -6882,7 +6882,7 @@ TP.stringifySchema = function() {
 				type = 'number';
 				break;
 			case 3:
-				type = 'bool';
+				type = 'boolean';
 				break;
 			case 4:
 				type = 'date';
