@@ -6546,7 +6546,6 @@ TP.$update = function() {
 				}
 
 				var upd = self.stringify(doc);
-				console.log(upd, doc);
 				if (upd === rec.doc)
 					continue;
 
