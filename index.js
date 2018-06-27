@@ -361,28 +361,40 @@ global.$MAKE = function(schema, model, filter, callback, novalidate, argument) {
 global.$QUERY = function(schema, options, callback, controller) {
 	schema = parseSchema(schema);
 	var o = framework_builders.getschema(schema[0], schema[1]);
-	o && o.query(options, callback, controller);
+	if (o)
+		o.query(options, callback, controller);
+	else
+		callback && callback(new Error('Schema {0}/{1} not found.'.format(schema[0], schema[1])));
 	return !!o;
 };
 
 global.$GET = function(schema, options, callback, controller) {
 	schema = parseSchema(schema);
 	var o = framework_builders.getschema(schema[0], schema[1]);
-	o && o.get(options, callback, controller);
+	if (o)
+		o.get(options, callback, controller);
+	else
+		callback && callback(new Error('Schema {0}/{1} not found.'.format(schema[0], schema[1])));
 	return !!o;
 };
 
 global.$WORKFLOW = function(schema, name, options, callback, controller) {
 	schema = parseSchema(schema);
 	var o = framework_builders.getschema(schema[0], schema[1]);
-	o && o.workflow2(name, options, callback, controller);
+	if (o)
+		o.workflow2(name, options, callback, controller);
+	else
+		callback && callback(new Error('Schema {0}/{1} not found.'.format(schema[0], schema[1])));
 	return !!o;
 };
 
 global.$TRANSFORM = function(schema, name, options, callback, controller) {
 	schema = parseSchema(schema);
 	var o = framework_builders.getschema(schema[0], schema[1]);
-	o && o.transform2(name, options, callback, controller);
+	if (o)
+		o.transform2(name, options, callback, controller);
+	else
+		callback && callback(new Error('Schema {0}/{1} not found.'.format(schema[0], schema[1])));
 	return !!o;
 };
 
@@ -396,7 +408,10 @@ global.$REMOVE = function(schema, options, callback, controller) {
 		options = EMPTYOBJECT;
 	}
 
-	o && o.remove(options, callback, controller);
+	if (o)
+		o.remove(options, callback, controller);
+	else
+		callback && callback(new Error('Schema {0}/{1} not found.'.format(schema[0], schema[1])));
 	return !!o;
 };
 
@@ -423,10 +438,16 @@ function performschema(type, schema, model, options, callback, controller) {
 
 	schema = parseSchema(schema);
 	var o = framework_builders.getschema(schema[0], schema[1]);
+
+	if (!o) {
+		callback && callback(new Error('Schema {0}/{1} not found.'.format(schema[0], schema[1])));
+		return false;
+	}
+
 	o.make(model, function(err, model) {
-		if (err)
-			callback(err);
-		else {
+		if (err) {
+			callback && callback(err);
+		} else {
 			model.$$controller = controller;
 			model[type](options, callback);
 		}
@@ -444,6 +465,12 @@ global.$ASYNC = function(schema, callback, index, controller) {
 
 	schema = parseSchema(schema);
 	var o = framework_builders.getschema(schema[0], schema[1]).default();
+
+	if (!o) {
+		callback && callback(new Error('Schema {0}/{1} not found.'.format(schema[0], schema[1])));
+		return EMPTYOBJECT;
+	}
+
 	controller && (o.$$controller = controller);
 	return o.$async(callback, index);
 };
@@ -451,7 +478,10 @@ global.$ASYNC = function(schema, callback, index, controller) {
 global.$OPERATION = function(schema, name, options, callback, controller) {
 	schema = parseSchema(schema);
 	var o = framework_builders.getschema(schema[0], schema[1]);
-	o && o.operation2(name, options, callback, controller);
+	if (o)
+		o.operation2(name, options, callback, controller);
+	else
+		callback && callback(new Error('Schema {0}/{1} not found.'.format(schema[0], schema[1])));
 	return !!o;
 };
 
