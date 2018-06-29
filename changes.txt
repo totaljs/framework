@@ -87,6 +87,10 @@
 - added: `TESTUSER([user])` for faking of `F.onAuthorize` delegate, targeted for unit-testing only
 - added: `G` as a global alias for `F.global`
 - added: a simple support for `.heic` and `.heif` image format
+- added: `controller.sitemap_url2()`
+- added: `controller.sitemap_name2()`
+- added: `@{sitemap_url2()}`
+- added: `@{sitemap_name2()}`
 
 - updated: (IMPORTANT) NoSQL binary divides files to independent directories for 1000 files per directory
 - updated: `GROUP()` by adding a new argument `url_prefix`
@@ -143,6 +147,7 @@
 - improved: reading performance (+5%) in `U.streamer()`
 - improved: CSS compressor
 - improved: CORS processing
+- improved: internal encryption/decryption mechanism
 
 ======= 2.9.4 (HOTFIX)
 

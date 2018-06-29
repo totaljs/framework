@@ -2289,9 +2289,13 @@ function view_prepare(command, dynamicCommand, functions, controller) {
 		case 'sitemap_url':
 		case 'sitemap_name':
 		case 'sitemap_navigation':
+		case 'sitemap_url2':
+		case 'sitemap_name2':
 			return 'self.' + command;
 		case 'breadcrumb_url':
 		case 'breadcrumb_name':
+		case 'breadcrumb_url2':
+		case 'breadcrumb_name2':
 		case 'breadcrumb_navigation':
 			return 'self.sitemap_' + command.substring(10);
 

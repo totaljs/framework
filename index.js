@@ -10911,6 +10911,16 @@ Controller.prototype.sitemap_name = function(name, a, b, c, d, e, f) {
 	return item ? item.name.format(a, b, c, d, e, f) : '';
 };
 
+Controller.prototype.sitemap_url2 = function(language, name, a, b, c, d, e, f) {
+	var item = F.sitemap(name || this.sitemapid, true, language);
+	return item ? item.url.format(a, b, c, d, e, f) : '';
+};
+
+Controller.prototype.sitemap_name2 = function(language, name, a, b, c, d, e, f) {
+	var item = F.sitemap(name || this.sitemapid, true, language);
+	return item ? item.name.format(a, b, c, d, e, f) : '';
+};
+
 Controller.prototype.sitemap_add = function(parent, name, url) {
 
 	var self = this;
