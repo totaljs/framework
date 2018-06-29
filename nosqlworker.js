@@ -68,7 +68,7 @@ process.on('message', function(msg) {
 
 	switch (msg.TYPE) {
 		case 'find':
-			db.find(msg.arg ? msg.arg[0] : undefined).parse(msg.data).callback(function(err, response, count, repository) {
+			db.find().parse(msg.data).callback(function(err, response, count, repository) {
 				RESFIND.err = err;
 				RESFIND.response = response;
 				RESFIND.count = count;
@@ -87,8 +87,18 @@ process.on('message', function(msg) {
 				process.send(RESFIND);
 			});
 			break;
+		case 'top':
+			db.top().parse(msg.data).callback(function(err, response, count, repository) {
+				RESFIND.err = err;
+				RESFIND.response = response;
+				RESFIND.count = count;
+				RESFIND.repository = repository;
+				RESFIND.id = msg.id;
+				process.send(RESFIND);
+			});
+			break;
 		case 'one':
-			db.one(msg.arg ? msg.arg[0] : undefined).parse(msg.data).callback(function(err, response, count, repository) {
+			db.one().parse(msg.data).callback(function(err, response, count, repository) {
 				RESFIND.err = err;
 				RESFIND.response = response;
 				RESFIND.count = count;
@@ -124,7 +134,7 @@ process.on('message', function(msg) {
 			});
 			break;
 		case 'count':
-			db.count(msg.arg ? msg.arg[0] : undefined).parse(msg.data).callback(function(err, response, count, repository) {
+			db.count().parse(msg.data).callback(function(err, response, count, repository) {
 				RESCOUNT.err = err;
 				RESCOUNT.response = response;
 				RESCOUNT.count = count;
@@ -141,9 +151,6 @@ process.on('message', function(msg) {
 				RESREMOVE.id = msg.id;
 				process.send(RESREMOVE);
 			});
-			break;
-		case 'view':
-			db.view(msg.arg[0]).parse(msg.data);
 			break;
 		case 'backup':
 			db.backup(msg.arg[0], function(err, response) {

@@ -257,26 +257,26 @@ exports.worker = function() {
 	var CP = Counter.prototype;
 	var SP = Storage.prototype;
 
-	DP.once = DP.on = DP.emit = DP.removeListener = DP.removeAllListeners = CP.on = CP.once = CP.emit = CP.removeListener = CP.removeAllListeners = function() {
+	TP.once = TP.on = TP.emit = TP.removeListener = TP.removeAllListeners = DP.once = DP.on = DP.emit = DP.removeListener = DP.removeAllListeners = CP.on = CP.once = CP.emit = CP.removeListener = CP.removeAllListeners = function() {
 		PRINTLN('ERROR --> NoSQL events are not supported in fork mode.');
 	};
 
-	DP.listing = function(view, builder) {
+	TP.listing = DP.listing = function(builder) {
 		if (builder)
 			builder.db = this;
 		else
 			builder = new DatabaseBuilder(this);
 		builder.$options.listing = true;
 		builder.$take = builder.$options.take = 100;
-		return send(this, 'find', view).builder = builder;
+		return send(this, 'find').builder = builder;
 	};
 
-	DP.find = function(view, builder) {
+	TP.find = DP.find = function(builder) {
 		if (builder)
 			builder.db = this;
 		else
 			builder = new DatabaseBuilder(this);
-		return send(this, 'find', view).builder = builder;
+		return send(this, 'find').builder = builder;
 	};
 
 	TP.find2 = DP.find2 = function(builder) {
@@ -287,19 +287,19 @@ exports.worker = function() {
 		return send(this, 'find2').builder = builder;
 	};
 
-	DP.top = function(max, view) {
+	TP.top = DP.top = function(max) {
 		var builder = new DatabaseBuilder(this);
 		builder.take(max);
-		return send(this, 'find', view).builder = builder;
+		return send(this, 'find').builder = builder;
 	};
 
-	DP.one = function(view) {
+	TP.one = DP.one = function() {
 		var builder = new DatabaseBuilder(this);
 		builder.first();
-		return send(this, 'one', view).builder = builder;
+		return send(this, 'one').builder = builder;
 	};
 
-	DP.insert = function(doc, unique) {
+	TP.insert = DP.insert = function(doc, unique) {
 
 		var self = this;
 		var builder;
@@ -330,22 +330,20 @@ exports.worker = function() {
 		return send(self, 'insert', framework_builders.isSchema(doc) ? doc.$clean() : doc).builder = new DatabaseBuilder2(self);
 	};
 
-	DP.count = function(view) {
+	TP.count = DP.count = function() {
 		var builder = new DatabaseBuilder(this);
-		return send(this, 'count', view).builder = builder;
+		return send(this, 'count').builder = builder;
 	};
 
-	DP.view = function(name) {
-		var builder = new DatabaseBuilder(this);
-		builder.id('$view_' + name);
-		return send(this, 'view', name).builder = builder;
+	DP.view = function() {
+		throw new Error('NoSQL Views are not supported.');
 	};
 
-	DP.update = function(doc, insert) {
+	TP.update = DP.update = function(doc, insert) {
 		return send(this, 'update', framework_builders.isSchema(doc) ? doc.$clean() : doc, insert).builder = new DatabaseBuilder(this);
 	};
 
-	DP.modify = function(doc, insert) {
+	TP.modify = DP.modify = function(doc, insert) {
 		return send(this, 'modify', framework_builders.isSchema(doc) ? doc.$clean() : doc, insert).builder = new DatabaseBuilder(this);
 	};
 
@@ -362,7 +360,6 @@ exports.worker = function() {
 	};
 
 	DP.refresh = function() {
-		notify(this, 'refresh');
 		return this;
 	};
 
@@ -381,16 +378,16 @@ exports.worker = function() {
 		return this;
 	};
 
-	DP.ready = function(callback) {
-		send(this, 'ready').callback = callback;
+	TP.ready = DP.ready = function(callback) {
+		callback && callback();
 		return this;
 	};
 
-	DP.remove = function(filename) {
+	TP.remove = DP.remove = function(filename) {
 		return send(this, 'remove', filename).builder = new DatabaseBuilder(this);
 	};
 
-	DP.stream = function(fn, repository, callback) {
+	TP.stream = DP.stream = function(fn, repository, callback) {
 
 		if (typeof(repository) === 'function')  {
 			callback = repository;
@@ -500,80 +497,6 @@ exports.worker = function() {
 		send(this.db, 'storage.clear', beg, end).callback = callback;
 		return this;
 	};
-
-	TP.find = function(builder) {
-		if (builder)
-			builder.db = this;
-		else
-			builder = new DatabaseBuilder(this);
-		return send(this, 'find').builder = builder;
-	};
-
-	TP.listing = function(builder) {
-		if (builder)
-			builder.db = this;
-		else
-			builder = new DatabaseBuilder(this);
-		builder.$options.listing = true;
-		builder.$take = builder.$options.take = 100;
-		return send(this, 'find', view).builder = builder;
-	};
-
-	TP.top = function(max) {
-		var builder = new DatabaseBuilder(this);
-		builder.take(max);
-		return send(this, 'find').builder = builder;
-	};
-
-	TP.one = function() {
-		var builder = new DatabaseBuilder(this);
-		builder.first();
-		return send(this, 'one').builder = builder;
-	};
-
-	TP.insert = function(doc, unique) {
-
-		var self = this;
-		var builder;
-
-		if (unique) {
-			builder = self.one();
-
-			var callback;
-
-			builder.callback(function(err, d) {
-				if (d)
-					callback && callback(null, 0);
-				else {
-					var tmp = self.insert(doc);
-					tmp.callback(callback);
-					tmp.$options.log = builder.$options.log;
-				}
-			});
-
-			builder.callback = function(fn) {
-				callback = fn;
-				return builder;
-			};
-
-			return builder;
-		}
-
-		return send(self, 'insert', framework_builders.isSchema(doc) ? doc.$clean() : doc).builder = new DatabaseBuilder2(self);
-	};
-
-	TP.count = function() {
-		var builder = new DatabaseBuilder(this);
-		return send(this, 'count').builder = builder;
-	};
-
-	TP.update = function(doc, insert) {
-		return send(this, 'update', framework_builders.isSchema(doc) ? doc.$clean() : doc, insert).builder = new DatabaseBuilder(this);
-	};
-
-	TP.modify = function(doc, insert) {
-		return send(this, 'modify', framework_builders.isSchema(doc) ? doc.$clean() : doc, insert).builder = new DatabaseBuilder(this);
-	};
 };
 
 function Table(name, filename) {
@@ -672,16 +595,13 @@ function Database(name, filename, readonly) {
 	self.pending_append = [];
 	self.pending_reader = [];
 	self.pending_remove = [];
-	self.pending_reader_view = readonly ? EMPTYARRAY : [];
 	self.pending_reader2 = [];
 	self.pending_streamer = [];
 	self.pending_clean = [];
 	self.pending_clear = [];
 	self.pending_locks = [];
-	self.views = null;
 	self.step = 0;
 	self.pending_drops = false;
-	self.pending_views = false;
 	self.pending_reindex = false;
 	self.binary = self.readonly || readonly === true ? null : new Binary(self, self.directory + '/' + self.name + '-binary/');
 	self.storage = self.readonly || readonly === true ? null : new Storage(self, self.directory + '/' + self.name + '-storage/');
@@ -771,9 +691,7 @@ exports.table = function(name, filename) {
 	return new Table(name, filename);
 };
 
-exports.memory = exports.inmemory = function(name, view) {
-	if (view)
-		name += '#' + view;
+exports.memory = exports.inmemory = function(name) {
 	return INMEMORY[name] = true;
 };
 
@@ -1126,58 +1044,38 @@ DP.remove = function(filename) {
 	return builder;
 };
 
-DP.listing = function(view, builder) {
+DP.listing = function(builder) {
 	var self = this;
-
 	if (builder)
 		builder.db = self;
 	else
 		builder = new DatabaseBuilder(self);
-
 	builder.$options.listing = true;
 	builder.$take = builder.$options.take = 100;
-
-	if (view) {
-		self.pending_reader_view.push({ builder: builder, count: 0, counter: 0, view: view });
-		setImmediate(next_operation, self, 6);
-	} else {
-		self.pending_reader.push({ builder: builder, count: 0, counter: 0 });
-		setImmediate(next_operation, self, 4);
-	}
-
+	self.pending_reader.push({ builder: builder, count: 0, counter: 0 });
+	setImmediate(next_operation, self, 4);
 	return builder;
 };
 
-DP.find = function(view, builder) {
+DP.find = function(builder) {
 	var self = this;
-
 	if (builder)
 		builder.db = self;
 	else
 		builder = new DatabaseBuilder(self);
-
-	if (view) {
-		self.pending_reader_view.push({ builder: builder, count: 0, counter: 0, view: view });
-		setImmediate(next_operation, self, 6);
-	} else {
-		self.pending_reader.push({ builder: builder, count: 0, counter: 0 });
-		setImmediate(next_operation, self, 4);
-	}
-
+	self.pending_reader.push({ builder: builder, count: 0, counter: 0 });
+	setImmediate(next_operation, self, 4);
 	return builder;
 };
 
 DP.find2 = function(builder) {
 	var self = this;
-
 	if (builder)
 		builder.db = self;
 	else
 		builder = new DatabaseBuilder(self);
-
 	if (self.readonly)
-		return self.find(null, builder);
-
+		return self.find(builder);
 	self.pending_reader2.push({ builder: builder, count: 0, counter: 0 });
 	setImmediate(next_operation, self, 11);
 	return builder;
@@ -1200,67 +1098,38 @@ DP.throwReadonly = function() {
 	throw new Error('Database "{0}" is readonly.'.format(this.name));
 };
 
-DP.scalar = function(type, field, view) {
-	return this.find(view).scalar(type, field);
+DP.scalar = function(type, field) {
+	return this.find().scalar(type, field);
 };
 
-DP.count = function(view) {
+DP.count = function() {
 	var self = this;
 	var builder = new DatabaseBuilder(self);
-
-	if (view) {
-		self.pending_reader_view.push({ builder: builder, count: 0, view: view, type: 1 });
-		setImmediate(next_operation, self, 6);
-	} else {
-		self.pending_reader.push({ builder: builder, count: 0, type: 1 });
-		setImmediate(next_operation, self, 4);
-	}
-
+	self.pending_reader.push({ builder: builder, count: 0, type: 1 });
+	setImmediate(next_operation, self, 4);
 	return builder;
 };
 
-DP.one = function(view) {
+DP.one = function() {
 	var self = this;
 	var builder = new DatabaseBuilder(self);
-
 	builder.first();
-
-	if (view) {
-		self.pending_reader_view.push({ builder: builder, count: 0, view: view });
-		setImmediate(next_operation, self, 6);
-	} else {
-		self.pending_reader.push({ builder: builder, count: 0 });
-		setImmediate(next_operation, self, 4);
-	}
-
+	self.pending_reader.push({ builder: builder, count: 0 });
+	setImmediate(next_operation, self, 4);
 	return builder;
 };
 
-DP.top = function(max, view) {
+DP.top = function(max) {
 	var self = this;
 	var builder = new DatabaseBuilder(self);
 	builder.take(max);
-
-	if (view) {
-		self.pending_reader_view.push({ builder: builder, count: 0, counter: 0, view: view });
-		setImmediate(next_operation, self, 6);
-	} else {
-		self.pending_reader.push({ builder: builder, count: 0, counter: 0 });
-		setImmediate(next_operation, self, 4);
-	}
-
+	self.pending_reader.push({ builder: builder, count: 0, counter: 0 });
+	setImmediate(next_operation, self, 4);
 	return builder;
 };
 
-DP.view = function(name) {
-	var builder = new DatabaseBuilder(this);
-	if (!this.views)
-		this.views = {};
-	this.views[name] = {};
-	this.views[name] = builder;
-	this.views[name].$filename = this.filename.replace(/\.nosql/, '#' + name + '.nosql');
-	builder.id('$view_' + name);
-	return builder;
+DP.view = function() {
+	throw new Error('NoSQL Views are not supported.');
 };
 
 //  1 append
@@ -1355,19 +1224,6 @@ DP.next = function(type) {
 			this.$streamer();
 			return;
 		}
-
-		if (this.step !== 6 && this.pending_reader_view.length) {
-			this.$readerview();
-			return;
-		}
-
-		if (this.step !== 5 && this.pending_views) {
-			if (INMEMORY[this.name])
-				this.$views_inmemory();
-			else
-				this.$views();
-			return;
-		}
 	}
 
 	if (this.step !== type) {
@@ -1376,39 +1232,28 @@ DP.next = function(type) {
 	}
 };
 
-DP.refresh = function() {
-	if (this.views) {
-		this.pending_views = true;
-		setImmediate(next_operation, this, 5);
-	}
-	return this;
-};
-
 // ======================================================================
 // FILE OPERATIONS
 // ======================================================================
 
 // InMemory saving
-DP.$save = function(view) {
+DP.$save = function() {
 	var self = this;
-	setTimeout2('nosql.' + self.name + '.' + view, function() {
-		var data = self.inmemory[view] || EMPTYARRAY;
+	setTimeout2('nosql.' + self.name, function() {
+		var data = self.inmemory['#'] || EMPTYARRAY;
 		var builder = [];
 		for (var i = 0, length = data.length; i < length; i++)
 			builder.push(JSON.stringify(data[i]).replace(REGBOOL, JSONBOOL));
-
-		var filename = self.filename;
-		if (view !== '#')
-			filename = filename.replace(/\.nosql/, '#' + view + '.nosql');
-
-		Fs.writeFile(filename, builder.join(NEWLINE) + NEWLINE, F.errorcallback);
+		Fs.writeFile(self.filename, builder.join(NEWLINE) + NEWLINE, F.errorcallback);
 	}, 50, 100);
 	return self;
 };
 
-DP.$inmemory = function(view, callback) {
+DP.$inmemory = function(callback) {
 
 	var self = this;
+	var view = '#';
+
 	self.readonly && self.throwReadonly();
 
 	// Last usage
@@ -1501,7 +1346,6 @@ function next_append(self) {
 	self.$writting = false;
 	self.next(0);
 	self.$events.change && self.emit('change', 'insert');
-	self.views && setImmediate(views_refresh, self);
 }
 
 DP.$append_inmemory = function() {
@@ -1515,7 +1359,7 @@ DP.$append_inmemory = function() {
 
 	var items = self.pending_append.splice(0);
 
-	return self.$inmemory('#', function() {
+	return self.$inmemory(function() {
 
 		for (var i = 0, length = items.length; i < length; i++) {
 			self.inmemory['#'].push(JSON.parse(items[i].doc, jsonparser));
@@ -1524,7 +1368,7 @@ DP.$append_inmemory = function() {
 			callback && callback(null, 1);
 		}
 
-		self.$save('#');
+		self.$save();
 		setImmediate(next_append, self);
 	});
 };
@@ -1681,20 +1525,12 @@ DP.$update = function() {
 		fs = null;
 		self.$writting = false;
 		self.next(0);
-
-		if (change) {
-			self.$events.change && self.emit('change', 'update');
-			self.views && setImmediate(views_refresh, self);
-		}
+		change && self.$events.change && self.emit('change', 'update');
 	};
 
 	fs.openupdate();
 	return self;
 };
-
-function views_refresh(self) {
-	self.refresh();
-}
 
 DP.$update_inmemory = function() {
 
@@ -1716,7 +1552,7 @@ DP.$update_inmemory = function() {
 		fil.filter = { repository: fil.builder.$repository, options: fil.builder.$options, arg: fil.builder.$params, fn: fil.builder.$functions };
 	}
 
-	return self.$inmemory('#', function() {
+	return self.$inmemory(function() {
 
 		var data = self.inmemory['#'];
 
@@ -1758,7 +1594,7 @@ DP.$update_inmemory = function() {
 			}
 		}
 
-		self.$save('#');
+		self.$save();
 
 		for (var i = 0; i < length; i++) {
 			var item = filter[i];
@@ -1777,12 +1613,7 @@ DP.$update_inmemory = function() {
 
 		setImmediate(function() {
 			self.next(0);
-
-			if (change) {
-				self.$events.change && self.emit('change', 'update');
-				self.views && setImmediate(views_refresh, self);
-			}
-
+			change && self.$events.change && self.emit('change', 'update');
 		});
 	});
 };
@@ -1799,7 +1630,7 @@ DP.$reader = function() {
 
 	var list = self.pending_reader.splice(0);
 	if (INMEMORY[self.name]) {
-		self.$reader2_inmemory('#', list, () => self.next(0));
+		self.$reader2_inmemory(list, () => self.next(0));
 	} else {
 		self.$reading = true;
 		self.$reader2(self.filename, list, function() {
@@ -1811,53 +1642,9 @@ DP.$reader = function() {
 	return self;
 };
 
-DP.$readerview = function() {
-
-	var self = this;
-	self.step = 6;
-
-	if (!self.pending_reader_view.length) {
-		self.next(0);
-		return self;
-	}
-
-	var group = {};
-	var skip = true;
-
-	for (var i = 0, length = self.pending_reader_view.length; i < length; i++) {
-		var item = self.pending_reader_view[i];
-		var name = INMEMORY[self.name] || INMEMORY[self.name + '#' + item.view] ? item.view : self.views[item.view].$filename;
-
-		skip = false;
-
-		if (group[name])
-			group[name].push(item);
-		else
-			group[name] = [item];
-	}
-
-	self.pending_reader_view = [];
-
-	if (skip) {
-		self.next(0);
-		return self;
-	}
-
-	Object.keys(group).wait(function(item, next) {
-		if (INMEMORY[self.name] || INMEMORY[self.name + '#' + item])
-			self.$reader2_inmemory(item, group[item], next);
-		else
-			self.$reader2(item, group[item], next);
-	}, () => self.next(0), 5);
-
-	return self;
-};
-
 function listing(builder, item) {
-
 	var skip = builder.$options.skip || 0;
 	var take = builder.$options.take || 0;
-
 	return { page: ((skip / take) + 1), pages: item.count ? Math.ceil(item.count / take) : 0, limit: take, count: item.count, items: item.response || [] };
 }
 
@@ -2336,11 +2123,12 @@ function nosqlresort(arr, builder, doc) {
 	}
 }
 
-DP.$reader2_inmemory = function(name, items, callback) {
+DP.$reader2_inmemory = function(items, callback) {
 
 	var self = this;
 	var filter = items;
 	var length = filter.length;
+	var name = '#';
 
 	for (var i = 0; i < length; i++) {
 		var fil = filter[i];
@@ -2348,7 +2136,7 @@ DP.$reader2_inmemory = function(name, items, callback) {
 		fil.filter = { repository: fil.builder.$repository, options: fil.builder.$options, arg: fil.builder.$params, fn: fil.builder.$functions };
 	}
 
-	return self.$inmemory(name, function() {
+	return self.$inmemory(function() {
 
 		var data = self.inmemory[name];
 		var val;
@@ -2483,180 +2271,6 @@ DP.$reader2_inmemory = function(name, items, callback) {
 	});
 };
 
-DP.$views = function() {
-
-	var self = this;
-	if (!self.views) {
-		self.next(0);
-		return;
-	}
-
-	self.step = 5;
-
-	if (!self.pending_views) {
-		self.next(0);
-		return;
-	}
-
-	self.pending_views = false;
-
-	var views = Object.keys(self.views);
-	var length = views.length;
-
-	if (!length) {
-		self.next(0);
-		return self;
-	}
-
-	var response = [];
-
-	for (var i = 0; i < length; i++) {
-		var builder = self.views[views[i]];
-		response.push({ response: [], name: views[i], compare: builder.compile(), filter: { repository: builder.$repository, options: builder.$options, arg: builder.$params, fn: builder.$functions }, builder: builder, count: 0, counter: 0, repository: {} });
-	}
-
-	var fs = new NoSQLStream(self.filename);
-	var indexer = 0;
-
-	self.$reading = true;
-
-	fs.ondocuments = function() {
-		var docs = JSON.parse('[' + fs.docs + ']', jsonparser);
-		for (var i = 0; i < docs.length; i++) {
-			var json = docs[i];
-			for (var j = 0; j < length; j++) {
-				var item = self.views[views[j]];
-				var res = response[j];
-				res.filter.index = indexer;
-				var output = res.compare(json, res.filter, indexer);
-				if (!output)
-					continue;
-				res.count++;
-				if (!res.filter.options.sort && ((res.filter.options.skip && res.filter.options.skip >= res.count) || (res.filter.options.take && res.filter.options.take <= res.counter)))
-					continue;
-				res.counter++;
-				!item.type && res.response.push(output);
-			}
-		}
-	};
-
-	fs.$callback = function() {
-		response.wait(function(item, next) {
-
-			var builder = item.builder;
-
-			if (builder.$options.sort) {
-				if (builder.$options.sort.name)
-					item.response.quicksort(builder.$options.sort.name, builder.$options.sort.asc);
-				else if (builder.$options.sort === EMPTYOBJECT)
-					item.response.random();
-				else
-					item.response.sort(builder.$options.sort);
-				if (builder.$options.skip && builder.$options.take)
-					item.response = item.response.splice(builder.$options.skip, builder.$options.take);
-				else if (builder.$options.skip)
-					item.response = item.response.splice(builder.$options.skip);
-				else if (builder.$options.take)
-					item.response = item.response.splice(0, builder.$options.take);
-			}
-
-			var filename = builder.$filename;
-			Fs.unlink(filename, function() {
-				item.response.limit(20, function(items, next) {
-					var builder = [];
-					for (var i = 0, length = items.length; i < length; i++)
-						builder.push(JSON.stringify(items[i]).replace(REGBOOL, JSONBOOL));
-					Fs.appendFile(filename, builder.join(NEWLINE) + NEWLINE, next);
-				}, function() {
-					// clears in-memory
-					self.inmemory[item.name] = undefined;
-					next();
-				});
-			});
-		}, function() {
-			self.$reading = false;
-			self.next(0);
-		}, 5);
-	};
-
-	fs.openread();
-};
-
-DP.$views_inmemory = function() {
-
-	var self = this;
-	self.step = 5;
-
-	if (!self.pending_views) {
-		self.next(0);
-		return self;
-	}
-
-	self.pending_views = false;
-
-	var views = Object.keys(self.views);
-	var length = views.length;
-
-	if (!length) {
-		self.next(0);
-		return self;
-	}
-
-	var response = [];
-
-	for (var i = 0; i < length; i++) {
-		var builder = self.views[views[i]];
-		response.push({ response: [], name: views[i], compare: builder.compile(), filter: { repository: builder.$repository, options: builder.$options, arg: builder.$params, fn: builder.$functions }, builder: builder, count: 0, counter: 0, repository: {} });
-	}
-
-	return self.$inmemory('#', function() {
-		var data = self.inmemory['#'];
-
-		for (var j = 0, jl = data.length; j < jl; j++) {
-			var json = data[j];
-			for (var i = 0; i < length; i++) {
-				var item = self.views[views[i]];
-				var res = response[i];
-				res.filter.index = j;
-				var output = res.compare(json, res.filter, j);
-				if (!output)
-					continue;
-				res.count++;
-				if (!item.$options.sort && ((item.$options.skip && item.$options.skip >= res.count) || (item.$options.take && item.$options.take <= res.counter)))
-					continue;
-				res.counter++;
-				!item.type && res.response.push(output);
-			}
-		}
-
-		for (var j = 0, jl = response.length; j < jl; j++) {
-
-			var item = response[j];
-			var builder = item.builder;
-
-			if (builder.$options.sort) {
-				if (builder.$options.sort.name)
-					item.response.quicksort(builder.$options.sort.name, builder.$options.sort.asc);
-				else if (builder.$options.sort === EMPTYOBJECT)
-					item.response.random();
-				else
-					item.response.sort(builder.$options.sort);
-				if (builder.$options.skip && builder.$options.take)
-					item.response = item.response.splice(builder.$options.skip, builder.$options.take);
-				else if (builder.$options.skip)
-					item.response = item.response.splice(builder.$options.skip);
-				else if (builder.$options.take)
-					item.response = item.response.splice(0, builder.$options.take);
-			}
-
-			self.inmemory[item.name] = item.response;
-			self.$save(item.name);
-		}
-
-		self.next(0);
-	});
-};
-
 DP.$remove = function() {
 
 	var self = this;
@@ -2736,11 +2350,7 @@ DP.$remove = function() {
 		fs = null;
 		self.$writting = false;
 		self.next(0);
-
-		if (change) {
-			self.views && setImmediate(views_refresh, self);
-			self.$events.change && self.emit('change', 'remove');
-		}
+		change && self.$events.change && self.emit('change', 'remove');
 	};
 
 	fs.openupdate();
@@ -2760,7 +2370,6 @@ DP.$clear = function() {
 	Fs.unlink(self.filename, function() {
 		for (var i = 0; i < filter.length; i++)
 			filter[i]();
-		self.views && setImmediate(views_refresh, self);
 		self.$events.change && self.emit('change', 'clear');
 		self.next(0);
 	});
@@ -2848,7 +2457,7 @@ DP.$remove_inmemory = function() {
 		fil.filter = { repository: fil.builder.$repository, options: fil.builder.$options, arg: fil.builder.$params, fn: fil.builder.$functions };
 	}
 
-	return self.$inmemory('#', function() {
+	return self.$inmemory(function() {
 
 		var data = self.inmemory['#'];
 		var arr = [];
@@ -2880,7 +2489,7 @@ DP.$remove_inmemory = function() {
 
 		if (change) {
 			self.inmemory['#'] = arr;
-			self.$save('#');
+			self.$save();
 		}
 
 		for (var i = 0; i < length; i++) {
@@ -2890,10 +2499,7 @@ DP.$remove_inmemory = function() {
 		}
 
 		self.next(0);
-		if (change) {
-			self.views && setImmediate(views_refresh, self);
-			self.$events.change && self.emit('change', 'remove');
-		}
+		change && self.$events.change && self.emit('change', 'remove');
 	});
 };
 
@@ -2908,16 +2514,12 @@ DP.$clear_inmemory = function() {
 	}
 
 	var filter = self.pending_clear.splice(0);
-	return self.$inmemory('#', function() {
-
+	return self.$inmemory(function() {
 		self.inmemory['#'] = [];
-		self.$save('#');
-
+		self.$save();
 		for (var i = 0; i < length; i++)
 			filter[i](null);
-
 		self.next(0);
-		self.views && setImmediate(views_refresh, self);
 	});
 };
 
@@ -2932,7 +2534,6 @@ DP.$drop = function() {
 
 	self.pending_drops = false;
 	var remove = [self.filename, self.filenameTemp];
-	self.views && Object.keys(self.views).forEach(key => remove.push(self.views[key].$filename));
 
 	try {
 		Fs.readdirSync(self.binary.directory).forEach(function(filename) {
@@ -3053,7 +2654,7 @@ DatabaseBuilder.prototype.$callbackjoin = function(callback) {
 			join.count = unique.length;
 			for (var i = 0; i < unique.length; i++) {
 				(function(val) {
-					var builder = db.scalar(join.scalartype, join.scalarfield, join.view).callback(function(err, response) {
+					var builder = db.scalar(join.scalartype, join.scalarfield).callback(function(err, response) {
 						join.items.push({ id: val, response: response });
 						join.count--;
 						if (join.count === 0) {
@@ -3089,7 +2690,7 @@ DatabaseBuilder.prototype.$callbackjoin = function(callback) {
 				if (isTable)
 					db.find(join.builder).in(join.a, unique);
 				else
-					db.find(join.view, join.builder).in(join.a, unique);
+					db.find(join.builder).in(join.a, unique);
 			} else {
 				join.items = join.builder.$options.first ? null : [];
 				next();
@@ -3163,13 +2764,13 @@ function findItems(items, field, value) {
 	return arr;
 }
 
-DatabaseBuilder.prototype.join = function(field, name, view) {
+DatabaseBuilder.prototype.join = function(field, name) {
 	var self = this;
 
 	if (!self.$join)
 		self.$join = {};
 
-	var key = name + '.' + (view || '') + '.' + field;
+	var key = name + '.' + field;
 	var join = self.$join[key];
 	if (join)
 		return join;
@@ -3177,7 +2778,6 @@ DatabaseBuilder.prototype.join = function(field, name, view) {
 	var item = self.$join[key] = {};
 	item.field = field;
 	item.name = name;
-	item.view = view;
 	item.builder = join = new DatabaseBuilder(self.db);
 
 	join.on = function(a, b) {
@@ -5885,6 +5485,18 @@ Backuper.prototype.flush = function() {
 	return self;
 };
 
+TP.ready = function(fn) {
+	var self = this;
+	if (self.ready)
+		fn.call(self);
+	else {
+		setTimeout(function(self, fn) {
+			self.ready(fn);
+		}, 100, self, fn);
+	}
+	return self;
+};
+
 TP.insert = function(doc, unique) {
 
 	var self = this;
@@ -6922,11 +6534,7 @@ TP.$remove = function() {
 		fs = null;
 		self.$writting = false;
 		self.next(0);
-
-		if (change) {
-			self.views && setImmediate(views_refresh, self);
-			self.$events.change && self.emit('change', 'remove');
-		}
+		change && self.$events.change && self.emit('change', 'remove');
 	};
 
 	fs.openupdate();
