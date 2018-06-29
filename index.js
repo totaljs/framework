@@ -645,7 +645,9 @@ function Framework() {
 		name: 'Total.js',
 		version: '1.0.0',
 		author: '',
-		secret: Os.hostname() + '-' + Os.platform() + '-' + Os.arch(),
+		secret: (Os.hostname() + '-' + Os.platform() + '-' + Os.arch()).crc32(true),
+		'default-crypto': 'aes-128-ofb',
+		'default-crypto-key': 16,
 
 		'security.txt': 'Contact: mailto:support@totaljs.com\nContact: https://www.totaljs.com/contact/',
 		'etag-version': '',
@@ -995,6 +997,7 @@ F.prototypes = function(fn) {
 	proto.UrlBuilder = framework_builders.UrlBuilder.prototype;
 	proto.WebSocket = WebSocket.prototype;
 	proto.WebSocketClient = WebSocketClient.prototype;
+	proto.Session = framework_session.prototype;
 	fn.call(proto, proto);
 	return F;
 };
@@ -16965,3 +16968,5 @@ EMPTYCONTROLLER.req.query = EMPTYOBJECT;
 EMPTYCONTROLLER.req.body = EMPTYOBJECT;
 EMPTYCONTROLLER.req.files = EMPTYARRAY;
 global.EMPTYCONTROLLER = EMPTYCONTROLLER;
+
+const framework_session = require('./session');

@@ -62,8 +62,6 @@ const regexpINTEGER = /(^-|\s-)?[0-9]+/g;
 const regexpFLOAT = /(^-|\s-)?[0-9.,]+/g;
 const regexpALPHA = /^[A-Za-z0-9]+$/;
 const regexpSEARCH = /[^a-zA-Zá-žÁ-Ž\d\s:]/g;
-const regexpDECRYPT = /-|_/g;
-const regexpENCRYPT = /\/|\+/g;
 const regexpUNICODE = /\\u([\d\w]{4})/gi;
 const regexpTERMINAL = /[\w\S]+/g;
 const regexpY = /y/g;
@@ -3764,75 +3762,48 @@ String.prototype.toKeywords = String.prototype.keywords = function(forSearch, al
 	return exports.keywords(this, forSearch, alternative, max_count, max_length, min_length);
 };
 
+const CRYPTO = {};
+
 String.prototype.encrypt = function(key, isUnique) {
-	var str = '0' + this;
-	var data_count = str.length;
-	var key_count = key.length;
-	var random = isUnique ? exports.random(120) + 40 : 65;
-	var count = data_count + (random % key_count);
-	var values = [];
-	var index = 0;
 
-	values[0] = String.fromCharCode(random);
-	var counter = this.length + key.length;
-
-	for (var i = count - 1; i > 0; i--) {
-		index = str.charCodeAt(i % data_count);
-		values[i] = String.fromCharCode(index ^ (key.charCodeAt(i % key_count) ^ random));
+	if (!CRYPTO[key]) {
+		var size = F.config['default-crypto-key'];
+		CRYPTO[key] = Buffer.alloc(size, key.length > size ? key.substring(0, size) : key, 'utf8');
 	}
 
-	var hash = exports.createBuffer(counter + '=' + values.join(''), ENCODING).toString('base64').replace(regexpENCRYPT, text => text === '+' ? '_' : '-');
-	index = hash.indexOf('=');
-	return index > 0 ? hash.substring(0, index) : hash;
+	var cipher = Crypto.createCipheriv(F.config['default-crypto'], CRYPTO[key], CRYPTO[key]);
+	var str = this.toString();
+	var plus = isUnique ? '_' + GUID(10) : '';
+	return cipher.update(plus + str.hash() + '#' + str, 'utf8', 'hex') + cipher.final('hex');
 };
 
 String.prototype.decrypt = function(key) {
 
-	var values = this.replace(regexpDECRYPT, text => text === '-' ? '/' : '+');
-	var mod = values.length % 4;
-
-	if (mod) {
-		for (var i = 0; i < mod; i++)
-			values += '=';
+	if (!CRYPTO[key]) {
+		var size = F.config['default-crypto-key'];
+		CRYPTO[key] = Buffer.alloc(size, key.length > size ? key.substring(0, size) : key, 'utf8');
 	}
 
-	values = exports.createBuffer(values, 'base64').toString(ENCODING);
+	var decipher = Crypto.createDecipheriv(F.config['default-crypto'], CRYPTO[key], CRYPTO[key]);
+	var result = decipher.update(this, 'hex') + decipher.final();
 
-	var index = values.indexOf('=');
-	if (index === -1)
+	var beg = result.indexOf('#');
+	if (beg === -1)
 		return null;
-
-	var counter = +values.substring(0, index);
-	if (isNaN(counter))
-		return null;
-
-	values = values.substring(index + 1);
-
-	var count = values.length;
-	var random = values.charCodeAt(0);
-
-	var key_count = key.length;
-	var data_count = count - (random % key_count);
-	var decrypt_data = [];
-
-	for (var i = data_count - 1; i > 0; i--) {
-		index = values.charCodeAt(i) ^ (random ^ key.charCodeAt(i % key_count));
-		decrypt_data[i] = String.fromCharCode(index);
-	}
-
-	var val = decrypt_data.join('');
-	return counter !== val.length + key.length ? null : val;
+	var o = result.substring(beg + 1);
+	var sum = result.substring(0, beg);
+	if (sum[0] === '_')
+		sum = sum.substring(10);
+	return +sum == o.hash() ? o : null;
 };
 
 String.prototype.base64ToFile = function(filename, callback) {
 	var self = this;
-
 	var index = self.indexOf(',');
 	if (index === -1)
 		index = 0;
 	else
 		index++;
-
 	Fs.writeFile(filename, self.substring(index), 'base64', callback || exports.noop);
 	return this;
 };
