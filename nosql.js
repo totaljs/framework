@@ -3075,7 +3075,7 @@ DatabaseBuilder.prototype.fulltext = function(name, value, weight) {
 	return self;
 };
 
-DatabaseBuilder2.prototype.stringify = DatabaseBuilder.prototype.stringify = function(raw) {
+DatabaseBuilder2.prototype.stringify = DatabaseBuilder.prototype.stringify = function() {
 	var obj = {};
 	obj.options = this.$options;
 	obj.code = this.$code;
@@ -3089,11 +3089,11 @@ DatabaseBuilder2.prototype.stringify = DatabaseBuilder.prototype.stringify = fun
 	if (this.$repository)
 		obj.repository = this.$repository;
 
-	return raw ? CLONE(obj) : JSON.stringify(obj);
+	return JSON.stringify(obj);
 };
 
 DatabaseBuilder2.prototype.parse = DatabaseBuilder.prototype.parse = function(data) {
-	data = data instanceof String ? JSON.parse(data, jsonparser) : data;
+	data = JSON.parse(data, jsonparser);
 	this.$options = data.options;
 	this.$code = data.code;
 	this.$params = data.params;
