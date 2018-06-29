@@ -645,9 +645,7 @@ function Framework() {
 		name: 'Total.js',
 		version: '1.0.0',
 		author: '',
-		secret: (Os.hostname() + '-' + Os.platform() + '-' + Os.arch()).crc32(true),
-		'default-crypto': 'aes-128-ofb',
-		'default-crypto-key': 16,
+		secret: (Os.hostname() + '-' + Os.platform() + '-' + Os.arch()).crc32(true).toString(),
 
 		'security.txt': 'Contact: mailto:support@totaljs.com\nContact: https://www.totaljs.com/contact/',
 		'etag-version': '',
@@ -705,6 +703,7 @@ function Framework() {
 		'default-root': '',
 		'default-response-maxage': '11111111',
 		'default-errorbuilder-status': 200,
+		'default-session': '10 minutes',
 
 		// Seconds (2 minutes)
 		'default-cors-maxage': 120,
