@@ -3784,8 +3784,14 @@ String.prototype.decrypt = function(key) {
 		CRYPTO[key] = Buffer.alloc(size, key.length > size ? key.substring(0, size) : key, 'utf8');
 	}
 
-	var decipher = Crypto.createDecipheriv(F.config['default-crypto'], CRYPTO[key], CRYPTO[key]);
-	var result = decipher.update(this, 'hex') + decipher.final();
+	var result;
+
+	try {
+		var decipher = Crypto.createDecipheriv(F.config['default-crypto'], CRYPTO[key], CRYPTO[key]);
+		result = decipher.update(this, 'hex') + decipher.final();
+	} catch (e) {
+		return null;
+	}
 
 	var beg = result.indexOf('#');
 	if (beg === -1)
@@ -3793,7 +3799,7 @@ String.prototype.decrypt = function(key) {
 	var o = result.substring(beg + 1);
 	var sum = result.substring(0, beg);
 	if (sum[0] === '_')
-		sum = sum.substring(10);
+		sum = sum.substring(11);
 	return +sum == o.hash() ? o : null;
 };
 
