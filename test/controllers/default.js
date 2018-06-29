@@ -109,11 +109,11 @@ exports.install = function() {
 		self.plain('408');
 	});
 
-	assert.ok(F.encrypt('123456', 'key', false) === 'a79aad6f9b92c0d3f1beb3812179863d8e', 'F.encrypt(string)');
-	assert.ok(F.decrypt('a79aad6f9b92c0d3f1beb3812179863d8e', 'key', false) === '123456', 'F.decrypt(string)');
+	assert.ok(F.encrypt('123456', 'key', false) === '5787-32333d411f0713195a1d0250071706004a1a150a061a0016', 'F.encrypt(string)');
+	assert.ok(F.decrypt('5787-32333d411f0713195a1d0250071706004a1a150a061a0016', 'key', false) === '123456', 'F.decrypt(string)');
 
-	assert.ok(F.encrypt({ name: 'Peter' }, 'key', false) === 'bb99af6f9b93c1dff0beb3cb3124d365dd06c70c0a81ec1a3dce8a', 'F.encrypt(object)');
-	assert.ok(F.decrypt('bb99af6f9b93c1dff0beb3cb3124d365dd06c70c0a81ec1a3dce8a', 'key').name === 'Peter', 'F.decrypt(object)');
+	assert.ok(F.encrypt({ name: 'Peter' }, 'key', false) === '6931-33333d4155174e4c024e105b17745741195806450555174e4c024e105b1774574119', 'F.encrypt(object)');
+	assert.ok(F.decrypt('6931-33333d4155174e4c024e105b17745741195806450555174e4c024e105b1774574119', 'key').name === 'Peter', 'F.decrypt(object)');
 
 	assert.ok(SOURCE('main').hello() === 'world', 'source');
 	assert.ok(INCLUDE('main').hello() === 'world', 'source');
