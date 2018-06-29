@@ -5,6 +5,7 @@
 - added: (IMPORTANT) Total.js components support nested public files encoded in base64
 - added: (IMPORTANT) NoSQL worker
 - added: (IMPORTANT) NoSQL embedded storage for smaller big data / IoT
+- added: (IMPORTANT) Session helper object
 - added: `debugging` supports live reloading
 - added: new schema operations: `schema.setInsert()` and `schema.setUpdate()`
 - added: `RESTBuilder.patch([data])`

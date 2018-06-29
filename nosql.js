@@ -262,7 +262,7 @@ exports.worker = function() {
 	};
 
 	TP.listing = DP.listing = function(builder) {
-		if (builder)
+		if (builder instanceof DatabaseBuilder)
 			builder.db = this;
 		else
 			builder = new DatabaseBuilder(this);
@@ -272,7 +272,7 @@ exports.worker = function() {
 	};
 
 	TP.find = DP.find = function(builder) {
-		if (builder)
+		if (builder instanceof DatabaseBuilder)
 			builder.db = this;
 		else
 			builder = new DatabaseBuilder(this);
@@ -280,7 +280,7 @@ exports.worker = function() {
 	};
 
 	TP.find2 = DP.find2 = function(builder) {
-		if (builder)
+		if (builder instanceof DatabaseBuilder)
 			builder.db = this;
 		else
 			builder = new DatabaseBuilder(this);
@@ -615,6 +615,10 @@ function Database(name, filename, readonly) {
 
 const TP = Table.prototype;
 const DP = Database.prototype;
+
+TP.view = DP.view = function(name) {
+	throw new Error('NoSQL Views are not supported in this version.');
+};
 
 TP.emit = DP.emit = function(name, a, b, c, d, e, f, g) {
 	var evt = this.$events[name];
@@ -1059,7 +1063,7 @@ DP.listing = function(builder) {
 
 DP.find = function(builder) {
 	var self = this;
-	if (builder)
+	if (builder instanceof DatabaseBuilder)
 		builder.db = self;
 	else
 		builder = new DatabaseBuilder(self);
@@ -1070,7 +1074,7 @@ DP.find = function(builder) {
 
 DP.find2 = function(builder) {
 	var self = this;
-	if (builder)
+	if (builder instanceof DatabaseBuilder)
 		builder.db = self;
 	else
 		builder = new DatabaseBuilder(self);
@@ -1126,10 +1130,6 @@ DP.top = function(max) {
 	self.pending_reader.push({ builder: builder, count: 0, counter: 0 });
 	setImmediate(next_operation, self, 4);
 	return builder;
-};
-
-DP.view = function() {
-	throw new Error('NoSQL Views are not supported.');
 };
 
 //  1 append
@@ -3075,7 +3075,7 @@ DatabaseBuilder.prototype.fulltext = function(name, value, weight) {
 	return self;
 };
 
-DatabaseBuilder2.prototype.stringify = DatabaseBuilder.prototype.stringify = function() {
+DatabaseBuilder2.prototype.stringify = DatabaseBuilder.prototype.stringify = function(raw) {
 	var obj = {};
 	obj.options = this.$options;
 	obj.code = this.$code;
@@ -3089,11 +3089,11 @@ DatabaseBuilder2.prototype.stringify = DatabaseBuilder.prototype.stringify = fun
 	if (this.$repository)
 		obj.repository = this.$repository;
 
-	return JSON.stringify(obj);
+	return raw ? CLONE(obj) : JSON.stringify(obj);
 };
 
 DatabaseBuilder2.prototype.parse = DatabaseBuilder.prototype.parse = function(data) {
-	data = JSON.parse(data, jsonparser);
+	data = data instanceof String ? JSON.parse(data, jsonparser) : data;
 	this.$options = data.options;
 	this.$code = data.code;
 	this.$params = data.params;
