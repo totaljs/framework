@@ -155,7 +155,7 @@ NoSQLStream.prototype.readhelpers = function() {
 				continue;
 			}
 
-			self.docs += (self.docs ? self.divider : '') + tmp;
+			self.docs += (self.docs ? self.divider : '') + tmp.trim();
 			self.docscount++;
 
 			if (self.docscount >= BUFFERDOCS) {

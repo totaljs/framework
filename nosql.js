@@ -70,6 +70,7 @@ const BINARYREADDATA = { start: BINARY_HEADER_LENGTH };
 const BINARYREADDATABASE64 = { start: BINARY_HEADER_LENGTH, encoding: 'base64' };
 const BINARYREADMETA = { start: 0, end: BINARY_HEADER_LENGTH - 1, encoding: 'binary' };
 const BOOLEAN = { '1': 1, 'true': 1, 'on': 1 };
+const TABLERECORD = { '+': 1, '-': 1, '*': 1 };
 
 const COMPARER = global.Intl ? global.Intl.Collator().compare : function(a, b) {
 	return a.removeDiacritics().localeCompare(b.removeDiacritics());
@@ -278,7 +279,7 @@ exports.worker = function() {
 		return send(this, 'find', view).builder = builder;
 	};
 
-	DP.find2 = function(builder) {
+	TP.find2 = DP.find2 = function(builder) {
 		if (builder)
 			builder.db = this;
 		else
@@ -508,7 +509,7 @@ exports.worker = function() {
 		return send(this, 'find').builder = builder;
 	};
 
-	TP.listing = function(view, builder) {
+	TP.listing = function(builder) {
 		if (builder)
 			builder.db = this;
 		else
@@ -585,6 +586,7 @@ function Table(name, filename) {
 	t.name = name;
 	t.$name = '$' + name;
 	t.pending_reader = [];
+	t.pending_reader2 = [];
 	t.pending_update = [];
 	t.pending_append = [];
 	t.pending_reader = [];
@@ -5991,6 +5993,17 @@ TP.find = function(builder) {
 	return builder;
 };
 
+TP.find2 = function(builder) {
+	var self = this;
+	if (builder)
+		builder.db = self;
+	else
+		builder = new DatabaseBuilder(self);
+	self.pending_reader2.push({ builder: builder, count: 0, counter: 0 });
+	setImmediate(next_operation, self, 11);
+	return builder;
+};
+
 TP.stream = function(fn, repository, callback) {
 	var self = this;
 	self.readonly && self.throwReadonly();
@@ -6165,6 +6178,11 @@ TP.next = function(type) {
 
 		if (this.step !== 4 && this.pending_reader.length) {
 			this.$reader();
+			return;
+		}
+
+		if (this.step !== 11 && this.pending_reader2.length) {
+			this.$reader3();
 			return;
 		}
 
@@ -6410,6 +6428,212 @@ TP.$reader = function() {
 	};
 
 	fs.openread();
+	return self;
+};
+
+TP.$reader3 = function() {
+
+	var self = this;
+
+	self.step = 11;
+
+	if (!self.pending_reader2.length) {
+		self.next(0);
+		return self;
+	}
+
+	self.$reading = true;
+
+	var filter = self.pending_reader2.splice(0);
+	var length = filter.length;
+	var first = true;
+	var indexer = 0;
+	var keys = {};
+	var keyscount = 0;
+
+	for (var i = 0; i < length; i++) {
+		var fil = filter[i];
+		if (!fil.builder.$options.first || fil.builder.$options.sort)
+			first = false;
+		if (fil.builder.$keys == null && keys)
+			keys = null;
+		else if (keys) {
+			if (fil.builder.$options.fields) {
+				for (var j = 0; j < fil.builder.$keys.length; j++) {
+					keyscount++;
+					keys[fil.builder.$keys[j]] = 1;
+				}
+			} else
+				keys = null;
+		}
+
+		fil.scalarcount = 0;
+		fil.compare = fil.builder.compile();
+		fil.filter = { repository: fil.builder.$repository, options: fil.builder.$options, arg: fil.builder.$params, fn: fil.builder.$functions };
+	}
+
+	if (first && length > 1)
+		first = false;
+
+	var fs = new NoSQLStream(self.filename);
+	var data = {};
+
+	fs.divider = '\n';
+	data.keys = keys && keyscount ? Object.keys(keys) : self.$keys;
+
+	fs.ondocuments = function() {
+
+		var lines = fs.docs.split(fs.divider);
+		var val;
+
+		for (var j = 0; j < lines.length; j++) {
+
+			data.line = lines[j].split('|');
+
+			if (!TABLERECORD[data.line[0]])
+				continue;
+
+			data.index = indexer++;
+			indexer++;
+
+			var obj = self.parseData(data);
+
+			for (var i = 0; i < length; i++) {
+				var item = filter[i];
+				var builder = item.builder;
+				item.filter.index = indexer;
+
+				var output = item.compare(obj, item.filter, indexer);
+				if (!output)
+					continue;
+
+				item.count++;
+
+				if (!builder.$inlinesort && ((builder.$options.skip && builder.$options.skip >= item.count) || (builder.$options.take && builder.$options.take <= item.counter)))
+					continue;
+
+				item.counter++;
+
+				if (item.type)
+					continue;
+
+				switch (builder.$options.scalar) {
+					case 'count':
+						item.scalar = item.scalar ? item.scalar + 1 : 1;
+						break;
+					case 'sum':
+						val = output[builder.$options.scalarfield] || 0;
+						item.scalar = item.scalar ? item.scalar + val : val;
+						break;
+					case 'min':
+						val = output[builder.$options.scalarfield] || 0;
+						if (val != null) {
+							if (item.scalar) {
+								if (item.scalar > val)
+									item.scalar = val;
+							} else
+								item.scalar = val;
+						}
+						break;
+					case 'max':
+						val = output[builder.$options.scalarfield];
+						if (val != null) {
+							if (item.scalar) {
+								if (item.scalar < val)
+									item.scalar = val;
+							} else
+								item.scalar = val;
+						}
+						break;
+					case 'avg':
+						val = output[builder.$options.scalarfield];
+						if (val != null) {
+							item.scalar = item.scalar ? item.scalar + val : val;
+							item.scalarcount++;
+						}
+						break;
+					case 'group':
+						!item.scalar && (item.scalar = {});
+						val = output[builder.$options.scalarfield];
+						if (val != null) {
+							if (item.scalar[val])
+								item.scalar[val]++;
+							else
+								item.scalar[val] = 1;
+						}
+						break;
+					default:
+						if (builder.$inlinesort)
+							nosqlinlinesorter(item, builder, output);
+						else if (item.response)
+							item.response.push(output);
+						else
+							item.response = [output];
+						break;
+				}
+
+				if (first)
+					return false;
+			}
+		}
+	};
+
+	fs.$callback = function() {
+
+		for (var i = 0; i < length; i++) {
+			var item = filter[i];
+			var builder = item.builder;
+			var output;
+
+			if (builder.$options.scalar || !builder.$options.sort) {
+
+				if (builder.$options.scalar)
+					output = builder.$options.scalar === 'avg' ? item.scalar / item.scalarcount : item.scalar;
+				else if (builder.$options.first)
+					output = item.response ? item.response[0] : undefined;
+				else if (builder.$options.listing)
+					output = listing(builder, item);
+				else
+					output = item.response || [];
+
+				builder.$callback2(errorhandling(null, builder, output), item.type === 1 ? item.count : output, item.count);
+				continue;
+			}
+
+			if (item.count) {
+				if (builder.$options.sort.name) {
+					if (!builder.$inlinesort || builder.$options.take !== item.response.length)
+						item.response.quicksort(builder.$options.sort.name, builder.$options.sort.asc);
+				} else if (builder.$options.sort === null)
+					item.response.random();
+				else
+					item.response.sort(builder.$options.sort);
+
+				if (builder.$options.skip && builder.$options.take)
+					item.response = item.response.splice(builder.$options.skip, builder.$options.take);
+				else if (builder.$options.skip)
+					item.response = item.response.splice(builder.$options.skip);
+				else if (!builder.$inlinesort && builder.$options.take)
+					item.response = item.response.splice(0, builder.$options.take);
+			}
+
+			if (builder.$options.first)
+				output = item.response ? item.response[0] : undefined;
+			else if (builder.$options.listing)
+				output = listing(builder, item);
+			else
+				output = item.response || [];
+
+			builder.$callback2(errorhandling(null, builder, output), item.type === 1 ? item.count : output, item.count);
+			builder.done();
+		}
+
+		self.$reading = false;
+		fs = null;
+		self.next(0);
+	};
+
+	fs.openreadreverse();
 	return self;
 };
 
