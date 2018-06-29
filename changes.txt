@@ -54,6 +54,8 @@
 - added: config `nosql-logger` (default `true`) enables simple logs when re-indexing and cleaning
 - added: config `security.txt` for auto-generating security.txt content (more in docs)
 - added: config `default-proxy` for default web proxy server
+- added: config `default-crypto` for default crypto algorithm
+- added: config `default-crypto-key` for default length of key crypto algorithm
 - added: `NOSQLSTORAGE(name)` alias for `NOSQL(name).storage`
 - added: `GUID()` a global alias for `U.GUID()`
 - added: `VIEW()` a global alias for `F.view()`
@@ -106,6 +108,7 @@
 - updated: `CORS()` tries to join multiple same preferences to one
 - updated: `U.keywords()` for Chinese/Japan characters
 - updated: `@{import()}` by adding `manifest` value linked to `/manifest.json`
+- updated: internal crypto algorithm to `aes-128-ofb`
 
 - fixed: mail attachments
 - fixed: mail `message.manually()`
