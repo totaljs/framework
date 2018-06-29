@@ -703,7 +703,6 @@ function Framework() {
 		'default-root': '',
 		'default-response-maxage': '11111111',
 		'default-errorbuilder-status': 200,
-		'default-session': '10 minutes',
 
 		// Seconds (2 minutes)
 		'default-cors-maxage': 120,
@@ -996,7 +995,6 @@ F.prototypes = function(fn) {
 	proto.UrlBuilder = framework_builders.UrlBuilder.prototype;
 	proto.WebSocket = WebSocket.prototype;
 	proto.WebSocketClient = WebSocketClient.prototype;
-	proto.Session = framework_session.prototype;
 	fn.call(proto, proto);
 	return F;
 };
@@ -16977,5 +16975,3 @@ EMPTYCONTROLLER.req.query = EMPTYOBJECT;
 EMPTYCONTROLLER.req.body = EMPTYOBJECT;
 EMPTYCONTROLLER.req.files = EMPTYARRAY;
 global.EMPTYCONTROLLER = EMPTYCONTROLLER;
-
-const framework_session = require('./session');
