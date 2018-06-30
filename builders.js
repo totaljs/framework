@@ -330,6 +330,22 @@ SchemaBuilderEntity.prototype.required = function(name, fn) {
 	return self;
 };
 
+SchemaBuilderEntity.prototype.clear = function() {
+	var self = this;
+
+	self.schema = {};
+	self.properties = [];
+	self.fields = [];
+
+	if (self.dependencies)
+		self.dependencies = null;
+
+	if (self.fields_allow)
+		self.fields_allow = null;
+
+	return self;
+};
+
 /**
  * Define type in schema
  * @param {String|String[]} name
