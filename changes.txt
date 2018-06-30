@@ -91,6 +91,7 @@
 - added: `controller.sitemap_name2()`
 - added: `@{sitemap_url2()}`
 - added: `@{sitemap_name2()}`
+- added: `F.syshash` contains a simple MD5 hash with OS info
 
 - updated: (IMPORTANT) NoSQL binary divides files to independent directories for 1000 files per directory
 - updated: `GROUP()` by adding a new argument `url_prefix`

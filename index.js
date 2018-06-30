@@ -635,6 +635,7 @@ function Framework() {
 	this.version = 3000;
 	this.version_header = '3.0.0';
 	this.version_node = process.version.toString();
+	this.syshash = (Os.hostname() + '-' + Os.platform() + '-' + Os.arch() + '-' + Os.release() + '-' + Os.tmpdir()).md5();
 
 	this.config = {
 
@@ -645,7 +646,7 @@ function Framework() {
 		name: 'Total.js',
 		version: '1.0.0',
 		author: '',
-		secret: (Os.hostname() + '-' + Os.platform() + '-' + Os.arch()).crc32(true).toString(),
+		secret: this.syshash,
 
 		'security.txt': 'Contact: mailto:support@totaljs.com\nContact: https://www.totaljs.com/contact/',
 		'etag-version': '',
@@ -8859,6 +8860,9 @@ F.$configure_configs = function(arr, rewrite) {
 			subtype = '';
 
 		switch (name) {
+			case 'secret':
+				obj[name] = value;
+				break;
 			case 'default-request-length':
 				OBSOLETE(name, 'You need to use "default-request-maxlength"');
 				obj['default-request-maxlength'] = U.parseInt(value);
