@@ -16699,7 +16699,7 @@ function async_middleware(index, req, res, middleware, callback, options, contro
 			opt.req = req;
 			opt.res = res;
 			opt.middleware = middleware;
-			opt.options = options;
+			opt.options = options || EMPTYOBJECT;
 			opt.controller = controller;
 			opt.callback2 = callback;
 			opt.next = function(err) {
