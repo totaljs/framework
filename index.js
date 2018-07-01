@@ -16673,7 +16673,7 @@ function existsSync(filename, file) {
 
 function async_middleware(index, req, res, middleware, callback, options, controller) {
 
-	if (res.success || res.headersSent) {
+	if (res.success || res.headersSent || res.finished) {
 		req.$total_route && req.$total_success();
 		callback = null;
 		return;
@@ -16693,6 +16693,7 @@ function async_middleware(index, req, res, middleware, callback, options, contro
 
 	if (item.$newversion) {
 		var opt = req.$total_middleware;
+
 		if (!index || !opt) {
 			opt = req.$total_middleware = new MiddlewareOptions();
 			opt.req = req;
@@ -16732,7 +16733,11 @@ function async_middleware(index, req, res, middleware, callback, options, contro
 		}, options, controller);
 	}
 
-	if (output !== false)
+	if (res.headersSent || res.finished) {
+		req.$total_route && req.$total_success();
+		callback = null;
+		return;
+	} else if (output !== false)
 		return;
 
 	req.$total_route && req.$total_success();
