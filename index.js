@@ -1807,6 +1807,14 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 		flags = null;
 	}
 
+	var type = typeof(funcExecute);
+
+	if (funcExecute instanceof Array) {
+		tmp = funcExecute;
+		funcExecute = flags;
+		flags = tmp;
+	}
+
 	var method = '';
 	var CUSTOM = typeof(url) === 'function' ? url : null;
 	if (CUSTOM)
@@ -1882,17 +1890,10 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 
 	url = framework_internal.encodeUnicodeURL(url);
 
-	var type = typeof(funcExecute);
 	var urlcache = url;
 
 	if (!name)
 		name = url;
-
-	if (type === 'object' || funcExecute instanceof Array) {
-		tmp = funcExecute;
-		funcExecute = flags;
-		flags = tmp;
-	}
 
 	if (method) {
 		!flags && (flags = []);
@@ -2177,7 +2178,6 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 	} else if (typeof(funcExecute) !== 'function') {
 
 		viewname = (sitemap && sitemap.url !== '/' ? sitemap.id : workflow ? '' : url) || '';
-
 		if (!workflow || (!viewname && !workflow)) {
 			if (viewname.endsWith('/'))
 				viewname = viewname.substring(0, viewname.length - 1);
