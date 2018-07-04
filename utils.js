@@ -5704,7 +5704,7 @@ exports.get = function(obj, path) {
 	var builder = [];
 
 	for (var i = 0, length = arr.length - 1; i < length; i++)
-		builder.push('if(!w' + (arr[i][0] === '[' ? '' : '.') + arr[i] + ')return');
+		builder.push('if(!w' + (!arr[i] || arr[i][0] === '[' ? '' : '.') + arr[i] + ')return');
 
 	var v = arr[arr.length - 1];
 	var fn = (new Function('w', builder.join(';') + ';return w' + (v[0] === '[' ? '' : '.') + v));
