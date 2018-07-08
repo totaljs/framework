@@ -1763,6 +1763,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 								tmp = '';
 							break;
 						case 'zip':
+							tmp = tmp.replace(REGEXP_CLEAN_EMAIL, '');
 							if (tmp && !type.required && !tmp.isZIP())
 								tmp = '';
 							break;
