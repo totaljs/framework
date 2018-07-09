@@ -5685,7 +5685,7 @@ TP.extend = function(schema, callback) {
 
 			var buffer = '';
 			for (var i = 0; i < items.length; i++)
-				buffer += self.stringify(items[i]) + NEWLINE;
+				buffer += self.stringify(items[i], true) + NEWLINE;
 			buffer && writer.write(buffer, 'utf8');
 		};
 
@@ -5826,7 +5826,7 @@ TP.$append = function() {
 		var data = '';
 
 		for (var i = 0, length = items.length; i < length; i++)
-			data += self.stringify(items[i].doc) + NEWLINE;
+			data += self.stringify(items[i].doc, true) + NEWLINE;
 
 		Fs.appendFile(self.filename, data, function(err) {
 			err && F.error(err, 'Table insert: ' + self.name);
@@ -6303,11 +6303,12 @@ TP.$update = function() {
 		for (var a = indexer ? 0 : 1; a < lines.length; a++) {
 
 			data.line = lines[a].split('|');
+			data.length = lines[a].length;
 			data.index = indexer++;
 
-			var doc = self.parseData(data);
 			var is = false;
 			var rec = fs.docsbuffer[a];
+			var doc = self.parseData(data, data.keys === self.$keys ? EMPTYOBJECT : null);
 
 			for (var i = 0; i < length; i++) {
 
@@ -6381,24 +6382,17 @@ TP.$update = function() {
 					}
 				}
 
-				var upd = self.stringify(doc);
+				var upd = self.stringify(doc, null, rec.length);
 				if (upd === rec.doc)
 					continue;
-
-				var was = true;
 
 				if (!change)
 					change = true;
 
-				if (rec.doc.length === upd.length) {
-					var b = Buffer.byteLength(upd);
-					if (rec.length === b) {
-						fs.write(upd + NEWLINE, rec.position);
-						was = false;
-					}
-				}
-
-				if (was) {
+				var b = Buffer.byteLength(upd);
+				if (rec.length === b) {
+					fs.write(upd + NEWLINE, rec.position);
+				} else {
 					var tmp = fs.remchar + rec.doc.substring(1) + NEWLINE;
 					fs.write(tmp, rec.position);
 					fs.write2(upd + NEWLINE);
@@ -6742,12 +6736,15 @@ TP.parseData = function(data, cache) {
 	var self = this;
 	var obj = {};
 	var esc = data.line[0] === '*';
-	var val;
+	var val, alloc;
+
+	if (cache && data.keys.length === data.line.length - 2)
+		alloc = data.line[data.line.length - 1].length - 1;
 
 	for (var i = 0; i < data.keys.length; i++) {
 		var key = data.keys[i];
 
-		if (cache && cache[key] != null) {
+		if (cache && cache !== EMPTYOBJECT && cache[key] != null) {
 			obj[key] = cache[key];
 			continue;
 		}
@@ -6783,14 +6780,17 @@ TP.parseData = function(data, cache) {
 				break;
 		}
 	}
+
+	alloc && (obj.$$alloc = { size: alloc, length: data.length });
 	return obj;
 };
 
-TP.stringify = function(doc) {
+TP.stringify = function(doc, insert, byteslen) {
 
 	var self = this;
 	var output = '';
 	var esc = false;
+	var size = 0;
 
 	for (var i = 0; i < self.$keys.length; i++) {
 		var key = self.$keys[i];
@@ -6800,9 +6800,11 @@ TP.stringify = function(doc) {
 		switch (meta.type) {
 			case 1: // String
 				val = val ? val : '';
+				size += 4;
 				break;
 			case 2: // Number
 				val = (val || 0);
+				size += 2;
 				break;
 			case 3: // Boolean
 				val = (val == true ? '1' : '0');
@@ -6810,9 +6812,11 @@ TP.stringify = function(doc) {
 			case 4: // Date
 				// val = val ? val.toISOString() : '';
 				val = val ? val.getTime() : '';
+				!val && (size += 13);
 				break;
 			case 5: // Object
 				val = val ? JSON.stringify(val) : '';
+				size += 4;
 				break;
 		}
 
@@ -6826,6 +6830,37 @@ TP.stringify = function(doc) {
 
 		output += '|' + val;
 	}
+
+	if (doc.$$alloc) {
+		var l = output.length;
+		var a = doc.$$alloc;
+		if (l < a.length) {
+			var s = (a.length - l) - 1;
+			if (s > 0) {
+				output += '|'.padRight(s, '.');
+				if (byteslen) {
+					var b = byteslen - Buffer.byteLength(output);
+					if (b > 0) {
+						b--;
+						for (var i = 0; i < b; i++)
+							output += '.';
+					} else {
+						var c = s - b;
+						if (c > 0)
+							output = output.substring(0, (output.length + b) - 1);
+					}
+				}
+			} else if (s === 0)
+				output += '|';
+			else
+				insert = true;
+		} else
+			insert = true;
+	} else
+		insert = true;
+
+	if (insert && size)
+		output += '|'.padRight(size, '.');
 
 	return (esc ? '*' : '+') + output;
 };
