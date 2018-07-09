@@ -1314,9 +1314,9 @@ global.TABLE = function(name) {
 	return db;
 };
 
-global.DATA = function(name) {
-	var key = 'rec_' + name;
-	return F.databases[key] ? F.databases[key] : F.databases[key] = require('./recorder').load(name, +(F.config['recorder.' + name] || 2000));
+global.KVALUE = function(name) {
+	var key = 'kval_' + name;
+	return F.databases[key] ? F.databases[key] : F.databases[key] = require('./keyvalue').load(name, +(F.config['keyvalue.' + name] || 2000));
 };
 
 F.stop = F.kill = function(signal) {
@@ -2674,6 +2674,13 @@ global.MIDDLEWARE = F.middleware = function(name, funcExecute) {
  * @return {Framework}
  */
 F.use = function(name, url, types, first) {
+
+	if (typeof(name) === 'function') {
+		var tmp = 'mid' + GUID(5);
+		MIDDLEWARE(tmp, name);
+		name = tmp;
+	}
+
 	if (!url && !types) {
 		if (name instanceof Array) {
 			for (var i = 0; i < name.length; i++)
