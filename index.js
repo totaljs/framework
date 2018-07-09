@@ -12027,6 +12027,9 @@ Controller.prototype.$json = function(obj, id, beautify, replacer) {
 		beautify = false;
 	}
 
+	if (framework_builders.isSchema(obj))
+		obj = obj.$clean();
+
 	var value = beautify ? JSON.stringify(obj, replacer, 4) : JSON.stringify(obj, replacer);
 	return id ? ('<script type="application/json" id="' + id + '">' + value + '</script>') : value;
 };
@@ -15586,6 +15589,8 @@ function extend_response(PROTO) {
 	PROTO.json = function(obj) {
 		var res = this;
 		F.stats.response.json++;
+		if (framework_builders.isSchema(obj))
+			obj = obj.$clean();
 		res.options.body = JSON.stringify(obj);
 		res.options.type = CT_JSON;
 		return res.$text();
