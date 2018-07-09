@@ -508,7 +508,7 @@ Image.prototype.limit = function(type, value) {
 	return this.push('-limit', type + ' ' + value, 1);
 };
 
-Image.prototype.extent = function(w, h) {
+Image.prototype.extent = function(w, h, x, y) {
 
 	var self = this;
 	var size = '';
@@ -519,6 +519,12 @@ Image.prototype.extent = function(w, h) {
 		size = w;
 	else if (!w && h)
 		size = 'x' + h;
+
+	if (x || y) {
+		!x && (x = 0);
+		!y && (y = 0);
+		size += (x >= 0 ? '+' : '') + x + (y >= 0 ? '+' : '') + y;
+	}
 
 	return self.push('-extent', size, 4, true);
 };
