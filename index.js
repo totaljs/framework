@@ -1852,7 +1852,8 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 			if (index !== -1) {
 				tmp = url.substring(index);
 				url = url.substring(0, index);
-			}
+			} else
+				tmp = '';
 
 			sitemap = F.sitemap(url, true, language);
 
