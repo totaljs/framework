@@ -1,49 +1,53 @@
 require('../index');
-const Http = require('http');
-const Https = require('https');
-const Url = require('url');
 
-function rrr() {
-	var options = { port: 8080, hostname: '127.0.0.1', method: 'CONNECT', headers: { host: 'www.totaljs.com:443' }};
-	var req = Http.request(options);
+var insert = false;
+var update = false;
+var read = false;
+var link = true;
 
-	req.on('connect', function(res, socket) {
+KVALUE('skuska').ready(function() {
+	// this.insert('Si kokot?', console.log);
+	//this.count(console.log);
+	//this.read(20303, console.log);
 
-		console.log(res.statusCode);
-		options = Url.parse('https://www.totaljs.com');
 
-		var agent = new Https.Agent();
-		agent.reuseSocket(socket, req);
-		options.agent = agent;
+	if (insert) {
+		for (var i = 0; i < 10; i++)
+			KVALUE('skuska').insert({ id: i + 1, guid: GUID(100) });
+	}
 
-		var r = Http.request(options);
+	if (link) {
+		// 11
+		//KVALUE('skuska').setLinkId(null, 4, 2, console.log);
+		//KVALUE('skuska').setLinkId(11, 3, 6, console.log);
+		//KVALUE('skuska').read(11, console.log);
+		//KVALUE('skuska').link(2, 6, 1, console.log);
+		KVALUE('skuska').traverse(2, console.log);
+	}
 
-		r.on('response', function(res) {
+	if (read) {
+		KVALUE('skuska').read(2, console.log);
+	}
 
-			res.on('data', function(data) {
-				console.log(data.toString('utf8'));
-			});
+	if (update) {
+		KVALUE('skuska').update(2, { id: 2, guid: GUID(100), kokotaris: 99 }, console.log);
+	}
 
-			res.on('end', function() {
-				agent.destroy();
-				agent = null;
-				socket.destroy();
-			});
-		});
-
-		r.end();
-
-	});
-
-	req.end();
-}
-
-//U.request('http://www.vyvojari.sk', ['get', 'proxy http://127.0.0.1:8080'], console.log);
-
-RESTBuilder.make(function(builder) {
-	builder.url('https://www.spektrum-bb.sk');
-	builder.proxy('127.0.0.1:8080');
-	builder.exec(console.log);
+	// KVALUE('skuska').read(2, console.log);
+	//KVALUE('skuska').link(2, 9, console.log);
 });
 
-//rrr();
+/*
+KEYVALUE('skuska').traverse(340304, function(err, val, index) {
+	console.log(val);
+	if (index === 6)
+		return false;
+});
+*/
+/*
+
+KEYVALUE('skuska').ready(function() {
+	for (var i = 0; i < 1000000; i++)
+		KEYVALUE('skuska').put({ id: i + 1, guid: GUID(100) });
+});
+*/

@@ -98,6 +98,10 @@ function KeyValue(name, size) {
 		t.write(id, prepare, callback);
 	};
 
+	t.$cb_link = function(id, toid, type, callback) {
+		t.link(id, toid, type, callback);
+	};
+
 	F.path.verify('databases');
 	t.open();
 }
@@ -298,7 +302,7 @@ RP.close = function() {
 	return self;
 };
 
-RP.insert = function(value, callback, edgesid, id) {
+RP.insert = function(value, callback, id) {
 
 	var self = this;
 	if (self.$ready) {
@@ -330,16 +334,20 @@ RP.insert = function(value, callback, edgesid, id) {
 		var val = U.createBuffer(type === 4 ? JSON.stringify(value) : value);
 
 		// 1b TYPE, 4b CONNECTIONSID, 2b DATA-SIZE, DATA
-		var res = U.createBufferSize(self.header.size).fill(val, 8, val.length + 8);
-		res.writeInt8(type);
-		res.writeInt32BE(edgesid || 0, 1);
-		res.writeInt16BE(val.length, 5);
+		var res = insert ? U.createBufferSize(self.header.size).fill(val, 8, val.length + 8) : U.createBufferSize(self.header.size - 5).fill(val, 3, val.length + 3);
+
+		if (insert) {
+			res.writeInt8(type, 0);
+			res.writeInt32BE(0, 1);
+		}
+
+		res.writeInt16BE(val.length, insert ? 5 : 0);
 
 		if (insert) {
 			self.bufferappend.push(res);
 			self.$events.insert && self.emit('insert', id, value);
 		} else {
-			self.bufferupdate.push({ buf: res, pos: id });
+			self.bufferupdate.push({ buf: res, pos: id, type: type });
 			self.$events.update && self.emit('update', id, value);
 		}
 
@@ -354,37 +362,147 @@ RP.insert = function(value, callback, edgesid, id) {
 		throw new Error(ERRREADY.format(self.name));
 };
 
-RP.write = function(id, prepare, callback) {
+RP.getLinkId = function(id, callback) {
+	var self = this;
+	var pos = 200 + ((id - 1) * self.header.size);
+	var tmp = U.createBufferSize(4);
+	Fs.read(self.fd, tmp, 0, tmp.length, pos + 1, (err) => callback(err, tmp.readInt32BE(0)));
+	return self;
+};
 
+RP.setLinkId = function(id, linkid, callback) {
+	var self = this;
+	var pos = 200 + ((id - 1) * self.header.size);
+	var buf = U.createBufferSize(4);
+	buf.writeInt32BE(linkid);
+	Fs.write(self.fd, buf, 0, buf.length, pos + 1, function(err, size) {
+		callback && callback(err);
+	});
+	return self;
+};
+
+RP.pushLinkId = function(id, toid, type, callback, parentid) {
+
+	var self = this;
+	var pos = 200 + ((id - 1) * self.header.size);
+	var buf = U.createBufferSize(self.header.size);
+	var max = (self.header.size - 9) / 5 >> 0;
+
+	if (id == null) {
+
+		id = self.index++;
+
+		buf.writeInt8(5); // type, 1b
+		buf.writeInt32BE(parentid || 0, 1); // link, 4b
+		buf.writeInt16BE(1, 6); // count, 2b
+
+		// TYPE, ID
+		buf.writeInt8(type, 9);
+		buf.writeInt32BE(toid, 10);
+
+		self.bufferappend.push(buf);
+		self.flush();
+		callback && callback(null, id);
+
+	} else {
+
+		Fs.read(self.fd, buf, 0, buf.length, pos, function(err) {
+
+			if (err) {
+				callback(err);
+				return;
+			} else if (buf[0] !== 5) {
+				callback(new Error('Invalid value type for linking.'));
+				return;
+			}
+
+			var count = buf.readInt16BE(6);
+			if (count + 1 >= max) {
+				// we need to create new record because existing buffer is full
+				self.pushLinkId(0, toid, type, function(err, id) {
+					// we return new id
+					callback && callback(err, id);
+				}, id);
+				return;
+			}
+
+			buf.writeInt16BE(count + 1, 6);
+
+			var off = 9 + (count * 5);
+			buf.writeInt8(type, off);
+			buf.writeInt32BE(toid, off + 1);
+
+			Fs.write(self.fd, buf, 0, buf.length, pos, function(err) {
+				callback && callback(err, id);
+			});
+		});
+	}
+
+	return self;
+};
+
+RP.link = function(fromid, toid, type, callback) {
 	var self = this;
 	if (self.$ready) {
 
-		var insert = !id;
+		var async = [];
+		var aid = 0;
+		var bid = 0;
 
-		if (insert) {
-			if (self.meta.removed && self.meta.removed.length) {
-				id = self.removed.shift();
-				insert = false;
+		async.push(function(next) {
+			self.getLinkId(fromid, function(err, id) {
+				aid = err ? null : id;
+				next();
+			});
+		});
+
+		async.push(function(next) {
+			self.getLinkId(toid, function(err, id) {
+				bid = err ? null : id;
+				next();
+			});
+		});
+
+		async.push(function(next) {
+			if (aid == null) {
+				async.length = 0;
+				next = null;
+				callback(new Error('Value (from) with "{0}" id does not exist'.format(fromid)));
+			} else if (bid == null) {
+				async.length = 0;
+				next = null;
+				callback(new Error('Value (to) with "{0}" id does not exist'.format(toid)));
 			} else
-				id = self.index++;
-		}
+				next();
+		});
 
-		var res = U.createBufferSize(self.header.size);
+		async.push(function(next) {
+			self.pushLinkId(aid == 0 ? null : aid, toid, type, function(err, id) {
+				if (aid !== id)
+					self.setLinkId(fromid, id, next);
+				else
+					next();
+			});
+		});
 
-		// res.writeInt8(type);
-		// res.writeInt32BE(edgesid || 0, 1);
+		async.push(function(next) {
+			self.pushLinkId(bid == 0 ? null : bid, fromid, type, function(err, id) {
+				if (bid !== id)
+					self.setLinkId(toid, id, next);
+				else
+					next();
+			});
+		});
 
-		prepare(res);
+		async.async(function() {
+			console.log('DONE');
+			callback && callback(null);
+		});
 
-		self.flush();
-		callback && callback(null, id);
-		return id;
-	}
+	} else
+		setTimeout(self.$cb_link, 100, fromid, toid, type, callback);
 
-	if (callback)
-		setTimeout(self.$cb_write, 100, id, prepare, callback);
-	else
-		throw new Error(ERRREADY.format(self.name));
+	return self;
 };
 
 RP.flush = function() {
@@ -397,7 +515,8 @@ RP.flush = function() {
 	if (self.bufferupdate.length) {
 		self.writing = true;
 		var doc = self.bufferupdate.shift();
-		Fs.write(self.fd, doc.buf, 0, doc.buf.length, 200 + (doc.pos * self.header.size), self.$cb_writeupdate);
+		var offset = 200 + (doc.pos * self.header.size);
+		Fs.write(self.fd, doc.buf, 0, doc.buf.length, offset + 5, self.$cb_writeupdate);
 		return self;
 	} else if (!self.bufferappend.length)
 		return self;
@@ -421,9 +540,17 @@ RP.remove = function(id) {
 	return self;
 };
 
-RP.update = function(id, value, callback, edgesid) {
+RP.update = function(id, value, callback) {
 	var self = this;
-	self.insert(value, callback, edgesid, id - 1);
+	self.insert(value, callback, id - 1);
+	return self;
+};
+
+RP.traverse = function(id, type, callback) {
+	var self = this;
+	self.read(id, function(err, doc, linkid) {
+		console.log(arguments);
+	});
 	return self;
 };
 
@@ -432,36 +559,38 @@ RP.get = RP.read = function(id, callback) {
 	if (self.$ready) {
 		var buf = U.createBufferSize(self.header.size);
 		Fs.read(self.fd, buf, 0, buf.length, 200 + ((id - 1) * self.header.size), function(err, size) {
-			var edgesid = buf.readInt32BE(1);
-			var data = size ? buf.slice(8, buf.readInt16BE(5) + 8).toString('utf8') : null;
+			var linkid = buf.readInt32BE(1);
+			var data = buf[0] !== 5 ? (size ? buf.slice(8, buf.readInt16BE(5) + 8).toString('utf8') : null) : null;
 			switch (buf[0]) {
+				case 5: // LINKS
+
+					var count = buf.readInt16BE(6); // 2b
+					var links = [];
+
+					for (var i = 0; i < count; i++) {
+						var pos = 9 + (i * 5);
+						links.push({ type: buf[pos], id: buf.readInt32BE(pos + 1) });
+					}
+
+					callback(err, links, linkid);
+					break;
 				case 4: // JSON
-					callback(err, data ? data.parseJSON(true) : null, edgesid);
+					callback(err, data ? data.parseJSON(true) : null, linkid);
 					break;
 				case 3: // BOOLEAN
-					callback(err, data ? data === 'true' : false, edgesid);
+					callback(err, data ? data === 'true' : false, linkid);
 					break;
 				case 2: // NUMBER
-					callback(err, data ? +data : 0, edgesid);
+					callback(err, data ? +data : 0, linkid);
 					break;
 				case 1: // STRING
 				default:
-					callback(err, data ? data : '', edgesid);
+					callback(err, data ? data : '', linkid);
 					break;
 			}
 		});
 	} else
 		setTimeout(self.$cb_get, 100, id, callback);
-	return self;
-};
-
-RP.read2 = function(id, callback) {
-	var self = this;
-	if (self.$ready) {
-		var buf = U.createBufferSize(self.header.size);
-		Fs.read(self.fd, buf, 0, buf.length, 200 + ((id - 1) * self.header.size), err => callback(err, buf));
-	} else
-		setTimeout(self.$cb_read2, 100, id, callback);
 	return self;
 };
 
@@ -496,6 +625,8 @@ RP.browse = function(beg, end, callback, done) {
 				var data = buf.slice(4, size).toString('utf8');
 
 				switch (buf[0]) {
+					case 5: // LINKS
+						break;
 					case 4: // JSON
 						output = callback(err, data.parseJSON(true), counter);
 						break;
