@@ -1314,6 +1314,11 @@ global.TABLE = function(name) {
 	return db;
 };
 
+global.RECORDER = function(name) {
+	var key = 'rec_' + name;
+	return F.databases[key] ? F.databases[key] : F.databases[key] = require('./recorder').load(name, +(F.config['recorder.' + name] || 2000));
+};
+
 F.stop = F.kill = function(signal) {
 
 	if (F.isKilled)
