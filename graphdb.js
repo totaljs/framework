@@ -40,10 +40,9 @@ const Fs = require('fs');
 const VERSION = 1;
 const EMPTYBUFFER = U.createBufferSize(1);
 const DEFSIZE = 150;
-const BUFFERSIZE = 100;
+const BUFFERSIZE = 10;
 const HEADERSIZE = 50;
 const DELAY = 100;
-const ERRREADY = 'GraphDB "{0}" storage is not ready.';
 const DatabaseBuilder = framework_nosql.DatabaseBuilder;
 
 const NODE_REMOVED = 7;
@@ -64,7 +63,6 @@ function GraphDB(name, size) {
 	t.bufferappend = [];
 	t.bufferupdate = [];
 	t.bufferremove = [];
-	t.buffercleaner = [];
 	t.pending = {};
 	t.removed = EMPTYARRAY;
 	t.$events = {};
@@ -152,12 +150,6 @@ function GraphDB(name, size) {
 		t.graph(id, options, callback, builder);
 	};
 
-	t.$cb_cleaner = function() {
-		var ids = t.buffercleaner.splice(0);
-		t.$cleaner = null;
-		ids.length && t.clean(ids);
-	};
-
 	F.path.verify('databases');
 	t.open();
 }
@@ -182,8 +174,7 @@ GP.scan = function(callback) {
 				else
 					next(index + 1);
 			} else {
-				self.bufferremove = remove;
-				callback && callback(null, self.bufferremove);
+				callback && callback(null, remove);
 				F.config['nosql-logger'] && PRINTLN('GraphDB "{0}" scanning (end, {1}s)'.format(self.name, (((Date.now() - now) / 1000) >> 0)));
 			}
 		});
@@ -193,104 +184,115 @@ GP.scan = function(callback) {
 	return self;
 };
 
-GP.clean = function(arr, callback) {
+GP.clean = function(callback) {
 
 	var self = this;
 
 	if (!self.$ready || self.cleaning) {
-		setTimeout(self.$cb_clean, DELAY, arr, callback);
+		setTimeout(self.$cb_clean, DELAY, callback);
 		return self;
 	}
 
 	self.cleaning = true;
 
-	var removed = 0;
-	var cache = {};
-	var now = Date.now();
+	self.scan(function(err, arr) {
 
-	F.config['nosql-logger'] && PRINTLN('GraphDB "{0}" cleaning (beg)'.format(self.name));
-
-	for (var i = 0; i < arr.length; i++)
-		cache[arr[i]] = 1;
-
-	var done = function() {
-		for (var i = 0; i < arr.length; i++) {
-			if (self.bufferremove.indexOf(arr[i]) === -1)
-				self.bufferremove.push(arr[i]);
+		if (!arr.length) {
+			callback && callback(null, 0);
+			return;
 		}
-		self.writing = false;
-		self.flushheader();
-		callback && callback(null, removed);
-		F.config['nosql-logger'] && PRINTLN('GraphDB "{0}" cleaning (end, {1}s)'.format(self.name, (((Date.now() - now) / 1000) >> 0)));
-	};
 
-	var next = function(index) {
-		var buf = U.createBufferSize(self.header.size);
-		var position = HEADERSIZE + ((index - 1) * self.header.size);
+		F.config['nosql-logger'] && PRINTLN('GraphDB "{0}" cleaning (beg)'.format(self.name));
 
-		Fs.read(self.fd, buf, 0, buf.length, position, function(err, size) {
+		var removed = 0;
+		var cache = {};
+		var now = Date.now();
 
-			if (err || !size) {
-				done();
-				return;
+		for (var i = 0; i < arr.length; i++)
+			cache[arr[i]] = 1;
+
+		var done = function() {
+			for (var i = 0; i < arr.length; i++) {
+				if (self.bufferremove.indexOf(arr[i]) === -1)
+					self.bufferremove.push(arr[i]);
 			}
+			self.header.scan = false;
+			self.writing = false;
+			self.flushheader();
+			callback && callback(null, removed);
+			F.config['nosql-logger'] && PRINTLN('GraphDB "{0}" cleaning (end, {1}s)'.format(self.name, (((Date.now() - now) / 1000) >> 0)));
+			self.emit('clean', removed);
+		};
 
-			if (buf[0] !== NODE_LINKS) {
-				next(index + 1);
-				return;
-			}
+		var next = function(index) {
+			var buf = U.createBufferSize(self.header.size);
+			var position = HEADERSIZE + ((index - 1) * self.header.size);
 
-			var id = buf.readUInt32BE(1);
+			Fs.read(self.fd, buf, 0, buf.length, position, function(err, size) {
 
-			// Are removed links?
-			if (cache[id] && buf[0] === NODE_REMOVED) {
-				next(index + 1);
-				return;
-			}
-
-			var count = buf.readUInt16BE(6); // 2b
-			var buffer = U.createBufferSize(self.header.size);
-			var off = 9;
-			var buffercount = 0;
-			var is = false;
-
-			for (var i = 0; i < count; i++) {
-				var pos = 9 + (i * 6);
-				var conn = buf.readUInt32BE(pos + 2);
-				if (cache[conn]) {
-					removed++;
-					is = true;
-				} else {
-					buffer.writeInt8(buf[pos], off);
-					buffer.writeInt8(buf[pos + 1], off + 1);
-					buffer.writeUInt32BE(buf.readUInt32BE(pos + 2), off + 2);
-					buffercount++;
-					off += 6;
-				}
-			}
-
-			if (is) {
-
-				buffer.writeInt8(buf[0], 0); // type, 1b
-				buffer.writeUInt32BE(buf.readUInt32BE(1), 1); // link, 4b
-				buffer.writeUInt16BE(buffercount, 6); // count, 2b
-
-				// WRITE
-				Fs.write(self.fd, buffer, 0, buffer.length, position, function(err) {
-					err && console.log(err);
-					next(index + 1);
-				});
-
-			} else {
-				if (size)
-					next(index + 1);
-				else
+				if (err || !size) {
 					done();
-			}
-		});
-	};
+					return;
+				}
 
-	next(1);
+				if (buf[0] !== NODE_LINKS) {
+					next(index + 1);
+					return;
+				}
+
+				var id = buf.readUInt32BE(1);
+
+				// Are removed links?
+				if (cache[id] && buf[0] === NODE_REMOVED) {
+					next(index + 1);
+					return;
+				}
+
+				var count = buf.readUInt16BE(6); // 2b
+				var buffer = U.createBufferSize(self.header.size);
+				var off = 9;
+				var buffercount = 0;
+				var is = false;
+
+				for (var i = 0; i < count; i++) {
+					var pos = 9 + (i * 6);
+					var conn = buf.readUInt32BE(pos + 2);
+					if (cache[conn]) {
+						removed++;
+						is = true;
+					} else {
+						buffer.writeInt8(buf[pos], off);
+						buffer.writeInt8(buf[pos + 1], off + 1);
+						buffer.writeUInt32BE(buf.readUInt32BE(pos + 2), off + 2);
+						buffercount++;
+						off += 6;
+					}
+				}
+
+				if (is) {
+
+					buffer.writeInt8(buf[0], 0); // type, 1b
+					buffer.writeUInt32BE(buf.readUInt32BE(1), 1); // link, 4b
+					buffer.writeUInt16BE(buffercount, 6); // count, 2b
+
+					// WRITE
+					Fs.write(self.fd, buffer, 0, buffer.length, position, function(err) {
+						err && console.log(err);
+						next(index + 1);
+					});
+
+				} else {
+					if (size)
+						next(index + 1);
+					else
+						done();
+				}
+			});
+		};
+
+		next(1);
+
+	});
 	return self;
 };
 
@@ -382,6 +384,8 @@ GP.open = function() {
 
 GP.resize = function(docSize, callback) {
 	var self = this;
+	var now = Date.now();
+	F.config['nosql-logger'] && PRINTLN('GraphDB "{0}" resizing (beg)'.format(self.name));
 	Fs.open(self.filename + '-tmp', 'w', function(err, fd) {
 		self.flushheader(function() {
 
@@ -410,6 +414,7 @@ GP.resize = function(docSize, callback) {
 				Fs.close(fd, function() {
 					Fs.close(self.fd, function() {
 						Fs.rename(self.filename + '-tmp', self.filename, function(err) {
+							F.config['nosql-logger'] && PRINTLN('GraphDB "{0}" resizing (end, {1}s)'.format(self.name, (((Date.now() - now) / 1000) >> 0)));
 							err && self.$events.error && self.emit('error', err);
 							callback && callback(err);
 						});
@@ -437,7 +442,7 @@ GP.flushheader = function(callback, fd) {
 
 	buf.writeInt8(VERSION, 0); // 1b
 	buf.writeInt8(0, 1); // 1b, COMPRESSION 1: true, 0: false
-	buf.writeInt8(self.bufferremove.length ? 1 : 0, 2); // 1b, SCAN REMOVED DOCUMENTS 1: true, 0: false
+	buf.writeInt8(self.header.scan ? 1 : 0, 2); // 1b, SCAN REMOVED DOCUMENTS 1: true, 0: false
 	buf.writeUInt16BE(self.$size, 3); // 2b
 	buf.writeUInt32BE(self.header.count || 0, 6); // 4b
 	buf.writeUInt32BE(self.header.removed || 0, 10); // 4b
@@ -466,19 +471,11 @@ GP.$open = function() {
 			self.header.count = buf.readUInt32BE(6);
 			self.index = self.header.count + 1;
 			if (self.$size > self.header.size) {
-				self.resize(self.$size, function() {
-					self.open();
-				});
+				self.resize(self.$size, () => self.open());
 			} else {
-				if (self.header.count && self.header.scan) {
-					self.scan();
-					self.$ready = true;
-					self.emit('ready');
-				} else {
-					self.$ready = true;
-					self.flush();
-					self.emit('ready');
-				}
+				self.$ready = true;
+				self.flush();
+				self.emit('ready');
 			}
 		});
 	});
@@ -495,14 +492,16 @@ GP.insert = function(value, callback, id) {
 
 	var self = this;
 
-	if (value instanceof Array)
-		throw new Error('GraphDB: You can\'t insert an array.');
-
-	if (value == null)
-		throw new Error('GraphDB: Value can\'t be nullable.');
-
-	if (typeof(value) !== 'object')
-		throw new Error('GraphDB: A value must be object only.');
+	if (value instanceof Array) {
+		callback && callback(new Error('GraphDB: You can\'t insert an array.'));
+		return self;
+	} else if (value == null) {
+		callback && callback(new Error('GraphDB: Value can\'t be nullable.'));
+		return self;
+	} else if (typeof(value) !== 'object') {
+		callback && callback(new Error('GraphDB: A value must be object only.'));
+		return self;
+	}
 
 	if (self.$ready) {
 
@@ -547,13 +546,10 @@ GP.insert = function(value, callback, id) {
 
 		self.flush();
 		callback && callback(null, id);
-		return id;
-	}
-
-	if (callback)
+	} else
 		setTimeout(self.$cb_insert, DELAY, value, callback, id);
-	else
-		throw new Error(ERRREADY.format(self.name));
+
+	return self;
 };
 
 GP.getLinkId = function(id, callback) {
@@ -775,43 +771,40 @@ GP.remove = function(id, callback) {
 
 	self.pending[id] = 1;
 
-	var buf = U.createBufferSize(5);
+	var removed = [];
 
-	Fs.read(self.fd, buf, 0, buf.length, HEADERSIZE + ((id - 1) * self.header.size), function(err, size) {
-
-		if (!size) {
+	var done = function() {
+		removed.wait(function(id, next) {
+			self.setDataType(id, NODE_REMOVED, function() {
+				self.$events.remove && self.emit('remove', id);
+				next();
+			});
+		}, function() {
 			delete self.pending[id];
-			callback && callback(null, 0);
-			return;
-		}
-
-		if (buf[0] === NODE_REMOVED) {
-			// Removed
-			delete self.pending[id];
-			callback && callback(null, 0);
-			return;
-		}
-
-		var linkid = buf.readUInt32BE(1);
-
-		// @TODO: missing children linkid
-		self.setDataType(id, NODE_REMOVED, function() {
-			delete self.pending[id];
-			self.$events.remove && self.emit('remove', id);
-			callback && callback(null, 1);
-			if (linkid) {
-				self.setDataType(linkid, NODE_REMOVED, function() {
-					self.buffercleaner.push(id);
-					self.buffercleaner.push(linkid);
-					self.bufferremove.length && self.buffercleaner.push.apply(self.buffercleaner, self.bufferremove);
-					self.$cleaner && clearTimeout(self.$cleaner);
-					self.$cleaner = setTimeout(self.$cb_cleaner, 5000);
-				});
-			} else
-				self.bufferremove.push(id);
+			callback && callback(null, removed.length);
 		});
-	});
+	};
 
+	var find = function(id) {
+		var buf = U.createBufferSize(5);
+		Fs.read(self.fd, buf, 0, buf.length, HEADERSIZE + ((id - 1) * self.header.size), function(err, size) {
+
+			if (!size || buf[0] === NODE_REMOVED) {
+				done();
+				return;
+			}
+
+			removed.push(id);
+
+			var link = buf.readUInt32BE(1);
+			if (link)
+				find(link);
+			else
+				done();
+		});
+	};
+
+	find(id);
 	return self;
 };
 
@@ -936,19 +929,21 @@ GP.graph = function(id, options, callback) {
 
 					self.read(item.ID, function(err, doc, linkid) {
 
-						count++;
+						if (doc) {
+							count++;
 
-						doc.ID = item.ID;
-						doc.INDEX = item.INDEX;
-						doc.LEVEL = depth;
-						doc.NODES = [];
-						doc.RELATION = item.RELATION;
-						doc.TYPE = item.TYPE;
-						parent.NODES.push(doc);
+							doc.ID = item.ID;
+							doc.INDEX = item.INDEX;
+							doc.LEVEL = depth;
+							doc.NODES = [];
+							doc.RELATION = item.RELATION;
+							doc.TYPE = item.TYPE;
+							parent.NODES.push(doc);
 
-						if (linkid && !tmp[linkid]) {
-							pending.push({ id: linkid, parent: doc, depth: depth });
-							sort = true;
+							if (linkid && !tmp[linkid]) {
+								pending.push({ id: linkid, parent: doc, depth: depth });
+								sort = true;
+							}
 						}
 
 						next();
