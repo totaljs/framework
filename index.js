@@ -1314,9 +1314,9 @@ global.TABLE = function(name) {
 	return db;
 };
 
-global.KVALUE = function(name) {
-	var key = 'kval_' + name;
-	return F.databases[key] ? F.databases[key] : F.databases[key] = require('./keyvalue').load(name, +(F.config['keyvalue.' + name] || 2000));
+global.GRAPHDB = function(name) {
+	var key = 'gdb_' + name;
+	return F.databases[key] ? F.databases[key] : F.databases[key] = require('./graphdb').load(name, +(F.config['graphdb.' + name] || 0));
 };
 
 F.stop = F.kill = function(signal) {
