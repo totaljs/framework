@@ -85,6 +85,7 @@ const PROXYBLACKLIST = { 'localhost': 1, '127.0.0.1': 1, '0.0.0.0': 1 };
 const PROXYOPTIONS = { headers: {}, method: 'CONNECT', agent: false };
 const PROXYTLS = { headers: {}};
 const PROXYOPTIONSHTTP = {};
+const REG_ROOT = /@\{#\}(\/)/g;
 
 exports.MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 exports.DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -2974,6 +2975,15 @@ String.prototype.isJSONDate = function() {
 	var l = this.length - 1;
 	return l > 22 && l < 30 && this[l] === 'Z' && this[10] === 'T' && this[4] === '-' && this[13] === ':' && this[16] === ':';
 };
+
+String.prototype.ROOT = function() {
+	return this.replace(REG_ROOT, $urlmaker);
+};
+
+function $urlmaker(text) {
+	var c = text[4];
+	return F.config['default-root'] ? F.config['default-root'] : (c || '');
+}
 
 if (!String.prototype.trim) {
 	String.prototype.trim = function() {

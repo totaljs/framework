@@ -94,6 +94,7 @@
 - added: `F.syshash` contains a simple MD5 hash with OS info
 - added: `SchemaEntity.clear()` for removing all current definition
 - added: new view engine markup `@{#}` for simulating of root URL
+- added: `String.ROOT()` for replacing `@{#}` markup in strings
 
 - updated: (IMPORTANT) NoSQL binary divides files to independent directories for 1000 files per directory
 - updated: `GROUP()` by adding a new argument `url_prefix`

@@ -50,7 +50,6 @@ const REG_7 = /\\/g;
 const REG_8 = /'/g;
 const REG_9 = />\n\s+/g;
 const REG_10 = /(\w|\W)\n\s+</g;
-const REG_ROOT = /@\{#\}(\/)/g;
 const REG_WIN = /\r/g;
 const REG_BLOCK_BEG = /@\{block.*?\}/i;
 const REG_BLOCK_END = /@\{end\}/i;
@@ -1776,7 +1775,7 @@ function localize(language, command) {
 
 function view_parse(content, minify, filename, controller) {
 
-	content = urlmaker(removeComments(content));
+	content = removeComments(content).ROOT();
 
 	var nocompressHTML = false;
 	var nocompressJS = false;
@@ -3401,17 +3400,8 @@ exports.restart = function() {
 	INDEXFILE = 0;
 };
 
-function urlmaker(body) {
-	return body.replace(REG_ROOT, $urlmaker);
-}
-
-function $urlmaker(text) {
-	var c = text[4];
-	return F.config['default-root'] ? F.config['default-root'] : (c || '');
-}
-
 function markup(body) {
-	body = urlmaker(body);
+	body = body.ROOT();
 	var command = view_find_command(body, 0, true);
 	if (!command)
 		return body;
