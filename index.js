@@ -5214,19 +5214,23 @@ F.onMapping = function(url, def, ispublic, encode) {
 	if (url[0] !== '/')
 		url = '/' + url;
 
+	var tmp = url;
+	if (F.config['default-root'])
+		tmp = tmp.substring(F.config['default-root'].length - 1);
+
 	// component files
-	if (url[1] === '~') {
-		var index = url.indexOf('/', 2);
-		var name = url.substring(2, index);
-		return F.components.files[name] && F.components.files[name][url.substring(index + 1)] ? (F.path.temp() + url.substring(1)) : null;
+	if (tmp[1] === '~') {
+		var index = tmp.indexOf('/', 2);
+		var name = tmp.substring(2, index);
+		return F.components.files[name] && F.components.files[name][tmp.substring(index + 1)] ? (F.path.temp() + tmp.substring(1)) : null;
 	}
 
 	if (F._length_themes) {
-		var index = url.indexOf('/', 2);
+		var index = tmp.indexOf('/', 2);
 		if (index !== -1) {
-			var themeName = url.substring(1, index);
+			var themeName = tmp.substring(1, index);
 			if (F.themes[themeName])
-				return F.themes[themeName] + 'public' + url.substring(index);
+				return F.themes[themeName] + 'public' + tmp.substring(index);
 		}
 	}
 

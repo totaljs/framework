@@ -85,7 +85,10 @@ const PROXYBLACKLIST = { 'localhost': 1, '127.0.0.1': 1, '0.0.0.0': 1 };
 const PROXYOPTIONS = { headers: {}, method: 'CONNECT', agent: false };
 const PROXYTLS = { headers: {}};
 const PROXYOPTIONSHTTP = {};
-const REG_ROOT = /@\{#\}(\/)/g;
+const REG_ROOT = /@\{#\}(\/)?/g;
+const REG_NOREMAP = /@\{noremap\}(\n)?/g;
+const REG_REMAP = /href=".*?"|src=".*?"/gi;
+const REG_URLEXT = /(https|http|wss|ws|file):\/\/|\/\/[a-z0-9]|[a-z]:/i;
 
 exports.MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 exports.DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -2976,9 +2979,25 @@ String.prototype.isJSONDate = function() {
 	return l > 22 && l < 30 && this[l] === 'Z' && this[10] === 'T' && this[4] === '-' && this[13] === ':' && this[16] === ':';
 };
 
-String.prototype.ROOT = function() {
-	return this.replace(REG_ROOT, $urlmaker);
+String.prototype.ROOT = function(noremap) {
+
+	var str = this;
+
+	str = str.replace(REG_NOREMAP, function() {
+		noremap = true;
+		return '';
+	}).replace(REG_ROOT, $urlmaker);
+
+	if (!noremap && F.config['default-root'])
+		str = str.replace(REG_REMAP, $urlremap);
+
+	return str;
 };
+
+function $urlremap(text) {
+	var pos = text[0] === 'h' ? 6 : 5;
+	return REG_URLEXT.test(text) ? text : ((text[0] === 'h' ? 'href' : 'src') + '="' + F.config['default-root'] + (text[pos] === '/' ? text.substring(pos + 1) : text));
+}
 
 function $urlmaker(text) {
 	var c = text[4];
@@ -6041,4 +6060,3 @@ exports.Callback = function(count, callback) {
 
 global.WAIT = exports.wait;
 !global.F && require('./index');
-
