@@ -33,7 +33,7 @@ CLASSES RAW JSON
 "Removed" : TYPE (255)  @Int8
 */
 
-const DEFSIZE = 80;
+const DEFSIZE = 500;
 const Fs = require('fs');
 const VERSION = 1;
 const EMPTYBUFFER = U.createBufferSize(1);
@@ -243,6 +243,11 @@ function extendclass(self, type, old) {
 	} else
 		setTimeout(extendclass, DELAY, self, type, old);
 }
+
+GP.errorhandling = function(err, type) {
+	console.log('GraphDB "{0}" --> "{1}" error: {2}'.format(name, err, type));
+	this.$events.error && this.emit('error', err);
+};
 
 GP.class = function(name, declaration, indexer) {
 
@@ -460,7 +465,7 @@ GP.clean = function(callback) {
 
 					// WRITE
 					Fs.write(self.fd, buffer, 0, buffer.length, position, function(err) {
-						err && console.log(err);
+						err && self.errorhandling(err, 'clean.write');
 						next(index + 1);
 					});
 
@@ -580,11 +585,10 @@ GP.resize = function(docSize, callback) {
 				Fs.read(self.fd, buf, 0, buf.length, index, function(err, size) {
 					if (size) {
 						var w = U.createBufferSize(docSize);
-						buf = buf.slice(0, buf.indexOf(EMPTYBUFFER));
 						w.fill(buf, 0, buf.length);
 						index += self.header.size;
 						Fs.write(fd, w, 0, w.length, offset, function(err, size) {
-							err && self.$events.error && self.emit('error', err);
+							err && self.errorhandling(err, 'resize.write');
 							offset += size;
 							next(done);
 						});
@@ -598,7 +602,7 @@ GP.resize = function(docSize, callback) {
 					Fs.close(self.fd, function() {
 						Fs.rename(self.filename + '-tmp', self.filename, function(err) {
 							F.config['nosql-logger'] && PRINTLN('GraphDB "{0}" resizing (end, {1}s)'.format(self.name, (((Date.now() - now) / 1000) >> 0)));
-							err && self.$events.error && self.emit('error', err);
+							err && self.errorhandling(err, 'resize.rename');
 							callback && callback(err);
 						});
 					});
@@ -637,7 +641,7 @@ GP.flushheader = function(callback, fd) {
 	buf.fill(str, 13, str.length + 13);
 
 	Fs.write(fd || self.fd, buf, 0, buf.length, 0, function(err) {
-		err && console.log(err);
+		err && self.errorhandling(err, 'flushheader.write');
 		if (fd)
 			self.flushmeta(callback, fd);
 		else
@@ -687,7 +691,7 @@ GP.flushmeta = function(callback, fd) {
 	buf.fill(data, 0, data.length);
 
 	Fs.write(fd || self.fd, buf, 0, buf.length, INFOSIZE, function(err) {
-		err && console.log(err);
+		err && self.errorhandling(err, 'flushmeta.write');
 		callback && callback();
 	});
 
@@ -859,7 +863,7 @@ GP.setLinkId = function(id, linkid, callback) {
 	var buf = U.createBufferSize(4);
 	buf.writeUInt32BE(linkid);
 	Fs.write(self.fd, buf, 0, buf.length, pos + 1, function(err) {
-		err && self.$events.error && self.emit('error', err);
+		err && self.errorhandling(err, 'setLinkId.write');
 		callback && callback(err);
 	});
 
