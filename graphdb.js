@@ -33,10 +33,6 @@ CLASSES RAW JSON
 "Removed" : TYPE (255)  @Int8
 */
 
-// @TODO:
-// - check?? if the link doesn't exist
-// - removing documents and links (problem)
-
 const DEFSIZE = 80;
 const Fs = require('fs');
 const VERSION = 1;
@@ -182,6 +178,72 @@ function GraphDB(name, size) {
 
 var GP = GraphDB.prototype;
 
+function extendclass(self, type, old) {
+
+	if (self.$ready && self.reading < MAXREADERS) {
+
+		var size = self.header.size * self.header.buffersize;
+		var index = 0;
+		var now = Date.now();
+		var cls = self.$classes[type];
+
+		F.config['nosql-logger'] && PRINTLN('GraphDB "{0}" extending class "{1}" (beg)'.format(self.name, cls.name));
+
+		old = parseSchema(old);
+		self.reading++;
+
+		var errhandling = F.error();
+
+		var reader = function() {
+
+			var buf = U.createBufferSize(size);
+			var offset = HEADERSIZE + (index * self.header.size);
+			var current = index;
+
+			index += self.header.buffersize;
+
+			Fs.read(self.fd, buf, 0, buf.length, offset, function(err, size) {
+
+				if (err || !size) {
+					self.reading--;
+					self.flushmeta();
+					F.config['nosql-logger'] && PRINTLN('GraphDB "{0}" extending class "{1}" (end, {2}s)'.format(self.name, cls.name, (((Date.now() - now) / 1000) >> 0)));
+					return;
+				}
+
+				while (true) {
+
+					var buffer = buf.slice(0, self.header.size);
+					if (!buffer.length)
+						break;
+
+					current++;
+
+					switch (buffer[0]) {
+						case NODE_REMOVED:
+						case NODE_LINKS:
+							break;
+						case type:
+							var docsize = buffer.readUInt16BE(9);
+							if (docsize) {
+								var data = parseData(old, buffer.slice(11, docsize + 11).toString('utf8').split('|'));
+								self.insert(type, data, errhandling, current);
+							}
+							break;
+					}
+
+					buf = buf.slice(self.header.size);
+				}
+
+				setImmediate(reader);
+			});
+		};
+
+		setImmediate(reader);
+	} else
+		setTimeout(extendclass, DELAY, self, type, old);
+}
+
 GP.class = function(name, declaration, indexer) {
 
 	var self = this;
@@ -194,9 +256,9 @@ GP.class = function(name, declaration, indexer) {
 
 		if (cls) {
 			if (cls.raw !== meta.raw) {
-				// schema is changed
-				// @todo: re-schemas all classed documents
-				console.log('SCHEMA IS CHANGED');
+				meta.index = cls.index;
+				self.$classes[cls.index] = self.$classes[name] = meta;
+				extendclass(self, meta.index, cls.raw, meta.raw);
 			}
 		} else {
 
@@ -1051,7 +1113,18 @@ GP.remove = function(id, callback) {
 
 GP.update = function(id, value, callback) {
 	var self = this;
-	self.insert(0, value, callback, id);
+	self.read(id, function(err, doc, linkid, cls) {
+		if (err || !doc)
+			callback(err, null);
+		else
+			self.insert(cls, typeof(value) === 'function' ? value(doc) : doc, callback, id);
+	});
+	return self;
+};
+
+GP.update2 = function(cls, id, value, callback) {
+	var self = this;
+	self.insert(cls, value, callback, id);
 	return self;
 };
 
@@ -1647,7 +1720,8 @@ function parseData(schema, lines, cache) {
 					obj[key] = obj[key].replace(REGTUNESCAPE, regtescapereverse);
 				break;
 			case 2: // Number
-				obj[key] = +lines[pos];
+				val = +lines[pos];
+				obj[key] = val < 0 || val > 0 ? val : 0;
 				break;
 			case 3: // Boolean
 				val = lines[pos];

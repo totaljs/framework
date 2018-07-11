@@ -6766,7 +6766,8 @@ TP.parseData = function(data, cache) {
 					obj[key] = obj[key].replace(REGTUNESCAPE, regtescapereverse);
 				break;
 			case 2: // Number
-				obj[key] = +data.line[pos];
+				val = +data.line[pos];
+				obj[key] = val < 0 || val > 0 ? val : 0;
 				break;
 			case 3: // Boolean
 				val = data.line[pos];
