@@ -822,9 +822,9 @@ DP.modify = function(doc, insert) {
 	var builder = new DatabaseBuilder(self);
 	var data = framework_builders.isSchema(doc) ? doc.$clean() : doc;
 	var keys = Object.keys(data);
+	var inc = null;
 
 	if (keys.length) {
-		var inc = null;
 		for (var i = 0; i < keys.length; i++) {
 			var key = keys[i];
 			switch (key[0]) {
@@ -2602,6 +2602,10 @@ function DatabaseBuilder(db) {
 }
 
 DatabaseBuilder.prototype.promise = promise;
+
+DatabaseBuilder.prototype.makefilter = function() {
+	return { repository: this.$repository, options: this.$options, arg: this.$params, fn: this.$functions };
+};
 
 DatabaseBuilder.prototype.id = function(id) {
 	this.$options.id = id;
@@ -6948,3 +6952,141 @@ function errorhandling(err, builder, response) {
 function jsonparser(key, value) {
 	return typeof(value) === 'string' && value.isJSONDate() ? new Date(value) : value;
 }
+
+// Item requirements:
+// item.first = false;
+// item.scalarcount = 0;
+// item.builder = builder;
+// item.compare = builder.compile();
+// item.filter = builder.makefilter();
+// item.index = DOCUMENT_COUNTER;
+
+exports.compare = function(item, obj) {
+
+	var val;
+	var builder = item.builder;
+
+	item.filter.index = item.index;
+
+	var output = item.compare(obj, item.filter, item.index);
+	if (!output)
+		return;
+
+	item.count++;
+
+	if (!builder.$inlinesort && ((builder.$options.skip && builder.$options.skip >= item.count) || (builder.$options.take && builder.$options.take <= item.counter)))
+		return;
+
+	item.counter++;
+
+	if (!builder.$inlinesort && !item.done)
+		item.done = builder.$options.take && builder.$options.take <= item.counter;
+
+	if (item.type)
+		return;
+
+	switch (builder.$options.scalar) {
+		case 'count':
+			item.scalar = item.scalar ? item.scalar + 1 : 1;
+			break;
+		case 'sum':
+			val = output[builder.$options.scalarfield] || 0;
+			item.scalar = item.scalar ? item.scalar + val : val;
+			break;
+		case 'min':
+			val = output[builder.$options.scalarfield] || 0;
+			if (val != null) {
+				if (item.scalar) {
+					if (item.scalar > val)
+						item.scalar = val;
+				} else
+					item.scalar = val;
+			}
+			break;
+		case 'max':
+			val = output[builder.$options.scalarfield];
+			if (val != null) {
+				if (item.scalar) {
+					if (item.scalar < val)
+						item.scalar = val;
+				} else
+					item.scalar = val;
+			}
+			break;
+		case 'avg':
+			val = output[builder.$options.scalarfield];
+			if (val != null) {
+				item.scalar = item.scalar ? item.scalar + val : val;
+				item.scalarcount++;
+			}
+			break;
+		case 'group':
+			!item.scalar && (item.scalar = {});
+			val = output[builder.$options.scalarfield];
+			if (val != null) {
+				if (item.scalar[val])
+					item.scalar[val]++;
+				else
+					item.scalar[val] = 1;
+			}
+			break;
+		default:
+			if (builder.$inlinesort)
+				nosqlinlinesorter(item, builder, output);
+			else if (item.response)
+				item.response.push(output);
+			else
+				item.response = [output];
+			break;
+	}
+
+	return item.first ? false : true;
+};
+
+exports.callback = function(item, err) {
+
+	var builder = item.builder;
+	var output;
+
+	if (builder.$options.scalar || !builder.$options.sort) {
+
+		if (builder.$options.scalar)
+			output = builder.$options.scalar === 'avg' ? item.scalar / item.scalarcount : item.scalar;
+		else if (builder.$options.first)
+			output = item.response ? item.response[0] : undefined;
+		else if (builder.$options.listing)
+			output = listing(builder, item);
+		else
+			output = item.response || [];
+
+		builder.$callback2(errorhandling(err, builder, output), item.type === 1 ? item.count : output, item.count);
+		return;
+	}
+
+	if (item.count) {
+		if (builder.$options.sort.name) {
+			if (!builder.$inlinesort || builder.$options.take !== item.response.length)
+				item.response.quicksort(builder.$options.sort.name, builder.$options.sort.asc);
+		} else if (builder.$options.sort === null)
+			item.response.random();
+		else
+			item.response.sort(builder.$options.sort);
+
+		if (builder.$options.skip && builder.$options.take)
+			item.response = item.response.splice(builder.$options.skip, builder.$options.take);
+		else if (builder.$options.skip)
+			item.response = item.response.splice(builder.$options.skip);
+		else if (!builder.$inlinesort && builder.$options.take)
+			item.response = item.response.splice(0, builder.$options.take);
+	}
+
+	if (builder.$options.first)
+		output = item.response ? item.response[0] : undefined;
+	else if (builder.$options.listing)
+		output = listing(builder, item);
+	else
+		output = item.response || [];
+
+	builder.$callback2(errorhandling(err, builder, output), item.type === 1 ? item.count : output, item.count);
+	builder.done();
+};
