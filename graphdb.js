@@ -33,7 +33,7 @@ CLASSES RAW JSON
 "Removed" : TYPE (255)  @Int8
 */
 
-const DEFSIZE = 500;
+const DEFSIZE = 40;
 const Fs = require('fs');
 const VERSION = 1;
 const EMPTYBUFFER = U.createBufferSize(1);
@@ -60,7 +60,7 @@ function GraphDB(name, size) {
 
 	var t = this;
 	t.name = name;
-	t.filename = F.path.databases(name + '.db');
+	t.filename = F.path.databases(name + '.gdb');
 	t.$ready = false;
 	t.$size = size || DEFSIZE;
 
@@ -74,7 +74,8 @@ function GraphDB(name, size) {
 	t.$events = {};
 	t.$classes = {};
 	t.$relations = {};
-	t.writing = false;
+	t.appending = false;
+	t.updating = false;
 	t.reading = 0;
 	t.cleaning = false;
 
@@ -88,7 +89,7 @@ function GraphDB(name, size) {
 		}
 
 		t.stat.mtime = NOW;
-		t.writing = false;
+		t.updating = false;
 		t.flush();
 	};
 
@@ -101,7 +102,7 @@ function GraphDB(name, size) {
 				F.error(err, 'GraphDB: ' + t.name);
 		}
 
-		t.writing = false;
+		t.appending = false;
 		t.stat.size += size;
 		t.stat.atime = NOW;
 		t.header.count += (size / t.header.size) >> 0;
@@ -134,7 +135,7 @@ function GraphDB(name, size) {
 	};
 
 	t.$cb_pushlinkid = function(id, toid, type, relation, callback, parentid) {
-		pushLinkId(t, id, toid, type, relation, callback, parentid);
+		pushRelation(t, id, toid, type, relation, callback, parentid);
 	};
 
 	t.$cb_getlinkid = function(id, callback) {
@@ -171,6 +172,10 @@ function GraphDB(name, size) {
 		else
 			t.find(type, builder);
 	};
+
+	t.$flush = function() {
+		t.flush();
+	}
 
 	F.path.verify('databases');
 	t.open();
@@ -240,16 +245,17 @@ function extendclass(self, type, old) {
 		};
 
 		setImmediate(reader);
-	} else
+	} else {
 		setTimeout(extendclass, DELAY, self, type, old);
+	}
 }
 
 GP.errorhandling = function(err, type) {
-	console.log('GraphDB "{0}" --> "{1}" error: {2}'.format(name, err, type));
+	console.log('GraphDB "{0}" --> "{1}" error: {2}'.format(this.name, err, type));
 	this.$events.error && this.emit('error', err);
 };
 
-GP.class = function(name, declaration, indexer) {
+GP.class = function(name, declaration, indexer, nodeid) {
 
 	var self = this;
 	if (self.$ready || indexer) {
@@ -262,6 +268,7 @@ GP.class = function(name, declaration, indexer) {
 		if (cls) {
 			if (cls.raw !== meta.raw) {
 				meta.index = cls.index;
+				meta.nodeid = cls.nodeid;
 				self.$classes[cls.index] = self.$classes[name] = meta;
 				extendclass(self, meta.index, cls.raw, meta.raw);
 			}
@@ -271,7 +278,9 @@ GP.class = function(name, declaration, indexer) {
 			if (indexer == null) {
 				self.header.classindex++;
 				index = self.header.classindex;
-			}
+				meta.nodeid = nodeid ? nodeid : makeRelation(self);
+			} else
+				meta.nodeid = nodeid;
 
 			meta.index = index;
 			self.$classes[index] = self.$classes[name] = meta;
@@ -280,8 +289,9 @@ GP.class = function(name, declaration, indexer) {
 				self.$flushmeta();
 		}
 
-	} else
+	} else {
 		setTimeout(self.$cb_class, DELAY, name, declaration, indexer);
+	}
 
 	return self;
 };
@@ -297,7 +307,7 @@ GP.classes = function(callback) {
 	return self;
 };
 
-GP.relation = function(name, both, indexer) {
+GP.relation = function(name, both, indexer, nodeid) {
 
 	var self = this;
 	if (self.$ready || indexer) {
@@ -316,6 +326,7 @@ GP.relation = function(name, both, indexer) {
 			if (indexer == null) {
 				self.header.relationindex++;
 				index = self.header.relationindex;
+				rel.nodeid = nodeid ? nodeid : makeRelation(self);
 			}
 
 			rel.index = index;
@@ -327,8 +338,9 @@ GP.relation = function(name, both, indexer) {
 				self.$flushmeta();
 		}
 
-	} else
+	} else {
 		setTimeout(self.$cb_relation, DELAY, name, both, indexer);
+	}
 
 	return self;
 };
@@ -405,7 +417,8 @@ GP.clean = function(callback) {
 					self.bufferremove.push(arr[i]);
 			}
 			self.header.scan = false;
-			self.writing = false;
+			self.appending = false;
+			self.updating = false;
 			self.flushheader();
 			callback && callback(null, removed);
 			F.config['nosql-logger'] && PRINTLN('GraphDB "{0}" cleaning (end, {1}s)'.format(self.name, (((Date.now() - now) / 1000) >> 0)));
@@ -670,7 +683,7 @@ GP.flushmeta = function(callback, fd) {
 	if (self.header.classindex) {
 		for (var i = 0; i < self.header.classindex; i++) {
 			var item = self.$classes[i + 1];
-			item && meta.c.push({ i: i + 1, n: item.name, r: item.raw });
+			item && meta.c.push({ i: i + 1, n: item.name, r: item.raw, x: item.nodeid });
 		}
 		var b = U.createBufferSize(1);
 		b.writeUInt8(self.header.classindex);
@@ -680,7 +693,7 @@ GP.flushmeta = function(callback, fd) {
 	if (self.header.relationindex) {
 		for (var i = 0; i < self.header.relationindex; i++) {
 			var item = self.$relations[i + 1];
-			item && meta.r.push({ i: i + 1, n: item.name, r: item.relation });
+			item && meta.r.push({ i: i + 1, n: item.name, r: item.relation, x: item.nodeid });
 		}
 		var b = U.createBufferSize(1);
 		b.writeUInt8(self.header.relationindex);
@@ -695,6 +708,7 @@ GP.flushmeta = function(callback, fd) {
 		callback && callback();
 	});
 
+	self.flush();
 	return self;
 };
 
@@ -724,18 +738,19 @@ GP.$open = function() {
 
 				var data = buf.slice(0, buf.indexOf(EMPTYBUFFER)).toString('utf8').parseJSON();
 				if (data) {
+
 					// registering classes
 					if (data.r instanceof Array) {
 						for (var i = 0; i < data.c.length; i++) {
 							var item = data.c[i];
-							self.class(item.n, item.r, item.i);
+							self.class(item.n, item.r, item.i, item.x);
 						}
 					}
 					// registering relations
 					if (data.r instanceof Array) {
 						for (var i = 0; i < data.r.length; i++) {
 							var item = data.r[i];
-							self.relation(item.n, item.r, item.i);
+							self.relation(item.n, item.r, item.i, item.x);
 						}
 					}
 				}
@@ -786,15 +801,19 @@ GP.insert = function(type, value, callback, id) {
 	if (self.$ready) {
 
 		var val;
+		var schema;
 
 		if (type) {
-			var schema = self.$classes[type];
+			schema = self.$classes[type];
+
 			if (!schema) {
 				callback && callback(new Error('GraphDB: Schema "{0}" not found.'.format(name)));
 				return self;
 			}
+
 			val = U.createBuffer(stringifyData(schema, value));
 			type = schema.index;
+
 		} else
 			val = U.createBuffer(stringify(value));
 
@@ -826,11 +845,12 @@ GP.insert = function(type, value, callback, id) {
 		res.writeUInt16BE(val.length, insert ? 9 : 0);
 
 		if (insert) {
-			self.bufferappend.push(res);
-			self.$events.insert && self.emit('insert', id, value);
+			self.bufferappend.push({ id: id, buf: res, callback: callback, schemaid: schema ? type : 0 });
+			self.$events.insert && self.emit('insert', schema ? schema.name : type, id, value);
+			// schema && schema.nodeid && pushRelationNode(self, schema, id);
 		} else {
 
-			self.bufferupdate.push({ buf: res, pos: id - 1, type: type, recovered: recovered });
+			self.bufferupdate.push({ buf: res, id: id, type: type, recovered: recovered, offset: 9, callback: callback });
 
 			// because of seeking on HDD
 			if (self.bufferupdate.length > 1)
@@ -839,10 +859,11 @@ GP.insert = function(type, value, callback, id) {
 			self.$events.update && self.emit('update', id, value);
 		}
 
-		self.flush();
-		callback && callback(null, id);
-	} else
+		setImmediate(self.$flush);
+
+	} else {
 		setTimeout(self.$cb_insert, DELAY, type, value, callback, id);
+	}
 
 	return self;
 };
@@ -870,15 +891,75 @@ GP.setLinkId = function(id, linkid, callback) {
 	return self;
 };
 
-function pushLinkId(self, id, toid, type, initializer, callback, parentid) {
+GP.findRelation = function(metaid, preparator) {
+	var self = this;
+	self.read(metaid, function(err, doc, linkid) {
+		preparator(doc || [], linkid ? () => self.findRelation(linkid, preparator) : null);
+	});
+	return self;
+};
+
+GP.findRelationCount = function(cls, callback, count) {
+	var self = this;
+
+	if (!count)
+		count = 0;
+
+	self.read(typeof(cls) === 'number' ? cls : self.$classes[cls].nodeid, function(err, doc, linkid) {
+		count += doc.length;
+		if (linkid)
+			self.findRelationCount(linkid, callback, count);
+		else
+			callback(err, count);
+	});
+
+	return self;
+};
+
+function makeRelation(self) {
+	var id = self.index++;
+	var buf = U.createBufferSize(self.header.size);
+	buf.writeUInt8(NODE_LINKS); // type, 1b
+	buf.writeUInt32BE(0, 1); // link, 4b
+	buf.writeUInt32BE(0, 5); // parent, 4b
+	buf.writeUInt16BE(0, 9); // count, 2b
+
+	self.bufferappend.push({ id: id, buf: buf });
+	self.flush();
+	return id;
+}
+
+function pushRelationNode(self, item, id) {
+
+	// Must contain:
+	// item.nodeid
+
+	self.pending[item.nodeid] = 1;
+
+	pushRelation(self, item.nodeid, id, 0, 0, function(err, nodeid) {
+
+		delete self.pending[item.nodeid];
+
+		err && self.errorhandling(err, 'pushRelationNode');
+
+		if (item.nodeid !== nodeid) {
+			item.nodeid = nodeid;
+			self.$flushmeta();
+		}
+
+	});
+}
+
+function pushRelation(self, id, toid, type, initializer, callback, parentid) {
 
 	var pos = HEADERSIZE + ((id - 1) * self.header.size);
 	var buf = U.createBufferSize(self.header.size);
-	var max = (self.header.size - 11) / 6 >> 0; // 6b --> TYPE 1b + RELATION 1b + ID 4b
 
 	if (id == null) {
 
 		id = self.index++;
+
+		console.log('CREATE:', 'id:' + id, 'toid:' + toid, 'parentid:' + parentid);
 
 		buf.writeUInt8(NODE_LINKS); // type, 1b
 		buf.writeUInt32BE(parentid || 0, 1); // link, 4b
@@ -889,47 +970,99 @@ function pushLinkId(self, id, toid, type, initializer, callback, parentid) {
 		buf.writeUInt8(initializer ? 1 : 0, 12); // RELATION TYPE
 		buf.writeUInt32BE(toid, 13);
 
-		self.bufferappend.push(buf);
+		self.bufferappend.push({ id: id, buf: buf });
 		self.flush();
 
 		callback && callback(null, id);
 
 	} else {
 
-		Fs.read(self.fd, buf, 0, buf.length, pos, function(err) {
+		var cache = self.bufferupdate.findItem('id', id);
+		if (cache == null)
+			cache = self.bufferappend.findItem('id', id);
 
-			if (err) {
-				callback(err);
-				return;
-			} else if (buf[0] !== NODE_LINKS) {
-				callback(new Error('GraphDB: Invalid value for linking.'));
-				return;
-			}
+		var max = ((self.header.size - 11) / 6 >> 0); // 6b --> TYPE 1b + RELATION 1b + ID 4b
 
+		var update = function(buf, isCache) {
 			var count = buf.readUInt16BE(9);
+
 			if (count + 1 >= max) {
-				// we need to create a new record because existing buffer is full
-				pushLinkId(self, null, toid, type, initializer, function(err, id) {
-					// we return a new id
+
+				console.log('INSERT:', 'id:' + id, 'toid:' + toid);
+
+				// We need to create a new record because existing buffer is full
+				pushRelation(self, null, toid, type, initializer, function(err, id) {
+					// We return a new id
 					callback && callback(err, id);
 				}, id);
+
 			} else {
+
+				// We add a new relation to existing list
 				buf.writeUInt16BE(count + 1, 9); // count, 2b
+
 				var off = 11 + (count * 6);
+
 				buf.writeUInt8(type, off);
 				buf.writeUInt8(initializer ? 1 : 0, off + 1);
 				buf.writeUInt32BE(toid, off + 2);
-				Fs.write(self.fd, buf, 0, buf.length, pos, function(err) {
-					callback && callback(err, id);
-				});
+
+				if (!isCache)
+					self.bufferupdate.push({ id: id, buf: buf, offset: 0 });
+
+				callback && callback(null, id);
 			}
-		});
+		};
+
+		if (cache) {
+			update(cache.buf);
+		} else {
+			Fs.read(self.fd, buf, 0, buf.length, pos, function(err) {
+				if (err) {
+					callback(err);
+					return;
+				} else if (buf[0] !== NODE_LINKS) {
+					callback(new Error('GraphDB: Invalid value for linking.'));
+					return;
+				}
+				update(buf);
+			});
+		}
 	}
 
 	return self;
 }
 
-GP.join = function(type, fromid, toid, callback) {
+function updateRelation(self, metaid, toid, type, initializer) {
+
+	var pos = HEADERSIZE + ((metaid - 1) * self.header.size);
+	var buf = U.createBufferSize(self.header.size);
+
+	Fs.read(self.fd, buf, 0, buf.length, pos, function(err, size) {
+
+		if (err || !size)
+			return;
+
+		var count = buf.readUInt16BE(9);
+
+		for (var i = 0; i < count; i++) {
+			var off = 11 + (i * 6);
+			if (buf.readUInt32BE(off + 2) === toid) {
+				// we have relation
+				// update
+				var data = U.createBufferSize(2);
+				data.writeUInt8(type == null ? buf[off] : type);
+				data.writeUInt8(initializer == null ? buf[off + 1] : initializer, 1);
+				Fs.write(self.fd, data, 0, data.length, pos + off, function(err) {
+					err && self.errorhandling(err, 'updateRelation.write');
+				});
+			}
+		}
+
+	});
+}
+
+GP.connect = function(type, fromid, toid, callback) {
 
 	var self = this;
 
@@ -939,6 +1072,11 @@ GP.join = function(type, fromid, toid, callback) {
 		if (relation == null) {
 			callback(new Error('GraphDB: relation "{0}" not found'.format(type)));
 			return self;
+		}
+
+		if (relation.nodeid) {
+			pushRelationNode(self, relation, fromid);
+			relation.relation && pushRelationNode(self, relation, toid);
 		}
 
 		self.pending[fromid] = 1;
@@ -985,8 +1123,7 @@ GP.join = function(type, fromid, toid, callback) {
 		// relation: 0 - "toid" doesn't know "fromid"
 
 		async.push(function(next) {
-
-			pushLinkId(self, aid == 0 ? null : aid, toid, relation.index, true, function(err, id) {
+			pushRelation(self, aid == 0 ? null : aid, toid, relation.index, true, function(err, id) {
 				if (aid !== id) {
 					aid = id;
 					self.setLinkId(fromid, id, next);
@@ -996,7 +1133,7 @@ GP.join = function(type, fromid, toid, callback) {
 		});
 
 		async.push(function(next) {
-			pushLinkId(self, bid == 0 ? null : bid, fromid, relation.index, false, function(err, id) {
+			pushRelation(self, bid == 0 ? null : bid, fromid, relation.index, false, function(err, id) {
 				if (bid !== id) {
 					bid = id;
 					self.setLinkId(toid, id, next);
@@ -1009,10 +1146,12 @@ GP.join = function(type, fromid, toid, callback) {
 			delete self.pending[fromid];
 			delete self.pending[toid];
 			callback && callback(null, aid, bid);
+			self.flush();
 		});
 
-	} else
+	} else {
 		setTimeout(self.$cb_join, DELAY, type, fromid, toid, callback);
+	}
 
 	return self;
 };
@@ -1032,13 +1171,13 @@ GP.flush = function() {
 
 	var self = this;
 
-	if (!self.$ready || self.writing)
+	if (!self.$ready)
 		return self;
 
-	if (self.bufferupdate.length) {
-		self.writing = true;
+	if (self.bufferupdate.length && !self.updating) {
+		self.updating = true;
 		var doc = self.bufferupdate.shift();
-		var offset = HEADERSIZE + (doc.pos * self.header.size);
+		var offset = HEADERSIZE + ((doc.id - 1) * self.header.size);
 		if (doc.recovered) {
 			var buf = U.createBufferSize(1);
 			buf.writeUInt8(doc.type);
@@ -1049,18 +1188,35 @@ GP.flush = function() {
 					else
 						F.error(err, 'GraphDB: ' + self.name);
 				}
-				Fs.write(self.fd, doc.buf, 0, doc.buf.length, offset + 9, self.$cb_writeupdate);
+				Fs.write(self.fd, doc.buf, 0, doc.buf.length, offset + doc.offset, self.$cb_writeupdate);
 			});
 		} else
-			Fs.write(self.fd, doc.buf, 0, doc.buf.length, offset + 9, self.$cb_writeupdate);
+			Fs.write(self.fd, doc.buf, 0, doc.buf.length, offset + doc.offset, self.$cb_writeupdate);
+		doc.callback && doc.callback(null, doc.id);
 		return self;
-	} else if (!self.bufferappend.length)
-		return self;
+	}
 
-	var buf = self.bufferappend.splice(0, self.header.buffersize);
-	var data = Buffer.concat(buf);
-	self.writing = true;
-	Fs.write(self.fd, data, 0, data.length, self.stat.size, self.$cb_writeappend);
+	if (self.bufferappend.length && !self.appending) {
+
+		var flush = self.bufferappend.splice(0, self.header.buffersize);
+		var buf = [];
+
+		for (var i = 0; i < flush.length; i++) {
+			var f = flush[i];
+			buf.push(f.buf);
+			f.callback && f.callback(null, f.id);
+
+			if (f.schemaid) {
+				console.log('PUSHID', f.id);
+				pushRelationNode(self, self.$classes[f.schemaid], f.id);
+			}
+		}
+
+		var data = Buffer.concat(buf);
+		self.appending = true;
+		Fs.write(self.fd, data, 0, data.length, self.stat.size, self.$cb_writeappend);
+	}
+
 	return self;
 };
 
@@ -1212,6 +1368,8 @@ GP.get = GP.read = function(id, callback, type, relation) {
 						else if ((type == null || (type == buf[pos]) && (relation == null || (relation == buf[pos + 1]))))
 							links.push(buf.readUInt32BE(pos + 2));
 					}
+
+					links.reverse();
 					callback(err, links, linkid);
 					return;
 
@@ -1232,8 +1390,9 @@ GP.get = GP.read = function(id, callback, type, relation) {
 					return;
 			}
 		});
-	} else
+	} else {
 		setTimeout(self.$cb_get, DELAY, id, callback, type, relation);
+	}
 
 	return self;
 };
@@ -1243,8 +1402,9 @@ GP.find = function(type, builder) {
 	var builder = new DatabaseBuilder(self);
 	if (self.$ready && self.reading < MAXREADERS)
 		setImmediate($find, self, type, builder);
-	else
+	else {
 		setTimeout(self.$cb_find, DELAY, type, builder);
+	}
 	return builder;
 };
 
@@ -1253,14 +1413,13 @@ GP.find2 = function(type, builder) {
 	var builder = new DatabaseBuilder(self);
 	if (self.$ready && self.reading < MAXREADERS)
 		setImmediate($find, self, type, builder, true);
-	else
+	else {
 		setTimeout(self.$cb_find, DELAY, type, builder, true);
+	}
 	return builder;
 };
 
 function $find(self, type, builder, reverse) {
-
-	self.reading++;
 
 	var index = reverse ? (self.header.count - 1) : 0;
 	var size = self.header.size * self.header.buffersize;
@@ -1278,10 +1437,8 @@ function $find(self, type, builder, reverse) {
 	var classes = null;
 
 	if (type) {
-
 		var cls;
 		classes = {};
-
 		if (type instanceof Array) {
 			for (var i = 0; i < type.length; i++) {
 				cls = self.$classes[type[i]];
@@ -1308,7 +1465,6 @@ function $find(self, type, builder, reverse) {
 		Fs.read(self.fd, buf, 0, buf.length, offset, function(err, size) {
 
 			if (err || !size) {
-				self.reading--;
 				framework_nosql.callback(filter);
 				return;
 			}
@@ -1344,7 +1500,6 @@ function $find(self, type, builder, reverse) {
 								}
 
 								if ((doc && framework_nosql.compare(filter, doc) === false) || (reverse && filter.done)) {
-									self.reading--;
 									framework_nosql.callback(filter);
 									return;
 								}
@@ -1458,19 +1613,19 @@ GP.graph = function(id, options, callback, filter) {
 
 		if (options.class) {
 
-			var cls;
+			var clstmp;
 			classes = {};
 
 			if (options.class instanceof Array) {
 				for (var i = 0; i < options.class.length; i++) {
-					cls = self.$classes[options.class[i]];
-					if (cls)
-						classes[cls.index] = 1;
+					clstmp = self.$classes[options.class[i]];
+					if (clstmp)
+						classes[clstmp.index] = 1;
 				}
 			} else {
-				cls = self.$classes[options.class];
-				if (cls)
-					classes[cls.index] = cls.class + 1;
+				clstmp = self.$classes[options.class];
+				if (clstmp)
+					classes[clstmp.index] = clstmp.class + 1;
 			}
 		}
 
@@ -1498,6 +1653,8 @@ GP.graph = function(id, options, callback, filter) {
 				return;
 			}
 
+			tmp[id] = 1;
+
 			self.read(id, function(err, links, linkid) {
 
 				if (linkid && !tmp[linkid]) {
@@ -1514,7 +1671,7 @@ GP.graph = function(id, options, callback, filter) {
 
 					var key = item.ID + '-' + item.RELATION;
 
-					if (tmp[key] || (relations && relations[item.RELATION] == null) || (!options.all && relations && !item.TYPE && relations[item.RELATION] === item.TYPE))
+					if (tmp[key] || (relations && relations[item.RELATION] == null) || (!options.all && !item.TYPE && !relations) || (relations && relations[item.RELATION] === item.TYPE))
 						return next();
 
 					tmp[key] = 1;
