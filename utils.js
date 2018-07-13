@@ -3808,7 +3808,7 @@ function checksum(val) {
 	return sum;
 }
 
-String.prototype.encrypt = function(key, isUnique) {
+String.prototype.encrypt = function(key, isUnique, secret) {
 	var str = '0' + this;
 	var data_count = str.length;
 	var key_count = key.length;
@@ -3832,10 +3832,10 @@ String.prototype.encrypt = function(key, isUnique) {
 	for (var i = 0; i < str.length; i++)
 		sum += str.charCodeAt(i);
 
-	return (sum + checksum(F.config.secret + key)) + '-' + str;
+	return (sum + checksum((secret || F.config.secret) + key)) + '-' + str;
 };
 
-String.prototype.decrypt = function(key) {
+String.prototype.decrypt = function(key, secret) {
 
 	var index = this.indexOf('-');
 	if (index === -1)
@@ -3846,7 +3846,7 @@ String.prototype.decrypt = function(key) {
 		return null;
 
 	var hash = this.substring(index + 1);
-	var sum = checksum(F.config.secret + key);
+	var sum = checksum((secret || F.config.secret) + key);
 	for (var i = 0; i < hash.length; i++)
 		sum += hash.charCodeAt(i);
 
@@ -3877,6 +3877,19 @@ String.prototype.decrypt = function(key) {
 
 	var val = decrypt_data.join('');
 	return counter !== (val.length + key.length) ? null : val;
+};
+
+String.prototype.decryptnumber = function(salt) {
+	var val = this.decrypt(salt, F.config['secret-numbers']);
+	var num = 0;
+	if (val) {
+		num = +val;
+		if (isNaN(num))
+			return 0;
+		for (var i = 0; i < salt.length; i++)
+			num -= salt.charCodeAt(i);
+	}
+	return num;
 };
 
 String.prototype.base64ToFile = function(filename, callback) {
@@ -4059,6 +4072,13 @@ String.prototype.soundex = function() {
 */
 String.prototype.removeTags = function() {
 	return this.replace(regexpTags, '');
+};
+
+Number.prototype.encrypt = function(salt) {
+	var num = this;
+	for (var i = 0; i < salt.length; i++)
+		num += salt.charCodeAt(i);
+	return num.toString().encrypt(salt, false, F.config['secret-numbers']);
 };
 
 Number.prototype.floor = function(decimals) {

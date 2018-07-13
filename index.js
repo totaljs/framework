@@ -647,6 +647,7 @@ function Framework() {
 		version: '1.0.0',
 		author: '',
 		secret: this.syshash,
+		'secret-numbers': 'numbers',
 
 		'security.txt': 'Contact: mailto:support@totaljs.com\nContact: https://www.totaljs.com/contact/',
 		'etag-version': '',
@@ -8878,6 +8879,7 @@ F.$configure_configs = function(arr, rewrite) {
 
 		switch (name) {
 			case 'secret':
+			case 'secret-numbers':
 				obj[name] = value;
 				break;
 			case 'default-request-length':
