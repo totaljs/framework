@@ -689,14 +689,24 @@ ProxyAgent.prototype.createSocket = function(options, callback) {
 		if (res.statusCode === 200) {
 			callback(socket);
 		} else {
-			var err = new Error('Proxy could not be established, code: ' + res.statusCode);
+			var err = new Error('Proxy could not be established (maybe a problem in auth), code: ' + res.statusCode);
 			err.code = 'ECONNRESET';
 			options.request.emit('error', err);
+			req.destroy && req.destroy();
+			req = null;
+			self.requests = null;
+			self.options = null;
 		}
 	});
 
 	req.on('error', function(err) {
-		options.request.emit('error', err);
+		var e = new Error('Request Proxy "proxy {0} --> target {1}": {2}'.format(PROXYOPTIONS.host + ':' + proxy.port, PROXYOPTIONS.path, err.toString()));
+		e.code = err.code;
+		options.request.emit('error', e);
+		req.destroy && req.destroy();
+		req = null;
+		self.requests = null;
+		self.options = null;
 	});
 
 	req.end();
