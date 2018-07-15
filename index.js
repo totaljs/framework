@@ -1336,6 +1336,7 @@ F.stop = F.kill = function(signal) {
 	}
 
 	framework_nosql.kill(signal);
+
 	F.emit('exit', signal);
 
 	if (!F.isWorker && process.send)
@@ -1348,7 +1349,8 @@ F.stop = F.kill = function(signal) {
 		F.server.close();
 	}
 
-	setTimeout(() => process.exit(signal), global.TEST ? 2000 : 100);
+	var extenddelay = require('./graphdb').getImportantOperations() > 0;
+	setTimeout(() => process.exit(signal), global.TEST || extenddelay ? 2000 : 300);
 	return F;
 };
 

@@ -69,6 +69,8 @@ const TYPE_CLASS = 1;
 const TYPE_RELATION = 2;
 const TYPE_RELATION_DOCUMENT = 3;
 
+var IMPORTATOPERATIONS = 0;
+
 function GraphDB(name) {
 
 	F.path.verify('databases');
@@ -423,6 +425,8 @@ function addRelation(self, relation, indexA, indexB, callback) {
 		if (F.isKilled)
 			return;
 
+		IMPORTATOPERATIONS++;
+
 		if (relA)
 			next();
 		else {
@@ -482,6 +486,7 @@ function addRelation(self, relation, indexA, indexB, callback) {
 	});
 
 	tasks.async(function() {
+		IMPORTATOPERATIONS--;
 		// console.log('REL ====', relA, relB);
 		callback(null, true);
 	});
@@ -524,9 +529,11 @@ function remRelation(self, relation, indexA, indexB, callback) {
 		if (F.isKilled)
 			return;
 
+		IMPORTATOPERATIONS++;
 		remRelationLink(self, relA, indexB, function(err, countA) {
 			remRelationLink(self, relB, indexA, function(err, countB) {
 				remRelationLink(self, relation.documentindex, indexA, function(err, countC) {
+					IMPORTATOPERATIONS--;
 					callback(null, (countA + countB + countC) > 1);
 				});
 			});
@@ -872,14 +879,9 @@ function pushRelationDocument(self, index, relation, documentindex, initializato
 				meta.relationindex = index;
 				meta.size = 0;
 
-				// addPage(self, relation.private ? TYPE_RELATION_DOCUMENT : TYPE_RELATION, relation.index, relation.pageindex, function(err, pageindex) {
 				addNode(self, meta, function(err, docindex, pageindex) {
-
-					// index = relation.documentindex;
 					relation.pageindex = pageindex;
-					// relation.documentindex = getDocumentIndex(self, pageindex);
 					relation.documentindex = docindex;
-
 					updDocumentRelation(self, relation.documentindex, index, function() {
 						updDocumentParent(self, index, relation.documentindex, function() {
 							pushRelationDocument(self, relation.documentindex, relation, documentindex, initializator, callback, between);
@@ -898,7 +900,7 @@ function pushRelationDocument(self, index, relation, documentindex, initializato
 			buf.writeUInt16LE(count + 1, 15);
 
 			if (buf[2] === STATE_REMOVED) {
-				// We must update page document counts
+				// We must update counts of documents in the page meta
 				var pageindex = Math.ceil(index / self.header.pagelimit);
 				updPageMeta(self, pageindex, function(err, buf) {
 
@@ -963,8 +965,10 @@ function remDocument(self) {
 		return;
 	self.states.remove = true;
 	var doc = self.pending.remove.shift();
+	IMPORTATOPERATIONS++;
 	remRelationAll(self, doc.id, doc.id, function() {
 		remDocumentAll(self, doc.id, function(err, count) {
+			IMPORTATOPERATIONS--;
 			self.states.remove = false;
 			doc.callback && doc.callback(err, count);
 			setImmediate(self.cb_next, NEXT_REMOVE);
@@ -2570,4 +2574,8 @@ function regtescape(c) {
 
 exports.load = function(name, size) {
 	return new GraphDB(name, size);
+};
+
+exports.getImportantOperations = function() {
+	return IMPORTATOPERATIONS;
 };
