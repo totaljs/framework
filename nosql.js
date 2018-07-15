@@ -530,7 +530,7 @@ function Table(name, filename) {
 
 	var schema = F.config['table.' + name];
 
-	Fs.createReadStream(t.filename, { end: 1000 }).once('data', function(chunk) {
+	Fs.createReadStream(t.filename, { end: 1200 }).once('data', function(chunk) {
 
 		if (schema) {
 			t.parseSchema(schema.replace(/;|,/g, '|').trim().split('|'));
