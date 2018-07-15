@@ -527,7 +527,7 @@ function remRelation(self, relation, indexA, indexB, callback) {
 		remRelationLink(self, relA, indexB, function(err, countA) {
 			remRelationLink(self, relB, indexA, function(err, countB) {
 				remRelationLink(self, relation.documentindex, indexA, function(err, countC) {
-					callback(null, (countA + countB + countC) === 3);
+					callback(null, (countA + countB + countC) > 1);
 				});
 			});
 		});
