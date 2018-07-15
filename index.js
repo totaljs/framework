@@ -647,7 +647,7 @@ function Framework() {
 		version: '1.0.0',
 		author: '',
 		secret: this.syshash,
-		'secret-numbers': 'numbers',
+		'secret-uid': this.syshash.substring(10),
 
 		'security.txt': 'Contact: mailto:support@totaljs.com\nContact: https://www.totaljs.com/contact/',
 		'etag-version': '',
@@ -8885,7 +8885,7 @@ F.$configure_configs = function(arr, rewrite) {
 
 		switch (name) {
 			case 'secret':
-			case 'secret-numbers':
+			case 'secret-uid':
 				obj[name] = value;
 				break;
 			case 'default-request-length':
@@ -9032,6 +9032,9 @@ F.$configure_configs = function(arr, rewrite) {
 	}
 
 	U.extend(F.config, obj, rewrite);
+
+	if (!F.config['secret-uid'])
+		F.config['secret-uid'] = (F.config.name).crc32(true).toString();
 
 	var tmp = F.config['mail-smtp-options'];
 	if (typeof(tmp) === 'string' && tmp) {
