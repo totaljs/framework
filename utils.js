@@ -3879,7 +3879,7 @@ String.prototype.decrypt = function(key, secret) {
 	return counter !== (val.length + key.length) ? null : val;
 };
 
-exports.encryptID = function(val, key) {
+exports.encryptUID = function(val, key) {
 
 	var num = typeof(val) === 'number';
 	var sum = 0;
@@ -3898,14 +3898,14 @@ exports.encryptID = function(val, key) {
 	return (num ? 'n' : 'x') + (F.config['secret-uid'] + val + sum + key).crc32(true).toString(16) + 'x' + val;
 };
 
-exports.decryptID = function(val, key) {
+exports.decryptUID = function(val, key) {
 	var num = val[0] === 'n';
 	var raw = val.substring(val.indexOf('x', 1) + 1);
 
 	if (num)
 		raw = +raw;
 
-	return exports.encryptID(raw, key) === val ? raw : null;
+	return exports.encryptUID(raw, key) === val ? raw : null;
 };
 
 String.prototype.base64ToFile = function(filename, callback) {

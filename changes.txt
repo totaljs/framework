@@ -5,7 +5,6 @@
 - added: (IMPORTANT) Total.js components support nested public files encoded in base64
 - added: (IMPORTANT) NoSQL worker
 - added: (IMPORTANT) NoSQL embedded storage for smaller big data / IoT
-- added: (IMPORTANT) Session helper object
 - added: `debugging` supports live reloading
 - added: new schema operations: `schema.setInsert()` and `schema.setUpdate()`
 - added: `RESTBuilder.patch([data])`
@@ -55,9 +54,6 @@
 - added: config `nosql-logger` (default `true`) enables simple logs when re-indexing and cleaning
 - added: config `security.txt` for auto-generating security.txt content (more in docs)
 - added: config `default-proxy` for default web proxy server
-- added: config `default-crypto` for default crypto algorithm
-- added: config `default-crypto-key` for default length of key crypto algorithm
-- added: `NOSQLSTORAGE(name)` alias for `NOSQL(name).storage`
 - added: `GUID()` a global alias for `U.GUID()`
 - added: `VIEW()` a global alias for `F.view()`
 - added: `SchemaBuilderEntity.$response([index])` returns a specific response from an operation in `async` queue
@@ -95,8 +91,8 @@
 - added: `SchemaEntity.clear()` for removing all current definition
 - added: new view engine markup `@{#}` for simulating of root URL
 - added: `String.ROOT()` for replacing `@{#}` markup in strings
-- added: `U.decryptID(value, key)` for encrypting number/string values
-- added: `U.encryptID(value, key)` for decrypting of number/string values
+- added: `U.decryptUID(value, key)` for encrypting number/string values
+- added: `U.encryptUID(value, key)` for decrypting of number/string values
 - added: `F.config['secret-uid']` as a hidden secret for encrypting/decrypting values
 
 - updated: (IMPORTANT) NoSQL binary divides files to independent directories for 1000 files per directory
