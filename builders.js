@@ -1167,11 +1167,11 @@ SchemaBuilderEntity.prototype.execute = function(TYPE, model, options, callback,
 		if (!isGenerator(self, $type, self[TYPE])) {
 			if (self[TYPE].$newversion)
 				self[TYPE](new SchemaOptions(builder, model, options, function(res) {
-					self.$process(arguments, model, $type, undefined, builder, res, callback);
+					self.$process(arguments, model, $type, undefined, builder, res, callback, controller);
 				}, controller));
 			else
 				self[TYPE](builder, model, options, function(res) {
-					self.$process(arguments, model, $type, undefined, builder, res, callback);
+					self.$process(arguments, model, $type, undefined, builder, res, callback, controller);
 				}, controller, skip !== true);
 			return self;
 		}
@@ -1248,11 +1248,11 @@ SchemaBuilderEntity.prototype.get = SchemaBuilderEntity.prototype.read = functio
 	if (!isGenerator(self, $type, self.onGet)) {
 		if (self.onGet.$newversion)
 			self.onGet(new SchemaOptions(builder, output, options, function(res) {
-				self.$process(arguments, output, $type, undefined, builder, res, callback);
+				self.$process(arguments, output, $type, undefined, builder, res, callback, controller);
 			}, controller));
 		else
 			self.onGet(builder, output, options, function(res) {
-				self.$process(arguments, output, $type, undefined, builder, res, callback);
+				self.$process(arguments, output, $type, undefined, builder, res, callback, controller);
 			}, controller);
 		return self;
 	}
@@ -1321,11 +1321,11 @@ SchemaBuilderEntity.prototype.remove = function(options, callback, controller) {
 	if (!isGenerator(self, $type, self.onRemove)) {
 		if (self.onRemove.$newversion)
 			self.onRemove(new SchemaOptions(builder, undefined, options, function(res) {
-				self.$process(arguments, undefined, $type, undefined, builder, res, callback);
+				self.$process(arguments, undefined, $type, undefined, builder, res, callback, controller);
 			}, controller));
 		else
 			self.onRemove(builder, options, function(res) {
-				self.$process(arguments, undefined, $type, undefined, builder, res, callback);
+				self.$process(arguments, undefined, $type, undefined, builder, res, callback, controller);
 			}, controller);
 		return self;
 	}
@@ -1392,11 +1392,11 @@ SchemaBuilderEntity.prototype.query = function(options, callback, controller) {
 	if (!isGenerator(self, $type, self.onQuery)) {
 		if (self.onQuery.$newversion)
 			self.onQuery(new SchemaOptions(builder, undefined, options, function(res) {
-				self.$process(arguments, undefined, $type, undefined, builder, res, callback);
+				self.$process(arguments, undefined, $type, undefined, builder, res, callback, controller);
 			}, controller));
 		else
 			self.onQuery(builder, options, function(res) {
-				self.$process(arguments, undefined, $type, undefined, builder, res, callback);
+				self.$process(arguments, undefined, $type, undefined, builder, res, callback, controller);
 			}, controller);
 		return self;
 	}
@@ -2041,7 +2041,7 @@ SchemaBuilderEntity.prototype.transform2 = function(name, options, callback, con
 	return this.transform(name, this.create(), options, callback, true, controller);
 };
 
-SchemaBuilderEntity.prototype.$process = function(arg, model, type, name, builder, response, callback) {
+SchemaBuilderEntity.prototype.$process = function(arg, model, type, name, builder, response, callback, controller) {
 
 	var self = this;
 
@@ -2053,6 +2053,10 @@ SchemaBuilderEntity.prototype.$process = function(arg, model, type, name, builde
 
 	var has = builder.hasError();
 	has && self.onError && self.onError(builder, model, type, name);
+
+	if (controller && response instanceof SchemaInstance && !response.$$controller)
+		response.$$controller = controller;
+
 	callback(has ? builder : null, response === undefined ? model : response, model);
 	return self;
 };
@@ -2278,11 +2282,11 @@ SchemaBuilderEntity.prototype.$execute = function(type, name, model, options, ca
 		self.resourcePrefix && builder.setPrefix(self.resourcePrefix);
 		if (item.$newversion)
 			item.call(self, new SchemaOptions(builder, model, options, function(res) {
-				self.$process(arguments, model, type, name, builder, res, callback);
+				self.$process(arguments, model, type, name, builder, res, callback, controller);
 			}, controller));
 		else
 			item.call(self, builder, model, options, function(res) {
-				self.$process(arguments, model, type, name, builder, res, callback);
+				self.$process(arguments, model, type, name, builder, res, callback, controller);
 			}, controller, skip !== true);
 		return self;
 	}
@@ -2294,6 +2298,9 @@ SchemaBuilderEntity.prototype.$execute = function(type, name, model, options, ca
 			return;
 		}
 
+		if (controller && model instanceof SchemaInstance && !model.$$controller)
+			model.$$controller = controller;
+
 		var builder = new ErrorBuilder();
 
 		self.resourceName && builder.setResource(self.resourceName);
@@ -2302,11 +2309,11 @@ SchemaBuilderEntity.prototype.$execute = function(type, name, model, options, ca
 		if (!isGenerator(self, type + '.' + name, item)) {
 			if (item.$newversion)
 				item.call(self, new SchemaOptions(builder, model, options, function(res) {
-					self.$process(arguments, model, type, name, builder, res, callback);
+					self.$process(arguments, model, type, name, builder, res, callback, controller);
 				}, controller));
 			else
 				item.call(self, builder, model, options, function(res) {
-					self.$process(arguments, model, type, name, builder, res, callback);
+					self.$process(arguments, model, type, name, builder, res, callback, controller);
 				}, controller);
 			return;
 		}
@@ -2413,11 +2420,11 @@ SchemaBuilderEntity.prototype.operation = function(name, model, options, callbac
 	if (!isGenerator(self, 'operation.' + name, operation)) {
 		if (operation.$newversion) {
 			operation.call(self, new SchemaOptions(builder, model, options, function(res) {
-				self.$process(arguments, model, $type, name, builder, res, callback);
+				self.$process(arguments, model, $type, name, builder, res, callback, controller);
 			}, controller));
 		} else
 			operation.call(self, builder, model, options, function(res) {
-				self.$process(arguments, model, $type, name, builder, res, callback);
+				self.$process(arguments, model, $type, name, builder, res, callback, controller);
 			}, controller, skip !== true);
 		return self;
 	}
