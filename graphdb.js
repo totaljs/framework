@@ -24,7 +24,6 @@
  * @version 1.0.0
  */
 
-
 const Fs = require('fs');
 const Zlib = require('zlib');
 
