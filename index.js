@@ -1342,7 +1342,11 @@ F.stop = F.kill = function(signal) {
 		TRY(() => process.send('total:stop'));
 
 	F.cache.stop();
-	F.server && F.server.close && F.server.close();
+
+	if (F.server) {
+		F.server.setTimeout(1);
+		F.server.close();
+	}
 
 	setTimeout(() => process.exit(signal), global.TEST ? 2000 : 100);
 	return F;
