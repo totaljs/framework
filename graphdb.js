@@ -78,6 +78,7 @@ function GraphDB(name) {
 	var self = this;
 	self.name = name;
 	self.filename = F.path.databases(name + '.gdb');
+	self.filenameBackup = self.filename.replace(/\.gdb$/, '.gdp-backup');
 	self.ready = false;
 
 	self.$classes = {};
