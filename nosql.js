@@ -615,7 +615,7 @@ function Database(name, filename, readonly) {
 const TP = Table.prototype;
 const DP = Database.prototype;
 
-TP.view = DP.view = function(name) {
+TP.view = DP.view = function() {
 	throw new Error('NoSQL Views are not supported in this version.');
 };
 
