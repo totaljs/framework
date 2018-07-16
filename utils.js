@@ -1262,7 +1262,7 @@ function download_response(res, uri, options) {
 			// TLS?
 			options.uri = tmp;
 			download_call(options, request_call);
-			return
+			return;
 		}
 
 		if (!options.resolve) {
