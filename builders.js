@@ -88,10 +88,6 @@ SchemaOptions.prototype = {
 
 	get query() {
 		return this.controller ? this.controller.query : null;
-	},
-
-	get params() {
-		return this.controller ? this.controller.params : null;
 	}
 };
 
