@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkCluster
- * @version 2.9.2
+ * @version 3.0.0
  */
 
 const Cluster = require('cluster');
@@ -36,6 +36,7 @@ var CALLBACKS = {};
 var OPTIONS = {};
 var THREADS = 0;
 var MASTER = null;
+var CONTINUE = false;
 
 exports.on = function(name, callback) {
 	!MASTER && (MASTER = {});
@@ -192,14 +193,29 @@ function master(count, mode, options, callback) {
 
 	THREADS = count;
 
-	for (var i = 0; i < count; i++)
-		exec(i);
+	var can = function(cb) {
+		if (CONTINUE)
+			cb();
+		else
+			setTimeout(can, 1000, cb);
+	};
+
+	count.async(function(i, next) {
+		exec(Math.abs(i - THREADS));
+		can(next);
+	}, function() {
+		callback && callback(FORKS);
+	});
 
 	process.title = 'total: cluster';
-	callback && callback(FORKS);
 }
 
 function message(m) {
+
+	if (m === 'total:ready') {
+		CONTINUE = true;
+		return;
+	}
 
 	if (m.TYPE === 'master') {
 		if (MASTER && MASTER[m.name]) {
@@ -225,6 +241,7 @@ function exec(index) {
 	var fork = Cluster.fork();
 	fork.$id = index.toString();
 	fork.on('message', message);
+
 	if (FORKS[index])
 		FORKS[index] = fork;
 	else
@@ -232,7 +249,7 @@ function exec(index) {
 	(function(fork) {
 		setTimeout(function() {
 			OPTIONS.options.id = fork.$id;
-			fork.send({ TYPE: 'init', id: fork.$id, mode: OPTIONS.mode, options: OPTIONS.options, threads: OPTIONS.count, index: index });
+			fork.send({ TYPE: 'init', bundling: !CONTINUE, id: fork.$id, mode: OPTIONS.mode, options: OPTIONS.options, threads: OPTIONS.count, index: index });
 		}, fork.$id * 500);
 	})(fork);
 }
@@ -249,6 +266,7 @@ function on_init(msg) {
 			CLUSTER_REQ.id = msg.id;
 			CLUSTER_RES.id = msg.id;
 			THREADS = msg.threads;
+			msg.options.bundling = msg.bundling;
 			F.http(msg.mode, msg.options);
 			F.isCluster = true;
 			F.removeListener(msg.TYPE, on_init);

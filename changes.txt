@@ -73,7 +73,6 @@
 - added: `versions` file supports `auto` value for generating auto-checksum of files
 - added: `F.load()` supports `test`
 - added: NoSQL binary supports `custom` small data attributes
-- added: `@{root}` for getting sub-root path
 - added: CSS and JS supports a simple View Engine markup (config + resources + F.global)
 - added: `controller.split` alias to `controller.req.split`
 - added: nicer error response messages
@@ -91,6 +90,7 @@
 - added: `F.syshash` contains a simple MD5 hash with OS info
 - added: `SchemaEntity.clear()` for removing all current definition
 - added: new view engine markup `@{#}` for simulating of root URL
+- added: new view engine command `@{root}` for getting sub-root path
 - added: `String.ROOT()` for replacing `@{#}` markup in strings
 - added: `U.decryptUID(value, key)` for encrypting number/string values
 - added: `U.encryptUID(value, key)` for decrypting of number/string values

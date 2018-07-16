@@ -752,6 +752,7 @@ function Framework() {
 	};
 
 	global.G = this.global = {};
+	this.$bundling = true;
 	this.resources = {};
 	this.connections = {};
 	this.functions = {};
@@ -3443,10 +3444,12 @@ F.$bundle = function(callback) {
 
 	try {
 		Fs.statSync(F.path.root(F.config['directory-bundles']));
-		makebundle();
-		return;
+		if (F.$bundling) {
+			makebundle();
+			return;
+		} else
+			F.directory = HEADERS.workers.cwd = directory = F.path.root(F.config['directory-src']);
 	} catch(e) {}
-
 	callback();
 };
 
@@ -3555,10 +3558,13 @@ F.$load = function(types, targetdirectory, callback, packageName) {
 
 					files.wait(function(filename, next) {
 
-						var stream = Fs.createReadStream(filename);
-						var writer = Fs.createWriteStream(Path.join(dir, filename.replace(item.filename, '').replace(/\.package$/i, '')));
-						stream.pipe(writer);
-						writer.on('finish', next);
+						if (F.$bundling) {
+							var stream = Fs.createReadStream(filename);
+							var writer = Fs.createWriteStream(Path.join(dir, filename.replace(item.filename, '').replace(/\.package$/i, '')));
+							stream.pipe(writer);
+							writer.on('finish', next);
+						} else
+							next();
 
 					}, function() {
 
@@ -3962,8 +3968,10 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 
 		content = parseComponent(internal ? declaration : Fs.readFileSync(declaration).toString(ENCODING), name);
 
-		content.js && Fs.appendFileSync(F.path.temp(temporary + '.js'), hash + (F.config.debug ? component_debug(name, content.js, 'js') : content.js) + hash.substring(0, hash.length - 1));
-		content.css && Fs.appendFileSync(F.path.temp(temporary + '.css'), hash + (F.config.debug ? component_debug(name, content.css, 'css') : content.css) + hash.substring(0, hash.length - 1));
+		if (F.$bundling) {
+			content.js && Fs.appendFileSync(F.path.temp(temporary + '.js'), hash + (F.config.debug ? component_debug(name, content.js, 'js') : content.js) + hash.substring(0, hash.length - 1));
+			content.css && Fs.appendFileSync(F.path.temp(temporary + '.css'), hash + (F.config.debug ? component_debug(name, content.css, 'css') : content.css) + hash.substring(0, hash.length - 1));
+		}
 
 		if (content.js)
 			F.components.js = true;
@@ -3978,7 +3986,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 
 		if (content.body) {
 			F.components.views[name] = '.' + F.path.temp('component_' + name);
-			Fs.writeFile(F.components.views[name].substring(1) + '.html', U.minifyHTML(content.body), NOOP);
+			F.$bundling && Fs.writeFile(F.components.views[name].substring(1) + '.html', U.minifyHTML(content.body), NOOP);
 		} else
 			delete F.components.views[name];
 
@@ -4066,8 +4074,8 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 		var dir = F.config['directory-temp'][0] === '~' ? Path.join(F.config['directory-temp'].substring(1), id + '.package') : Path.join(F.path.root(), F.config['directory-temp'], id + '.package');
 
 		F.routes.packages[id] = dir;
-		F.restore(declaration, dir, function() {
 
+		var restorecb = function() {
 			var filename = Path.join(dir, 'index.js');
 			if (!existsSync(filename)) {
 				next && next();
@@ -4088,7 +4096,12 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 				callback && callback(err, name);
 			}, internal, useRequired, true, undefined);
 			next && next();
-		});
+		};
+
+		if (F.$bundling)
+			F.restore(declaration, dir, restorecb);
+		else
+			restorecb();
 
 		return F;
 	}
@@ -4271,7 +4284,8 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 		tmp = F.path.temp('isomorphic_' + name + '.min.js');
 		F.map(framework_internal.preparePath(obj.url), tmp);
 		F.isomorphic[name] = obj;
-		Fs.writeFileSync(tmp, prepare_isomorphic(name, framework_internal.compile_javascript(content, '#' + name)));
+
+		F.$bundling && Fs.writeFileSync(tmp, prepare_isomorphic(name, framework_internal.compile_javascript(content, '#' + name)));
 
 		F.consoledebug('install', type + '#' + name);
 		next && next();
@@ -6742,7 +6756,7 @@ global.LOAD = F.load = function(debug, types, pwd) {
 				}
 			});
 		});
-	});
+	}, !types || types.indexOf('bundles') !== -1);
 
 	return F;
 };
@@ -6779,10 +6793,12 @@ F.initialize = function(http, debug, options, restart) {
 	F.config.debug = debug;
 	F.isDebug = debug;
 
+	if (options.bundling != null)
+		F.$bundling = options.bundling == true;
+
 	global.DEBUG = debug;
 	global.RELEASE = !debug;
 	global.I = global.isomorphic = F.isomorphic;
-
 	F.$bundle(function() {
 
 		F.$configure_configs();
@@ -6924,8 +6940,14 @@ F.http = function(mode, options, middleware) {
 	options == null && (options = {});
 	!options.port && (options.port = +process.argv[2]);
 
+	if (options.port && isNaN(options.port))
+		options.port = 0;
+
 	if (typeof(middleware) === 'function')
 		options.middleware = middleware;
+
+	if (options.bundling != null)
+		F.$bundling = options.bundling;
 
 	var http = require('http');
 	extend_request(http.IncomingMessage.prototype);
@@ -8012,30 +8034,32 @@ F.test = function() {
  * @return {Framework}
  */
 F.clear = function(callback, isInit) {
+
 	var dir = F.path.temp();
 	var plus = F.id ? 'i-' + F.id + '_' : '';
 
 	if (isInit) {
 		if (!F.config['allow-clear-temp']) {
-			// clears only JS and CSS files
-			U.ls(dir, function(files) {
-				F.unlink(files, function() {
-					callback && callback();
+			if (F.$bundling) {
+				// clears only JS and CSS files
+				U.ls(dir, function(files) {
+					F.unlink(files, function() {
+						callback && callback();
+					});
+				}, function(filename, folder) {
+					if (folder || (plus && !filename.substring(dir.length).startsWith(plus)))
+						return false;
+					if (filename.indexOf('.package') !== -1)
+						return true;
+					var ext = U.getExtension(filename);
+					return ext === 'js' || ext === 'css' || ext === 'tmp' || ext === 'upload' || ext === 'html' || ext === 'htm';
 				});
-			}, function(filename, folder) {
-				if (folder || (plus && !filename.substring(dir.length).startsWith(plus)))
-					return false;
-				if (filename.indexOf('.package') !== -1)
-					return true;
-				var ext = U.getExtension(filename);
-				return ext === 'js' || ext === 'css' || ext === 'tmp' || ext === 'upload' || ext === 'html' || ext === 'htm';
-			});
-
+			}
 			return F;
 		}
 	}
 
-	if (!existsSync(dir)) {
+	if (!existsSync(dir) || !F.$bundling) {
 		callback && callback();
 		return F;
 	}
@@ -16844,7 +16868,7 @@ function parseComponent(body, filename) {
 		var name = base64.substring(base64.lastIndexOf('name="', tmp), tmp);
 		name = name.substring(6, name.length - 1);
 		base64 = base64.substring(tmp + 1);
-		Fs.writeFile(U.join(p, name), base64, 'base64', NOOP);
+		F.$bundling && Fs.writeFile(U.join(p, name), base64, 'base64', NOOP);
 		response.files[name] = 1;
 	}
 
