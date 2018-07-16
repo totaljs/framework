@@ -15,7 +15,7 @@
 - added: `MailMessage.low()` sets `low` priority of the email messsage
 - added: `MailMessage.confidential()` sets `Sensitivity` header with `confidential` value
 - added: `MailMessage.attachmentnosql(db, id, [name])` sends a file from NoSQL embedded database
-- added: `MailMessage.filestorage(storage_name, id, [name])` sends a file from FileStorage
+- added: `MailMessage.attachmentfs(storage_name, id, [name])` sends a file from FileStorage
 - added: `SchemaBuilderEntity.$stop()` stops the async list
 - added: `SchemaOptions.stop()` alias to `$.model.$stop()`
 - added: `SchemaOptions.next()` alias to `$.model.$next()`

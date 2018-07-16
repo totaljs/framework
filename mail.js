@@ -267,7 +267,7 @@ Message.prototype.attachment = function(filename, name) {
 	return this;
 };
 
-Message.prototype.filestorage = function(storagename, id, name) {
+Message.prototype.attachmentfs = function(storagename, id, name) {
 
 	var extension;
 	var type;
