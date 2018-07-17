@@ -627,6 +627,7 @@ function other() {
 	var b = U.atob(a);
 
 	assert.ok(b === input, 'U.atob() / U.btoa()');
+	assert.ok(U.decryptUID(U.encryptUID(100)) === 100, 'U.encryptUID() + U.decryptUID()');
 }
 
 function Utils_Ls2_StringFilter() {
