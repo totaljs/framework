@@ -55,6 +55,7 @@
 - added: config `nosql-logger` (default `true`) enables simple logs when re-indexing and cleaning
 - added: config `security.txt` for auto-generating security.txt content (more in docs)
 - added: config `default-proxy` for default web proxy server
+- added: config `allow-cache-cluster` (default `true`) allow/disallow cache synchronization
 - added: `GUID()` a global alias for `U.GUID()`
 - added: `VIEW()` a global alias for `F.view()`
 - added: `SchemaBuilderEntity.$response([index])` returns a specific response from an operation in `async` queue

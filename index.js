@@ -731,6 +731,7 @@ function Framework() {
 		'allow-performance': false,
 		'allow-custom-titles': false,
 		'allow-cache-snapshot': false,
+		'allow-cache-cluster': true,
 		'allow-debug': false,
 		'allow-head': false,
 		'allow-filter-errors': true,
@@ -9850,7 +9851,7 @@ FrameworkCache.prototype.stop = function() {
 
 FrameworkCache.prototype.clear = function(sync) {
 	this.items = {};
-	F.isCluster && sync !== false && process.send(CLUSTER_CACHE_CLEAR);
+	F.isCluster && sync !== false && F.config['allow-cache-cluster'] && process.send(CLUSTER_CACHE_CLEAR);
 	this.savePersist();
 	return this;
 };
@@ -9889,7 +9890,7 @@ FrameworkCache.prototype.set2 = function(name, value, expire, sync) {
 FrameworkCache.prototype.set = FrameworkCache.prototype.add = function(name, value, expire, sync, persist) {
 	var type = typeof(expire);
 
-	if (F.isCluster && sync !== false) {
+	if (F.isCluster && sync !== false && F.config['allow-cache-cluster']) {
 		CLUSTER_CACHE_SET.key = name;
 		CLUSTER_CACHE_SET.value = value;
 		CLUSTER_CACHE_SET.expire = expire;
@@ -9964,7 +9965,7 @@ FrameworkCache.prototype.remove = function(name, sync) {
 		this.items[name] = undefined;
 	}
 
-	if (F.isCluster && sync !== false) {
+	if (F.isCluster && sync !== false && F.config['allow-cache-cluster']) {
 		CLUSTER_CACHE_REMOVE.key = name;
 		process.send(CLUSTER_CACHE_REMOVE);
 	}
@@ -9990,7 +9991,7 @@ FrameworkCache.prototype.removeAll = function(search, sync) {
 		count++;
 	}
 
-	if (F.isCluster && sync !== false) {
+	if (F.isCluster && sync !== false && F.config['allow-cache-cluster']) {
 		CLUSTER_CACHE_REMOVEALL.key = search;
 		process.send(CLUSTER_CACHE_REMOVEALL);
 	}
@@ -16669,11 +16670,6 @@ process.on('message', function(msg, h) {
 		msg.TYPE === 'cache-remove' && F.cache.remove(msg.key, false);
 		msg.TYPE === 'cache-remove-all' && F.cache.removeAll(msg.key, false);
 		msg.TYPE === 'cache-clear' && F.cache.clear(false);
-		msg.TYPE === 'nosql-lock' && F.databases[msg.name] && F.databases[msg.name].lock();
-		msg.TYPE === 'nosql-unlock' && F.databases[msg.name] && F.databases[msg.name].unlock();
-		msg.TYPE === 'nosql-meta' && F.databases[msg.name] && F.databases[msg.name].$meta();
-		msg.TYPE === 'nosql-counter-lock' && F.databases[msg.name] && (F.databases[msg.name].counter.locked = true);
-		msg.TYPE === 'nosql-counter-unlock' && F.databases[msg.name] && (F.databases[msg.name].counter.locked = false);
 		msg.TYPE === 'req' && F.cluster.req(msg);
 		msg.TYPE === 'res' && msg.target === F.id && F.cluster.res(msg);
 		msg.TYPE === 'emit' && F.$events[msg.name] && F.emit(msg.name, msg.data);
