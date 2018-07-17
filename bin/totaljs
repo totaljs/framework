@@ -10,8 +10,27 @@ var $type = 1;
 var isDirectory = false;
 
 function display_help() {
+	console.log('--------------------------------------------------------');
+	console.log('TEMPLATES');
+	console.log('--------------------------------------------------------');
 	console.log('');
-	console.log('without arguments      : creates empty-project');
+	console.log('without arguments      : creates emptyproject');
+	console.log('flow                   : creates emptyproject-flow');
+	console.log('dashboard              : creates emptyproject-dashboard');
+	console.log('flowboard              : creates emptyproject-flowboard');
+	console.log('spa                    : creates emptyproject-jcomponent');
+	console.log('pwa                    : creates emptyproject-pwa');
+	console.log('rest                   : creates emptyproject-restservice');
+	console.log('cms                    : downloads Total.js CMS');
+	console.log('eshop                  : downloads Total.js Eshop');
+	console.log('superadmin             : downloads Total.js SuperAdmin');
+	console.log('openplatform           : downloads Total.js OpenPlatform');
+	console.log('helpdesk               : downloads Total.js HelpDesk');
+	console.log('');
+	console.log('--------------------------------------------------------');
+	console.log('TOOLS');
+	console.log('--------------------------------------------------------');
+	console.log('');
 	console.log('-translate             : creates a resource file with the localized text from views');
 	console.log('-translate "TEXT"      : creates an identificator for the resource');
 	console.log('-translate filename    : parses and creates a resource file from the text file');
@@ -21,7 +40,6 @@ function display_help() {
 	console.log('-merge source target   : merges first resource into the second "-merge source target"');
 	console.log('-clean source          : cleans a resource file "-clean source"');
 	console.log('-minify filename       : minifies .js, .css or .html file into filename.min.[extension]');
-	console.log('-v or -version         : Total.js version');
 	console.log('-install               : run "totaljs -install help" to see what can be installed');
 	console.log('8000                   : starts a server');
 	console.log('');
@@ -433,40 +451,52 @@ function main() {
 
 		if (cmd === '-i' || cmd === '-install') {
 
-			var libs = ['jc', 'jc.min', 'jcta', 'jcta.min', 'jctajr', 'jctajr.min', 'ta', 'jr', 'jr.jc'];
+			var libs = ['jc', 'jc.min', 'jcta', 'jcta.min', 'jctajr', 'jctajr.min', 'ta', 'jr', 'jr.jc', 'spa', 'spa.min'];
 			var tmp = process.argv[i + 1] || '';
 
 			if (tmp === 'help') {
-				return console.log('Following libs can be installed: jc, jc.min, jcta.min, jctajr.min, ta, jr, jr.jc');
+				return console.log('Following libs can be installed: jc, jc.min, jcta.min, jctajr.min, ta, jr, jr.jc, spa');
 			}
 
-			if (!tmp || libs.indexOf(tmp) < 0) 
+			if (!tmp || libs.indexOf(tmp) < 0)
 				return console.log('Unknown library: "' + tmp + '"');
-				
+
 			console.log('');
 			console.log('Installing: ' + tmp);
 
 			var url = '';
 			switch(tmp) {
-				case 'jc': 
-					url = 'https://rawgit.com/totaljs/jComponent/master/jc.js';
+				case 'jc':
+					url = 'https://rawgit.com/totaljs/components/master/0dependencies/jc.js';
 					break;
-				case 'jc.min': 
-					url = 'https://rawgit.com/totaljs/jComponent/master/jc.min.js';
+				case 'jc.min':
+					url = 'https://rawgit.com/totaljs/components/master/0dependencies/jc.min.js';
 					break;
-				case 'jcta.min': 
-					url = 'https://rawgit.com/totaljs/jComponent/master/jcta.min.js';
+				case 'jcta.min':
+					url = 'https://rawgit.com/totaljs/components/master/0dependencies/jcta.min.js';
 					break;
-				case 'jctajr.min': 
-					url = 'https://rawgit.com/totaljs/jComponent/master/jctajr.min.js';
+				case 'jctajr.min':
+					url = 'https://rawgit.com/totaljs/components/master/0dependencies/jctajr.min.js';
 					break;
-				case 'ta': 
+				case 'spa':
+				case 'spa.min':
+					url = 'https://rawgit.com/totaljs/components/master/0dependencies/spa.min.js';
+					break;
+				case 'spa@14':
+				case 'spa.min@14':
+					url = 'https://rawgit.com/totaljs/components/master/0dependencies/spa.min@14.js';
+					break;
+				case 'spa@15':
+				case 'spa.min@15':
+					url = 'https://rawgit.com/totaljs/components/master/0dependencies/spa.min@15.js';
+					break;
+				case 'ta':
 					url = 'https://rawgit.com/totaljs/Tangular/master/Tangular.js';
 					break;
-				case 'jr': 
+				case 'jr':
 					url = 'https://rawgit.com/totaljs/jRouting/master/jrouting.js';
 					break;
-				case 'jr.jc': 
+				case 'jr.jc':
 					url = 'https://rawgit.com/totaljs/jRouting/master/jrouting.jcomponent.js';
 					break;
 			}
@@ -494,6 +524,66 @@ function main() {
 			console.log('');
 			console.log('output   : ' + tt);
 			console.log('');
+			return;
+		}
+
+		if (cmd === '-cms' || cmd === 'cms') {
+			git(dir, 'cms');
+			return;
+		}
+
+		if (cmd === '-eshop' || cmd === 'eshop') {
+			git(dir, 'eshop');
+			return;
+		}
+
+		if (cmd === '-superadmin' || cmd === 'superadmin') {
+			git(dir, 'superadmin');
+			return;
+		}
+
+		if (cmd === '-messenger' || cmd === 'messenger') {
+			git(dir, 'messenger');
+			return;
+		}
+
+		if (cmd === '-helpdesk' || cmd === 'helpdesk') {
+			git(dir, 'helpdesk');
+			return;
+		}
+
+		if (cmd === '-openplatform' || cmd === 'openplatform') {
+			git(dir, 'openplatform');
+			return;
+		}
+
+		if (cmd === '-flow' || cmd === 'flow') {
+			git(dir, 'emptyproject-flow');
+			return;
+		}
+
+		if (cmd === '-dashboard' || cmd === 'dashboard') {
+			git(dir, 'emptyproject-dashboard');
+			return;
+		}
+
+		if (cmd === '-flowboard' || cmd === 'flowboard') {
+			git(dir, 'emptyproject-flowboard');
+			return;
+		}
+
+		if (cmd === '-pwa' || cmd === 'pwa') {
+			git(dir, 'emptyproject-pwa');
+			return;
+		}
+
+		if (cmd === '-spa' || cmd === 'spa') {
+			git(dir, 'emptyproject-jcomponent');
+			return;
+		}
+
+		if (cmd === '-rest' || cmd === 'rest') {
+			git(dir, 'emptyproject-restservice');
 			return;
 		}
 
@@ -669,7 +759,7 @@ function main() {
 					texts[key] = command.command;
 
 					if (!resource[key]) {
-						output.push(key + ';"' + command.command.replace(/\"/g, '""') + '";');
+						output.push(key + ';"' + command.command.replace(/"/g, '""') + '";');
 						resource[key] = true;
 						count++;
 					}
@@ -701,20 +791,36 @@ function main() {
 		}
 	}
 
-	console.log('Downloading "empty-project" from www.totaljs.com');
+	git(dir, 'emptyproject');
+}
 
-	var url = 'https://cdn.totaljs.com/empty-project.package';
+function git(dir, type) {
 
-	Utils.download(url, ['get'], function(err, response) {
-		var filename = path.join(dir, 'total.package');
-		var stream = fs.createWriteStream(filename);
-		response.pipe(stream);
-		stream.on('finish', function() {
-			console.log('Unpacking file.');
-			exec('totalpackage unpack total.package', function() {
-				fs.unlink(filename, NOOP);
-				console.log('Done.');
-				console.log('');
+	var done = function() {
+		console.log('Installed: {0}'.format(type));
+		console.log();
+	};
+
+	U.ls(dir, function(fol, fil) {
+
+		if (fol.length || fil.length) {
+			console.log('Directory "{0}"" is not empty.'.format(dir));
+			console.log();
+			return;
+		}
+
+		F.path.mkdir(dir);
+		exec('git clone https://github.com/totaljs/{0}.git {1}'.format(type, dir), function(err) {
+			F.path.mkdir(path.join(dir, '/node_modules/'));
+			F.rmdir(path.join(dir, '.git'), function() {
+				F.unlink(path.join(dir, '.gitignore'), function() {
+					F.path.exists(path.join(dir, 'package.json'), function(e) {
+						if (e)
+							exec('npm install total.js --save', done);
+						else
+							exec('npm install', done);
+					});
+				});
 			});
 		});
 	});
