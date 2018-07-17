@@ -306,7 +306,7 @@ global.$$$ = global.GETSCHEMA = (group, name, fn, timeout) => framework_builders
 global.CREATE = (group, name) => framework_builders.getschema(group, name).default();
 global.SCRIPT = (body, value, callback, param) => F.script(body, value, callback, param);
 global.SINGLETON = (name, def) => SINGLETONS[name] || (SINGLETONS[name] = (new Function('return ' + (def || '{}')))());
-global.FUNCTION = (name) => F.functions[name];
+global.FUNCTION = (name) => F.functions[name] || NOOP;
 global.ROUTING = (name) => F.routing(name);
 global.SCHEDULE = (date, each, fn, param) => F.schedule(date, each, fn, param);
 global.FINISHED = framework_internal.onFinished;
@@ -969,6 +969,11 @@ Framework.prototype = {
 
 var framework = new Framework();
 global.framework = global.F = module.exports = framework;
+
+F.dir = function(path) {
+	F.directory = path;
+	directory = path;
+};
 
 F.prototypes = function(fn) {
 	var proto = {};
@@ -4609,7 +4614,7 @@ F.$restart = function() {
 		global.G = F.global = {};
 		F.resources = {};
 		F.connections = {};
-		F.functions = {};
+		global.FUNCTIONS = F.functions = {};
 		F.themes = {};
 		F.uptodates = null;
 		F.versions = null;
