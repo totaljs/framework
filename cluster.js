@@ -159,7 +159,8 @@ exports.restart = function(index) {
 			fork.removeAllListeners();
 			fork.disconnect();
 			exec(index);
-		}
+		} else
+			exec(index);
 	}
 };
 
@@ -241,11 +242,13 @@ function exec(index) {
 	var fork = Cluster.fork();
 	fork.$id = index.toString();
 	fork.on('message', message);
+	fork.on('exit', () => FORKS[index] = null);
 
-	if (FORKS[index])
-		FORKS[index] = fork;
-	else
+	if (FORKS[index] === undefined)
 		FORKS.push(fork);
+	else
+		FORKS[index] = fork;
+
 	(function(fork) {
 		setTimeout(function() {
 			OPTIONS.options.id = fork.$id;
