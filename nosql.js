@@ -1129,6 +1129,15 @@ DP.one = function() {
 	return builder;
 };
 
+DP.one2 = function() {
+	var self = this;
+	var builder = new DatabaseBuilder(self);
+	builder.first();
+	self.pending_reader2.push({ builder: builder, count: 0 });
+	setImmediate(next_operation, self, 11);
+	return builder;
+};
+
 DP.top = function(max) {
 	var self = this;
 	var builder = new DatabaseBuilder(self);
@@ -5784,6 +5793,16 @@ TP.one = function() {
 	builder.first();
 	self.pending_reader.push({ builder: builder, count: 0 });
 	setImmediate(next_operation, self, 4);
+	return builder;
+};
+
+TP.one2 = function() {
+	var self = this;
+	self.readonly && self.throwReadonly();
+	var builder = new DatabaseBuilder(self);
+	builder.first();
+	self.pending_reader2.push({ builder: builder, count: 0 });
+	setImmediate(next_operation, self, 11);
 	return builder;
 };
 
