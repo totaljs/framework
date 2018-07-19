@@ -6250,6 +6250,18 @@ F.touch = function(url) {
 	return F;
 };
 
+// OBSOLETE
+F.responseFile = function(req, res, filename, downloadName, headers, done, key) {
+	OBSOLETE('F.responseFile()', 'This method is obsolete, use res.file()');
+	res.$key = key;
+	res.options.filename = filename;
+	res.options.download = downloadName;
+	res.options.headers = headers;
+	res.options.callback = done;
+	res.$file();
+	return F;
+};
+
 F.response503 = function(req, res) {
 	res.options.code = 503;
 	res.options.headers = HEADERS.response503;
