@@ -112,6 +112,7 @@ function GraphDB(name) {
 		self.next(value);
 	};
 
+	F.grapdbinstance = true;
 	self.open();
 }
 
