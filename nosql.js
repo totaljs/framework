@@ -615,6 +615,13 @@ function Database(name, filename, readonly) {
 const TP = Table.prototype;
 const DP = Database.prototype;
 
+TP.memory = DP.memory = function(count, size) {
+	var self = this;
+	count && (self.buffercount = count);      // def: 15 - count of stored documents in memory while reading/writing
+	size && (self.buffersize = size * 1024);  // def: 32 - size of buffer in kB
+	return self;
+};
+
 TP.view = DP.view = function() {
 	throw new Error('NoSQL Views are not supported in this version.');
 };
@@ -1401,6 +1408,12 @@ DP.$update = function() {
 	var indexer = 0;
 	var fs = new NoSQLStream(self.filename);
 
+	if (self.buffersize)
+		fs.buffersize = self.buffersize;
+
+	if (self.buffercount)
+		fs.buffercount = self.buffercount;
+
 	fs.ondocuments = function() {
 
 		var docs = JSON.parse('[' + fs.docs + ']', jsonparser);
@@ -1680,6 +1693,12 @@ DP.$reader2 = function(filename, items, callback, reader) {
 
 	var fs = new NoSQLStream(self.filename);
 
+	if (self.buffersize)
+		fs.buffersize = self.buffersize;
+
+	if (self.buffercount)
+		fs.buffercount = self.buffercount;
+
 	fs.ondocuments = function() {
 
 		var docs = JSON.parse('[' + fs.docs + ']', jsonparser);
@@ -1863,6 +1882,12 @@ DP.$reader3 = function() {
 
 	var fs = new NoSQLStream(self.filename);
 
+	if (self.buffersize)
+		fs.buffersize = self.buffersize;
+
+	if (self.buffercount)
+		fs.buffercount = self.buffercount;
+
 	fs.ondocuments = function() {
 
 		var docs = JSON.parse('[' + fs.docs + ']', jsonparser);
@@ -2042,6 +2067,12 @@ DP.$streamer = function() {
 	var length = filter.length;
 	var count = 0;
 	var fs = new NoSQLStream(self.filename);
+
+	if (self.buffersize)
+		fs.buffersize = self.buffersize;
+
+	if (self.buffercount)
+		fs.buffercount = self.buffercount;
 
 	fs.ondocuments = function() {
 		var docs = JSON.parse('[' + fs.docs + ']', jsonparser);
@@ -2289,6 +2320,12 @@ DP.$remove = function() {
 	var indexer = 0;
 	var backup = false;
 
+	if (self.buffersize)
+		fs.buffersize = self.buffersize;
+
+	if (self.buffercount)
+		fs.buffercount = self.buffercount;
+
 	for (var i = 0; i < length; i++) {
 		var fil = filter[i];
 		fil.compare = fil.builder.compile();
@@ -2393,6 +2430,12 @@ DP.$clean = function() {
 
 	var fs = new NoSQLStream(self.filename);
 	var writer = Fs.createWriteStream(self.filename + '-tmp');
+
+	if (self.buffersize)
+		fs.buffersize = self.buffersize;
+
+	if (self.buffercount)
+		fs.buffercount = self.buffercount;
 
 	fs.divider = NEWLINE;
 
@@ -5360,6 +5403,12 @@ SP.scan = function(beg, end, mapreduce, callback, reverse) {
 			stats.current = item.date;
 			stats.index = index;
 
+			if (self.buffersize)
+				reader.buffersize = self.buffersize;
+
+			if (self.buffercount)
+				reader.buffercount = self.buffercount;
+
 			reader.ondocuments = function() {
 				var docs = JSON.parse('[' + reader.docs + ']', jsonparser);
 				for (var j = 0; j < docs.length; j++) {
@@ -5653,9 +5702,14 @@ TP.extend = function(schema, callback) {
 		var count = 0;
 		var fs = new NoSQLStream(self.filename);
 		var data = {};
-
 		var tmp = self.filename + '-tmp';
 		var writer = Fs.createWriteStream(tmp);
+
+		if (self.buffersize)
+			fs.buffersize = self.buffersize;
+
+		if (self.buffercount)
+			fs.buffercount = self.buffercount;
 
 		writer.write(meta, 'utf8');
 		writer.on('finish', function() {
@@ -5894,6 +5948,12 @@ TP.$reader = function() {
 	fs.divider = '\n';
 	data.keys = keys && keyscount ? Object.keys(keys) : self.$keys;
 
+	if (self.buffersize)
+		fs.buffersize = self.buffersize;
+
+	if (self.buffercount)
+		fs.buffercount = self.buffercount;
+
 	fs.ondocuments = function() {
 
 		var lines = fs.docs.split(fs.divider);
@@ -6095,6 +6155,12 @@ TP.$reader3 = function() {
 
 	fs.divider = '\n';
 	data.keys = keys && keyscount ? Object.keys(keys) : self.$keys;
+
+	if (self.buffersize)
+		fs.buffersize = self.buffersize;
+
+	if (self.buffercount)
+		fs.buffercount = self.buffercount;
 
 	fs.ondocuments = function() {
 
@@ -6298,6 +6364,12 @@ TP.$update = function() {
 	var data = {};
 	data.keys = keys && keyscount ? Object.keys(keys) : self.$keys;
 
+	if (self.buffersize)
+		fs.buffersize = self.buffersize;
+
+	if (self.buffercount)
+		fs.buffercount = self.buffercount;
+
 	fs.ondocuments = function() {
 
 		var lines = fs.docs.split(fs.divider);
@@ -6456,6 +6528,12 @@ TP.$remove = function() {
 
 	fs.divider = '\n';
 
+	if (self.buffersize)
+		fs.buffersize = self.buffersize;
+
+	if (self.buffercount)
+		fs.buffercount = self.buffercount;
+
 	for (var i = 0; i < length; i++) {
 		var fil = filter[i];
 		fil.compare = fil.builder.compile(true);
@@ -6559,6 +6637,12 @@ TP.$clean = function() {
 
 	fs.divider = NEWLINE;
 
+	if (self.buffersize)
+		fs.buffersize = self.buffersize;
+
+	if (self.buffercount)
+		fs.buffercount = self.buffercount;
+
 	fs.ondocuments = function() {
 		writer.write(fs.docs + NEWLINE);
 	};
@@ -6641,6 +6725,12 @@ TP.$streamer = function() {
 
 	data.keys = self.$keys;
 	fs.divider = '\n';
+
+	if (self.buffersize)
+		fs.buffersize = self.buffersize;
+
+	if (self.buffercount)
+		fs.buffercount = self.buffercount;
 
 	fs.ondocuments = function() {
 		var lines = fs.docs.split(fs.divider);

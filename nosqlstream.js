@@ -44,6 +44,8 @@ function NoSQLStream(filename) {
 	this.buffer = null;
 	this.divider = ',';
 	this.remchar = '-';
+	this.buffercount = BUFFERDOCS;
+	this.buffersize = BUFFERSIZE;
 	// this.canceled = false;
 	// this.docs = '';
 	// this.docscount = 0;
@@ -95,7 +97,7 @@ NoSQLStream.prototype.readhelpers = function() {
 			self.docscount++;
 			self.indexer++;
 
-			if (self.docscount >= BUFFERDOCS) {
+			if (self.docscount >= self.buffercount) {
 
 				if (self.ondocuments() === false)
 					self.canceled = true;
@@ -158,7 +160,7 @@ NoSQLStream.prototype.readhelpers = function() {
 			self.docs += (self.docs ? self.divider : '') + tmp.trim();
 			self.docscount++;
 
-			if (self.docscount >= BUFFERDOCS) {
+			if (self.docscount >= self.buffercount) {
 				if (self.ondocuments() === false)
 					self.canceled = true;
 				self.docs = '';
@@ -215,7 +217,7 @@ NoSQLStream.prototype.readhelpers = function() {
 			self.docscount++;
 			self.indexer++;
 
-			if (self.docscount >= BUFFERDOCS) {
+			if (self.docscount >= self.buffercount) {
 
 				if (self.ondocuments() === false)
 					self.canceled = true;
@@ -325,7 +327,7 @@ NoSQLStream.prototype.writehelpers = function() {
 				self.docs += (self.docs ? self.divider : '') + tmp;
 				self.docsbuffer.push({ length: index, doc: tmp, position: self.positionupdate });
 				self.docscount++;
-				if (self.docsbuffer.length >= BUFFERDOCS) {
+				if (self.docsbuffer.length >= self.buffercount) {
 
 					if (self.ondocuments() === false)
 						self.canceled = true;
@@ -568,7 +570,7 @@ NoSQLStream.prototype.read = function() {
 		self.close();
 
 	} else {
-		size = size < BUFFERSIZE ? size : BUFFERSIZE;
+		size = size < self.buffersize ? size : self.buffersize;
 		var buffer = framework_utils.createBufferSize(size);
 		Fs.read(self.fd, buffer, 0, size, self.position, self.cb_readbuffer);
 	}
@@ -602,7 +604,7 @@ NoSQLStream.prototype.readreverse2 = function() {
 
 	} else {
 		var size = self.stats.size - self.bytesread;
-		size = size < BUFFERSIZE ? size : BUFFERSIZE;
+		size = size < self.buffersize ? size : self.buffersize;
 		self.position -= size;
 		var buffer = framework_utils.createBufferSize(size);
 		Fs.read(self.fd, buffer, 0, size, self.position, self.cb_readreversebuffer);
@@ -631,7 +633,7 @@ NoSQLStream.prototype.readupdate = function() {
 
 		self.flush();
 	} else {
-		size = size < BUFFERSIZE ? size : BUFFERSIZE;
+		size = size < self.buffersize ? size : self.buffersize;
 		var buffer = framework_utils.createBufferSize(size);
 		Fs.read(self.fd, buffer, 0, size, self.position, self.cb_readwritebuffer);
 	}
