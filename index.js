@@ -808,10 +808,16 @@ function Framework() {
 		other: {},
 		internal: {}, // controllers/modules names for the routing
 		owners: {},
-		ready: {}
+		ready: {},
+		service: { redirect: 0, request: 0, file: 0 }
 	};
 
 	this.stats = {
+
+		performance: {
+			request: 0,
+			file: 0
+		},
 
 		other: {
 			websocketPing: 0,
@@ -6787,6 +6793,19 @@ F.service = function(count) {
 	}
 
 	var releasegc = false;
+
+	if (F.temporary.service.request)
+		F.temporary.service.request++;
+	else
+		F.temporary.service.request = 1;
+
+	if (F.temporary.service.file)
+		F.temporary.service.file++;
+	else
+		F.temporary.service.file = 1;
+
+	F.stats.performance.request = F.stats.request.request ? F.stats.request.request / F.temporary.service.request : 0;
+	F.stats.performance.file = F.stats.request.file ? F.stats.request.file / F.temporary.service.file : 0;
 
 	// clears temporary memory for non-exist files
 	F.temporary.notfound = {};
