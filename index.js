@@ -14985,6 +14985,17 @@ function extend_response(PROTO) {
 		return self;
 	};
 
+	PROTO.filenosql = function(name, id, download, headers, callback) {
+		var self = this;
+		var options = {};
+		options.id = id;
+		options.download = download;
+		options.headers = headers;
+		options.done = callback;
+		NOSQL(name).binary.res(self, options, $file_notmodified);
+		return self;
+	};
+
 	/**
 	 * Responds with a stream
 	 * @param {String} contentType

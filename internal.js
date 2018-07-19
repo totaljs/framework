@@ -780,13 +780,19 @@ HFP.image = function(im) {
 };
 
 HFP.fs = function(storagename, custom, callback) {
-
 	if (typeof(custom) === 'function') {
 		callback = custom;
 		custom = null;
 	}
-
 	return FILESTORAGE(storagename).insert(this.filename, Fs.createReadStream(this.path), custom, callback);
+};
+
+HFP.nosql = function(name, custom, callback) {
+	if (typeof(custom) === 'function') {
+		callback = custom;
+		custom = null;
+	}
+	return NOSQL(name).binary.insert(this.filename, Fs.createReadStream(this.path), custom, callback);
 };
 
 // *********************************************************************************
