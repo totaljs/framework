@@ -899,6 +899,16 @@ HttpFile.prototype.image = function(im) {
 	return framework_image.init(this.path, im, this.width, this.height);
 };
 
+HttpFile.prototype.fs = function(storagename, custom, callback) {
+
+	if (typeof(custom) === 'function') {
+		callback = custom;
+		custom = null;
+	}
+
+	return FILESTORAGE(storagename).insert(this.filename, Fs.createReadStream(this.path), custom, callback);
+};
+
 // *********************************************************************************
 // =================================================================================
 // JS CSS + AUTO-VENDOR-PREFIXES

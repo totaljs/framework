@@ -4877,6 +4877,96 @@ Binary.prototype.update = function(id, name, buffer, custom, callback) {
 	return cacheid;
 };
 
+Binary.prototype.meta = function(id, callback, count) {
+
+	var self = this;
+
+	if (count > 3) {
+		callback(new Error('File not found.'));
+		return self;
+	}
+
+	var isnew = false;
+
+	if (id > 0)
+		isnew = true;
+	else if (id[0] === 'B' || id[0] === 'b') {
+		id = +id.substring(id.length - DIRECTORYLENGTH);
+		isnew = true;
+	} else if (id.indexOf('#') === -1)
+		id = self.db.name + '#' + id;
+
+	var filename;
+
+	if (isnew) {
+		filename = Path.join(self.$directory(id), id.toString().padLeft(DIRECTORYLENGTH, '0') + self.ext);
+	} else
+		filename = framework_utils.join(self.directory, id + self.ext);
+
+	var stream = Fs.createReadStream(filename, BINARYREADMETA);
+	stream.on('error', err => callback(err));
+	stream.on('data', function(buffer) {
+		var json = buffer.toString('utf8').replace(REGCLEAN, '');
+		if (json) {
+			callback(null, JSON.parse(json, jsonparser));
+			CLEANUP(stream);
+		} else
+			setTimeout(readfileattempt, 100, self, id, callback, count || 1);
+	});
+
+	return self;
+};
+
+Binary.prototype.res = function(res, options, notmodified) {
+
+	var self = this;
+	var isnew = false;
+	var id = options.id || '';
+
+	if (id > 0)
+		isnew = true;
+	else if (id[0] === 'B' || id[0] === 'b') {
+		id = +id.substring(id.length - DIRECTORYLENGTH);
+		isnew = true;
+	} else if (id.indexOf('#') === -1)
+		id = self.db.name + '#' + id;
+
+	var filename;
+
+	if (isnew)
+		filename = Path.join(self.$directory(id), id.toString().padLeft(DIRECTORYLENGTH, '0') + self.ext);
+	else
+		filename = framework_utils.join(self.directory, id + self.ext);
+
+	var stream = Fs.createReadStream(filename, BINARYREADMETA);
+	stream.on('error', () => res.throw404());
+	stream.on('data', function(buffer) {
+		var json = buffer.toString('utf8').replace(REGCLEAN, '');
+		if (json) {
+			var obj = JSON.parse(json, jsonparser);
+			var utc = obj.date ? new Date(+obj.date.substring(0, 4), +obj.date.substring(4, 6), +obj.date.substring(6, 8)).toUTCString() : '';
+			if (!options.download && res.req.headers['if-modified-since'] === utc) {
+				res.extention = U.getExtension(obj.name);
+				notmodified(res, utc);
+			} else {
+				res.options.type = obj.type;
+				res.options.stream = Fs.createReadStream(filename, BINARYREADDATA);
+				if (!options.download) {
+					if (!options.headers)
+						options.headers = {};
+					options.headers['Last-Modified'] = utc;
+				} else
+					res.options.download = options.download;
+				res.options.headers = options.headers;
+				res.options.done = options.done;
+				res.options.compress = options.nocompress ? false : true;
+				res.$stream();
+			}
+		} else
+			res.throw404();
+	});
+};
+
 Binary.prototype.read = function(id, callback, count) {
 
 	var self = this;

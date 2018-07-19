@@ -98,6 +98,8 @@
 - added: `F.config['secret-uid']` as a hidden secret for encrypting/decrypting values
 - added: `F.dir(path)` for changing of root directory
 - added: `NOSQL()/TABLE().memory(count, [size])` for memory consumption, more in docs
+- added: `HttpFile.fs(storage_name, [custom], [callback])` saves a file into the FileStorage
+- added: `res.filefs(storage_name, id, [download], [headers], [callback])` returns file from FileStorage
 
 - updated: (IMPORTANT) NoSQL binary divides files to independent directories for 1000 files per directory
 - updated: `GROUP()` by adding a new argument `url_prefix`

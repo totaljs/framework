@@ -15511,6 +15511,26 @@ function extend_response(PROTO) {
 	};
 
 	/**
+	 * Responds with a file from FileStorage
+	 * @param {String} name A name of FileStorage
+	 * @param {String/Number} id
+	 * @param {String} download Optional, a download name.
+	 * @param {Object} headers Optional, additional headers.
+	 * @param {Function} done Optional, callback.
+	 * @return {Framework}
+	 */
+	PROTO.filefs = function(name, id, download, headers, callback) {
+		var self = this;
+		var options = {};
+		options.id = id;
+		options.download = download;
+		options.headers = headers;
+		options.done = callback;
+		FILESTORAGE(name).res(self, options, $file_notmodified);
+		return self;
+	};
+
+	/**
 	 * Responds with a stream
 	 * @param {String} contentType
 	 * @param {Stream} stream
@@ -16315,7 +16335,7 @@ function $file_notmodified(res, name) {
 	if (res.getHeader('Last-Modified'))
 		delete headers['Last-Modified'];
 	else
-		headers['Last-Modified'] = name[2];
+		headers['Last-Modified'] = name instanceof Array ? name[2] : name;
 
 	if (res.getHeader('Expires'))
 		delete headers.Expires;
