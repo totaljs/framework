@@ -617,7 +617,7 @@ const DP = Database.prototype;
 
 TP.memory = DP.memory = function(count, size) {
 	var self = this;
-	count && (self.buffercount = count);      // def: 15 - count of stored documents in memory while reading/writing
+	count && (self.buffercount = count + 1);      // def: 15 - count of stored documents in memory while reading/writing
 	size && (self.buffersize = size * 1024);  // def: 32 - size of buffer in kB
 	return self;
 };
