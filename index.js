@@ -294,7 +294,9 @@ global.NOBIN = global.NOSQLBINARY = (name) => F.nosql(name).binary;
 global.NOSQLSTORAGE = (name) => F.nosql(name).storage;
 global.NOCOUNTER = global.NOSQLCOUNTER = (name) => F.nosql(name).counter;
 global.NOMEM = global.NOSQLMEMORY = (name, view) => global.framework_nosql.inmemory(name, view);
-global.CONFIG = (name) => F.config[name];
+global.CONFIG = function(name, val) {
+	return arguments.length === 1 ? F.config[name] : (F.config[name] = val);
+};
 global.UPTODATE = (type, url, options, interval, callback) => F.uptodate(type, url, options, interval, callback);
 global.INSTALL = (type, name, declaration, options, callback) => F.install(type, name, declaration, options, callback);
 global.UNINSTALL = (type, name, options) => F.uninstall(type, name, options);
