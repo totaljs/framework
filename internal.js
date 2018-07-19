@@ -322,128 +322,6 @@ function uploadparser_done() {
 	this.buffer_parser.end();
 }
 
-exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile) {
-
-	var boundary = contentType.split(';')[1];
-	if (!boundary) {
-		F.reqstats(false, false);
-		F.stats.request.error400++;
-		req.res.writeHead(400);
-		req.res.end();
-		return;
-	}
-
-	// For unexpected closing
-	req.once('close', () => !req.$upload && req.clear());
-
-	var parser = new MultipartParser();
-	var close = 0;
-	var stream;
-	var tmp;
-	var counter = 0;
-	var path = framework_utils.combine(tmpDirectory, (F.id ? 'i-' + F.id + '_' : '') + 'uploadedmixed-');
-
-	boundary = boundary.substring(boundary.indexOf('=', 2) + 1);
-	req.buffer_exceeded = false;
-	req.buffer_has = true;
-	req.buffer_parser = parser;
-
-	parser.initWithBoundary(boundary);
-
-	parser.onPartBegin = function() {
-		// Temporary data
-		tmp = new HttpFile();
-		tmp.$step = 0;
-		tmp.$is = false;
-		tmp.length = 0;
-	};
-
-	parser.onHeaderValue = function(buffer, start, end) {
-
-		if (req.buffer_exceeded)
-			return;
-
-		var header = buffer.slice(start, end).toString(ENCODING);
-		if (tmp.$step === 1) {
-			var index = header.indexOf(';');
-			if (index === -1)
-				tmp.type = header.trim();
-			else
-				tmp.type = header.substring(0, index).trim();
-			tmp.$step = 2;
-			return;
-		}
-
-		if (tmp.$step !== 0)
-			return;
-
-		header = parse_multipart_header(header);
-
-		tmp.$step = 1;
-		tmp.$is = header[1] !== null;
-		tmp.name = header[0];
-
-		if (tmp.$is) {
-			tmp.filename = header[1];
-			tmp.path = path + (INDEXMIXED++) + '.bin';
-
-			stream = Fs.createWriteStream(tmp.path, WRITESTREAM);
-			stream.once('close', () => close--);
-			stream.once('error', () => close--);
-			close++;
-		} else
-			destroyStream(stream);
-	};
-
-	parser.onPartData = function(buffer, start, end) {
-
-		if (req.buffer_exceeded)
-			return;
-
-		var data = buffer.slice(start, end);
-		var length = data.length;
-
-		if (!tmp.$is)
-			return;
-
-		if (tmp.length) {
-			stream.write(data);
-			tmp.length += length;
-			return;
-		}
-
-		stream.write(data);
-		tmp.length += length;
-		onFile(req, tmp, counter++);
-	};
-
-	parser.onPartEnd = function() {
-
-		if (stream) {
-			stream.end();
-			stream = null;
-		}
-
-		if (req.buffer_exceeded || !tmp.$is)
-			return;
-
-		tmp.$is = undefined;
-		tmp.$step = undefined;
-	};
-
-	parser.onEnd = function() {
-		if (close) {
-			setImmediate(parser.onEnd);
-		} else {
-			onFile(req, null);
-			F.responseContent(req, req.res, 200, EMPTYBUFFER, 'text/plain', false);
-		}
-	};
-
-	req.on('data', uploadparser);
-	req.on('end', uploadparser_done);
-};
-
 function parse_multipart_header(header) {
 
 	var arr = new Array(2);
@@ -780,7 +658,9 @@ function HttpFile() {
 	this.rem = true;
 }
 
-HttpFile.prototype.rename = HttpFile.prototype.move = function(filename, callback) {
+var HFP = HttpFile.prototype;
+
+HFP.rename = HFP.move = function(filename, callback) {
 	var self = this;
 	Fs.rename(self.path, filename, function(err) {
 
@@ -794,7 +674,7 @@ HttpFile.prototype.rename = HttpFile.prototype.move = function(filename, callbac
 	return self;
 };
 
-HttpFile.prototype.copy = function(filename, callback) {
+HFP.copy = function(filename, callback) {
 
 	var self = this;
 
@@ -811,38 +691,38 @@ HttpFile.prototype.copy = function(filename, callback) {
 	return self;
 };
 
-HttpFile.prototype.$$rename = HttpFile.prototype.$$move = function(filename) {
+HFP.$$rename = HFP.$$move = function(filename) {
 	var self = this;
 	return function(callback) {
 		return self.rename(filename, callback);
 	};
 };
 
-HttpFile.prototype.$$copy = function(filename) {
+HFP.$$copy = function(filename) {
 	var self = this;
 	return function(callback) {
 		return self.copy(filename, callback);
 	};
 };
 
-HttpFile.prototype.readSync = function() {
+HFP.readSync = function() {
 	return Fs.readFileSync(this.path);
 };
 
-HttpFile.prototype.read = function(callback) {
+HFP.read = function(callback) {
 	var self = this;
 	Fs.readFile(self.path, callback);
 	return self;
 };
 
-HttpFile.prototype.$$read = function() {
+HFP.$$read = function() {
 	var self = this;
 	return function(callback) {
 		self.read(callback);
 	};
 };
 
-HttpFile.prototype.md5 = function(callback) {
+HFP.md5 = function(callback) {
 	var self = this;
 	var md5 = Crypto.createHash('md5');
 	var stream = Fs.createReadStream(self.path);
@@ -866,40 +746,40 @@ HttpFile.prototype.md5 = function(callback) {
 	return self;
 };
 
-HttpFile.prototype.$$md5 = function() {
+HFP.$$md5 = function() {
 	var self = this;
 	return function(callback) {
 		self.md5(callback);
 	};
 };
 
-HttpFile.prototype.stream = function(options) {
+HFP.stream = function(options) {
 	return Fs.createReadStream(this.path, options);
 };
 
-HttpFile.prototype.pipe = function(stream, options) {
+HFP.pipe = function(stream, options) {
 	return Fs.createReadStream(this.path, options).pipe(stream, options);
 };
 
-HttpFile.prototype.isImage = function() {
+HFP.isImage = function() {
 	return this.type.indexOf('image/') !== -1;
 };
 
-HttpFile.prototype.isVideo = function() {
+HFP.isVideo = function() {
 	return this.type.indexOf('video/') !== -1;
 };
 
-HttpFile.prototype.isAudio = function() {
+HFP.isAudio = function() {
 	return this.type.indexOf('audio/') !== -1;
 };
 
-HttpFile.prototype.image = function(im) {
+HFP.image = function(im) {
 	if (im === undefined)
 		im = F.config['default-image-converter'] === 'im';
 	return framework_image.init(this.path, im, this.width, this.height);
 };
 
-HttpFile.prototype.fs = function(storagename, custom, callback) {
+HFP.fs = function(storagename, custom, callback) {
 
 	if (typeof(custom) === 'function') {
 		callback = custom;
@@ -2403,9 +2283,7 @@ function view_prepare(command, dynamicCommand, functions, controller) {
 		case 'selected':
 		case 'disabled':
 		case 'checked':
-		case 'etag':
 		case 'header':
-		case 'modified':
 		case 'options':
 		case 'readonly':
 		case 'canonical':

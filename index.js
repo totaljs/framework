@@ -123,11 +123,6 @@ HEADERS.sse['Pragma'] = 'no-cache';
 HEADERS.sse['Expires'] = '-1';
 HEADERS.sse[HEADER_TYPE] = 'text/event-stream';
 HEADERS.sse['X-Powered-By'] = 'Total.js';
-HEADERS.mmr = {};
-HEADERS.mmr[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
-HEADERS.mmr['Pragma'] = 'no-cache';
-HEADERS.mmr['Expires'] = '-1';
-HEADERS.mmr['X-Powered-By'] = 'Total.js';
 HEADERS.file_lastmodified = {};
 HEADERS.file_lastmodified['Access-Control-Allow-Origin'] = '*';
 HEADERS.file_lastmodified[HEADER_CACHE] = 'public, max-age=11111111';
@@ -255,7 +250,6 @@ HEADERS.authorization = { user: '', password: '', empty: true };
 HEADERS.fsStreamRead = { flags: 'r', mode: '0666', autoClose: true };
 HEADERS.fsStreamReadRange = { flags: 'r', mode: '0666', autoClose: true, start: 0, end: 0 };
 HEADERS.workers = { cwd: '' };
-HEADERS.mmrpipe = { end: false };
 HEADERS.responseLocalize = {};
 HEADERS.responseNotModified = {};
 HEADERS.responseNotModified[HEADER_CACHE] = 'public, max-age=11111111';
@@ -490,29 +484,6 @@ global.DB = global.DATABASE = function(a, b, c, d) {
 
 global.OFF = function() {
 	return arguments.length > 1 ? F.removeListener.apply(F, arguments) : F.removeAllListeners.apply(F, arguments);
-};
-
-global.MAKE = global.TRANSFORM = function(transform, fn) {
-
-	if (typeof(transform) === 'function') {
-		var tmp = fn;
-		fn = transform;
-		transform = tmp;
-	}
-
-	var obj;
-
-	if (typeof(fn) === 'function') {
-		obj = {};
-		fn.call(obj, obj);
-	} else
-		obj = fn;
-
-	return transform ? TransformBuilder.transform.apply(obj, arguments) : obj;
-};
-
-global.NEWTRANSFORM = function() {
-	return TransformBuilder.addTransform.apply(F, arguments);
 };
 
 global.NEWSCHEMA = function(group, name, make) {
@@ -785,8 +756,7 @@ function Framework() {
 		mapping: {},
 		packages: {},
 		blocks: {},
-		resources: {},
-		mmr: {}
+		resources: {}
 	};
 
 	this.owners = [];
@@ -847,7 +817,6 @@ function Framework() {
 			websocketPing: 0,
 			websocketCleaner: 0,
 			obsolete: 0,
-			restart: 0,
 			mail: 0
 		},
 
@@ -866,7 +835,6 @@ function Framework() {
 			path: 0,
 			upload: 0,
 			schema: 0,
-			mmr: 0,
 			blocked: 0,
 			'delete': 0,
 			mobile: 0,
@@ -891,7 +859,6 @@ function Framework() {
 			forward: 0,
 			notModified: 0,
 			sse: 0,
-			mmr: 0,
 			errorBuilder: 0,
 			error400: 0,
 			error401: 0,
@@ -999,7 +966,6 @@ F.prototypes = function(fn) {
 	proto.RESTBuilderResponse = framework_builders.RESTBuilderResponse.prototype;
 	proto.SchemaBuilder = framework_builders.SchemaBuilder.prototype;
 	proto.SchemaOptions = framework_builders.SchemaOptions.prototype;
-	proto.TransformBuilder = framework_builders.TransformBuilder.prototype;
 	proto.UrlBuilder = framework_builders.UrlBuilder.prototype;
 	proto.WebSocket = WebSocket.prototype;
 	proto.WebSocketClient = WebSocketClient.prototype;
@@ -2448,13 +2414,6 @@ function flags_to_object(flags) {
 	flags.forEach(flag => obj[flag] = true);
 	return obj;
 }
-
-F.mmr = function(url, process) {
-	url = framework_internal.preparePath(U.path(url));
-	F.routes.mmr[url] = { exec: process };
-	F._request_check_POST = true;
-	return F;
-};
 
 /**
  * Get routing by name
@@ -4574,150 +4533,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 };
 
 F.restart = function() {
-	if (!F.isRestarted) {
-		F.isRestarted = true;
-		F.emit('restart');
-		setTimeout(() => F.$restart(), 1000);
-	}
-	return F;
-};
-
-F.$restart = function() {
-
-	console.log('----------------> RESTART ' + new Date().format('yyyy-MM-dd HH:mm:ss'));
-
-	F.server.setTimeout(0);
-	F.server.timeout = 0;
-	F.server.close(function() {
-
-		Object.keys(F.modules).forEach(function(key) {
-			var item = F.modules[key];
-			item && item.uninstall && item.uninstall();
-		});
-
-		Object.keys(F.models).forEach(function(key) {
-			var item = F.models[key];
-			item && item.uninstall && item.uninstall();
-		});
-
-		Object.keys(F.controllers).forEach(function(key) {
-			var item = F.controllers[key];
-			item && item.uninstall && item.uninstall();
-		});
-
-		Object.keys(F.workers).forEach(function(key) {
-			var item = F.workers[key];
-			if (item && item.kill) {
-				item.removeAllListeners();
-				item.kill('SIGTERM');
-			}
-		});
-
-		Object.keys(F.connections).forEach(function(key) {
-			var item = F.connections[key];
-			if (item) {
-				item.removeAllListeners();
-				item.close();
-			}
-		});
-
-		framework_builders.restart();
-		framework_image.restart();
-		framework_mail.restart();
-		U.restart();
-		framework_internal.restart();
-
-		F.cache.clear();
-		F.cache.stop();
-		F.$events = {};
-		global.G = F.global = {};
-		F.resources = {};
-		F.connections = {};
-		global.FUNCTIONS = F.functions = {};
-		F.themes = {};
-		F.uptodates = null;
-		F.versions = null;
-		F.schedules = [];
-		F.isLoaded = false;
-		F.isRestarted = false;
-		F.components = { has: false, css: false, js: false, views: {}, instances: {}, version: null, links: '', groups: {}, files: {} };
-		PERF = {};
-
-		F.routes = {
-			sitemap: null,
-			web: [],
-			system: {},
-			files: [],
-			cors: [],
-			corsall: false,
-			websockets: [],
-			middleware: {},
-			redirects: {},
-			resize: {},
-			request: [],
-			views: {},
-			merge: {},
-			mapping: {},
-			packages: {},
-			blocks: {},
-			resources: {},
-			mmr: {}
-		};
-
-		F.temporary = {
-			path: {},
-			notfound: {},
-			processing: {},
-			range: {},
-			views: {},
-			versions: {},
-			dependencies: {},
-			other: {},
-			internal: {},
-			owners: {},
-			ready: {}
-		};
-
-		F.modificators = null;
-		F.helpers = {};
-		F.modules = {};
-		F.models = {};
-		F.sources = {};
-		F.controllers = {};
-		F.dependencies = {};
-		F.isomorphic = {};
-		F.errors = [];
-		F.problems = [];
-		F.changes = [];
-		F.traces = [];
-		F.workers = {};
-		F.convertors = [];
-		F.convertors2 = null;
-		F.databases = {};
-
-		F._request_check_redirect = false;
-		F._request_check_referer = false;
-		F._request_check_POST = false;
-		F._request_check_robot = false;
-		F._request_check_mobile = false;
-		F._length_middleware = 0;
-		F._length_request_middleware = 0;
-		F._length_files = 0;
-		F._length_wait = 0;
-		F._length_themes = 0;
-		F._length_cors = 0;
-		F._length_subdomain_web = 0;
-		F._length_subdomain_websocket = 0;
-		F.isVirtualDirectory = false;
-		F.isTheme = false;
-		F.stats.other.restart++;
-
-		setTimeout(() => F.removeAllListeners(), 2000);
-		setTimeout(function() {
-			var init = F.temporary.init;
-			F.mode(init.isHTTPS ? require('https') : http, init.name, init.options);
-		}, 1000);
-	});
+	OBSOLETE('F.restart()', 'This function is not supported');
 	return F;
 };
 
@@ -5693,8 +5509,7 @@ F.usage = function(detailed) {
 		websocket: F.routes.websockets.length,
 		file: F.routes.files.length,
 		middleware: Object.keys(F.routes.middleware).length,
-		redirect: redirects.length,
-		mmr: Object.keys(F.routes.mmr).length
+		redirect: redirects.length
 	};
 
 	output.stats = F.stats;
@@ -6067,13 +5882,6 @@ function compile_content(extension, content, filename) {
 	return content;
 }
 
-// OBSOLETE
-F.responseStatic = function(req, res, done) {
-	res.options.callback = done;
-	res.continue();
-	return F;
-};
-
 F.restore = function(filename, target, callback, filter) {
 
 	var buffer_key = U.createBuffer(':');
@@ -6426,29 +6234,6 @@ F.isProcessing = function(filename) {
 };
 
 /**
- * Disable HTTP cache for current request/response
- * @param  {Request}  req Request
- * @param  {Response} res (optional) Response
- * @return {Framework}
- */
-F.noCache = function(req) {
-	OBSOLETE('F.noCache()', 'Use req.noCache() or res.noCache() --> they have same functionality.');
-	req.noCache();
-	return F;
-};
-
-// OBSOLETE
-F.responseFile = function(req, res, filename, downloadName, headers, done, key) {
-	res.$key = key;
-	res.options.filename = filename;
-	res.options.download = downloadName;
-	res.options.headers = headers;
-	res.options.callback = done;
-	res.$file();
-	return F;
-};
-
-/**
  * Clears file information in release mode
  * @param {String/Request} url
  * @return {Framework}
@@ -6465,216 +6250,11 @@ F.touch = function(url) {
 	return F;
 };
 
-// OBSOLETE
-F.responsePipe = function(req, res, url, headers, timeout, callback) {
-	res.pipe(url, headers, timeout, callback);
-	return F;
-};
-
-// OBSOLETE
-F.responseCustom = function(req, res) {
-	res.$custom();
-	return F;
-};
-
-// OBSOLETE
-F.responseImage = function(req, res, filename, make, headers, done) {
-
-	if (typeof(filename) === 'object')
-		res.options.stream = filename;
-	else
-		res.options.filename = filename;
-
-	res.options.headers = headers;
-	res.options.callback = done;
-	res.options.make = make;
-	res.$image();
-	return F;
-};
-
-// OBSOLETE
-F.responseImageWithoutCache = function(req, res, filename, make, headers, done) {
-
-	if (typeof(filename) === 'object')
-		res.options.stream = filename;
-	else
-		res.options.filename = filename;
-
-	res.options.headers = headers;
-	res.options.callback = done;
-	res.options.make = make;
-	res.options.cache = false;
-	res.$image();
-};
-
-// OBSOLETE
-F.responseStream = function(req, res, type, stream, download, headers, done, nocompress) {
-	res.options.type = type;
-	res.options.stream = stream;
-	res.options.download = download;
-	res.options.headers = headers;
-	res.options.compress = nocompress ? false : true;
-	res.options.callback = done;
-	res.$stream();
-	return F;
-};
-
-// OBSOLETE
-F.responseBinary = function(req, res, type, buffer, encoding, download, headers, done) {
-	res.options.type = type;
-	res.options.body = buffer;
-	res.options.encoding = encoding;
-	res.options.download = download;
-	res.options.headers = headers;
-	res.options.callback = done;
-	res.$binary();
-	return F;
-};
-
-F.setModified = function(req, res, value) {
-	if (typeof(value) === 'string')
-		res.setHeader('Etag', value + F.config['etag-version']);
-	else
-		res.setHeader('Last-Modified', value.toUTCString());
-	return F;
-};
-
-F.notModified = function(req, res, compare, strict) {
-
-	var type = typeof(compare);
-	if (type === 'boolean') {
-		var tmp = compare;
-		compare = strict;
-		strict = tmp;
-		type = typeof(compare);
-	}
-
-	var isEtag = type === 'string';
-	var val = req.headers[isEtag ? 'if-none-match' : 'if-modified-since'];
-
-	if (isEtag) {
-		if (val !== (compare + F.config['etag-version']))
-			return false;
-	} else {
-
-		if (!val)
-			return false;
-
-		var date = compare === undefined ? new Date().toUTCString() : compare.toUTCString();
-		if (strict) {
-			if (new Date(Date.parse(val)) === new Date(date))
-				return false;
-		} else {
-			if (new Date(Date.parse(val)) < new Date(date))
-				return false;
-		}
-	}
-
-
-	var headers;
-
-	if (isEtag) {
-		headers = HEADERS.notModifiedEtag;
-		headers['Etag'] = val;
-	} else {
-		headers = HEADERS.notModifiedLastModifiedDate;
-		headers['Last-Modified'] = val;
-	}
-
-	res.success = true;
-	res.writeHead(304, headers);
-	res.end();
-
-	F.stats.response.notModified++;
-	response_end(res);
-	return true;
-};
-
-F.responseCode = function(req, res, code, problem) {
-	res.options.code = code;
-	problem && (res.options.problem = problem);
-	res.$throw();
-	return F;
-};
-
-F.response400 = function(req, res, problem) {
-	res.options.code = 400;
-	problem && (res.options.problem = problem);
-	res.$throw();
-	return F;
-};
-
-F.response401 = function(req, res, problem) {
-	res.options.code = 401;
-	problem && (res.options.problem = problem);
-	res.$throw();
-	return F;
-};
-
-F.response403 = function(req, res, problem) {
-	res.options.code = 403;
-	problem && (res.options.problem = problem);
-	res.$throw();
-	return F;
-};
-
-F.response404 = function(req, res, problem) {
-	res.options.code = 404;
-	problem && (res.options.problem = problem);
-	res.$throw();
-	return F;
-};
-
-F.response408 = function(req, res, problem) {
-	res.options.code = 408;
-	problem && (res.options.problem = problem);
-	res.$throw();
-	return F;
-};
-
-F.response431 = function(req, res, problem) {
-	res.options.code = 431;
-	problem && (res.options.problem = problem);
-	res.$throw();
-	return F;
-};
-
-F.response500 = function(req, res, error) {
-	res.throw500(error);
-	return F;
-};
-
-F.response501 = function(req, res, problem) {
-	res.options.code = 501;
-	problem && (res.options.problem = problem);
-	res.$throw();
-	return F;
-};
-
 F.response503 = function(req, res) {
 	res.options.code = 503;
 	res.options.headers = HEADERS.response503;
 	res.options.body = F.view('.' + PATHMODULES + '503', F.waits);
 	res.$text();
-	return F;
-};
-
-// OBSOLETE
-F.responseContent = function(req, res, code, body, type, compress, headers) {
-	res.options.code = code;
-	res.options.body = body;
-	res.options.type = type;
-	res.options.compress = compress === undefined || compress === true;
-	res.options.headers = headers;
-	res.$text();
-	return F;
-};
-
-// OBSOLETE
-F.responseRedirect = function(req, res, url, permanent) {
-	res.options.url = url;
-	res.options.permanent = permanent;
-	res.$redirect();
 	return F;
 };
 
@@ -6793,7 +6373,7 @@ global.LOAD = F.load = function(debug, types, pwd) {
  * @param  {Object} options
  * @return {Framework}
  */
-F.initialize = function(http, debug, options, restart) {
+F.initialize = function(http, debug, options) {
 
 	if (!options)
 		options = {};
@@ -6908,7 +6488,7 @@ F.initialize = function(http, debug, options, restart) {
 					F.usagesnapshot();
 				}
 
-				if (!process.connected || restart)
+				if (!process.connected)
 					F.console();
 
 				setTimeout(function() {
@@ -7061,17 +6641,11 @@ F.mode = function(http, name, options) {
 			break;
 	}
 
-	var restart = false;
-	if (F.temporary.init)
-		restart = true;
-	else
-		F.temporary.init = { name: name, isHTTPS: typeof(http.STATUS_CODES) === 'undefined', options: options };
-
 	F.config.trace = debug;
 	F.consoledebug('startup');
 	F.$startup(function() {
 		F.consoledebug('startup (done)');
-		F.initialize(http, debug, options, restart);
+		F.initialize(http, debug, options);
 	});
 	return F;
 };
@@ -7116,17 +6690,11 @@ F.custom = function(mode, http, request, response, options) {
 			break;
 	}
 
-	var restart = false;
-	if (F.temporary.init)
-		restart = true;
-	else
-		F.temporary.init = { name: mode, isHTTPS: false, options: options };
-
 	F.config.trace = debug;
 	F.consoledebug('startup');
 	F.$startup(function() {
 		F.consoledebug('startup (done)');
-		F.initialize(http, debug, options, restart);
+		F.initialize(http, debug, options);
 	});
 
 	return F;
@@ -7511,11 +7079,6 @@ F.$requestcontinue = function(req, res, headers) {
 				req.$type = 2;
 				multipart = '';
 				break;
-			case 'lace':
-				req.$type = 4;
-				flags.push('mmr');
-				req.$flags += 'e';
-				break;
 			default:
 				if (multipart) {
 					// 'undefined' DATA
@@ -7599,8 +7162,6 @@ F.$requestcontinue = function(req, res, headers) {
 				if (multipart) {
 					if (isCORS)
 						F.$cors(req, res, cors_callback_multipart, multipart);
-					else if (req.$type === 4)
-						F.$requestcontinue_mmr(req, res, multipart);
 					else
 						req.$total_multipart(multipart);
 				} else {
@@ -7632,21 +7193,8 @@ function cors_callback1(req) {
 }
 
 function cors_callback_multipart(req, res, multipart) {
-	if (req.$type === 4)
-		F.$requestcontinue_mmr(req, res, multipart);
-	else
-		req.$total_multipart(multipart);
+	req.$total_multipart(multipart);
 }
-
-F.$requestcontinue_mmr = function(req, res, header) {
-	var route = F.routes.mmr[req.url];
-	F.stats.request.mmr++;
-	if (route) {
-		F.path.verify('temp');
-		framework_internal.parseMULTIPART_MIXED(req, header, F.config['directory-temp'], route.exec);
-	} else
-		req.$total_status(404);
-};
 
 F.$cors = function(req, res, fn, arg) {
 
@@ -11241,43 +10789,6 @@ Controller.prototype.mail = function(address, subject, view, model, callback) {
 	return message;
 };
 
-/*
-	Check if ETag or Last Modified has modified
-	@compare {String or Date}
-	@strict {Boolean} :: if strict then use equal date else use great than date (default: false)
-
-	if @compare === {String} compare if-none-match
-	if @compare === {Date} compare if-modified-since
-
-	return {Boolean};
-*/
-Controller.prototype.notModified = function(compare, strict) {
-	return F.notModified(this.req, this.res, compare, strict);
-};
-
-/*
-	Set last modified header or Etag
-	@value {String or Date}
-
-	if @value === {String} set ETag
-	if @value === {Date} set LastModified
-
-	return {Controller};
-*/
-Controller.prototype.setModified = function(value) {
-	F.setModified(this.req, this.res, value);
-	return this;
-};
-
-/**
- * Sets expire headers
- * @param {Date} date
- */
-Controller.prototype.setExpires = function(date) {
-	date && this.res.setHeader('Expires', date.toUTCString());
-	return this;
-};
-
 Controller.prototype.$template = function(name, model, expire, key) {
 	return this.$viewToggle(true, name, model, expire, key);
 };
@@ -11723,48 +11234,6 @@ Controller.prototype.$isValue = function(bool, charBeg, charEnd, value) {
 	charBeg = charBeg || ' ';
 	charEnd = charEnd || '';
 	return charBeg + value + charEnd;
-};
-
-Controller.prototype.$modified = function(value) {
-
-	var self = this;
-	var type = typeof(value);
-	var date;
-
-	if (type === 'number') {
-		date = new Date(value);
-	} else if (type === 'string') {
-
-		var d = value.split(' ');
-
-		date = d[0].split('-');
-		var time = (d[1] || '').split(':');
-
-		var year = U.parseInt(date[0] || '');
-		var month = U.parseInt(date[1] || '') - 1;
-		var day = U.parseInt(date[2] || '') - 1;
-
-		if (month < 0)
-			month = 0;
-
-		if (day < 0)
-			day = 0;
-
-		var hour = U.parseInt(time[0] || '');
-		var minute = U.parseInt(time[1] || '');
-		var second = U.parseInt(time[2] || '');
-
-		date = new Date(year, month, day, hour, minute, second, 0);
-	} else if (U.isDate(value))
-		date = value;
-
-	date && self.setModified(date);
-	return '';
-};
-
-Controller.prototype.$etag = function(value) {
-	this.setModified(value);
-	return '';
 };
 
 Controller.prototype.$options = function(arr, selected, name, value) {
@@ -12341,9 +11810,7 @@ Controller.prototype.json = function(obj, headers, beautify, replacer) {
 };
 
 Controller.prototype.success = function(is, value) {
-	if (is === undefined)
-		is = true;
-	return this.json(SUCCESS(is, value));
+	return this.json(SUCCESS(is === undefined ? true : is, value));
 };
 
 /**
@@ -12870,45 +12337,6 @@ Controller.prototype.sse = function(data, eventname, id, retry) {
 	builder += newline;
 	res.write(builder);
 	F.stats.response.sse++;
-	return self;
-};
-
-Controller.prototype.mmr = function(name, stream, callback) {
-
-	var self = this;
-	var res = self.res;
-
-	if (typeof(stream) === 'function') {
-		callback = stream;
-		stream = name;
-	}
-
-	if (!stream)
-		stream = name;
-
-	if (!self.isConnected || (!self.type && res.success) || (self.type && self.type !== 2)) {
-		callback = null;
-		return self;
-	}
-
-	if (!self.type) {
-		self.type = 2;
-		self.boundary = '----totaljs' + U.GUID(10);
-		self.req.$total_success();
-		self.req.on('close', () => self.close());
-		res.success = true;
-		HEADERS.mmr[HEADER_TYPE] = 'multipart/x-mixed-replace; boundary=' + self.boundary;
-		res.writeHead(self.status || 200, HEADERS.mmr);
-	}
-
-	res.write('--' + self.boundary + NEWLINE + HEADER_TYPE + ': ' + U.getContentType(U.getExtension(name)) + NEWLINE + NEWLINE);
-	F.stats.response.mmr++;
-
-	if (typeof(stream) === 'string')
-		stream = Fs.createReadStream(stream);
-
-	stream.pipe(res, HEADERS.mmrpipe);
-	CLEANUP(stream, () => callback && callback());
 	return self;
 };
 
@@ -14693,10 +14121,6 @@ function extend_request(PROTO) {
 	PROTO.noCache = function() {
 		this.res && this.res.noCache();
 		return this;
-	};
-
-	PROTO.notModified = function(compare, strict) {
-		return F.notModified(this, this.res, compare, strict);
 	};
 
 	/**

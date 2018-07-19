@@ -464,13 +464,8 @@ function viewIndex() {
 
 	assert.ok(self.hash('sha1', '123456', false) === '7c4a8d09ca3762af61e59520943dc26494f8941b', 'controller.hash()');
 
-	self.setModified('123456');
-
 	var date = new Date();
 	date.setFullYear(1984);
-
-	self.setModified(date);
-	self.setExpires(date);
 
 	assert.ok(self.routeScript('p.js') === '/js/p.js', name + 'routeScript()');
 	assert.ok(self.routeStyle('p.css') === '/css/p.css', name + 'routeStyle()');

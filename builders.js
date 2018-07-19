@@ -37,7 +37,7 @@ const Qs = require('querystring');
 
 var schemas = {};
 var operations = {};
-var transforms = { pagination: {}, error: {}, transformbuilder: {}, restbuilder: {} };
+var transforms = { pagination: {}, error: {}, restbuilder: {} };
 
 function SchemaBuilder(name) {
 	this.name = name;
@@ -4051,56 +4051,6 @@ UrlBuilder.prototype.toOne = function(keys, delimiter) {
 	return builder.join(delimiter || '&');
 };
 
-function TransformBuilder() {}
-
-TransformBuilder.transform = function(name, obj) {
-
-	OBSOLETE('TransformBuilder', 'Builders.TransformBuilder will be removed in next versions.');
-
-	var index = 2;
-
-	if (obj === undefined) {
-		obj = name;
-		name = transforms['transformbuilder_default'];
-		index = 1;
-	}
-
-	var current = transforms['transformbuilder'][name];
-	if (!current) {
-		F.error('Transformation "' + name + '" not found.', 'TransformBuilder.transform()');
-		return obj;
-	}
-
-	var sum = arguments.length - index;
-	if (sum <= 0)
-		return current.call(obj, obj);
-
-	var arr = new Array(sum + 1);
-	var indexer = 1;
-	arr[0] = obj;
-	for (var i = index; i < arguments.length; i++)
-		arr[indexer++] = arguments[i];
-	return current.apply(obj, arr);
-};
-
-/**
- * STATIC: Create a transformation
- * @param {String} name
- * @param {Function} fn
- * @param {Boolean} isDefault Default transformation for all TransformBuilders.
- */
-TransformBuilder.addTransform = function(name, fn, isDefault) {
-	transforms['transformbuilder'][name] = fn;
-	isDefault && TransformBuilder.setDefaultTransform(name);
-};
-
-TransformBuilder.setDefaultTransform = function(name) {
-	if (name)
-		transforms['transformbuilder_default'] = name;
-	else
-		delete transforms['transformbuilder_default'];
-};
-
 function RESTBuilder(url) {
 
 	this.$url = url;
@@ -4909,14 +4859,12 @@ exports.ErrorBuilder = ErrorBuilder;
 exports.Pagination = Pagination;
 exports.Page = Page;
 exports.UrlBuilder = UrlBuilder;
-exports.TransformBuilder = TransformBuilder;
 exports.SchemaOptions = SchemaOptions;
 exports.OperationOptions = OperationOptions;
 exports.RESTBuilderResponse = RESTBuilderResponse;
 global.RESTBuilder = RESTBuilder;
 global.RESTBuilderResponse = RESTBuilderResponse;
 global.ErrorBuilder = ErrorBuilder;
-global.TransformBuilder = TransformBuilder;
 global.Pagination = Pagination;
 global.Page = Page;
 global.UrlBuilder = global.URLBuilder = UrlBuilder;

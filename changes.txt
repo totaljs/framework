@@ -152,6 +152,29 @@
 - replaced: config `default-maximum-file-descriptors` to `default-maxopenfiles`
 - replaced: `controller.proxy()` functionality (the name remains) via `controller.proxy2()` functionality
 
+- removed: `F.responseFile()`
+- removed: `F.responsePipe()`
+- removed: `F.responseImage()`
+- removed: `F.responseImageWithoutCache()`
+- removed: `F.responseStream()`
+- removed: `F.responseBinary()`
+- removed: `F.responseContent()`
+- removed: `F.responseRedirect()`
+- removed: `F.response400()`
+- removed: `F.response401()`
+- removed: `F.response404()`
+- removed: `F.response408()`
+- removed: `F.response431()`
+- removed: `F.response500()`
+- removed: `F.response501()`
+- removed: `F.responseStatic()`
+- removed: `F.setModified()`
+- removed: `F.notModified()`
+- removed: `F.responseCode()`
+- removed: `F.noCache()`
+- removed: `controller.$modified()`
+- removed: `controller.$etag()`
+
 - improved: `debug` mode timing with improved consumption
 - improved: performance (+20%) NoSQL embedded database
 - improved: reading performance (+5%) in `U.streamer()`

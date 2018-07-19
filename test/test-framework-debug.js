@@ -68,8 +68,6 @@ function test_controller_functions(next) {
 	utils.request(url, ['get'], function(error, data, code, headers) {
 		error && assert.ok(false, 'test_controller_functions: ' + error.toString());
 		assert.ok(code === 404, 'controller: statusCode ' + code);
-		assert.ok(headers['etag'] === '1234561', 'controller: setModified(etag)');
-		assert.ok(headers['last-modified'].toString().indexOf('1984') !== -1, 'controller: setModified(date)');
 		next();
 	});
 }
