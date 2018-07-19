@@ -335,13 +335,10 @@ global.UID = function(type) {
 	return UIDGENERATOR.date + index.padLeft(4, '0') + UIDGENERATOR.instance + (index % 2 ? 1 : 0);
 };
 
-global.ROUTE = (a, b, c, d, e) => F.route(a, b, c, d, e);
-global.WEBSOCKET = (a, b, c, d) => F.websocket(a, b, c, d);
-global.FILE = (a, b, c) => F.file(a, b, c);
-global.REDIRECT = (a, b, c, d) => F.redirect(a, b, c, d);
 global.AUTH = function(fn) {
 	F.onAuthorize = fn;
 };
+
 global.WEBSOCKETCLIENT = function(callback) {
 	var ws = require('./websocketclient').create();
 	callback && callback.call(ws, ws);
@@ -1363,7 +1360,7 @@ F.stop = F.kill = function(signal) {
 	return F;
 };
 
-F.redirect = function(host, newHost, withPath, permanent) {
+global.REDIRECT = F.redirect = function(host, newHost, withPath, permanent) {
 
 	var external = host.startsWith('http://') || host.startsWith('https');
 	if (external) {
@@ -1811,7 +1808,8 @@ global.GROUP = F.group = function() {
  * @param {Number} timeout Response timeout.
  * @return {Framework}
  */
-F.web = F.route = function(url, funcExecute, flags, length, language) {
+
+global.ROUTE = F.web = F.route = function(url, funcExecute, flags, length, language) {
 
 	var name;
 	var tmp;
@@ -2174,11 +2172,11 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 
 	if (type === 'string') {
 		viewname = funcExecute;
-		funcExecute = (function(name, sitemap, language) {
+		funcExecute = (function(name, sitemap, language, workflow) {
 			var themeName = U.parseTheme(name);
 			if (themeName)
 				name = prepare_viewname(name);
-			return function() {
+			return function(id) {
 				if (language && !this.language)
 					this.language = language;
 				sitemap && this.sitemap(sitemap.id, language);
@@ -2188,15 +2186,24 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 					this.themeName = themeName;
 				if (!this.route.workflow)
 					return this.view(name);
+
 				var self = this;
-				this.$exec(this.route.workflow, null, function(err, response) {
-					if (err)
-						self.content(err);
+				if (this.route.workflow instanceof Object) {
+					workflow.view = name;
+					if (workflow.id instanceof Array)
+						controller_json_workflow_multiple.call(self, id);
 					else
-						self.view(name, response);
-				});
+						controller_json_workflow.call(self, id);
+				} else {
+					this.$exec(this.route.workflow, null, function(err, response) {
+						if (err)
+							self.content(err);
+						else
+							self.view(name, response);
+					});
+				}
 			};
-		})(viewname, sitemap, language);
+		})(viewname, sitemap, language, workflow);
 	} else if (typeof(funcExecute) !== 'function') {
 
 		viewname = (sitemap && sitemap.url !== '/' ? sitemap.id : workflow ? '' : url) || '';
@@ -2211,17 +2218,27 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 			if (!viewname || viewname === '/')
 				viewname = 'index';
 
-			funcExecute = (function(name, sitemap, language, action) {
-				return function() {
-					if (language && !this.language)
-						this.language = language;
-					sitemap && this.sitemap(sitemap.id, language);
-					name[0] === '~' && this.theme('');
-					if (!this.route.workflow)
-						return this.view(name);
+			funcExecute = (function(name, sitemap, language) {
+				return function(id) {
 					var self = this;
 
-					if (action) {
+					if (language && !self.language)
+						self.language = language;
+
+					sitemap && self.sitemap(sitemap.id, language);
+
+					if (name[0] === '~')
+						self.themeName = '';
+
+					if (!self.route.workflow)
+						return self.view(name);
+
+					if (self.route.workflow instanceof Object) {
+						workflow.view = name;
+						if (workflow.id instanceof Array)
+							controller_json_workflow_multiple.call(self, id);
+						else
+							controller_json_workflow.call(self, id);
 					} else {
 						self.$exec(self.route.workflow, null, function(err, response) {
 							if (err)
@@ -2783,7 +2800,7 @@ function merge_middleware(a, b, first) {
  * @param {Object} options Optional, additional options for middleware.
  * @return {Framework}
  */
-F.websocket = function(url, funcInitialize, flags, length) {
+global.WEBSOCKET = F.websocket = function(url, funcInitialize, flags, length) {
 
 	var tmp;
 
@@ -3066,7 +3083,7 @@ F.initwebsocket = function() {
  * @param {String Array} middleware
  * @return {Framework}
  */
-F.file = function(fnValidation, fnExecute, flags) {
+global.FILE = F.file = function(fnValidation, fnExecute, flags) {
 
 	var a;
 
@@ -16964,7 +16981,7 @@ function controller_json_workflow(id) {
 			self[w.type](w.name, self.callback());
 		else {
 			if (w.type)
-				self[w.type](self.callback());
+				self[w.type](self.callback(w.view));
 			else
 				self.throw500('Operation @' + w.id + ' not found.');
 		}
@@ -17004,7 +17021,7 @@ function controller_json_workflow_multiple(id) {
 			w.async = op;
 		}
 
-		var async = self.$async(self.callback(), w.index);
+		var async = self.$async(self.callback(w.view), w.index);
 		for (var i = 0; i < w.async.length; i++) {
 			var a = w.async[i];
 			if (a.id)
