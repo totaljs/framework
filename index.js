@@ -6744,7 +6744,7 @@ F.console = function() {
 };
 
 F.usagesnapshot = function(filename) {
-	Fs.writeFile(filename || F.path.root('usage.log'), JSON.stringify(F.usage(true), null, '    '), NOOP);
+	Fs.writeFile(filename || F.path.root('usage' + (F.id ? ('-' + F.id) : '') + '.log'), JSON.stringify(F.usage(true), null, '    '), NOOP);
 	return F;
 };
 
@@ -16193,6 +16193,8 @@ process.on('message', function(msg, h) {
 		msg.TYPE === 'req' && F.cluster.req(msg);
 		msg.TYPE === 'res' && msg.target === F.id && F.cluster.res(msg);
 		msg.TYPE === 'emit' && F.$events[msg.name] && F.emit(msg.name, msg.data);
+		msg.TYPE === 'nosql-meta' && NOSQL(msg.name).meta(msg.key, msg.value, true);
+		msg.TYPE === 'table-meta' && TABLE(msg.name).meta(msg.key, msg.value, true);
 	}
 	F.$events.message && F.emit('message', msg, h);
 });

@@ -24,6 +24,7 @@
  * @version 3.0.0
  */
 
+const Fs = require('fs');
 const Cluster = require('cluster');
 const CLUSTER_REQ = { TYPE: 'req' };
 const CLUSTER_RES = { TYPE: 'res' };
@@ -192,13 +193,24 @@ function master(count, mode, options, callback) {
 	console.log('Mode        : ' + mode);
 	console.log('====================================================\n');
 
+	// Remove all DB locks
+	Fs.readdir(F.path.databases(), function(err, files) {
+		if (!err) {
+			var reglock = /(\.nosql-lock|\.table-lock|\.nosql-counter2-lock)$/;
+			for (var i = 0; i < files.length; i++) {
+				var file = files[i];
+				reglock.test(file) && Fs.unlinkSync(F.path.databases(file));
+			}
+		}
+	});
+
 	THREADS = count;
 
 	var can = function(cb) {
 		if (CONTINUE)
 			cb();
 		else
-			setTimeout(can, 1000, cb);
+			setTimeout(can, 500, cb);
 	};
 
 	count.async(function(i, next) {

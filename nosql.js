@@ -71,6 +71,7 @@ const BINARYREADDATABASE64 = { start: BINARY_HEADER_LENGTH, encoding: 'base64' }
 const BINARYREADMETA = { start: 0, end: BINARY_HEADER_LENGTH - 1, encoding: 'binary' };
 const BOOLEAN = { '1': 1, 'true': 1, 'on': 1 };
 const TABLERECORD = { '+': 1, '-': 1, '*': 1 };
+const CLUSTERMETA = {};
 
 const COMPARER = global.Intl ? global.Intl.Collator().compare : function(a, b) {
 	return a.removeDiacritics().localeCompare(b.removeDiacritics());
@@ -82,6 +83,33 @@ const CACHE = {};
 var JSONBUFFER = process.argv.findIndex(n => n.endsWith('nosqlworker.js')) === -1 ? 20 : 40;
 var FORK;
 var FORKCALLBACKS;
+
+function clusterlock(db, method) {
+	Fs.open(db.filenameLock, 'wx', function(err, fd) {
+
+		if (err) {
+			setTimeout(clusterlock, 100, db, method);
+			return;
+		}
+
+		Fs.write(fd, F.id.toString(), function(err) {
+			err && F.error('NoSQLStream.lock.write()', err);
+			Fs.close(fd, function(err) {
+				err && F.error('NoSQLStream.lock.close()', err);
+				db.locked = true;
+				db[method]();
+			});
+		});
+	});
+
+}
+
+function clusterunlock(db) {
+	if (db.locked) {
+		db.locked = false;
+		Fs.unlink(db.filenameLock, NOOP);
+	}
+}
 
 function promise(fn) {
 	var self = this;
@@ -172,11 +200,11 @@ exports.worker = function() {
 				break;
 			case 'update':
 				var obj = FORKCALLBACKS[msg.id];
-				obj && obj.builder.$callback(msg.err, msg.response, msg.repository);
+				obj && obj.builder.$callback && obj.builder.$callback(msg.err, msg.response, msg.repository);
 				break;
 			case 'remove':
 				var obj = FORKCALLBACKS[msg.id];
-				obj && obj.builder.$callback(msg.err, msg.response, msg.repository);
+				obj && obj.builder.$callback && obj.builder.$callback(msg.err, msg.response, msg.repository);
 				break;
 			case 'backup':
 			case 'restore':
@@ -505,6 +533,7 @@ function Table(name, filename) {
 	t.filenameCounter = filename + EXTENSION_TABLE + EXTENSION_COUNTER;
 	t.filenameMeta = filename + EXTENSION_TABLE + '-meta';
 	t.directory = Path.dirname(filename);
+	t.filenameLock = t.filename + '-lock';
 	t.name = name;
 	t.$name = '$' + name;
 	t.pending_reader = [];
@@ -576,6 +605,7 @@ function Database(name, filename, readonly) {
 	self.directory = Path.dirname(filename);
 
 	if (!readonly) {
+		self.filenameLock = self.filename + '-lock';
 		self.filenameCounter = self.readonly ? filename.format('counter', '-') : filename + EXTENSION + EXTENSION_COUNTER;
 		self.filenameLog = self.readonly || readonly === true ? '' : filename + EXTENSION_LOG;
 		self.filenameBackup = self.readonly || readonly === true ? '' : filename + EXTENSION_BACKUP;
@@ -713,15 +743,30 @@ TP.set = DP.set = function(name, value) {
 	return this.meta(name, value);
 };
 
-TP.meta = DP.meta = function(name, value) {
+TP.meta = DP.meta = function(name, value, nosave) {
 	var self = this;
+
 	if (value === undefined)
 		return self.metadata ? self.metadata[name] : undefined;
+
 	if (!self.metadata)
 		self.metadata = {};
+
 	self.metadata[name] = value;
 	clearTimeout(self.timeoutmeta);
-	self.timeoutmeta = setTimeout(() => self.$meta(true), 500);
+
+	if (nosave)
+		self.timeoutmeta = setTimeout(() => self.$meta(true), 500);
+
+	if (F.isCluster && !nosave) {
+		CLUSTERMETA.id = F.id;
+		CLUSTERMETA.TYPE = (self instanceof Table ? 'table' : 'nosql') + '-meta';
+		CLUSTERMETA.name = self.name;
+		CLUSTERMETA.key = name;
+		CLUSTERMETA.value = value;
+		process.send(CLUSTERMETA);
+	}
+
 	return self;
 };
 
@@ -1169,10 +1214,15 @@ DP.next = function(type) {
 	if (type && NEXTWAIT[this.step])
 		return;
 
+	if (F.isCluster && type === 0 && this.locked)
+		clusterunlock(this);
+
 	if (!this.$writting && !this.$reading) {
 
 		if (this.step !== 12 && this.pending_clear.length) {
-			if (INMEMORY[this.name])
+			if (!this.readonly && F.isCluster)
+				clusterlock(this, '$clear');
+			else if (INMEMORY[this.name])
 				this.$clear_inmemory();
 			else
 				this.$clear();
@@ -1180,7 +1230,10 @@ DP.next = function(type) {
 		}
 
 		if (this.step !== 13 && this.pending_clean.length) {
-			this.$clean();
+			if (!this.readonly && F.isCluster)
+				clusterlock(this, '$clean');
+			else
+				this.$clean();
 			return;
 		}
 
@@ -1206,7 +1259,9 @@ DP.next = function(type) {
 		}
 
 		if (this.step !== 2 && !this.$writting && this.pending_update.length) {
-			if (INMEMORY[this.name])
+			if (!this.readonly && F.isCluster)
+				clusterlock(this, '$update');
+			else if (INMEMORY[this.name])
 				this.$update_inmemory();
 			else
 				this.$update();
@@ -1214,6 +1269,8 @@ DP.next = function(type) {
 		}
 
 		if (this.step !== 3 && !this.$writting && this.pending_remove.length) {
+			if (!this.readonly && F.isCluster)
+				clusterlock(this, '$remove');
 			if (INMEMORY[this.name])
 				this.$remove_inmemory();
 			else
@@ -3385,6 +3442,7 @@ function Counter(db) {
 	t.TIMEOUT = 30000;
 	t.db = db;
 	t.cache;
+	t.filenameLock = db.filenameCounter + '-lock';
 	t.key = (db instanceof Table ? 'table' : 'nosql') + db.name.hash();
 	t.type = 0; // 1 === saving, 2 === reading
 	t.$events = {};
@@ -4313,6 +4371,15 @@ function counter_parse_days_all(output, value, year, opt) {
 }
 
 CP.save = function() {
+	var self = this;
+	if (F.isCluster)
+		clusterlock(self, '$save');
+	else
+		self.$save();
+	return self;
+};
+
+CP.$save = function() {
 
 	var self = this;
 	self.db.readonly && self.db.throwReadonly();
@@ -4322,7 +4389,7 @@ CP.save = function() {
 		return self;
 	}
 
-	var filename = self.db.filename + EXTENSION_COUNTER;
+	var filename = self.db.filenameCounter;
 	var reader = Fs.createReadStream(filename);
 	var writer = Fs.createWriteStream(filename + '-tmp');
 	var dt = NOW.format('MMdd') + '=';
@@ -4428,6 +4495,7 @@ CP.save = function() {
 
 	CLEANUP(writer, function() {
 		Fs.rename(filename + '-tmp', filename, function() {
+			F.isCluster && clusterunlock(self);
 			clearTimeout(self.timeout);
 			self.timeout = 0;
 			self.type = 0;
@@ -5911,15 +5979,24 @@ TP.next = function(type) {
 	if (!this.ready || (type && NEXTWAIT[this.step]))
 		return;
 
+	if (F.isCluster && type === 0 && this.locked)
+		clusterunlock(this);
+
 	if (!this.$writting && !this.$reading) {
 
 		if (this.step !== 12 && this.pending_clear.length) {
-			this.$clear();
+			if (!this.readonly && F.isCluster)
+				clusterlock(this, '$clear');
+			else
+				this.$clear();
 			return;
 		}
 
 		if (this.step !== 13 && this.pending_clean.length) {
-			this.$clean();
+			if (!this.readonly && F.isCluster)
+				clusterlock(this, '$clean');
+			else
+				this.$clean();
 			return;
 		}
 
@@ -5942,12 +6019,18 @@ TP.next = function(type) {
 		}
 
 		if (this.step !== 2 && !this.$writting && this.pending_update.length) {
-			this.$update();
+			if (!this.readonly && F.isCluster)
+				clusterlock(this, '$update');
+			else
+				this.$update();
 			return;
 		}
 
 		if (this.step !== 3 && !this.$writting && this.pending_remove.length) {
-			this.$remove();
+			if (!this.readonly && F.isCluster)
+				clusterlock(this, '$remove');
+			else
+				this.$remove();
 			return;
 		}
 	}
