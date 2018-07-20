@@ -133,7 +133,7 @@ exports.pid = function() {
 
 exports.worker = function() {
 
-	if (FORK)
+	if (FORK || F.isCluster)
 		return;
 
 	// Clears unhandled callbacks
