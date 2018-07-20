@@ -4706,6 +4706,8 @@ Binary.prototype.insert = function(name, buffer, custom, callback) {
 
 	var id;
 
+	F.isCluster && self.$refresh();
+
 	if (self.meta.free.length) {
 		id = self.meta.free.shift();
 	} else {
@@ -4759,6 +4761,7 @@ Binary.prototype.insertstream = function(id, name, type, stream, callback, custo
 			id = +id.substring(id.length - DIRECTORYLENGTH);
 		}
 	} else {
+		F.isCluster && self.$refresh();
 		isnew = true;
 		if (self.meta.free.length) {
 			id = self.meta.free.shift();
