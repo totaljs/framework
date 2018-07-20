@@ -530,7 +530,6 @@ function viewViews() {
 	//console.log('\n\n\n');
 	//self.framework.stop();
 	//return;
-
 	assert.ok(output.contains('#COMPONENTVIEWPETER#'), name + 'components rendering');
 	assert.ok(output.contains('#<div>@{{ vue_command }}</div>#'), name + 'VUE command');
 	assert.ok(output.contains('#mobilefalse#'), name + 'mobile');
@@ -539,7 +538,7 @@ function viewViews() {
 	assert.ok(output.contains('HELPER:1-<count>1</count><next>0</next>'), name + 'inline helper + foreach 1');
 	assert.ok(output.contains('HELPER:2-<count>2</count><next>1</next>'), name + 'inline helper + foreach 2');
 	assert.ok(output.contains('<section>SECTION</section>'), name + 'section');
-	assert.ok(output.contains('COMPILE_TANGULARCOMPILED'), name + 'onCompileView with name');
+	assert.ok(output.contains('COMPILE_TANGULAR\nCOMPILED'), name + 'onCompileView with name');
 	assert.ok(output.contains('COMPILE_WITHOUTCOMPILED'), name + 'onCompileView without name');
 	assert.ok(output.contains('<div>4</div><div>4</div><div>FOREACH</div>'), name + 'foreach');
 	assert.ok(output.contains('<div>3</div><div>3</div><div></div><div>C:10</div><div>C:11</div><div>C:12</div>'), name + 'foreach - nested');

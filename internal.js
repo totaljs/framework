@@ -80,11 +80,9 @@ const REG_CSS_11 = /\$[a-z0-9-_]+/gi;
 const REG_CSS_12 = /(margin|padding):.*?(;|})/g;
 const AUTOVENDOR = ['filter', 'appearance', 'column-count', 'column-gap', 'column-rule', 'display', 'transform', 'transform-style', 'transform-origin', 'transition', 'user-select', 'animation', 'perspective', 'animation-name', 'animation-duration', 'animation-timing-function', 'animation-delay', 'animation-iteration-count', 'animation-direction', 'animation-play-state', 'opacity', 'background', 'background-image', 'font-smoothing', 'text-size-adjust', 'backface-visibility', 'box-sizing', 'overflow-scrolling'];
 const WRITESTREAM = { flags: 'w' };
-const EMPTYBUFFER = framework_utils.createBufferSize(0);
 const ALLOWEDMARKUP = { G: 1, M: 1, R: 1, repository: 1, model: 1, config: 1, global: 1, resource: 1, RESOURCE: 1, CONFIG: 1, author: 1, root: 1, functions: 1, NOW: 1, F: 1 };
 
 var INDEXFILE = 0;
-var INDEXMIXED = 0;
 
 global.$STRING = function(value) {
 	return value != null ? value.toString() : '';
@@ -1856,7 +1854,7 @@ function view_parse(content, minify, filename, controller) {
 				builder += '+' + DELIMITER + (new Function('self', 'return self.$import(' + cmd[0] + '!' + cmd.substring(1) + ')'))(controller) + DELIMITER;
 		} else if (cmd7 === 'compile' && cmd.lastIndexOf(')') === -1) {
 
-			builderTMP = builder + '+(F.onCompileView.call(self,\'' + (cmd8[7] === ' ' ? cmd.substring(8) : '') + '\',';
+			builderTMP = builder + '+(F.onCompileView.call(self,\'' + (cmd8[7] === ' ' ? cmd.substring(8).trim() : '') + '\',';
 			builder = '';
 			sectionName = cmd.substring(8);
 			isCOMPILATION = true;
@@ -2501,12 +2499,25 @@ function removeComments(html) {
 function compressView(html, minify) {
 
 	var cache = [];
+	var beg = 0;
+	var end;
 
 	while (true) {
-		var beg = html.indexOf('@{');
+		beg = html.indexOf('@{compile ', beg - 1);
 		if (beg === -1)
 			break;
-		var end = html.indexOf('}', beg + 2);
+		end = html.indexOf('@{end}', beg + 6);
+		if (end === -1)
+			break;
+		cache.push(html.substring(beg, end + 6));
+		html = html.substring(0, beg) + '#@' + (cache.length - 1) + '#' + html.substring(end + 6);
+	}
+
+	while (true) {
+		beg = html.indexOf('@{', beg);
+		if (beg === -1)
+			break;
+		end = html.indexOf('}', beg + 2);
 		if (end === -1)
 			break;
 		cache.push(html.substring(beg, end + 1));
@@ -2845,16 +2856,17 @@ function compressHTML(html, minify, isChunk) {
 	var indexer = 0;
 	var length = tags.length;
 	var chars = 65;
+	var tagBeg, tagEnd, beg, end, len, key, value;
 
 	for (var i = 0; i < length; i++) {
 		var o = tags[i];
 
-		var tagBeg = '<' + o;
-		var tagEnd = '</' + o;
+		tagBeg = '<' + o;
+		tagEnd = '</' + o;
 
-		var beg = html.indexOf(tagBeg);
-		var end = 0;
-		var len = tagEnd.length;
+		beg = html.indexOf(tagBeg);
+		end = 0;
+		len = tagEnd.length;
 
 		while (beg !== -1) {
 
@@ -2866,11 +2878,11 @@ function compressHTML(html, minify, isChunk) {
 					break;
 			}
 
-			var key = id + (indexer++) + String.fromCharCode(chars++);
+			key = id + (indexer++) + String.fromCharCode(chars++);
 			if (chars > 90)
 				chars = 65;
 
-			var value = html.substring(beg, end + len);
+			value = html.substring(beg, end + len);
 
 			if (!i) {
 				end = value.indexOf('>');
@@ -3288,11 +3300,6 @@ function existsSync(filename) {
 		return false;
 	}
 }
-
-exports.restart = function() {
-	INDEXMIXED = 0;
-	INDEXFILE = 0;
-};
 
 function markup(body) {
 	body = body.ROOT();
