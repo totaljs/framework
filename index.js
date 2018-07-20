@@ -9418,7 +9418,7 @@ FrameworkCache.prototype.savePersist = function() {
 		for (var i = 0, length = keys.length; i < length; i++) {
 			var key = keys[i];
 			var item = self.items[key];
-			if (item.persist)
+			if (item && item.persist)
 				obj[key] = item;
 		}
 
