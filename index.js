@@ -16017,7 +16017,17 @@ function response_end(res) {
 	!res.req.isStaticFile && F.$events['request-end'] && F.emit('request-end', res.req, res);
 	res.req.clear(true);
 	res.controller && res.req.$total_success();
-	res.options.callback && res.options.callback();
+
+	if (res.options.callback) {
+		res.options.callback();
+		res.options.callback = null;
+	}
+
+	if (res.options.done) {
+		res.options.done();
+		res.options.done = null;
+	}
+
 	// res.options = EMPTYOBJECT;
 	res.controller = null;
 }
