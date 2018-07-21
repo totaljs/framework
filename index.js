@@ -701,7 +701,7 @@ function Framework() {
 		'allow-performance': false,
 		'allow-custom-titles': false,
 		'allow-cache-snapshot': false,
-		'allow-cache-cluster': true,
+		'allow-cache-cluster': false,
 		'allow-debug': false,
 		'allow-head': false,
 		'allow-filter-errors': true,
@@ -13302,17 +13302,12 @@ WebSocket.prototype.find = function(id) {
 
 	for (var i = 0; i < length; i++) {
 		var connection = self.connections[self._keys[i]];
-
-		if (!isFn) {
-			if (connection.id === id)
+		if (isFn) {
+			if (id(connection, connection.id))
 				return connection;
-			continue;
-		}
-
-		if (id(connection, connection.id))
+		} else if (connection.id === id)
 			return connection;
 	}
-
 	return null;
 };
 
