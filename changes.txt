@@ -127,6 +127,7 @@
 - updated: `@{import()}` by adding `manifest` value linked to `/manifest.json`
 - updated: `F.use()` supports `function` instead of `middleware` name
 - updated: improved crypto algorithm
+- updated: decreased a maximum count of keys to `33` from `69` when the query string is parsing
 
 - fixed: mail attachments
 - fixed: mail `message.manually()`
