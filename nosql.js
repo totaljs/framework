@@ -553,6 +553,7 @@ function Table(name, filename) {
 	t.$free = true;
 	t.$writting = false;
 	t.$reading = false;
+	t.$allocations = true;
 
 	t.counter = new Counter(t);
 	t.$meta();
@@ -644,6 +645,7 @@ function Database(name, filename, readonly) {
 
 const TP = Table.prototype;
 const DP = Database.prototype;
+
 
 TP.memory = DP.memory = function(count, size) {
 	var self = this;
@@ -6950,6 +6952,11 @@ TP.$streamer = function() {
 	return self;
 };
 
+TP.allocations = function(enable) {
+	this.$allocations = enable;
+	return this;
+};
+
 TP.parseSchema = function() {
 	var self = this;
 	var arr = arguments[0] instanceof Array ? arguments[0] : arguments;
@@ -7148,7 +7155,7 @@ TP.stringify = function(doc, insert, byteslen) {
 	} else
 		insert = true;
 
-	if (insert && size)
+	if (insert && size && self.$allocations)
 		output += '|'.padRight(size, '.');
 
 	return (esc ? '*' : '+') + output;

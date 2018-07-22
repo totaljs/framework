@@ -5236,8 +5236,11 @@ F.$onParseXML = function(req) {
  * @return {Object}
  */
 F.onParseJSON = function(value) {
-	if (value)
-		return JSON.parse(value);
+	if (value) {
+		try {
+			return JSON.parse(value);
+		} catch (e) {}
+	}
 };
 F.onParseJSON.$def = true;
 
@@ -13847,7 +13850,11 @@ WebSocketClient.prototype.$decode = function() {
 			if (data instanceof Buffer)
 				data = data.toString(ENCODING);
 			F.config['default-websocket-encodedecode'] === true && (data = $decodeURIComponent(data));
-			data.isJSON() && this.container.emit('message', this, F.onParseJSON(data, this.req));
+			if (data.isJSON()) {
+				var tmp = F.onParseJSON(data, this.req);
+				if (tmp !== undefined)
+					this.container.emit('message', this, tmp);
+			}
 			break;
 
 		default: // TEXT
