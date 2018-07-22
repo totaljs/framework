@@ -6260,6 +6260,22 @@ F.touch = function(url) {
 };
 
 // OBSOLETE
+F.responseImage = function(req, res, filename, make, headers, done) {
+	OBSOLETE('F.responseImage()', 'This method is obsolete, use res.img()');
+
+	if (typeof(filename) === 'object')
+		res.options.stream = filename;
+	else
+		res.options.filename = filename;
+
+	res.options.headers = headers;
+	res.options.callback = done;
+	res.options.make = make;
+	res.$image();
+	return F;
+};
+
+// OBSOLETE
 F.responseFile = function(req, res, filename, downloadName, headers, done, key) {
 	OBSOLETE('F.responseFile()', 'This method is obsolete, use res.file()');
 	res.$key = key;
