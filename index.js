@@ -347,8 +347,23 @@ global.$CREATE = function(schema) {
 
 global.$MAKE = function(schema, model, filter, callback, novalidate, argument) {
 	schema = parseSchema(schema);
+
 	var o = framework_builders.getschema(schema[0], schema[1]);
-	return o ? o.make(model, filter, callback, argument, novalidate) : undefined;
+	var w = null;
+
+	if (filter instanceof Array) {
+		w = {};
+		for (var i = 0; i < filter.length; i++)
+			w[filter[i]] = i + 1;
+		filter = null;
+	} else if (filter instanceof Object) {
+		if (!(filter instanceof RegExp)) {
+			filter = null;
+			w = filter;
+		}
+	}
+
+	return o ? o.make(model, filter, callback, argument, novalidate, w) : undefined;
 };
 
 global.$QUERY = function(schema, options, callback, controller) {
@@ -437,14 +452,17 @@ function performschema(type, schema, model, options, callback, controller) {
 		return false;
 	}
 
-	o.make(model, function(err, model) {
+	var workflow = {};
+	workflow[type.substring(1)] = 1;
+
+	o.make(model, null, function(err, model) {
 		if (err) {
 			callback && callback(err);
 		} else {
 			model.$$controller = controller;
 			model[type](options, callback);
 		}
-	});
+	}, null, false, workflow);
 
 	return !!o;
 }
@@ -2327,6 +2345,15 @@ global.ROUTE = F.web = F.route = function(url, funcExecute, flags, length, langu
 		console.warn('F.route() skips "binary" flag because the "raw" flag is not defined.');
 	}
 
+	if (workflow && workflow.id) {
+		workflow.meta = {};
+		if (workflow.id instanceof Array) {
+			for (var i = 0; i < workflow.id.length; i++)
+				workflow.meta[workflow.id[i]] = i + 1;
+		} else
+			workflow.meta[workflow.id] = 1;
+	}
+
 	if (subdomain)
 		F._length_subdomain_web++;
 
@@ -2334,7 +2361,7 @@ global.ROUTE = F.web = F.route = function(url, funcExecute, flags, length, langu
 	var r = instance.route;
 	r.hash = hash;
 	r.id = id;
-	r.name = name;
+	r.name = name.trim();
 	r.groups = flags_to_object(groups);
 	r.priority = priority;
 	r.sitemap = sitemap ? sitemap.id : '';
@@ -5297,10 +5324,10 @@ F.$onParseQueryUrl = function(req) {
  * @param {String} name
  * @param {Function(err, body)} callback
  */
-F.onSchema = function(req, group, name, callback, filter, novalidate) {
+F.onSchema = function(req, group, name, callback, filter, novalidate, workflow) {
 	var schema = GETSCHEMA(group, name);
 	if (schema)
-		schema.make(req.body, filter, onSchema_callback, callback, novalidate);
+		schema.make(req.body, filter, onSchema_callback, callback, novalidate, workflow ? workflow.meta : null);
 	else
 		callback(new Error('Schema "' + group + '/' + name + '" not found.'));
 };
@@ -14508,7 +14535,6 @@ function extend_request(PROTO) {
 			return next(this, code);
 
 		var self = this;
-
 		F.onSchema(this, this.$total_route.schema[0], this.$total_route.schema[1], function(err, body) {
 
 			if (err) {
@@ -14521,7 +14547,7 @@ function extend_request(PROTO) {
 				next(self, code);
 			}
 
-		}, route.schema[2], route.novalidate);
+		}, route.schema[2], route.novalidate, route.workflow);
 	};
 
 	PROTO.$total_authorize = function(isLogged, user, roles) {

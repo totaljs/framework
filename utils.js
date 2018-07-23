@@ -2276,7 +2276,7 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 			continue;
 
 		var TYPE = collection[schema].schema[name];
-		if (TYPE.can && !TYPE.can(model))
+		if (TYPE.can && !TYPE.can(model, model.$$workflow || EMPTYOBJECT))
 			continue;
 
 		var value = model[name];

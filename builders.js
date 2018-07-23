@@ -28,7 +28,7 @@
 
 const REQUIRED = 'The field "@" is invalid.';
 const DEFAULT_SCHEMA = 'default';
-const SKIP = { $$schema: true, $$async: true, $$repository: true, $$controller: true };
+const SKIP = { $$schema: true, $$async: true, $$repository: true, $$controller: true, $$workflow: true };
 const REGEXP_CLEAN_EMAIL = /\s/g;
 const REGEXP_CLEAN_PHONE = /\s|\.|-|\(|\)/g;
 const REGEXP_NEWOPERATION = /^(async\s)?function(\s)?([a-zA-Z$][a-zA-Z0-9$]+)?(\s)?\([a-zA-Z0-9$]+\)|^function anonymous\(\$/;
@@ -1592,7 +1592,7 @@ SchemaBuilderEntity.prototype.default = function() {
  * @param [callback]
  * @returns {SchemaInstance}
  */
-SchemaBuilderEntity.prototype.make = function(model, filter, callback, argument, novalidate) {
+SchemaBuilderEntity.prototype.make = function(model, filter, callback, argument, novalidate, workflow) {
 
 	if (typeof(model) === 'function') {
 		model.call(this, this);
@@ -1607,6 +1607,9 @@ SchemaBuilderEntity.prototype.make = function(model, filter, callback, argument,
 
 	var output = this.prepare(model);
 
+	if (workflow)
+		output.$$workflow = workflow;
+
 	if (novalidate) {
 		callback && callback(null, output, argument);
 		return output;
@@ -1616,10 +1619,9 @@ SchemaBuilderEntity.prototype.make = function(model, filter, callback, argument,
 	if (builder.hasError()) {
 		this.onError && this.onError(builder, model, 'make');
 		callback && callback(builder, null, argument);
-		return output;
-	}
+	} else
+		callback && callback(null, output, argument);
 
-	callback && callback(null, output, argument);
 	return output;
 };
 
