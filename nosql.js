@@ -7107,7 +7107,7 @@ TP.stringify = function(doc, insert, byteslen) {
 				break;
 			case 4: // Date
 				// val = val ? val.toISOString() : '';
-				val = val ? (val instanceof Date ? val.getTime() : val.parseDate().getTime()) : '';
+				val = val ? val instanceof Date ? val.getTime() : val : '';
 				!val && (size += 13);
 				break;
 			case 5: // Object
