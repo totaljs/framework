@@ -756,7 +756,7 @@ TP.meta = DP.meta = function(name, value, nosave) {
 	self.metadata[name] = value;
 	clearTimeout(self.timeoutmeta);
 
-	if (nosave)
+	if (!nosave)
 		self.timeoutmeta = setTimeout(() => self.$meta(true), 500);
 
 	if (F.isCluster && !nosave) {
