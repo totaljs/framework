@@ -331,6 +331,9 @@ exports.worker = function() {
 		var self = this;
 		var builder;
 
+		if (framework_builders.isSchema(doc))
+			doc = doc.$clean();
+
 		if (unique) {
 			builder = self.one();
 
@@ -354,7 +357,7 @@ exports.worker = function() {
 			return builder;
 		}
 
-		return send(self, 'insert', framework_builders.isSchema(doc) ? doc.$clean() : doc).builder = new DatabaseBuilder2(self);
+		return send(self, 'insert', doc).builder = new DatabaseBuilder2(self);
 	};
 
 	TP.count = DP.count = function() {
@@ -473,7 +476,7 @@ exports.worker = function() {
 	};
 
 	SP.insert = function(doc) {
-		notify(this.db, 'storage.insert', doc);
+		notify(this.db, 'storage.insert', framework_builders.isSchema(doc) ? doc.$clean() : doc);
 		return this;
 	};
 
@@ -5398,6 +5401,9 @@ SP.insert = function(doc) {
 		return self;
 	}
 
+	if (framework_builders.isSchema(doc))
+		doc = doc.$clean();
+
 	self.locked_reader = true;
 
 	if (self.$mapreduce.length) {
@@ -5730,6 +5736,9 @@ TP.insert = function(doc, unique) {
 
 	var self = this;
 	var builder;
+
+	if (framework_builders.isSchema(doc))
+		doc = doc.$clean();
 
 	self.readonly && self.throwReadonly();
 
