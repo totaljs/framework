@@ -1616,6 +1616,11 @@ global.CORS = F.cors = function(url, flags, credentials) {
 		return F;
 	}
 
+	if (flags === true) {
+		credentials = true;
+		flags = null;
+	}
+
 	var route = {};
 	var origins = [];
 	var methods = [];
@@ -1666,6 +1671,9 @@ global.CORS = F.cors = function(url, flags, credentials) {
 			}
 		}
 	}
+
+	if (!methods.length)
+		methods = 'POST,PUT,GET,DELETE,PATCH,GET,HEAD'.split(',');
 
 	route.isWILDCARD = url.lastIndexOf('*') !== -1;
 
