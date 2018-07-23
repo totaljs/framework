@@ -42,9 +42,15 @@ const RESTORAGESTATS = { TYPE: 'storage.stats' };
 const RESSTORAGECLEAR = { TYPE: 'storage.clear' };
 const RESSTREAM = { TYPE: 'stream' };
 
+global.NOW = global.DATETIME = new Date();
+
 function killprocess() {
 	process.exit(0);
 }
+
+setInterval(function() {
+	global.NOW = global.DATETIME = new Date();
+}, 30000);
 
 // One day cleaner
 setInterval(function() {

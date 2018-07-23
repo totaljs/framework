@@ -646,7 +646,6 @@ function Database(name, filename, readonly) {
 const TP = Table.prototype;
 const DP = Database.prototype;
 
-
 TP.memory = DP.memory = function(count, size) {
 	var self = this;
 	count && (self.buffercount = count + 1);      // def: 15 - count of stored documents in memory while reading/writing
@@ -1592,7 +1591,7 @@ DP.$update = function() {
 		for (var i = 0; i < length; i++) {
 			var item = filter[i];
 			if (item.insert && !item.count) {
-				item.builder.$insertcallback && item.builder.$insertcallback(item.insert);
+				item.builder.$insertcallback && item.builder.$insertcallback(item.insert, item.builder.$repository || EMPTYOBJECT);
 				var tmp = self.insert(item.insert);
 				tmp.$callback = item.builder.$callback;
 				tmp.$options.log = item.builder.$options.log;
@@ -1679,7 +1678,7 @@ DP.$update_inmemory = function() {
 		for (var i = 0; i < length; i++) {
 			var item = filter[i];
 			if (item.insert && !item.count) {
-				item.builder.$insertcallback && item.builder.$insertcallback(item.insert);
+				item.builder.$insertcallback && item.builder.$insertcallback(item.insert, item.builder.$repository || EMPTYOBJECT);
 				var tmp = self.insert(item.insert);
 				tmp.$callback = item.builder.$callback;
 				tmp.$options.log = item.builder.$options.log;
@@ -3190,10 +3189,14 @@ DatabaseBuilder.prototype.fulltext = function(name, value, weight) {
 };
 
 DatabaseBuilder2.prototype.stringify = DatabaseBuilder.prototype.stringify = function() {
+
 	var obj = {};
+
 	obj.options = this.$options;
 	obj.code = this.$code;
 	obj.params = this.$params;
+	obj.insert = this.$insertcallback ? this.$insertcallback.toString() : null;
+
 	if (this.$functions) {
 		obj.functions = [];
 		for (var i = 0; i < this.$functions.length; i++)
@@ -3207,6 +3210,7 @@ DatabaseBuilder2.prototype.stringify = DatabaseBuilder.prototype.stringify = fun
 };
 
 DatabaseBuilder2.prototype.parse = DatabaseBuilder.prototype.parse = function(data) {
+
 	data = JSON.parse(data, jsonparser);
 	this.$options = data.options;
 	this.$code = data.code;
@@ -3214,6 +3218,7 @@ DatabaseBuilder2.prototype.parse = DatabaseBuilder.prototype.parse = function(da
 	this.$take = data.options.take;
 	this.$skip = data.options.skip;
 	this.$repository = data.repository;
+	this.$insertcallback = data.insert ? eval('(' + data.insert + ')') : null;
 
 	if (data.functions) {
 		for (var i = 0; i < data.functions.length; i++)
@@ -6681,7 +6686,7 @@ TP.$update = function() {
 		for (var i = 0; i < length; i++) {
 			var item = filter[i];
 			if (item.insert && !item.count) {
-				item.builder.$insertcallback && item.builder.$insertcallback(item.insert);
+				item.builder.$insertcallback && item.builder.$insertcallback(item.insert, item.builder.$repository || EMPTYOBJECT);
 				var tmp = self.insert(item.insert);
 				tmp.$callback = item.builder.$callback;
 				tmp.$options.log = item.builder.$options.log;
