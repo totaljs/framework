@@ -123,11 +123,14 @@
 - updated: JavaScript compressor, now optimizes multiple `var` declarations
 - updated: `CORS()` without arguments for all routes, methods and origins
 - updated: `CORS()` tries to join multiple same preferences to one
+- updated: `CORS(path)` without additional arguments allows all HTTP methods
 - updated: `U.keywords()` for Chinese/Japan characters
 - updated: `@{import()}` by adding `manifest` value linked to `/manifest.json`
 - updated: `F.use()` supports `function` instead of `middleware` name
 - updated: improved crypto algorithm
 - updated: decreased a maximum count of keys to `33` from `69` when the query string is parsing
+- updated: extended `schema.required(name, (model, workflow) => workflow.update)`, more in docs.
+- updated: `$MAKE(schema, model, [filter/workflows], ...)` supports `workflows` (array or object) instead of filter for `schema.required()`
 
 - fixed: mail attachments
 - fixed: mail `message.manually()`
