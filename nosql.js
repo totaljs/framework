@@ -163,7 +163,7 @@ exports.worker = function() {
 						case 'insert':
 						case 'update':
 						case 'remove':
-							item.builder && item.builder.$callback(err, EMPTYOBJECT, EMPTYOBJECT);
+							item.builder && item.builder.$callback && item.builder.$callback(err, EMPTYOBJECT, EMPTYOBJECT);
 							break;
 						case 'clean':
 						case 'clear':
@@ -7107,7 +7107,7 @@ TP.stringify = function(doc, insert, byteslen) {
 				break;
 			case 4: // Date
 				// val = val ? val.toISOString() : '';
-				val = val ? val.getTime() : '';
+				val = val ? (val instanceof Date ? val.getTime() : val.parseDate().getTime()) : '';
 				!val && (size += 13);
 				break;
 			case 5: // Object
