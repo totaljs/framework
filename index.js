@@ -537,6 +537,12 @@ global.CLEANUP = function(stream, callback) {
 	});
 };
 
+global.CATCH = function(name) {
+	return name == null ? F.error() : function(err) {
+		err && F.error(err, name);
+	};
+};
+
 global.SUCCESS = function(success, value) {
 
 	if (typeof(success) === 'function') {

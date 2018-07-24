@@ -83,6 +83,7 @@
 - added: `schema.define()(DEFAULT_VALUE)` added `DEFAULT_VALUE`
 - added: `TESTUSER([user])` for faking of `F.onAuthorize` delegate, targeted for unit-testing only
 - added: `G` as a global alias for `F.global`
+- added: `CATCH([name])` is an improved `F.error()` without arguments
 - added: a simple support for `.heic` and `.heif` image format
 - added: `controller.sitemap_url2()`
 - added: `controller.sitemap_name2()`
