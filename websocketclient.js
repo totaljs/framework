@@ -289,7 +289,12 @@ WebSocketClient.prototype.$ondata = function(data) {
 			break;
 
 		case 0x08:
-			// close
+			this.closemessage = current.buffer.slice(4).toString('utf8');
+			this.closecode = current.buffer[2] << 8 | current.buffer[3];
+
+			if (this.closemessage && this.options.encodedecode)
+				this.closemessage = $decodeURIComponent(this.closemessage);
+
 			this.close(true);
 			break;
 
@@ -515,7 +520,7 @@ WebSocketClient.prototype.$onclose = function() {
 		this.deflatechunks = null;
 	}
 
-	this.$events.close && this.emit('close');
+	this.$events.close && this.emit('close', this.closecode, this.closemessage);
 	this.socket && this.socket.removeAllListeners();
 };
 

@@ -13752,6 +13752,12 @@ WebSocketClient.prototype.$ondata = function(data) {
 
 		case 0x08:
 			// close
+			this.closemessage = current.buffer.slice(4).toString('utf8');
+			this.closecode = current.buffer[2] << 8 | current.buffer[3];
+
+			if (this.closemessage && F.config['default-websocket-encodedecode'])
+				this.closemessage = $decodeURIComponent(this.closemessage);
+
 			this.close();
 			break;
 
@@ -13998,7 +14004,7 @@ WebSocketClient.prototype.$onclose = function() {
 
 	this.container.$remove(this._id);
 	this.container.$refresh();
-	this.container.$events.close && this.container.emit('close', this);
+	this.container.$events.close && this.container.emit('close', this, this.closecode, this.closemessage);
 	this.socket.removeAllListeners();
 	F.$events['websocket-end'] && F.emit('websocket-end', this.container, this);
 };
@@ -14080,7 +14086,7 @@ WebSocketClient.prototype.ping = function() {
 WebSocketClient.prototype.close = function(message, code) {
 	if (!this.isClosed) {
 		this.isClosed = true;
-		this.socket.end(U.getWebSocketFrame(code || 1000,  message ? (F.config['default-websocket-encodedecode'] ? encodeURIComponent(message) : message) : '', 0x08));
+		this.socket.end(U.getWebSocketFrame(code || 1000, message ? (F.config['default-websocket-encodedecode'] ? encodeURIComponent(message) : message) : '', 0x08));
 	}
 	return this;
 };
