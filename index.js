@@ -15105,6 +15105,8 @@ function extend_response(PROTO) {
 
 	PROTO.proxy = function(url, headers, timeout, callback) {
 
+		OBSOLETE('res.proxy()', 'You need to use controller.proxy()');
+
 		var res = this;
 
 		if (res.success || res.headersSent)
