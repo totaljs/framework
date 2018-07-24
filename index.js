@@ -329,6 +329,12 @@ global.UID = function(type) {
 	return UIDGENERATOR.date + index.padLeft(4, '0') + UIDGENERATOR.instance + (index % 2 ? 1 : 0);
 };
 
+global.ERROR = function(name) {
+	return name == null ? F.errorcallback : function(err) {
+		err && F.error(err, name);
+	};
+};
+
 global.AUTH = function(fn) {
 	F.onAuthorize = fn;
 };
@@ -535,12 +541,6 @@ global.CLEANUP = function(stream, callback) {
 			callback = null;
 		}
 	});
-};
-
-global.CATCH = function(name) {
-	return name == null ? F.error() : function(err) {
-		err && F.error(err, name);
-	};
 };
 
 global.SUCCESS = function(success, value) {
