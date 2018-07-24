@@ -12494,7 +12494,7 @@ Controller.prototype.proxy = Controller.prototype.proxy2 = function(url, callbac
 	flags.push(req.method);
 	flags.push('dnscache');
 
-	if (type === CT_JSON)
+	if ((/\/json/i).test(type))
 		flags.push('json');
 
 	var c = req.method[0];
@@ -12537,12 +12537,11 @@ Controller.prototype.proxy = Controller.prototype.proxy2 = function(url, callbac
 		if (err) {
 			callback && callback(err);
 			self.invalid().push(err);
-			return;
+		} else {
+			self.status = code;
+			callback && callback(err, data, code, headers);
+			self.content(data, (headers['content-type'] || 'text/plain').replace(REG_ENCODINGCLEANER, ''));
 		}
-
-		self.status = code;
-		callback && callback(err, data, code, headers);
-		self.content(data, (headers['content-type'] || 'text/plain').replace(REG_ENCODINGCLEANER, ''));
 
 	}, null, h, ENCODING, timeout || 10000);
 };
