@@ -631,6 +631,9 @@ global.REQUEST = exports.request = function(url, flags, data, callback, cookies,
 	if (F.config['default-proxy'] && !proxy && !PROXYBLACKLIST[uri.hostname])
 		proxy = parseProxy(F.config['default-proxy']);
 
+	if (proxy && (uri.hostname === 'localhost' || uri.hostname === '127.0.0.1'))
+		proxy = null;
+
 	options.proxy = proxy;
 
 	if (proxy && uri.protocol === 'https:') {
