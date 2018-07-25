@@ -682,11 +682,11 @@ ProxyAgent.prototype.createSocket = function(options, callback) {
 		PROXYOPTIONS.headers['Proxy-Authorization'] = proxy._auth;
 
 	var req = self.request(PROXYOPTIONS);
-
-	req.setTimeout(3000);
+	req.setTimeout(10000);
 	req.on('response', proxyagent_response);
 	req.on('connect', function(res, socket) {
 		if (res.statusCode === 200) {
+			socket.$req = req;
 			callback(socket);
 		} else {
 			var err = new Error('Proxy could not be established (maybe a problem in auth), code: ' + res.statusCode);
@@ -743,6 +743,7 @@ function request_call(uri, options) {
 		opt.path = uri.href;
 		opt.headers = uri.headers;
 		opt.method = uri.method;
+		opt.headers.host = uri.host;
 		if (options.proxy._auth)
 			opt.headers['Proxy-Authorization'] = options.proxy._auth;
 	} else
