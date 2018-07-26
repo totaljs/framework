@@ -4665,6 +4665,9 @@ Binary.prototype.insert = function(name, buffer, custom, callback) {
 		custom = null;
 	}
 
+	if (name.length > 80)
+		name = name.substring(0, 80) + name.substring(name.lastIndexOf('.'));
+
 	if (!buffer) {
 		var reader = Fs.createReadStream(name);
 		CLEANUP(reader);
@@ -4869,6 +4872,9 @@ Binary.prototype.update = function(id, name, buffer, custom, callback) {
 		callback = custom;
 		custom = null;
 	}
+
+	if (name.length > 80)
+		name = name.substring(0, 80) + name.substring(name.lastIndexOf('.'));
 
 	if (!buffer) {
 
