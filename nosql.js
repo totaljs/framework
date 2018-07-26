@@ -2763,7 +2763,7 @@ DatabaseBuilder.prototype.$callbackjoin = function(callback) {
 		}
 
 		var isTable = self.db instanceof Table;
-		var db = isTable ? TABLE(join.name) : NOSQL(join.name);
+		var db = isTable || join.table ? TABLE(join.name) : NOSQL(join.name);
 
 		if (join.scalartype) {
 			join.items = [];
@@ -2886,6 +2886,18 @@ DatabaseBuilder.prototype.join = function(field, name) {
 	if (!self.$join)
 		self.$join = {};
 
+	var table = self instanceof Table;
+
+	if (name instanceof Database)
+		name = name.name;
+	else if (name instanceof Table) {
+		table = true;
+		name = name.name;
+	} else if (name[0] === '#') {
+		table = true;
+		name = name.substring(1);
+	}
+
 	var key = name + '.' + field;
 	var join = self.$join[key];
 	if (join)
@@ -2894,6 +2906,7 @@ DatabaseBuilder.prototype.join = function(field, name) {
 	var item = self.$join[key] = {};
 	item.field = field;
 	item.name = name;
+	item.table = table;
 	item.builder = join = new DatabaseBuilder(self.db);
 
 	join.on = function(a, b) {
