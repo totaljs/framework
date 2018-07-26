@@ -102,7 +102,9 @@
 - added: `HttpFile.fs(storage_name, [custom], [callback])` saves a file into the FileStorage
 - added: `HttpFile.nosql(db_name, [custom], [callback])` saves a file into the FileStorage
 - added: `res.filefs(storage_name, id, [download], [headers], [callback])` returns file from FileStorage
-- added: `res.filenosql(db_name, id, [download], [headers], [callback])` returns file from FileStorage
+- added: `res.filenosql(db_name, id, [download], [headers], [callback])` returns file from NoSQL binary
+- added: `res.imagefs(storage_name, id, image_make_fn, [headers], [callback])` returns file from FileStorage
+- added: `res.imagenosql(db_name, id, image_make_fn, [headers], [callback])` returns file from NoSQL binary
 - added: new stats `F.stats.performance` contains count of `request` and `file` per minute
 
 - updated: (IMPORTANT) NoSQL binary divides files to independent directories for 1000 files per directory

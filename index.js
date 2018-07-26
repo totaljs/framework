@@ -15059,6 +15059,30 @@ function extend_response(PROTO) {
 		return self;
 	};
 
+	PROTO.imagefs = function(name, id, make, headers, callback) {
+		var self = this;
+		var options = {};
+		options.id = id;
+		options.image = true;
+		options.make = make;
+		options.headers = headers;
+		options.done = callback;
+		FILESTORAGE(name).res(self, options, $file_notmodified);
+		return self;
+	};
+
+	PROTO.imagenosql = function(name, id, make, headers, callback) {
+		var self = this;
+		var options = {};
+		options.id = id;
+		options.image = true;
+		options.make = make;
+		options.headers = headers;
+		options.done = callback;
+		NOSQL(name).binary.res(self, options, $file_notmodified);
+		return self;
+	};
+
 	/**
 	 * Responds with a stream
 	 * @param {String} contentType
@@ -15355,7 +15379,7 @@ function extend_response(PROTO) {
 		}
 
 		// Is package?
-		if (options.filename[0] === '@')
+		if (options.filename && options.filename[0] === '@')
 			options.filename = F.path.package(options.filename.substring(1));
 
 		var name = F.temporary.path[req.$key];
@@ -15441,7 +15465,7 @@ function extend_response(PROTO) {
 
 		if (res.getHeader('Last-Modified'))
 			delete headers['Last-Modified'];
-		else
+		else if (!headers['Last-Modified'])
 			headers['Last-Modified'] = name[2];
 
 		headers.Etag = ETAG + F.config['etag-version'];
