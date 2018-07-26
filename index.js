@@ -15465,7 +15465,7 @@ function extend_response(PROTO) {
 
 		if (res.getHeader('Last-Modified'))
 			delete headers['Last-Modified'];
-		else if (!headers['Last-Modified'])
+		else if (!res.options.lastmodified)
 			headers['Last-Modified'] = name[2];
 
 		headers.Etag = ETAG + F.config['etag-version'];

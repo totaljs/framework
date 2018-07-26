@@ -5052,6 +5052,7 @@ Binary.prototype.res = function(res, options, notmodified) {
 
 				res.options.type = obj.type;
 				res.options.stream = Fs.createReadStream(filename, BINARYREADDATA);
+				res.options.lastmodified = true;
 
 				if (!options.download) {
 					if (!options.headers)
