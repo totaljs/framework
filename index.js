@@ -10100,6 +10100,11 @@ Controller.prototype.$operation = function(name, helper, callback) {
 	return self;
 };
 
+Controller.prototype.operation = function(name, value, callback, options) {
+	OPERATION(name, value, callback, options, this);
+	return this;
+};
+
 Controller.prototype.$operation2 = function(name, helper, callback) {
 
 	if (callback == null && typeof(helper) === 'function') {

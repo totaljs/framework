@@ -4578,9 +4578,11 @@ global.NEWOPERATION = function(name, fn) {
 	return this;
 };
 
-global.OPERATION = function(name, value, callback, param) {
+global.OPERATION = function(name, value, callback, param, controller) {
 
 	if (typeof(value) === 'function') {
+		controller = param;
+		param = callback;
 		callback = value;
 		value = EMPTYOBJECT;
 	}
@@ -4590,7 +4592,7 @@ global.OPERATION = function(name, value, callback, param) {
 
 	if (fn) {
 		if (fn.$newversion) {
-			var self = new OperationOptions(error, value, param);
+			var self = new OperationOptions(error, value, param, controller);
 			if (callback && callback !== NOOP) {
 				self.callback = function(value) {
 					if (arguments.length > 1) {
@@ -4626,11 +4628,58 @@ global.OPERATION = function(name, value, callback, param) {
 	}
 };
 
-function OperationOptions(error, value, options) {
+function OperationOptions(error, value, options, controller) {
+
+	if (!controller && options instanceof global.Controller) {
+		controller = options;
+		options = EMPTYOBJECT;
+	} else if (options === undefined)
+		options = EMPTYOBJECT;
+
+	this.controller = controller;
 	this.model = this.value = value;
 	this.error = error;
 	this.options = options;
 }
+
+OperationOptions.prototype = {
+
+	get user() {
+		return this.controller ? this.controller.user : null;
+	},
+
+	get session() {
+		return this.controller ? this.controller.session : null;
+	},
+
+	get language() {
+		return (this.controller ? this.controller.language : '') || '';
+	},
+
+	get ip() {
+		return this.controller ? this.controller.ip : null;
+	},
+
+	get id() {
+		return this.controller ? this.controller.id : null;
+	},
+
+	get params() {
+		return this.controller ? this.controller.params : null;
+	},
+
+	get files() {
+		return this.controller ? this.controller.files : null;
+	},
+
+	get body() {
+		return this.controller ? this.controller.body : null;
+	},
+
+	get query() {
+		return this.controller ? this.controller.query : null;
+	}
+};
 
 OperationOptions.prototype.DB = function() {
 	return F.database(this.error);
