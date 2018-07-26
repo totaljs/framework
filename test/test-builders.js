@@ -635,6 +635,25 @@ function test_Operations() {
 		assert.ok(err.hasError('bug'), 'OPERATIONS: ErrorHandling 1');
 		assert.ok(response === undefined, 'OPERATIONS: ErrorHandling 2');
 	});
+
+	NEWOPERATION('testC', function($) {
+		assert.ok($.controller === EMPTYCONTROLLER, 'OPERATIONS: Controller 1');
+		$.callback(true);
+	});
+
+	NEWOPERATION('testD', function($) {
+		assert.ok($.options.ok === 100, 'OPERATIONS: Custom options + controller');
+		assert.ok($.controller === EMPTYCONTROLLER, 'OPERATIONS: Controller 2');
+		$.callback(false);
+	});
+
+	OPERATION('testC', 1, function(err, response) {
+		assert.ok(response === true, 'OPERATIONS: controller 1 response');
+	}, EMPTYCONTROLLER);
+
+	OPERATION('testD', 2, function(err, response) {
+		assert.ok(response === false, 'OPERATIONS: controller 2 response');
+	}, { ok: 100 }, EMPTYCONTROLLER);
 }
 
 test_PageBuilder();
