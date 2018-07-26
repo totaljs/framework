@@ -13110,6 +13110,11 @@ WebSocket.prototype = {
 	}
 };
 
+WebSocket.prototype.operation = function(name, value, callback, options) {
+	OPERATION(name, value, callback, options, this);
+	return this;
+};
+
 WebSocket.prototype.emit = function(name, a, b, c, d, e, f, g) {
 	var evt = this.$events[name];
 	if (evt) {
