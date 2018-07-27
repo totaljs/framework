@@ -1286,11 +1286,7 @@ function scriptNow() {
 	return new Date();
 }
 
-F.database = function(name) {
-	return F.nosql(name);
-};
-
-global.NOSQL = F.nosql = function(name) {
+F.database = global.NOSQL = F.nosql = function(name) {
 	var db = F.databases[name];
 	if (db)
 		return db;
