@@ -2886,7 +2886,7 @@ DatabaseBuilder.prototype.join = function(field, name) {
 	if (!self.$join)
 		self.$join = {};
 
-	var table = self instanceof Table;
+	var table = self.db instanceof Table;
 
 	if (name instanceof Database) {
 		name = name.name;
