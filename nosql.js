@@ -3390,21 +3390,21 @@ DatabaseBuilder.prototype.between = function(name, a, b) {
 DatabaseBuilder.prototype.or = function() {
 	this.$code.push('$is=false;');
 	this.$scope = 1;
-	self.$cmd && self.$cmd.push({ type: 'or' });
+	this.$cmd && this.$cmd.push({ type: 'or' });
 	return this;
 };
 
 DatabaseBuilder.prototype.end = function() {
 	this.$scope = 0;
 	this.$code.push('if(!$is)return;');
-	self.$cmd && self.$cmd.push({ type: 'end' });
+	this.$cmd && this.$cmd.push({ type: 'end' });
 	return this;
 };
 
 DatabaseBuilder.prototype.and = function() {
 	this.$code.push('$is=false;');
 	this.$scope = 0;
-	self.$cmd && self.$cmd.push({ type: 'and' });
+	this.$cmd && this.$cmd.push({ type: 'and' });
 	return this;
 };
 
