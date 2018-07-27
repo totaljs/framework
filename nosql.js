@@ -2711,6 +2711,7 @@ function DatabaseBuilder(db) {
 	this.$repository = {};
 	this.$counter = 0;
 	this.$keys = [];
+	this.$cmd = null;
 }
 
 DatabaseBuilder.prototype.promise = promise;
@@ -2901,6 +2902,8 @@ DatabaseBuilder.prototype.join = function(field, name) {
 	if (join)
 		return join;
 
+	self.$cmd && self.$cmd.push({ type: 'join', arg: arguments });
+
 	var item = self.$join[key] = {};
 	item.field = field;
 	item.name = name;
@@ -2961,6 +2964,7 @@ DatabaseBuilder.prototype.filter = function(fn) {
 	if (self.$scope)
 		code = 'if(!$is){' + code + '}';
 
+	self.$cmd && self.$cmd.push({ type: 'fitler', arg: arguments });
 	self.$code.push(code);
 	!self.$scope && self.$code.push('if(!$is)return;');
 	self.$counter++;
@@ -2983,6 +2987,7 @@ DatabaseBuilder.prototype.contains = function(name) {
 	self.$code.push(code);
 	!self.$scope && self.$code.push('if(!$is)return;');
 	self.$counter++;
+	self.$cmd && self.$cmd.push({ type: 'contains', arg: arguments });
 	return self;
 };
 
@@ -2994,6 +2999,7 @@ DatabaseBuilder.prototype.empty = function(name) {
 	self.$code.push(code);
 	!self.$scope && self.$code.push('if(!$is)return;');
 	self.$counter++;
+	self.$cmd && self.$cmd.push({ type: 'empty', arg: arguments });
 	return self;
 };
 
@@ -3041,6 +3047,7 @@ DatabaseBuilder.prototype.where = function(name, operator, value) {
 	self.$keys && self.$keys.push(name);
 	self.$code.push(code.format(name, key, operator));
 	!self.$scope && self.$code.push('if(!$is)return;');
+	self.$cmd && self.$cmd.push({ type: 'where', arg: arguments });
 	return self;
 };
 
@@ -3058,6 +3065,7 @@ DatabaseBuilder.prototype.query = function(code) {
 	self.$code.push(code);
 	!self.$scope && self.$code.push('if(!$is)return;');
 	self.$counter++;
+	self.$cmd && self.$cmd.push({ type: 'query', arg: arguments });
 	return self;
 };
 
@@ -3079,6 +3087,7 @@ DatabaseBuilder.prototype.month = function(name, operator, value) {
 	self.$keys && self.$keys.push(name);
 	self.$code.push(code);
 	!self.$scope && self.$code.push('if(!$is)return;');
+	self.$cmd && self.$cmd.push({ type: 'month', arg: arguments });
 	return self;
 };
 
@@ -3100,6 +3109,7 @@ DatabaseBuilder.prototype.day = function(name, operator, value) {
 	self.$keys && self.$keys.push(name);
 	self.$code.push(code);
 	!self.$scope && self.$code.push('if(!$is)return;');
+	self.$cmd && self.$cmd.push({ type: 'day', arg: arguments });
 	return self;
 };
 
@@ -3122,6 +3132,7 @@ DatabaseBuilder.prototype.year = function(name, operator, value) {
 
 	self.$code.push(code);
 	!self.$scope && self.$code.push('if(!$is)return;');
+	self.$cmd && self.$cmd.push({ type: 'year', arg: arguments });
 	return self;
 };
 
@@ -3157,6 +3168,7 @@ DatabaseBuilder.prototype.like = DatabaseBuilder.prototype.search = function(nam
 	self.$keys && self.$keys.push(name);
 	self.$code.push(code.format(name, key));
 	!self.$scope && self.$code.push('if(!$is)return;');
+	self.$cmd && self.$cmd.push({ type: 'search', arg: arguments });
 	return self;
 };
 
@@ -3169,6 +3181,7 @@ DatabaseBuilder.prototype.regexp = function(name, value) {
 	self.$keys && self.$keys.push(name);
 	self.$code.push(code.format(name, value.toString()));
 	!self.$scope && self.$code.push('if(!$is)return;');
+	self.$cmd && self.$cmd.push({ type: 'regexp', arg: arguments });
 	return self;
 };
 
@@ -3199,6 +3212,7 @@ DatabaseBuilder.prototype.fulltext = function(name, value, weight) {
 		code = 'if(!$is){' + code + '}';
 	self.$code.push(code.format(name, key, count || 1));
 	!self.$scope && self.$code.push('if(!$is)return;');
+	self.$cmd && self.$cmd.push({ type: 'fulltext', arg: arguments });
 	return self;
 };
 
@@ -3304,6 +3318,7 @@ DatabaseBuilder.prototype.random = function() {
 
 DatabaseBuilder.prototype.sort = function(name, desc) {
 	this.$options.sort = { name: name, asc: desc ? false : true };
+	self.$cmd && self.$cmd.push({ type: 'sort', arg: arguments });
 	return this;
 };
 
@@ -3313,6 +3328,7 @@ DatabaseBuilder.prototype.repository = function(key, value) {
 	if (value === undefined)
 		return this.$repository[key];
 	this.$repository[key] = value;
+	self.$cmd && self.$cmd.push({ type: 'repository', arg: arguments });
 	return this;
 };
 
@@ -3337,6 +3353,7 @@ DatabaseBuilder.prototype.in = function(name, value) {
 		code = 'if(!$is){' + code + '}';
 	self.$code.push(code);
 	!self.$scope && self.$code.push('if(!$is)return;');
+	self.$cmd && self.$cmd.push({ type: 'in', arg: arguments });
 	return self;
 };
 
@@ -3350,6 +3367,7 @@ DatabaseBuilder.prototype.notin = function(name, value) {
 		code = 'if(!$is){' + code + '}';
 	self.$code.push(code);
 	!self.$scope && self.$code.push('if(!$is)return;');
+	self.$cmd && self.$cmd.push({ type: 'notin', arg: arguments });
 	return self;
 };
 
@@ -3365,24 +3383,28 @@ DatabaseBuilder.prototype.between = function(name, a, b) {
 	self.$params[keyb] = b;
 	self.$code.push(code);
 	!self.$scope && self.$code.push('if(!$is)return;');
+	self.$cmd && self.$cmd.push({ type: 'between', arg: arguments });
 	return self;
 };
 
 DatabaseBuilder.prototype.or = function() {
 	this.$code.push('$is=false;');
 	this.$scope = 1;
+	self.$cmd && self.$cmd.push({ type: 'or' });
 	return this;
 };
 
 DatabaseBuilder.prototype.end = function() {
 	this.$scope = 0;
 	this.$code.push('if(!$is)return;');
+	self.$cmd && self.$cmd.push({ type: 'end' });
 	return this;
 };
 
 DatabaseBuilder.prototype.and = function() {
 	this.$code.push('$is=false;');
 	this.$scope = 0;
+	self.$cmd && self.$cmd.push({ type: 'and' });
 	return this;
 };
 
@@ -3413,6 +3435,7 @@ DatabaseBuilder.prototype.fields = function() {
 		}
 		self.$keys && self.$keys.push(name);
 	}
+	self.$cmd && self.$cmd.push({ type: 'fields', arg: arguments });
 	return self;
 };
 
@@ -3435,6 +3458,7 @@ DatabaseBuilder.prototype.code = function(code) {
 	if (self.$keys)
 		self.$keys = null;
 
+	self.$cmd && self.$cmd.push({ type: 'code', arg: arguments });
 	return self;
 };
 
