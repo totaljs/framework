@@ -3457,6 +3457,7 @@ global.MODULE = F.module = function(name) {
  * @return {Framework}
  */
 F.modify = function(fn) {
+	OBSOLETE('F.modify()', 'This method will be removed from in versions.');
 	if (!F.modificators)
 		F.modificators = [];
 	F.modificators.push(fn);
@@ -15926,6 +15927,7 @@ function $file_nocompress(stream, next, res) {
 		next();
 		framework_internal.destroyStream(stream);
 	});
+
 	response_end(res);
 }
 
