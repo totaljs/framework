@@ -3317,19 +3317,21 @@ DatabaseBuilder.prototype.random = function() {
 };
 
 DatabaseBuilder.prototype.sort = function(name, desc) {
-	this.$options.sort = { name: name, asc: desc ? false : true };
+	var self = this;
+	self.$options.sort = { name: name, asc: desc ? false : true };
 	self.$cmd && self.$cmd.push({ type: 'sort', arg: arguments });
-	return this;
+	return self;
 };
 
 DatabaseBuilder.prototype.repository = function(key, value) {
+	var self = this;
 	if (key === undefined)
-		return this.$repository;
+		return self.$repository;
 	if (value === undefined)
-		return this.$repository[key];
-	this.$repository[key] = value;
+		return self.$repository[key];
+	self.$repository[key] = value;
 	self.$cmd && self.$cmd.push({ type: 'repository', arg: arguments });
-	return this;
+	return self;
 };
 
 DatabaseBuilder.prototype.compile = function(noTrimmer) {
