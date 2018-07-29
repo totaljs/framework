@@ -41,6 +41,8 @@
 - added: `DatabaseBuilder.query(code)` can contain a raw JS condition in the form e.g. `doc.age > 18 && doc.age < 33`
 - added: `DatabaseBuilder.regexp(name, regexp)` RegExp search in strings
 - added: `DatabaseBuilder.fulltext(name, regexp, [weight])` full text search in strings, more info in docs.
+- added: `DatabaseBuilder.hour(name, [compare], value)` creates a condition for hours
+- added: `DatabaseBuilder.minute(name, [compare], value)` creates a condition for minutes
 - added: `Database.find2()` performs faster and reverse reading of documents (from end to begin of the file)
 - added: `Database.stream(fn, [repository], [callback(err, repository, count)])` for streaming documents
 - added: `Database.lock(callback(next))` locks all internal DB operations
