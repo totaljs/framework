@@ -12500,19 +12500,15 @@ Controller.prototype.proxy = Controller.prototype.proxy2 = function(url, callbac
 	if ((/\/json/i).test(type))
 		flags.push('json');
 
-	var c = req.method[0];
 	var tmp;
-	var keys;
 
-	if (c === 'G' || c === 'H' || c === 'O') {
-		if (url.indexOf('?') === -1) {
-			tmp = Qs.stringify(self.query);
-			if (tmp)
-				url += '?' + tmp;
-		}
+	if (url.indexOf('?') === -1) {
+		tmp = Qs.stringify(self.query);
+		if (tmp)
+			url += '?' + tmp;
 	}
 
-	keys = Object.keys(req.headers);
+	var keys = Object.keys(req.headers);
 	for (var i = 0, length = keys.length; i < length; i++) {
 		switch (keys[i]) {
 			case 'x-forwarded-for':
