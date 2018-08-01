@@ -626,7 +626,7 @@ var PERF = {};
 function Framework() {
 
 	this.$id = null; // F.id ==> property
-  this.version = 3000;
+	this.version = 3000;
 	this.version_header = '3.0.0';
 	this.version_node = process.version.toString();
 	this.syshash = (Os.hostname() + '-' + Os.platform() + '-' + Os.arch() + '-' + Os.release() + '-' + Os.tmpdir()).md5();
