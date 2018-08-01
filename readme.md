@@ -3,7 +3,7 @@
 [![Professional Support](https://www.totaljs.com/img/badge-support.svg)](https://www.totaljs.com/support/) [![Chat with contributors](https://www.totaljs.com/img/badge-chat.svg)](https://messenger.totaljs.com) [![NPM version][npm-version-image]][npm-url] [![NPM quality][npm-quality]](http://packagequality.com/#?package=total.js) [![NPM downloads][npm-downloads-image]][npm-url] [![MIT License][license-image]][license-url] [![Build Status][travis-image]][travis-url] [![Gitter chat](https://badges.gitter.im/totaljs/framework.png)](https://messenger.totaljs.com) [![Known Vulnerabilities](https://snyk.io/test/npm/total.js/badge.svg)](https://snyk.io/test/npm/total.js)
 
 Node.js framework
-=====================
+=================
 
 __Total.js framework__ is a framework for Node.js platfrom written in `pure` JavaScript similar to PHP's Laravel or Python's Django or ASP.NET MVC. It can be used as web, desktop, service or IoT application.
 
@@ -112,6 +112,9 @@ $ npm install -g total.js
 | [luoage](https://github.com/luoage) | contributor | <luoage@msn.cn> |
 | [Mato Holly](https://github.com/boardshepherd) | contributor | <mato.holly@gmail.com> |
 | [Tema Smirnov](https://github.com/TemaSM) | contributor | <github.tema@smirnov.one> |
+| [Jeroen van Hilst](https://github.com/frunjik) | contributor | <frunjik@gmail.com> |
+| [Pedro Maia Costa](https://github.com/pnmcosta) | contributor | <pedro@pmcdigital.pt> |
+| [Sarp Aykent](https://github.com/HACKHERS) | contributor | <shackhers@gmail.com> |
 
 ## Useful modules
 
@@ -130,6 +133,7 @@ Please support the framework on social networks.
 - [Follow Total.js on LinkedIn](https://www.linkedin.com/groups/totaljs-8109884)
 
 ## Contact
+
 - (c) 2012-2018 by Peter Širka - <petersirka@gmail.com>
 - contact form <https://www.totaljs.com/contact/>
 - <info@totaljs.com>

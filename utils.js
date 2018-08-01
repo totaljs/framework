@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkUtils
- * @version 2.9.2
+ * @version 3.0.0
  */
 
 'use strict';
@@ -35,6 +35,9 @@ const Path = require('path');
 const Fs = require('fs');
 const Events = require('events');
 const Crypto = require('crypto');
+const Zlib = require('zlib');
+const Tls = require('tls');
+
 const CONCAT = [null, null];
 const COMPARER = global.Intl ? global.Intl.Collator().compare : function(a, b) {
 	return a.removeDiacritics().localeCompare(b.removeDiacritics());
@@ -54,15 +57,17 @@ const regexpDiacritics = /[^\u0000-\u007e]/g;
 const regexpXML = /\w+=".*?"/g;
 const regexpDECODE = /&#?[a-z0-9]+;/g;
 const regexpPARAM = /\{{2}[^}\n]*\}{2}/g;
-const regexpARG = /\{[^}\n]*\}/g;
+const regexpARG = /\{{1,2}[a-z0-9_.-\s]+\}{1,2}/gi;
 const regexpINTEGER = /(^-|\s-)?[0-9]+/g;
 const regexpFLOAT = /(^-|\s-)?[0-9.,]+/g;
 const regexpALPHA = /^[A-Za-z0-9]+$/;
 const regexpSEARCH = /[^a-zA-Zá-žÁ-Ž\d\s:]/g;
-const regexpDECRYPT = /-|_/g;
-const regexpENCRYPT = /\/|\+/g;
 const regexpUNICODE = /\\u([\d\w]{4})/gi;
 const regexpTERMINAL = /[\w\S]+/g;
+const regexpY = /y/g;
+const regexpN = /\n/g;
+const regexpCHARS = /\W|_/g;
+const regexpCHINA = /[\u3400-\u9FBF]/;
 const SOUNDEX = { a: '', e: '', i: '', o: '', u: '', b: 1, f: 1, p: 1, v: 1, c: 2, g: 2, j: 2, k: 2, q: 2, s: 2, x: 2, z: 2, d: 3, t: 3, l: 4, m: 5, n: 5, r: 6 };
 const ENCODING = 'utf8';
 const NEWLINE = '\r\n';
@@ -71,16 +76,22 @@ const DIACRITICSMAP = {};
 const STREAM_READONLY = { flags: 'r' };
 const STREAM_END = { end: false };
 const ALPHA_INDEX = { '&lt': '<', '&gt': '>', '&quot': '"', '&apos': '\'', '&amp': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&apos;': '\'', '&amp;': '&' };
-const EMPTYARRAY = [];
-const EMPTYOBJECT = [];
 const NODEVERSION = parseFloat(process.version.toString().replace('v', '').replace(/\./g, ''));
 const STREAMPIPE = { end: false };
+const CT = 'Content-Type';
+const CRC32TABLE = '00000000,77073096,EE0E612C,990951BA,076DC419,706AF48F,E963A535,9E6495A3,0EDB8832,79DCB8A4,E0D5E91E,97D2D988,09B64C2B,7EB17CBD,E7B82D07,90BF1D91,1DB71064,6AB020F2,F3B97148,84BE41DE,1ADAD47D,6DDDE4EB,F4D4B551,83D385C7,136C9856,646BA8C0,FD62F97A,8A65C9EC,14015C4F,63066CD9,FA0F3D63,8D080DF5,3B6E20C8,4C69105E,D56041E4,A2677172,3C03E4D1,4B04D447,D20D85FD,A50AB56B,35B5A8FA,42B2986C,DBBBC9D6,ACBCF940,32D86CE3,45DF5C75,DCD60DCF,ABD13D59,26D930AC,51DE003A,C8D75180,BFD06116,21B4F4B5,56B3C423,CFBA9599,B8BDA50F,2802B89E,5F058808,C60CD9B2,B10BE924,2F6F7C87,58684C11,C1611DAB,B6662D3D,76DC4190,01DB7106,98D220BC,EFD5102A,71B18589,06B6B51F,9FBFE4A5,E8B8D433,7807C9A2,0F00F934,9609A88E,E10E9818,7F6A0DBB,086D3D2D,91646C97,E6635C01,6B6B51F4,1C6C6162,856530D8,F262004E,6C0695ED,1B01A57B,8208F4C1,F50FC457,65B0D9C6,12B7E950,8BBEB8EA,FCB9887C,62DD1DDF,15DA2D49,8CD37CF3,FBD44C65,4DB26158,3AB551CE,A3BC0074,D4BB30E2,4ADFA541,3DD895D7,A4D1C46D,D3D6F4FB,4369E96A,346ED9FC,AD678846,DA60B8D0,44042D73,33031DE5,AA0A4C5F,DD0D7CC9,5005713C,270241AA,BE0B1010,C90C2086,5768B525,206F85B3,B966D409,CE61E49F,5EDEF90E,29D9C998,B0D09822,C7D7A8B4,59B33D17,2EB40D81,B7BD5C3B,C0BA6CAD,EDB88320,9ABFB3B6,03B6E20C,74B1D29A,EAD54739,9DD277AF,04DB2615,73DC1683,E3630B12,94643B84,0D6D6A3E,7A6A5AA8,E40ECF0B,9309FF9D,0A00AE27,7D079EB1,F00F9344,8708A3D2,1E01F268,6906C2FE,F762575D,806567CB,196C3671,6E6B06E7,FED41B76,89D32BE0,10DA7A5A,67DD4ACC,F9B9DF6F,8EBEEFF9,17B7BE43,60B08ED5,D6D6A3E8,A1D1937E,38D8C2C4,4FDFF252,D1BB67F1,A6BC5767,3FB506DD,48B2364B,D80D2BDA,AF0A1B4C,36034AF6,41047A60,DF60EFC3,A867DF55,316E8EEF,4669BE79,CB61B38C,BC66831A,256FD2A0,5268E236,CC0C7795,BB0B4703,220216B9,5505262F,C5BA3BBE,B2BD0B28,2BB45A92,5CB36A04,C2D7FFA7,B5D0CF31,2CD99E8B,5BDEAE1D,9B64C2B0,EC63F226,756AA39C,026D930A,9C0906A9,EB0E363F,72076785,05005713,95BF4A82,E2B87A14,7BB12BAE,0CB61B38,92D28E9B,E5D5BE0D,7CDCEFB7,0BDBDF21,86D3D2D4,F1D4E242,68DDB3F8,1FDA836E,81BE16CD,F6B9265B,6FB077E1,18B74777,88085AE6,FF0F6A70,66063BCA,11010B5C,8F659EFF,F862AE69,616BFFD3,166CCF45,A00AE278,D70DD2EE,4E048354,3903B3C2,A7672661,D06016F7,4969474D,3E6E77DB,AED16A4A,D9D65ADC,40DF0B66,37D83BF0,A9BCAE53,DEBB9EC5,47B2CF7F,30B5FFE9,BDBDF21C,CABAC28A,53B39330,24B4A3A6,BAD03605,CDD70693,54DE5729,23D967BF,B3667A2E,C4614AB8,5D681B02,2A6F2B94,B40BBE37,C30C8EA1,5A05DF1B,2D02EF8D'.split(',').map(s => parseInt(s, 16));
+const REGISARR = /\[\d+\]$/;
+const PROXYBLACKLIST = { 'localhost': 1, '127.0.0.1': 1, '0.0.0.0': 1 };
+const PROXYOPTIONS = { headers: {}, method: 'CONNECT', agent: false };
+const PROXYTLS = { headers: {}};
+const PROXYOPTIONSHTTP = {};
+const REG_ROOT = /@\{#\}(\/)?/g;
+const REG_NOREMAP = /@\{noremap\}(\n)?/g;
+const REG_REMAP = /href=".*?"|src=".*?"/gi;
+const REG_URLEXT = /(https|http|wss|ws|file):\/\/|\/\/[a-z0-9]|[a-z]:/i;
 
 exports.MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 exports.DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-
-Object.freeze(EMPTYARRAY);
-Object.freeze(EMPTYOBJECT);
 
 var DIACRITICS=[{b:' ',c:'\u00a0'},{b:'0',c:'\u07c0'},{b:'A',c:'\u24b6\uff21\u00c0\u00c1\u00c2\u1ea6\u1ea4\u1eaa\u1ea8\u00c3\u0100\u0102\u1eb0\u1eae\u1eb4\u1eb2\u0226\u01e0\u00c4\u01de\u1ea2\u00c5\u01fa\u01cd\u0200\u0202\u1ea0\u1eac\u1eb6\u1e00\u0104\u023a\u2c6f'},{b:'AA',c:'\ua732'},{b:'AE',c:'\u00c6\u01fc\u01e2'},{b:'AO',c:'\ua734'},{b:'AU',c:'\ua736'},{b:'AV',c:'\ua738\ua73a'},{b:'AY',c:'\ua73c'},{b:'B',c:'\u24b7\uff22\u1e02\u1e04\u1e06\u0243\u0181'},{b:'C',c:'\u24b8\uff23\ua73e\u1e08\u0106C\u0108\u010a\u010c\u00c7\u0187\u023b'},{b:'D',c:'\u24b9\uff24\u1e0a\u010e\u1e0c\u1e10\u1e12\u1e0e\u0110\u018a\u0189\u1d05\ua779'},{b:'Dh',c:'\u00d0'},{b:'DZ',c:'\u01f1\u01c4'},{b:'Dz',c:'\u01f2\u01c5'},{b:'E',c:'\u025b\u24ba\uff25\u00c8\u00c9\u00ca\u1ec0\u1ebe\u1ec4\u1ec2\u1ebc\u0112\u1e14\u1e16\u0114\u0116\u00cb\u1eba\u011a\u0204\u0206\u1eb8\u1ec6\u0228\u1e1c\u0118\u1e18\u1e1a\u0190\u018e\u1d07'},{b:'F',c:'\ua77c\u24bb\uff26\u1e1e\u0191\ua77b'}, {b:'G',c:'\u24bc\uff27\u01f4\u011c\u1e20\u011e\u0120\u01e6\u0122\u01e4\u0193\ua7a0\ua77d\ua77e\u0262'},{b:'H',c:'\u24bd\uff28\u0124\u1e22\u1e26\u021e\u1e24\u1e28\u1e2a\u0126\u2c67\u2c75\ua78d'},{b:'I',c:'\u24be\uff29\u00cc\u00cd\u00ce\u0128\u012a\u012c\u0130\u00cf\u1e2e\u1ec8\u01cf\u0208\u020a\u1eca\u012e\u1e2c\u0197'},{b:'J',c:'\u24bf\uff2a\u0134\u0248\u0237'},{b:'K',c:'\u24c0\uff2b\u1e30\u01e8\u1e32\u0136\u1e34\u0198\u2c69\ua740\ua742\ua744\ua7a2'},{b:'L',c:'\u24c1\uff2c\u013f\u0139\u013d\u1e36\u1e38\u013b\u1e3c\u1e3a\u0141\u023d\u2c62\u2c60\ua748\ua746\ua780'}, {b:'LJ',c:'\u01c7'},{b:'Lj',c:'\u01c8'},{b:'M',c:'\u24c2\uff2d\u1e3e\u1e40\u1e42\u2c6e\u019c\u03fb'},{b:'N',c:'\ua7a4\u0220\u24c3\uff2e\u01f8\u0143\u00d1\u1e44\u0147\u1e46\u0145\u1e4a\u1e48\u019d\ua790\u1d0e'},{b:'NJ',c:'\u01ca'},{b:'Nj',c:'\u01cb'},{b:'O',c:'\u24c4\uff2f\u00d2\u00d3\u00d4\u1ed2\u1ed0\u1ed6\u1ed4\u00d5\u1e4c\u022c\u1e4e\u014c\u1e50\u1e52\u014e\u022e\u0230\u00d6\u022a\u1ece\u0150\u01d1\u020c\u020e\u01a0\u1edc\u1eda\u1ee0\u1ede\u1ee2\u1ecc\u1ed8\u01ea\u01ec\u00d8\u01fe\u0186\u019f\ua74a\ua74c'}, {b:'OE',c:'\u0152'},{b:'OI',c:'\u01a2'},{b:'OO',c:'\ua74e'},{b:'OU',c:'\u0222'},{b:'P',c:'\u24c5\uff30\u1e54\u1e56\u01a4\u2c63\ua750\ua752\ua754'},{b:'Q',c:'\u24c6\uff31\ua756\ua758\u024a'},{b:'R',c:'\u24c7\uff32\u0154\u1e58\u0158\u0210\u0212\u1e5a\u1e5c\u0156\u1e5e\u024c\u2c64\ua75a\ua7a6\ua782'},{b:'S',c:'\u24c8\uff33\u1e9e\u015a\u1e64\u015c\u1e60\u0160\u1e66\u1e62\u1e68\u0218\u015e\u2c7e\ua7a8\ua784'},{b:'T',c:'\u24c9\uff34\u1e6a\u0164\u1e6c\u021a\u0162\u1e70\u1e6e\u0166\u01ac\u01ae\u023e\ua786'}, {b:'Th',c:'\u00de'},{b:'TZ',c:'\ua728'},{b:'U',c:'\u24ca\uff35\u00d9\u00da\u00db\u0168\u1e78\u016a\u1e7a\u016c\u00dc\u01db\u01d7\u01d5\u01d9\u1ee6\u016e\u0170\u01d3\u0214\u0216\u01af\u1eea\u1ee8\u1eee\u1eec\u1ef0\u1ee4\u1e72\u0172\u1e76\u1e74\u0244'},{b:'V',c:'\u24cb\uff36\u1e7c\u1e7e\u01b2\ua75e\u0245'},{b:'VY',c:'\ua760'},{b:'W',c:'\u24cc\uff37\u1e80\u1e82\u0174\u1e86\u1e84\u1e88\u2c72'},{b:'X',c:'\u24cd\uff38\u1e8a\u1e8c'},{b:'Y',c:'\u24ce\uff39\u1ef2\u00dd\u0176\u1ef8\u0232\u1e8e\u0178\u1ef6\u1ef4\u01b3\u024e\u1efe'}, {b:'Z',c:'\u24cf\uff3a\u0179\u1e90\u017b\u017d\u1e92\u1e94\u01b5\u0224\u2c7f\u2c6b\ua762'},{b:'a',c:'\u24d0\uff41\u1e9a\u00e0\u00e1\u00e2\u1ea7\u1ea5\u1eab\u1ea9\u00e3\u0101\u0103\u1eb1\u1eaf\u1eb5\u1eb3\u0227\u01e1\u00e4\u01df\u1ea3\u00e5\u01fb\u01ce\u0201\u0203\u1ea1\u1ead\u1eb7\u1e01\u0105\u2c65\u0250\u0251'},{b:'aa',c:'\ua733'},{b:'ae',c:'\u00e6\u01fd\u01e3'},{b:'ao',c:'\ua735'},{b:'au',c:'\ua737'},{b:'av',c:'\ua739\ua73b'},{b:'ay',c:'\ua73d'}, {b:'b',c:'\u24d1\uff42\u1e03\u1e05\u1e07\u0180\u0183\u0253\u0182'},{b:'c',c:'\uff43\u24d2\u0107\u0109\u010b\u010d\u00e7\u1e09\u0188\u023c\ua73f\u2184'},{b:'d',c:'\u24d3\uff44\u1e0b\u010f\u1e0d\u1e11\u1e13\u1e0f\u0111\u018c\u0256\u0257\u018b\u13e7\u0501\ua7aa'},{b:'dh',c:'\u00f0'},{b:'dz',c:'\u01f3\u01c6'},{b:'e',c:'\u24d4\uff45\u00e8\u00e9\u00ea\u1ec1\u1ebf\u1ec5\u1ec3\u1ebd\u0113\u1e15\u1e17\u0115\u0117\u00eb\u1ebb\u011b\u0205\u0207\u1eb9\u1ec7\u0229\u1e1d\u0119\u1e19\u1e1b\u0247\u01dd'}, {b:'f',c:'\u24d5\uff46\u1e1f\u0192'},{b:'ff',c:'\ufb00'},{b:'fi',c:'\ufb01'},{b:'fl',c:'\ufb02'},{b:'ffi',c:'\ufb03'},{b:'ffl',c:'\ufb04'},{b:'g',c:'\u24d6\uff47\u01f5\u011d\u1e21\u011f\u0121\u01e7\u0123\u01e5\u0260\ua7a1\ua77f\u1d79'},{b:'h',c:'\u24d7\uff48\u0125\u1e23\u1e27\u021f\u1e25\u1e29\u1e2b\u1e96\u0127\u2c68\u2c76\u0265'},{b:'hv',c:'\u0195'},{b:'i',c:'\u24d8\uff49\u00ec\u00ed\u00ee\u0129\u012b\u012d\u00ef\u1e2f\u1ec9\u01d0\u0209\u020b\u1ecb\u012f\u1e2d\u0268\u0131'}, {b:'j',c:'\u24d9\uff4a\u0135\u01f0\u0249'},{b:'k',c:'\u24da\uff4b\u1e31\u01e9\u1e33\u0137\u1e35\u0199\u2c6a\ua741\ua743\ua745\ua7a3'},{b:'l',c:'\u24db\uff4c\u0140\u013a\u013e\u1e37\u1e39\u013c\u1e3d\u1e3b\u017f\u0142\u019a\u026b\u2c61\ua749\ua781\ua747\u026d'},{b:'lj',c:'\u01c9'},{b:'m',c:'\u24dc\uff4d\u1e3f\u1e41\u1e43\u0271\u026f'},{b:'n',c:'\u24dd\uff4e\u01f9\u0144\u00f1\u1e45\u0148\u1e47\u0146\u1e4b\u1e49\u019e\u0272\u0149\ua791\ua7a5\u043b\u0509'},{b:'nj', c:'\u01cc'},{b:'o',c:'\u24de\uff4f\u00f2\u00f3\u00f4\u1ed3\u1ed1\u1ed7\u1ed5\u00f5\u1e4d\u022d\u1e4f\u014d\u1e51\u1e53\u014f\u022f\u0231\u00f6\u022b\u1ecf\u0151\u01d2\u020d\u020f\u01a1\u1edd\u1edb\u1ee1\u1edf\u1ee3\u1ecd\u1ed9\u01eb\u01ed\u00f8\u01ff\ua74b\ua74d\u0275\u0254\u1d11'},{b:'oe',c:'\u0153'},{b:'oi',c:'\u01a3'},{b:'oo',c:'\ua74f'},{b:'ou',c:'\u0223'},{b:'p',c:'\u24df\uff50\u1e55\u1e57\u01a5\u1d7d\ua751\ua753\ua755\u03c1'},{b:'q',c:'\u24e0\uff51\u024b\ua757\ua759'}, {b:'r',c:'\u24e1\uff52\u0155\u1e59\u0159\u0211\u0213\u1e5b\u1e5d\u0157\u1e5f\u024d\u027d\ua75b\ua7a7\ua783'},{b:'s',c:'\u24e2\uff53\u015b\u1e65\u015d\u1e61\u0161\u1e67\u1e63\u1e69\u0219\u015f\u023f\ua7a9\ua785\u1e9b\u0282'},{b:'ss',c:'\u00df'},{b:'t',c:'\u24e3\uff54\u1e6b\u1e97\u0165\u1e6d\u021b\u0163\u1e71\u1e6f\u0167\u01ad\u0288\u2c66\ua787'},{b:'th',c:'\u00fe'},{b:'tz',c:'\ua729'},{b:'u',c:'\u24e4\uff55\u00f9\u00fa\u00fb\u0169\u1e79\u016b\u1e7b\u016d\u00fc\u01dc\u01d8\u01d6\u01da\u1ee7\u016f\u0171\u01d4\u0215\u0217\u01b0\u1eeb\u1ee9\u1eef\u1eed\u1ef1\u1ee5\u1e73\u0173\u1e77\u1e75\u0289'}, {b:'v',c:'\u24e5\uff56\u1e7d\u1e7f\u028b\ua75f\u028c'},{b:'vy',c:'\ua761'},{b:'w',c:'\u24e6\uff57\u1e81\u1e83\u0175\u1e87\u1e85\u1e98\u1e89\u2c73'},{b:'x',c:'\u24e7\uff58\u1e8b\u1e8d'},{b:'y',c:'\u24e8\uff59\u1ef3\u00fd\u0177\u1ef9\u0233\u1e8f\u00ff\u1ef7\u1e99\u1ef5\u01b4\u024f\u1eff'},{b:'z',c:'\u24e9\uff5a\u017a\u1e91\u017c\u017e\u1e93\u1e95\u01b6\u0225\u0240\u2c6c\ua763'}];
 
@@ -109,6 +120,8 @@ var CONTENTTYPES = {
 	'geojson': 'application/json',
 	'gif': 'image/gif',
 	'gzip': 'application/x-gzip',
+	'heic': 'image/heic',
+	'heif': 'image/heif',
 	'htm': 'text/html',
 	'html': 'text/html',
 	'ico': 'image/x-icon',
@@ -173,7 +186,6 @@ var CONTENTTYPES = {
 	'zip': 'application/zip'
 };
 
-var persistentcookies = {};
 var dnscache = {};
 var datetimeformat = {};
 const hasOwnProperty = Object.prototype.hasOwnProperty;
@@ -185,11 +197,8 @@ const hasOwnProperty = Object.prototype.hasOwnProperty;
  */
 exports.isEmpty = function(obj) {
 
-	if (!obj)
+	if (!obj || obj instanceof Array)
 		return true;
-
-	if (obj.length)
-		return false;
 
 	for (var key in obj) {
 		if (hasOwnProperty.call(obj, key))
@@ -347,14 +356,14 @@ exports.keywords = function(content, forSearch, alternative, max_count, max_leng
 		for (var i = 0, length = content.length; i < length; i++) {
 			if (!content[i])
 				continue;
-			var tmp = (forSearch ? content[i].removeDiacritics().toLowerCase().replace(/y/g, 'i') : content[i].toLowerCase()).replace(/\n/g, ' ').split(' ');
+			var tmp = (forSearch ? content[i].removeDiacritics().toLowerCase().replace(regexpY, 'i') : content[i].toLowerCase()).replace(regexpN, ' ').split(' ');
 			if (!tmp || !tmp.length)
 				continue;
 			for (var j = 0, jl = tmp.length; j < jl; j++)
 				words.push(tmp[j]);
 		}
 	} else
-		words = (forSearch ? content.removeDiacritics().toLowerCase().replace(/y/g, 'i') : content.toLowerCase()).replace(/\n/g, ' ').split(' ');
+		words = (forSearch ? content.removeDiacritics().toLowerCase().replace(regexpY, 'i') : content.toLowerCase()).replace(regexpN, ' ').split(' ');
 
 	if (!words)
 		words = [];
@@ -363,16 +372,33 @@ exports.keywords = function(content, forSearch, alternative, max_count, max_leng
 	var counter = 0;
 
 	for (var i = 0, length = words.length; i < length; i++) {
-		var word = words[i].trim();
+
+		var word = words[i].trim().replace(regexpCHARS, keywordscleaner);
+
+		if (regexpCHINA.test(word)) {
+
+			var tmpw = word.split('', max_count);
+
+			for (var j = 0; j < tmpw.length; j++) {
+				word = tmpw[j];
+				if (dic[word])
+					dic[word]++;
+				else
+					dic[word] = 1;
+				counter++;
+			}
+
+			if (counter >= max_count)
+				break;
+
+			continue;
+		}
 
 		if (word.length < min_length)
 			continue;
 
 		if (counter >= max_count)
 			break;
-
-		if (forSearch)
-			word = word.replace(/\W|_/g, '');
 
 		// Gets 80% length of word
 		if (alternative) {
@@ -407,6 +433,27 @@ exports.keywords = function(content, forSearch, alternative, max_count, max_leng
 	return keys;
 };
 
+function keywordscleaner(c) {
+	return c.charCodeAt(0) < 200 ? '' : c;
+}
+
+function parseProxy(p) {
+	var key = 'proxy_' + p;
+	if (F.temporary.other[key])
+		return F.temporary.other[key];
+
+	if (p.indexOf('://') === -1)
+		p = 'http://' + p;
+
+	var obj = Url.parse(p);
+
+	if (obj.auth)
+		obj._auth = 'Basic ' + U.createBuffer(obj.auth).toString('base64');
+
+	obj.port = +obj.port;
+	return F.temporary.other[key] = obj;
+}
+
 /**
  * Create a request to a specific URL
  * @param  {String} url URL address.
@@ -419,7 +466,7 @@ exports.keywords = function(content, forSearch, alternative, max_count, max_leng
  * @param  {Number} timeout Request timeout.
  * return {Boolean}
  */
-exports.request = function(url, flags, data, callback, cookies, headers, encoding, timeout, files) {
+global.REQUEST = exports.request = function(url, flags, data, callback, cookies, headers, encoding, timeout, files) {
 
 	// No data (data is optional argument)
 	if (typeof(data) === 'function') {
@@ -438,10 +485,13 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 	var method;
 	var type = 0;
 	var isCookies = false;
+	var def;
+	var proxy;
 
-	if (headers)
+	if (headers) {
 		headers = exports.extend({}, headers);
-	else
+		def = headers[CT];
+	} else
 		headers = {};
 
 	if (flags instanceof Array) {
@@ -458,6 +508,11 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 				continue;
 			}
 
+			if (flags[i][0] === 'p' && flags[i][4] === 'y') {
+				proxy = parseProxy(flags[i].substring(6));
+				continue;
+			}
+
 			switch (flags[i].toLowerCase()) {
 				case 'utf8':
 				case 'ascii':
@@ -470,22 +525,27 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 					headers['X-Requested-With'] = 'XMLHttpRequest';
 					break;
 				case 'plain':
-					headers['Content-Type'] = 'text/plain';
+					if (!def)
+						headers[CT] = 'text/plain';
 					break;
 				case 'html':
-					headers['Content-Type'] = 'text/html';
+					if (!def)
+						headers[CT] = 'text/html';
 					break;
 				case 'raw':
 					type = 3;
-					headers['Content-Type'] = 'application/octet-stream';
+					if (!def)
+						headers[CT] = 'application/octet-stream';
 					break;
 				case 'json':
-					headers['Content-Type'] = 'application/json';
+					if (!def)
+						headers[CT] = 'application/json';
 					!method && (method = 'POST');
 					type = 1;
 					break;
 				case 'xml':
-					headers['Content-Type'] = 'text/xml';
+					if (!def)
+						headers[CT] = 'text/xml';
 					!method && (method = 'POST');
 					type = 2;
 					break;
@@ -505,7 +565,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 					options.upload = true;
 					options.files = files || EMPTYARRAY;
 					options.boundary = '----totaljs' + Math.random().toString(16).substring(2);
-					headers['Content-Type'] = 'multipart/form-data; boundary=' + options.boundary;
+					headers[CT] = 'multipart/form-data; boundary=' + options.boundary;
 					break;
 
 				case 'post':
@@ -513,7 +573,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 				case 'delete':
 				case 'patch':
 					method = flags[i].toUpperCase();
-					!headers['Content-Type'] && (headers['Content-Type'] = 'application/x-www-form-urlencoded');
+					!def && !headers[CT] && (headers[CT] = 'application/x-www-form-urlencoded');
 					break;
 
 				case 'dnscache':
@@ -562,10 +622,31 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 
 	var uri = Url.parse(url);
 	uri.method = method;
-	uri.agent = false;
 	uri.headers = headers;
+	options.uri = uri;
 
-	if (options.resolve) {
+	if (options.resolve && (uri.hostname === 'localhost' || uri.hostname.charCodeAt(0) < 64))
+		options.resolve = null;
+
+	if (F.config['default-proxy'] && !proxy && !PROXYBLACKLIST[uri.hostname])
+		proxy = parseProxy(F.config['default-proxy']);
+
+	if (proxy && (uri.hostname === 'localhost' || uri.hostname === '127.0.0.1'))
+		proxy = null;
+
+	options.proxy = proxy;
+
+	if (proxy && uri.protocol === 'https:') {
+		proxy.tls = true;
+		uri.agent = new ProxyAgent(options);
+		uri.agent.request = Http.request;
+		uri.agent.createSocket = createSecureSocket;
+		uri.agent.defaultPort = 443;
+	}
+
+	if (proxy)
+		request_call(uri, options);
+	else if (options.resolve) {
 		exports.resolve(url, function(err, u) {
 			!err && (uri.host = u.host);
 			request_call(uri, options);
@@ -576,10 +657,103 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 	return options.evt;
 };
 
+function ProxyAgent(options) {
+	var self = this;
+	self.options = options;
+	self.maxSockets = Http.Agent.defaultMaxSockets;
+	self.requests = [];
+}
+
+ProxyAgent.prototype.createConnection = function(pending) {
+	var self = this;
+	self.createSocket(pending, function(socket) {
+		pending.request.onSocket(socket);
+	});
+};
+
+ProxyAgent.prototype.createSocket = function(options, callback) {
+
+	var self = this;
+	var proxy = self.options.proxy;
+	var uri = self.options.uri;
+
+	PROXYOPTIONS.host = proxy.hostname;
+	PROXYOPTIONS.port = proxy.port;
+	PROXYOPTIONS.path = PROXYOPTIONS.headers.host = uri.hostname + ':' + (uri.port || '443');
+
+	if (proxy._auth)
+		PROXYOPTIONS.headers['Proxy-Authorization'] = proxy._auth;
+
+	var req = self.request(PROXYOPTIONS);
+	req.setTimeout(10000);
+	req.on('response', proxyagent_response);
+	req.on('connect', function(res, socket) {
+		if (res.statusCode === 200) {
+			socket.$req = req;
+			callback(socket);
+		} else {
+			var err = new Error('Proxy could not be established (maybe a problem in auth), code: ' + res.statusCode);
+			err.code = 'ECONNRESET';
+			options.request.emit('error', err);
+			req.destroy && req.destroy();
+			req = null;
+			self.requests = null;
+			self.options = null;
+		}
+	});
+
+	req.on('error', function(err) {
+		var e = new Error('Request Proxy "proxy {0} --> target {1}": {2}'.format(PROXYOPTIONS.host + ':' + proxy.port, PROXYOPTIONS.path, err.toString()));
+		e.code = err.code;
+		options.request.emit('error', e);
+		req.destroy && req.destroy();
+		req = null;
+		self.requests = null;
+		self.options = null;
+	});
+
+	req.end();
+};
+
+function proxyagent_response(res) {
+	res.upgrade = true;
+}
+
+ProxyAgent.prototype.addRequest = function(req, options) {
+	this.createConnection({ host: options.host, port: options.port, request: req });
+};
+
+function createSecureSocket(options, callback) {
+	var self = this;
+	ProxyAgent.prototype.createSocket.call(self, options, function(socket) {
+		PROXYTLS.servername = self.options.uri.hostname;
+		PROXYTLS.headers = self.options.uri.headers;
+		PROXYTLS.socket = socket;
+		var tls = Tls.connect(0, PROXYTLS);
+		//tls.on('data', console.log);
+		callback(tls);
+	});
+}
+
 function request_call(uri, options) {
 
+	var opt;
+
+	if (options.proxy && !options.proxy.tls) {
+		opt = PROXYOPTIONSHTTP;
+		opt.port = options.proxy.port;
+		opt.host = options.proxy.hostname;
+		opt.path = uri.href;
+		opt.headers = uri.headers;
+		opt.method = uri.method;
+		opt.headers.host = uri.host;
+		if (options.proxy._auth)
+			opt.headers['Proxy-Authorization'] = options.proxy._auth;
+	} else
+		opt = uri;
+
 	var connection = uri.protocol === 'https:' ? Https : Http;
-	var req = options.post ? connection.request(uri, (res) => request_response(res, uri, options)) : connection.get(uri, (res) => request_response(res, uri, options));
+	var req = options.post ? connection.request(opt, (res) => request_response(res, uri, options)) : connection.get(opt, (res) => request_response(res, uri, options));
 
 	if (!options.callback) {
 		req.on('error', NOOP);
@@ -609,7 +783,6 @@ function request_call(uri, options) {
 	if (options.upload) {
 		options.first = true;
 		options.files.wait(function(file, next) {
-			// next();
 			request_writefile(req, options, file, next);
 		}, function() {
 
@@ -649,7 +822,6 @@ function request_writefile(req, options, file, next) {
 		stream.pipe(req, STREAMPIPE);
 	}
 }
-
 
 function request_response(res, uri, options) {
 
@@ -699,7 +871,13 @@ function request_response(res, uri, options) {
 
 		options.redirect++;
 
-		var tmp = Url.parse(res.headers['location']);
+		var loc = res.headers['location'];
+		var proto = loc.substring(0, 6);
+
+		if (proto !== 'http:/' && proto !== 'https:')
+			loc = uri.protocol + '//' + uri.hostname + loc;
+
+		var tmp = Url.parse(loc);
 		tmp.headers = uri.headers;
 		tmp.agent = false;
 		tmp.method = uri.method;
@@ -707,13 +885,23 @@ function request_response(res, uri, options) {
 		res.req.removeAllListeners();
 		res.req = null;
 
+		if (options.proxy && tmp.protocol === 'https:') {
+			// TLS?
+			options.proxy.tls = true;
+			options.uri = tmp;
+			options.uri.agent = new ProxyAgent(options);
+			options.uri.agent.request = Http.request;
+			options.uri.agent.createSocket = createSecureSocket;
+			options.uri.agent.defaultPort = 443;
+		}
+
 		if (!options.resolve) {
 			res.removeAllListeners();
 			res = null;
 			return request_call(tmp, options);
 		}
 
-		exports.resolve(res.headers['location'], function(err, u) {
+		exports.resolve(tmp, function(err, u) {
 			if (!err)
 				tmp.host = u.host;
 			res.removeAllListeners();
@@ -764,6 +952,12 @@ function request_response(res, uri, options) {
 	});
 
 	res.on('end', function() {
+
+		if (options.socket) {
+			options.uri.agent.destroy();
+			//options.socket.destroy();
+		}
+
 		var self = this;
 		var str = self._buffer ? self._buffer.toString(options.encoding) : '';
 		self._buffer = undefined;
@@ -793,11 +987,11 @@ exports.$$request = function(url, flags, data, cookies, headers, encoding, timeo
 };
 
 exports.btoa = function(str) {
-	return (str instanceof Buffer) ? str.toString('base64') : exports.createBuffer(str.toString(), 'binary').toString('base64');
+	return (str instanceof Buffer) ? str.toString('base64') : exports.createBuffer(str.toString(), 'utf8').toString('base64');
 };
 
 exports.atob = function(str) {
-	return exports.createBuffer(str, 'base64').toString('binary');
+	return exports.createBuffer(str, 'base64').toString('utf8');
 };
 
 /**
@@ -842,8 +1036,8 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 	if (typeof(encoding) !== 'string')
 		encoding = ENCODING;
 
+	var proxy, type = 0;
 	var method = 'GET';
-	var type = 0;
 	var options = { callback: callback, resolve: false, length: 0, evt: new EventEmitter2(), timeout: timeout || 60000, post: false, encoding: encoding };
 
 	if (headers)
@@ -865,6 +1059,11 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 
 			if (flags[i][0] === '<') {
 				// max length is not supported
+				continue;
+			}
+
+			if (flags[i][0] === 'p' && flags[i][4] === 'y') {
+				proxy = parseProxy(flags[i].substring(6));
 				continue;
 			}
 
@@ -950,13 +1149,32 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 	uri.method = method;
 	uri.agent = false;
 	uri.headers = headers;
+	options.uri = uri;
+
+	if (options.resolve && (uri.hostname === 'localhost' || uri.hostname.charCodeAt(0) < 64))
+		options.resolve = null;
 
 	if (data.length) {
 		options.data = exports.createBuffer(data, ENCODING);
 		headers['Content-Length'] = options.data.length;
 	}
 
-	if (options.resolve) {
+	if (F.config['default-proxy'] && !proxy && !PROXYBLACKLIST[uri.hostname])
+		proxy = parseProxy(F.config['default-proxy']);
+
+	options.proxy = proxy;
+
+	if (proxy && uri.protocol === 'https:') {
+		proxy.tls = true;
+		uri.agent = new ProxyAgent(options);
+		uri.agent.request = Http.request;
+		uri.agent.createSocket = createSecureSocket;
+		uri.agent.defaultPort = 443;
+	}
+
+	if (proxy)
+		download_call(uri, options);
+	else if (options.resolve) {
 		exports.resolve(url, function(err, u) {
 			!err && (uri.host = u.host);
 			download_call(uri, options);
@@ -969,10 +1187,23 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 
 function download_call(uri, options) {
 
+	var opt;
 	options.length = 0;
 
+	if (options.proxy && !options.proxy.tls) {
+		opt = PROXYOPTIONSHTTP;
+		opt.port = options.proxy.port;
+		opt.host = options.proxy.hostname;
+		opt.path = uri.href;
+		opt.headers = uri.headers;
+		opt.method = uri.method;
+		if (options.proxy._auth)
+			opt.headers['Proxy-Authorization'] = options.proxy._auth;
+	} else
+		opt = uri;
+
 	var connection = uri.protocol === 'https:' ? Https : Http;
-	var req = options.post ? connection.request(uri, (res) => download_response(res, uri, options)) : connection.get(uri, (res) => download_response(res, uri, options));
+	var req = options.post ? connection.request(opt, (res) => download_response(res, uri, options)) : connection.get(opt, (res) => download_response(res, uri, options));
 
 	if (!options.callback) {
 		req.on('error', NOOP);
@@ -980,21 +1211,21 @@ function download_call(uri, options) {
 	}
 
 	req.on('error', function(err) {
-		if (!options.callback)
-			return;
-		options.callback(err);
-		options.callback = null;
-		options.evt.removeAllListeners();
-		options.evt = null;
+		if (options.callback) {
+			options.callback(err);
+			options.callback = null;
+			options.evt.removeAllListeners();
+			options.evt = null;
+		}
 	});
 
 	req.setTimeout(options.timeout, function() {
-		if (!options.callback)
-			return;
-		options.callback(new Error(exports.httpStatus(408)));
-		options.callback = null;
-		options.evt.removeAllListeners();
-		options.evt = null;
+		if (options.callback) {
+			options.callback(new Error(exports.httpStatus(408)));
+			options.callback = null;
+			options.evt.removeAllListeners();
+			options.evt = null;
+		}
 	});
 
 	req.on('response', function(response) {
@@ -1030,6 +1261,13 @@ function download_response(res, uri, options) {
 		tmp.method = uri.method;
 		res.req.removeAllListeners();
 		res.req = null;
+
+		if (options.proxy && tmp.protocol === 'https:') {
+			// TLS?
+			options.uri = tmp;
+			download_call(options, request_call);
+			return;
+		}
 
 		if (!options.resolve) {
 			res.removeAllListeners();
@@ -1591,11 +1829,11 @@ exports.isRelative = function(url) {
 
 /**
  * Streamer method
- * @param {String} beg
- * @param {String} end
+ * @param {String/Buffer} beg
+ * @param {String/Buffer} end
  * @param {Function(value, index)} callback
  */
-exports.streamer = function(beg, end, callback, skip, stream) {
+exports.streamer = function(beg, end, callback, skip, stream, raw) {
 
 	if (typeof(end) === 'function') {
 		stream = skip;
@@ -1617,8 +1855,10 @@ exports.streamer = function(beg, end, callback, skip, stream) {
 	if (skip === undefined)
 		skip = 0;
 
-	beg = exports.createBuffer(beg, 'utf8');
-	if (end)
+	if (!(beg instanceof Buffer))
+		beg = exports.createBuffer(beg, 'utf8');
+
+	if (end && !(end instanceof Buffer))
 		end = exports.createBuffer(end, 'utf8');
 
 	if (!end) {
@@ -1630,9 +1870,18 @@ exports.streamer = function(beg, end, callback, skip, stream) {
 
 			CONCAT[0] = buffer;
 			CONCAT[1] = chunk;
+
+			var f = 0;
+
+			if (buffer.length) {
+				f = buffer.length - beg.length;
+				if (f < 0)
+					f = 0;
+			}
+
 			buffer = Buffer.concat(CONCAT);
 
-			var index = buffer.indexOf(beg);
+			var index = buffer.indexOf(beg, f);
 			if (index === -1)
 				return;
 
@@ -1641,7 +1890,7 @@ exports.streamer = function(beg, end, callback, skip, stream) {
 				if (skip)
 					skip--;
 				else {
-					if (callback(buffer.toString('utf8', 0, index + length), indexer++) === false)
+					if (callback(raw ? buffer.slice(0, index + length) : buffer.toString('utf8', 0, index + length), indexer++) === false)
 						canceled = true;
 				}
 
@@ -1675,7 +1924,10 @@ exports.streamer = function(beg, end, callback, skip, stream) {
 		buffer = Buffer.concat(CONCAT);
 
 		if (!is) {
-			bi = buffer.indexOf(beg);
+			var f = CONCAT[0].length - beg.length;
+			if (f < 0)
+				f = 0;
+			bi = buffer.indexOf(beg, f);
 			if (bi === -1)
 				return;
 			is = true;
@@ -1692,7 +1944,7 @@ exports.streamer = function(beg, end, callback, skip, stream) {
 			if (skip)
 				skip--;
 			else {
-				if (callback(buffer.toString('utf8', bi, ei + elength), indexer++) === false)
+				if (callback(raw ? buffer.slice(bi, ei + elength) : buffer.toString('utf8', bi, ei + elength), indexer++) === false)
 					canceled = true;
 			}
 
@@ -1713,6 +1965,10 @@ exports.streamer = function(beg, end, callback, skip, stream) {
 
 	stream && stream.on('end', () => fn(end));
 	return fn;
+};
+
+exports.streamer2 = function(beg, end, callback, skip, stream) {
+	return exports.streamer(beg, end, callback, skip, stream, true);
 };
 
 /**
@@ -1953,7 +2209,7 @@ function rnd() {
 	return Math.floor(Math.random() * 65536).toString(36);
 }
 
-exports.GUID = function(max) {
+global.GUID = exports.GUID = function(max) {
 	max = max || 40;
 	var str = '';
 	for (var i = 0; i < (max / 3) + 1; i++)
@@ -2007,8 +2263,9 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 
 	var entity = collection[schema];
 	var prepare = entity.onValidate || F.onValidate || NOOP;
-	var current = path === undefined ? '' : path + '.';
+	var current = path ? path + '.' : '';
 	var properties = entity.properties;
+	var result;
 
 	if (!pluspath)
 		pluspath = '';
@@ -2023,8 +2280,7 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 			continue;
 
 		var TYPE = collection[schema].schema[name];
-
-		if (TYPE.can && !TYPE.can(model))
+		if (TYPE.can && !TYPE.can(model, model.$$workflow || EMPTYOBJECT))
 			continue;
 
 		var value = model[name];
@@ -2039,48 +2295,56 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 
 		if (TYPE.isArray) {
 
-			if (!(value instanceof Array) || !value.length) {
-				error.push(pluspath + name, '@', current + name, index, prefix);
-				continue;
-			}
-
-			for (var j = 0, jl = value.length; j < jl; j++) {
-				if (TYPE.type === 7) {
-					// Another schema
+			if (TYPE.type === 7 && value instanceof Array && value.length) {
+				for (var j = 0, jl = value.length; j < jl; j++)
 					exports.validate_builder(value[j], error, TYPE.raw, collection, current + name + '[' + j + ']', j, undefined, pluspath);
-				} else {
-					// Basic types
-					var result = TYPE.validate ? TYPE.validate(value[j], model) : prepare(name, value, current + name + '[' + j + ']', model, schema, TYPE);
-					if (result === undefined) {
-						result = validate_builder_default(name, value[j], TYPE);
-						if (result)
-							continue;
-						type = typeof(result);
-						if (type === 'string') {
-							if (result[0] === '@')
-								error.push(pluspath + name, '@', current + name + '[' + j + ']', j, entity.resourcePrefix + result.substring(1));
-							else
-								error.push(pluspath + name, result, current + name + '[' + j + ']', j, prefix);
-						} else if (type === 'boolean') {
-							!result && error.push(pluspath + name, '@', current + name + '[' + j + ']', j, prefix);
-						} else if (result.isValid === false)
-							error.push(pluspath + name, result.error, current + name + '[' + j + ']', j, prefix);
-					}
+			} else {
+
+				result = TYPE.validate ? TYPE.validate(value, model) : prepare(name, value, current + name, model, schema, TYPE);
+				if (result == null) {
+					result = value instanceof Array ? value.length > 0 : false;
+					if (result == null || result === true)
+						continue;
 				}
+
+				type = typeof(result);
+				if (type === 'string') {
+					if (result[0] === '@')
+						error.push(pluspath + name, '@', current + name, index, entity.resourcePrefix + result.substring(1));
+					else
+						error.push(pluspath + name, result, current + name, index, prefix);
+				} else if (type === 'boolean') {
+					!result && error.push(pluspath + name, '@', current + name, index, prefix);
+				} else if (result.isValid === false)
+					error.push(pluspath + name, result.error, current + name, index, prefix);
 			}
 			continue;
 		}
 
 		if (TYPE.type === 7) {
 			// Another schema
-			exports.validate_builder(value, error, TYPE.raw, collection, current + name, undefined, undefined, pluspath);
+			result = TYPE.validate ? TYPE.validate(value, model) : null;
+			if (result == null)
+				exports.validate_builder(value, error, TYPE.raw, collection, current + name, undefined, undefined, pluspath);
+			else {
+				type = typeof(result);
+				if (type === 'string') {
+					if (result[0] === '@')
+						error.push(pluspath + name, '@', current + name, index, entity.resourcePrefix + result.substring(1));
+					else
+						error.push(pluspath + name, result, current + name, index, prefix);
+				} else if (type === 'boolean') {
+					!result && error.push(pluspath + name, '@', current + name, index, prefix);
+				} else if (result.isValid === false)
+					error.push(pluspath + name, result.error, current + name, index, prefix);
+			}
 			continue;
 		}
 
-		var result = TYPE.validate ? TYPE.validate(value, model) : prepare(name, value, current + name, model, schema, TYPE);
-		if (result === undefined) {
+		result = TYPE.validate ? TYPE.validate(value, model) : prepare(name, value, current + name, model, schema, TYPE);
+		if (result == null) {
 			result = validate_builder_default(name, value, TYPE);
-			if (result)
+			if (result == null || result === true)
 				continue;
 		}
 
@@ -2233,7 +2497,6 @@ exports.parseJSON = function(value, date) {
 	try {
 		return JSON.parse(value, date ? jsonparser : undefined);
 	} catch(e) {
-		return null;
 	}
 };
 
@@ -2349,62 +2612,47 @@ exports.distance = function(lat1, lon1, lat2, lon2) {
 	return (R * c).floor(3);
 };
 
-/**
- * Directory listing
- * @param {String} path Path.
- * @param {Function(files, directories)} callback Callback
- * @param {Function(filename),isDirectory or String or RegExp} filter Custom filter (optional).
- */
-exports.ls = function(path, callback, filter) {
-
+function ls(path, callback, advanced, filter) {
 	var filelist = new FileList();
 	var tmp;
 
+	filelist.advanced = advanced;
 	filelist.onComplete = callback;
 
 	if (typeof(filter) === 'string') {
 		tmp = filter.toLowerCase();
-		filter.onFilter = function(filename, is, relative) {
-			return is ? true : relative.toLowerCase().indexOf(tmp);
+		filelist.onFilter = function(filename, is) {
+			return is ? true : filename.toLowerCase().indexOf(tmp) !== -1;
 		};
 	} else if (exports.isRegExp(filter)) {
 		tmp = filter;
-		filter.onFilter = function(filename, is) {
+		filelist.onFilter = function(filename, is) {
 			return is ? true : tmp.test(filename);
 		};
 	} else
 		filelist.onFilter = filter || null;
 
 	filelist.walk(path);
+}
+
+/**
+ * Directory listing
+ * @param {String} path Path.
+ * @param {Function(files, directories)} callback Callback
+ * @param {Function(filename, isDirectory) or String or RegExp} filter Custom filter (optional).
+ */
+exports.ls = function(path, callback, filter) {
+	ls(path, callback, false, filter);
 };
 
 /**
  * Advanced Directory listing
  * @param {String} path Path.
  * @param {Function(files, directories)} callback Callback
- * @param {Function(filename),isDirectory or String or RegExp} filter Custom filter (optional).
+ * @param {Function(filename ,isDirectory) or String or RegExp} filter Custom filter (optional).
  */
 exports.ls2 = function(path, callback, filter) {
-	var filelist = new FileList();
-	var tmp;
-
-	filelist.advanced = true;
-	filelist.onComplete = callback;
-
-	if (typeof(filter) === 'string') {
-		tmp = filter.toLowerCase();
-		filter.onFilter = function(filename, is) {
-			return is ? true : filename.toLowerCase().indexOf(tmp);
-		};
-	} else if (exports.isRegExp(filter)) {
-		tmp = filter;
-		filter.onFilter = function(filename, is) {
-			return is ? true : tmp.test(filename);
-		};
-	} else
-		filelist.onFilter = filter || null;
-
-	filelist.walk(path);
+	ls(path, callback, true, filter);
 };
 
 Date.prototype.add = function(type, value) {
@@ -2546,16 +2794,16 @@ Date.prototype.extend = function(date) {
 
 			arr = m.split(':');
 			tmp = +arr[0];
-			!isNaN(tmp) && dt.setHours(tmp);
+			tmp >= 0 && dt.setHours(tmp);
 
 			if (arr[1]) {
 				tmp = +arr[1];
-				!isNaN(tmp) && dt.setMinutes(tmp);
+				tmp >= 0 && dt.setMinutes(tmp);
 			}
 
 			if (arr[2]) {
 				tmp = +arr[2];
-				!isNaN(tmp) && dt.setSeconds(tmp);
+				tmp >= 0 && dt.setSeconds(tmp);
 			}
 
 			continue;
@@ -2565,16 +2813,16 @@ Date.prototype.extend = function(date) {
 			arr = m.split('-');
 
 			tmp = +arr[0];
-			dt.setFullYear(tmp);
-
-			if (arr[2]) {
-				tmp = +arr[2];
-				!isNaN(tmp) && dt.setDate(tmp);
-			}
+			tmp && dt.setFullYear(tmp);
 
 			if (arr[1]) {
 				tmp = +arr[1];
-				!isNaN(tmp) && dt.setMonth(tmp - 1);
+				tmp >= 0 && dt.setMonth(tmp - 1);
+			}
+
+			if (arr[2]) {
+				tmp = +arr[2];
+				tmp >= 0 && dt.setDate(tmp);
 			}
 
 			continue;
@@ -2583,18 +2831,18 @@ Date.prototype.extend = function(date) {
 		if (m.indexOf('.') !== -1) {
 			arr = m.split('.');
 
-			tmp = +arr[0];
-			dt.setDate(tmp);
+			if (arr[2]) {
+				tmp = +arr[2];
+				!isNaN(tmp) && dt.setFullYear(tmp);
+			}
 
 			if (arr[1]) {
 				tmp = +arr[1];
 				!isNaN(tmp) && dt.setMonth(tmp - 1);
 			}
 
-			if (arr[2]) {
-				tmp = +arr[2];
-				!isNaN(tmp) && dt.setFullYear(tmp);
-			}
+			tmp = +arr[0];
+			!isNaN(tmp) && dt.setDate(tmp);
 
 			continue;
 		}
@@ -2647,7 +2895,7 @@ Date.compare = function(d1, d2) {
 Date.prototype.format = function(format, resource) {
 
 	if (!format)
-		return this.getFullYear() + '-' + (this.getMonth() + 1).toString().padLeft(2, '0') + '-' + this.getDate().toString().padLeft(2, '0') + 'T' + this.getHours().toString().padLeft(2, '0') + ':' + this.getMinutes().toString().padLeft(2, '0') + ':' + this.getSeconds().toString().padLeft(2, '0') + '.' + this.getMilliseconds().toString().padLeft(3, '0') + 'Z';
+		return this.getUTCFullYear() + '-' + (this.getUTCMonth() + 1).toString().padLeft(2, '0') + '-' + this.getUTCDate().toString().padLeft(2, '0') + 'T' + this.getUTCHours().toString().padLeft(2, '0') + ':' + this.getUTCMinutes().toString().padLeft(2, '0') + ':' + this.getUTCSeconds().toString().padLeft(2, '0') + '.' + this.getUTCMilliseconds().toString().padLeft(3, '0') + 'Z';
 
 	if (datetimeformat[format])
 		return datetimeformat[format](this, resource);
@@ -2745,6 +2993,31 @@ String.prototype.isJSONDate = function() {
 	return l > 22 && l < 30 && this[l] === 'Z' && this[10] === 'T' && this[4] === '-' && this[13] === ':' && this[16] === ':';
 };
 
+String.prototype.ROOT = function(noremap) {
+
+	var str = this;
+
+	str = str.replace(REG_NOREMAP, function() {
+		noremap = true;
+		return '';
+	}).replace(REG_ROOT, $urlmaker);
+
+	if (!noremap && F.config['default-root'])
+		str = str.replace(REG_REMAP, $urlremap);
+
+	return str;
+};
+
+function $urlremap(text) {
+	var pos = text[0] === 'h' ? 6 : 5;
+	return REG_URLEXT.test(text) ? text : ((text[0] === 'h' ? 'href' : 'src') + '="' + F.config['default-root'] + (text[pos] === '/' ? text.substring(pos + 1) : text));
+}
+
+function $urlmaker(text) {
+	var c = text[4];
+	return F.config['default-root'] ? F.config['default-root'] : (c || '');
+}
+
 if (!String.prototype.trim) {
 	String.prototype.trim = function() {
 		return this.replace(regexpTRIM, '');
@@ -2830,9 +3103,21 @@ String.prototype.hash = function(type, salt) {
 			return str.sha256();
 		case 'sha512':
 			return str.sha512();
+		case 'crc32':
+			return str.crc32();
+		case 'crc32unsigned':
+			return str.crc32(true);
 		default:
 			return string_hash(str);
 	}
+};
+
+String.prototype.crc32 = function(unsigned) {
+	var crc = -1;
+	for (var i = 0, length = this.length; i < length; i++)
+		crc = (crc >>> 8) ^ CRC32TABLE[(crc ^ this.charCodeAt(i)) & 0xFF];
+	var val = crc ^ (-1);
+	return unsigned ? val >>> 0 : val;
 };
 
 function string_hash(s, convert) {
@@ -3078,7 +3363,7 @@ String.prototype.parseDate = function() {
 		}
 	}
 
-	return new Date(parsed[0], parsed[1] - 1, parsed[2], parsed[3], parsed[4], parsed[5]);
+	return new Date(parsed[0], parsed[1] - 1, parsed[2], parsed[3], parsed[4] - NOW.getTimezoneOffset(), parsed[5]);
 };
 
 String.prototype.parseDateExpiration = function() {
@@ -3130,12 +3415,19 @@ String.prototype.localeCompare2 = function(value) {
 /**
  * Parse configuration from a string
  * @param {Object} def
+ * @onerr {Function} error handling
  * @return {Object}
  */
-String.prototype.parseConfig = function(def) {
+String.prototype.parseConfig = function(def, onerr) {
+
+	if (typeof(def) === 'function') {
+		onerr = def;
+		def = null;
+	}
+
 	var arr = this.split('\n');
 	var length = arr.length;
-	var obj = exports.extend({}, def);
+	var obj = def ? exports.extend({}, def) : {};
 	var subtype;
 	var name;
 	var index;
@@ -3147,7 +3439,7 @@ String.prototype.parseConfig = function(def) {
 		if (!str || str[0] === '#' || str.substring(0, 2) === '//')
 			continue;
 
-		index = str.indexOf(' :');
+		index = str.indexOf(':');
 		if (index === -1) {
 			index = str.indexOf('\t:');
 			if (index === -1)
@@ -3172,11 +3464,11 @@ String.prototype.parseConfig = function(def) {
 			case 'float':
 			case 'double':
 			case 'currency':
-				obj[name] = value.isNumber(true) ? value.parseFloat() : value.parseInt();
+				obj[name] = value.isNumber(true) ? value.parseFloat2() : value.parseInt2();
 				break;
 			case 'boolean':
 			case 'bool':
-				obj[name] = value.parseBoolean();
+				obj[name] = (/true|on|1|enabled/i).test(value);
 				break;
 			case 'config':
 				obj[name] = F.config[value];
@@ -3184,7 +3476,14 @@ String.prototype.parseConfig = function(def) {
 			case 'eval':
 			case 'object':
 			case 'array':
-				obj[name] = new Function('return ' + value)();
+				try {
+					obj[name] = new Function('return ' + value)();
+				} catch (e) {
+					if (onerr)
+						onerr(e, arr[i]);
+					else
+						throw new Error('A value of "{0}" can\'t be converted to "{1}": '.format(name, subtype) + e.toString());
+				}
 				break;
 			case 'json':
 				obj[name] = value.parseJSON(true);
@@ -3262,7 +3561,9 @@ String.prototype.urlDecode = function() {
 
 String.prototype.arg = function(obj) {
 	return this.replace(regexpARG, function(text) {
-		var val = obj[text.substring(1, text.length - 1).trim()];
+		// Is double?
+		var l = text[1] === '{' ? 2 : 1;
+		var val = obj[text.substring(l, text.length - l).trim()];
 		return val == null ? text : val;
 	});
 };
@@ -3369,7 +3670,7 @@ String.prototype.isJSON = function() {
 		break;
 	}
 
-	return (a === '"' && b === '"') || (a === '[' && b === ']') || (a === '{' && b === '}');
+	return (a === '"' && b === '"') || (a === '[' && b === ']') || (a === '{' && b === '}') || (a.charCodeAt(0) > 47 && b.charCodeAt(0) < 57);
 };
 
 String.prototype.isURL = function() {
@@ -3504,7 +3805,14 @@ String.prototype.toKeywords = String.prototype.keywords = function(forSearch, al
 	return exports.keywords(this, forSearch, alternative, max_count, max_length, min_length);
 };
 
-String.prototype.encrypt = function(key, isUnique) {
+function checksum(val) {
+	var sum = 0;
+	for (var i = 0; i < val.length; i++)
+		sum += val.charCodeAt(i);
+	return sum;
+}
+
+String.prototype.encrypt = function(key, isUnique, secret) {
 	var str = '0' + this;
 	var data_count = str.length;
 	var key_count = key.length;
@@ -3514,6 +3822,7 @@ String.prototype.encrypt = function(key, isUnique) {
 	var index = 0;
 
 	values[0] = String.fromCharCode(random);
+
 	var counter = this.length + key.length;
 
 	for (var i = count - 1; i > 0; i--) {
@@ -3521,23 +3830,34 @@ String.prototype.encrypt = function(key, isUnique) {
 		values[i] = String.fromCharCode(index ^ (key.charCodeAt(i % key_count) ^ random));
 	}
 
-	var hash = exports.createBuffer(counter + '=' + values.join(''), ENCODING).toString('base64').replace(regexpENCRYPT, text => text === '+' ? '_' : '-');
-	index = hash.indexOf('=');
-	return index > 0 ? hash.substring(0, index) : hash;
+	str = exports.createBuffer(counter + '=' + values.join(''), ENCODING).toString('hex');
+	var sum = 0;
+
+	for (var i = 0; i < str.length; i++)
+		sum += str.charCodeAt(i);
+
+	return (sum + checksum((secret || F.config.secret) + key)) + '-' + str;
 };
 
-String.prototype.decrypt = function(key) {
+String.prototype.decrypt = function(key, secret) {
 
-	var values = this.replace(regexpDECRYPT, text => text === '-' ? '/' : '+');
-	var mod = values.length % 4;
+	var index = this.indexOf('-');
+	if (index === -1)
+		return null;
 
-	if (mod) {
-		for (var i = 0; i < mod; i++)
-			values += '=';
-	}
+	var cs = +this.substring(0, index);
+	if (!cs || isNaN(cs))
+		return null;
 
-	values = exports.createBuffer(values, 'base64').toString(ENCODING);
+	var hash = this.substring(index + 1);
+	var sum = checksum((secret || F.config.secret) + key);
+	for (var i = 0; i < hash.length; i++)
+		sum += hash.charCodeAt(i);
 
+	if (sum !== cs)
+		return null;
+
+	var values = exports.createBuffer(hash, 'hex').toString(ENCODING);
 	var index = values.indexOf('=');
 	if (index === -1)
 		return null;
@@ -3550,7 +3870,6 @@ String.prototype.decrypt = function(key) {
 
 	var count = values.length;
 	var random = values.charCodeAt(0);
-
 	var key_count = key.length;
 	var data_count = count - (random % key_count);
 	var decrypt_data = [];
@@ -3561,18 +3880,45 @@ String.prototype.decrypt = function(key) {
 	}
 
 	var val = decrypt_data.join('');
-	return counter !== val.length + key.length ? null : val;
+	return counter !== (val.length + key.length) ? null : val;
+};
+
+exports.encryptUID = function(val, key) {
+
+	var num = typeof(val) === 'number';
+	var sum = 0;
+
+	if (!key)
+		key = F.config.secret;
+
+	val = val.toString();
+
+	for (var i = 0; i < val.length; i++)
+		sum += val.charCodeAt(i);
+
+	for (var i = 0; i < key.length; i++)
+		sum += key.charCodeAt(i);
+
+	return (num ? 'n' : 'x') + (F.config['secret-uid'] + val + sum + key).crc32(true).toString(16) + 'x' + val;
+};
+
+exports.decryptUID = function(val, key) {
+	var num = val[0] === 'n';
+	var raw = val.substring(val.indexOf('x', 1) + 1);
+
+	if (num)
+		raw = +raw;
+
+	return exports.encryptUID(raw, key) === val ? raw : null;
 };
 
 String.prototype.base64ToFile = function(filename, callback) {
 	var self = this;
-
 	var index = self.indexOf(',');
 	if (index === -1)
 		index = 0;
 	else
 		index++;
-
 	Fs.writeFile(filename, self.substring(index), 'base64', callback || exports.noop);
 	return this;
 };
@@ -3758,6 +4104,11 @@ Number.prototype.padLeft = function(max, c) {
 
 Number.prototype.padRight = function(max, c) {
 	return this.toString().padRight(max, c || '0');
+};
+
+Number.prototype.round = function(precision) {
+	var m = Math.pow(10, precision) || 1;
+	return Math.round(this * m) / m;
 };
 
 /**
@@ -4061,7 +4412,6 @@ Number.prototype.VAT = function(percentage, decimals, includedVAT) {
 
 	if (!percentage || !num)
 		return num;
-
 	return includedVAT ? (num / ((percentage / 100) + 1)).floor(decimals) : (num * ((percentage / 100) + 1)).floor(decimals);
 };
 
@@ -5400,28 +5750,17 @@ exports.set = function(obj, path, value) {
 	if (F.temporary.other[cachekey])
 		return F.temporary.other[cachekey](obj, value);
 
-	var arr = path.split('.');
+	var arr = parsepath(path);
 	var builder = [];
-	var p = '';
 
-	for (var i = 0, length = arr.length; i < length; i++) {
-		p += (p !== '' ? '.' : '') + arr[i];
-		var type = arr[i] instanceof Array ? '[]' : '{}';
-
-		if (i !== length - 1) {
-			builder.push('if(typeof(w.' + p + ')!=="object"||w.' + p + '===null)w.' + p + '=' + type);
-			continue;
-		}
-
-		if (type === '{}')
-			break;
-
-		p = p.substring(0, p.lastIndexOf('['));
-		builder.push('if(!(w.' + p + ' instanceof Array))w.' + p + '=' + type);
-		break;
+	for (var i = 0; i < arr.length - 1; i++) {
+		var type = arr[i + 1] ? (REGISARR.test(arr[i + 1]) ? '[]' : '{}') : '{}';
+		var p = 'w' + (arr[i][0] === '[' ? '' : '.') + arr[i];
+		builder.push('if(typeof(' + p + ')!==\'object\'||' + p + '==null)' + p + '=' + type + ';');
 	}
 
-	var fn = (new Function('w', 'a', 'b', builder.join(';') + ';w.' + path.replace(/'/, '\'') + '=a;return a'));
+	var v = arr[arr.length - 1];
+	var fn = (new Function('w', 'a', 'b', builder.join(';') + ';var v=typeof(a)===\'function\'?a(MAIN.compiler.get(b)):a;w' + (v[0] === '[' ? '' : '.') + v + '=v;return v'));
 	F.temporary.other[cachekey] = fn;
 	fn(obj, value, path);
 };
@@ -5433,23 +5772,54 @@ exports.get = function(obj, path) {
 	if (F.temporary.other[cachekey])
 		return F.temporary.other[cachekey](obj);
 
-	var arr = path.split('.');
+	var arr = parsepath(path);
 	var builder = [];
-	var p = '';
 
-	for (var i = 0, length = arr.length - 1; i < length; i++) {
-		var tmp = arr[i];
-		var index = tmp.lastIndexOf('[');
-		if (index !== -1)
-			builder.push('if(!w.' + (p ? p + '.' : '') + tmp.substring(0, index) + ')return');
-		p += (p !== '' ? '.' : '') + arr[i];
-		builder.push('if(!w.' + p + ')return');
-	}
+	for (var i = 0, length = arr.length - 1; i < length; i++)
+		builder.push('if(!w' + (!arr[i] || arr[i][0] === '[' ? '' : '.') + arr[i] + ')return');
 
-	var fn = (new Function('w', builder.join(';') + ';return w.' + path.replace(/'/, '\'')));
+	var v = arr[arr.length - 1];
+	var fn = (new Function('w', builder.join(';') + ';return w' + (v[0] === '[' ? '' : '.') + v));
 	F.temporary.other[cachekey] = fn;
 	return fn(obj);
 };
+
+function parsepath(path) {
+
+	var arr = path.split('.');
+	var builder = [];
+	var all = [];
+
+	for (var i = 0; i < arr.length; i++) {
+		var p = arr[i];
+		var index = p.indexOf('[');
+		if (index === -1) {
+			if (p.indexOf('-') === -1) {
+				all.push(p);
+				builder.push(all.join('.'));
+			} else {
+				var a = all.splice(all.length - 1);
+				all.push(a + '[\'' + p + '\']');
+				builder.push(all.join('.'));
+			}
+		} else {
+			if (p.indexOf('-') === -1) {
+				all.push(p.substring(0, index));
+				builder.push(all.join('.'));
+				all.splice(all.length - 1);
+				all.push(p);
+				builder.push(all.join('.'));
+			} else {
+				all.push('[\'' + p.substring(0, index) + '\']');
+				builder.push(all.join(''));
+				all.push(p.substring(index));
+				builder.push(all.join(''));
+			}
+		}
+	}
+
+	return builder;
+}
 
 global.Async = global.async = exports.async;
 global.sync = global.SYNCHRONIZE = exports.sync;
@@ -5547,11 +5917,14 @@ function Chunker(name, max) {
 	this.name = name;
 	this.max = max || 50;
 	this.index = 0;
-	this.filename = 'chunker_{0}-'.format(name);
+	this.filename = '{0}-'.format(name);
 	this.stack = [];
 	this.flushing = 0;
 	this.pages = 0;
 	this.count = 0;
+	this.percentage = 0;
+	this.autoremove = true;
+	this.compress = true;
 	this.filename = F.path.temp(this.filename);
 }
 
@@ -5563,10 +5936,20 @@ Chunker.prototype.append = Chunker.prototype.write = function(obj) {
 	var tmp = self.stack.length;
 
 	if (tmp >= self.max) {
+
 		self.flushing++;
 		self.pages++;
 		self.count += tmp;
-		Fs.writeFile(self.filename + (self.index++) + '.json', JSON.stringify(self.stack), () => self.flushing--);
+
+		var index = (self.index++);
+
+		if (self.compress) {
+			Zlib.deflate(exports.createBuffer(JSON.stringify(self.stack), ENCODING), function(err, buffer) {
+				Fs.writeFile(self.filename + index + '.chunker', buffer, () => self.flushing--);
+			});
+		} else
+			Fs.writeFile(self.filename + index + '.chunker', JSON.stringify(self.stack), () => self.flushing--);
+
 		self.stack = [];
 	}
 
@@ -5580,7 +5963,16 @@ Chunker.prototype.end = function() {
 		self.flushing++;
 		self.pages++;
 		self.count += tmp;
-		Fs.writeFile(self.filename + (self.index++) + '.json', JSON.stringify(self.stack), () => self.flushing--);
+
+		var index = (self.index++);
+
+		if (self.compress) {
+			Zlib.deflate(exports.createBuffer(JSON.stringify(self.stack), ENCODING), function(err, buffer) {
+				Fs.writeFile(self.filename + index + '.chunker', buffer, () => self.flushing--);
+			});
+		} else
+			Fs.writeFile(self.filename + index + '.chunker', JSON.stringify(self.stack), () => self.flushing--);
+
 		self.stack = [];
 	}
 
@@ -5591,13 +5983,16 @@ Chunker.prototype.each = function(onItem, onEnd, indexer) {
 
 	var self = this;
 
-	if (indexer === undefined)
+	if (indexer == null) {
+		self.percentage = 0;
 		indexer = 0;
+	}
 
 	if (indexer >= self.index)
 		return onEnd && onEnd();
 
 	self.read(indexer++, function(err, items) {
+		self.percentage = Math.ceil((indexer / self.pages) * 100);
 		onItem(items, () => self.each(onItem, onEnd, indexer), indexer - 1);
 	});
 
@@ -5612,19 +6007,37 @@ Chunker.prototype.read = function(index, callback) {
 		return;
 	}
 
-	Fs.readFile(self.filename + index + '.json', function(err, data) {
-		if (err)
+	var filename = self.filename + index + '.chunker';
+
+	Fs.readFile(filename, function(err, data) {
+
+		if (err) {
 			callback(null, EMPTYARRAY);
-		else
+			return;
+		}
+
+		if (self.compress) {
+			Zlib.inflate(data, function(err, data) {
+				if (err) {
+					callback(null, EMPTYARRAY);
+				} else {
+					self.autoremove && Fs.unlink(filename, NOOP);
+					callback(null, data.toString('utf8').parseJSON(true));
+				}
+			});
+		} else {
+			self.autoremove && Fs.unlink(filename, NOOP);
 			callback(null, data.toString('utf8').parseJSON(true));
+		}
 	});
+
 	return self;
 };
 
 Chunker.prototype.clear = function() {
 	var files = [];
 	for (var i = 0; i < this.index; i++)
-		files.push(this.filename + i + '.json');
+		files.push(this.filename + i + '.chunker');
 	files.wait((filename, next) => Fs.unlink(filename, next));
 	return this;
 };
@@ -5661,6 +6074,32 @@ if (NODEVERSION > 699) {
 	exports.createBufferSize = (size) => new Buffer(size || 0);
 	exports.createBuffer = (val, type) => new Buffer(val || '', type);
 }
+
+function Callback(count, callback) {
+	this.pending = count;
+	this.$callback = callback;
+}
+
+Callback.prototype.done = function(callback) {
+	this.$callback = callback;
+	return this;
+};
+
+Callback.prototype.next = function() {
+	var self = this;
+	self.pending--;
+	if (!self.pending && self.$callback) {
+		self.$callback();
+		self.$callback = null;
+	}
+	return self;
+};
+
+global.Callback = Callback;
+
+exports.Callback = function(count, callback) {
+	return new Callback(count, callback);
+};
 
 global.WAIT = exports.wait;
 !global.F && require('./index');

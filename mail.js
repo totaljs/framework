@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkMail
- * @version 2.9.4
+ * @version 3.0.0
  */
 
 'use strict';
@@ -182,6 +182,21 @@ Message.prototype.from = function(address, name) {
 	return this;
 };
 
+Message.prototype.high = function() {
+	this.$priority = 1;
+	return this;
+};
+
+Message.prototype.low = function() {
+	this.$priority = 5;
+	return this;
+};
+
+Message.prototype.confidential = function() {
+	this.$confidential = true;
+	return this;
+};
+
 Message.prototype.to = function(address, name, clear) {
 
 	if (typeof(name) === 'boolean') {
@@ -252,6 +267,36 @@ Message.prototype.attachment = function(filename, name) {
 	return this;
 };
 
+Message.prototype.attachmentfs = function(storagename, id, name) {
+
+	var extension;
+	var type;
+
+	if (name) {
+		extension = framework_utils.getExtension(name);
+		type = framework_utils.getContentType(extension);
+	}
+
+	!this.files && (this.files = []);
+	this.files.push({ storage: storagename, name: name, filename: id, type: type, extension: extension });
+	return this;
+};
+
+Message.prototype.attachmentnosql = function(db, id, name) {
+
+	var extension;
+	var type;
+
+	if (name) {
+		extension = framework_utils.getExtension(name);
+		type = framework_utils.getContentType(extension);
+	}
+
+	!this.files && (this.files = []);
+	this.files.push({ nosql: db, name: name, filename: id, type: type, extension: extension });
+	return this;
+};
+
 /**
  * Clears a timeout for sending emails (if the email is sent through the F.onMail)
  * @return {Message}
@@ -272,7 +317,7 @@ Message.prototype.manually = function() {
  * @param {String} contentId the Content-ID (e.g. 'AB435BH'), must be unique across the email
  * @returns {Message}
  */
-Message.prototype.attachmentInline = function(filename, name, contentId) {
+Message.prototype.attachmentInline = Message.prototype.attachmentinline = function(filename, name, contentId) {
 	!name && (name = framework_utils.getName(filename));
 	!this.files && (this.files = []);
 	var extension = framework_utils.getExtension(name);
@@ -364,11 +409,53 @@ Mailer.prototype.$writeattachment = function(obj) {
 		return this;
 	}
 
+	var stream;
+
+	if (attachment.storage) {
+		FILESTORAGE(attachment.storage).binary.readbase64(attachment.filename, function(err, stream, meta) {
+			if (err) {
+				F.error(err, 'Mail.filestorage()', attachment.filename);
+				mailer.$writeattachment(obj);
+			} else {
+
+				if (!attachment.name) {
+					attachment.name = meta.name;
+					attachment.type = meta.type;
+					attachment.extension = U.getExtension(meta.name);
+				}
+
+				writeattachemnt_stream(attachment, obj, stream);
+			}
+		});
+	} else if (attachment.nosql) {
+		NOSQL(attachment.nosql).binary.readbase64(attachment.filename, function(err, stream, meta) {
+			if (err) {
+				F.error(err, 'Mail.attachmentnosql()', attachment.filename);
+				mailer.$writeattachment(obj);
+			} else {
+
+				if (!attachment.name) {
+					attachment.name = meta.name;
+					attachment.type = meta.type;
+					attachment.extension = U.getExtension(meta.name);
+				}
+
+				writeattachemnt_stream(attachment, obj, stream);
+			}
+		});
+	} else {
+		stream = Fs.createReadStream(attachment.filename, ATTACHMENT_SO);
+		writeattachemnt_stream(attachment, obj, stream);
+	}
+
+	return this;
+};
+
+function writeattachemnt_stream(attachment, obj, stream) {
+
 	var name = attachment.name;
-	var stream = Fs.createReadStream(attachment.filename, ATTACHMENT_SO);
+	var isCalendar = attachment.extension === 'ics';
 	var message = [];
-	var extension = attachment.extension;
-	var isCalendar = extension === 'ics';
 
 	message.push('--' + obj.boundary);
 
@@ -394,8 +481,7 @@ Mailer.prototype.$writeattachment = function(obj) {
 		mailer.$writeattachment(obj);
 	});
 
-	return this;
-};
+}
 
 function writeattachment_data(chunk) {
 
@@ -468,7 +554,7 @@ Mailer.prototype.send = function(smtp, options, messages, callback) {
 	obj.count = 0;
 	obj.socket;
 	obj.tls = false;
-	obj.date = global.F ? global.F.datetime : new Date();
+	obj.date = global.NOW ? global.NOW : new Date();
 
 	smtp = smtp || null;
 
@@ -495,15 +581,18 @@ Mailer.prototype.send = function(smtp, options, messages, callback) {
 	obj.host = smtp.substring(smtp.lastIndexOf('.', smtp.lastIndexOf('.') - 1) + 1);
 	obj.socket.on('error', function(err) {
 		mailer.destroy(obj);
+		var is = obj.callback ? true : false;
 		obj.callback && obj.callback(err);
 		obj.callback = null;
 		if (obj.try || err.stack.indexOf('ECONNRESET') !== -1)
 			return;
+		!obj.try && !is && F.error(err, 'mail-smtp', smtp);
 		mailer.$events.error && mailer.emit('error', err, obj);
 	});
 
 	obj.socket.on('clientError', function(err) {
 		mailer.destroy(obj);
+		!obj.try && !obj.callback && F.error(err, 'mail-smtp', smtp);
 		obj.callback && obj.callback(err);
 		obj.callback = null;
 		mailer.$events.error && !obj.try && mailer.emit('error', err, obj);
@@ -512,6 +601,7 @@ Mailer.prototype.send = function(smtp, options, messages, callback) {
 	obj.socket.setTimeout(options.timeout || 8000, function() {
 		var err = new Error(framework_utils.httpStatus(408));
 		mailer.destroy(obj);
+		!obj.try && !obj.callback && F.error(err, 'mail-smtp', smtp);
 		obj.callback && obj.callback(err);
 		obj.callback = null;
 		mailer.$events.error && !obj.try && mailer.emit('error', err, obj);
@@ -537,6 +627,10 @@ Mailer.prototype.$writemessage = function(obj, buffer) {
 	buffer.push('MAIL FROM: <' + msg.addressFrom.address + '>');
 	message.push('Message-ID: <total' + (INDEXATTACHMENT++) + '@WIN-t' + (INDEXATTACHMENT) + '>');
 	message.push('MIME-Version: 1.0');
+
+	self.$priority && message.push('X-Priority: ' + self.$priority);
+	self.$confidential && message.push('Sensitivity: Company-Confidential');
+
 	message.push('From: ' + (msg.addressFrom.name ? unicode_encode(msg.addressFrom.name) + ' <' + msg.addressFrom.address + '>' : msg.addressFrom.address));
 
 	var length;

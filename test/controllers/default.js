@@ -26,6 +26,18 @@ exports.install = function() {
 		this.plain('ROBOT');
 	}, ['robot']);
 
+	GROUP(['get'], '/prefix1/', function() {
+		ROUTE('/test/', function() {
+			this.plain('PREFIX1TEST');
+		});
+	});
+
+	GROUP('prefix2', ['get'], function() {
+		ROUTE('/test/', function() {
+			this.plain('PREFIX2TEST');
+		});
+	});
+
 	F.route('#route');
 	F.route('/view-in-modules/', '.' + F.path.modules('someview'));
 	F.route('/options/', plain_options, ['options']);
@@ -75,7 +87,7 @@ exports.install = function() {
 	F.route('/post/json/', plain_post_json, ['json']);
 	F.route('/post/xml/', plain_post_xml, ['xml']);
 	F.route('/multiple/', plain_multiple, ['post', 'get', 'put', 'delete']);
-	F.route('/post/schema/', plain_post_schema_parse, ['post', '*test/User']);
+	F.route('POST /post/schema/', plain_post_schema_parse, ['*test/User']);
 	F.route('/rest/', plain_rest, ['post']);
 	F.route('/rest/', plain_rest, ['put']);
 	F.route('/rest/', plain_rest, ['get', 'head']);
@@ -97,11 +109,11 @@ exports.install = function() {
 		self.plain('408');
 	});
 
-	assert.ok(F.encrypt('123456', 'key', false) === 'MjM9QR8HExlaHQJQBxcGAEoaFQoGGgAW', 'F.encrypt(string)');
-	assert.ok(F.decrypt('MjM9QR8HExlaHQJQBxcGAEoaFQoGGgAW', 'key', false) === '123456', 'F.decrypt(string)');
+	assert.ok(F.encrypt('123456', 'key', false) === '5787-32333d411f0713195a1d0250071706004a1a150a061a0016', 'F.encrypt(string)');
+	assert.ok(F.decrypt('5787-32333d411f0713195a1d0250071706004a1a150a061a0016', 'key', false) === '123456', 'F.decrypt(string)');
 
-	assert.ok(F.encrypt({ name: 'Peter' }, 'key', false) === 'MzM9QVUXTkwCThBbF3RXQRlYBkUFVRdOTAJOEFsXdFdBGQ', 'F.encrypt(object)');
-	assert.ok(F.decrypt('MzM9QVUXTkwCThBbF3RXQRlYBkUFVRdOTAJOEFsXdFdBGQ', 'key').name === 'Peter', 'F.decrypt(object)')
+	assert.ok(F.encrypt({ name: 'Peter' }, 'key', false) === '6931-33333d4155174e4c024e105b17745741195806450555174e4c024e105b1774574119', 'F.encrypt(object)');
+	assert.ok(F.decrypt('6931-33333d4155174e4c024e105b17745741195806450555174e4c024e105b1774574119', 'key').name === 'Peter', 'F.decrypt(object)');
 
 	assert.ok(SOURCE('main').hello() === 'world', 'source');
 	assert.ok(INCLUDE('main').hello() === 'world', 'source');
@@ -452,13 +464,8 @@ function viewIndex() {
 
 	assert.ok(self.hash('sha1', '123456', false) === '7c4a8d09ca3762af61e59520943dc26494f8941b', 'controller.hash()');
 
-	self.setModified('123456');
-
 	var date = new Date();
 	date.setFullYear(1984);
-
-	self.setModified(date);
-	self.setExpires(date);
 
 	assert.ok(self.routeScript('p.js') === '/js/p.js', name + 'routeScript()');
 	assert.ok(self.routeStyle('p.css') === '/css/p.css', name + 'routeStyle()');
@@ -523,7 +530,6 @@ function viewViews() {
 	//console.log('\n\n\n');
 	//self.framework.stop();
 	//return;
-
 	assert.ok(output.contains('#COMPONENTVIEWPETER#'), name + 'components rendering');
 	assert.ok(output.contains('#<div>@{{ vue_command }}</div>#'), name + 'VUE command');
 	assert.ok(output.contains('#mobilefalse#'), name + 'mobile');
@@ -532,14 +538,14 @@ function viewViews() {
 	assert.ok(output.contains('HELPER:1-<count>1</count><next>0</next>'), name + 'inline helper + foreach 1');
 	assert.ok(output.contains('HELPER:2-<count>2</count><next>1</next>'), name + 'inline helper + foreach 2');
 	assert.ok(output.contains('<section>SECTION</section>'), name + 'section');
-	assert.ok(output.contains('COMPILE_TANGULARCOMPILED'), name + 'onCompileView with name');
+	assert.ok(output.contains('COMPILE_TANGULAR\nCOMPILED'), name + 'onCompileView with name');
 	assert.ok(output.contains('COMPILE_WITHOUTCOMPILED'), name + 'onCompileView without name');
 	assert.ok(output.contains('<div>4</div><div>4</div><div>FOREACH</div>'), name + 'foreach');
 	assert.ok(output.contains('<div>3</div><div>3</div><div></div><div>C:10</div><div>C:11</div><div>C:12</div>'), name + 'foreach - nested');
 	assert.ok(output.contains('<INLINE>5</INLINE>'), name + 'Inline assign value');
-	assert.ok(output.contains('var d="$\'"'), name + 'JS script special chars 1');
-	assert.ok(output.contains("var e='$\\'';"), name + "JS script special chars 2");
-	assert.ok(output.contains('<script type="text/template"><textarea>\na</textarea>a</script>'), name + ' minify html');
+	assert.ok(output.contains(',d="$\'"'), name + 'JS script special chars 1');
+	assert.ok(output.contains(",e='$\\'',"), name + "JS script special chars 2");
+	assert.ok(output.contains('<script type="text/template"><textarea>\na</textarea>a</script>') || output.contains('<script type="text/template"><textarea>\r\na</textarea>a</script>'), name + ' minify html');
 	assert.ok(output.contains('#tag-encode&lt;b&gt;A&lt;/b&gt;#'), name + 'encode value');
 	assert.ok(output.contains('#tag-raw<b>A</b>#'), name + 'raw value');
 	assert.ok(output.contains('#helper-fn-A#'), name + 'helper function');

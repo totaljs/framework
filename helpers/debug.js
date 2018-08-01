@@ -12,5 +12,6 @@ const options = {};
 // options.sleep = 3000;
 // options.inspector = 9229;
 // options.watch = ['private'];
+// options.livereload = true;
 
 require('total.js/debug')(options);

@@ -4,13 +4,15 @@ global.builders = require('../builders');
 var assert = require('assert');
 var utils = require('../utils');
 
+process.env.TZ = 'utc';
+
 // test: date prototype
 function prototypeDate() {
 
 	var dt = new Date(1404723152167);
-	assert.ok(dt.toString() === 'Mon Jul 07 2014 10:52:32 GMT+0200 (CEST)', 'date problem');
-	assert.ok(dt.format() === '2014-07-07T10:52:32.167Z', 'date format(0) problem');
-	assert.ok(dt.add('minute', 5).toString() === 'Mon Jul 07 2014 10:57:32 GMT+0200 (CEST)', 'date add');
+	assert.ok(dt.toUTCString() === 'Mon, 07 Jul 2014 08:52:32 GMT', 'date problem');
+	assert.ok(dt.format() === '2014-07-07T08:52:32.167Z', 'date format(0) problem');
+	assert.ok(dt.add('minute', 5).toUTCString() === 'Mon, 07 Jul 2014 08:57:32 GMT', 'date add');
 	assert.ok(dt.format('MMM') === 'Jul', 'month name 1');
 	assert.ok(dt.format('MMMM') === 'July', 'month name 2');
 	assert.ok(dt.format('MMM', 'sk') === 'Júl', 'localized month name 1');
@@ -23,10 +25,13 @@ function prototypeDate() {
 	assert.ok('1 minute 5 seconds'.parseDateExpiration().format('mm:ss') === dt.format('mm:ss'), 'date expiration');
 
 	dt = '2010-01-01 12:05:10'.parseDate();
-	assert.ok('Fri Jan 01 2010 12:05:10 GMT+0100 (CET)' === dt.toString(), 'date parsing 1');
+	/*
+	Because of our time offset :-(
+	assert.ok('Fri, 01 Jan 2010 12:05:10 GMT' === dt.toUTCString(), 'date parsing 1');
 
 	dt = '2010-01-02'.parseDate();
-	assert.ok('Sat Jan 02 2010 00:00:00 GMT+0100 (CET)' === dt.toString(), 'date parsing 2');
+	assert.ok('Sat, 02 Jan 2010 00:00:00 GMT' === dt.toUTCString(), 'date parsing 2');
+	*/
 
 	dt = '2100-01-01'.parseDate();
 	assert.ok(dt.compare(new Date()) === 1, 'date compare (earlier)');
@@ -40,7 +45,6 @@ function prototypeDate() {
 
 // test: number prototype
 function prototypeNumber() {
-	var format = '';
 	assert.ok((10000).format(2) === '10 000.00', 'format number with decimal parameter');
 	assert.ok((10000).format(3) === '10 000.000', 'format/decimal: A');
 	assert.ok((10000).format(3, ',', '.') === '10,000.000', 'format/decimal: B');
@@ -115,9 +119,9 @@ function prototypeString() {
 	assert.ok('    {}     '.isJSON() === true, 'string.isJSON({})');
 	assert.ok('"'.isJSON() === false, 'string.isJSON(")');
 	assert.ok('""'.isJSON() === true, 'string.isJSON("")');
-	assert.ok('12'.isJSON() === false, 'string.isJSON(12)');
+	assert.ok('12'.isJSON() === true, 'string.isJSON(12)');
 	assert.ok('[}'.isJSON() === false, 'string.isJSON([})');
-	assert.ok('["'.isJSON() === false, 'string.isJSON([")');
+	assert.ok('['.isJSON() === false, 'string.isJSON([)');
 	assert.ok(str.isJSON() === false, 'string.isJSON()');
 	assert.ok(JSON.parse(JSON.stringify(new Date())).isJSONDate(), 'string.isJSONDate()');
 
@@ -262,6 +266,8 @@ function prototypeString() {
 	assert.ok('á'.localeCompare2('a') === 1, 'localeCompare2 - 1');
 	assert.ok('á'.localeCompare2('b') === -1, 'localeCompare2 - 2');
 	assert.ok('č'.localeCompare2('b') === 1, 'localeCompare2 - 3');
+
+	assert.ok('Hello {{ what }}!'.arg({ what: 'world' }) === 'Hello world!', 'String.arg()');
 }
 
 function prototypeArray() {
@@ -331,7 +337,7 @@ function prototypeArray() {
 			assert.ok(item.join(',') === '1,2,3', 'arrray.limit(0-3)');
 		else if (beg === 3 && end === 6)
 			assert.ok(item.join(',') === '4,5,6', 'arrray.limit(3-6)');
-	    next();
+		next();
 	});
 
 	var arr1 = [{ id: 1, name: 'Peter', age: 25 }, { id: 2, name: 'Lucia', age: 19 }, { id: 3, name: 'Jozef', age: 33 }, { id: 10, name: 'New', age: 39 }];
@@ -371,39 +377,6 @@ function prototypeArray() {
 	});
 }
 
-function t_callback1(a, cb) {
-	cb(null, a);
-}
-
-function t_callback2(a, b, cb) {
-	cb(null, a + b);
-}
-
-function t_callback3(a, b, cb) {
-	cb(new Error('TEST'), a + b);
-}
-/*
-function harmony() {
-
-	async(function *() {
-		var a = yield sync(t_callback1)(1);
-		assert.ok(a === 1, 'harmony t_callback1');
-
-		var b = yield sync(t_callback2)(1, 1);
-		assert.ok(b === 2, 'harmony t_callback2');
-
-		return a + b;
-	})(function(err, value) {
-		assert.ok(value === 3, 'harmony callback');
-	});
-
-	async(function *() {
-		var err = yield sync(t_callback3)(1, 1);
-	})(function(err, value) {
-		assert.ok(err.message === 'TEST', 'harmony t_callback3');
-	});
-}*/
-
 function other() {
 	var obj = {};
 
@@ -423,6 +396,10 @@ function other() {
 
 	utils.copy({ name: 'A', age: -1 }, obj);
 	assert.ok(obj.name === 'A' && obj.age === -1, 'utils.copy(rewrite=true)');
+
+	assert.ok(U.get(obj, 'arr').join(',') === '1,2,3,4', 'utils.get()');
+	U.set(obj, 'address.city', 'Banská Bystrica');
+	assert.ok(obj.address.city === 'Banská Bystrica', 'utils.set()');
 
 	var a = utils.reduce(obj, ['name']);
 	var b = utils.reduce(obj, ['name'], true);
@@ -572,10 +549,6 @@ function other() {
 		assert.ok(err !== null, 'utils.request (error)');
 	});
 
-	var resource = function(name) {
-		return 'resource-' + name;
-	};
-
 	assert.ok(utils.getName('/aaa/bbb/ccc/dddd') === 'dddd', 'problem with getName (1)');
 	assert.ok(utils.getName('\\aaa\\bbb\\ccc\\dddd') === 'dddd', 'problem with getName (2)');
 	assert.ok(utils.getName('/aaa/bbb/ccc/dddd/') === 'dddd', 'problem with getName (3)');
@@ -589,7 +562,7 @@ function other() {
 		assert(err === null, 'utils.wait()');
 	});
 
-	utils.wait(noop, function(err) {
+	utils.wait(NOOP, function(err) {
 		assert(err !== null, 'utils.wait() - timeout');
 	}, 1000);
 
@@ -649,13 +622,67 @@ function other() {
 	var a = { buf: Buffer.from('123456') };
 	assert.ok(U.clone(a).buf !== a, 'Cloning buffers');
 
+	var input = '12345čťžýáýáííéídfsfgd';
+	var a = U.btoa(input);
+	var b = U.atob(a);
+
+	assert.ok(b === input, 'U.atob() / U.btoa()');
+	assert.ok(U.decryptUID(U.encryptUID(100)) === 100, 'U.encryptUID() + U.decryptUID()');
 }
+
+function Utils_Ls2_StringFilter() {
+	var result;
+	var async = new U.Async();
+
+	async.await('U.ls2', function(next) {
+		U.ls2(
+			'./app',
+			function(files, folders) {
+				result = {files: files, folders: folders};
+				next();
+			},
+			'app'
+		);
+	});
+
+	async.run(function() {
+		assert.ok(result.files.length === 1, 'problem with number of files from U.ls2 string filter');
+		assert.ok(result.files[0].filename.indexOf('virtual.txt') !== -1, 'problem with files[0].filename from U.ls2 string filter');
+		assert.ok(result.files[0].stats, 'problem with files[0].stats from U.ls2');
+		assert.ok(result.folders.length === 0, 'problem with folders from U.ls2');
+	});
+}
+
+function Utils_Ls_RegExpFilter() {
+	var result;
+	var async = new U.Async();
+
+	async.await('U.ls', function(next) {
+		U.ls(
+			'./app',
+			function(files, folders) {
+				result = {files: files, folders: folders};
+				next();
+			},
+			/QQQ/
+		);
+	});
+
+	async.run(function() {
+		assert.ok(result.files.length === 0, 'problem with files from U.ls regExp filter');
+		assert.ok(result.folders.length === 0, 'problem with folders from U.ls regExp filter');
+	});
+}
+
 
 prototypeDate();
 prototypeNumber();
 prototypeString();
 prototypeArray();
 other();
+Utils_Ls_RegExpFilter();
+Utils_Ls2_StringFilter();
+
 //harmony();
 
 console.log('================================================');

@@ -18,7 +18,7 @@
         "test": "test"
     },
     "engines": {
-        "node": ">=4.0.0"
+        "node": ">=8.0.0"
     },
     "keywords": ["total", "iot", "framework", "web", "websocket", "mvc", "controller", "view", "angular.js", "upload", "picture", "graphicsmagick", "imagemagick", "eshop", "blog", "forum", "chat", "game", "nosql", "database", "streaming", "live", "server sent events", "sse", "multipart", "x-mixed-replace"],
     "license": "MIT",
@@ -89,8 +89,17 @@
     },{
         "name": "Tema Smirnov",
         "email": "github.tema@smirnov.one"
+    }, {
+        "name": "Jeroen van Hilst",
+        "email": "frunjik@gmail.com"
+    }, {
+        "name": "Pedro Costa",
+        "email": "pedro@pmcdigital.pt"
+    }, {
+        "name": "Sarp Aykent",
+        "email": "shackhers@gmail.com"
     }],
-    "version": "2.9.4",
+    "version": "3.0.0",
     "homepage": "http://www.totaljs.com",
     "bugs": {
         "url": "https://github.com/totaljs/framework/issues",

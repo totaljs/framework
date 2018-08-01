@@ -1,3 +1,201 @@
+======= 3.0.0
+
+- added: (IMPORTANT) bundles
+- added: (IMPORTANT) Total.js components can have async delegate
+- added: (IMPORTANT) Total.js components support nested public files encoded in base64
+- added: (IMPORTANT) NoSQL worker
+- added: (IMPORTANT) NoSQL embedded storage for smaller big data / IoT
+- added: `debugging` supports live reloading
+- added: new schema operations: `schema.setInsert()` and `schema.setUpdate()`
+- added: `RESTBuilder.patch([data])`
+- added: `RESTBuilder.type(new-content-type)`
+- added: `CONVERT(obj, schema)` for quick converting values like Schema (more in docs.)
+- added: `Capitalize2` schema type which converts only the first char
+- added: `MailMessage.high()` sets `high` priority of the email messsage
+- added: `MailMessage.low()` sets `low` priority of the email messsage
+- added: `MailMessage.confidential()` sets `Sensitivity` header with `confidential` value
+- added: `MailMessage.attachmentnosql(db, id, [name])` sends a file from NoSQL embedded database
+- added: `MailMessage.attachmentfs(storage_name, id, [name])` sends a file from FileStorage
+- added: `SchemaBuilderEntity.$stop()` stops the async list
+- added: `SchemaOptions.stop()` alias to `$.model.$stop()`
+- added: `SchemaOptions.next()` alias to `$.model.$next()`
+- added: `SchemaOptions.output()` alias to `$.model.$output()`
+- added: `SchemaOptions.clean()` alias to `$.model.$clean()`
+- added: `SchemaOptions.response()` alias to `$.model.$response([index])`
+- added: `SchemaOptions.$async(callback, [index])` alias to `$.model.$async()`
+- added: `SchemaOptions.$get([options], [callback])` alias to `$.model.$get()`
+- added: `SchemaOptions.$insert([options], [callback])` alias to `$.model.$insert()`
+- added: `SchemaOptions.$query([options], [callback])` alias to `$.model.$query()`
+- added: `SchemaOptions.$remove([options], [callback])` alias to `$.model.$remove()`
+- added: `SchemaOptions.$save([options], [callback])` alias to `$.model.$save()`
+- added: `SchemaOptions.$update([options], [callback])` alias to `$.model.$update()`
+- added: `SchemaOptions.$workflow(name, [options], [callback])` alias to `$.model.$workflow()`
+- added: `SchemaOptions.$transform(name, [options], [callback])` alias to `$.model.$transform()`
+- added: `SchemaOptions.$operation(name, [options], [callback])` alias to `$.model.$operation()`
+- added: `SchemaOptions.$hook(name, [options], [callback])` alias to `$.model.$hook()`
+- added: `SchemaOptions.stop()` alias to `$.model.$stop()`
+- added: a new route flag type `&group` something like `roles` but groups aren't evaluated
+- added: `route.groups` with defined groups
+- added: NoSQL `database.listing([view])` which generates a listing response
+- added: `DatabaseBuilder.insert(fn(doc))` can modify a document after `update` or `modify` has `insert` mode
+- added: `DatabaseBuilder.query(code)` can contain a raw JS condition in the form e.g. `doc.age > 18 && doc.age < 33`
+- added: `DatabaseBuilder.regexp(name, regexp)` RegExp search in strings
+- added: `DatabaseBuilder.fulltext(name, regexp, [weight])` full text search in strings, more info in docs.
+- added: `DatabaseBuilder.hour(name, [compare], value)` creates a condition for hours
+- added: `DatabaseBuilder.minute(name, [compare], value)` creates a condition for minutes
+- added: `Database.find2()` performs faster and reverse reading of documents (from end to begin of the file)
+- added: `Database.stream(fn, [repository], [callback(err, repository, count)])` for streaming documents
+- added: `Database.lock(callback(next))` locks all internal DB operations
+- added: `Database.ready(callback)` executes a callback when DB is ready to use (only for special cases if you use indexes)
+- added: new directory `schemas` with a new configuration item `directory-schemas'
+- added: new directory `operations` with a new configuration item `directory-operations'
+- added: `String.crc32([unsigned])`
+- added: `U.hash('crc32')` and `U.hash('crc32unsigned')`
+- added: config `nosql-worker' for enabling worker for NoSQL embedded database (default: `false`)
+- added: config `nosql-inmemory' can contain name of databases e.g. (`users, products`) or String Array
+- added: config `nosql-cleaner` for cleaning databases from removed documents (default: `1440` === 24 hours)
+- added: config `nosql-logger` (default `true`) enables simple logs when re-indexing and cleaning
+- added: config `security.txt` for auto-generating security.txt content (more in docs)
+- added: config `default-proxy` for default web proxy server
+- added: config `allow-cache-cluster` (default `true`) allow/disallow cache synchronization
+- added: `GUID()` a global alias for `U.GUID()`
+- added: `VIEW()` a global alias for `F.view()`
+- added: `SchemaBuilderEntity.$response([index])` returns a specific response from an operation in `async` queue
+- added: `$SAVE(schema, model, [options], [callback], [controller])` performs `schema.save()`
+- added: `$INSERT(schema, model, [options], [callback], [controller])` performs `schema.insert()`
+- added: `$UPDATE(schema, model, [options], [callback], [controller])` performs `schema.update()`
+- added: `$REMOVE(schema, [options], [callback], [controller])` performs `schema.remove()`
+- added: `U.streamer2()` same functionality as `U.streamer()` but it returns `Buffer` instead of `String`
+- added: `Number.round([precision])`
+- added: `UID([type])` supports custom types, e.g. `UID('users')` or `UID('orders')`
+- added: `REQUEST()` global method, it's alias to `U.request()`
+- added: `NOW` global property, it's alias to `F.datetime`
+- added: `DatabaseBuilder.promise()`
+- added: `RESTBuilder.promise()`
+- added: `RESTBuilder.plain()` it returns a raw string from the response body
+- added: `versions` file supports `auto` value for generating auto-checksum of files
+- added: `F.load()` supports `test`
+- added: NoSQL binary supports `custom` small data attributes
+- added: CSS and JS supports a simple View Engine markup (config + resources + F.global)
+- added: `controller.split` alias to `controller.req.split`
+- added: nicer error response messages
+- added: `RESTBuilder.proxy(proxy)` for HTTP proxy
+- added: `U.request()` supports a new flag `proxy`, for example `proxy 127.0.0.1:8080`
+- added: NoSQL database a new event `change`, more in docs
+- added: `schema.define()(DEFAULT_VALUE)` added `DEFAULT_VALUE`
+- added: `TESTUSER([user])` for faking of `F.onAuthorize` delegate, targeted for unit-testing only
+- added: `G` as a global alias for `F.global`
+- added: `ERROR([name])` is an improved `F.error()` without arguments
+- added: a simple support for `.heic` and `.heif` image format
+- added: `controller.sitemap_url2()`
+- added: `controller.sitemap_name2()`
+- added: `@{sitemap_url2()}`
+- added: `@{sitemap_name2()}`
+- added: `F.syshash` contains a simple MD5 hash with OS info
+- added: `SchemaEntity.clear()` for removing all current definition
+- added: new view engine markup `@{#}` for simulating of root URL
+- added: new view engine command `@{root}` for getting sub-root path
+- added: `String.ROOT()` for replacing `@{#}` markup in strings
+- added: `U.decryptUID(value, key)` for encrypting number/string values
+- added: `U.encryptUID(value, key)` for decrypting of number/string values
+- added: `F.config['secret-uid']` as a hidden secret for encrypting/decrypting values
+- added: `F.dir(path)` for changing of root directory
+- added: `NOSQL()/TABLE().memory(count, [size])` for memory consumption, more in docs
+- added: `HttpFile.fs(storage_name, [custom], [callback])` saves a file into the FileStorage
+- added: `HttpFile.nosql(db_name, [custom], [callback])` saves a file into the FileStorage
+- added: `res.filefs(storage_name, id, [download], [headers], [callback])` returns file from FileStorage
+- added: `res.filenosql(db_name, id, [download], [headers], [callback])` returns file from NoSQL binary
+- added: `res.imagefs(storage_name, id, image_make_fn, [headers], [callback])` returns file from FileStorage
+- added: `res.imagenosql(db_name, id, image_make_fn, [headers], [callback])` returns file from NoSQL binary
+- added: new stats `F.stats.performance` contains count of `request` and `file` per minute
+- added: new method `controller.operation(name, value, [callback], [options])` for evaluating of operation
+
+- updated: (IMPORTANT) NoSQL binary divides files to independent directories for 1000 files per directory
+- updated: `GROUP()` by adding a new argument `url_prefix`
+- updated: `NEWSCHEMA()` supports `NEWSCHEMA('group/name')`
+- updated: `ROUTE()`, extended syntax for schemas, for example: `Schema --> @name` (more in docs.)
+- updated: `ROUTE()` supports a new HTTP method definition `ROUTE('GET /api/users/')`, `ROUTE('POST /api/users/')`, etc.
+- updated: `ROUTE()` supports a schema definition directly in the URL `ROUTE('GET /api/users/ *User --> @save')`, etc.
+- updated: `tpm` supports a new command called `bundle`, for example: `tpm bundle cms`
+- updated: `F.restore()` filter can return a new filename (for files only)
+- updated: `@{import('livereload')}` or `@{import('livereload wss://mywebsite.com')}` supports `livereload` value and it's rendered in `debug` mode only
+- updated: information after the framework is started
+- updated: `schema.define('name', null)` removes a schema field
+- updated: Chunker supports `compression`, default `true`
+- updated: Chunker supports `autoremove` processed files in `each()` or `read()` method, default `true`
+- updated: `String.parseConfig(def, [onError])` can handle errors better
+- updated: `middleware`, now Total.js supports new declaration `F.middleware(function($) {})`
+- updated: `F.wait()` HTML template
+- updated: JavaScript compressor, now optimizes multiple `var` declarations
+- updated: `CORS()` without arguments for all routes, methods and origins
+- updated: `CORS()` tries to join multiple same preferences to one
+- updated: `CORS(path)` without additional arguments allows all HTTP methods
+- updated: `U.keywords()` for Chinese/Japan characters
+- updated: `@{import()}` by adding `manifest` value linked to `/manifest.json`
+- updated: `F.use()` supports `function` instead of `middleware` name
+- updated: improved crypto algorithm
+- updated: decreased a maximum count of keys to `33` from `69` when the query string is parsing
+- updated: extended `schema.required(name, (model, workflow) => workflow.update)`, more in docs.
+- updated: `$MAKE(schema, model, [filter/workflows], ...)` supports `workflows` (array or object) instead of filter for `schema.required()`
+- updated: `OPERATION()` by adding `controller`
+
+- fixed: mail attachments
+- fixed: mail `message.manually()`
+- fixed: WebSocket comparing of `origin` header
+- fixed: uninstalling CORS routes
+- fixed: cache for `favicon`
+- fixed: `Date.extend()`
+- fixed: `String.isJSON()` validator
+- fixed: `String.parseDate()` now it parses date to UTC correctly
+- fixed: `Date.format()` now it formats a date as UTC correctly
+- fixed: HTML compressor with `\r\n` (Windows line endings)
+- fixed: schema validation
+- fixed: `U.atob()`
+- fixed: `U.btoa()`
+- fixed: schema field can be changed dynamically
+- fixed: `String.arg()`
+- fixed: `controller.href()` with Array values
+- fixed: `U.get()` a problem with path with `-`
+- fixed: `U.set()` a problem with path with `-`
+- fixed: `F.path.mkdir()` in Windows and Linux
+
+- replaced: config `disable-clear-temporary-directory` to `allow-clear-temp : true|false`
+- replaced: config `disable-strict-server-certificate-validation` to `allow-ssc-validation : true|false`
+- replaced: config `default-websocket-request-length` to `default-websocket-maxlength`
+- replaced: config `default-request-length` to `default-request-maxlength`
+- replaced: config `default-maximum-file-descriptors` to `default-maxopenfiles`
+- replaced: `controller.proxy()` functionality (the name remains) via `controller.proxy2()` functionality
+
+- removed: `F.responseFile()`
+- removed: `F.responsePipe()`
+- removed: `F.responseImage()`
+- removed: `F.responseImageWithoutCache()`
+- removed: `F.responseStream()`
+- removed: `F.responseBinary()`
+- removed: `F.responseContent()`
+- removed: `F.responseRedirect()`
+- removed: `F.response400()`
+- removed: `F.response401()`
+- removed: `F.response404()`
+- removed: `F.response408()`
+- removed: `F.response431()`
+- removed: `F.response500()`
+- removed: `F.response501()`
+- removed: `F.responseStatic()`
+- removed: `F.setModified()`
+- removed: `F.notModified()`
+- removed: `F.responseCode()`
+- removed: `F.noCache()`
+- removed: `controller.$modified()`
+- removed: `controller.$etag()`
+
+- improved: `debug` mode timing with improved consumption
+- improved: performance (+20%) NoSQL embedded database
+- improved: reading performance (+5%) in `U.streamer()`
+- improved: CSS compressor
+- improved: CORS processing
+- improved: internal encryption/decryption mechanism
+
 ======= 2.9.4 (HOTFIX)
 
 - fixed: mail attachments

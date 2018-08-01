@@ -21,7 +21,7 @@
 
 /**
  * @module WebSocketClient
- * @version 2.9.0
+ * @version 3.0.0
  */
 
 if (!global.framework_utils)
@@ -33,7 +33,6 @@ const Http = require('http');
 const Url = require('url');
 const Zlib = require('zlib');
 const ENCODING = 'utf8';
-const REG_WEBSOCKET_ERROR = /ECONNRESET|EHOSTUNREACH|EPIPE|is closed/i;
 const WEBSOCKET_COMPRESS = U.createBuffer([0x00, 0x00, 0xFF, 0xFF]);
 const WEBSOCKET_COMPRESS_OPTIONS = { windowBits: Zlib.Z_DEFAULT_WINDOWBITS };
 const CONCAT = [null, null];
@@ -290,8 +289,13 @@ WebSocketClient.prototype.$ondata = function(data) {
 			break;
 
 		case 0x08:
-			// close
-			this.close();
+			this.closemessage = current.buffer.slice(4).toString('utf8');
+			this.closecode = current.buffer[2] << 8 | current.buffer[3];
+
+			if (this.closemessage && this.options.encodedecode)
+				this.closemessage = $decodeURIComponent(this.closemessage);
+
+			this.close(true);
 			break;
 
 		case 0x09:
@@ -489,18 +493,15 @@ WebSocketClient.prototype.parseInflate = function() {
 };
 
 WebSocketClient.prototype.$onerror = function(err) {
-
-	if (this.isClosed)
-		return;
-
-	if (REG_WEBSOCKET_ERROR.test(err.stack)) {
+	this.$events.error && this.emit('error', err);
+	if (!this.isClosed) {
 		this.isClosed = true;
 		this.$onclose();
-	} else
-		this.$events.error && this.emit('error', err);
+	}
 };
 
 WebSocketClient.prototype.$onclose = function() {
+
 	if (this._isClosed)
 		return;
 
@@ -519,8 +520,8 @@ WebSocketClient.prototype.$onclose = function() {
 		this.deflatechunks = null;
 	}
 
-	this.$events.close && this.emit('close');
-	this.socket.removeAllListeners();
+	this.$events.close && this.emit('close', this.closecode, this.closemessage);
+	this.socket && this.socket.removeAllListeners();
 };
 
 /**
@@ -610,6 +611,12 @@ function websocket_deflate(data) {
  * @return {WebSocketClient}
  */
 WebSocketClient.prototype.close = function(message, code) {
+
+	if (message !== true) {
+		this.options.reconnect = 0;
+	} else
+		message = undefined;
+
 	if (!this.isClosed) {
 		this.isClosed = true;
 		this.socket.end(U.getWebSocketFrame(code || 1000,  message ? (this.options.encodedecode ? encodeURIComponent(message) : message) : '', 0x08));

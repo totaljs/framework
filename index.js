@@ -21,7 +21,7 @@
 
 /**
  * @module Framework
- * @version 2.9.4
+ * @version 3.0.0
  */
 
 'use strict';
@@ -45,12 +45,14 @@ const CT_TEXT = 'text/plain';
 const CT_HTML = 'text/html';
 const CT_JSON = 'application/json';
 const COMPRESSION = { 'text/plain': true, 'text/javascript': true, 'text/css': true, 'text/jsx': true, 'application/javascript': true, 'application/x-javascript': true, 'application/json': true, 'text/xml': true, 'image/svg+xml': true, 'text/x-markdown': true, 'text/html': true };
+const COMPRESSIONSPECIAL = { 'js': 1, 'css': 1 };
 const REG_TEMPORARY = /\//g;
 const REG_MOBILE = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet/i;
 const REG_ROBOT = /search|agent|bot|crawler|spider/i;
-const REG_VERSIONS = /(href|src)="[a-zA-Z0-9/:\-.]+\.(jpg|js|css|png|gif|svg|html|ico|json|less|sass|scss|swf|txt|webp|woff|woff2|xls|xlsx|xml|xsl|xslt|zip|rar|csv|doc|docx|eps|gzip|jpe|jpeg|manifest|mov|mp3|flac|mp4|ogg|package|pdf)"/gi;
+const REG_VERSIONS = /(href|src)="[a-zA-Z0-9/:\-.]+\.(jpg|js|css|png|apng|gif|svg|html|ico|json|less|sass|scss|swf|txt|webp|heif|heic|jpeg|woff|woff2|xls|xlsx|xml|xsl|xslt|zip|rar|csv|doc|docx|eps|gzip|jpe|jpeg|manifest|mov|mp3|flac|mp4|ogg|package|pdf)"/gi;
 const REG_COMPILECSS = /url\(.*?\)/g;
 const REG_ROUTESTATIC = /^(\/\/|https:|http:)+/;
+const REG_NEWIMPL = /^(async\s)?function(\s)?([a-zA-Z$][a-zA-Z0-9$]+)?(\s)?\([a-zA-Z0-9$]+\)|^function anonymous\(\$/;
 const REG_RANGE = /bytes=/;
 const REG_EMPTY = /\s/g;
 const REG_ACCEPTCLEANER = /\s|\./g;
@@ -59,15 +61,14 @@ const REG_WEBSOCKET_ERROR = /ECONNRESET|EHOSTUNREACH|EPIPE|is closed/i;
 const REG_WINDOWSPATH = /\\/g;
 const REG_SCRIPTCONTENT = /<|>|;/;
 const REG_HTTPHTTPS = /^(\/)?(http|https):\/\//i;
-const REG_NOCOMPRESS = /[.|-]+min\.(css|js)$/i;
+const REG_NOCOMPRESS = /[.|-]+min(@[a-z0-9]*)?\.(css|js)$/i;
 const REG_TEXTAPPLICATION = /text|application/;
 const REG_ENCODINGCLEANER = /[;\s]charset=utf-8/g;
 const REG_SKIPERROR = /epipe|invalid\sdistance/i;
 const REG_UTF8 = /[^\x20-\x7E]+/;
-const FLAGS_PROXY = ['post', 'json'];
 const FLAGS_INSTALL = ['get'];
 const FLAGS_DOWNLOAD = ['get', 'dnscache'];
-const QUERYPARSEROPTIONS = { maxKeys: 69 };
+const QUERYPARSEROPTIONS = { maxKeys: 33 };
 const EMPTYARRAY = [];
 const EMPTYOBJECT = {};
 const EMPTYREQUEST = { uri: {} };
@@ -89,6 +90,11 @@ const CLUSTER_CACHE_REMOVEALL = { TYPE: 'cache-remove-all' };
 const CLUSTER_CACHE_CLEAR = { TYPE: 'cache-clear' };
 const GZIPFILE = { memLevel: 9 };
 const GZIPSTREAM = { memLevel: 1 };
+const MODELERROR = {};
+const IMAGES = { jpg: 1, png: 1, gif: 1, apng: 1, jpeg: 1, heif: 1, heic: 1, webp: 1 };
+
+var PATHMODULES = require.resolve('./index');
+PATHMODULES = PATHMODULES.substring(0, PATHMODULES.length - 8);
 
 Object.freeze(EMPTYOBJECT);
 Object.freeze(EMPTYARRAY);
@@ -96,6 +102,8 @@ Object.freeze(EMPTYREQUEST);
 
 global.EMPTYOBJECT = EMPTYOBJECT;
 global.EMPTYARRAY = EMPTYARRAY;
+global.NOW = new Date();
+
 var PROTORES, PROTOREQ;
 
 var RANGE = { start: 0, end: 0 };
@@ -115,13 +123,6 @@ HEADERS.sse['Pragma'] = 'no-cache';
 HEADERS.sse['Expires'] = '-1';
 HEADERS.sse[HEADER_TYPE] = 'text/event-stream';
 HEADERS.sse['X-Powered-By'] = 'Total.js';
-HEADERS.mmr = {};
-HEADERS.mmr[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
-HEADERS.mmr['Pragma'] = 'no-cache';
-HEADERS.mmr['Expires'] = '-1';
-HEADERS.mmr['X-Powered-By'] = 'Total.js';
-HEADERS.proxy = {};
-HEADERS.proxy['X-Proxy'] = 'total.js';
 HEADERS.file_lastmodified = {};
 HEADERS.file_lastmodified['Access-Control-Allow-Origin'] = '*';
 HEADERS.file_lastmodified[HEADER_CACHE] = 'public, max-age=11111111';
@@ -249,7 +250,6 @@ HEADERS.authorization = { user: '', password: '', empty: true };
 HEADERS.fsStreamRead = { flags: 'r', mode: '0666', autoClose: true };
 HEADERS.fsStreamReadRange = { flags: 'r', mode: '0666', autoClose: true, start: 0, end: 0 };
 HEADERS.workers = { cwd: '' };
-HEADERS.mmrpipe = { end: false };
 HEADERS.responseLocalize = {};
 HEADERS.responseNotModified = {};
 HEADERS.responseNotModified[HEADER_CACHE] = 'public, max-age=11111111';
@@ -269,6 +269,7 @@ var IMAGEMAGICK = false;
 var _controller = '';
 var _owner = '';
 var _flags;
+var _prefix;
 
 // GO ONLINE MODE
 !global.framework_internal && (global.framework_internal = require('./internal'));
@@ -283,10 +284,13 @@ var U = global.Utils = global.utils = global.U = global.framework_utils;
 global.Mail = framework_mail;
 
 global.WTF = (message, name, uri) => F.problem(message, name, uri);
-global.NOBIN = (name) => F.nosql(name).binary;
-global.NOCOUNTER = (name) => F.nosql(name).counter;
+global.NOBIN = global.NOSQLBINARY = (name) => F.nosql(name).binary;
+global.NOSQLSTORAGE = (name) => F.nosql(name).storage;
+global.NOCOUNTER = global.NOSQLCOUNTER = (name) => F.nosql(name).counter;
 global.NOMEM = global.NOSQLMEMORY = (name, view) => global.framework_nosql.inmemory(name, view);
-global.CONFIG = (name) => F.config[name];
+global.CONFIG = function(name, val) {
+	return arguments.length === 1 ? F.config[name] : (F.config[name] = val);
+};
 global.UPTODATE = (type, url, options, interval, callback) => F.uptodate(type, url, options, interval, callback);
 global.INSTALL = (type, name, declaration, options, callback) => F.install(type, name, declaration, options, callback);
 global.UNINSTALL = (type, name, options) => F.uninstall(type, name, options);
@@ -298,20 +302,43 @@ global.$$$ = global.GETSCHEMA = (group, name, fn, timeout) => framework_builders
 global.CREATE = (group, name) => framework_builders.getschema(group, name).default();
 global.SCRIPT = (body, value, callback, param) => F.script(body, value, callback, param);
 global.SINGLETON = (name, def) => SINGLETONS[name] || (SINGLETONS[name] = (new Function('return ' + (def || '{}')))());
-global.FUNCTION = (name) => F.functions[name];
+global.FUNCTION = (name) => F.functions[name] || NOOP;
 global.ROUTING = (name) => F.routing(name);
 global.SCHEDULE = (date, each, fn, param) => F.schedule(date, each, fn, param);
 global.FINISHED = framework_internal.onFinished;
 global.DESTROY = framework_internal.destroyStream;
-global.UID = () => UIDGENERATOR.date + (++UIDGENERATOR.index).padLeft(4, '0') + UIDGENERATOR.instance + (UIDGENERATOR.index % 2 ? 1 : 0);
-global.ROUTE = (a, b, c, d, e) => F.route(a, b, c, d, e);
-global.GROUP = (a, b) => F.group(a, b);
-global.WEBSOCKET = (a, b, c, d) => F.websocket(a, b, c, d);
-global.FILE = (a, b, c) => F.file(a, b, c);
-global.REDIRECT = (a, b, c, d) => F.redirect(a, b, c, d);
+global.FILESTORAGE = function(name) {
+	var key = 'storage_' + name;
+	return F.databases[key] ? F.databases[key] : (F.databases[key] = new framework_nosql.DatabaseBinary({ name: name }, F.path.databases('fs-' + name + '/'), '.file'));
+};
+
+global.UID = function(type) {
+
+	var index;
+
+	if (type) {
+		if (UIDGENERATOR.types[type])
+			index = UIDGENERATOR.types[type] = UIDGENERATOR.types[type] + 1;
+		else {
+			UIDGENERATOR.multiple = true;
+			index = UIDGENERATOR.types[type] = 1;
+		}
+	} else
+		index = UIDGENERATOR.index++;
+
+	return UIDGENERATOR.date + index.padLeft(4, '0') + UIDGENERATOR.instance + (index % 2 ? 1 : 0);
+};
+
+global.ERROR = function(name) {
+	return name == null ? F.errorcallback : function(err) {
+		err && F.error(err, name);
+	};
+};
+
 global.AUTH = function(fn) {
 	F.onAuthorize = fn;
 };
+
 global.WEBSOCKETCLIENT = function(callback) {
 	var ws = require('./websocketclient').create();
 	callback && callback.call(ws, ws);
@@ -326,37 +353,125 @@ global.$CREATE = function(schema) {
 
 global.$MAKE = function(schema, model, filter, callback, novalidate, argument) {
 	schema = parseSchema(schema);
+
 	var o = framework_builders.getschema(schema[0], schema[1]);
-	return o ? o.make(model, filter, callback, argument, novalidate) : undefined;
+	var w = null;
+
+	if (filter instanceof Array) {
+		w = {};
+		for (var i = 0; i < filter.length; i++)
+			w[filter[i]] = i + 1;
+		filter = null;
+	} else if (filter instanceof Object) {
+		if (!(filter instanceof RegExp)) {
+			filter = null;
+			w = filter;
+		}
+	}
+
+	return o ? o.make(model, filter, callback, argument, novalidate, w) : undefined;
 };
 
 global.$QUERY = function(schema, options, callback, controller) {
 	schema = parseSchema(schema);
 	var o = framework_builders.getschema(schema[0], schema[1]);
-	o && o.query(options, callback, controller);
+	if (o)
+		o.query(options, callback, controller);
+	else
+		callback && callback(new Error('Schema "{0}" not found.'.format(getSchemaName(schema))));
 	return !!o;
 };
 
 global.$GET = function(schema, options, callback, controller) {
 	schema = parseSchema(schema);
 	var o = framework_builders.getschema(schema[0], schema[1]);
-	o && o.get(options, callback, controller);
+	if (o)
+		o.get(options, callback, controller);
+	else
+		callback && callback(new Error('Schema "{0}" not found.'.format(getSchemaName(schema))));
 	return !!o;
 };
 
 global.$WORKFLOW = function(schema, name, options, callback, controller) {
 	schema = parseSchema(schema);
 	var o = framework_builders.getschema(schema[0], schema[1]);
-	o && o.workflow2(name, options, callback, controller);
+	if (o)
+		o.workflow2(name, options, callback, controller);
+	else
+		callback && callback(new Error('Schema "{0}" not found.'.format(getSchemaName(schema))));
 	return !!o;
 };
 
 global.$TRANSFORM = function(schema, name, options, callback, controller) {
 	schema = parseSchema(schema);
 	var o = framework_builders.getschema(schema[0], schema[1]);
-	o && o.transform2(name, options, callback, controller);
+	if (o)
+		o.transform2(name, options, callback, controller);
+	else
+		callback && callback(new Error('Schema "{0}" not found.'.format(getSchemaName(schema))));
 	return !!o;
 };
+
+global.$REMOVE = function(schema, options, callback, controller) {
+	schema = parseSchema(schema);
+	var o = framework_builders.getschema(schema[0], schema[1]);
+
+	if (typeof(options) === 'function') {
+		controller = callback;
+		callback = options;
+		options = EMPTYOBJECT;
+	}
+
+	if (o)
+		o.remove(options, callback, controller);
+	else
+		callback && callback(new Error('Schema "{0}" not found.'.format(getSchemaName(schema))));
+	return !!o;
+};
+
+global.$SAVE = function(schema, model, options, callback, controller) {
+	return performschema('$save', schema, model, options, callback, controller);
+};
+
+global.$INSERT = function(schema, model, options, callback, controller) {
+	return performschema('$insert', schema, model, options, callback, controller);
+};
+
+global.$UPDATE = function(schema, model, options, callback, controller) {
+	return performschema('$update', schema, model, options, callback, controller);
+};
+
+// type, schema, model, options, callback, controller
+function performschema(type, schema, model, options, callback, controller) {
+
+	if (typeof(options) === 'function') {
+		controller = callback;
+		callback = options;
+		options = null;
+	}
+
+	schema = parseSchema(schema);
+	var o = framework_builders.getschema(schema[0], schema[1]);
+
+	if (!o) {
+		callback && callback(new Error('Schema "{0}" not found.'.format(getSchemaName(schema))));
+		return false;
+	}
+
+	var workflow = {};
+	workflow[type.substring(1)] = 1;
+
+	o.make(model, null, function(err, model) {
+		if (err) {
+			callback && callback(err);
+		} else {
+			model.$$controller = controller;
+			model[type](options, callback);
+		}
+	}, null, false, workflow);
+
+	return !!o;
+}
 
 global.$ASYNC = function(schema, callback, index, controller) {
 
@@ -367,6 +482,12 @@ global.$ASYNC = function(schema, callback, index, controller) {
 
 	schema = parseSchema(schema);
 	var o = framework_builders.getschema(schema[0], schema[1]).default();
+
+	if (!o) {
+		callback && callback(new Error('Schema "{0}" not found.'.format(getSchemaName(schema))));
+		return EMPTYOBJECT;
+	}
+
 	controller && (o.$$controller = controller);
 	return o.$async(callback, index);
 };
@@ -374,63 +495,42 @@ global.$ASYNC = function(schema, callback, index, controller) {
 global.$OPERATION = function(schema, name, options, callback, controller) {
 	schema = parseSchema(schema);
 	var o = framework_builders.getschema(schema[0], schema[1]);
-	o && o.operation2(name, options, callback, controller);
+	if (o)
+		o.operation2(name, options, callback, controller);
+	else
+		callback && callback(new Error('Schema "{0}" not found.'.format(getSchemaName(schema))));
 	return !!o;
 };
 
-global.DB = global.DATABASE = function() {
-	return typeof(F.database) === 'object' ? F.database : F.database.apply(framework, arguments);
-};
-
-global.ON = function() {
-	return F.on.apply(F, arguments);
+global.DB = global.DATABASE = function(a, b, c, d) {
+	return typeof(F.database) === 'object' ? F.database : F.database(a, b, c, d);
 };
 
 global.OFF = function() {
 	return arguments.length > 1 ? F.removeListener.apply(F, arguments) : F.removeAllListeners.apply(F, arguments);
 };
 
-global.EMIT = function() {
-	return F.emit.apply(F, arguments);
-};
+global.NEWSCHEMA = function(group, name, make) {
 
-global.LOG = function() {
-	return F.log.apply(F, arguments);
-};
-
-global.LOGGER = function() {
-	return F.logger.apply(F, arguments);
-};
-
-global.MAKE = global.TRANSFORM = function(transform, fn) {
-
-	if (typeof(transform) === 'function') {
-		var tmp = fn;
-		fn = transform;
-		transform = tmp;
+	if (typeof(name) === 'function') {
+		make = name;
+		name = undefined;
 	}
 
-	var obj;
-
-	if (typeof(fn) === 'function') {
-		obj = {};
-		fn.call(obj, obj);
-	} else
-		obj = fn;
-
-	return transform ? TransformBuilder.transform.apply(obj, arguments) : obj;
-};
-
-global.NEWTRANSFORM = function() {
-	return TransformBuilder.addTransform.apply(this, arguments);
-};
-
-global.NEWSCHEMA = function(group, name) {
 	if (!name) {
-		name = group;
-		group = 'default';
+		var arr = group.split('/');
+		if (arr.length === 2) {
+			name = arr[1];
+			group = arr[0];
+		} else {
+			name = group;
+			group = 'default';
+		}
 	}
-	return framework_builders.newschema(group, name);
+
+	var schema = framework_builders.newschema(group, name);
+	make && make.call(schema, schema);
+	return schema;
 };
 
 global.CLEANUP = function(stream, callback) {
@@ -454,7 +554,7 @@ global.SUCCESS = function(success, value) {
 	var err;
 
 	if (success instanceof Error) {
-		err = success;
+		err = success.toString();
 		success = false;
 	} else if (success instanceof framework_builders.ErrorBuilder) {
 		if (success.hasError()) {
@@ -466,7 +566,7 @@ global.SUCCESS = function(success, value) {
 		success = true;
 
 	SUCCESSHELPER.success = !!success;
-	SUCCESSHELPER.value = value == null ? undefined : value;
+	SUCCESSHELPER.value = value == null ? undefined : (framework_builders.isSchema(value) ? value.$clean() : value);
 	SUCCESSHELPER.error = err ? err : undefined;
 	return SUCCESSHELPER;
 };
@@ -482,7 +582,7 @@ global.TRY = function(fn, err) {
 };
 
 global.OBSOLETE = function(name, message) {
-	console.log(F.datetime.format('yyyy-MM-dd HH:mm:ss') + ' :: OBSOLETE / IMPORTANT ---> "' + name + '"', message);
+	console.log(NOW.format('yyyy-MM-dd HH:mm:ss') + ' :: OBSOLETE / IMPORTANT ---> "' + name + '"', message);
 	if (global.F)
 		F.stats.other.obsolete++;
 };
@@ -500,7 +600,7 @@ var DATE_EXPIRES = new Date().add('y', 1).toUTCString();
 
 const WEBSOCKET_COMPRESS = U.createBuffer([0x00, 0x00, 0xFF, 0xFF]);
 const WEBSOCKET_COMPRESS_OPTIONS = { windowBits: Zlib.Z_DEFAULT_WINDOWBITS };
-const UIDGENERATOR = { date: new Date().format('yyMMddHHmm'), instance: 'abcdefghijklmnoprstuwxy'.split('').random().join('').substring(0, 3), index: 1 };
+const UIDGENERATOR = { date: new Date().format('yyMMddHHmm'), instance: 'abcdefghijklmnoprstuwxy'.split('').random().join('').substring(0, 3), index: 1, types: {} };
 const EMPTYBUFFER = U.createBufferSize(0);
 global.EMPTYBUFFER = EMPTYBUFFER;
 
@@ -526,9 +626,10 @@ var PERF = {};
 function Framework() {
 
 	this.$id = null; // F.id ==> property
-	this.version = 2940;
-	this.version_header = '2.9.4';
-	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
+  this.version = 3000;
+	this.version_header = '3.0.0';
+	this.version_node = process.version.toString();
+	this.syshash = (Os.hostname() + '-' + Os.platform() + '-' + Os.arch() + '-' + Os.release() + '-' + Os.tmpdir()).md5();
 
 	this.config = {
 
@@ -539,16 +640,21 @@ function Framework() {
 		name: 'Total.js',
 		version: '1.0.0',
 		author: '',
-		secret: Os.hostname() + '-' + Os.platform() + '-' + Os.arch(),
+		secret: this.syshash,
+		'secret-uid': this.syshash.substring(10),
 
-		'default-xpoweredby': 'Total.js',
+		'security.txt': 'Contact: mailto:support@totaljs.com\nContact: https://www.totaljs.com/contact/',
 		'etag-version': '',
+		'directory-src': '/.src/',
+		'directory-bundles': '/bundles/',
 		'directory-controllers': '/controllers/',
 		'directory-components': '/components/',
 		'directory-views': '/views/',
 		'directory-definitions': '/definitions/',
 		'directory-temp': '/tmp/',
 		'directory-models': '/models/',
+		'directory-schemas': '/schemas/',
+		'directory-operations': '/operations/',
 		'directory-resources': '/resources/',
 		'directory-public': '/public/',
 		'directory-public-virtual': '/app/',
@@ -574,19 +680,21 @@ function Framework() {
 		'static-url-font': '/fonts/',
 		'static-url-download': '/download/',
 		'static-url-components': '/components.',
-		'static-accepts': { 'flac': true, 'jpg': true, 'jpeg': true, 'png': true, 'gif': true, 'ico': true, 'js': true, 'css': true, 'txt': true, 'xml': true, 'woff': true, 'woff2': true, 'otf': true, 'ttf': true, 'eot': true, 'svg': true, 'zip': true, 'rar': true, 'pdf': true, 'docx': true, 'xlsx': true, 'doc': true, 'xls': true, 'html': true, 'htm': true, 'appcache': true, 'manifest': true, 'map': true, 'ogv': true, 'ogg': true, 'mp4': true, 'mp3': true, 'webp': true, 'webm': true, 'swf': true, 'package': true, 'json': true, 'md': true, 'm4v': true, 'jsx': true },
+		'static-accepts': { flac: true, jpg: true, jpeg: true, png: true, gif: true, ico: true, js: true, css: true, txt: true, xml: true, woff: true, woff2: true, otf: true, ttf: true, eot: true, svg: true, zip: true, rar: true, pdf: true, docx: true, xlsx: true, doc: true, xls: true, html: true, htm: true, appcache: true, manifest: true, map: true, ogv: true, ogg: true, mp4: true, mp3: true, webp: true, webm: true, swf: true, package: true, json: true, md: true, m4v: true, jsx: true, heif: true, heic: true },
 
 		// 'static-accepts-custom': [],
 
+		'default-xpoweredby': 'Total.js',
 		'default-layout': 'layout',
 		'default-theme': '',
+		'default-proxy': '',
 
 		// default maximum request size / length
 		// default 10 kB
-		'default-request-length': 10,
-		'default-websocket-request-length': 2,
+		'default-request-maxlength': 10,
+		'default-websocket-maxlength': 2,
 		'default-websocket-encodedecode': true,
-		'default-maximum-file-descriptors': 0,
+		'default-maxopenfiles': 0,
 		'default-timezone': '',
 		'default-root': '',
 		'default-response-maxage': '11111111',
@@ -613,26 +721,33 @@ function Framework() {
 		'allow-compile-script': true,
 		'allow-compile-style': true,
 		'allow-compile-html': true,
+		'allow-compile-build': true,
 		'allow-performance': false,
 		'allow-custom-titles': false,
 		'allow-cache-snapshot': false,
+		'allow-cache-cluster': false,
 		'allow-debug': false,
 		'allow-head': false,
 		'allow-filter-errors': true,
-		'disable-strict-server-certificate-validation': true,
-		'disable-clear-temporary-directory': false,
+		'allow-clear-temp': true,
+		'allow-ssc-validation': false,
+		'nosql-worker': false,
+		'nosql-inmemory': null, // String Array
+		'nosql-cleaner': 1440,
+		'nosql-logger': true,
 
 		// Used in F.service()
 		// All values are in minutes
 		'default-interval-clear-resources': 20,
 		'default-interval-clear-cache': 10,
+		'default-interval-clear-dnscache': 120,
 		'default-interval-precompile-views': 61,
 		'default-interval-websocket-ping': 3,
-		'default-interval-clear-dnscache': 120,
 		'default-interval-uptodate': 5
 	};
 
-	this.global = {};
+	global.G = this.global = {};
+	this.$bundling = true;
 	this.resources = {};
 	this.connections = {};
 	this.functions = {};
@@ -654,6 +769,7 @@ function Framework() {
 		system: {},
 		files: [],
 		cors: [],
+		corsall: false,
 		websockets: [],
 		middleware: {},
 		redirects: {},
@@ -664,8 +780,7 @@ function Framework() {
 		mapping: {},
 		packages: {},
 		blocks: {},
-		resources: {},
-		mmr: {}
+		resources: {}
 	};
 
 	this.owners = [];
@@ -677,8 +792,9 @@ function Framework() {
 	this.controllers = {};
 	this.dependencies = {};
 	this.isomorphic = {};
-	this.components = { has: false, css: false, js: false, views: {}, instances: {}, version: null, links: '', groups: {} };
+	this.components = { has: false, css: false, js: false, views: {}, instances: {}, version: null, links: '', groups: {}, files: {} };
 	this.convertors = [];
+	this.convertors2 = null;
 	this.tests = [];
 	this.errors = [];
 	this.problems = [];
@@ -697,10 +813,10 @@ function Framework() {
 
 	this.workers = {};
 	this.databases = {};
+	this.databasescleaner = {};
 	this.directory = HEADERS.workers.cwd = directory;
 	this.isLE = Os.endianness ? Os.endianness() === 'LE' : true;
 	this.isHTTPS = false;
-	this.datetime = new Date();
 
 	// It's hidden
 	// this.waits = {};
@@ -716,16 +832,21 @@ function Framework() {
 		other: {},
 		internal: {}, // controllers/modules names for the routing
 		owners: {},
-		ready: {}
+		ready: {},
+		service: { redirect: 0, request: 0, file: 0 }
 	};
 
 	this.stats = {
+
+		performance: {
+			request: 0,
+			file: 0
+		},
 
 		other: {
 			websocketPing: 0,
 			websocketCleaner: 0,
 			obsolete: 0,
-			restart: 0,
 			mail: 0
 		},
 
@@ -744,7 +865,6 @@ function Framework() {
 			path: 0,
 			upload: 0,
 			schema: 0,
-			mmr: 0,
 			blocked: 0,
 			'delete': 0,
 			mobile: 0,
@@ -769,16 +889,17 @@ function Framework() {
 			forward: 0,
 			notModified: 0,
 			sse: 0,
-			mmr: 0,
 			errorBuilder: 0,
 			error400: 0,
 			error401: 0,
 			error403: 0,
 			error404: 0,
 			error408: 0,
+			error409: 0,
 			error431: 0,
 			error500: 0,
-			error501: 0
+			error501: 0,
+			error503: 0
 		}
 	};
 
@@ -790,6 +911,7 @@ function Framework() {
 	this._request_check_referer = false;
 	this._request_check_POST = false;
 	this._request_check_robot = false;
+	this._request_check_mobile = false;
 	this._length_middleware = 0;
 	this._length_request_middleware = 0;
 	this._length_files = 0;
@@ -812,6 +934,12 @@ function Framework() {
 // ======================================================
 
 Framework.prototype = {
+	get datetime() {
+		return global.NOW;
+	},
+	set datetime(val) {
+		global.NOW = val;
+	},
 	get cluster() {
 		return require('./cluster');
 	},
@@ -838,6 +966,11 @@ Framework.prototype = {
 var framework = new Framework();
 global.framework = global.F = module.exports = framework;
 
+F.dir = function(path) {
+	F.directory = path;
+	directory = path;
+};
+
 F.prototypes = function(fn) {
 	var proto = {};
 	proto.Chunker = framework_utils.Chunker.prototype;
@@ -847,12 +980,15 @@ F.prototypes = function(fn) {
 	proto.DatabaseBuilder = framework_nosql.DatabaseBuilder.prototype;
 	proto.DatabaseBuilder2 = framework_nosql.DatabaseBuilder2.prototype;
 	proto.DatabaseCounter = framework_nosql.DatabaseCounter.prototype;
+	proto.DatabaseStorage = framework_nosql.DatabaseStorage.prototype;
+	proto.DatabaseTable = framework_nosql.DatabaseTable.prototype;
 	proto.ErrorBuilder = framework_builders.ErrorBuilder.prototype;
 	proto.HttpFile = framework_internal.HttpFile.prototype;
 	proto.HttpRequest = PROTOREQ;
 	proto.HttpResponse = PROTORES;
 	proto.Image = framework_image.Image.prototype;
 	proto.Message = Mail.Message.prototype;
+	proto.MiddlewareOptions = MiddlewareOptions;
 	proto.OperationOptions = framework_builders.OperationOptions.prototype;
 	proto.Page = framework_builders.Page.prototype;
 	proto.Pagination = framework_builders.Pagination.prototype;
@@ -860,7 +996,6 @@ F.prototypes = function(fn) {
 	proto.RESTBuilderResponse = framework_builders.RESTBuilderResponse.prototype;
 	proto.SchemaBuilder = framework_builders.SchemaBuilder.prototype;
 	proto.SchemaOptions = framework_builders.SchemaOptions.prototype;
-	proto.TransformBuilder = framework_builders.TransformBuilder.prototype;
 	proto.UrlBuilder = framework_builders.UrlBuilder.prototype;
 	proto.WebSocket = WebSocket.prototype;
 	proto.WebSocketClient = WebSocketClient.prototype;
@@ -868,34 +1003,34 @@ F.prototypes = function(fn) {
 	return F;
 };
 
-F.on = function(name, fn) {
+global.ON = F.on = function(name, fn) {
 
 	if (name === 'init' || name === 'ready' || name === 'load') {
-		if (this.isLoaded) {
-			fn.call(this);
+		if (F.isLoaded) {
+			fn.call(F);
 			return;
 		}
 	} else if (name.indexOf('#') !== -1) {
 		var arr = name.split('#');
 		switch (arr[0]) {
 			case 'middleware':
-				F.temporary.ready[name] && fn.call(this);
+				F.temporary.ready[name] && fn.call(F);
 				break;
 			case 'component':
-				F.temporary.ready[name] && fn.call(this);
+				F.temporary.ready[name] && fn.call(F);
 				break;
 			case 'model':
-				F.temporary.ready[name] && fn.call(this, F.models[arr[1]]);
+				F.temporary.ready[name] && fn.call(F, F.models[arr[1]]);
 				break;
 			case 'source':
-				F.temporary.ready[name] && fn.call(this, F.sources[arr[1]]);
+				F.temporary.ready[name] && fn.call(F, F.sources[arr[1]]);
 				break;
 			case 'package':
 			case 'module':
-				F.temporary.ready[name] && fn.call(this, F.modules[arr[1]]);
+				F.temporary.ready[name] && fn.call(F, F.modules[arr[1]]);
 				break;
 			case 'controller':
-				F.temporary.ready[name] && fn.call(this, F.controllers[arr[1]]);
+				F.temporary.ready[name] && fn.call(F, F.controllers[arr[1]]);
 				break;
 		}
 	}
@@ -905,10 +1040,11 @@ F.on = function(name, fn) {
 	else
 		F.$events[name] = [fn];
 
-	return this;
+	return F;
 };
 
-F.emit = function(name, a, b, c, d, e, f, g) {
+global.EMIT = F.emit = function(name, a, b, c, d, e, f, g) {
+
 	var evt = F.$events[name];
 	if (evt) {
 		var clean = false;
@@ -968,8 +1104,12 @@ F.isSuccess = function(obj) {
 F.convert = function(value, convertor) {
 
 	if (convertor) {
-		if (F.convertors.findIndex('name', value) !== -1)
+
+		if (F.convertors.findIndex('name', value) !== -1) {
+			if (convertor == null)
+				F.convertors = F.convertors.remove('name', value);
 			return false;
+		}
 
 		if (convertor === Number)
 			convertor = U.parseFloat;
@@ -1000,7 +1140,7 @@ F.convert = function(value, convertor) {
 	}
 
 	for (var i = 0, length = F.convertors.length; i < length; i++) {
-		if (value[F.convertors[i].name])
+		if (value[F.convertors[i].name] != null)
 			value[F.convertors[i].name] = F.convertors[i].convertor(value[F.convertors[i].name]);
 	}
 
@@ -1146,11 +1286,7 @@ function scriptNow() {
 	return new Date();
 }
 
-F.database = function(name) {
-	return F.nosql(name);
-};
-
-global.NOSQL = F.nosql = function(name) {
+F.database = global.NOSQL = F.nosql = function(name) {
 	var db = F.databases[name];
 	if (db)
 		return db;
@@ -1167,12 +1303,37 @@ global.NOSQL = F.nosql = function(name) {
 	return db;
 };
 
+global.TABLE = function(name) {
+	var db = F.databases['$' + name];
+	if (db)
+		return db;
+	F.path.verify('databases');
+	db = framework_nosql.table(name, F.path.databases(name));
+	F.databases['$' + name] = db;
+	return db;
+};
+
+global.GRAPHDB = function(name) {
+	var key = 'gdb_' + name;
+	return F.databases[key] ? F.databases[key] : F.databases[key] = require('./graphdb').load(name, +(F.config['graphdb.' + name] || 0));
+};
+
 F.stop = F.kill = function(signal) {
+
+	if (F.isKilled)
+		return F;
+
+	F.isKilled = true;
+
+	if (!signal)
+		signal = 'SIGTERM';
 
 	for (var m in F.workers) {
 		var worker = F.workers[m];
-		TRY(() => worker && worker.kill && worker.kill(signal || 'SIGTERM'));
+		TRY(() => worker && worker.kill && worker.kill(signal));
 	}
+
+	framework_nosql.kill(signal);
 
 	F.emit('exit', signal);
 
@@ -1180,14 +1341,18 @@ F.stop = F.kill = function(signal) {
 		TRY(() => process.send('total:stop'));
 
 	F.cache.stop();
-	F.server && F.server.close && F.server.close();
 
-	setTimeout(() => process.exit(signal || 'SIGTERM'), TEST ? 2000 : 100);
+	if (F.server) {
+		F.server.setTimeout(1);
+		F.server.close();
+	}
+
+	var extenddelay = F.grapdbinstance && require('./graphdb').getImportantOperations() > 0;
+	setTimeout(() => process.exit(signal), global.TEST || extenddelay ? 2000 : 300);
 	return F;
 };
 
-
-F.redirect = function(host, newHost, withPath, permanent) {
+global.REDIRECT = F.redirect = function(host, newHost, withPath, permanent) {
 
 	var external = host.startsWith('http://') || host.startsWith('https');
 	if (external) {
@@ -1264,7 +1429,7 @@ F.schedule = function(date, repeat, fn) {
 
 	if (type === 'string') {
 		date = date.parseDate();
-		repeat && date < F.datetime && (date = F.datetime.add(repeat));
+		repeat && date < NOW && (date = NOW.add(repeat));
 	} else if (type === 'number')
 		date = new Date(date);
 
@@ -1298,7 +1463,7 @@ F.resize = function(url, fn, flags) {
 		fn = tmp;
 	}
 
-	var ext = url.match(/\*.\*$|\*?\.(jpg|png|gif|jpeg)$/gi);
+	var ext = url.match(/\*.\*$|\*?\.(jpg|png|gif|jpeg|heif|heic|apng)$/gi);
 	if (ext) {
 		url = url.replace(ext, '');
 		switch (ext.toString().toLowerCase()) {
@@ -1308,6 +1473,9 @@ F.resize = function(url, fn, flags) {
 			case '*.jpg':
 			case '*.gif':
 			case '*.png':
+			case '*.heif':
+			case '*.heic':
+			case '*.apng':
 			case '*.jpeg':
 				extensions[ext.toString().toLowerCase().replace(/\*/g, '').substring(1)] = true;
 				break;
@@ -1333,6 +1501,9 @@ F.resize = function(url, fn, flags) {
 		extensions['jpeg'] = true;
 		extensions['png'] = true;
 		extensions['gif'] = true;
+		extensions['heic'] = true;
+		extensions['heif'] = true;
+		extensions['apng'] = true;
 	}
 
 	if (extensions['jpg'] && !extensions['jpeg'])
@@ -1459,6 +1630,17 @@ F.restful2 = function(url, flags, onQuery, onGet, onSave, onDelete) {
  */
 global.CORS = F.cors = function(url, flags, credentials) {
 
+	if (!arguments.length) {
+		F.routes.corsall = true;
+		PERF.OPTIONS = true;
+		return F;
+	}
+
+	if (flags === true) {
+		credentials = true;
+		flags = null;
+	}
+
 	var route = {};
 	var origins = [];
 	var methods = [];
@@ -1510,13 +1692,24 @@ global.CORS = F.cors = function(url, flags, credentials) {
 		}
 	}
 
+	if (!methods.length)
+		methods = 'POST,PUT,GET,DELETE,PATCH,GET,HEAD'.split(',');
+
 	route.isWILDCARD = url.lastIndexOf('*') !== -1;
+
+	var index = url.indexOf('{');
+	if (index !== -1) {
+		route.isWILDCARD = true;
+		url = url.substring(0, index);
+	}
 
 	if (route.isWILDCARD)
 		url = url.replace('*', '');
 
-	url = framework_internal.preparePath(framework_internal.encodeUnicodeURL(url.trim()));
+	if (url[url.length - 1] !== '/')
+		url += '/';
 
+	url = framework_internal.preparePath(framework_internal.encodeUnicodeURL(url.trim()));
 	route.hash = url.hash();
 	route.owner = _owner;
 	route.url = framework_internal.routeSplitCreate(url);
@@ -1525,9 +1718,36 @@ global.CORS = F.cors = function(url, flags, credentials) {
 	route.headers = headers.length ? headers : null;
 	route.credentials = credentials;
 	route.age = age || F.config['default-cors-maxage'];
-	route.id = id;
 
-	F.routes.cors.push(route);
+	var e = F.routes.cors.findItem(function(item) {
+		return item.hash === route.hash;
+	});
+
+	if (e) {
+
+		// Extends existing
+		if (route.origins && e.origins)
+			corsextend(route.origins, e.origins);
+		else if (e.origins && !route.origins)
+			e.origins = null;
+
+		if (route.methods && e.methods)
+			corsextend(route.methods, e.methods);
+
+		if (route.headers && e.headers)
+			corsextend(route.headers, e.headers);
+
+		if (route.credentials && !e.credentials)
+			e.credentials = true;
+
+		if (route.isWILDCARD && !e.isWILDCARD)
+			e.isWILDCARD = true;
+
+	} else {
+		F.routes.cors.push(route);
+		route.id = id;
+	}
+
 	F._length_cors = F.routes.cors.length;
 
 	F.routes.cors.sort(function(a, b) {
@@ -1540,11 +1760,42 @@ global.CORS = F.cors = function(url, flags, credentials) {
 	return F;
 };
 
-F.group = function(flags, fn) {
-	_flags = flags;
-	fn.call(this);
+function corsextend(a, b) {
+	for (var i = 0; i < a.length; i++)
+		b.indexOf(a[i]) === -1 && b.push(a[i]);
+}
+
+global.GROUP = F.group = function() {
+
+	var fn = null;
+
+	_flags = null;
+	_prefix = null;
+
+	for (var i = 0; i < arguments.length; i++) {
+		var o = arguments[i];
+
+		if (o instanceof Array) {
+			_flags = o;
+			continue;
+		}
+
+		switch (typeof(o)) {
+			case 'string':
+				if (o.endsWith('/'))
+					o = o.substring(0, o.length - 1);
+				_prefix = o;
+				break;
+			case 'function':
+				fn = o;
+				break;
+		}
+	}
+
+	fn && fn.call(F);
+	_prefix = undefined;
 	_flags = undefined;
-	return this;
+	return F;
 };
 
 /**
@@ -1557,7 +1808,8 @@ F.group = function(flags, fn) {
  * @param {Number} timeout Response timeout.
  * @return {Framework}
  */
-F.web = F.route = function(url, funcExecute, flags, length, language) {
+
+global.ROUTE = F.web = F.route = function(url, funcExecute, flags, length, language) {
 
 	var name;
 	var tmp;
@@ -1569,9 +1821,39 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 		return F;
 	}
 
+	if (typeof(flags) === 'number') {
+		length = flags;
+		flags = null;
+	}
+
+	var type = typeof(funcExecute);
+
+	if (funcExecute instanceof Array) {
+		tmp = funcExecute;
+		funcExecute = flags;
+		flags = tmp;
+	}
+
+	var method = '';
 	var CUSTOM = typeof(url) === 'function' ? url : null;
 	if (CUSTOM)
 		url = '/';
+
+	if (url) {
+		url = url.replace(/\t/g, ' ');
+		var index = url.indexOf(' ');
+		if (index !== -1) {
+			method = url.substring(0, index).toLowerCase().trim();
+			url = url.substring(index + 1).trim();
+		}
+
+
+		url = url.replace(/(^|\s?)\*[a-z0-9].*?$/i, function(text) {
+			!flags && (flags = []);
+			flags.push(text.trim());
+			return '';
+		});
+	}
 
 	if (url[0] === '#') {
 		url = url.substring(1);
@@ -1585,7 +1867,8 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 			if (index !== -1) {
 				tmp = url.substring(index);
 				url = url.substring(0, index);
-			}
+			} else
+				tmp = '';
 
 			sitemap = F.sitemap(url, true, language);
 
@@ -1620,22 +1903,23 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 	if (url[0] !== '[' && url[0] !== '/')
 		url = '/' + url;
 
+	if (_prefix)
+		url = _prefix + url;
+
 	if (url.endsWith('/'))
 		url = url.substring(0, url.length - 1);
 
 	url = framework_internal.encodeUnicodeURL(url);
 
-	var type = typeof(funcExecute);
-	var index = 0;
 	var urlcache = url;
 
 	if (!name)
 		name = url;
 
-	if (type === 'object' || funcExecute instanceof Array) {
-		tmp = funcExecute;
-		funcExecute = flags;
-		flags = tmp;
+	if (method) {
+		!flags && (flags = []);
+		flags.push(method);
+		method = '';
 	}
 
 	var priority = 0;
@@ -1660,7 +1944,6 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 
 	var isRaw = false;
 	var isNOXHR = false;
-	var method = '';
 	var schema;
 	var workflow;
 	var isMOBILE = false;
@@ -1679,13 +1962,11 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 	var isGENERATOR = false;
 	var description;
 	var id = null;
+	var groups = [];
 
 	if (_flags) {
-		if (!flags)
-			flags = [];
-		_flags.forEach(function(flag) {
-			flags.indexOf(flag) === -1 && flags.push(flag);
-		});
+		!flags && (flags = []);
+		_flags.forEach(flag => flags.indexOf(flag) === -1 && flags.push(flag));
 	}
 
 	if (flags) {
@@ -1707,11 +1988,11 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 				continue;
 			}
 
-			var first = flags[i][0];
+			flags[i] = flags[i].replace(/\t/g, ' ');
 
+			var first = flags[i][0];
 			if (first === '&') {
-				// resource (sitemap localization)
-				// isn't used now
+				groups.push(flags[i].substring(1).trim());
 				continue;
 			}
 
@@ -1723,7 +2004,7 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 
 			if (first === '#') {
 				!middleware && (middleware = []);
-				middleware.push(flags[i].substring(1));
+				middleware.push(flags[i].substring(1).trim());
 				continue;
 			}
 
@@ -1739,6 +2020,7 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 					schema = workflow;
 					workflow = null;
 				}
+
 				schema = schema.replace(/\\/g, '/').split('/');
 
 				if (schema.length === 1) {
@@ -1852,6 +2134,8 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 					tmp.push(flag);
 					method += (method ? ',' : '') + flag;
 					corsflags.push(flag);
+					PERF[flag.toUpperCase()] = true;
+					PERF[flag] = true;
 					break;
 				default:
 					if (flag[0] === '@')
@@ -1860,6 +2144,14 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 					break;
 			}
 		}
+
+		if (isROLE && !membertype) {
+			tmp.push('authorize');
+			priority += 2;
+			membertype = 1;
+			count++;
+		}
+
 		flags = tmp;
 		priority += (count * 2);
 	} else {
@@ -1867,13 +2159,25 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 		method = 'get';
 	}
 
+	if (workflow && workflow[0] === '@') {
+		var tmpa = workflow.replace(/,/g, ' ').split('@').trim();
+		var rindex = null;
+		for (var i = 0; i < tmpa.length; i++) {
+			var a = tmpa[i].split(' ');
+			if (a[1] && (/response|res/i).test(a[1]))
+				rindex = i;
+			tmpa[i] = a[0];
+		}
+		workflow = { id: tmpa.length > 1 ? tmpa : tmpa[0], index: rindex };
+	}
+
 	if (type === 'string') {
 		viewname = funcExecute;
-		funcExecute = (function(name, sitemap, language) {
+		funcExecute = (function(name, sitemap, language, workflow) {
 			var themeName = U.parseTheme(name);
 			if (themeName)
 				name = prepare_viewname(name);
-			return function() {
+			return function(id) {
 				if (language && !this.language)
 					this.language = language;
 				sitemap && this.sitemap(sitemap.id, language);
@@ -1883,19 +2187,27 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 					this.themeName = themeName;
 				if (!this.route.workflow)
 					return this.view(name);
+
 				var self = this;
-				this.$exec(this.route.workflow, null, function(err, response) {
-					if (err)
-						self.content(err);
+				if (this.route.workflow instanceof Object) {
+					workflow.view = name;
+					if (workflow.id instanceof Array)
+						controller_json_workflow_multiple.call(self, id);
 					else
-						self.view(name, response);
-				});
+						controller_json_workflow.call(self, id);
+				} else {
+					this.$exec(this.route.workflow, null, function(err, response) {
+						if (err)
+							self.content(err);
+						else
+							self.view(name, response);
+					});
+				}
 			};
-		})(viewname, sitemap, language);
+		})(viewname, sitemap, language, workflow);
 	} else if (typeof(funcExecute) !== 'function') {
 
 		viewname = (sitemap && sitemap.url !== '/' ? sitemap.id : workflow ? '' : url) || '';
-
 		if (!workflow || (!viewname && !workflow)) {
 			if (viewname.endsWith('/'))
 				viewname = viewname.substring(0, viewname.length - 1);
@@ -1908,24 +2220,38 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 				viewname = 'index';
 
 			funcExecute = (function(name, sitemap, language) {
-				return function() {
-					if (language && !this.language)
-						this.language = language;
-					sitemap && this.sitemap(sitemap.id, language);
-					name[0] === '~' && this.theme('');
-					if (!this.route.workflow)
-						return this.view(name);
+				return function(id) {
 					var self = this;
-					this.$exec(this.route.workflow, null, function(err, response) {
-						if (err)
-							self.content(err);
+
+					if (language && !self.language)
+						self.language = language;
+
+					sitemap && self.sitemap(sitemap.id, language);
+
+					if (name[0] === '~')
+						self.themeName = '';
+
+					if (!self.route.workflow)
+						return self.view(name);
+
+					if (self.route.workflow instanceof Object) {
+						workflow.view = name;
+						if (workflow.id instanceof Array)
+							controller_json_workflow_multiple.call(self, id);
 						else
-							self.view(name, response);
-					});
+							controller_json_workflow.call(self, id);
+					} else {
+						self.$exec(self.route.workflow, null, function(err, response) {
+							if (err)
+								self.content(err);
+							else
+								self.view(name, response);
+						});
+					}
 				};
 			})(viewname, sitemap, language);
 		} else if (workflow)
-			funcExecute = controller_json_workflow;
+			funcExecute = workflow.id instanceof Array ? controller_json_workflow_multiple : controller_json_workflow;
 	}
 
 	if (!isGENERATOR)
@@ -1969,16 +2295,11 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 			regIndex.push(i);
 		});
 
-		priority -= arr.length;
+		priority -= arr.length + 1;
 	}
 
 	if (url.indexOf('#') !== -1)
 		priority -= 100;
-
-	if (flags.indexOf('proxy') !== -1) {
-		isJSON = true;
-		priority++;
-	}
 
 	if ((isJSON || flags.indexOf('xml') !== -1 || isRaw) && (flags.indexOf('delete') === -1 && flags.indexOf('post') === -1 && flags.indexOf('put') === -1) && flags.indexOf('patch') === -1) {
 		flags.push('post');
@@ -2027,6 +2348,15 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 		console.warn('F.route() skips "binary" flag because the "raw" flag is not defined.');
 	}
 
+	if (workflow && workflow.id) {
+		workflow.meta = {};
+		if (workflow.id instanceof Array) {
+			for (var i = 0; i < workflow.id.length; i++)
+				workflow.meta[workflow.id[i]] = i + 1;
+		} else
+			workflow.meta[workflow.id] = 1;
+	}
+
 	if (subdomain)
 		F._length_subdomain_web++;
 
@@ -2034,7 +2364,8 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 	var r = instance.route;
 	r.hash = hash;
 	r.id = id;
-	r.name = name;
+	r.name = name.trim();
+	r.groups = flags_to_object(groups);
 	r.priority = priority;
 	r.sitemap = sitemap ? sitemap.id : '';
 	r.schema = schema;
@@ -2052,7 +2383,7 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 	r.flags2 = flags_to_object(flags);
 	r.method = method;
 	r.execute = funcExecute;
-	r.length = (length || F.config['default-request-length']) * 1024;
+	r.length = (length || F.config['default-request-maxlength']) * 1024;
 	r.middleware = middleware;
 	r.timeout = timeout === undefined ? (isDELAY ? 0 : F.config['default-request-timeout']) : timeout;
 	r.isGET = flags.indexOf('get') !== -1;
@@ -2073,7 +2404,6 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 	r.isHTTP = flags.indexOf('http') !== -1;
 	r.isDEBUG = flags.indexOf('debug') !== -1;
 	r.isRELEASE = flags.indexOf('release') !== -1;
-	r.isPROXY = flags.indexOf('proxy') !== -1;
 	r.isBOTH = isNOXHR ? false : true;
 	r.isXHR = flags.indexOf('xhr') !== -1;
 	r.isUPLOAD = flags.indexOf('upload') !== -1;
@@ -2116,24 +2446,18 @@ F.web = F.route = function(url, funcExecute, flags, length, language) {
 		!_controller && F.$routesSort(1);
 	}
 
+	if (isMOBILE)
+		F._request_check_mobile = true;
+
 	F.emit('route', 'web', instance);
 	return instance;
 };
 
 function flags_to_object(flags) {
 	var obj = {};
-	flags.forEach(function(flag) {
-		obj[flag] = true;
-	});
+	flags.forEach(flag => obj[flag] = true);
 	return obj;
 }
-
-F.mmr = function(url, process) {
-	url = framework_internal.preparePath(U.path(url));
-	F.routes.mmr[url] = { exec: process };
-	F._request_check_POST = true;
-	return F;
-};
 
 /**
  * Get routing by name
@@ -2166,6 +2490,19 @@ global.MERGE = F.merge = function(url) {
 	if (url[0] === '#')
 		url = sitemapurl(url.substring(1));
 
+	url = F.$version(url);
+
+	if (url === 'auto') {
+		// auto-generating
+		var arg = arguments;
+		setTimeout(function(arg) {
+			F.merge.apply(F, arg);
+		}, 500, arg);
+		return F;
+	}
+
+	url = framework_internal.preparePath(url);
+
 	var arr = [];
 
 	for (var i = 1, length = arguments.length; i < length; i++) {
@@ -2186,8 +2523,6 @@ global.MERGE = F.merge = function(url) {
 			arr.push(fn);
 		}
 	}
-
-	url = framework_internal.preparePath(F.$version(url));
 
 	if (url[0] !== '/')
 		url = '/' + url;
@@ -2351,7 +2686,7 @@ global.MAP = F.map = function(url, filename, filter) {
 		});
 	}, isPackage ? 500 : 1);
 
-	return this;
+	return F;
 };
 
 /**
@@ -2375,6 +2710,13 @@ global.MIDDLEWARE = F.middleware = function(name, funcExecute) {
  * @return {Framework}
  */
 F.use = function(name, url, types, first) {
+
+	if (typeof(name) === 'function') {
+		var tmp = 'mid' + GUID(5);
+		MIDDLEWARE(tmp, name);
+		name = tmp;
+	}
+
 	if (!url && !types) {
 		if (name instanceof Array) {
 			for (var i = 0; i < name.length; i++)
@@ -2461,7 +2803,7 @@ function merge_middleware(a, b, first) {
  * @param {Object} options Optional, additional options for middleware.
  * @return {Framework}
  */
-F.websocket = function(url, funcInitialize, flags, length) {
+global.WEBSOCKET = F.websocket = function(url, funcInitialize, flags, length) {
 
 	var tmp;
 
@@ -2503,6 +2845,7 @@ F.websocket = function(url, funcInitialize, flags, length) {
 	var options;
 	var protocols;
 	var id;
+	var groups = [];
 
 	priority = url.count('/');
 
@@ -2572,13 +2915,8 @@ F.websocket = function(url, funcInitialize, flags, length) {
 	var count = 0;
 	var membertype = 0;
 
-	if (!flags)
-		flags = [];
-
-	_flags && _flags.forEach(function(flag) {
-		if (flags.indexOf(flag) === -1)
-			flags.push(flag);
-	});
+	!flags && (flags = []);
+	_flags && _flags.forEach(flag => flags.indexOf(flag) === -1 && flags.push(flag));
 
 	for (var i = 0; i < flags.length; i++) {
 
@@ -2587,7 +2925,7 @@ F.websocket = function(url, funcInitialize, flags, length) {
 
 		// Middleware options
 		if (type === 'object') {
-			options = flags[i];
+			options = flag;
 			continue;
 		}
 
@@ -2602,10 +2940,16 @@ F.websocket = function(url, funcInitialize, flags, length) {
 			continue;
 		}
 
+		// Groups
+		if (flag[0] === '&') {
+			groups.push(flag.substring(1).trim());
+			continue;
+		}
+
 		// Middleware
 		if (flag[0] === '#') {
 			!middleware && (middleware = []);
-			middleware.push(flags[i].substring(1));
+			middleware.push(flag.substring(1).trim());
 			continue;
 		}
 
@@ -2663,11 +3007,17 @@ F.websocket = function(url, funcInitialize, flags, length) {
 				tmp.push(flag);
 				break;
 			default:
-				if (!protocols)
-					protocols = [];
+				!protocols && (protocols = []);
 				protocols.push(flag);
 				break;
 		}
+	}
+
+	if (isROLE && !membertype) {
+		tmp.push('authorize');
+		membertype = 1;
+		priority++;
+		count++;
 	}
 
 	flags = tmp;
@@ -2683,6 +3033,7 @@ F.websocket = function(url, funcInitialize, flags, length) {
 	r.id = id;
 	r.urlraw = urlraw;
 	r.hash = hash;
+	r.groups = flags_to_object(groups);
 	r.controller = _controller ? _controller : 'unknown';
 	r.owner = _owner;
 	r.url = routeURL;
@@ -2695,7 +3046,7 @@ F.websocket = function(url, funcInitialize, flags, length) {
 	r.onInitialize = funcInitialize;
 	r.protocols = protocols || EMPTYARRAY;
 	r.allow = allow || [];
-	r.length = (length || F.config['default-websocket-request-length']) * 1024;
+	r.length = (length || F.config['default-websocket-maxlength']) * 1024;
 	r.isWEBSOCKET = true;
 	r.MEMBER = membertype;
 	r.isJSON = isJSON;
@@ -2722,7 +3073,7 @@ F.websocket = function(url, funcInitialize, flags, length) {
 
 F.initwebsocket = function() {
 	if (F.routes.websockets.length && F.config['allow-websocket'] && F.server) {
-		F.server.on('upgrade', F._upgrade);
+		F.server.on('upgrade', F.$upgrade);
 		F.initwebsocket = null;
 	}
 };
@@ -2735,7 +3086,7 @@ F.initwebsocket = function() {
  * @param {String Array} middleware
  * @return {Framework}
  */
-F.file = function(fnValidation, fnExecute, flags) {
+global.FILE = F.file = function(fnValidation, fnExecute, flags) {
 
 	var a;
 
@@ -2764,38 +3115,29 @@ F.file = function(fnValidation, fnExecute, flags) {
 	var fixedfile = false;
 	var id = null;
 	var urlraw = fnValidation;
+	var groups = [];
 
 	if (_flags) {
 		!flags && (flags = []);
-		_flags.forEach(function(flag) {
-			flags.indexOf(flag) === -1 && flags.push(flag);
-		});
+		_flags.forEach(flag => flags.indexOf(flag) === -1 && flags.push(flag));
 	}
 
 	if (flags) {
 		for (var i = 0, length = flags.length; i < length; i++) {
 			var flag = flags[i];
-
-			if (typeof(flag) === 'object') {
+			if (typeof(flag) === 'object')
 				options = flag;
-				continue;
-			}
-
-			if (flag.substring(0, 3) === 'id:') {
-				id = flag.substring(3).trim();
-				continue;
-			}
-
-			if (flag[0] === '#') {
+			else if (flag[0] === '&')
+				groups.push(flag.substring(1).trim());
+			else if (flag[0] === '#') {
 				!middleware && (middleware = []);
-				middleware.push(flag.substring(1));
-			}
-
-			if (flag[0] === '.') {
-				flag = flag.substring(1).toLowerCase();
+				middleware.push(flag.substring(1).trim());
+			} else if (flag[0] === '.') {
+				flag = flag.substring(1).toLowerCase().trim();
 				!extensions && (extensions = {});
 				extensions[flag] = true;
-			}
+			} else if (flag.substring(0, 3) === 'id:')
+				id = flag.substring(3).trim();
 		}
 	}
 
@@ -2832,6 +3174,7 @@ F.file = function(fnValidation, fnExecute, flags) {
 	var r = instance.route;
 	r.id = id;
 	r.urlraw = urlraw;
+	r.groups = flags_to_object(groups);
 	r.controller = _controller ? _controller : 'unknown';
 	r.owner = _owner;
 	r.url = url;
@@ -2935,7 +3278,7 @@ global.LOCALIZE = F.localize = function(url, flags, minify) {
 			if (err)
 				return res.throw404();
 
-			content = F.translator(req.$language, framework_internal.modificators(content.toString(ENCODING), filename, 'static'));
+			content = framework_internal.markup(F.translator(req.$language, framework_internal.modificators(content.toString(ENCODING), filename, 'static')));
 
 			Fs.lstat(filename, function(err, stats) {
 
@@ -2984,23 +3327,24 @@ F.$notModified = function(req, res, date) {
  */
 F.error = function(err, name, uri) {
 
-	if (!arguments.length) {
-		return function(err) {
-			err && F.error(err, name, uri);
-		};
-	}
+	if (!arguments.length)
+		return F.errorcallback;
 
 	if (!err)
 		return F;
 
 	if (F.errors) {
-		F.datetime = new Date();
-		F.errors.push({ error: err.stack, name: name, url: uri ? typeof(uri) === 'string' ? uri : Parser.format(uri) : undefined, date: F.datetime });
+		NOW = new Date();
+		F.errors.push({ error: err.stack, name: name, url: uri ? typeof(uri) === 'string' ? uri : Parser.format(uri) : undefined, date: NOW });
 		F.errors.length > 50 && F.errors.shift();
 	}
 
 	F.onError(err, name, uri);
 	return F;
+};
+
+F.errorcallback = function(err) {
+	err && F.error(err);
 };
 
 /**
@@ -3028,6 +3372,10 @@ F.problem = F.wtf = function(message, name, uri, ip) {
 	}
 
 	return F;
+};
+
+global.PRINTLN = function(msg) {
+	console.log('------>', '[' + new Date().format('yyyy-MM-dd HH:mm:ss') + ']', msg);
 };
 
 /**
@@ -3077,11 +3425,11 @@ F.trace = function(message, name, uri, ip) {
 	else if (typeof(message) === 'object')
 		message = JSON.stringify(message);
 
-	F.datetime = new Date();
-	var obj = { message: message, name: name, url: uri ? typeof(uri) === 'string' ? uri : Parser.format(uri) : undefined, ip: ip, date: F.datetime };
+	NOW = new Date();
+	var obj = { message: message, name: name, url: uri ? typeof(uri) === 'string' ? uri : Parser.format(uri) : undefined, ip: ip, date: NOW };
 	F.logger('traces', obj.message, 'url: ' + obj.url, 'source: ' + obj.name, 'ip: ' + obj.ip);
 
-	F.config['trace-console'] && console.log(F.datetime.format('yyyy-MM-dd HH:mm:ss'), '[trace]', message, '|', 'url: ' + obj.url, 'source: ' + obj.name, 'ip: ' + obj.ip);
+	F.config['trace-console'] && console.log(NOW.format('yyyy-MM-dd HH:mm:ss'), '[trace]', message, '|', 'url: ' + obj.url, 'source: ' + obj.name, 'ip: ' + obj.ip);
 
 	if (F.traces) {
 		F.traces.push(obj);
@@ -3106,11 +3454,32 @@ global.MODULE = F.module = function(name) {
  * @return {Framework}
  */
 F.modify = function(fn) {
+	OBSOLETE('F.modify()', 'This method will be removed from in versions.');
 	if (!F.modificators)
 		F.modificators = [];
 	F.modificators.push(fn);
 	fn.$owner = _owner;
 	return F;
+};
+
+F.$bundle = function(callback) {
+
+	var makebundle = function() {
+		require('./bundles').make(function() {
+			F.directory = HEADERS.workers.cwd = directory = F.path.root(F.config['directory-src']);
+			callback();
+		});
+	};
+
+	try {
+		Fs.statSync(F.path.root(F.config['directory-bundles']));
+		if (F.$bundling) {
+			makebundle();
+			return;
+		} else
+			F.directory = HEADERS.workers.cwd = directory = F.path.root(F.config['directory-src']);
+	} catch(e) {}
+	callback();
 };
 
 F.$load = function(types, targetdirectory, callback, packageName) {
@@ -3218,10 +3587,13 @@ F.$load = function(types, targetdirectory, callback, packageName) {
 
 					files.wait(function(filename, next) {
 
-						var stream = Fs.createReadStream(filename);
-						var writer = Fs.createWriteStream(Path.join(dir, filename.replace(item.filename, '').replace(/\.package$/i, '')));
-						stream.pipe(writer);
-						writer.on('finish', next);
+						if (F.$bundling) {
+							var stream = Fs.createReadStream(filename);
+							var writer = Fs.createWriteStream(Path.join(dir, filename.replace(item.filename, '').replace(/\.package$/i, '')));
+							stream.pipe(writer);
+							writer.on('finish', next);
+						} else
+							next();
 
 					}, function() {
 
@@ -3243,6 +3615,26 @@ F.$load = function(types, targetdirectory, callback, packageName) {
 			arr = [];
 			listing(dir, 0, arr);
 			arr.forEach((item) => dependencies.push(next => F.install('model', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next, packageName)));
+			resume();
+		});
+	}
+
+	if (!types || types.indexOf('schemas') !== -1) {
+		operations.push(function(resume) {
+			dir = U.combine(targetdirectory, isPackage ? '/schemas/' : F.config['directory-schemas']);
+			arr = [];
+			listing(dir, 0, arr);
+			arr.forEach((item) => dependencies.push(next => F.install('schema', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next, packageName)));
+			resume();
+		});
+	}
+
+	if (!types || types.indexOf('operations') !== -1) {
+		operations.push(function(resume) {
+			dir = U.combine(targetdirectory, isPackage ? '/operations/' : F.config['directory-operations']);
+			arr = [];
+			listing(dir, 0, arr);
+			arr.forEach((item) => dependencies.push(next => F.install('operation', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next, packageName)));
 			resume();
 		});
 	}
@@ -3337,7 +3729,7 @@ F.$startup = function(callback) {
 		});
 	}, callback);
 
-	return this;
+	return F;
 };
 
 F.uptodate = function(type, url, options, interval, callback, next) {
@@ -3347,7 +3739,7 @@ F.uptodate = function(type, url, options, interval, callback, next) {
 		options = null;
 	}
 
-	var obj = { type: type, name: '', url: url, interval: interval, options: options, count: 0, updated: F.datetime, errors: [], callback: callback };
+	var obj = { type: type, name: '', url: url, interval: interval, options: options, count: 0, updated: NOW, errors: [], callback: callback };
 
 	if (!F.uptodates)
 		F.uptodates = [];
@@ -3401,7 +3793,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 	var content;
 	var err;
 
-	F.datetime = new Date();
+	NOW = new Date();
 
 	if (t === 'object') {
 		t = typeof(options);
@@ -3505,15 +3897,18 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 		F.routes.middleware[name] = typeof(declaration) === 'function' ? declaration : eval(declaration);
 		F._length_middleware = Object.keys(F.routes.middleware).length;
 
+		if (REG_NEWIMPL.test(F.routes.middleware[name].toString()))
+			F.routes.middleware[name].$newversion = true;
+
 		next && next();
 		callback && callback(null, name);
 
 		key = type + '.' + name;
 
 		if (F.dependencies[key]) {
-			F.dependencies[key].updated = F.datetime;
+			F.dependencies[key].updated = NOW;
 		} else {
-			F.dependencies[key] = { name: name, type: type, installed: F.datetime, updated: null, count: 0 };
+			F.dependencies[key] = { name: name, type: type, installed: NOW, updated: null, count: 0 };
 			if (internal)
 				F.dependencies[key].url = internal;
 		}
@@ -3523,7 +3918,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 		setTimeout(function() {
 			F.emit(type + '#' + name);
 			F.emit('install', type, name);
-			F.temporary.ready[type + '#' + name] = F.datetime;
+			F.temporary.ready[type + '#' + name] = NOW;
 		}, 500);
 
 		F.consoledebug('install', type + '#' + name);
@@ -3531,13 +3926,12 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 	}
 
 	if (type === 'config' || type === 'configuration' || type === 'settings') {
-
 		F.$configure_configs(declaration instanceof Array ? declaration : declaration.toString().split('\n'), true);
 		setTimeout(function() {
 			delete F.temporary['mail-settings'];
 			F.emit(type + '#' + name, F.config);
 			F.emit('install', type, name);
-			F.temporary.ready[type + '#' + name] = F.datetime;
+			F.temporary.ready[type + '#' + name] = NOW;
 		}, 500);
 
 		F.consoledebug('install', type + '#' + name);
@@ -3552,7 +3946,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 		setTimeout(function() {
 			F.emit(type + '#' + name);
 			F.emit('install', type, name);
-			F.temporary.ready[type + '#' + name] = F.datetime;
+			F.temporary.ready[type + '#' + name] = NOW;
 		}, 500);
 
 		F.consoledebug('install', type + '#' + name);
@@ -3567,7 +3961,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 		setTimeout(function() {
 			F.emit(type + '#' + name);
 			F.emit('install', type, name);
-			F.temporary.ready[type + '#' + name] = F.datetime;
+			F.temporary.ready[type + '#' + name] = NOW;
 			F.consoledebug('install', type + '#' + name);
 		}, 500);
 
@@ -3582,7 +3976,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 		setTimeout(function() {
 			F.emit(type + '#' + name);
 			F.emit('install', type, name);
-			F.temporary.ready[type + '#' + name] = F.datetime;
+			F.temporary.ready[type + '#' + name] = NOW;
 			F.consoledebug('install', type + '#' + name);
 		}, 500);
 
@@ -3598,12 +3992,15 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 
 		F.uninstall(type, uptodateName || name, uptodateName ? 'uptodate' : undefined);
 
-		var hash = '\n/*' + name.hash() + '*/\n';
+		var hash = '\n/*' + name.crc32(true) + '*/\n';
 		var temporary = (F.id ? 'i-' + F.id + '_' : '') + 'components';
 
 		content = parseComponent(internal ? declaration : Fs.readFileSync(declaration).toString(ENCODING), name);
-		content.js && Fs.appendFileSync(F.path.temp(temporary + '.js'), hash + (F.config.debug ? component_debug(name, content.js, 'js') : content.js) + hash.substring(0, hash.length - 1));
-		content.css && Fs.appendFileSync(F.path.temp(temporary + '.css'), hash + (F.config.debug ? component_debug(name, content.css, 'css') : content.css) + hash.substring(0, hash.length - 1));
+
+		if (F.$bundling) {
+			content.js && Fs.appendFileSync(F.path.temp(temporary + '.js'), hash + (F.config.debug ? component_debug(name, content.js, 'js') : content.js) + hash.substring(0, hash.length - 1));
+			content.css && Fs.appendFileSync(F.path.temp(temporary + '.css'), hash + (F.config.debug ? component_debug(name, content.css, 'css') : content.css) + hash.substring(0, hash.length - 1));
+		}
 
 		if (content.js)
 			F.components.js = true;
@@ -3611,16 +4008,21 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 		if (content.css)
 			F.components.css = true;
 
+		if (content.files)
+			F.components.files[name] = content.files;
+		else
+			delete F.components.files[name];
+
 		if (content.body) {
 			F.components.views[name] = '.' + F.path.temp('component_' + name);
-			Fs.writeFile(F.components.views[name].substring(1) + '.html', U.minifyHTML(content.body), NOOP);
+			F.$bundling && Fs.writeFile(F.components.views[name].substring(1) + '.html', U.minifyHTML(content.body), NOOP);
 		} else
 			delete F.components.views[name];
 
 		F.components.has = true;
 
 		var link = F.config['static-url-components'];
-		F.components.version = F.datetime.getTime();
+		F.components.version = NOW.getTime();
 		F.components.links = (F.components.js ? '<script src="{0}js?version={1}"></script>'.format(link, F.components.version) : '') + (F.components.css ? '<link type="text/css" rel="stylesheet" href="{0}css?version={1}" />'.format(link, F.components.version) : '');
 
 		if (content.install) {
@@ -3637,6 +4039,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 				obj.$owner = _owner;
 				F.temporary.owners[_owner] = true;
 				_controller = '';
+				obj.name = name;
 				F.components.instances[name] = obj;
 				obj && typeof(obj.install) === 'function' && obj.install(options || F.config[_owner], name);
 			} catch(e) {
@@ -3648,6 +4051,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 				_owner = (packageName ? packageName + '@' : '') + type + '#' + name;
 				F.temporary.owners[_owner] = true;
 				obj = require(js);
+				obj.name = name;
 				obj.$owner = _owner;
 				_controller = '';
 				F.components.instances[name] = obj;
@@ -3661,7 +4065,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 		}
 
 		if (obj && obj.group) {
-			key = obj.group.hash();
+			key = obj.group.crc32(true);
 			temporary += '_g' + key;
 			tmp = F.components.groups[obj.group];
 			if (!tmp)
@@ -3677,14 +4081,14 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 				tmp.css = true;
 			}
 
-			tmp.version = F.datetime.getTime();
+			tmp.version = NOW.getTime();
 			tmp.links = (tmp.js ? '<script src="{0}js?group={2}&version={1}"></script>'.format(link, tmp.version, key) : '') + (tmp.css ? '<link type="text/css" rel="stylesheet" href="{0}css?group={2}&version={1}" />'.format(link, tmp.version, key) : '');
 		}
 
 		!skipEmit && setTimeout(function() {
 			F.emit(type + '#' + name);
 			F.emit('install', type, name);
-			F.temporary.ready[type + '#' + name] = F.datetime;
+			F.temporary.ready[type + '#' + name] = NOW;
 		}, 500);
 
 		F.consoledebug('install', type + '#' + name);
@@ -3699,8 +4103,8 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 		var dir = F.config['directory-temp'][0] === '~' ? Path.join(F.config['directory-temp'].substring(1), id + '.package') : Path.join(F.path.root(), F.config['directory-temp'], id + '.package');
 
 		F.routes.packages[id] = dir;
-		F.restore(declaration, dir, function() {
 
+		var restorecb = function() {
 			var filename = Path.join(dir, 'index.js');
 			if (!existsSync(filename)) {
 				next && next();
@@ -3714,14 +4118,19 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 					F.emit(type + '#' + name);
 					F.emit('install', 'module', name);
 					F.emit('install', type, name);
-					F.temporary.ready['package#' + name] = F.datetime;
-					F.temporary.ready['module#' + name] = F.datetime;
+					F.temporary.ready['package#' + name] = NOW;
+					F.temporary.ready['module#' + name] = NOW;
 				}, 500);
 				F.consoledebug('install', 'package#' + name);
 				callback && callback(err, name);
 			}, internal, useRequired, true, undefined);
 			next && next();
-		});
+		};
+
+		if (F.$bundling)
+			F.restore(declaration, dir, restorecb);
+		else
+			restorecb();
 
 		return F;
 	}
@@ -3738,7 +4147,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 		!skipEmit && setTimeout(function() {
 			F.emit(type + '#' + name);
 			F.emit('install', type, name);
-			F.temporary.ready[type + '#' + name] = F.datetime;
+			F.temporary.ready[type + '#' + name] = NOW;
 		}, 500);
 
 		F.consoledebug('install', type + '#' + name);
@@ -3764,8 +4173,8 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 				F.emit(type + '#' + name);
 				F.emit('install', type, name);
 				F.emit('install', 'module', name);
-				F.temporary.ready['package#' + name] = F.datetime;
-				F.temporary.ready['module#' + name] = F.datetime;
+				F.temporary.ready['package#' + name] = NOW;
+				F.temporary.ready['module#' + name] = NOW;
 			}, 500);
 			F.consoledebug('install', 'package#' + name);
 			callback && callback(err, name);
@@ -3794,7 +4203,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 		setTimeout(function() {
 			F.emit(type + '#' + name);
 			F.emit('install', type, name);
-			F.temporary.ready[type + '#' + name] = F.datetime;
+			F.temporary.ready[type + '#' + name] = NOW;
 		}, 500);
 
 		F.consoledebug('install', type + '#' + name);
@@ -3803,7 +4212,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 		return F;
 	}
 
-	if (type === 'definition' || type === 'eval') {
+	if (type === 'definition' || type === 'eval' || type === 'schema' || type === 'operation') {
 
 		_controller = '';
 		_owner = (packageName ? packageName + '@' : '') + type + '#' + name;
@@ -3844,7 +4253,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 		setTimeout(function() {
 			F.emit(type + '#' + name);
 			F.emit('install', type, name);
-			F.temporary.ready[type + '#' + name] = F.datetime;
+			F.temporary.ready[type + '#' + name] = NOW;
 		}, 500);
 
 		return F;
@@ -3904,7 +4313,8 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 		tmp = F.path.temp('isomorphic_' + name + '.min.js');
 		F.map(framework_internal.preparePath(obj.url), tmp);
 		F.isomorphic[name] = obj;
-		Fs.writeFileSync(tmp, prepare_isomorphic(name, framework_internal.compile_javascript(content, '#' + name)));
+
+		F.$bundling && Fs.writeFileSync(tmp, prepare_isomorphic(name, framework_internal.compile_javascript(content, '#' + name)));
 
 		F.consoledebug('install', type + '#' + name);
 		next && next();
@@ -3913,7 +4323,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 		setTimeout(function() {
 			F.emit(type + '#' + name, obj);
 			F.emit('install', type, name, obj);
-			F.temporary.ready[type + '#' + name] = F.datetime;
+			F.temporary.ready[type + '#' + name] = NOW;
 		}, 500);
 
 		return F;
@@ -3990,10 +4400,10 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 
 		if (tmp) {
 			F.dependencies[key] = tmp;
-			F.dependencies[key].updated = F.datetime;
+			F.dependencies[key].updated = NOW;
 		}
 		else {
-			F.dependencies[key] = { name: name, type: type, installed: F.datetime, updated: null, count: 0 };
+			F.dependencies[key] = { name: name, type: type, installed: NOW, updated: null, count: 0 };
 			if (internal)
 				F.dependencies[key].url = internal;
 		}
@@ -4015,7 +4425,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 		!skipEmit && setTimeout(function() {
 			F.emit(type + '#' + name, obj);
 			F.emit('install', type, name, obj);
-			F.temporary.ready[type + '#' + name] = F.datetime;
+			F.temporary.ready[type + '#' + name] = NOW;
 		}, 500);
 
 		F.consoledebug('install', type + '#' + name);
@@ -4100,14 +4510,12 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 				F.$configure_sitemap();
 				F.$configure_workflows();
 			} else {
-
 				F.$configure_configs('@' + name + '/config');
 
 				if (F.config.debug)
 					F.$configure_configs('@' + name + '/config-debug');
 				else
 					F.$configure_configs('@' + name + '/config-release');
-
 				F.isTest && F.$configure_configs('@' + name + '/config-test');
 				F.$configure_versions('@' + name + '/versions');
 				F.$configure_dependencies('@' + name + '/dependencies');
@@ -4115,7 +4523,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 				F.$configure_workflows('@' + name + '/workflows');
 			}
 
-			F.$load(undefined, tmpdir, undefined, name);
+			F.$bundle(() => F.$load(undefined, tmpdir, undefined, name));
 		}, 100);
 
 		key = type + '.' + name;
@@ -4126,10 +4534,10 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 
 		if (tmp) {
 			F.dependencies[key] = tmp;
-			F.dependencies[key].updated = F.datetime;
+			F.dependencies[key].updated = NOW;
 		}
 		else {
-			F.dependencies[key] = { name: name, type: type, installed: F.datetime, updated: null, count: 0, _id: _ID };
+			F.dependencies[key] = { name: name, type: type, installed: NOW, updated: null, count: 0, _id: _ID };
 			if (internal)
 				F.dependencies[key].url = internal;
 		}
@@ -4170,147 +4578,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 };
 
 F.restart = function() {
-	if (!F.isRestarted) {
-		F.isRestarted = true;
-		F.emit('restart');
-		setTimeout(() => F.$restart(), 1000);
-	}
-	return F;
-};
-
-F.$restart = function() {
-
-	console.log('----------------------------------------------------> RESTART ' + new Date().format('yyyy-MM-dd HH:mm:ss'));
-
-	F.server.setTimeout(0);
-	F.server.timeout = 0;
-	F.server.close(function() {
-
-		Object.keys(F.modules).forEach(function(key) {
-			var item = F.modules[key];
-			item && item.uninstall && item.uninstall();
-		});
-
-		Object.keys(F.models).forEach(function(key) {
-			var item = F.models[key];
-			item && item.uninstall && item.uninstall();
-		});
-
-		Object.keys(F.controllers).forEach(function(key) {
-			var item = F.controllers[key];
-			item && item.uninstall && item.uninstall();
-		});
-
-		Object.keys(F.workers).forEach(function(key) {
-			var item = F.workers[key];
-			if (item && item.kill) {
-				item.removeAllListeners();
-				item.kill('SIGTERM');
-			}
-		});
-
-		Object.keys(F.connections).forEach(function(key) {
-			var item = F.connections[key];
-			if (item) {
-				item.removeAllListeners();
-				item.close();
-			}
-		});
-
-		framework_builders.restart();
-		framework_image.restart();
-		framework_mail.restart();
-		U.restart();
-		framework_internal.restart();
-
-		F.cache.clear();
-		F.cache.stop();
-		F.$events = {};
-		F.global = {};
-		F.resources = {};
-		F.connections = {};
-		F.functions = {};
-		F.themes = {};
-		F.uptodates = null;
-		F.versions = null;
-		F.schedules = [];
-		F.isLoaded = false;
-		F.isRestarted = false;
-		F.components = { has: false, css: false, js: false, views: {}, instances: {}, version: null, links: '', groups: {} };
-
-		F.routes = {
-			sitemap: null,
-			web: [],
-			system: {},
-			files: [],
-			cors: [],
-			websockets: [],
-			middleware: {},
-			redirects: {},
-			resize: {},
-			request: [],
-			views: {},
-			merge: {},
-			mapping: {},
-			packages: {},
-			blocks: {},
-			resources: {},
-			mmr: {}
-		};
-
-		F.temporary = {
-			path: {},
-			notfound: {},
-			processing: {},
-			range: {},
-			views: {},
-			versions: {},
-			dependencies: {},
-			other: {},
-			internal: {},
-			owners: {},
-			ready: {}
-		};
-
-		F.modificators = null;
-		F.helpers = {};
-		F.modules = {};
-		F.models = {};
-		F.sources = {};
-		F.controllers = {};
-		F.dependencies = {};
-		F.isomorphic = {};
-		F.tests = [];
-		F.errors = [];
-		F.problems = [];
-		F.changes = [];
-		F.traces = [];
-		F.workers = {};
-		F.convertors = [];
-		F.databases = {};
-
-		F._request_check_redirect = false;
-		F._request_check_referer = false;
-		F._request_check_POST = false;
-		F._request_check_robot = false;
-		F._length_middleware = 0;
-		F._length_request_middleware = 0;
-		F._length_files = 0;
-		F._length_wait = 0;
-		F._length_themes = 0;
-		F._length_cors = 0;
-		F._length_subdomain_web = 0;
-		F._length_subdomain_websocket = 0;
-		F.isVirtualDirectory = false;
-		F.isTheme = false;
-		F.stats.other.restart++;
-
-		setTimeout(() => F.removeAllListeners(), 2000);
-		setTimeout(function() {
-			var init = F.temporary.init;
-			F.mode(init.isHTTPS ? require('https') : http, init.name, init.options);
-		}, 1000);
-	});
+	OBSOLETE('F.restart()', 'This function is not supported');
 	return F;
 };
 
@@ -4410,7 +4678,7 @@ F.install_make = function(key, name, obj, options, callback, skipEmit, type) {
 		setTimeout(function() {
 			F.emit(type + '#' + name, obj);
 			F.emit('install', type, name, obj);
-			F.temporary.ready[type + '#' + name] = F.datetime;
+			F.temporary.ready[type + '#' + name] = NOW;
 		}, 500);
 	}
 
@@ -4451,12 +4719,19 @@ F.uninstall = function(type, name, options, skipEmit, packageName) {
 		if (k !== 'id')
 			v = framework_internal.preparePath(framework_internal.encodeUnicodeURL(v.replace('*', '').trim()));
 		F.routes.cors = F.routes.cors.remove(k, v);
+		F._length_cors = F.routes.cors.length;
 		F.consoledebug('uninstall', type + '#' + name);
 		return F;
 	}
 
 	if (type === 'operation') {
 		NEWOPERATION(name, null);
+		F.consoledebug('uninstall', type + '#' + name);
+		return F;
+	}
+
+	if (type === 'convertor') {
+		F.convertor(name, null);
 		F.consoledebug('uninstall', type + '#' + name);
 		return F;
 	}
@@ -4606,6 +4881,7 @@ F.uninstall = function(type, name, options, skipEmit, packageName) {
 
 		delete F.components.instances[name];
 		delete F.components.views[name];
+		delete F.components.files[name];
 		delete F.temporary.ready[type + '#' + name];
 
 		var temporary = (F.id ? 'i-' + F.id + '_' : '') + 'components';
@@ -4660,12 +4936,12 @@ F.uninstall = function(type, name, options, skipEmit, packageName) {
 					}
 				}
 
-				tmp.version = F.datetime.getTime();
+				tmp.version = NOW.getTime();
 			}
 		}
 
 		if (is)
-			F.components.version = F.datetime.getTime();
+			F.components.version = NOW.getTime();
 
 		F.consoledebug('uninstall', type + '#' + name);
 	}
@@ -4797,8 +5073,8 @@ F.eval = function(script) {
  * @return {Framework}
  */
 F.onError = function(err, name, uri) {
-	F.datetime = new Date();
-	console.log('======= ' + (F.datetime.format('yyyy-MM-dd HH:mm:ss')) + ': ' + (name ? name + ' ---> ' : '') + err.toString() + (uri ? ' (' + Parser.format(uri) + ')' : ''), err.stack);
+	NOW = new Date();
+	console.log('======= ' + (NOW.format('yyyy-MM-dd HH:mm:ss')) + ': ' + (name ? name + ' ---> ' : '') + err.toString() + (uri ? ' (' + Parser.format(uri) + ')' : ''), err.stack);
 	return F;
 };
 
@@ -4845,12 +5121,23 @@ F.onMapping = function(url, def, ispublic, encode) {
 	if (url[0] !== '/')
 		url = '/' + url;
 
+	var tmp = url;
+	if (F.config['default-root'])
+		tmp = tmp.substring(F.config['default-root'].length - 1);
+
+	// component files
+	if (tmp[1] === '~') {
+		var index = tmp.indexOf('/', 2);
+		var name = tmp.substring(2, index);
+		return F.components.files[name] && F.components.files[name][tmp.substring(index + 1)] ? (F.path.temp() + tmp.substring(1)) : null;
+	}
+
 	if (F._length_themes) {
-		var index = url.indexOf('/', 1);
+		var index = tmp.indexOf('/', 2);
 		if (index !== -1) {
-			var themeName = url.substring(1, index);
+			var themeName = tmp.substring(1, index);
 			if (F.themes[themeName])
-				return F.themes[themeName] + 'public' + url.substring(index);
+				return F.themes[themeName] + 'public' + tmp.substring(index);
 		}
 	}
 
@@ -4988,7 +5275,11 @@ F.$onParseXML = function(req) {
  * @return {Object}
  */
 F.onParseJSON = function(value) {
-	return JSON.parse(value);
+	if (value) {
+		try {
+			return JSON.parse(value);
+		} catch (e) {}
+	}
 };
 F.onParseJSON.$def = true;
 
@@ -5037,10 +5328,10 @@ F.$onParseQueryUrl = function(req) {
  * @param {String} name
  * @param {Function(err, body)} callback
  */
-F.onSchema = function(req, group, name, callback, filter, novalidate) {
+F.onSchema = function(req, group, name, callback, filter, novalidate, workflow) {
 	var schema = GETSCHEMA(group, name);
 	if (schema)
-		schema.make(req.body, filter, onSchema_callback, callback, novalidate);
+		schema.make(req.body, filter, onSchema_callback, callback, novalidate, workflow ? workflow.meta : null);
 	else
 		callback(new Error('Schema "' + group + '/' + name + '" not found.'));
 };
@@ -5129,11 +5420,11 @@ F.onMeta = function() {
 };
 
 // @arguments {Object params}
-F.log = function() {
+global.LOG = F.log = function() {
 
-	F.datetime = new Date();
-	var filename = F.datetime.getFullYear() + '-' + (F.datetime.getMonth() + 1).toString().padLeft(2, '0') + '-' + F.datetime.getDate().toString().padLeft(2, '0');
-	var time = F.datetime.getHours().toString().padLeft(2, '0') + ':' + F.datetime.getMinutes().toString().padLeft(2, '0') + ':' + F.datetime.getSeconds().toString().padLeft(2, '0');
+	NOW = new Date();
+	var filename = NOW.getFullYear() + '-' + (NOW.getMonth() + 1).toString().padLeft(2, '0') + '-' + NOW.getDate().toString().padLeft(2, '0');
+	var time = NOW.getHours().toString().padLeft(2, '0') + ':' + NOW.getMinutes().toString().padLeft(2, '0') + ':' + NOW.getSeconds().toString().padLeft(2, '0');
 	var str = '';
 	var length = arguments.length;
 
@@ -5153,9 +5444,9 @@ F.log = function() {
 	return F;
 };
 
-F.logger = function() {
-	F.datetime = new Date();
-	var dt = F.datetime.getFullYear() + '-' + (F.datetime.getMonth() + 1).toString().padLeft(2, '0') + '-' + F.datetime.getDate().toString().padLeft(2, '0') + ' ' + F.datetime.getHours().toString().padLeft(2, '0') + ':' + F.datetime.getMinutes().toString().padLeft(2, '0') + ':' + F.datetime.getSeconds().toString().padLeft(2, '0');
+global.LOGGER = F.logger = function() {
+	NOW = new Date();
+	var dt = NOW.getFullYear() + '-' + (NOW.getMonth() + 1).toString().padLeft(2, '0') + '-' + NOW.getDate().toString().padLeft(2, '0') + ' ' + NOW.getHours().toString().padLeft(2, '0') + ':' + NOW.getMinutes().toString().padLeft(2, '0') + ':' + NOW.getSeconds().toString().padLeft(2, '0');
 	var str = '';
 	var length = arguments.length;
 
@@ -5175,7 +5466,7 @@ F.logger = function() {
 	return F;
 };
 
-F.logmail = function(address, subject, body, callback) {
+global.LOGMAIL = F.logmail = function(address, subject, body, callback) {
 
 	if (typeof(body) === FUNCTION) {
 		callback = body;
@@ -5194,6 +5485,7 @@ F.logmail = function(address, subject, body, callback) {
 };
 
 F.usage = function(detailed) {
+
 	var memory = process.memoryUsage();
 	var cache = Object.keys(F.cache.items);
 	var resources = Object.keys(F.resources);
@@ -5209,10 +5501,11 @@ F.usage = function(detailed) {
 	var staticRange = Object.keys(F.temporary.range);
 	var redirects = Object.keys(F.routes.redirects);
 	var output = {};
+	var nosqlcleaner = Object.keys(F.databasescleaner);
 
 	output.framework = {
 		id: F.id,
-		datetime: F.datetime,
+		datetime: NOW,
 		pid: process.pid,
 		node: process.version,
 		version: 'v' + F.version_header,
@@ -5227,6 +5520,9 @@ F.usage = function(detailed) {
 		ip: F.ip,
 		directory: process.cwd()
 	};
+
+	if (F.config['nosql-worker'])
+		output.framework.pidnosql = framework_nosql.pid();
 
 	var keys = Object.keys(U.queuecache);
 	var pending = 0;
@@ -5251,7 +5547,8 @@ F.usage = function(detailed) {
 		streaming: staticRange.length,
 		modificator:  F.modificators ? F.modificators.length : 0,
 		viewphrases: $VIEWCACHE.length,
-		uptodates: F.uptodates ? F.uptodates.length : 0
+		uptodates: F.uptodates ? F.uptodates.length : 0,
+		nosqlcleaner: nosqlcleaner.length
 	};
 
 	output.routing = {
@@ -5260,8 +5557,7 @@ F.usage = function(detailed) {
 		websocket: F.routes.websockets.length,
 		file: F.routes.files.length,
 		middleware: Object.keys(F.routes.middleware).length,
-		redirect: redirects.length,
-		mmr: Object.keys(F.routes.mmr).length
+		redirect: redirects.length
 	};
 
 	output.stats = F.stats;
@@ -5271,43 +5567,45 @@ F.usage = function(detailed) {
 		return output;
 
 	output.controllers = [];
-
-	controllers.forEach(function(o) {
-		var item = F.controllers[o];
-		output.controllers.push({ name: o, usage: item.usage ? item.usage() : null });
-	});
+	for (var i = 0, length = controllers.length; i < length; i++) {
+		var key = controllers[i];
+		var item = F.controllers[key];
+		output.controllers.push({ name: key, usage: item.usage ? item.usage() : null });
+	}
 
 	output.connections = [];
-
-	connections.forEach(function(o) {
-		output.connections.push({ name: o, online: F.connections[o].online });
-	});
+	for (var i = 0, length = connections.length; i < length; i++) {
+		var key = connections[i];
+		output.connections.push({ name: key, online: F.connections[key].online });
+	}
 
 	output.modules = [];
-
-	modules.forEach(function(o) {
-		var item = F.modules[o];
-		output.modules.push({ name: o, usage: item.usage ? item.usage() : null });
-	});
+	for (var i = 0, length = modules.length; i < length; i++) {
+		var key = modules[i];
+		var item = F.modules[key];
+		output.modules.push({ name: key, usage: item.usage ? item.usage() : null });
+	}
 
 	output.models = [];
+	for (var i = 0, length = models.length; i < length; i++) {
+		var key = models[i];
+		var item = F.models[key];
+		output.models.push({ name: key, usage: item.usage ? item.usage() : null });
+	}
 
-	models.forEach(function(o) {
-		var item = F.models[o];
-		output.models.push({ name: o, usage: item.usage ? item.usage() : null });
-	});
-
-	output.uptodates = F.uptodates;
-	output.helpers = helpers;
 	output.cache = cache;
-	output.resources = resources;
-	output.errors = F.errors;
-	output.problems = F.problems;
 	output.changes = F.changes;
-	output.traces = F.traces;
+	output.errors = F.errors;
 	output.files = staticFiles;
-	output.streaming = staticRange;
+	output.helpers = helpers;
+	output.nosqlcleaner = nosqlcleaner;
 	output.other = Object.keys(F.temporary.other);
+	output.problems = F.problems;
+	output.resources = resources;
+	output.streaming = staticRange;
+	output.traces = F.traces;
+	output.uptodates = F.uptodates;
+
 	return output;
 };
 
@@ -5318,7 +5616,8 @@ F.usage = function(detailed) {
  * @param {Object} model
  * @return {String}
  */
-F.onCompileView = function(name, html, model) {
+// name, html, model
+F.onCompileView = function(name, html) {
 	return html;
 };
 
@@ -5527,11 +5826,18 @@ F.compile_virtual = function(res) {
 			return;
 		}
 
-		if (!res.noCompress && (req.extension === 'js' || req.extension === 'css') && F.config['allow-compile'] && !REG_NOCOMPRESS.test(res.options.filename)) {
+		if (!res.noCompress && COMPRESSIONSPECIAL[req.extension] && F.config['allow-compile'] && !REG_NOCOMPRESS.test(res.options.filename)) {
 			res.options.filename = tmpname;
-			compile_file(res);
+			return compile_file(res);
+		}
+
+		var tmp = F.temporary.path[req.$key] = [tmpname, size, stats.mtime.toUTCString()];
+		if (F.config['allow-gzip'] && COMPRESSION[U.getContentType(req.extension)]) {
+			compile_gzip(tmp, function() {
+				delete F.temporary.processing[req.$key];
+				res.$file();
+			});
 		} else {
-			F.temporary.path[req.$key] = [tmpname, size, stats.mtime.toUTCString()];
 			delete F.temporary.processing[req.$key];
 			res.$file();
 		}
@@ -5554,7 +5860,7 @@ function compile_check(res) {
 
 		if (e) {
 
-			if (!res.noCompress && (req.extension === 'js' || req.extension === 'css') && F.config['allow-compile'] && !REG_NOCOMPRESS.test(res.options.filename))
+			if (!res.noCompress && COMPRESSIONSPECIAL[req.extension] && F.config['allow-compile'] && !REG_NOCOMPRESS.test(res.options.filename))
 				return compile_file(res);
 
 			var tmp = F.temporary.path[req.$key] = [res.options.filename, size, stats.mtime.toUTCString()];
@@ -5615,7 +5921,7 @@ function compile_content(extension, content, filename) {
 				for (var i = 0, length = matches.length; i < length; i++) {
 					var key = matches[i];
 					var url = key.substring(4, key.length - 1);
-					content = content.replace(key, 'url(' + F.$version(url) + ')');
+					content = content.replace(key, 'url(' + F.$version(url, true) + ')');
 				}
 			}
 			return content;
@@ -5623,13 +5929,6 @@ function compile_content(extension, content, filename) {
 
 	return content;
 }
-
-// OBSOLETE
-F.responseStatic = function(req, res, done) {
-	res.options.callback = done;
-	res.continue();
-	return F;
-};
 
 F.restore = function(filename, target, callback, filter) {
 
@@ -5683,7 +5982,10 @@ F.restore = function(filename, target, callback, filter) {
 			cache[path] = true;
 
 			var npath = path.substring(0, path.lastIndexOf(F.isWindows ? '\\' : '/'));
-			if (!filter || filter(item, false) !== false)
+
+			var filename = filter && filter(item, false);
+
+			if (!filter || filename || filename == null)
 				F.path.mkdir(npath);
 			else {
 				type = 5; // skip
@@ -5691,6 +5993,9 @@ F.restore = function(filename, target, callback, filter) {
 				return;
 			}
 		}
+
+		if (typeof(filename) === 'string')
+			path = Path.join(target, filename);
 
 		// File
 		type = 2;
@@ -5838,12 +6143,20 @@ F.backup = function(filename, filelist, callback, filter) {
 
 		var writer = Fs.createWriteStream(filename);
 
+		writer.on('finish', function() {
+			callback && Fs.stat(filename, (e, stat) => callback(null, { filename: filename, files: counter, size: stat.size }));
+		});
+
 		filelist.wait(function(item, next) {
+
+			var file = Path.join(path, item);
+
+			if (F.isWindows)
+				item = item.replace(/\\/g, '/');
 
 			if (item[0] !== '/')
 				item = '/' + item;
 
-			var file = Path.join(path, item);
 			Fs.stat(file, function(err, stats) {
 
 				if (err) {
@@ -5870,9 +6183,8 @@ F.backup = function(filename, filelist, callback, filter) {
 				}
 
 				var data = U.createBufferSize(0);
-
 				writer.write(item.padRight(padding) + ':');
-				CLEANUP(Fs.createReadStream(file).pipe(Zlib.createGzip(GZIPFILE)).on('data', function(chunk) {
+				Fs.createReadStream(file).pipe(Zlib.createGzip(GZIPFILE)).on('data', function(chunk) {
 
 					CONCAT[0] = data;
 					CONCAT[1] = chunk;
@@ -5884,17 +6196,15 @@ F.backup = function(filename, filelist, callback, filter) {
 						data = data.slice(data.length - remaining);
 					}
 
-				}), function() {
+				}).on('end', function() {
 					data.length && writer.write(data.toString('base64'));
 					writer.write('\n', 'utf8');
 					counter++;
-					next();
+					setImmediate(next);
 				});
 
 			});
-		}, function() {
-			callback && Fs.stat(filename, (e, stat) => callback(null, { filename: filename, files: counter, size: stat.size }));
-		});
+		}, () => writer.end());
 	});
 
 	return F;
@@ -5972,29 +6282,6 @@ F.isProcessing = function(filename) {
 };
 
 /**
- * Disable HTTP cache for current request/response
- * @param  {Request}  req Request
- * @param  {Response} res (optional) Response
- * @return {Framework}
- */
-F.noCache = function(req) {
-	OBSOLETE('F.noCache()', 'Use req.noCache() or res.noCache() --> they have same functionality.');
-	req.noCache();
-	return F;
-};
-
-// OBSOLETE
-F.responseFile = function(req, res, filename, downloadName, headers, done, key) {
-	res.$key = key;
-	res.options.filename = filename;
-	res.options.download = downloadName;
-	res.options.headers = headers;
-	res.options.callback = done;
-	res.$file();
-	return F;
-};
-
-/**
  * Clears file information in release mode
  * @param {String/Request} url
  * @return {Framework}
@@ -6012,19 +6299,8 @@ F.touch = function(url) {
 };
 
 // OBSOLETE
-F.responsePipe = function(req, res, url, headers, timeout, callback) {
-	res.pipe(url, headers, timeout, callback);
-	return F;
-};
-
-// OBSOLETE
-F.responseCustom = function(req, res) {
-	res.$custom();
-	return F;
-};
-
-// OBSOLETE
 F.responseImage = function(req, res, filename, make, headers, done) {
+	OBSOLETE('F.responseImage()', 'This method is obsolete, use res.img()');
 
 	if (typeof(filename) === 'object')
 		res.options.stream = filename;
@@ -6039,205 +6315,63 @@ F.responseImage = function(req, res, filename, make, headers, done) {
 };
 
 // OBSOLETE
-F.responseImageWithoutCache = function(req, res, filename, make, headers, done) {
-
-	if (typeof(filename) === 'object')
-		res.options.stream = filename;
-	else
-		res.options.filename = filename;
-
+F.responseFile = function(req, res, filename, downloadName, headers, done, key) {
+	OBSOLETE('F.responseFile()', 'This method is obsolete, use res.file()');
+	res.$key = key;
+	res.options.filename = filename;
+	res.options.download = downloadName;
 	res.options.headers = headers;
 	res.options.callback = done;
-	res.options.make = make;
-	res.options.cache = false;
-	res.$image();
-};
-
-// OBSOLETE
-F.responseStream = function(req, res, type, stream, download, headers, done, nocompress) {
-	res.options.type = type;
-	res.options.stream = stream;
-	res.options.download = download;
-	res.options.headers = headers;
-	res.options.compress = nocompress ? false : true;
-	res.options.callback = done;
-	res.$stream();
-	return F;
-};
-
-// OBSOLETE
-F.responseBinary = function(req, res, type, buffer, encoding, download, headers, done) {
-	res.options.type = type;
-	res.options.body = buffer;
-	res.options.encoding = encoding;
-	res.options.download = download;
-	res.options.headers = headers;
-	res.options.callback = done;
-	res.$binary();
-	return F;
-};
-
-F.setModified = function(req, res, value) {
-	if (typeof(value) === 'string')
-		res.setHeader('Etag', value + F.config['etag-version']);
-	else
-		res.setHeader('Last-Modified', value.toUTCString());
-	return F;
-};
-
-F.notModified = function(req, res, compare, strict) {
-
-	var type = typeof(compare);
-	if (type === 'boolean') {
-		var tmp = compare;
-		compare = strict;
-		strict = tmp;
-		type = typeof(compare);
-	}
-
-	var isEtag = type === 'string';
-	var val = req.headers[isEtag ? 'if-none-match' : 'if-modified-since'];
-
-	if (isEtag) {
-		if (val !== (compare + F.config['etag-version']))
-			return false;
-	} else {
-
-		if (!val)
-			return false;
-
-		var date = compare === undefined ? new Date().toUTCString() : compare.toUTCString();
-		if (strict) {
-			if (new Date(Date.parse(val)) === new Date(date))
-				return false;
-		} else {
-			if (new Date(Date.parse(val)) < new Date(date))
-				return false;
-		}
-	}
-
-
-	var headers;
-
-	if (isEtag) {
-		headers = HEADERS.notModifiedEtag;
-		headers['Etag'] = val;
-	} else {
-		headers = HEADERS.notModifiedLastModifiedDate;
-		headers['Last-Modified'] = val;
-	}
-
-	res.success = true;
-	res.writeHead(304, headers);
-	res.end();
-
-	F.stats.response.notModified++;
-	response_end(res);
-	return true;
-};
-
-F.responseCode = function(req, res, code, problem) {
-	res.options.code = code;
-	problem && (res.options.problem = problem);
-	res.$throw();
-	return F;
-};
-
-F.response400 = function(req, res, problem) {
-	res.options.code = 400;
-	problem && (res.options.problem = problem);
-	res.$throw();
-	return F;
-};
-
-F.response401 = function(req, res, problem) {
-	res.options.code = 401;
-	problem && (res.options.problem = problem);
-	res.$throw();
-	return F;
-};
-
-F.response403 = function(req, res, problem) {
-	res.options.code = 403;
-	problem && (res.options.problem = problem);
-	res.$throw();
-	return F;
-};
-
-F.response404 = function(req, res, problem) {
-	res.options.code = 404;
-	problem && (res.options.problem = problem);
-	res.$throw();
-	return F;
-};
-
-F.response408 = function(req, res, problem) {
-	res.options.code = 408;
-	problem && (res.options.problem = problem);
-	res.$throw();
-	return F;
-};
-
-F.response431 = function(req, res, problem) {
-	res.options.code = 431;
-	problem && (res.options.problem = problem);
-	res.$throw();
-	return F;
-};
-
-F.response500 = function(req, res, error) {
-	res.throw500(error);
-	return F;
-};
-
-F.response501 = function(req, res, problem) {
-	res.options.code = 501;
-	problem && (res.options.problem = problem);
-	res.$throw();
+	res.$file();
 	return F;
 };
 
 F.response503 = function(req, res) {
-	var keys = '';
-	for (var m in F.waits)
-		keys += (res.options.body ? ', ' : '') + '<u>' + m + '</u>';
 	res.options.code = 503;
 	res.options.headers = HEADERS.response503;
-	res.options.body = '<html><head><meta charset="utf-8" /></head><body style="font:normal normal 11px Arial;color:gray;line-height:16px;padding:10px;background-color:white"><div style="font-size:14px;color:#505050">Please wait (<span id="time">10</span>) for <b>' + (F.config.name + ' v' + F.config.version) + '</b> application.</div>The application is waiting for: ' + keys + '.<script>var i=10;setInterval(function(){i--;if(i<0)return;document.getElementById("time").innerHTML=(i===0?"refreshing":i);if(i===0)window.location.reload();},1000);</script></body></html>';
-	res.$throw();
-	return F;
-};
-
-// OBSOLETE
-F.responseContent = function(req, res, code, body, type, compress, headers) {
-	res.options.code = code;
-	res.options.body = body;
-	res.options.type = type;
-	res.options.compress = compress === undefined || compress === true;
-	res.options.headers = headers;
+	res.options.body = F.view('.' + PATHMODULES + '503', F.waits);
 	res.$text();
 	return F;
 };
 
-// OBSOLETE
-F.responseRedirect = function(req, res, url, permanent) {
-	res.options.url = url;
-	res.options.permanent = permanent;
-	res.$redirect();
-	return F;
-};
-
-F.load = function(debug, types, pwd) {
+global.LOAD = F.load = function(debug, types, pwd) {
 
 	if (pwd && pwd[0] === '.' && pwd.length < 4)
 		F.directory = directory = U.$normalize(Path.normalize(directory + '/..'));
 	else if (pwd)
 		F.directory = directory = U.$normalize(pwd);
 
-	if (debug === 'release')
-		debug = false;
-	else if (debug === 'debug')
-		debug = true;
+	if (typeof(debug) === 'string') {
+		switch (debug.toLowerCase().replace(/\.|\s/g, '-')) {
+			case 'release':
+			case 'production':
+				break;
+
+			case 'debug':
+			case 'develop':
+			case 'development':
+				debug = true;
+				break;
+
+			case 'test-debug':
+			case 'debug-test':
+			case 'testing-debug':
+				debug = true;
+				F.isTest = true;
+				break;
+
+			case 'test':
+			case 'testing':
+			case 'test-release':
+			case 'release-test':
+			case 'testing-release':
+			case 'test-production':
+			case 'testing-production':
+				debug = false;
+				F.isTest = true;
+				break;
+		}
+	}
 
 	F.isWorker = true;
 	F.config.debug = debug;
@@ -6247,55 +6381,63 @@ F.load = function(debug, types, pwd) {
 	global.RELEASE = !debug;
 	global.I = global.isomorphic = F.isomorphic;
 
-	F.consoledebug('startup');
-	F.$startup(function() {
+	F.$bundle(function() {
+		F.consoledebug('startup');
+		F.$startup(function() {
 
-		F.consoledebug('startup (done)');
-		F.$configure_configs();
+			F.consoledebug('startup (done)');
+			F.$configure_configs();
 
-		if (!types || types.indexOf('versions') !== -1)
-			F.$configure_versions();
+			if (!types || types.indexOf('versions') !== -1)
+				F.$configure_versions();
 
-		if (!types || types.indexOf('workflows') !== -1)
-			F.$configure_workflows();
+			if (!types || types.indexOf('workflows') !== -1)
+				F.$configure_workflows();
 
-		if (!types || types.indexOf('sitemap') !== -1)
-			F.$configure_sitemap();
+			if (!types || types.indexOf('sitemap') !== -1)
+				F.$configure_sitemap();
 
-		F.consoledebug('init');
-		F.cache.init();
-		F.emit('init');
+			F.consoledebug('init');
+			F.cache.init();
+			F.emit('init');
 
-		F.$load(types, directory, function() {
+			F.$load(types, directory, function() {
 
-			F.isLoaded = true;
-			process.send && process.send('total:ready');
+				F.isLoaded = true;
+				process.send && process.send('total:ready');
 
-			setTimeout(function() {
+				setTimeout(function() {
 
-				try {
-					F.emit('load', F);
-					F.emit('ready', F);
-				} catch (err) {
-					F.error(err, 'F.on("load/ready")');
+					try {
+						F.emit('load', F);
+						F.emit('ready', F);
+					} catch (err) {
+						F.error(err, 'F.on("load/ready")');
+					}
+
+					F.removeAllListeners('load');
+					F.removeAllListeners('ready');
+
+					if (F.isTest) {
+						F.console();
+						F.test();
+						return F;
+					}
+
+					setTimeout(function() {
+						if (!F.isTest)
+							delete F.test;
+					}, 5000);
+
+				}, 500);
+
+				if (F.config['allow-debug']) {
+					F.consoledebug('done');
+					F.usagesnapshot();
 				}
-
-				F.removeAllListeners('load');
-				F.removeAllListeners('ready');
-
-				// clear unnecessary items
-				delete F.tests;
-				delete F.test;
-				delete F.testing;
-				delete F.assert;
-			}, 500);
-
-			if (F.config['allow-debug']) {
-				F.consoledebug('done');
-				F.usagesnapshot();
-			}
+			});
 		});
-	});
+	}, !types || types.indexOf('bundles') !== -1);
 
 	return F;
 };
@@ -6307,7 +6449,7 @@ F.load = function(debug, types, pwd) {
  * @param  {Object} options
  * @return {Framework}
  */
-F.initialize = function(http, debug, options, restart) {
+F.initialize = function(http, debug, options) {
 
 	if (!options)
 		options = {};
@@ -6332,125 +6474,126 @@ F.initialize = function(http, debug, options, restart) {
 	F.config.debug = debug;
 	F.isDebug = debug;
 
+	if (options.bundling != null)
+		F.$bundling = options.bundling == true;
+
 	global.DEBUG = debug;
 	global.RELEASE = !debug;
 	global.I = global.isomorphic = F.isomorphic;
+	F.$bundle(function() {
 
-	F.$configure_configs();
-	F.$configure_versions();
-	F.$configure_workflows();
-	F.$configure_sitemap();
-	F.isTest && F.$configure_configs('config-test', true);
-	F.cache.init();
-	F.consoledebug('init');
-	F.emit('init');
+		F.$configure_configs();
+		F.$configure_versions();
+		F.$configure_workflows();
+		F.$configure_sitemap();
+		F.isTest && F.$configure_configs('config-test', true);
+		F.cache.init();
+		F.consoledebug('init');
+		F.emit('init');
 
-	if (!port) {
-		if (F.config['default-port'] === 'auto') {
-			var envPort = +(process.env.PORT || '');
-			if (!isNaN(envPort))
-				port = envPort;
+		if (!port) {
+			if (F.config['default-port'] === 'auto') {
+				var envPort = +(process.env.PORT || '');
+				if (!isNaN(envPort))
+					port = envPort;
+			} else
+				port = F.config['default-port'];
+		}
+
+		F.port = port || 8000;
+
+		if (ip !== null) {
+			F.ip = ip || F.config['default-ip'] || '0.0.0.0';
+			if (F.ip === 'null' || F.ip === 'undefined' || F.ip === 'auto')
+				F.ip = null;
 		} else
-			port = F.config['default-port'];
-	}
+			F.ip = undefined;
 
-	F.port = port || 8000;
+		if (F.ip == null)
+			F.ip = '0.0.0.0';
 
-	if (ip !== null) {
-		F.ip = ip || F.config['default-ip'] || '0.0.0.0';
-		if (F.ip === 'null' || F.ip === 'undefined' || F.ip === 'auto')
-			F.ip = null;
-	} else
-		F.ip = undefined;
+		!listenpath && (listenpath = F.config['default-listenpath']);
+		F.listenpath = listenpath;
 
-	if (F.ip == null)
-		F.ip = '0.0.0.0';
+		if (F.server) {
+			F.server.removeAllListeners();
+			Object.keys(F.connections).forEach(function(key) {
+				var item = F.connections[key];
+				if (item) {
+					item.removeAllListeners();
+					item.close();
+				}
+			});
 
-	!listenpath && (listenpath = F.config['default-listenpath']);
-	F.listenpath = listenpath;
+			F.server.close();
+		}
 
-	if (F.server) {
-		F.server.removeAllListeners();
-		Object.keys(F.connections).forEach(function(key) {
-			var item = F.connections[key];
-			if (item) {
-				item.removeAllListeners();
-				item.close();
-			}
-		});
+		var listen = function() {
 
-		F.server.close();
-	}
-
-	var listen = function() {
-
-		if (options.https)
-			F.server = http.createServer(options.https, F.listener);
-		else
-			F.server = http.createServer(F.listener);
-
-		F.config['allow-performance'] && F.server.on('connection', connection_tunning);
-		F.initwebsocket && F.initwebsocket();
-		F.consoledebug('HTTP listening');
-
-		if (listenpath)
-			F.server.listen(listenpath);
-		else
-			F.server.listen(F.port, F.ip);
-	};
-
-	// clears static files
-	F.consoledebug('clear temporary');
-	F.clear(function() {
-		F.consoledebug('clear temporary (done)');
-		F.$load(undefined, directory, function() {
-
-			F.isLoaded = true;
-			process.send && process.send('total:ready');
-
-			if (options.middleware)
-				options.middleware(listen);
+			if (options.https)
+				F.server = http.createServer(options.https, F.listener);
 			else
-				listen();
+				F.server = http.createServer(F.listener);
 
-			if (F.config['allow-debug']) {
-				F.consoledebug('done');
-				F.usagesnapshot();
-			}
+			F.config['allow-performance'] && F.server.on('connection', connection_tunning);
+			F.initwebsocket && F.initwebsocket();
+			F.consoledebug('HTTP listening');
 
-			if (!process.connected || restart)
-				F.console();
+			if (listenpath)
+				F.server.listen(listenpath);
+			else
+				F.server.listen(F.port, F.ip);
+		};
 
-			setTimeout(function() {
+		// clears static files
+		F.consoledebug('clear temporary');
+		F.clear(function() {
+			F.consoledebug('clear temporary (done)');
+			F.$load(undefined, directory, function() {
 
-				try {
-					F.emit('load', F);
-					F.emit('ready', F);
-				} catch (err) {
-					F.error(err, 'F.on("load/ready")');
+				F.isLoaded = true;
+				process.send && process.send('total:ready');
+
+				if (options.middleware)
+					options.middleware(listen);
+				else
+					listen();
+
+				if (F.config['allow-debug']) {
+					F.consoledebug('done');
+					F.usagesnapshot();
 				}
 
-				F.removeAllListeners('load');
-				F.removeAllListeners('ready');
-				options.package && INSTALL('package', options.package);
-			}, 500);
+				if (!process.connected)
+					F.console();
 
-			if (F.isTest) {
-				var sleep = options.sleep || options.delay || 1000;
-				setTimeout(() => F.test(true, options.tests || options.test), sleep);
-				return F;
-			}
+				setTimeout(function() {
 
-			setTimeout(function() {
-				if (F.isTest)
-					return;
-				delete F.tests;
-				delete F.test;
-				delete F.testing;
-				delete F.assert;
-			}, 5000);
-		});
-	}, true);
+					try {
+						F.emit('load', F);
+						F.emit('ready', F);
+					} catch (err) {
+						F.error(err, 'F.on("load/ready")');
+					}
+
+					F.removeAllListeners('load');
+					F.removeAllListeners('ready');
+					options.package && INSTALL('package', options.package);
+				}, 500);
+
+				if (F.isTest) {
+					var sleep = options.sleep || options.delay || 1000;
+					setTimeout(F.test, sleep);
+					return F;
+				}
+
+				setTimeout(function() {
+					if (!F.isTest)
+						delete F.test;
+				}, 5000);
+			});
+		}, true);
+	});
 
 	return F;
 };
@@ -6478,8 +6621,14 @@ F.http = function(mode, options, middleware) {
 	options == null && (options = {});
 	!options.port && (options.port = +process.argv[2]);
 
+	if (options.port && isNaN(options.port))
+		options.port = 0;
+
 	if (typeof(middleware) === 'function')
 		options.middleware = middleware;
+
+	if (options.bundling != null)
+		F.$bundling = options.bundling;
 
 	var http = require('http');
 	extend_request(http.IncomingMessage.prototype);
@@ -6568,17 +6717,11 @@ F.mode = function(http, name, options) {
 			break;
 	}
 
-	var restart = false;
-	if (F.temporary.init)
-		restart = true;
-	else
-		F.temporary.init = { name: name, isHTTPS: typeof(http.STATUS_CODES) === 'undefined', options: options };
-
 	F.config.trace = debug;
 	F.consoledebug('startup');
 	F.$startup(function() {
 		F.consoledebug('startup (done)');
-		F.initialize(http, debug, options, restart);
+		F.initialize(http, debug, options);
 	});
 	return F;
 };
@@ -6623,41 +6766,43 @@ F.custom = function(mode, http, request, response, options) {
 			break;
 	}
 
-	var restart = false;
-	if (F.temporary.init)
-		restart = true;
-	else
-		F.temporary.init = { name: mode, isHTTPS: false, options: options };
-
 	F.config.trace = debug;
 	F.consoledebug('startup');
 	F.$startup(function() {
 		F.consoledebug('startup (done)');
-		F.initialize(http, debug, options, restart);
+		F.initialize(http, debug, options);
 	});
 
 	return F;
 };
 
 F.console = function() {
+	var memory = process.memoryUsage();
 	console.log('====================================================');
-	console.log('PID         : ' + process.pid);
-	console.log('Node.js     : ' + process.version);
-	console.log('Total.js    : v' + F.version_header);
-	console.log('OS          : ' + Os.platform() + ' ' + Os.release());
+	console.log('PID           : ' + process.pid);
+	console.log('Node.js       : ' + process.version);
+	console.log('Total.js      : v' + F.version_header);
+	console.log('OS            : ' + Os.platform() + ' ' + Os.release());
+	F.config['nosql-worker'] && console.log('NoSQL PID     : ' + framework_nosql.pid());
+	console.log('Memory        : ' + memory.heapUsed.filesize(2) + ' / ' + memory.heapTotal.filesize(2));
 	console.log('====================================================');
-	console.log('Name        : ' + F.config.name);
-	console.log('Version     : ' + F.config.version);
-	console.log('Author      : ' + F.config.author);
-	console.log('Date        : ' + F.datetime.format('yyyy-MM-dd HH:mm:ss'));
-	console.log('Mode        : ' + (F.config.debug ? 'debug' : 'release'));
+	console.log('Name          : ' + F.config.name);
+	console.log('Version       : ' + F.config.version);
+	console.log('Author        : ' + F.config.author);
+	console.log('Date          : ' + NOW.format('yyyy-MM-dd HH:mm:ss'));
+	console.log('Mode          : ' + (F.config.debug ? 'debug' : 'release'));
+	console.log('====================================================');
+	console.log('Directory     : ' + process.cwd());
+	console.log('node_modules  : ' + PATHMODULES);
 	console.log('====================================================\n');
-	console.log('{2}://{0}:{1}/'.format(F.ip, F.port, F.isHTTPS ? 'https' : 'http'));
-	console.log('');
+	if (!F.isWorker) {
+		console.log('{2}://{0}:{1}/'.format(F.ip, F.port, F.isHTTPS ? 'https' : 'http'));
+		console.log('');
+	}
 };
 
 F.usagesnapshot = function(filename) {
-	Fs.writeFile(filename || F.path.root('usage.log'), JSON.stringify(F.usage(true), null, '    '), NOOP);
+	Fs.writeFile(filename || F.path.root('usage' + (F.id ? ('-' + F.id) : '') + '.log'), JSON.stringify(F.usage(true), null, '    '), NOOP);
 	return F;
 };
 
@@ -6694,10 +6839,31 @@ F.reconnect = function() {
  */
 F.service = function(count) {
 
-	UIDGENERATOR.date = F.datetime.format('yyMMddHHmm');
+	UIDGENERATOR.date = NOW.format('yyMMddHHmm');
 	UIDGENERATOR.index = 1;
 
+	var keys;
+
+	if (UIDGENERATOR.multiple) {
+		keys = Object.keys(UIDGENERATOR.types);
+		for (var i = 0; i < keys.length; i++)
+			UIDGENERATOR.types[keys[i]] = 0;
+	}
+
 	var releasegc = false;
+
+	if (F.temporary.service.request)
+		F.temporary.service.request++;
+	else
+		F.temporary.service.request = 1;
+
+	if (F.temporary.service.file)
+		F.temporary.service.file++;
+	else
+		F.temporary.service.file = 1;
+
+	F.stats.performance.request = F.stats.request.request ? F.stats.request.request / F.temporary.service.request : 0;
+	F.stats.performance.file = F.stats.request.file ? F.stats.request.file / F.temporary.service.file : 0;
 
 	// clears temporary memory for non-exist files
 	F.temporary.notfound = {};
@@ -6714,7 +6880,7 @@ F.service = function(count) {
 		// Clears command cache
 		Image.clear();
 
-		var dt = F.datetime.add('-5 minutes');
+		var dt = NOW.add('-5 minutes');
 		for (var key in F.databases)
 			F.databases[key] && F.databases[key].inmemorylastusage < dt && F.databases[key].release();
 
@@ -6754,10 +6920,10 @@ F.service = function(count) {
 		var hasUpdate = false;
 		F.uptodates.wait(function(item, next) {
 
-			if (item.updated.add(item.interval) > F.datetime)
+			if (item.updated.add(item.interval) > NOW)
 				return next();
 
-			item.updated = F.datetime;
+			item.updated = NOW;
 			item.count++;
 
 			setTimeout(function() {
@@ -6805,7 +6971,17 @@ F.service = function(count) {
 	}
 
 	// Update expires date
-	count % 1000 === 0 && (DATE_EXPIRES = F.datetime.add('y', 1).toUTCString());
+	count % 1000 === 0 && (DATE_EXPIRES = NOW.add('y', 1).toUTCString());
+
+	if (count % F.config['nosql-cleaner'] === 0 && F.config['nosql-cleaner']) {
+		keys = Object.keys(F.databasescleaner);
+		keys.wait(function(item, next) {
+			if (item[0] === '$')
+				TABLE(item).clean(next);
+			else
+				NOSQL(item).clean(next);
+		});
+	}
 
 	F.$events.service && F.emit('service', count);
 
@@ -6823,7 +6999,7 @@ F.service = function(count) {
 	if (!F.schedules.length)
 		return F;
 
-	var expire = F.datetime.getTime();
+	var expire = NOW.getTime();
 	var index = 0;
 
 	while (true) {
@@ -6836,7 +7012,7 @@ F.service = function(count) {
 		index--;
 
 		if (schedule.repeat)
-			schedule.expire = F.datetime.add(schedule.repeat);
+			schedule.expire = NOW.add(schedule.repeat);
 		else
 			F.schedules.splice(index, 1);
 
@@ -6905,6 +7081,8 @@ F.listener = function(req, res) {
 };
 
 function requestcontinue_middleware(req, res)  {
+	if (req.$total_middleware)
+		req.$total_middleware = null;
 	F.$requestcontinue(req, res, req.headers);
 }
 
@@ -6945,16 +7123,10 @@ F.$requestcontinue = function(req, res, headers) {
 	req.buffer_has = false;
 	req.$flags = req.method[0] + req.method[1];
 
-	if (headers['x-proxy'] === 'total.js') {
-		req.isProxy = true;
-		req.$flags += 'f';
-		flags.push('proxy');
-	}
-
 	var flags = [req.method.toLowerCase()];
 	var multipart;
 
-	if (req.mobile) {
+	if (F._request_check_mobile && req.mobile) {
 		req.$flags += 'a';
 		F.stats.request.mobile++;
 	} else
@@ -6995,11 +7167,6 @@ F.$requestcontinue = function(req, res, headers) {
 				flags.push('xml');
 				req.$type = 2;
 				multipart = '';
-				break;
-			case 'lace':
-				req.$type = 4;
-				flags.push('mmr');
-				req.$flags += 'e';
 				break;
 			default:
 				if (multipart) {
@@ -7044,7 +7211,7 @@ F.$requestcontinue = function(req, res, headers) {
 	req.flags = flags;
 	F.$events['request-begin'] && F.emit('request-begin', req, res);
 
-	var isCORS = F._length_cors && req.headers['origin'];
+	var isCORS = (F._length_cors || F.routes.corsall) && req.headers['origin'] != null;
 
 	switch (first) {
 		case 'G':
@@ -7084,8 +7251,6 @@ F.$requestcontinue = function(req, res, headers) {
 				if (multipart) {
 					if (isCORS)
 						F.$cors(req, res, cors_callback_multipart, multipart);
-					else if (req.$type === 4)
-						F.$requestcontinue_mmr(req, res, multipart);
 					else
 						req.$total_multipart(multipart);
 				} else {
@@ -7117,108 +7282,95 @@ function cors_callback1(req) {
 }
 
 function cors_callback_multipart(req, res, multipart) {
-	if (req.$type === 4)
-		F.$requestcontinue_mmr(req, res, multipart);
-	else
-		req.$total_multipart(multipart);
+	req.$total_multipart(multipart);
 }
-
-F.$requestcontinue_mmr = function(req, res, header) {
-	var route = F.routes.mmr[req.url];
-	F.stats.request.mmr++;
-	if (route) {
-		F.path.verify('temp');
-		framework_internal.parseMULTIPART_MIXED(req, header, F.config['directory-temp'], route.exec);
-	} else
-		req.$total_status(404);
-};
 
 F.$cors = function(req, res, fn, arg) {
 
-	var isAllowed = false;
-	var cors;
-
-	for (var i = 0; i < F._length_cors; i++) {
-		cors = F.routes.cors[i];
-		if (framework_internal.routeCompare(req.path, cors.url, false, cors.isWILDCARD)) {
-			isAllowed = true;
-			break;
-		}
-	}
-
-	if (!isAllowed)
-		return fn(req, res, arg);
-
-	var stop = false;
+	var isAllowed = F.routes.corsall;
+	var cors, origin;
 	var headers = req.headers;
-
-	if (!isAllowed)
-		stop = true;
-
-	isAllowed = false;
-
-	if (!stop && cors.headers) {
-		isAllowed = false;
-		for (var i = 0, length = cors.headers.length; i < length; i++) {
-			if (headers[cors.headers[i]]) {
+	if (!isAllowed) {
+		for (var i = 0; i < F._length_cors; i++) {
+			cors = F.routes.cors[i];
+			if (framework_internal.routeCompare(req.path, cors.url, false, cors.isWILDCARD)) {
 				isAllowed = true;
 				break;
 			}
 		}
+
+		if (!isAllowed)
+			return fn(req, res, arg);
+
+		var stop = false;
+
 		if (!isAllowed)
 			stop = true;
-	}
 
-	if (!stop && cors.methods) {
 		isAllowed = false;
-		var current = headers['access-control-request-method'] || req.method;
-		if (current !== 'OPTIONS') {
-			for (var i = 0, length = cors.methods.length; i < length; i++) {
-				if (current.indexOf(cors.methods[i]) !== -1) {
+
+		if (!stop && cors.headers) {
+			isAllowed = false;
+			for (var i = 0, length = cors.headers.length; i < length; i++) {
+				if (headers[cors.headers[i]]) {
 					isAllowed = true;
 					break;
 				}
 			}
+			if (!isAllowed)
+				stop = true;
+		}
 
+		if (!stop && cors.methods) {
+			isAllowed = false;
+			var current = headers['access-control-request-method'] || req.method;
+			if (current !== 'OPTIONS') {
+				for (var i = 0, length = cors.methods.length; i < length; i++) {
+					if (current === cors.methods[i]) {
+						isAllowed = true;
+						break;
+					}
+				}
+				if (!isAllowed)
+					stop = true;
+			}
+		}
+
+		origin = headers['origin'].toLowerCase();
+		if (!stop && cors.origins) {
+			isAllowed = false;
+			for (var i = 0, length = cors.origins.length; i < length; i++) {
+				if (cors.origins[i].indexOf(origin) !== -1) {
+					isAllowed = true;
+					break;
+				}
+			}
 			if (!isAllowed)
 				stop = true;
 		}
 	}
 
-	var origin = headers['origin'].toLowerCase();
-	if (!stop && cors.origins) {
-		isAllowed = false;
-		for (var i = 0, length = cors.origins.length; i < length; i++) {
-			if (cors.origins[i].indexOf(origin) !== -1) {
-				isAllowed = true;
-				break;
-			}
-		}
-		if (!isAllowed)
-			stop = true;
-	}
+	res.setHeader('Access-Control-Allow-Origin', F.routes.corsall ? headers['origin'] : (cors.origins ? cors.origins : cors.credentials ? isAllowed ? origin : cors.origins ? cors.origins : origin : headers['origin']));
 
-	var name;
+	if (!cors || cors.credentials)
+		res.setHeader('Access-Control-Allow-Credentials', 'true');
+
+	var name = 'Access-Control-Allow-Methods';
 	var isOPTIONS = req.method === 'OPTIONS';
 
-	res.setHeader('Access-Control-Allow-Origin', cors.origins ? cors.origins : cors.credentials ? isAllowed ? origin : cors.origins ? cors.origins : origin : headers['origin']);
-	cors.credentials && res.setHeader('Access-Control-Allow-Credentials', 'true');
-
-	name = 'Access-Control-Allow-Methods';
-
-	if (cors.methods)
+	if (cors && cors.methods)
 		res.setHeader(name, cors.methods.join(', '));
 	else
 		res.setHeader(name, isOPTIONS ? headers['access-control-request-method'] || '*' : req.method);
 
 	name = 'Access-Control-Allow-Headers';
 
-	if (cors.headers)
+	if (cors && cors.headers)
 		res.setHeader(name, cors.headers.join(', '));
 	else
 		res.setHeader(name, headers['access-control-request-headers'] || '*');
 
-	cors.age && res.setHeader('Access-Control-Max-Age', cors.age);
+	cors && cors.age && res.setHeader('Access-Control-Max-Age', cors.age);
 
 	if (stop) {
 		fn = null;
@@ -7247,7 +7399,7 @@ F.$cors = function(req, res, fn, arg) {
  * @param {Socket} socket
  * @param {Buffer} head
  */
-F._upgrade = function(req, socket, head) {
+F.$upgrade = function(req, socket, head) {
 
 	if ((req.headers.upgrade || '').toLowerCase() !== 'websocket')
 		return;
@@ -7284,6 +7436,8 @@ F._upgrade = function(req, socket, head) {
 };
 
 function websocketcontinue_middleware(req) {
+	if (req.$total_middleware)
+		req.$total_middleware = null;
 	F.$websocketcontinue(req, req.$wspath, req.headers);
 }
 
@@ -7318,7 +7472,7 @@ F.$websocketcontinue_process = function(route, req, path) {
 
 	var socket = req.websocket;
 
-	if (!socket.prepare(route.flags, route.protocols, route.allow, route.length, F.version_header)) {
+	if (!socket.prepare(route.flags, route.protocols, route.allow, route.length)) {
 		socket.close();
 		req.connection.destroy();
 		return;
@@ -7332,6 +7486,9 @@ F.$websocketcontinue_process = function(route, req, path) {
 		socket.type = 3;
 
 	var next = function() {
+
+		if (req.$total_middleware)
+			req.$total_middleware = null;
 
 		if (F.connections[id]) {
 			socket.upgrade(F.connections[id]);
@@ -7425,7 +7582,7 @@ F.include = function(name, options, callback) {
  * @param {String} language Optional.
  * @return {MailMessage}
  */
-F.mail = function(address, subject, view, model, callback, language) {
+global.MAIL = F.mail = function(address, subject, view, model, callback, language) {
 
 	if (typeof(callback) === 'string') {
 		var tmp = language;
@@ -7439,8 +7596,8 @@ F.mail = function(address, subject, view, model, callback, language) {
 
 	if (controller.themeName)
 		view = prepare_viewname(view);
-	else if (this.onTheme)
-		controller.themeName = this.onTheme(controller);
+	else if (F.onTheme)
+		controller.themeName = F.onTheme(controller);
 	else
 		controller.themeName = '';
 
@@ -7464,7 +7621,7 @@ F.mail = function(address, subject, view, model, callback, language) {
  * @param {String} language Optional.
  * @return {String}
  */
-F.view = function(name, model, layout, repository, language) {
+global.VIEW = F.view = function(name, model, layout, repository, language) {
 
 	var controller = EMPTYCONTROLLER;
 
@@ -7544,26 +7701,27 @@ F.clear = function(callback, isInit) {
 	var plus = F.id ? 'i-' + F.id + '_' : '';
 
 	if (isInit) {
-		if (F.config['disable-clear-temporary-directory']) {
-			// clears only JS and CSS files
-			U.ls(dir, function(files) {
-				F.unlink(files, function() {
-					callback && callback();
+		if (!F.config['allow-clear-temp']) {
+			if (F.$bundling) {
+				// clears only JS and CSS files
+				U.ls(dir, function(files) {
+					F.unlink(files, function() {
+						callback && callback();
+					});
+				}, function(filename, folder) {
+					if (folder || (plus && !filename.substring(dir.length).startsWith(plus)))
+						return false;
+					if (filename.indexOf('.package') !== -1)
+						return true;
+					var ext = U.getExtension(filename);
+					return ext === 'js' || ext === 'css' || ext === 'tmp' || ext === 'upload' || ext === 'html' || ext === 'htm';
 				});
-			}, function(filename, folder) {
-				if (folder || (plus && !filename.substring(dir.length).startsWith(plus)))
-					return false;
-				if (filename.indexOf('.package') !== -1)
-					return true;
-				var ext = U.getExtension(filename);
-				return ext === 'js' || ext === 'css' || ext === 'tmp' || ext === 'upload' || ext === 'html' || ext === 'htm';
-			});
-
+			}
 			return F;
 		}
 	}
 
-	if (!existsSync(dir)) {
+	if (!existsSync(dir) || !F.$bundling) {
 		callback && callback();
 		return F;
 	}
@@ -7578,8 +7736,19 @@ F.clear = function(callback, isInit) {
 					continue;
 				(filename.indexOf('/') === -1 || filename.indexOf('.package/') !== -1) && !filename.endsWith('.jsoncache') && arr.push(files[i]);
 			}
+
 			files = arr;
-			directories = directories.remove(n => n.indexOf('.package') === -1);
+			directories = directories.remove(function(name) {
+				name = U.getName(name);
+
+				if (name[0] === '~')
+					return false;
+
+				if (name.endsWith('.package'))
+					return false;
+
+				return true;
+			});
 		}
 
 		F.unlink(files, () => F.rmdir(directories, callback));
@@ -7701,19 +7870,7 @@ F.decrypt = function(value, key, jsonConvert) {
 		jsonConvert = true;
 
 	var response = (value || '').decrypt(F.config.secret + '=' + key);
-	if (!response)
-		return null;
-
-	if (jsonConvert) {
-		if (response.isJSON()) {
-			try {
-				return response.parseJSON(true);
-			} catch (ex) {}
-		}
-		return null;
-	}
-
-	return response;
+	return response ? (jsonConvert ? (response.isJSON() ? response.parseJSON(true) : null) : response) : null;
 };
 
 /**
@@ -7873,7 +8030,7 @@ F.$configure_sitemap = function(arr, clean) {
 F.sitemap = function(name, me, language) {
 
 	if (!F.routes.sitemap)
-		return EMPTYARRAY;
+		return me ? null : EMPTYARRAY;
 
 	if (typeof(me) === 'string') {
 		language = me;
@@ -8274,12 +8431,57 @@ F.$configure_versions = function(arr, clean) {
 		var len = ismap ? 3 : 2;
 		var key = str.substring(0, index).trim();
 		var filename = str.substring(index + len).trim();
-		F.versions[key] = filename;
-		ismap && F.map(filename, F.path.public(key));
+
+		if (filename === 'auto') {
+
+			if (ismap)
+				throw new Error('/versions: "auto" value can\'t be used with mapping');
+
+			F.versions[key] = filename;
+
+			(function(key, filename) {
+				ON('ready', function() {
+					F.consoledebug('"versions" is getting checksum of ' + key);
+					makehash(key, function(hash) {
+						F.consoledebug('"versions" is getting checksum of ' + key + ' (done)');
+						if (hash) {
+							var index = key.lastIndexOf('.');
+							filename = key.substring(0, index) + '-' + hash + key.substring(index);
+							F.versions[key] = filename;
+						}
+					});
+				});
+			})(key, filename);
+
+		} else {
+			F.versions[key] = filename;
+			ismap && F.map(filename, F.path.public(key));
+		}
 	}
 
 	return F;
 };
+
+function makehash(url, callback) {
+	url = 'http://' + (F.ip === 'auto' ? '0.0.0.0' : F.ip) + ':' + F.port + url;
+	U.download(url, ['get'], function(err, stream, status) {
+
+		if (status !== 200) {
+			callback('');
+			return;
+		}
+
+		var hash = Crypto.createHash('md5');
+		hash.setEncoding('hex');
+		stream.pipe(hash);
+		stream.on('end', function() {
+			hash.end();
+			callback(hash.read().crc32(true));
+		});
+
+		stream.on('error', () => callback(''));
+	});
+}
 
 F.$configure_configs = function(arr, rewrite) {
 
@@ -8368,18 +8570,34 @@ F.$configure_configs = function(arr, rewrite) {
 			subtype = '';
 
 		switch (name) {
-			case 'default-cors-maxage':
+			case 'secret':
+			case 'secret-uid':
+				obj[name] = value;
+				break;
 			case 'default-request-length':
+				OBSOLETE(name, 'You need to use "default-request-maxlength"');
+				obj['default-request-maxlength'] = U.parseInt(value);
+				break;
 			case 'default-websocket-request-length':
+				OBSOLETE(name, 'You need to use "default-websocket-maxlength"');
+				obj['default-websocket-maxlength'] = U.parseInt(value);
+				break;
+			case 'default-maximum-file-descriptors':
+				OBSOLETE(name, 'You need to use "default-maxopenfiles"');
+				obj['default-maxopenfiles'] = U.parseInt(value);
+				break;
+			case 'default-cors-maxage':
 			case 'default-request-timeout':
+			case 'default-request-maxlength':
+			case 'default-websocket-maxlength':
 			case 'default-interval-clear-cache':
 			case 'default-interval-clear-resources':
 			case 'default-interval-precompile-views':
 			case 'default-interval-uptodate':
 			case 'default-interval-websocket-ping':
-			case 'default-maximum-file-descriptors':
 			case 'default-interval-clear-dnscache':
 			case 'default-dependency-timeout':
+			case 'nosql-cleaner':
 				obj[name] = U.parseInt(value);
 				break;
 			case 'default-image-consumption':
@@ -8424,19 +8642,35 @@ F.$configure_configs = function(arr, rewrite) {
 				obj['allow-static-files'] = true;
 				break;
 
+			case 'disable-clear-temporary-directory':
+				OBSOLETE('disable-clear-temporary-directory', 'You need to use "allow-clear-temp : true|false"');
+				obj['allow-clear-temp'] = !(value.toLowerCase() === 'true' || value === '1' || value === 'on');
+				break;
+
+			case 'disable-strict-server-certificate-validation':
+				OBSOLETE('disable-strict-server-certificate-validation', 'You need to use "allow-ssc-validation : true|false"');
+				obj['allow-ssc-validation'] = !(value.toLowerCase() === 'true' || value === '1' || value === 'on');
+				break;
+
 			case 'allow-compile-html':
 			case 'allow-compile-script':
 			case 'allow-compile-style':
+			case 'allow-ssc-validation':
 			case 'allow-debug':
 			case 'allow-gzip':
 			case 'allow-performance':
 			case 'allow-static-files':
 			case 'allow-websocket':
-			case 'disable-strict-server-certificate-validation':
-			case 'disable-clear-temporary-directory':
-			case 'trace':
+			case 'allow-clear-temp':
 			case 'allow-cache-snapshot':
+			case 'trace':
+			case 'nosql-worker':
+			case 'nosql-logger':
 				obj[name] = value.toLowerCase() === 'true' || value === '1' || value === 'on';
+				break;
+
+			case 'nosql-inmemory':
+				obj[name] = typeof(value) === 'string' ? value.split(',').trim() : value instanceof Array ? value : null;
 				break;
 
 			case 'allow-compress-html':
@@ -8447,14 +8681,18 @@ F.$configure_configs = function(arr, rewrite) {
 				obj[name] = value;
 				break;
 
+			case 'security.txt':
+				obj[name] = value ? value.split(',').trim().join('\n') : '';
+				break;
+
 			default:
 
 				if (subtype === 'string')
 					obj[name] = value;
 				else if (subtype === 'number' || subtype === 'currency' || subtype === 'float' || subtype === 'double')
-					obj[name] = value.isNumber(true) ? value.parseFloat() : value.parseInt();
+					obj[name] = value.isNumber(true) ? value.parseFloat2() : value.parseInt2();
 				else if (subtype === 'boolean' || subtype === 'bool')
-					obj[name] = value.parseBoolean();
+					obj[name] = (/true|on|1|enabled/i).test(value);
 				else if (subtype === 'eval' || subtype === 'object' || subtype === 'array') {
 					try {
 						obj[name] = new Function('return ' + value)();
@@ -8467,13 +8705,22 @@ F.$configure_configs = function(arr, rewrite) {
 					obj[name] = value.parseDate();
 				else if (subtype === 'env' || subtype === 'environment')
 					obj[name] = process.env[value];
-				else
-					obj[name] = value.isNumber() ? U.parseInt(value) : value.isNumber(true) ? U.parseFloat(value) : value.isBoolean() ? value.toLowerCase() === 'true' : value;
+				else {
+					if (value.isNumber()) {
+						obj[name] = value[0] !== '0' ? U.parseInt(value) : value;
+					} else if (value.isNumber(true))
+						obj[name] = value.indexOf(',') === -1 && !(/^0{2,}/).test(value) ? U.parseFloat(value) : value;
+					else
+						obj[name] = value.isBoolean() ? value.toLowerCase() === 'true' : value;
+				}
 				break;
 		}
 	}
 
 	U.extend(F.config, obj, rewrite);
+
+	if (!F.config['secret-uid'])
+		F.config['secret-uid'] = (F.config.name).crc32(true).toString();
 
 	var tmp = F.config['mail-smtp-options'];
 	if (typeof(tmp) === 'string' && tmp) {
@@ -8490,9 +8737,11 @@ F.$configure_configs = function(arr, rewrite) {
 	if (F.config['default-timezone'])
 		process.env.TZ = F.config['default-timezone'];
 
+	F.config['nosql-worker'] && framework_nosql.worker();
+	F.config['nosql-inmemory'] && F.config['nosql-inmemory'].forEach(n => framework_nosql.inmemory(n));
 	accepts && accepts.length && accepts.forEach(accept => F.config['static-accepts'][accept] = true);
 
-	if (F.config['disable-strict-server-certificate-validation'] === true)
+	if (F.config['allow-ssc-validation'] === false)
 		process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 	if (F.config['allow-performance'])
@@ -8585,22 +8834,23 @@ F.$routeStatic = function(name, directory, theme) {
 	if (REG_ROUTESTATIC.test(name))
 		filename = name;
 	else if (name[0] === '/')
-		filename = U.join(theme, F.$version(name));
+		filename = U.join(theme, F.$version(name, true));
 	else {
-		filename = U.join(theme, directory, F.$version(name));
+		filename = U.join(theme, directory, F.$version(name, true));
 		if (REG_HTTPHTTPS.test(filename) && filename[0] === '/')
 			filename = filename.substring(1);
 	}
 
-	return F.temporary.other[key] = framework_internal.preparePath(F.$version(filename));
+	return F.temporary.other[key] = framework_internal.preparePath(F.$version(filename, true));
 };
 
-F.$version = function(name) {
+F.$version = function(name, def) {
+	var tmp;
 	if (F.versions)
-		name = F.versions[name] || name;
+		tmp = F.versions[name] || name;
 	if (F.onVersion)
-		name = F.onVersion(name) || name;
-	return name;
+		tmp = F.onVersion(name) || name;
+	return tmp === 'auto' && def ? name : (tmp || name);
 };
 
 F.$versionprepare = function(html) {
@@ -8618,7 +8868,7 @@ F.$versionprepare = function(html) {
 			end = 6;
 
 		var name = src.substring(end, src.length - 1);
-		html = html.replace(match[i], src.substring(0, end) + F.$version(name) + '"');
+		html = html.replace(match[i], src.substring(0, end) + F.$version(name, true) + '"');
 	}
 
 	return html;
@@ -8649,7 +8899,7 @@ F.lookup = function(req, url, flags, membertype) {
 	req.$isAuthorized = true;
 
 	if (!isSystem) {
-		key = '1' + url + '$' + membertype + req.$flags + (subdomain ? '$' + subdomain : '');
+		key = '1' + url + '$' + membertype + req.$flags + (subdomain ? '$' + subdomain : '') + (req.$roles ? 'R' : '');
 		if (F.temporary.other[key])
 			return F.temporary.other[key];
 	}
@@ -8707,7 +8957,7 @@ F.lookup = function(req, url, flags, membertype) {
 				continue;
 		}
 
-		if (key && route.isCACHE && req.$isAuthorized)
+		if (key && route.isCACHE && (req.$isAuthorized || membertype === 1))
 			F.temporary.other[key] = route;
 
 		return route;
@@ -8962,6 +9212,12 @@ FrameworkRoute.prototype = {
 	},
 	get flags() {
 		return this.route.flags || EMPTYARRAY;
+	},
+	set groups(value) {
+		this.route.groups = value;
+	},
+	get groups() {
+		return this.route.groups;
 	}
 };
 
@@ -9014,31 +9270,44 @@ FrameworkPath.prototype.verify = function(name) {
 
 FrameworkPath.prototype.mkdir = function(p) {
 
-	if (p[0] === '/')
-		p = p.substring(1);
-
 	var is = F.isWindows;
+	var s = '';
+
+	if (p[0] === '/') {
+		s = is ? '\\' : '/';
+		p = p.substring(1);
+	}
+
 	var l = p.length - 1;
+	var beg = 0;
 
 	if (is) {
 		if (p[l] === '\\')
 			p = p.substring(0, l);
+
+		if (p[1] === ':')
+			beg = 1;
+
 	} else {
 		if (p[l] === '/')
 			p = p.substring(0, l);
 	}
 
 	var arr = is ? p.replace(/\//g, '\\').split('\\') : p.split('/');
-	var directory = is ? '' : '/';
+	var directory = s;
 
 	for (var i = 0, length = arr.length; i < length; i++) {
 		var name = arr[i];
 		if (is)
-			directory += (directory ? '\\' : '') + name;
+			directory += (i && directory ? '\\' : '') + name;
 		else
-			directory += (directory ? '/' : '') + name;
-		!existsSync(directory) && Fs.mkdirSync(directory);
+			directory += (i && directory ? '/' : '') + name;
+
+		if (i >= beg && !existsSync(directory))
+			Fs.mkdirSync(directory);
 	}
+
+	return F;
 };
 
 FrameworkPath.prototype.exists = function(path, callback) {
@@ -9174,9 +9443,9 @@ FrameworkCache.prototype.init = function() {
 	clearInterval(self.interval);
 	self.interval = setInterval(() => F.cache.recycle(), 1000 * 60);
 	if (F.config['allow-cache-snapshot'])
-		self.load(() => self.loadPersist());
+		self.load(() => self.loadpersistent());
 	else
-		self.loadPersist();
+		self.loadpersistent();
 	return self;
 };
 
@@ -9207,7 +9476,7 @@ FrameworkCache.prototype.savePersist = function() {
 		for (var i = 0, length = keys.length; i < length; i++) {
 			var key = keys[i];
 			var item = self.items[key];
-			if (item.persist)
+			if (item && item.persist)
 				obj[key] = item;
 		}
 
@@ -9216,7 +9485,7 @@ FrameworkCache.prototype.savePersist = function() {
 	return this;
 };
 
-FrameworkCache.prototype.loadPersist = function(callback) {
+FrameworkCache.prototype.loadpersistent = function(callback) {
 	var self = this;
 	Fs.readFile(F.path.temp((F.id ? 'i-' + F.id + '_' : '') + 'framework_cachepersist.jsoncache'), function(err, data) {
 		if (!err) {
@@ -9226,7 +9495,7 @@ FrameworkCache.prototype.loadPersist = function(callback) {
 				for (var i = 0, length = keys.length; i < length; i++) {
 					var key = keys[i];
 					var item = data[key];
-					if (item.expire >= F.datetime)
+					if (item.expire >= NOW)
 						self.items[key] = item;
 				}
 			} catch (e) {}
@@ -9243,7 +9512,7 @@ FrameworkCache.prototype.stop = function() {
 
 FrameworkCache.prototype.clear = function(sync) {
 	this.items = {};
-	F.isCluster && sync !== false && process.send(CLUSTER_CACHE_CLEAR);
+	F.isCluster && sync !== false && F.config['allow-cache-cluster'] && process.send(CLUSTER_CACHE_CLEAR);
 	this.savePersist();
 	return this;
 };
@@ -9252,7 +9521,8 @@ FrameworkCache.prototype.recycle = function() {
 
 	var items = this.items;
 	var isPersist = false;
-	F.datetime = new Date();
+
+	NOW = new Date();
 
 	this.count++;
 
@@ -9260,7 +9530,7 @@ FrameworkCache.prototype.recycle = function() {
 		var value = items[o];
 		if (!value)
 			delete items[o];
-		else if (value.expire < F.datetime) {
+		else if (value.expire < NOW) {
 			if (value.persist)
 				isPersist = true;
 			F.emit('cache-expire', o, value.value);
@@ -9281,7 +9551,7 @@ FrameworkCache.prototype.set2 = function(name, value, expire, sync) {
 FrameworkCache.prototype.set = FrameworkCache.prototype.add = function(name, value, expire, sync, persist) {
 	var type = typeof(expire);
 
-	if (F.isCluster && sync !== false) {
+	if (F.isCluster && sync !== false && F.config['allow-cache-cluster']) {
 		CLUSTER_CACHE_SET.key = name;
 		CLUSTER_CACHE_SET.value = value;
 		CLUSTER_CACHE_SET.expire = expire;
@@ -9293,7 +9563,7 @@ FrameworkCache.prototype.set = FrameworkCache.prototype.add = function(name, val
 			expire = expire.parseDateExpiration();
 			break;
 		case 'undefined':
-			expire = F.datetime.add('m', 5);
+			expire = NOW.add('m', 5);
 			break;
 	}
 
@@ -9315,9 +9585,9 @@ FrameworkCache.prototype.read = FrameworkCache.prototype.get = function(key, def
 	if (!value)
 		return def;
 
-	F.datetime = new Date();
+	NOW = new Date();
 
-	if (value.expire < F.datetime) {
+	if (value.expire < NOW) {
 		this.items[key] = undefined;
 		F.$events['cache-expire'] && F.emit('cache-expire', key, value.value);
 		return def;
@@ -9332,7 +9602,7 @@ FrameworkCache.prototype.read2 = FrameworkCache.prototype.get2 = function(key, d
 	if (!value)
 		return def;
 
-	if (value.expire < F.datetime) {
+	if (value.expire < NOW) {
 		this.items[key] = undefined;
 		F.$events['cache-expire'] && F.emit('cache-expire', key, value.value);
 		return def;
@@ -9356,7 +9626,7 @@ FrameworkCache.prototype.remove = function(name, sync) {
 		this.items[name] = undefined;
 	}
 
-	if (F.isCluster && sync !== false) {
+	if (F.isCluster && sync !== false && F.config['allow-cache-cluster']) {
 		CLUSTER_CACHE_REMOVE.key = name;
 		process.send(CLUSTER_CACHE_REMOVE);
 	}
@@ -9382,7 +9652,7 @@ FrameworkCache.prototype.removeAll = function(search, sync) {
 		count++;
 	}
 
-	if (F.isCluster && sync !== false) {
+	if (F.isCluster && sync !== false && F.config['allow-cache-cluster']) {
 		CLUSTER_CACHE_REMOVEALL.key = search;
 		process.send(CLUSTER_CACHE_REMOVEALL);
 	}
@@ -9414,6 +9684,8 @@ function subscribe_timeout(req) {
 }
 
 function subscribe_timeout_middleware(req) {
+	if (req.$total_middleware)
+		req.$total_middleware = null;
 	req.$total_execute2();
 }
 
@@ -9438,6 +9710,7 @@ function Controller(name, req, res, currentView) {
 	if (req) {
 		this.language = req.$language;
 		this.req = req;
+		this.route = req.$total_route;
 	} else
 		this.req = EMPTYREQUEST;
 
@@ -9485,27 +9758,27 @@ Controller.prototype = {
 	},
 
 	get schema() {
-		return this.req.$total_route.schema[0] === 'default' ? this.req.$total_route.schema[1] : this.req.$total_route.schema.join('/');
+		return this.route.schema[0] === 'default' ? this.route.schema[1] : this.route.schema.join('/');
 	},
 
 	get workflow() {
-		return this.req.$total_route.schema_workflow;
+		return this.route.schema_workflow;
 	},
 
 	get sseID() {
 		return this.req.headers['last-event-id'] || null;
 	},
 
-	get route() {
-		return this.req.$total_route;
+	get options() {
+		return this.route.options;
 	},
 
-	get options() {
-		return this.req.$total_route.options;
+	get split() {
+		return this.req.split;
 	},
 
 	get flags() {
-		return this.req.$total_route.flags;
+		return this.route.flags;
 	},
 
 	get path() {
@@ -9554,10 +9827,6 @@ Controller.prototype = {
 
 	get controllers() {
 		return F.controllers;
-	},
-
-	get isProxy() {
-		return this.req.isProxy === true;
 	},
 
 	get isDebug() {
@@ -9616,7 +9885,7 @@ Controller.prototype = {
 	get params() {
 		if (this.$params)
 			return this.$params;
-		var route = this.req.$total_route;
+		var route = this.route;
 		var names = route.paramnames;
 		if (names) {
 			var obj = {};
@@ -9638,16 +9907,34 @@ Controller.prototype = {
 // Schema operations
 
 Controller.prototype.$get = Controller.prototype.$read = function(helper, callback) {
+
+	if (callback == null && typeof(helper) === 'function') {
+		callback = helper;
+		helper = null;
+	}
+
 	this.getSchema().get(helper, callback, this);
 	return this;
 };
 
 Controller.prototype.$query = function(helper, callback) {
+
+	if (callback == null && typeof(helper) === 'function') {
+		callback = helper;
+		helper = null;
+	}
+
 	this.getSchema().query(helper, callback, this);
 	return this;
 };
 
 Controller.prototype.$save = function(helper, callback) {
+
+	if (callback == null && typeof(helper) === 'function') {
+		callback = helper;
+		helper = null;
+	}
+
 	var self = this;
 	if (framework_builders.isSchema(self.body)) {
 		self.body.$$controller = self;
@@ -9660,7 +9947,51 @@ Controller.prototype.$save = function(helper, callback) {
 	return self;
 };
 
+Controller.prototype.$insert = function(helper, callback) {
+
+	if (callback == null && typeof(helper) === 'function') {
+		callback = helper;
+		helper = null;
+	}
+
+	var self = this;
+	if (framework_builders.isSchema(self.body)) {
+		self.body.$$controller = self;
+		self.body.$insert(helper, callback);
+	} else {
+		var model = self.getSchema().default();
+		model.$$controller = self;
+		model.$insert(helper, callback);
+	}
+	return self;
+};
+
+Controller.prototype.$update = function(helper, callback) {
+
+	if (callback == null && typeof(helper) === 'function') {
+		callback = helper;
+		helper = null;
+	}
+
+	var self = this;
+	if (framework_builders.isSchema(self.body)) {
+		self.body.$$controller = self;
+		self.body.$update(helper, callback);
+	} else {
+		var model = self.getSchema().default();
+		model.$$controller = self;
+		model.$update(helper, callback);
+	}
+	return self;
+};
+
 Controller.prototype.$remove = function(helper, callback) {
+
+	if (callback == null && typeof(helper) === 'function') {
+		callback = helper;
+		helper = null;
+	}
+
 	var self = this;
 	self.getSchema().remove(helper, callback, self);
 	return this;
@@ -9668,6 +9999,12 @@ Controller.prototype.$remove = function(helper, callback) {
 
 Controller.prototype.$workflow = function(name, helper, callback) {
 	var self = this;
+
+	if (callback == null && typeof(helper) === 'function') {
+		callback = helper;
+		helper = null;
+	}
+
 	if (framework_builders.isSchema(self.body)) {
 		self.body.$$controller = self;
 		self.body.$workflow(name, helper, callback);
@@ -9677,6 +10014,12 @@ Controller.prototype.$workflow = function(name, helper, callback) {
 };
 
 Controller.prototype.$workflow2 = function(name, helper, callback) {
+
+	if (callback == null && typeof(helper) === 'function') {
+		callback = helper;
+		helper = null;
+	}
+
 	var self = this;
 	self.getSchema().workflow2(name, helper, callback, self);
 	return self;
@@ -9684,21 +10027,40 @@ Controller.prototype.$workflow2 = function(name, helper, callback) {
 
 Controller.prototype.$hook = function(name, helper, callback) {
 	var self = this;
+
+	if (callback == null && typeof(helper) === 'function') {
+		callback = helper;
+		helper = EMPTYOBJECT;
+	}
+
 	if (framework_builders.isSchema(self.body)) {
 		self.body.$$controller = self;
 		self.body.$hook(name, helper, callback);
 	} else
 		self.getSchema().hook2(name, helper, callback, self);
+
 	return self;
 };
 
 Controller.prototype.$hook2 = function(name, helper, callback) {
+
+	if (callback == null && typeof(helper) === 'function') {
+		callback = helper;
+		helper = EMPTYOBJECT;
+	}
+
 	var self = this;
 	self.getSchema().hook2(name, helper, callback, self);
 	return self;
 };
 
 Controller.prototype.$transform = function(name, helper, callback) {
+
+	if (callback == null && typeof(helper) === 'function') {
+		callback = helper;
+		helper = EMPTYOBJECT;
+	}
+
 	var self = this;
 	if (framework_builders.isSchema(self.body)) {
 		self.body.$$controller = self;
@@ -9709,12 +10071,24 @@ Controller.prototype.$transform = function(name, helper, callback) {
 };
 
 Controller.prototype.$transform2 = function(name, helper, callback) {
+
+	if (callback == null && typeof(helper) === 'function') {
+		callback = helper;
+		helper = EMPTYOBJECT;
+	}
+
 	var self = this;
 	self.getSchema().transform2(name, helper, callback, self);
 	return self;
 };
 
 Controller.prototype.$operation = function(name, helper, callback) {
+
+	if (callback == null && typeof(helper) === 'function') {
+		callback = helper;
+		helper = EMPTYOBJECT;
+	}
+
 	var self = this;
 	if (framework_builders.isSchema(self.body)) {
 		self.body.$$controller = self;
@@ -9724,7 +10098,18 @@ Controller.prototype.$operation = function(name, helper, callback) {
 	return self;
 };
 
+Controller.prototype.operation = function(name, value, callback, options) {
+	OPERATION(name, value, callback, options, this);
+	return this;
+};
+
 Controller.prototype.$operation2 = function(name, helper, callback) {
+
+	if (callback == null && typeof(helper) === 'function') {
+		callback = helper;
+		helper = EMPTYOBJECT;
+	}
+
 	var self = this;
 	self.getSchema().operation2(name, helper, callback, self);
 	return self;
@@ -9733,7 +10118,7 @@ Controller.prototype.$operation2 = function(name, helper, callback) {
 Controller.prototype.$exec = function(name, helper, callback) {
 	var self = this;
 
-	if (typeof(helper) === 'function') {
+	if (callback == null && typeof(helper) === 'function') {
 		callback = helper;
 		helper = EMPTYOBJECT;
 	}
@@ -9767,7 +10152,7 @@ Controller.prototype.$async = function(callback, index) {
 };
 
 Controller.prototype.getSchema = function() {
-	var route = this.req.$total_route;
+	var route = this.route;
 	if (!route.schema || !route.schema[1])
 		throw new Error('The controller\'s route does not define any schema.');
 	var schema = GETSCHEMA(route.schema[0], route.schema[1]);
@@ -9780,14 +10165,15 @@ Controller.prototype.getSchema = function() {
  * Renders component
  * @param {String} name A component name
  * @param {Object} settings Optional, settings.
+ * @model {Object} settings Optional, model for the component.
  * @return {String}
  */
-Controller.prototype.component = function(name, settings) {
+Controller.prototype.component = function(name, settings, model) {
 	var filename = F.components.views[name];
 	if (filename) {
 		var generator = framework_internal.viewEngine(name, filename, this);
 		if (generator)
-			return generator.call(this, this, this.repository, this.$model, this.session, this.query, this.body, this.url, F.global, F.helpers, this.user, this.config, F.functions, 0, this.outputPartial, this.req.cookie, this.req.files, this.req.mobile, settings || EMPTYOBJECT);
+			return generator.call(this, this, this.repository, model || this.$model, this.session, this.query, this.body, this.url, F.global, F.helpers, this.user, this.config, F.functions, 0, this.outputPartial, this.req.files, this.req.mobile, settings || EMPTYOBJECT);
 	}
 	return '';
 };
@@ -9800,8 +10186,16 @@ Controller.prototype.$components = function(group, settings) {
 		for (var i = 0, length = keys.length; i < length; i++) {
 			var component = F.components.instances[keys[i]];
 			if (component.group === group) {
-				var tmp = this.component(keys[i], settings);
-				tmp && output.push(tmp);
+				if (component.render) {
+					!this.$viewasync && (this.$viewasync = []);
+					$VIEWASYNC++;
+					var name = '@{-' + $VIEWASYNC + '-}';
+					this.$viewasync.push({ replace: name, name: component.name, settings: settings });
+					output.push(name);
+				} else {
+					var tmp = this.component(keys[i], settings);
+					tmp && output.push(tmp);
+				}
 			}
 		}
 		return output.join('\n');
@@ -9873,6 +10267,10 @@ Controller.prototype.middleware = function(names, options, callback) {
 		options = EMPTYOBJECT;
 
 	var self = this;
+
+	if (self.req.$total_middleware)
+		self.req.$total_middleware = null;
+
 	async_middleware(0, self.req, self.res, names, () => callback && callback(), options, self);
 	return self;
 };
@@ -9957,12 +10355,18 @@ Controller.prototype.error = function(err) {
 };
 
 Controller.prototype.invalid = function(status) {
-	var self = this;
 
-	if (status)
+	var self = this;
+	var type = typeof(status);
+
+	if (type === 'number')
 		self.status = status;
 
 	var builder = new ErrorBuilder();
+
+	if (type === 'string')
+		builder.push(status);
+
 	setImmediate(next_controller_invalid, self, builder);
 	return builder;
 };
@@ -10061,7 +10465,7 @@ Controller.prototype.transfer = function(url, flags) {
 	// Hidden variable
 	self.req.$path = framework_internal.routeSplit(url, true);
 
-	self.req.$total_route = selected;
+	self.route = self.req.$total_route = selected;
 	self.req.$total_execute(404);
 	return true;
 };
@@ -10072,12 +10476,12 @@ Controller.prototype.cancel = function() {
 };
 
 Controller.prototype.log = function() {
-	F.log.apply(framework, arguments);
+	F.log.apply(F, arguments);
 	return this;
 };
 
 Controller.prototype.logger = function() {
-	F.logger.apply(framework, arguments);
+	F.logger.apply(F, arguments);
 	return this;
 };
 
@@ -10225,6 +10629,16 @@ Controller.prototype.sitemap_url = function(name, a, b, c, d, e, f) {
 
 Controller.prototype.sitemap_name = function(name, a, b, c, d, e, f) {
 	var item = F.sitemap(name || this.sitemapid, true, this.language);
+	return item ? item.name.format(a, b, c, d, e, f) : '';
+};
+
+Controller.prototype.sitemap_url2 = function(language, name, a, b, c, d, e, f) {
+	var item = F.sitemap(name || this.sitemapid, true, language);
+	return item ? item.url.format(a, b, c, d, e, f) : '';
+};
+
+Controller.prototype.sitemap_name2 = function(language, name, a, b, c, d, e, f) {
+	var item = F.sitemap(name || this.sitemapid, true, language);
 	return item ? item.name.format(a, b, c, d, e, f) : '';
 };
 
@@ -10469,43 +10883,6 @@ Controller.prototype.mail = function(address, subject, view, model, callback) {
 	return message;
 };
 
-/*
-	Check if ETag or Last Modified has modified
-	@compare {String or Date}
-	@strict {Boolean} :: if strict then use equal date else use great than date (default: false)
-
-	if @compare === {String} compare if-none-match
-	if @compare === {Date} compare if-modified-since
-
-	return {Boolean};
-*/
-Controller.prototype.notModified = function(compare, strict) {
-	return F.notModified(this.req, this.res, compare, strict);
-};
-
-/*
-	Set last modified header or Etag
-	@value {String or Date}
-
-	if @value === {String} set ETag
-	if @value === {Date} set LastModified
-
-	return {Controller};
-*/
-Controller.prototype.setModified = function(value) {
-	F.setModified(this.req, this.res, value);
-	return this;
-};
-
-/**
- * Sets expire headers
- * @param {Date} date
- */
-Controller.prototype.setExpires = function(date) {
-	date && this.res.setHeader('Expires', date.toUTCString());
-	return this;
-};
-
 Controller.prototype.$template = function(name, model, expire, key) {
 	return this.$viewToggle(true, name, model, expire, key);
 };
@@ -10515,7 +10892,26 @@ Controller.prototype.$templateToggle = function(visible, name, model, expire, ke
 };
 
 Controller.prototype.$view = function(name, model, expire, key) {
-	return this.$viewToggle(true, name, model, expire, key);
+
+	var self = this;
+	var cache;
+
+	if (expire) {
+		cache = '$view.' + name + '.' + (key || '');
+		var output = self.cache.read2(cache);
+		if (output) {
+			if (output.components)
+				self.$hasComponents = true;
+			return output.body;
+		}
+	}
+
+	var value = self.view(name, model, null, true, true, cache);
+	if (!value)
+		return '';
+
+	expire && self.cache.add(cache, { components: value instanceof Function, body: value instanceof Function ? '' : value }, expire, false);
+	return value;
 };
 
 Controller.prototype.$viewCompile = function(body, model, key) {
@@ -10527,31 +10923,8 @@ Controller.prototype.$viewCompile = function(body, model, key) {
 	return value || '';
 };
 
-Controller.prototype.$viewToggle = function(visible, name, model, expire, key) {
-
-	if (!visible)
-		return '';
-
-	var self = this;
-	var cache;
-
-	if (expire) {
-		cache = '$view.' + name + '.' + (key || '');
-		var output = self.cache.read2(cache);
-		if (output)
-			return output;
-	}
-
-	var layout = self.layoutName;
-	self.layoutName = '';
-	var value = self.view(name, model, null, true);
-	self.layoutName = layout;
-
-	if (!value)
-		return '';
-
-	expire && self.cache.add(cache, value, expire, false);
-	return value;
+Controller.prototype.$viewToggle = function(visible, name, model, expire, key, async) {
+	return visible ? this.$view(name, model, expire, key, async) : '';
 };
 
 /**
@@ -10639,7 +11012,15 @@ Controller.prototype.$helper = function() {
 	return this.helper.apply(this, arguments);
 };
 
-function querystring_encode(value, def) {
+function querystring_encode(value, def, key) {
+
+	if (value instanceof Array) {
+		var tmp = '';
+		for (var i = 1; i < value.length; i++)
+			tmp += (tmp ? '&' : '') + key + '=' + querystring_encode(value[i], def);
+		return querystring_encode(value[0], def) + (tmp ? tmp : '');
+	}
+
 	return value != null ? value instanceof Date ? encodeURIComponent(value.format()) : typeof(value) === 'string' ? encodeURIComponent(value) : value.toString() : def || '';
 }
 
@@ -10664,6 +11045,7 @@ Controller.prototype.href = function(key, value) {
 		if (!str) {
 
 			obj = U.copy(self.query);
+
 			for (var i = 2; i < arguments.length; i++)
 				obj[arguments[i]] = undefined;
 
@@ -10672,13 +11054,18 @@ Controller.prototype.href = function(key, value) {
 			var arr = Object.keys(obj);
 			for (var i = 0, length = arr.length; i < length; i++) {
 				var val = obj[arr[i]];
-				if (val !== undefined)
-					str += (str ? '&' : '') + arr[i] + '=' + (key === arr[i] ? '\0' : querystring_encode(val));
+				if (val !== undefined) {
+					if (val instanceof Array) {
+						for (var j = 0; j < val.length; j++)
+							str += (str ? '&' : '') + arr[i] + '=' + (key === arr[i] ? '\0' : querystring_encode(val[j]));
+					} else
+						str += (str ? '&' : '') + arr[i] + '=' + (key === arr[i] ? '\0' : querystring_encode(val));
+				}
 			}
 			self[cachekey] = str;
 		}
 
-		str = str.replace('\0', querystring_encode(value, self.query[key]));
+		str = str.replace('\0', querystring_encode(value, self.query[key], key));
 
 		for (var i = 2; i < arguments.length; i++) {
 			var beg = str.indexOf(arguments[i] + '=');
@@ -10943,48 +11330,6 @@ Controller.prototype.$isValue = function(bool, charBeg, charEnd, value) {
 	return charBeg + value + charEnd;
 };
 
-Controller.prototype.$modified = function(value) {
-
-	var self = this;
-	var type = typeof(value);
-	var date;
-
-	if (type === 'number') {
-		date = new Date(value);
-	} else if (type === 'string') {
-
-		var d = value.split(' ');
-
-		date = d[0].split('-');
-		var time = (d[1] || '').split(':');
-
-		var year = U.parseInt(date[0] || '');
-		var month = U.parseInt(date[1] || '') - 1;
-		var day = U.parseInt(date[2] || '') - 1;
-
-		if (month < 0)
-			month = 0;
-
-		if (day < 0)
-			day = 0;
-
-		var hour = U.parseInt(time[0] || '');
-		var minute = U.parseInt(time[1] || '');
-		var second = U.parseInt(time[2] || '');
-
-		date = new Date(year, month, day, hour, minute, second, 0);
-	} else if (U.isDate(value))
-		date = value;
-
-	date && self.setModified(date);
-	return '';
-};
-
-Controller.prototype.$etag = function(value) {
-	this.setModified(value);
-	return '';
-};
-
 Controller.prototype.$options = function(arr, selected, name, value) {
 
 	var type = typeof(arr);
@@ -11160,8 +11505,21 @@ Controller.prototype.$import = function() {
 			continue;
 		}
 
+		if (filename === 'manifest' || filename === 'manifest.json') {
+			builder += '<link rel="manifest" href="' + F.$version('/manifest.json') + '">';
+			continue;
+		}
+
 		if (filename === 'favicon.ico' || filename === 'favicon.png') {
 			builder += self.$favicon(filename);
+			continue;
+		}
+
+		if (filename[0] === 'l' && filename[9] === 'd' && filename.substring(0, 10) === 'livereload') {
+			if (DEBUG) {
+				var url = filename.substring(11).trim();
+				builder += '<script src="//cdn.totaljs.com/livereload.js"' + (url ? (' data-url="' + url + '"') : '') + '></script>';
+			}
 			continue;
 		}
 
@@ -11188,6 +11546,10 @@ Controller.prototype.$import = function() {
 			case '.svg':
 			case '.png':
 			case '.jpeg':
+			case '.heif':
+			case '.webp':
+			case '.heic':
+			case '.apng':
 				builder += self.routeImage(filename);
 				break;
 			case '.mp4':
@@ -11300,6 +11662,9 @@ Controller.prototype.$json = function(obj, id, beautify, replacer) {
 		beautify = false;
 	}
 
+	if (framework_builders.isSchema(obj))
+		obj = obj.$clean();
+
 	var value = beautify ? JSON.stringify(obj, replacer, 4) : JSON.stringify(obj, replacer);
 	return id ? ('<script type="application/json" id="' + id + '">' + value + '</script>') : value;
 };
@@ -11314,7 +11679,7 @@ Controller.prototype.$favicon = function(name) {
 
 	var contentType = 'image/x-icon';
 
-	if (name == null)
+	if (!name)
 		name = 'favicon.ico';
 
 	var key = 'favicon#' + name;
@@ -11539,9 +11904,7 @@ Controller.prototype.json = function(obj, headers, beautify, replacer) {
 };
 
 Controller.prototype.success = function(is, value) {
-	if (is === undefined)
-		is = true;
-	return this.json(SUCCESS(is, value));
+	return this.json(SUCCESS(is === undefined ? true : is, value));
 };
 
 /**
@@ -11611,6 +11974,9 @@ Controller.prototype.callback = function(view) {
 	var self = this;
 	return function(err, data) {
 
+		if (self.res && self.res.success)
+			return;
+
 		var is = err instanceof framework_builders.ErrorBuilder;
 
 		// NoSQL embedded database
@@ -11647,7 +12013,13 @@ Controller.prototype.custom = function() {
  * @return {Controller}
  */
 Controller.prototype.noClear = function(enable) {
+	OBSOLETE('controller.noClear()', 'You need to use controller.autoclear(false)');
 	this.req._manual = enable === undefined ? true : enable;
+	return this;
+};
+
+Controller.prototype.autoclear = function(enable) {
+	this.req._manual = enable === true;
 	return this;
 };
 
@@ -11917,6 +12289,15 @@ Controller.prototype.throw501 = Controller.prototype.view501 = function(problem)
 };
 
 /**
+ * Throw 503 - Service unavailable
+ * @param  {String} problem Description of the problem (optional)
+ * @return {Controller}
+ */
+Controller.prototype.throw503 = Controller.prototype.view503 = function(problem) {
+	return controller_error_status(this, 503, problem);
+};
+
+/**
  * Creates a redirect
  * @param {String} url
  * @param {Boolean} permanent Is permanent? Default: `false`
@@ -12020,7 +12401,7 @@ Controller.prototype.sse = function(data, eventname, id, retry) {
 		self.type = 1;
 
 		if (retry === undefined)
-			retry = self.req.$total_route.timeout;
+			retry = self.route.timeout;
 
 		self.req.$total_success();
 		self.req.on('close', () => self.close());
@@ -12050,45 +12431,6 @@ Controller.prototype.sse = function(data, eventname, id, retry) {
 	builder += newline;
 	res.write(builder);
 	F.stats.response.sse++;
-	return self;
-};
-
-Controller.prototype.mmr = function(name, stream, callback) {
-
-	var self = this;
-	var res = self.res;
-
-	if (typeof(stream) === 'function') {
-		callback = stream;
-		stream = name;
-	}
-
-	if (!stream)
-		stream = name;
-
-	if (!self.isConnected || (!self.type && res.success) || (self.type && self.type !== 2)) {
-		callback = null;
-		return self;
-	}
-
-	if (!self.type) {
-		self.type = 2;
-		self.boundary = '----totaljs' + U.GUID(10);
-		self.req.$total_success();
-		self.req.on('close', () => self.close());
-		res.success = true;
-		HEADERS.mmr[HEADER_TYPE] = 'multipart/x-mixed-replace; boundary=' + self.boundary;
-		res.writeHead(self.status || 200, HEADERS.mmr);
-	}
-
-	res.write('--' + self.boundary + NEWLINE + HEADER_TYPE + ': ' + U.getContentType(U.getExtension(name)) + NEWLINE + NEWLINE);
-	F.stats.response.mmr++;
-
-	if (typeof(stream) === 'string')
-		stream = Fs.createReadStream(stream);
-
-	stream.pipe(res, HEADERS.mmrpipe);
-	CLEANUP(stream, () => callback && callback());
 	return self;
 };
 
@@ -12131,40 +12473,6 @@ Controller.prototype.close = function(end) {
 };
 
 /**
- * Sends an object to another total.js application (POST + JSON)
- * @param {String} url
- * @param {Object} obj
- * @param {Function(err, data, code, headers)} callback
- * @param {Number} timeout Timeout, optional default 10 seconds.
- * @return {EventEmitter}
- */
-Controller.prototype.proxy = function(url, obj, callback, timeout) {
-
-	var self = this;
-	var tmp;
-
-	if (typeof(callback) === 'number') {
-		tmp = timeout;
-		timeout = callback;
-		callback = tmp;
-	}
-
-	if (typeof(obj) === 'function') {
-		tmp = callback;
-		callback = obj;
-		obj = tmp;
-	}
-
-	return U.request(url, FLAGS_PROXY, obj, function(err, data, code, headers) {
-		if (!callback)
-			return;
-		if ((headers['content-type'] || '').lastIndexOf('/json') !== -1)
-			data = F.onParseJSON(data);
-		callback.call(self, err, data, code, headers);
-	}, null, HEADERS.proxy, ENCODING, timeout || 10000);
-};
-
-/**
  * Creates a proxy between current request and new URL
  * @param {String} url
  * @param {Function(err, response, headers)} callback Optional.
@@ -12172,7 +12480,7 @@ Controller.prototype.proxy = function(url, obj, callback, timeout) {
  * @param {Number} timeout Optional, timeout (default: 10000)
  * @return {EventEmitter}
  */
-Controller.prototype.proxy2 = function(url, callback, headers, timeout) {
+Controller.prototype.proxy = Controller.prototype.proxy2 = function(url, callback, headers, timeout) {
 
 	if (typeof(callback) === 'object') {
 		timeout = headers;
@@ -12189,22 +12497,18 @@ Controller.prototype.proxy2 = function(url, callback, headers, timeout) {
 	flags.push(req.method);
 	flags.push('dnscache');
 
-	if (type === CT_JSON)
+	if ((/\/json/i).test(type))
 		flags.push('json');
 
-	var c = req.method[0];
 	var tmp;
-	var keys;
 
-	if (c === 'G' || c === 'H' || c === 'O') {
-		if (url.indexOf('?') === -1) {
-			tmp = Qs.stringify(self.query);
-			if (tmp)
-				url += '?' + tmp;
-		}
+	if (url.indexOf('?') === -1) {
+		tmp = Qs.stringify(self.query);
+		if (tmp)
+			url += '?' + tmp;
 	}
 
-	keys = Object.keys(req.headers);
+	var keys = Object.keys(req.headers);
 	for (var i = 0, length = keys.length; i < length; i++) {
 		switch (keys[i]) {
 			case 'x-forwarded-for':
@@ -12232,12 +12536,12 @@ Controller.prototype.proxy2 = function(url, callback, headers, timeout) {
 		if (err) {
 			callback && callback(err);
 			self.invalid().push(err);
-			return;
+		} else {
+			self.status = code;
+			callback && callback(err, data, code, headers);
+			self.content(data, (headers['content-type'] || 'text/plain').replace(REG_ENCODINGCLEANER, ''));
 		}
 
-		self.status = code;
-		callback && callback(err, data, code, headers);
-		self.content(data, (headers['content-type'] || 'text/plain').replace(REG_ENCODINGCLEANER, ''));
 	}, null, h, ENCODING, timeout || 10000);
 };
 
@@ -12249,7 +12553,7 @@ Controller.prototype.proxy2 = function(url, callback, headers, timeout) {
  * @param {Boolean} isPartial When is `true` the method returns rendered HTML as `String`
  * @return {Controller/String}
  */
-Controller.prototype.view = function(name, model, headers, partial) {
+Controller.prototype.view = function(name, model, headers, partial, noasync, cachekey) {
 
 	var self = this;
 
@@ -12360,7 +12664,7 @@ Controller.prototype.view = function(name, model, headers, partial) {
 		}
 	}
 
-	return self.$viewrender(filename, framework_internal.viewEngine(name, filename, self), model, headers, partial, isLayout);
+	return self.$viewrender(filename, framework_internal.viewEngine(name, filename, self), model, headers, partial, isLayout, noasync, cachekey);
 };
 
 Controller.prototype.viewCompile = function(body, model, headers, partial, key) {
@@ -12380,7 +12684,7 @@ Controller.prototype.viewCompile = function(body, model, headers, partial, key) 
 	return this.$viewrender('[dynamic view]', framework_internal.viewEngineCompile(body, this.language, this, key), model, headers, partial);
 };
 
-Controller.prototype.$viewrender = function(filename, generator, model, headers, partial, isLayout) {
+Controller.prototype.$viewrender = function(filename, generator, model, headers, partial, isLayout, noasync, cachekey) {
 
 	var self = this;
 	var err;
@@ -12412,7 +12716,7 @@ Controller.prototype.$viewrender = function(filename, generator, model, headers,
 	var helpers = F.helpers;
 
 	try {
-		value = generator.call(self, self, self.repository, model, self.session, self.query, self.body, self.url, F.global, helpers, self.user, self.config, F.functions, 0, partial ? self.outputPartial : self.output, self.req.cookie, self.req.files, self.req.mobile, EMPTYOBJECT);
+		value = generator.call(self, self, self.repository, model, self.session, self.query, self.body, self.url, F.global, helpers, self.user, self.config, F.functions, 0, partial ? self.outputPartial : self.output, self.req.files, self.req.mobile, EMPTYOBJECT);
 	} catch (ex) {
 
 		err = new Error('View "' + filename + '": ' + ex.message);
@@ -12433,7 +12737,109 @@ Controller.prototype.$viewrender = function(filename, generator, model, headers,
 		return value;
 	}
 
-	if (!isLayout && self.precache && (!self.status || self.status === 200) && !partial)
+	// noasync = true --> rendered inline view in view
+
+	if (self.$viewasync && self.$viewasync.length) {
+
+		var can = ((isLayout || !self.layoutName) && noasync !== true) || !!cachekey;
+		if (can) {
+			var done = {};
+			var obj = {};
+
+			obj.repository = self.repository;
+			obj.model = self.$model;
+			obj.user = self.user;
+			obj.session = self.session;
+			obj.controller = self;
+			obj.query = self.query;
+			obj.body = self.body;
+			obj.files = self.files;
+
+			self.$viewasync.waitFor(function(item, next) {
+
+				if (item.value) {
+					value = value.replace(item.replace, item.value);
+					if (isLayout && self.precache)
+						self.output = self.output.replace(item.replace, item.value);
+					return next();
+				}
+
+				obj.options = obj.settings = item.settings;
+				obj.next = obj.callback = function(model) {
+
+					if (arguments.length > 1)
+						model = arguments[1];
+
+					item.value = self.component(item.name, item.settings, model);
+					value = value.replace(item.replace, item.value);
+					if (isLayout && self.precache)
+						self.output = self.output.replace(item.replace, item.value);
+					next();
+				};
+
+				F.components.instances[item.name].render(obj);
+
+			}, function() {
+
+				if (cachekey && F.cache.items[cachekey]) {
+					var cache = F.cache.items[cachekey].value;
+					cache.body = value;
+					cache.components = true;
+				}
+
+				if (isLayout && self.precache && (!self.status || self.status === 200) && !partial)
+					self.precache(self.output, CT_HTML, headers, true);
+
+				if (isLayout || !self.layoutName) {
+
+					self.outputPartial = '';
+					self.output = '';
+					isLayout = false;
+
+					if (partial) {
+						done.callback && done.callback(null, value);
+						return;
+					}
+
+					self.req.$total_success();
+
+					if (!self.isConnected)
+						return self;
+
+					var res = self.res;
+					res.options.body = value;
+					res.options.code = self.status || 200;
+					res.options.type = CT_HTML;
+					res.options.headers = headers;
+					res.$text();
+					F.stats.response.view++;
+					return self;
+				}
+
+				if (partial)
+					self.outputPartial = value;
+				else
+					self.output = value;
+
+				if (!cachekey && !noasync) {
+					self.isLayout = true;
+					value = self.view(self.layoutName, self.$model, headers, partial);
+				}
+
+				// Async
+				if (partial) {
+					self.outputPartial = '';
+					self.isLayout = false;
+					done.callback && done.callback(null, value);
+				}
+
+			}, 3);
+
+			return cachekey ? value : (partial ? (fn => done.callback = fn) : self);
+		}
+	}
+
+	if (!isLayout && self.precache && (!self.status || self.status === 200) && !partial && !self.$viewasync)
 		self.precache(value, CT_HTML, headers, true);
 
 	if (isLayout || !self.layoutName) {
@@ -12465,9 +12871,12 @@ Controller.prototype.$viewrender = function(filename, generator, model, headers,
 	else
 		self.output = value;
 
-	self.isLayout = true;
-	value = self.view(self.layoutName, self.$model, headers, partial);
+	if (!cachekey && !noasync) {
+		self.isLayout = true;
+		value = self.view(self.layoutName, self.$model, headers, partial);
+	}
 
+	// Async
 	if (partial) {
 		self.outputPartial = '';
 		self.isLayout = false;
@@ -12509,6 +12918,9 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
 
 	self.layoutName = output.layout;
 	self.themeName = output.theme;
+
+	if (output.components)
+		self.$hasComponents = true;
 
 	var res = self.res;
 
@@ -12576,7 +12988,7 @@ Controller.prototype.$memorize_prepare = function(key, expires, disabled, fnTo, 
 			return;
 		}
 
-		var options = { content: value, type: contentType || CT_TEXT, layout: self.layoutName, theme: self.themeName };
+		var options = { content: value, type: contentType || CT_TEXT, layout: self.layoutName, theme: self.themeName, components: (self.$viewasync ? true : false) || (self.$hasComponents ? true : false) };
 		if (headers)
 			options.headers = headers;
 
@@ -12690,6 +13102,11 @@ WebSocket.prototype = {
 			return EMPTYOBJECT;
 		}
 	}
+};
+
+WebSocket.prototype.operation = function(name, value, callback, options) {
+	OPERATION(name, value, callback, options, this);
+	return this;
 };
 
 WebSocket.prototype.emit = function(name, a, b, c, d, e, f, g) {
@@ -12948,17 +13365,12 @@ WebSocket.prototype.find = function(id) {
 
 	for (var i = 0; i < length; i++) {
 		var connection = self.connections[self._keys[i]];
-
-		if (!isFn) {
-			if (connection.id === id)
+		if (isFn) {
+			if (id(connection, connection.id))
 				return connection;
-			continue;
-		}
-
-		if (id(connection, connection.id))
+		} else if (connection.id === id)
 			return connection;
 	}
-
 	return null;
 };
 
@@ -13343,6 +13755,12 @@ WebSocketClient.prototype.$ondata = function(data) {
 
 		case 0x08:
 			// close
+			this.closemessage = current.buffer.slice(4).toString('utf8');
+			this.closecode = current.buffer[2] << 8 | current.buffer[3];
+
+			if (this.closemessage && F.config['default-websocket-encodedecode'])
+				this.closemessage = $decodeURIComponent(this.closemessage);
+
 			this.close();
 			break;
 
@@ -13498,7 +13916,11 @@ WebSocketClient.prototype.$decode = function() {
 			if (data instanceof Buffer)
 				data = data.toString(ENCODING);
 			F.config['default-websocket-encodedecode'] === true && (data = $decodeURIComponent(data));
-			data.isJSON() && this.container.emit('message', this, F.onParseJSON(data, this.req));
+			if (data.isJSON()) {
+				var tmp = F.onParseJSON(data, this.req);
+				if (tmp !== undefined)
+					this.container.emit('message', this, tmp);
+			}
 			break;
 
 		default: // TEXT
@@ -13585,7 +14007,7 @@ WebSocketClient.prototype.$onclose = function() {
 
 	this.container.$remove(this._id);
 	this.container.$refresh();
-	this.container.$events.close && this.container.emit('close', this);
+	this.container.$events.close && this.container.emit('close', this, this.closecode, this.closemessage);
 	this.socket.removeAllListeners();
 	F.$events['websocket-end'] && F.emit('websocket-end', this.container, this);
 };
@@ -13667,7 +14089,7 @@ WebSocketClient.prototype.ping = function() {
 WebSocketClient.prototype.close = function(message, code) {
 	if (!this.isClosed) {
 		this.isClosed = true;
-		this.socket.end(U.getWebSocketFrame(code || 1000,  message ? (F.config['default-websocket-encodedecode'] ? encodeURIComponent(message) : message) : '', 0x08));
+		this.socket.end(U.getWebSocketFrame(code || 1000, message ? (F.config['default-websocket-encodedecode'] ? encodeURIComponent(message) : message) : '', 0x08));
 	}
 	return this;
 };
@@ -13800,10 +14222,6 @@ function extend_request(PROTO) {
 		return this;
 	};
 
-	PROTO.notModified = function(compare, strict) {
-		return F.notModified(this, this.res, compare, strict);
-	};
-
 	/**
 	 * Read a cookie from current request
 	 * @param {String} name Cookie name.
@@ -13870,7 +14288,7 @@ function extend_request(PROTO) {
 
 		var req = this;
 
-		auth(req, req.res, req.flags, function(isAuthorized, user) {
+		auth(req, req.res, req.flags || [], function(isAuthorized, user) {
 			if (typeof(isAuthorized) !== 'boolean') {
 				user = isAuthorized;
 				isAuthorized = !user;
@@ -14012,8 +14430,13 @@ function extend_request(PROTO) {
 				res.options.type = this.$total_exception.contentType;
 				res.$text();
 			} else {
-				res.options.body = U.httpStatus(status) + prepare_error(this.$total_exception);
-				res.options.type = CT_TEXT;
+
+				MODELERROR.code = status;
+				MODELERROR.status = U.httpStatus(status, false);
+				MODELERROR.error = this.$total_exception ? prepare_error(this.$total_exception) : null;
+
+				res.options.body = F.view('.' + PATHMODULES + 'error', MODELERROR);
+				res.options.type = CT_HTML;
 				res.options.code = status || 404;
 				res.$text();
 			}
@@ -14127,7 +14550,6 @@ function extend_request(PROTO) {
 			return next(this, code);
 
 		var self = this;
-
 		F.onSchema(this, this.$total_route.schema[0], this.$total_route.schema[1], function(err, body) {
 
 			if (err) {
@@ -14140,7 +14562,7 @@ function extend_request(PROTO) {
 				next(self, code);
 			}
 
-		}, route.schema[2], route.novalidate);
+		}, route.schema[2], route.novalidate, route.workflow);
 	};
 
 	PROTO.$total_authorize = function(isLogged, user, roles) {
@@ -14257,42 +14679,45 @@ function extend_request(PROTO) {
 		for (var i = 0; i < F._length_files; i++) {
 
 			var file = F.routes.files[i];
-			try {
+			// try {
 
-				if (file.extensions && !file.extensions[req.extension])
+			if (file.extensions && !file.extensions[req.extension])
+				continue;
+
+			if (file.url) {
+				var skip = false;
+				var length = file.url.length;
+
+				if (!file.wildcard && !file.fixedfile && length !== req.path.length - 1)
 					continue;
 
-				if (file.url) {
-					var skip = false;
-					var length = file.url.length;
-
-					if (!file.wildcard && !file.fixedfile && length !== req.path.length - 1)
+				for (var j = 0; j < length; j++) {
+					if (file.url[j] === req.path[j])
 						continue;
+					skip = true;
+					break;
+				}
 
-					for (var j = 0; j < length; j++) {
-						if (file.url[j] === req.path[j])
-							continue;
-						skip = true;
-						break;
-					}
-
-					if (skip)
-						continue;
-
-				} else if (file.onValidate && !file.onValidate.call(F, req, res, true))
+				if (skip)
 					continue;
 
-				if (file.middleware)
-					req.$total_endfilemiddleware(file);
-				else
-					file.execute.call(F, req, res, false);
-				return;
+			} else if (file.onValidate && !file.onValidate(req, res, true))
+				continue;
 
+			if (file.middleware)
+				req.$total_endfilemiddleware(file);
+			else
+				file.execute(req, res, false);
+
+			return;
+
+			/*
 			} catch (err) {
 				F.error(err, file.controller, req.uri);
 				res.throw500();
 				return;
 			}
+			*/
 		}
 
 		res.continue();
@@ -14316,15 +14741,17 @@ function extend_request(PROTO) {
 	};
 
 	PROTO.$total_prepare = function() {
-
 		var req = this;
 		var length = req.flags.length;
-
 		if (F.onAuthorize) {
 			F.onAuthorize(req, req.res, req.flags, function(isAuthorized, user) {
 				var hasRoles = length !== req.flags.length;
-				if (hasRoles)
+
+				if (hasRoles) {
 					req.$flags += req.flags.slice(length).join('');
+					req.$roles = true;
+				}
+
 				if (typeof(isAuthorized) !== 'boolean') {
 					user = isAuthorized;
 					isAuthorized = !user;
@@ -14347,8 +14774,12 @@ function extend_request(PROTO) {
 }
 
 function total_endmiddleware(req) {
+
+	if (req.total_middleware)
+		req.total_middleware = null;
+
 	try {
-		req.$total_filemiddleware.execute.call(F, req, req.res, false);
+		req.$total_filemiddleware.execute(req, req.res, false);
 	} catch (err) {
 		F.error(err, req.$total_filemiddleware.controller + ' :: ' + req.$total_filemiddleware.name, req.uri);
 		req.res.throw500();
@@ -14602,6 +15033,61 @@ function extend_response(PROTO) {
 	};
 
 	/**
+	 * Responds with a file from FileStorage
+	 * @param {String} name A name of FileStorage
+	 * @param {String/Number} id
+	 * @param {String} download Optional, a download name.
+	 * @param {Object} headers Optional, additional headers.
+	 * @param {Function} done Optional, callback.
+	 * @return {Framework}
+	 */
+	PROTO.filefs = function(name, id, download, headers, callback) {
+		var self = this;
+		var options = {};
+		options.id = id;
+		options.download = download;
+		options.headers = headers;
+		options.done = callback;
+		FILESTORAGE(name).res(self, options, $file_notmodified);
+		return self;
+	};
+
+	PROTO.filenosql = function(name, id, download, headers, callback) {
+		var self = this;
+		var options = {};
+		options.id = id;
+		options.download = download;
+		options.headers = headers;
+		options.done = callback;
+		NOSQL(name).binary.res(self, options, $file_notmodified);
+		return self;
+	};
+
+	PROTO.imagefs = function(name, id, make, headers, callback) {
+		var self = this;
+		var options = {};
+		options.id = id;
+		options.image = true;
+		options.make = make;
+		options.headers = headers;
+		options.done = callback;
+		FILESTORAGE(name).res(self, options, $file_notmodified);
+		return self;
+	};
+
+	PROTO.imagenosql = function(name, id, make, headers, callback) {
+		var self = this;
+		var options = {};
+		options.id = id;
+		options.image = true;
+		options.make = make;
+		options.headers = headers;
+		options.done = callback;
+		NOSQL(name).binary.res(self, options, $file_notmodified);
+		return self;
+	};
+
+	/**
 	 * Responds with a stream
 	 * @param {String} contentType
 	 * @param {Stream} stream
@@ -14623,6 +15109,19 @@ function extend_response(PROTO) {
 	};
 
 	PROTO.binary = function(body, type, encoding, download, headers) {
+
+		if (typeof(encoding) === 'object') {
+			var tmp = encoding;
+			encoding = download;
+			download = headers;
+			headers = tmp;
+		}
+
+		if (typeof(download) === 'object') {
+			headers = download;
+			download = headers;
+		}
+
 		this.options.type = type;
 		this.options.body = body;
 		this.options.encoding = encoding;
@@ -14633,6 +15132,8 @@ function extend_response(PROTO) {
 	};
 
 	PROTO.proxy = function(url, headers, timeout, callback) {
+
+		OBSOLETE('res.proxy()', 'You need to use controller.proxy()');
 
 		var res = this;
 
@@ -14690,10 +15191,10 @@ function extend_response(PROTO) {
 			});
 
 			client.on('close', function() {
-				if (res.success)
-					return;
-				F.stats.response.pipe++;
-				response_end(res);
+				if (!res.success) {
+					F.stats.response.pipe++;
+					response_end(res);
+				}
 			});
 		});
 
@@ -14739,10 +15240,14 @@ function extend_response(PROTO) {
 	PROTO.json = function(obj) {
 		var res = this;
 		F.stats.response.json++;
+		if (framework_builders.isSchema(obj))
+			obj = obj.$clean();
 		res.options.body = JSON.stringify(obj);
 		res.options.type = CT_JSON;
 		return res.$text();
 	};
+
+	const SECURITYTXT = { '/security.txt': 1, '/.well-known/security.txt': 1 };
 
 	PROTO.continue = function(callback) {
 
@@ -14759,6 +15264,11 @@ function extend_response(PROTO) {
 			return res;
 		}
 
+		if (SECURITYTXT[req.url] && F.config['security.txt']) {
+			res.send(200, F.config['security.txt'], 'text/plain');
+			return;
+		}
+
 		req.$key = createTemporaryKey(req);
 
 		if (F.temporary.notfound[req.$key]) {
@@ -14766,24 +15276,32 @@ function extend_response(PROTO) {
 			return res;
 		}
 
-		var name = req.uri.pathname;
-		var index = name.lastIndexOf('/');
-		var resizer = F.routes.resize[name.substring(0, index + 1)];
-		var canResize = false;
+		var canresize = false;
 		var filename = null;
+		var name = req.uri.pathname;
 
-		if (resizer) {
-			name = name.substring(index + 1);
-			canResize = resizer.extension['*'] || resizer.extension[req.extension];
-			if (canResize) {
-				name = resizer.path + $decodeURIComponent(name);
-				filename = F.onMapping(name, name, false, false);
+		if (IMAGES[req.extension]) {
+			var index = name.lastIndexOf('/');
+			var resizer = F.routes.resize[name.substring(0, index + 1)];
+			if (resizer) {
+				name = name.substring(index + 1);
+				canresize = resizer.extension['*'] || resizer.extension[req.extension];
+				if (canresize) {
+					name = resizer.path + $decodeURIComponent(name);
+					filename = F.onMapping(name, name, false, false);
+				} else
+					filename = F.onMapping(name, name, true, true);
 			} else
 				filename = F.onMapping(name, name, true, true);
 		} else
 			filename = F.onMapping(name, name, true, true);
 
-		if (!canResize) {
+		if (!filename) {
+			res.throw404();
+			return;
+		}
+
+		if (!canresize) {
 
 			if (F.components.has && F.components[req.extension] && req.uri.pathname === F.config['static-url-components'] + req.extension) {
 				res.noCompress = true;
@@ -14865,7 +15383,7 @@ function extend_response(PROTO) {
 		}
 
 		// Is package?
-		if (options.filename[0] === '@')
+		if (options.filename && options.filename[0] === '@')
 			options.filename = F.path.package(options.filename.substring(1));
 
 		var name = F.temporary.path[req.$key];
@@ -14951,7 +15469,7 @@ function extend_response(PROTO) {
 
 		if (res.getHeader('Last-Modified'))
 			delete headers['Last-Modified'];
-		else
+		else if (!res.options.lastmodified)
 			headers['Last-Modified'] = name[2];
 
 		headers.Etag = ETAG + F.config['etag-version'];
@@ -15341,18 +15859,22 @@ function extend_response(PROTO) {
 			return res;
 
 		var req = res.req;
-		res.options.problem && F.problem(res.options.problem, 'response' + res.options.code + '()', req.uri, req.ip);
-		res.writeHead(res.options.code || 501, res.options.headers || HEADERS.responseCode);
-
-		if (req.method === 'HEAD')
-			res.end();
-		else
-			res.end(res.options.body || U.httpStatus(res.options.code) + prepare_error(res.options && res.options.problem));
-
 		var key = 'error' + res.options.code;
+
+		res.options.problem && F.problem(res.options.problem, 'response' + res.options.code + '()', req.uri, req.ip);
+
+		if (req.method === 'HEAD') {
+			res.writeHead(res.options.code || 501, res.options.headers || HEADERS.responseCode);
+			res.end();
+			F.stats.response[key]++;
+			response_end(res);
+		} else {
+			req.$total_route = F.lookup(req, '#' + res.options.code, EMPTYARRAY, 0);
+			req.$total_exception = res.options.problem;
+			req.$total_execute(res.options.code, true);
+		}
+
 		F.$events[key] && F.emit(key, req, res, res.options.problem);
-		F.stats.response[key]++;
-		response_end(res);
 		return res;
 	};
 }
@@ -15372,7 +15894,7 @@ function $file_notmodified(res, name) {
 	if (res.getHeader('Last-Modified'))
 		delete headers['Last-Modified'];
 	else
-		headers['Last-Modified'] = name[2];
+		headers['Last-Modified'] = name instanceof Array ? name[2] : name;
 
 	if (res.getHeader('Expires'))
 		delete headers.Expires;
@@ -15398,6 +15920,7 @@ function $file_nocompress(stream, next, res) {
 		next();
 		framework_internal.destroyStream(stream);
 	});
+
 	response_end(res);
 }
 
@@ -15588,7 +16111,17 @@ function response_end(res) {
 	!res.req.isStaticFile && F.$events['request-end'] && F.emit('request-end', res.req, res);
 	res.req.clear(true);
 	res.controller && res.req.$total_success();
-	res.options.callback && res.options.callback();
+
+	if (res.options.callback) {
+		res.options.callback();
+		res.options.callback = null;
+	}
+
+	if (res.options.done) {
+		res.options.done();
+		res.options.done = null;
+	}
+
 	// res.options = EMPTYOBJECT;
 	res.controller = null;
 }
@@ -15604,6 +16137,10 @@ function $decodeURIComponent(value) {
 }
 
 global.Controller = Controller;
+
+process.on('unhandledRejection', function(e) {
+	F.error(e, '', null);
+});
 
 process.on('uncaughtException', function(e) {
 
@@ -15621,7 +16158,7 @@ process.on('uncaughtException', function(e) {
 });
 
 function fsFileRead(filename, callback, a, b, c) {
-	U.queue('F.files', F.config['default-maximum-file-descriptors'], function(next) {
+	U.queue('F.files', F.config['default-maxopenfiles'], function(next) {
 		Fs.readFile(filename, function(err, result) {
 			next();
 			callback(err, result, a, b, c);
@@ -15630,7 +16167,7 @@ function fsFileRead(filename, callback, a, b, c) {
 }
 
 function fsFileExists(filename, callback, a, b, c) {
-	U.queue('F.files', F.config['default-maximum-file-descriptors'], function(next) {
+	U.queue('F.files', F.config['default-maxopenfiles'], function(next) {
 		Fs.lstat(filename, function(err, stats) {
 			next();
 			callback(!err && stats.isFile(), stats ? stats.size : 0, stats ? stats.isFile() : false, stats, a, b, c);
@@ -15638,7 +16175,7 @@ function fsFileExists(filename, callback, a, b, c) {
 	});
 }
 
-function fsStreamRead(filename, options, callback, req, res) {
+function fsStreamRead(filename, options, callback, res) {
 
 	if (!callback) {
 		callback = options;
@@ -15659,10 +16196,10 @@ function fsStreamRead(filename, options, callback, req, res) {
 	} else
 		opt = HEADERS.fsStreamRead;
 
-	U.queue('F.files', F.config['default-maximum-file-descriptors'], function(next) {
+	U.queue('F.files', F.config['default-maxopenfiles'], function(next) {
 		var stream = Fs.createReadStream(filename, opt);
 		stream.on('error', NOOP);
-		callback(stream, next, req, res);
+		callback(stream, next, res);
 	}, filename);
 }
 
@@ -15674,6 +16211,57 @@ function fsStreamRead(filename, options, callback, req, res) {
 function createTemporaryKey(req) {
 	return (req.uri ? req.uri.pathname : req).replace(REG_TEMPORARY, '-').substring(1);
 }
+
+function MiddlewareOptions() {}
+
+MiddlewareOptions.prototype = {
+
+	get user() {
+		return this.req.user;
+	},
+
+	get session() {
+		return this.req.session;
+	},
+
+	get language() {
+		return this.req.$language;
+	},
+
+	get ip() {
+		return this.req.ip;
+	},
+
+	get id() {
+		return this.controller ? this.controller.id : null;
+	},
+
+	get params() {
+		return this.controller ? this.controller.params : null;
+	},
+
+	get files() {
+		return this.req.files;
+	},
+
+	get body() {
+		return this.req.body;
+	},
+
+	get query() {
+		return this.req.query;
+	}
+};
+
+MiddlewareOptions.prototype.callback = function() {
+	this.next();
+	return this;
+};
+
+MiddlewareOptions.prototype.cancel = function() {
+	this.next(false);
+	return this;
+};
 
 process.on('SIGTERM', () => F.stop());
 process.on('SIGINT', () => F.stop());
@@ -15696,14 +16284,11 @@ process.on('message', function(msg, h) {
 		msg.TYPE === 'cache-remove' && F.cache.remove(msg.key, false);
 		msg.TYPE === 'cache-remove-all' && F.cache.removeAll(msg.key, false);
 		msg.TYPE === 'cache-clear' && F.cache.clear(false);
-		msg.TYPE === 'nosql-lock' && F.databases[msg.name] && F.databases[msg.name].lock();
-		msg.TYPE === 'nosql-unlock' && F.databases[msg.name] && F.databases[msg.name].unlock();
-		msg.TYPE === 'nosql-meta' && F.databases[msg.name] && F.databases[msg.name].$meta();
-		msg.TYPE === 'nosql-counter-lock' && F.databases[msg.name] && (F.databases[msg.name].counter.locked = true);
-		msg.TYPE === 'nosql-counter-unlock' && F.databases[msg.name] && (F.databases[msg.name].counter.locked = false);
 		msg.TYPE === 'req' && F.cluster.req(msg);
 		msg.TYPE === 'res' && msg.target === F.id && F.cluster.res(msg);
 		msg.TYPE === 'emit' && F.$events[msg.name] && F.emit(msg.name, msg.data);
+		msg.TYPE === 'nosql-meta' && NOSQL(msg.name).meta(msg.key, msg.value, true);
+		msg.TYPE === 'table-meta' && TABLE(msg.name).meta(msg.key, msg.value, true);
 	}
 	F.$events.message && F.emit('message', msg, h);
 });
@@ -15712,10 +16297,9 @@ function prepare_error(e) {
 	if (!e)
 		return '';
 	else if (e instanceof ErrorBuilder)
-		return ' :: ' + e.plain();
-	else if (e.stack)
-		return RELEASE ? '' : e.stack;
-	return RELEASE ? '' : ' :: ' + e.toString();
+		return e.plain();
+	else if (DEBUG)
+		return e.stack ? e.stack : e.toString();
 }
 
 function prepare_filename(name) {
@@ -15758,7 +16342,7 @@ function existsSync(filename, file) {
 
 function async_middleware(index, req, res, middleware, callback, options, controller) {
 
-	if (res.success || res.headersSent) {
+	if (res.success || res.headersSent || res.finished) {
 		req.$total_route && req.$total_success();
 		callback = null;
 		return;
@@ -15774,24 +16358,55 @@ function async_middleware(index, req, res, middleware, callback, options, contro
 		return async_middleware(index, req, res, middleware, callback, options, controller);
 	}
 
-	var output = item.call(framework, req, res, function(err) {
+	var output;
 
-		if (err === false) {
-			req.$total_route && req.$total_success();
-			callback = null;
-			return;
+	if (item.$newversion) {
+		var opt = req.$total_middleware;
+
+		if (!index || !opt) {
+			opt = req.$total_middleware = new MiddlewareOptions();
+			opt.req = req;
+			opt.res = res;
+			opt.middleware = middleware;
+			opt.options = options || EMPTYOBJECT;
+			opt.controller = controller;
+			opt.callback2 = callback;
+			opt.next = function(err) {
+				var mid = req.$total_middleware;
+				if (err === false) {
+					req.$total_route && req.$total_success();
+					req.$total_middleware = null;
+					callback = null;
+				} else if (err instanceof Error || err instanceof ErrorBuilder) {
+					res.throw500(err);
+					req.$total_middleware = null;
+					callback = null;
+				} else
+					async_middleware(mid.index, mid.req, mid.res, mid.middleware, mid.callback2, mid.options, mid.controller);
+			};
 		}
 
-		if (err instanceof Error || err instanceof ErrorBuilder) {
-			res.throw500(err);
-			callback = null;
-			return;
-		}
+		opt.index = index;
+		output = item(opt);
 
-		async_middleware(index, req, res, middleware, callback, options, controller);
-	}, options, controller);
+	} else {
+		output = item.call(framework, req, res, function(err) {
+			if (err === false) {
+				req.$total_route && req.$total_success();
+				callback = null;
+			} else if (err instanceof Error || err instanceof ErrorBuilder) {
+				res.throw500(err);
+				callback = null;
+			} else
+				async_middleware(index, req, res, middleware, callback, options, controller);
+		}, options, controller);
+	}
 
-	if (output !== false)
+	if (res.headersSent || res.finished) {
+		req.$total_route && req.$total_success();
+		callback = null;
+		return;
+	} else if (output !== false)
 		return;
 
 	req.$total_route && req.$total_success();
@@ -15835,14 +16450,49 @@ function parseComponent(body, filename) {
 	response.css = '';
 	response.js = '';
 	response.install = '';
+	response.files = {};
 
 	var beg = 0;
 	var end = 0;
+	var comname = U.getName(filename);
+
+	// Files
+	while (true) {
+		beg = body.indexOf('<file name="');
+		if (beg === -1)
+			break;
+
+		end = body.indexOf('</file>', beg);
+		if (end === -1)
+			break;
+
+		var base64 = body.substring(beg, end);
+
+		body = body.substring(0, beg) + body.substring(end + 7);
+
+		// Creates directory
+		var p = F.path.temp() + '~' + comname;
+		try {
+			Fs.mkdirSync(p);
+		} catch (e) {}
+
+		var tmp = base64.indexOf('>');
+		var name = base64.substring(base64.lastIndexOf('name="', tmp), tmp);
+		name = name.substring(6, name.length - 1);
+		base64 = base64.substring(tmp + 1);
+		F.$bundling && Fs.writeFile(U.join(p, name), base64, 'base64', NOOP);
+		response.files[name] = 1;
+	}
 
 	while (true) {
 		beg = body.indexOf('<script type="text/totaljs">');
-		if (beg === -1)
-			break;
+		if (beg === -1) {
+			beg = body.indexOf('<script total>');
+			if (beg === -1)
+				beg = body.indexOf('<script totaljs>');
+			if (beg === -1)
+				break;
+		}
 		end = body.indexOf('</script>', beg);
 		if (end === -1)
 			break;
@@ -15885,11 +16535,94 @@ function parseComponent(body, filename) {
 	return response;
 }
 
+function getSchemaName(schema) {
+	return schema[0] === 'default' ? schema[1] : schema[0] + '/' + schema[1];
+}
+
 // Default action for workflow routing
 function controller_json_workflow(id) {
 	var self = this;
 	self.id = id;
-	self.$exec(self.route.workflow, null, self.callback());
+	var w = self.route.workflow;
+	if (w instanceof Object) {
+		if (!w.type) {
+			var schema = GETSCHEMA(self.route.schema[0], self.route.schema[1]);
+
+			if (!schema) {
+				self.throw500('Schema "{0}" not found.'.format(getSchemaName(self.route.schema)));
+				return;
+			}
+
+			if (schema.meta[w.id] !== undefined) {
+				w.type = '$' + w.id;
+			} else if (schema.meta['workflow#' + w.id] !== undefined) {
+				w.type = '$workflow';
+				w.name = w.id;
+			} else if (schema.meta['workflow#' + w.id] !== undefined) {
+				w.type = '$transform';
+				w.name = w.id;
+			} else if (schema.meta['operation#' + w.id] !== undefined) {
+				w.type = '$operation';
+				w.name = w.id;
+			} else if (schema.meta['hook#' + w.id] !== undefined) {
+				w.type = '$hook';
+				w.name = w.id;
+			}
+		}
+		if (w.name)
+			self[w.type](w.name, self.callback());
+		else {
+			if (w.type)
+				self[w.type](self.callback(w.view));
+			else
+				self.throw500('Operation @' + w.id + ' not found.');
+		}
+	} else
+		self.$exec(w, null, self.callback());
+}
+
+// Default action for workflow routing
+function controller_json_workflow_multiple(id) {
+	var self = this;
+	self.id = id;
+	var w = self.route.workflow;
+	if (w instanceof Object) {
+		if (!w.type) {
+			var schema = GETSCHEMA(self.route.schema[0], self.route.schema[1]);
+
+			if (!schema) {
+				self.throw500('Schema "{0}" not found.'.format(getSchemaName(self.route.schema)));
+				return;
+			}
+
+			var op = [];
+			for (var i = 0; i < w.id.length; i++) {
+				var id = w.id[i];
+				if (schema.meta[id] !== undefined) {
+					op.push({ name: '$' + id });
+				} else if (schema.meta['workflow#' + id] !== undefined) {
+					op.push({ name: '$workflow', id: id });
+				} else if (schema.meta['workflow#' + id] !== undefined) {
+					op.push({ name: '$transform', id: id });
+				} else if (schema.meta['operation#' + id] !== undefined) {
+					op.push({ name: '$operation', id: id });
+				} else if (schema.meta['hook#' + id] !== undefined) {
+					op.push({ name: '$hook', id: id });
+				}
+			}
+			w.async = op;
+		}
+
+		var async = self.$async(self.callback(w.view), w.index);
+		for (var i = 0; i < w.async.length; i++) {
+			var a = w.async[i];
+			if (a.id)
+				async[a.name](a.id);
+			else
+				async[a.name]();
+		}
+	} else
+		self.$exec(w, null, self.callback());
 }
 
 // Parses schema group and schema name from string e.g. "User" or "Company/User"
@@ -15920,5 +16653,3 @@ EMPTYCONTROLLER.req.query = EMPTYOBJECT;
 EMPTYCONTROLLER.req.body = EMPTYOBJECT;
 EMPTYCONTROLLER.req.files = EMPTYARRAY;
 global.EMPTYCONTROLLER = EMPTYCONTROLLER;
-global.LOGMAIL = F.logmail;
-global.MAIL = F.mail;

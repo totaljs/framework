@@ -366,6 +366,7 @@ function test_Schema() {
 	var NewTypes = NEWSCHEMA('NewTypes').make(function(schema) {
 		schema.define('capitalize', 'Capitalize');
 		schema.define('capitalize10', 'Capitalize(10)');
+		schema.define('capitalize2', 'Capitalize2');
 		schema.define('lower', 'Lower');
 		schema.define('lower10', 'Lower(10)');
 		schema.define('upper', 'Upper');
@@ -385,6 +386,7 @@ function test_Schema() {
 		var res = schema.make(obj);
 		assert.ok(res.capitalize === 'Total FraMEWOrk', 'SchemaBuilder: Capitalize');
 		assert.ok(res.capitalize10 === 'Total FraM', 'SchemaBuilder: Capitalize(10)');
+		assert.ok(res.capitalize2 === 'Total fraMEWOrk', 'SchemaBuilder: Capitalize2');
 		assert.ok(res.lower === 'total framework', 'SchemaBuilder: Lower');
 		assert.ok(res.lower10 === 'total fram', 'SchemaBuilder: Lower(10)');
 		assert.ok(res.upper === 'TOTAL FRAMEWORK', 'SchemaBuilder: Upper');
@@ -444,9 +446,9 @@ function test_Schema() {
 		});
 
 		schema.make({ enum_int: '5', 'keyvalue': 'luciaa', enum_string: 'Širkaa' }, function(err) {
-			assert.ok(err.items[0].path === 'EnumKeyValue.enum_int', 'Schema enums (int) 2');
-			assert.ok(err.items[1].path === 'EnumKeyValue.enum_string', 'Schema enums (string) 2');
-			assert.ok(err.items[2].path === 'EnumKeyValue.keyvalue', 'Schema keyvalue 2');
+			assert.ok(err.items[0].path === 'enum_int', 'Schema enums (int) 2');
+			assert.ok(err.items[1].path === 'enum_string', 'Schema enums (string) 2');
+			assert.ok(err.items[2].path === 'keyvalue', 'Schema keyvalue 2');
 		});
 
 	});
@@ -608,6 +610,11 @@ function test_ErrorBuilder() {
 
 }
 
+function test_Convertors() {
+	var a = CONVERT({ page: 5, age: 3, money: '-100', tags: 'Total.js' }, 'page:Number,age:Number, money:Number, tags:[String], empty: Boolean');
+	assert.ok(a.page === 5 && a.age === 3 && a.money === -100 && a.tags[0] === 'Total.js' && a.empty === false, 'Problem in convertor');
+}
+
 function test_Operations() {
 
 	NEWOPERATION('testA', function(error, value, callback) {
@@ -628,6 +635,25 @@ function test_Operations() {
 		assert.ok(err.hasError('bug'), 'OPERATIONS: ErrorHandling 1');
 		assert.ok(response === undefined, 'OPERATIONS: ErrorHandling 2');
 	});
+
+	NEWOPERATION('testC', function($) {
+		assert.ok($.controller === EMPTYCONTROLLER, 'OPERATIONS: Controller 1');
+		$.callback(true);
+	});
+
+	NEWOPERATION('testD', function($) {
+		assert.ok($.options.ok === 100, 'OPERATIONS: Custom options + controller');
+		assert.ok($.controller === EMPTYCONTROLLER, 'OPERATIONS: Controller 2');
+		$.callback(false);
+	});
+
+	OPERATION('testC', 1, function(err, response) {
+		assert.ok(response === true, 'OPERATIONS: controller 1 response');
+	}, EMPTYCONTROLLER);
+
+	OPERATION('testD', 2, function(err, response) {
+		assert.ok(response === false, 'OPERATIONS: controller 2 response');
+	}, { ok: 100 }, EMPTYCONTROLLER);
 }
 
 test_PageBuilder();
@@ -635,6 +661,7 @@ test_UrlBuilder();
 test_Schema();
 test_ErrorBuilder();
 test_Operations();
+test_Convertors();
 
 console.log('================================================');
 console.log('success - OK');

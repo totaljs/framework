@@ -71,10 +71,6 @@ function test_controller_functions(next) {
 			assert.ok(false, 'test_controller_functions: ' + error.toString());
 
 		assert.ok(code === 404, 'controller: statusCode ' + code);
-		assert.ok(headers['etag'] === '123456:1', 'controller: setModified(etag)');
-		assert.ok(headers['last-modified'].toString().indexOf('1984') !== -1, 'controller: setModified(date)');
-		assert.ok(headers['expires'].toString().indexOf('1984') !== -1, 'controller: setExpires(date)');
-
 		next();
 	});
 }

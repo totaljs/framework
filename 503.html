@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>@(Please wait)</title>
+	<meta charset="utf-8" />
+	<meta name="format-detection" content="telephone=no" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+	<meta name="robots" content="all,follow" />
+	<style type="text/css">
+		/*auto*/
+		html,body { font: normal normal 14px Arial; background-color: white; height: 100%; margin: 0; padding: 0; font-smoothing: antialiased; }
+		.table { display: table; width: 100%; height: 100%}
+		.cell { display:table-cell;vertical-align:middle;text-align:center}
+		table { max-width: 300px; margin: 20px auto; width: 100%; border:1px solid #E0E0E0; border-collapse: collapse; font-size: 12px; }
+		table td { border: 1px solid #E0E0E0; padding: 6px 8px; text-align: center; }
+		table td:first-child { text-align: left; width: 85%; }
+		.anim { animation: anim 2s infinite; }
+		.text { color: #A0A0A0; font-size: 10px; margin-bottom: 3px; text-transform: uppercase; }
+		#time { font-size: 60px; font-weight: bold; margin-bottom: 10px; background-color: black; color: white; padding: 3px 10px; min-width: 70px; text-align: center; border-radius: 2px; position: relative; display: inline-block; }
+
+		@keyframes anim {
+			0% { transform:scale(1); }
+			50%{ transform:scale(1.5) rotate(180deg); color:gray }
+			100%{ transform:scale(1); }
+		}
+
+	</style>
+</head>
+<body>
+
+	<div class="table">
+		<div class="cell">
+			<div id="time" style="">10</div>
+			<div class="text">@(Please wait)</div>
+			<div>
+				<b>@(Application is starting &hellip;)</b>
+			</div>
+			<table>
+				@{foreach m in model}
+					<tr>
+						<td>@{m.key}</td>
+						<td class="anim">&#10711;</td>
+					</tr>
+				@{end}
+			</table>
+		</div>
+	</div>
+
+	<script>
+		var i = 10;
+		setInterval(function() {
+			i--;
+			if (i >= 0) {
+				var el = document.getElementById('time');
+				!i && (el.style.fontSize = '40px');
+				el.innerHTML = (i === 0 ? '@(REFRESHING)' : i);
+			} else if (i === -1) {
+				setTimeout(function() {
+					window.location.reload();
+				}, 1000);
+			}
+		}, 1000);
+	</script>
+
+</body>
+</html>

@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkInternal
- * @version 2.9.2
+ * @version 3.0.0
  */
 
 'use strict';
@@ -48,6 +48,9 @@ const REG_5 = />\n\s{1,}</g;
 const REG_6 = /[<\w"\u0080-\u07ff\u0400-\u04FF]+\s{2,}[\w\u0080-\u07ff\u0400-\u04FF>]+/;
 const REG_7 = /\\/g;
 const REG_8 = /'/g;
+const REG_9 = />\n\s+/g;
+const REG_10 = /(\w|\W)\n\s+</g;
+const REG_WIN = /\r/g;
 const REG_BLOCK_BEG = /@\{block.*?\}/i;
 const REG_BLOCK_END = /@\{end\}/i;
 const REG_SKIP_1 = /\('|"/;
@@ -59,10 +62,11 @@ const HTTPVERBS = { 'get': true, 'post': true, 'options': true, 'put': true, 'de
 const RENDERNOW = ['self.$import(', 'self.route', 'self.$js(', 'self.$css(', 'self.$favicon(', 'self.$script(', '$STRING(self.resource(', '$STRING(RESOURCE(', 'self.translate(', 'language', 'self.sitemap_url(', 'self.sitemap_name(', '$STRING(CONFIG(', '$STRING(config.', '$STRING(config[', '$STRING(config('];
 const REG_NOTRANSLATE = /@\{notranslate\}/gi;
 const REG_NOCOMPRESS = /@\{nocompress\s\w+}/gi;
-const REG_TAGREMOVE = /[^>]\n\s{1,}$/;
+const REG_TAGREMOVE = /[^>](\r)\n\s{1,}$/;
 const REG_HELPERS = /helpers\.[a-z0-9A-Z_$]+\(.*?\)+/g;
 const REG_SITEMAP = /\s+(sitemap_navigation\(|sitemap\()+/g;
-const REG_CSS_1 = /\n|\s{2,}/g;
+const REG_CSS_0 = /\s{2,}/g;
+const REG_CSS_1 = /\n/g;
 const REG_CSS_2 = /\s?\{\s{1,}/g;
 const REG_CSS_3 = /\s?\}\s{1,}/g;
 const REG_CSS_4 = /\s?:\s{1,}/g;
@@ -73,18 +77,19 @@ const REG_CSS_8 = /\s\{/g;
 const REG_CSS_9 = /;\}/g;
 const REG_CSS_10 = /\$[a-z0-9-_]+:.*?;/gi;
 const REG_CSS_11 = /\$[a-z0-9-_]+/gi;
+const REG_CSS_12 = /(margin|padding):.*?(;|})/g;
 const AUTOVENDOR = ['filter', 'appearance', 'column-count', 'column-gap', 'column-rule', 'display', 'transform', 'transform-style', 'transform-origin', 'transition', 'user-select', 'animation', 'perspective', 'animation-name', 'animation-duration', 'animation-timing-function', 'animation-delay', 'animation-iteration-count', 'animation-direction', 'animation-play-state', 'opacity', 'background', 'background-image', 'font-smoothing', 'text-size-adjust', 'backface-visibility', 'box-sizing', 'overflow-scrolling'];
 const WRITESTREAM = { flags: 'w' };
-const EMPTYBUFFER = framework_utils.createBufferSize(0);
+const ALLOWEDMARKUP = { G: 1, M: 1, R: 1, repository: 1, model: 1, config: 1, global: 1, resource: 1, RESOURCE: 1, CONFIG: 1, author: 1, root: 1, functions: 1, NOW: 1, F: 1 };
 
 var INDEXFILE = 0;
-var INDEXMIXED = 0;
 
 global.$STRING = function(value) {
 	return value != null ? value.toString() : '';
 };
 
 global.$VIEWCACHE = [];
+global.$VIEWASYNC = 0;
 
 exports.parseMULTIPART = function(req, contentType, route, tmpDirectory) {
 
@@ -315,128 +320,6 @@ function uploadparser_done() {
 	this.buffer_parser.end();
 }
 
-exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile) {
-
-	var boundary = contentType.split(';')[1];
-	if (!boundary) {
-		F.reqstats(false, false);
-		F.stats.request.error400++;
-		req.res.writeHead(400);
-		req.res.end();
-		return;
-	}
-
-	// For unexpected closing
-	req.once('close', () => !req.$upload && req.clear());
-
-	var parser = new MultipartParser();
-	var close = 0;
-	var stream;
-	var tmp;
-	var counter = 0;
-	var path = framework_utils.combine(tmpDirectory, (F.id ? 'i-' + F.id + '_' : '') + 'uploadedmixed-');
-
-	boundary = boundary.substring(boundary.indexOf('=', 2) + 1);
-	req.buffer_exceeded = false;
-	req.buffer_has = true;
-	req.buffer_parser = parser;
-
-	parser.initWithBoundary(boundary);
-
-	parser.onPartBegin = function() {
-		// Temporary data
-		tmp = new HttpFile();
-		tmp.$step = 0;
-		tmp.$is = false;
-		tmp.length = 0;
-	};
-
-	parser.onHeaderValue = function(buffer, start, end) {
-
-		if (req.buffer_exceeded)
-			return;
-
-		var header = buffer.slice(start, end).toString(ENCODING);
-		if (tmp.$step === 1) {
-			var index = header.indexOf(';');
-			if (index === -1)
-				tmp.type = header.trim();
-			else
-				tmp.type = header.substring(0, index).trim();
-			tmp.$step = 2;
-			return;
-		}
-
-		if (tmp.$step !== 0)
-			return;
-
-		header = parse_multipart_header(header);
-
-		tmp.$step = 1;
-		tmp.$is = header[1] !== null;
-		tmp.name = header[0];
-
-		if (tmp.$is) {
-			tmp.filename = header[1];
-			tmp.path = path + (INDEXMIXED++) + '.bin';
-
-			stream = Fs.createWriteStream(tmp.path, WRITESTREAM);
-			stream.once('close', () => close--);
-			stream.once('error', () => close--);
-			close++;
-		} else
-			destroyStream(stream);
-	};
-
-	parser.onPartData = function(buffer, start, end) {
-
-		if (req.buffer_exceeded)
-			return;
-
-		var data = buffer.slice(start, end);
-		var length = data.length;
-
-		if (!tmp.$is)
-			return;
-
-		if (tmp.length) {
-			stream.write(data);
-			tmp.length += length;
-			return;
-		}
-
-		stream.write(data);
-		tmp.length += length;
-		onFile(req, tmp, counter++);
-	};
-
-	parser.onPartEnd = function() {
-
-		if (stream) {
-			stream.end();
-			stream = null;
-		}
-
-		if (req.buffer_exceeded || !tmp.$is)
-			return;
-
-		tmp.$is = undefined;
-		tmp.$step = undefined;
-	};
-
-	parser.onEnd = function() {
-		if (close) {
-			setImmediate(parser.onEnd);
-		} else {
-			onFile(req, null);
-			F.responseContent(req, req.res, 200, EMPTYBUFFER, 'text/plain', false);
-		}
-	};
-
-	req.on('data', uploadparser);
-	req.on('end', uploadparser_done);
-};
-
 function parse_multipart_header(header) {
 
 	var arr = new Array(2);
@@ -663,6 +546,8 @@ exports.routeCompareFlags2 = function(req, route, membertype) {
 			return 0;
 		if ((route.isREFERER && req.flags.indexOf('referer') === -1) || (!route.isMULTIPLE && route.isJSON && req.flags.indexOf('json') === -1))
 			return 0;
+		if (route.isROLE && !req.$roles && membertype)
+			return -1;
 	}
 
 	var isRole = false;
@@ -678,11 +563,6 @@ exports.routeCompareFlags2 = function(req, route, membertype) {
 				if (route.isRAW || route.isXML)
 					continue;
 				return 0;
-
-			case 'proxy':
-				if (!route.isPROXY)
-					return 0;
-				continue;
 
 			case 'debug':
 				if (!route.isDEBUG && route.isRELEASE)
@@ -776,7 +656,9 @@ function HttpFile() {
 	this.rem = true;
 }
 
-HttpFile.prototype.rename = HttpFile.prototype.move = function(filename, callback) {
+var HFP = HttpFile.prototype;
+
+HFP.rename = HFP.move = function(filename, callback) {
 	var self = this;
 	Fs.rename(self.path, filename, function(err) {
 
@@ -790,7 +672,7 @@ HttpFile.prototype.rename = HttpFile.prototype.move = function(filename, callbac
 	return self;
 };
 
-HttpFile.prototype.copy = function(filename, callback) {
+HFP.copy = function(filename, callback) {
 
 	var self = this;
 
@@ -807,38 +689,38 @@ HttpFile.prototype.copy = function(filename, callback) {
 	return self;
 };
 
-HttpFile.prototype.$$rename = HttpFile.prototype.$$move = function(filename) {
+HFP.$$rename = HFP.$$move = function(filename) {
 	var self = this;
 	return function(callback) {
 		return self.rename(filename, callback);
 	};
 };
 
-HttpFile.prototype.$$copy = function(filename) {
+HFP.$$copy = function(filename) {
 	var self = this;
 	return function(callback) {
 		return self.copy(filename, callback);
 	};
 };
 
-HttpFile.prototype.readSync = function() {
+HFP.readSync = function() {
 	return Fs.readFileSync(this.path);
 };
 
-HttpFile.prototype.read = function(callback) {
+HFP.read = function(callback) {
 	var self = this;
 	Fs.readFile(self.path, callback);
 	return self;
 };
 
-HttpFile.prototype.$$read = function() {
+HFP.$$read = function() {
 	var self = this;
 	return function(callback) {
 		self.read(callback);
 	};
 };
 
-HttpFile.prototype.md5 = function(callback) {
+HFP.md5 = function(callback) {
 	var self = this;
 	var md5 = Crypto.createHash('md5');
 	var stream = Fs.createReadStream(self.path);
@@ -862,37 +744,53 @@ HttpFile.prototype.md5 = function(callback) {
 	return self;
 };
 
-HttpFile.prototype.$$md5 = function() {
+HFP.$$md5 = function() {
 	var self = this;
 	return function(callback) {
 		self.md5(callback);
 	};
 };
 
-HttpFile.prototype.stream = function(options) {
+HFP.stream = function(options) {
 	return Fs.createReadStream(this.path, options);
 };
 
-HttpFile.prototype.pipe = function(stream, options) {
+HFP.pipe = function(stream, options) {
 	return Fs.createReadStream(this.path, options).pipe(stream, options);
 };
 
-HttpFile.prototype.isImage = function() {
+HFP.isImage = function() {
 	return this.type.indexOf('image/') !== -1;
 };
 
-HttpFile.prototype.isVideo = function() {
+HFP.isVideo = function() {
 	return this.type.indexOf('video/') !== -1;
 };
 
-HttpFile.prototype.isAudio = function() {
+HFP.isAudio = function() {
 	return this.type.indexOf('audio/') !== -1;
 };
 
-HttpFile.prototype.image = function(im) {
+HFP.image = function(im) {
 	if (im === undefined)
 		im = F.config['default-image-converter'] === 'im';
 	return framework_image.init(this.path, im, this.width, this.height);
+};
+
+HFP.fs = function(storagename, custom, callback) {
+	if (typeof(custom) === 'function') {
+		callback = custom;
+		custom = null;
+	}
+	return FILESTORAGE(storagename).insert(this.filename, Fs.createReadStream(this.path), custom, callback);
+};
+
+HFP.nosql = function(name, custom, callback) {
+	if (typeof(custom) === 'function') {
+		callback = custom;
+		custom = null;
+	}
+	return NOSQL(name).binary.insert(this.filename, Fs.createReadStream(this.path), custom, callback);
 };
 
 // *********************************************************************************
@@ -906,13 +804,57 @@ function compile_autovendor(css) {
 	var isAuto = css.substring(0, 100).indexOf(avp) !== -1;
 	if (isAuto)
 		css = autoprefixer(css.replace(avp, ''));
-	return css.replace(REG_CSS_1, '').replace(REG_CSS_2, '{').replace(REG_CSS_3, '}').replace(REG_CSS_4, ':').replace(REG_CSS_5, ';').replace(REG_CSS_6, function(search, index, text) {
+	return css.replace(REG_CSS_0, ' ').replace(REG_CSS_1, '').replace(REG_CSS_2, '{').replace(REG_CSS_3, '}').replace(REG_CSS_4, ':').replace(REG_CSS_5, ';').replace(REG_CSS_6, function(search, index, text) {
 		for (var i = index; i > 0; i--) {
 			if ((text[i] === '\'' || text[i] === '"') && (text[i - 1] === ':'))
 				return search;
 		}
 		return ',';
-	}).replace(REG_CSS_7, '}').replace(REG_CSS_8, '{').replace(REG_CSS_9, '}').trim();
+	}).replace(REG_CSS_7, '}').replace(REG_CSS_8, '{').replace(REG_CSS_9, '}').replace(REG_CSS_12, cssmarginpadding).trim();
+}
+
+function cssmarginpadding(text) {
+
+	// margin
+	// padding
+
+	var prop = '';
+	var val;
+	var l = text.length - 1;
+	var last = text[l];
+
+	if (text[0] === 'm') {
+		prop = 'margin:';
+		val = text.substring(7, l);
+	} else {
+		prop = 'padding:';
+		val = text.substring(8, l);
+	}
+
+	var a = val.split(' ');
+
+	for (var i = 0; i < a.length; i++) {
+		if (a[i][0] === '0' && a[i].charCodeAt(1) > 58)
+			a[i] = '0';
+	}
+
+	// 0 0 0 0 --> 0
+	if (a[0] === '0' && a[1] === '0' && a[2] === '0' && a[3] === '0')
+		return prop + '0' + last;
+
+	// 20px 0 0 0 --> 20px 0 0
+	if (a[0] !== '0' && a[1] === '0' && a[2] === '0' && a[3] === '0')
+		return prop + a[0] + ' 0 0' + last;
+
+	// 20px 30px 20px 30px --> 20px 30px
+	if (a[1] && a[2] && a[3] && a[0] === a[2] && a[1] === a[3])
+		return prop + a[0] + ' ' + a[1] + last;
+
+	// 20px 30px 10px 30px --> 20px 30px 10px
+	if (a[2] && a[3] && a[1] === a[3] && a[0] !== a[2])
+		return prop + a[0] + ' ' + a[1] + ' ' + a[2] + last;
+
+	return text;
 }
 
 function autoprefixer(value) {
@@ -946,7 +888,8 @@ function autoprefixer(value) {
 				continue;
 
 			// text-transform
-			var isPrefix = value.substring(index - 1, index) === '-';
+			var before = value.substring(index - 1, index);
+			var isPrefix = before === '-';
 			if (isPrefix)
 				continue;
 
@@ -956,7 +899,7 @@ function autoprefixer(value) {
 			if (end === -1 || css.substring(0, end + 1).replace(/\s/g, '') !== property + ':')
 				continue;
 
-			builder.push({ name: property, property: css });
+			builder.push({ name: property, property: before + css, css: css });
 		}
 	}
 
@@ -966,7 +909,10 @@ function autoprefixer(value) {
 	for (var i = 0; i < length; i++) {
 
 		var name = builder[i].name;
-		property = builder[i].property;
+		var replace = builder[i].property;
+		var before = replace[0];
+
+		property = builder[i].css.trim();
 
 		var plus = property;
 		var delimiter = ';';
@@ -974,11 +920,11 @@ function autoprefixer(value) {
 
 		if (name === 'opacity') {
 			var opacity = +plus.replace('opacity', '').replace(':', '').replace(/\s/g, '');
-			if (isNaN(opacity))
-				continue;
-			updated += 'filter:alpha(opacity=' + Math.floor(opacity * 100) + ')';
-			value = value.replacer(property, '@[[' + output.length + ']]');
-			output.push(updated);
+			if (!isNaN(opacity)) {
+				updated += 'filter:alpha(opacity=' + Math.floor(opacity * 100) + ')';
+				value = value.replacer(replace, before + '@[[' + output.length + ']]');
+				output.push(updated);
+			}
 			continue;
 		}
 
@@ -986,7 +932,7 @@ function autoprefixer(value) {
 			updated = plus + delimiter;
 			updated += plus.replacer('font-smoothing', '-webkit-font-smoothing') + delimiter;
 			updated += plus.replacer('font-smoothing', '-moz-osx-font-smoothing');
-			value = value.replacer(property, '@[[' + output.length + ']]');
+			value = value.replacer(replace, before + '@[[' + output.length + ']]');
 			output.push(updated);
 			continue;
 		}
@@ -997,50 +943,49 @@ function autoprefixer(value) {
 				updated += plus.replacer('repeating-linear-', '-moz-repeating-linear-') + delimiter;
 				updated += plus.replacer('repeating-linear-', '-ms-repeating-linear-') + delimiter;
 				updated += plus;
-				value = value.replacer(property, '@[[' + output.length + ']]');
+				value = value.replacer(replace, before + '@[[' + output.length + ']]');
 				output.push(updated);
 			} else if (property.indexOf('repeating-radial-gradient') !== -1) {
 				updated = plus.replacer('repeating-radial-', '-webkit-repeating-radial-') + delimiter;
 				updated += plus.replacer('repeating-radial-', '-moz-repeating-radial-') + delimiter;
 				updated += plus.replacer('repeating-radial-', '-ms-repeating-radial-') + delimiter;
 				updated += plus;
-				value = value.replacer(property, '@[[' + output.length + ']]');
+				value = value.replacer(replace, before + '@[[' + output.length + ']]');
 				output.push(updated);
 			} else if (property.indexOf('linear-gradient') !== -1) {
 				updated = plus.replacer('linear-', '-webkit-linear-') + delimiter;
 				updated += plus.replacer('linear-', '-moz-linear-') + delimiter;
 				updated += plus.replacer('linear-', '-ms-linear-') + delimiter;
 				updated += plus;
-				value = value.replacer(property, '@[[' + output.length + ']]');
+				value = value.replacer(replace, before + '@[[' + output.length + ']]');
 				output.push(updated);
 			} else if (property.indexOf('radial-gradient') !== -1) {
 				updated = plus.replacer('radial-', '-webkit-radial-') + delimiter;
 				updated += plus.replacer('radial-', '-moz-radial-') + delimiter;
 				updated += plus.replacer('radial-', '-ms-radial-') + delimiter;
 				updated += plus;
-				value = value.replacer(property, '@[[' + output.length + ']]');
+				value = value.replacer(replace, before + '@[[' + output.length + ']]');
 				output.push(updated);
 			}
-
 			continue;
 		}
 
 		if (name === 'text-overflow') {
 			updated = plus + delimiter;
 			updated += plus.replacer('text-overflow', '-ms-text-overflow');
-			value = value.replacer(property, '@[[' + output.length + ']]');
+			value = value.replacer(replace, before + '@[[' + output.length + ']]');
 			output.push(updated);
 			continue;
 		}
 
 		if (name === 'display') {
-			if (property.indexOf('box') === -1)
-				continue;
-			updated = plus + delimiter;
-			updated += plus.replacer('box', '-webkit-box') + delimiter;
-			updated += plus.replacer('box', '-moz-box');
-			value = value.replacer(property, '@[[' + output.length + ']]');
-			output.push(updated);
+			if (property.indexOf('box') !== -1) {
+				updated = plus + delimiter;
+				updated += plus.replacer('box', '-webkit-box') + delimiter;
+				updated += plus.replacer('box', '-moz-box');
+				value = value.replacer(replace, before + '@[[' + output.length + ']]');
+				output.push(updated);
+			}
 			continue;
 		}
 
@@ -1050,7 +995,7 @@ function autoprefixer(value) {
 		if (name.indexOf('animation') === -1)
 			updated += delimiter + '-ms-' + plus;
 
-		value = value.replacer(property, '@[[' + output.length + ']]');
+		value = value.replacer(replace, before + '@[[' + output.length + ']]');
 		output.push(updated);
 	}
 
@@ -1142,11 +1087,12 @@ function minify_javascript(data) {
 	var alpha = /[0-9a-z$]/i;
 	var white = /\W/;
 	var skip = { '$': true, '_': true };
+	var newlines = { '\n': 1, '\r': 1 };
 	var regexp = false;
-	var scope;
-	var prev;
-	var next;
-	var last;
+	var scope, prev, next, last;
+	var vtmp = false;
+	var regvar = /^(\s)*var /;
+	var vindex = 0;
 
 	while (true) {
 
@@ -1177,7 +1123,7 @@ function minify_javascript(data) {
 				if (c === '/' && next === '/') {
 					isCI = true;
 					continue;
-				} else if (isCI && (c === '\n' || c === '\r')) {
+				} else if (isCI && newlines[c]) {
 					isCI = false;
 					alpha.test(last) && output.push(' ');
 					last = '';
@@ -1188,7 +1134,7 @@ function minify_javascript(data) {
 					continue;
 			}
 
-			if (c === '\t' || c === '\n' || c === '\r') {
+			if (c === '\t' || newlines[c]) {
 				if (!last || !alpha.test(last))
 					continue;
 				output.push(' ');
@@ -1197,8 +1143,11 @@ function minify_javascript(data) {
 			}
 
 			if (!regexp && (c === ' ' && (white.test(prev) || white.test(next)))) {
-				if (!skip[prev] && !skip[next])
-					continue;
+				// if (!skip[prev] && !skip[next])
+				if (!skip[prev]) {
+					if (!skip[next] || !alpha.test(prev))
+						continue;
+				}
 			}
 
 			if (regexp) {
@@ -1229,6 +1178,43 @@ function minify_javascript(data) {
 				scope = c;
 		}
 
+		// var
+		if (!scope && c === 'v' && next === 'a') {
+			var v = c + data[index] + data[index + 1] + data[index + 2];
+			if (v === 'var ') {
+				if (vtmp && output[output.length - 1] === ';') {
+					output.pop();
+					output.push(',');
+				} else
+					output.push('var ');
+				index += 3;
+				vtmp = true;
+				continue;
+			}
+		} else {
+			if (vtmp) {
+				vindex = index + 1;
+				while (true) {
+					if (!data[vindex] || !white.test(data[vindex]))
+						break;
+					vindex++;
+				}
+				if (c === '(' || c === ')' || (c === ';' && !regvar.test(data.substring(vindex, vindex + 20))))
+					vtmp = false;
+			}
+		}
+
+		if (c === '+' || c === '-' && next === ' ') {
+			if (data[index + 1] === c) {
+				index += 2;
+				output.push(c);
+				output.push(' ');
+				output.push(c);
+				last = c;
+				continue;
+			}
+		}
+
 		if ((c === '}' && last === ';') || ((c === '}' || c === ']') && output[output.length - 1] === ' ' && alpha.test(output[output.length - 2])))
 			output.pop();
 
@@ -1239,7 +1225,11 @@ function minify_javascript(data) {
 	return output.join('').trim();
 }
 
-exports.compile_css = function(value, filename) {
+exports.compile_css = function(value, filename, nomarkup) {
+
+	// Internal markup
+	if (!nomarkup)
+		value = markup(value);
 
 	if (global.F) {
 		value = modificators(value, filename, 'style');
@@ -1251,10 +1241,7 @@ exports.compile_css = function(value, filename) {
 
 		var isVariable = false;
 
-		value = nested(value, '', function() {
-			isVariable = true;
-		});
-
+		value = nested(value, '', () => isVariable = true);
 		value = compile_autovendor(value);
 
 		if (isVariable)
@@ -1262,12 +1249,16 @@ exports.compile_css = function(value, filename) {
 
 		return value;
 	} catch (ex) {
-		F.error(new Error('CSS compiler exception: ' + ex.message));
+		F.error(new Error('CSS compiler error: ' + ex.message));
 		return '';
 	}
 };
 
-exports.compile_javascript = function(source, filename) {
+exports.compile_javascript = function(source, filename, nomarkup) {
+
+	// Internal markup
+	if (!nomarkup)
+		source = markup(source);
 
 	if (global.F) {
 		source = modificators(source, filename, 'script');
@@ -1678,8 +1669,7 @@ function localize(language, command) {
 
 function view_parse(content, minify, filename, controller) {
 
-	if (minify)
-		content = removeComments(content);
+	content = removeComments(content).ROOT();
 
 	var nocompressHTML = false;
 	var nocompressJS = false;
@@ -1715,10 +1705,10 @@ function view_parse(content, minify, filename, controller) {
 	}).trim();
 
 	if (!nocompressJS)
-		content = compressJS(content, 0, filename);
+		content = compressJS(content, 0, filename, true);
 
 	if (!nocompressCSS)
-		content = compressCSS(content, 0, filename);
+		content = compressCSS(content, 0, filename, true);
 
 	content = F.$versionprepare(content);
 
@@ -1732,8 +1722,12 @@ function view_parse(content, minify, filename, controller) {
 	var isFirst = false;
 	var txtindex = -1;
 	var index = 0;
+	var isCookie = false;
 
-	if ((controller.$hasComponents || REG_COMPONENTS.test(content)) && REG_HEAD.test(content)) {
+	if (!controller.$hasComponents)
+		controller.$hasComponents = REG_COMPONENTS.test(content) && REG_HEAD.test(content);
+
+	if (controller.$hasComponents) {
 
 		index = content.indexOf('@{import(');
 
@@ -1777,6 +1771,10 @@ function view_parse(content, minify, filename, controller) {
 		if (!value)
 			return '$EMPTY';
 
+		if (!minify) {
+
+		}
+
 		if (!nocompressHTML && is)
 			value += ' ';
 
@@ -1809,6 +1807,9 @@ function view_parse(content, minify, filename, controller) {
 	var text;
 
 	while (command) {
+
+		if (!isCookie && command.command.indexOf('cookie') !== -1)
+			isCookie = true;
 
 		if (old) {
 			text = content.substring(old.end + 1, command.beg);
@@ -1853,7 +1854,7 @@ function view_parse(content, minify, filename, controller) {
 				builder += '+' + DELIMITER + (new Function('self', 'return self.$import(' + cmd[0] + '!' + cmd.substring(1) + ')'))(controller) + DELIMITER;
 		} else if (cmd7 === 'compile' && cmd.lastIndexOf(')') === -1) {
 
-			builderTMP = builder + '+(F.onCompileView.call(self,\'' + (cmd8[7] === ' ' ? cmd.substring(8) : '') + '\',';
+			builderTMP = builder + '+(F.onCompileView.call(self,\'' + (cmd8[7] === ' ' ? cmd.substring(8).trim() : '') + '\',';
 			builder = '';
 			sectionName = cmd.substring(8);
 			isCOMPILATION = true;
@@ -1913,7 +1914,7 @@ function view_parse(content, minify, filename, controller) {
 
 			} else {
 				counter--;
-				builder += '}return $output;})()';
+				builder += '}return $output})()';
 				newCommand = '';
 			}
 
@@ -1927,7 +1928,7 @@ function view_parse(content, minify, filename, controller) {
 			builder += '}$output+=$EMPTY';
 		} else {
 
-			tmp = view_prepare(command.command, newCommand, functionsName, controller);
+			tmp = view_prepare(command.command, newCommand, functionsName, controller, filename);
 			var can = false;
 
 			// Inline rendering is supported only in release mode
@@ -1969,7 +1970,7 @@ function view_parse(content, minify, filename, controller) {
 					}
 				} catch (e) {
 
-					console.log('VIEW EXCEPTION --->', filename, e, tmp);
+					console.log('A view compilation error --->', filename, e, tmp);
 					F.errors.push({ error: e.stack, name: filename, url: null, date: new Date() });
 
 					if (view_parse_plus(builder))
@@ -1979,7 +1980,10 @@ function view_parse(content, minify, filename, controller) {
 			} else if (tmp) {
 				if (view_parse_plus(builder))
 					builder += '+';
-				builder += wrapTryCatch(tmp, command.command, command.line);
+				if (tmp.substring(1, 4) !== '@{-' && tmp.substring(0, 11) !== 'self.$view')
+					builder += wrapTryCatch(tmp, command.command, command.line);
+				else
+					builder += tmp;
 			}
 		}
 
@@ -1996,7 +2000,7 @@ function view_parse(content, minify, filename, controller) {
 	if (RELEASE)
 		builder = builder.replace(/(\+\$EMPTY\+)/g, '+').replace(/(\$output=\$EMPTY\+)/g, '$output=').replace(/(\$output\+=\$EMPTY\+)/g, '$output+=').replace(/(\}\$output\+=\$EMPTY)/g, '}').replace(/(\{\$output\+=\$EMPTY;)/g, '{').replace(/(\+\$EMPTY\+)/g, '+').replace(/(>'\+'<)/g, '><').replace(/'\+'/g, '');
 
-	var fn = '(function(self,repository,model,session,query,body,url,global,helpers,user,config,functions,index,output,cookie,files,mobile,settings){var get=query;var post=body;var G=F.global;var R=this.repository;var M=model;var theme=this.themeName;var language=this.language;var sitemap=this.repository.$sitemap;var cookie=function(name){return self.req.cookie(name)};' + (functions.length ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})';
+	var fn = '(function(self,repository,model,session,query,body,url,global,helpers,user,config,functions,index,output,files,mobile,settings){var get=query;var post=body;var G=F.global;var R=this.repository;var M=model;var theme=this.themeName;var language=this.language;var sitemap=this.repository.$sitemap;' + (isCookie ? 'var cookie=function(name){return self.req.cookie(name)};' : '') + (functions.length ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})';
 	try {
 		fn = eval(fn);
 	} catch (e) {
@@ -2073,6 +2077,10 @@ function view_prepare(command, dynamicCommand, functions, controller) {
 			return '$STRING(' + command + ')';
 		case '!isomorphic':
 			return '$STRING(' + command + ')';
+
+		case 'root':
+			var r = F.config['default-root'];
+			return '\'' + (r ? r.substring(0, r.length - 1) : r) + '\'';
 
 		case 'M':
 		case 'R':
@@ -2175,10 +2183,21 @@ function view_prepare(command, dynamicCommand, functions, controller) {
 		case 'sitemap_url':
 		case 'sitemap_name':
 		case 'sitemap_navigation':
+		case 'sitemap_url2':
+		case 'sitemap_name2':
 			return 'self.' + command;
+		case 'breadcrumb_url':
+		case 'breadcrumb_name':
+		case 'breadcrumb_url2':
+		case 'breadcrumb_name2':
+		case 'breadcrumb_navigation':
+			return 'self.sitemap_' + command.substring(10);
 
 		case 'sitemap':
+		case 'breadcrumb':
 		case 'place':
+			if (name === 'breadcrumb')
+				name = 'sitemap';
 			return command.indexOf('(') === -1 ? '(repository[\'$' + command + '\'] || \'\')' : 'self.$' + command;
 
 		case 'meta':
@@ -2211,7 +2230,33 @@ function view_prepare(command, dynamicCommand, functions, controller) {
 			return '(' + command + ')';
 
 		case 'component':
+
 			controller.$hasComponents = true;
+			tmp = command.indexOf('\'');
+
+			var is = false;
+			if (tmp !== -1) {
+				name = command.substring(tmp + 1, command.indexOf('\'', tmp + 1));
+				tmp = F.components.instances[name];
+				if (tmp && tmp.render)
+					is = true;
+			} else {
+				tmp = command.indexOf('"');
+				name = command.substring(tmp + 1, command.indexOf('"', tmp + 1));
+				tmp = F.components.instances[name];
+				if (tmp && tmp.render)
+					is = true;
+			}
+
+
+			if (is) {
+				var settings = command.substring(11 + name.length + 2, command.length - 1).trim();
+				if (settings === ')')
+					settings = '';
+				$VIEWASYNC++;
+				return '\'@{-{0}-}\'+(function(index){!controller.$viewasync&&(controller.$viewasync=[]);controller.$viewasync.push({replace:\'@{-{0}-}\',name:\'{1}\',settings:{2}});return $EMPTY})({0})'.format($VIEWASYNC, name, settings || 'null');
+			}
+
 			return 'self.' + command;
 
 		case 'routeJS':
@@ -2242,9 +2287,7 @@ function view_prepare(command, dynamicCommand, functions, controller) {
 		case 'selected':
 		case 'disabled':
 		case 'checked':
-		case 'etag':
 		case 'header':
-		case 'modified':
 		case 'options':
 		case 'readonly':
 		case 'canonical':
@@ -2264,7 +2307,7 @@ function view_prepare(command, dynamicCommand, functions, controller) {
 		case 'hidden':
 		case 'textarea':
 		case 'password':
-			return 'self.$' + exports.appendModel(command);
+			return 'self.$' + appendModel(command);
 
 		default:
 			return F.helpers[name] ? ('helpers.' + view_insert_call(command)) : ('$STRING(' + (functions.indexOf(name) === -1 ? command[0] === '!' ? command.substring(1) + ')' : command + ').encode()' : command + ')'));
@@ -2344,13 +2387,11 @@ function view_is_assign(value) {
 			if (!skip)
 				return true;
 		}
-
 	}
-
 	return false;
 }
 
-function view_find_command(content, index) {
+function view_find_command(content, index, entire) {
 
 	index = content.indexOf('@{', index);
 	if (index === -1)
@@ -2380,12 +2421,12 @@ function view_find_command(content, index) {
 		if (command[0] === '{')
 			return view_find_command(content, index + 1);
 
-		return {
-			beg: index,
-			end: i,
-			line: view_line_counter(content.substr(0, index)),
-			command: command
-		};
+		var obj = { beg: index, end: i, line: view_line_counter(content.substr(0, index)), command: command };
+
+		if (entire)
+			obj.phrase = content.substring(index, i + 1);
+
+		return obj;
 	}
 
 	return null;
@@ -2458,12 +2499,25 @@ function removeComments(html) {
 function compressView(html, minify) {
 
 	var cache = [];
+	var beg = 0;
+	var end;
 
 	while (true) {
-		var beg = html.indexOf('@{');
+		beg = html.indexOf('@{compile ', beg - 1);
 		if (beg === -1)
 			break;
-		var end = html.indexOf('}', beg + 2);
+		end = html.indexOf('@{end}', beg + 6);
+		if (end === -1)
+			break;
+		cache.push(html.substring(beg, end + 6));
+		html = html.substring(0, beg) + '#@' + (cache.length - 1) + '#' + html.substring(end + 6);
+	}
+
+	while (true) {
+		beg = html.indexOf('@{', beg);
+		if (beg === -1)
+			break;
+		end = html.indexOf('}', beg + 2);
 		if (end === -1)
 			break;
 		cache.push(html.substring(beg, end + 1));
@@ -2484,7 +2538,7 @@ function compressView(html, minify) {
  * @param  {Number} index Last index.
  * @return {String}
  */
-function compressJS(html, index, filename) {
+function compressJS(html, index, filename, nomarkup) {
 
 	if (!F.config['allow-compile-script'])
 		return html;
@@ -2510,12 +2564,12 @@ function compressJS(html, index, filename) {
 		return html;
 
 	var val = js.substring(strFrom.length, js.length - strTo.length).trim();
-	var compiled = exports.compile_javascript(val, filename);
+	var compiled = exports.compile_javascript(val, filename, nomarkup);
 	html = html.replacer(js, strFrom + compiled.trim() + strTo.trim());
-	return compressJS(html, indexBeg + compiled.length + 9, filename);
+	return compressJS(html, indexBeg + compiled.length + 9, filename, nomarkup);
 }
 
-function compressCSS(html, index, filename) {
+function compressCSS(html, index, filename, nomarkup) {
 
 	if (!F.config['allow-compile-style'])
 		return html;
@@ -2537,9 +2591,9 @@ function compressCSS(html, index, filename) {
 
 	var css = html.substring(indexBeg, indexEnd + strTo.length);
 	var val = css.substring(strFrom.length, css.length - strTo.length).trim();
-	var compiled = exports.compile_css(val, filename);
+	var compiled = exports.compile_css(val, filename, nomarkup);
 	html = html.replacer(css, (strFrom + compiled.trim() + strTo).trim());
-	return compressCSS(html, indexBeg + compiled.length + 8, filename);
+	return compressCSS(html, indexBeg + compiled.length + 8, filename, nomarkup);
 }
 
 function variablesCSS(content) {
@@ -2794,7 +2848,7 @@ function compressHTML(html, minify, isChunk) {
 	if (!html || !minify)
 		return html;
 
-	html = removeComments(html);
+	html = removeComments(html.replace(REG_WIN, ''));
 
 	var tags = ['script', 'textarea', 'pre', 'code'];
 	var id = '[' + new Date().getTime() + ']#';
@@ -2802,16 +2856,17 @@ function compressHTML(html, minify, isChunk) {
 	var indexer = 0;
 	var length = tags.length;
 	var chars = 65;
+	var tagBeg, tagEnd, beg, end, len, key, value;
 
 	for (var i = 0; i < length; i++) {
 		var o = tags[i];
 
-		var tagBeg = '<' + o;
-		var tagEnd = '</' + o;
+		tagBeg = '<' + o;
+		tagEnd = '</' + o;
 
-		var beg = html.indexOf(tagBeg);
-		var end = 0;
-		var len = tagEnd.length;
+		beg = html.indexOf(tagBeg);
+		end = 0;
+		len = tagEnd.length;
 
 		while (beg !== -1) {
 
@@ -2823,11 +2878,11 @@ function compressHTML(html, minify, isChunk) {
 					break;
 			}
 
-			var key = id + (indexer++) + String.fromCharCode(chars++);
+			key = id + (indexer++) + String.fromCharCode(chars++);
 			if (chars > 90)
 				chars = 65;
 
-			var value = html.substring(beg, end + len);
+			value = html.substring(beg, end + len);
 
 			if (!i) {
 				end = value.indexOf('>');
@@ -2865,7 +2920,7 @@ function compressHTML(html, minify, isChunk) {
 		html = html.replace(REG_6, text => text.replace(/\s+/g, ' '));
 	}
 
-	html = html.replace(/>\n\s+/g, '>').replace(/(\w|\W)\n\s+</g, function(text) {
+	html = html.replace(REG_9, '>').replace(REG_10, function(text) {
 		return text.trim().replace(/\s/g, '');
 	}).replace(REG_5, '><').replace(REG_4, function(text) {
 		var c = text[text.length - 1];
@@ -2959,6 +3014,7 @@ function viewengine_load(name, filename, controller) {
 		filename += '.html';
 
 	var key = 'view#' + filename + (controller.language || '');
+
 	var generator = F.temporary.views[key];
 	if (generator)
 		return generator;
@@ -2985,13 +3041,13 @@ function viewengine_dynamic(content, language, controller, cachekey) {
 	return generator;
 }
 
-exports.appendModel = function(str) {
+function appendModel(str) {
 	var index = str.indexOf('(');
 	if (index === -1)
 		return str;
 	var end = str.substring(index + 1);
 	return str.substring(0, index) + '(model' + (end[0] === ')' ? end : ',' + end);
-};
+}
 
 function cleanURL(url, index) {
 	var o = url.substring(0, index);
@@ -3139,16 +3195,29 @@ function onFinished(stream, fn) {
 		if (stream.socket) {
 			if (!stream.socket.$totalstream) {
 				stream.socket.$totalstream = stream;
-				stream.socket.prependListener('error', callback);
-				stream.socket.prependListener('close', callback);
+				if (stream.socket.prependListener) {
+					stream.socket.prependListener('error', callback);
+					stream.socket.prependListener('close', callback);
+				} else {
+					stream.socket.on('error', callback);
+					stream.socket.on('close', callback);
+				}
 			}
 		}
 
-		stream.prependListener('error', callback);
-		stream.prependListener('end', callback);
-		stream.prependListener('close', callback);
-		stream.prependListener('aborted', callback);
-		stream.prependListener('finish', callback);
+		if (stream.prependListener) {
+			stream.prependListener('error', callback);
+			stream.prependListener('end', callback);
+			stream.prependListener('close', callback);
+			stream.prependListener('aborted', callback);
+			stream.prependListener('finish', callback);
+		} else {
+			stream.on('error', callback);
+			stream.on('end', callback);
+			stream.on('close', callback);
+			stream.on('aborted', callback);
+			stream.on('finish', callback);
+		}
 
 		//stream.uri --> determines ServerRespone
 		// stream.uri && stream.prependListener('aborted', callback);
@@ -3232,10 +3301,61 @@ function existsSync(filename) {
 	}
 }
 
-exports.restart = function() {
-	INDEXMIXED = 0;
-	INDEXFILE = 0;
-};
+function markup(body) {
+	body = body.ROOT();
+	var command = view_find_command(body, 0, true);
+	if (!command)
+		return body;
+
+	var G = F.global;
+	var config = F.config;
+	var resource = F.resource;
+	var r = [];
+
+	while (command) {
+
+		var cmd = command.command;
+		var name = cmd;
+
+		if (name.substring(0, 2) === '\'%') {
+			name = 'config';
+			cmd = 'config[\'' + cmd.substring(2) + ']';
+		} else {
+			var index = name.indexOf('.');
+			if (index !== -1)
+				name = name.substring(0, index);
+			else {
+				index = name.indexOf('(');
+				if (index !== -1)
+					name = name.substring(0, index);
+			}
+		}
+
+		if (ALLOWEDMARKUP[name]) {
+			switch (cmd) {
+				case 'author':
+					cmd = 'F.config.author';
+					break;
+				case 'root':
+					cmd = 'F.config[\'default-root\']';
+					break;
+			}
+
+			try {
+				r.push({ cmd: command.phrase, value: eval('(' + cmd + ')') });
+			} catch (e) {
+				console.log('A markup compilation error -->', cmd, e);
+			}
+		}
+
+		command = view_find_command(body, command.end, true);
+	}
+
+	for (var i = 0; i < r.length; i++)
+		body = body.replace(r[i].cmd, r[i].value);
+
+	return body;
+}
 
 global.HttpFile = HttpFile;
 exports.HttpFile = HttpFile;
@@ -3246,3 +3366,4 @@ exports.findLocalization = view_find_localization;
 exports.destroyStream = destroyStream;
 exports.onFinished = onFinished;
 exports.modificators = modificators;
+exports.markup = markup;

@@ -68,8 +68,6 @@ function test_controller_functions(next) {
 	utils.request(url, ['get'], function(error, data, code, headers) {
 		error && assert.ok(false, 'test_controller_functions: ' + error.toString());
 		assert.ok(code === 404, 'controller: statusCode ' + code);
-		assert.ok(headers['etag'] === '1234561', 'controller: setModified(etag)');
-		assert.ok(headers['last-modified'].toString().indexOf('1984') !== -1, 'controller: setModified(date)');
 		next();
 	});
 }
@@ -79,7 +77,6 @@ function test_view_functions(next) {
 
 		if (error)
 			assert.ok(false, 'test_view_functions: ' + error.toString());
-
 		assert.ok(data === '{"r":true}', 'json');
 		next();
 	});
@@ -173,7 +170,7 @@ function test_routing(next) {
 		utils.request(url + 'html-nocompress/', ['get'], function(error, data, code, headers) {
 			if (error)
 				throw error;
-			assert(data.indexOf('<div>\nA\n</div>') !== -1, 'HTML nocompress');
+			assert(data.indexOf('<div>\nA\n</div>') !== -1 || data.indexOf('<div>\r\nA\r\n</div>') !== -1, 'HTML nocompress');
 			complete();
 		});
 	});
@@ -397,6 +394,24 @@ function test_routing(next) {
 		});
 	});
 
+	async.await('prefix -- 1', function(complete) {
+		utils.request(url + 'prefix1/test/', ['get'], function(error, data) {
+			if (error)
+				throw error;
+			assert.ok(data === 'PREFIX1TEST', 'Group + Prefix 1');
+			complete();
+		});
+	});
+
+	async.await('prefix -- 2', function(complete) {
+		utils.request(url + 'prefix2/test/', ['get'], function(error, data) {
+			if (error)
+				throw error;
+			assert.ok(data === 'PREFIX2TEST', 'Group + Prefix 2');
+			complete();
+		});
+	});
+
 	async.await('package/', function(complete) {
 		utils.request(url + 'package/', ['get'], function(error, data, code, headers) {
 			if (error)
@@ -479,7 +494,7 @@ function test_routing(next) {
 		utils.request(url + 'schema-filter/', ['post'], 'EMPTY', function(error, data, code, headers) {
 			if (error)
 				throw error;
-			assert(data === '[{"name":"age","error":"The field \\"age\\" is invalid.","path":"filter.age","prefix":"age"}]', 'schema filter');
+			assert(data === '[{"name":"age","error":"The field \\"age\\" is invalid.","path":"age","prefix":"age"}]', 'schema filter');
 			complete();
 		});
 	});
@@ -497,7 +512,7 @@ function test_routing(next) {
 		utils.request(url + 'post/schema/', ['post'], 'age=Peter123456789012345678901234567890#', function(error, data, code, headers) {
 			if (error)
 				throw error;
-			assert(data === '[{"name":"name","error":"default","path":"User.name","prefix":"name"}]', 'post-schema 2');
+			assert(data === '[{"name":"name","error":"default","path":"name","prefix":"name"}]', 'post-schema 2');
 			complete();
 		});
 	});
@@ -628,6 +643,24 @@ function test_routing(next) {
 		});
 	});
 
+	async.await('component-filename-1', function(complete) {
+		utils.request(url + '~contactform/a.txt', [], function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(code === 200 && data === 'Total.js v3', 'problem with component files 1');
+			complete();
+		});
+	});
+
+	async.await('component-filename-2', function(complete) {
+		utils.request(url + '~contactform/b.txt', [], function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(code === 200 && data === 'Peter Sirka', 'problem with component files 2');
+			complete();
+		});
+	});
+
 	async.await('static-file-notfound-because-directory1', function(complete) {
 		utils.request(url + 'directory.txt', [], function(error, data, code, headers) {
 			if (error)
@@ -736,7 +769,7 @@ function test_routing(next) {
 		utils.request(url + 'merge-blocks-a.js', [], function(error, data, code, headers) {
 			if (error)
 				throw error;
-			assert(data.indexOf('var common=true;var a=true;') !== -1, 'merge blocks - A');
+			assert(data.indexOf('var common=true,a=true;') !== -1, 'merge blocks - A');
 			complete();
 		});
 	});
@@ -745,7 +778,7 @@ function test_routing(next) {
 		utils.request(url + 'merge-blocks-b.js', [], function(error, data, code, headers) {
 			if (error)
 				throw error;
-			assert(data.indexOf('var common=true;var b=true;') !== -1, 'merge blocks - B');
+			assert(data.indexOf('var common=true,b=true;') !== -1, 'merge blocks - B');
 			complete();
 		});
 	});
@@ -754,7 +787,7 @@ function test_routing(next) {
 		utils.request(url + 'blocks-a.js', [], function(error, data, code, headers) {
 			if (error)
 				throw error;
-			assert(data.indexOf('var common=true;var a=true;') !== -1, 'mapping blocks - A');
+			assert(data.indexOf('var common=true,a=true;') !== -1, 'mapping blocks - A');
 			complete();
 		});
 	});
@@ -763,7 +796,7 @@ function test_routing(next) {
 		utils.request(url + 'blocks-b.js', [], function(error, data, code, headers) {
 			if (error)
 				throw error;
-			assert(data.indexOf('var common=true;var b=true;') !== -1, 'mapping blocks - B');
+			assert(data.indexOf('var common=true,b=true;') !== -1, 'mapping blocks - B');
 			complete();
 		});
 	});
@@ -772,7 +805,7 @@ function test_routing(next) {
 		utils.request(url + 'blocks-c.js', [], function(error, data, code, headers) {
 			if (error)
 				throw error;
-			assert(data.indexOf('var common=true;var a=true;var b=true;') !== -1, 'mapping blocks - C');
+			assert(data.indexOf('var common=true,a=true,b=true;') !== -1, 'mapping blocks - C');
 			complete();
 		});
 	});
@@ -887,6 +920,7 @@ framework.on('load', function() {
 	assert.ok(RESOURCE('default', 'name-root').length > 0, 'custom resource mapping 1');
 	assert.ok(RESOURCE('default', 'name-theme').length > 0, 'custom resource mapping 2');
 	assert.ok(F.global.newslettercomponent, 'components: inline <script type="text/totaljs"> --> newsletter');
+	assert.ok(F.global.schemas === 1, 'schemas are not loaded');
 
 	var sa = F.sitemap_navigation();
 	var sb = F.sitemap_navigation('b');

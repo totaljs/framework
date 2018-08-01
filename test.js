@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkTest
- * @version 2.9.4
+ * @version 3.0.0
  */
 
 var T = F.tests = {};
@@ -118,15 +118,53 @@ global.TEST = function(name, url, scope) {
 };
 
 global.FAIL = function(is, description) {
-	logger(is ? true : false, T.currentname, description);
-	T.immediate && clearImmediate(T.immediate);
-	T.immediate = setImmediate(NEXT);
+	if (arguments.length) {
+		logger(is ? true : false, T.currentname, description);
+		T.immediate && clearImmediate(T.immediate);
+		T.immediate = setImmediate(NEXT);
+	} else {
+		return function(err) {
+			FAIL(err == null);
+		};
+	}
 };
 
 global.OK = function(is, description) {
-	logger(is ? false : true, T.currentname, description);
-	T.immediate && clearImmediate(T.immediate);
-	T.immediate = setImmediate(NEXT);
+	if (arguments.length) {
+		logger(is ? false : true, T.currentname, description);
+		T.immediate && clearImmediate(T.immediate);
+		T.immediate = setImmediate(NEXT);
+	} else {
+		return function(err) {
+			OK(err == null);
+		};
+	}
+};
+
+global.TESTUSER = function(user, flags) {
+
+	if (!T.auth)
+		T.auth = F.onAuthorize;
+
+	T.user = user;
+	T.flags = flags;
+
+	if (user) {
+		F.onAuthorize = function(req, res, flags, next) {
+
+			if (T.flags && T.flags.length) {
+				for (var i = 0; i < T.flags.length; i++) {
+					var f = T.flags[i];
+					if (f[0] !== '@')
+						f = '@' + f;
+					flags.push(f);
+				}
+			}
+
+			next(true, F.tests.user);
+		};
+	} else
+		F.onAuthorize = T.auth;
 };
 
 exports.load = function() {
