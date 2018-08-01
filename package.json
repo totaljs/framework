@@ -3,7 +3,7 @@
     "author": {
         "name": "Peter Sirka",
         "email": "petersirka@gmail.com",
-        "url": "http://www.petersirka.eu"
+        "url": "http://www.petersirka.com"
     },
     "bin": {
         "total": "./bin/totaljs",
