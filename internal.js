@@ -76,7 +76,7 @@ const REG_CSS_7 = /\s\}/g;
 const REG_CSS_8 = /\s\{/g;
 const REG_CSS_9 = /;\}/g;
 const REG_CSS_10 = /\$[a-z0-9-_]+:.*?;/gi;
-const REG_CSS_11 = /\$[a-z0-9-_]+/gi;
+const REG_CSS_11 = /\$.*?(;|\})/gi;
 const REG_CSS_12 = /(margin|padding):.*?(;|})/g;
 const AUTOVENDOR = ['filter', 'appearance', 'column-count', 'column-gap', 'column-rule', 'display', 'transform', 'transform-style', 'transform-origin', 'transition', 'user-select', 'animation', 'perspective', 'animation-name', 'animation-duration', 'animation-timing-function', 'animation-delay', 'animation-iteration-count', 'animation-direction', 'animation-play-state', 'opacity', 'background', 'background-image', 'font-smoothing', 'text-size-adjust', 'backface-visibility', 'box-sizing', 'overflow-scrolling'];
 const WRITESTREAM = { flags: 'w' };
@@ -2613,8 +2613,23 @@ function variablesCSS(content) {
 	});
 
 	content = content.replace(REG_CSS_11, function(text) {
-		var variable = variables[text];
-		return variable ? variable : text;
+
+		var index = text.indexOf('||');
+		var variable = '';
+		var last = text[text.length - 1];
+		var len = text.length;
+
+		if (last === ';' || last === '}')
+			len = len - 1;
+		else
+			last = '';
+
+		if (index !== -1)
+			variable = variables[text.substring(0, index).trim()] || text.substring(index + 2, len).trim();
+		else
+			variable = variables[text.substring(0, len).trim()];
+
+		return variable ? (variable + last) : text;
 	}).trim();
 
 	return content;
