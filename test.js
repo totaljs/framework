@@ -181,13 +181,17 @@ exports.load = function() {
 			T.current = null;
 			next();
 		}, function() {
-			T.tests.quicksort('priority');
-			F.emit('test-begin', T);
-			console.log('===================== TESTING ======================');
-			console.log('');
-			T.running = true;
-			T.start = Date.now();
-			NEXT();
+			U.wait(function() {
+				return F._length_wait === 0;
+			}, function() {
+				T.tests.quicksort('priority');
+				F.emit('test-begin', T);
+				console.log('===================== TESTING ======================');
+				console.log('');
+				T.running = true;
+				T.start = Date.now();
+				NEXT();
+			});
 		});
 	});
 };
