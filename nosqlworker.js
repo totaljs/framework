@@ -122,6 +122,10 @@ process.on('message', function(msg) {
 			});
 			break;
 		case 'update':
+
+			if (typeof(msg.arg[0]) === 'string')
+				msg.arg[0] = eval('(' + msg.arg[0] + ')');
+
 			db.update(msg.arg[0], msg.arg[1]).parse(msg.data).callback(function(err, response, repository) {
 				RESUPDATE.err = err;
 				RESUPDATE.response = response;
@@ -131,6 +135,10 @@ process.on('message', function(msg) {
 			});
 			break;
 		case 'modify':
+
+			if (typeof(msg.arg[0]) === 'string')
+				msg.arg[0] = eval('(' + msg.arg[0] + ')');
+
 			db.modify(msg.arg[0], msg.arg[1]).parse(msg.data).callback(function(err, response, repository) {
 				RESUPDATE.err = err;
 				RESUPDATE.response = response;

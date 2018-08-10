@@ -370,11 +370,17 @@ exports.worker = function() {
 	};
 
 	TP.update = DP.update = function(doc, insert) {
-		return send(this, 'update', framework_builders.isSchema(doc) ? doc.$clean() : doc, insert).builder = new DatabaseBuilder(this);
+		var val = framework_builders.isSchema(doc) ? doc.$clean() : doc;
+		if (typeof(val) === 'function')
+			val = val.toString();
+		return send(this, 'update', val, insert).builder = new DatabaseBuilder(this);
 	};
 
 	TP.modify = DP.modify = function(doc, insert) {
-		return send(this, 'modify', framework_builders.isSchema(doc) ? doc.$clean() : doc, insert).builder = new DatabaseBuilder(this);
+		var val = framework_builders.isSchema(doc) ? doc.$clean() : doc;
+		if (typeof(val) === 'function')
+			val = val.toString();
+		return send(this, 'modify', val, insert).builder = new DatabaseBuilder(this);
 	};
 
 	DP.restore = function(filename, callback) {

@@ -1,3 +1,7 @@
+======= 3.0.1
+
+- fixed: `nosql.update()` and `nosql.modify()` methods if the first argument is a function
+
 ======= 3.0.0
 
 - added: (IMPORTANT) bundles
