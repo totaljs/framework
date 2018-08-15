@@ -4,6 +4,7 @@
 
 - fixed: `nosql.update()` and `nosql.modify()` methods if the first argument is a function
 - fixed: `F.wait()` in the test mode
+- fixed: `LOCALIZE()` for nested directories
 
 ======= 3.0.0
 
