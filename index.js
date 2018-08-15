@@ -21,7 +21,7 @@
 
 /**
  * @module Framework
- * @version 3.0.0
+ * @version 3.0.1
  */
 
 'use strict';
@@ -626,8 +626,8 @@ var PERF = {};
 function Framework() {
 
 	this.$id = null; // F.id ==> property
-	this.version = 3000;
-	this.version_header = '3.0.0';
+	this.version = 3001;
+	this.version_header = '3.0.1';
 	this.version_node = process.version.toString();
 	this.syshash = (Os.hostname() + '-' + Os.platform() + '-' + Os.arch() + '-' + Os.release() + '-' + Os.tmpdir()).md5();
 
@@ -3223,7 +3223,7 @@ global.LOCALIZE = F.localize = function(url, flags, minify) {
 	if (url[0] === '#')
 		url = sitemapurl(url.substring(1));
 
-	url = url.replace('*', '');
+	url = url.replace('*.*', '');
 
 	if (minify == null)
 		minify = true;
@@ -3235,24 +3235,30 @@ global.LOCALIZE = F.localize = function(url, flags, minify) {
 		flags = [];
 
 	var index;
+	var ext = false;
 
 	flags = flags.remove(function(item) {
 		item = item.toLowerCase();
 		if (item === 'nocompress')
 			minify = false;
+		if (item[0] === '.')
+			ext = true;
 		return item === 'compress' || item === 'nocompress' || item === 'minify';
 	});
 
 	var index = url.lastIndexOf('.');
 
-	if (index === -1)
-		flags.push('.html', '.htm', '.md', '.txt');
-	else {
-		flags.push(url.substring(index).toLowerCase());
-		url = url.substring(0, index);
+	if (!ext) {
+		if (index === -1)
+			flags.push('.html', '.htm', '.md', '.txt');
+		else {
+			flags.push(url.substring(index).toLowerCase());
+			url = url.substring(0, index).replace('*', '');
+		}
 	}
 
-	url = framework_internal.preparePath(url);
+	url = framework_internal.preparePath(url.replace('.*', ''));
+
 	F.file(url, function(req, res) {
 
 		F.onLocale && (req.$language = F.onLocale(req, res, req.isStaticFile));
