@@ -879,7 +879,7 @@ function request_response(res, uri, options) {
 
 		var tmp = Url.parse(loc);
 		tmp.headers = uri.headers;
-		tmp.agent = false;
+		// tmp.agent = false;
 		tmp.method = uri.method;
 
 		res.req.removeAllListeners();
@@ -1147,7 +1147,7 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 
 	var uri = Url.parse(url);
 	uri.method = method;
-	uri.agent = false;
+	// uri.agent = false;
 	uri.headers = headers;
 	options.uri = uri;
 
@@ -1257,7 +1257,7 @@ function download_response(res, uri, options) {
 
 		var tmp = Url.parse(res.headers['location']);
 		tmp.headers = uri.headers;
-		tmp.agent = false;
+		// tmp.agent = false;
 		tmp.method = uri.method;
 		res.req.removeAllListeners();
 		res.req = null;
