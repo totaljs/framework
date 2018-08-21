@@ -2,6 +2,7 @@
 
 - added: CSS variables support default values `border-radius: $radius || 10px`
 
+- fixed: a critical bug with storing uploaded files via `httpfile.fs()` or `httpfile.nosql()`
 - fixed: `nosql.update()` and `nosql.modify()` methods if the first argument is a function
 - fixed: `F.wait()` in the test mode
 - fixed: `LOCALIZE()` for nested directories

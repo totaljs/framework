@@ -4738,7 +4738,7 @@ Binary.prototype.insert = function(name, buffer, custom, callback) {
 	if (typeof(buffer) === 'string')
 		buffer = framework_utils.createBuffer(buffer, 'base64');
 	else if (buffer.resume)
-		return self.insertstream(null, name, type, buffer, callback);
+		return self.insertstream(null, name, type, buffer, callback, custom);
 
 	var size = buffer.length;
 	var dimension;
@@ -4898,7 +4898,7 @@ Binary.prototype.insertstream = function(id, name, type, stream, callback, custo
 
 		h.size = writer.bytesWritten;
 
-		Fs.open(filepath, 'a', function(err, fd) {
+		Fs.open(filepath, 'r+', function(err, fd) {
 			if (!err) {
 				var header = framework_utils.createBufferSize(BINARY_HEADER_LENGTH);
 				header.fill(' ');
@@ -4953,7 +4953,7 @@ Binary.prototype.update = function(id, name, buffer, custom, callback) {
 		buffer = framework_utils.createBuffer(buffer, 'base64');
 
 	if (buffer.resume)
-		return self.insertstream(id, name, type, buffer, callback);
+		return self.insertstream(id, name, type, buffer, callback, custom);
 
 	var isnew = false;
 	var time = NOW.format('yyyyMMdd');
