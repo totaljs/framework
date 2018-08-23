@@ -872,7 +872,8 @@ DP.update = function(doc, insert) {
 	self.readonly && self.throwReadonly();
 	var builder = new DatabaseBuilder(self);
 	var data = framework_builders.isSchema(doc) ? doc.$clean() : doc;
-	self.pending_update.push({ builder: builder, doc: data, count: 0, insert: insert === true ? data : insert });
+	builder.$options.readertype = 1;
+	self.pending_update.push({ builder: builder, doc: data, insert: insert === true ? data : insert });
 	setImmediate(next_operation, self, 2);
 	return builder;
 };
@@ -884,6 +885,8 @@ DP.modify = function(doc, insert) {
 	var data = framework_builders.isSchema(doc) ? doc.$clean() : doc;
 	var keys = Object.keys(data);
 	var inc = null;
+
+	builder.$options.readertype = 1;
 
 	if (keys.length) {
 		for (var i = 0; i < keys.length; i++) {
@@ -902,7 +905,7 @@ DP.modify = function(doc, insert) {
 					break;
 			}
 		}
-		self.pending_update.push({ builder: builder, doc: data, count: 0, keys: keys, inc: inc, insert: insert === true ? data : insert });
+		self.pending_update.push({ builder: builder, doc: data, keys: keys, inc: inc, insert: insert === true ? data : insert });
 		setImmediate(next_operation, self, 2);
 	}
 
@@ -1095,16 +1098,11 @@ TP.lock = DP.lock = function(callback) {
 	return self;
 };
 
-DP.remove = function(filename) {
+DP.remove = function() {
 	var self = this;
 	self.readonly && self.throwReadonly();
 	var builder = new DatabaseBuilder(self);
-	var backup = filename === undefined ? undefined : filename || self.filenameBackup2;
-
-	if (backup)
-		backup = new Backuper(backup);
-
-	self.pending_remove.push({ builder: builder, count: 0, backup: backup });
+	self.pending_remove.push(builder);
 	setImmediate(next_operation, self, 3);
 	return builder;
 };
@@ -1117,7 +1115,7 @@ DP.listing = function(builder) {
 		builder = new DatabaseBuilder(self);
 	builder.$options.listing = true;
 	builder.$take = builder.$options.take = 100;
-	self.pending_reader.push({ builder: builder, count: 0, counter: 0 });
+	self.pending_reader.push(builder);
 	setImmediate(next_operation, self, 4);
 	return builder;
 };
@@ -1128,7 +1126,7 @@ DP.find = function(builder) {
 		builder.db = self;
 	else
 		builder = new DatabaseBuilder(self);
-	self.pending_reader.push({ builder: builder, count: 0, counter: 0 });
+	self.pending_reader.push(builder);
 	setImmediate(next_operation, self, 4);
 	return builder;
 };
@@ -1141,7 +1139,7 @@ DP.find2 = function(builder) {
 		builder = new DatabaseBuilder(self);
 	if (self.readonly)
 		return self.find(builder);
-	self.pending_reader2.push({ builder: builder, count: 0, counter: 0 });
+	self.pending_reader2.push(builder);
 	setImmediate(next_operation, self, 11);
 	return builder;
 };
@@ -1170,7 +1168,8 @@ DP.scalar = function(type, field) {
 DP.count = function() {
 	var self = this;
 	var builder = new DatabaseBuilder(self);
-	self.pending_reader.push({ builder: builder, count: 0, type: 1 });
+	builder.$options.readertype = 1;
+	self.pending_reader.push(builder);
 	setImmediate(next_operation, self, 4);
 	return builder;
 };
@@ -1179,7 +1178,7 @@ DP.one = function() {
 	var self = this;
 	var builder = new DatabaseBuilder(self);
 	builder.first();
-	self.pending_reader.push({ builder: builder, count: 0 });
+	self.pending_reader.push(builder);
 	setImmediate(next_operation, self, 4);
 	return builder;
 };
@@ -1188,7 +1187,7 @@ DP.one2 = function() {
 	var self = this;
 	var builder = new DatabaseBuilder(self);
 	builder.first();
-	self.pending_reader2.push({ builder: builder, count: 0 });
+	self.pending_reader2.push(builder);
 	setImmediate(next_operation, self, 11);
 	return builder;
 };
@@ -1197,7 +1196,7 @@ DP.top = function(max) {
 	var self = this;
 	var builder = new DatabaseBuilder(self);
 	builder.take(max);
-	self.pending_reader.push({ builder: builder, count: 0, counter: 0 });
+	self.pending_reader.push(builder);
 	setImmediate(next_operation, self, 4);
 	return builder;
 };
@@ -1468,21 +1467,12 @@ DP.$update = function() {
 	self.$writting = true;
 
 	var filter = self.pending_update.splice(0);
-	var length = filter.length;
-	var backup = false;
-	var filters = 0;
+	var filters = new NoSQLReader();
+	var fs = new NoSQLStream(self.filename);
 	var change = false;
 
-	for (var i = 0; i < length; i++) {
-		var fil = filter[i];
-		fil.compare = fil.builder.compile();
-		fil.filter = { repository: fil.builder.$repository, options: fil.builder.$options, arg: fil.builder.$params, fn: fil.builder.$functions };
-		if (fil.backup || fil.builder.$options.backup)
-			backup = true;
-	}
-
-	var indexer = 0;
-	var fs = new NoSQLStream(self.filename);
+	for (var i = 0; i < filter.length; i++)
+		filters.add(filter[i].builder, true);
 
 	if (self.buffersize)
 		fs.buffersize = self.buffersize;
@@ -1490,126 +1480,84 @@ DP.$update = function() {
 	if (self.buffercount)
 		fs.buffercount = self.buffercount;
 
-	fs.ondocuments = function() {
+	var update = function(docs, doc, dindex, f, findex) {
 
-		var docs = JSON.parse('[' + fs.docs + ']', jsonparser);
+		var rec = fs.docsbuffer[dindex];
+		var fil = filter[findex];
+		var e = fil.keys ? 'modify' : 'update';
+		var old = self.$events[e] ? CLONE(doc) : 0;
 
-		for (var a = 0; a < docs.length; a++) {
+		if (f.first)
+			f.canceled = true;
 
-			indexer++;
-
-			var doc = docs[a];
-			var is = false;
-			var rec = fs.docsbuffer[a];
-
-			for (var i = 0; i < length; i++) {
-
-				var item = filter[i];
-				if (item.skip)
-					continue;
-
-				item.filter.index = indexer;
-
-				var output = item.compare(doc, item.filter, indexer);
-				if (output) {
-
-					var e = item.keys ? 'modify' : 'update';
-					var old = self.$events[e] ? CLONE(output) : 0;
-
-					if (item.filter.options.first) {
-						item.skip = true;
-						filters++;
-					}
-
-					if (item.keys) {
-						for (var j = 0; j < item.keys.length; j++) {
-							var key = item.keys[j];
-							var val = item.doc[key];
-							if (val !== undefined) {
-								if (typeof(val) === 'function')
-									output[key] = val(output[key], output);
-								else if (item.inc && item.inc[key]) {
-									switch (item.inc[key]) {
-										case '+':
-											output[key] = (output[key] || 0) + val;
-											break;
-										case '-':
-											output[key] = (output[key] || 0) - val;
-											break;
-										case '*':
-											output[key] = (output[key] || 0) + val;
-											break;
-										case '/':
-											output[key] = (output[key] || 0) / val;
-											break;
-									}
-								} else
-									output[key] = val;
-							}
+		if (fil.keys) {
+			for (var j = 0; j < fil.keys.length; j++) {
+				var key = fil.keys[j];
+				var val = fil.doc[key];
+				if (val !== undefined) {
+					if (typeof(val) === 'function')
+						doc[key] = val(doc[key], doc);
+					else if (fil.inc && fil.inc[key]) {
+						switch (fil.inc[key]) {
+							case '+':
+								doc[key] = (doc[key] || 0) + val;
+								break;
+							case '-':
+								doc[key] = (doc[key] || 0) - val;
+								break;
+							case '*':
+								doc[key] = (doc[key] || 0) + val;
+								break;
+							case '/':
+								doc[key] = (doc[key] || 0) / val;
+								break;
 						}
 					} else
-						output = typeof(item.doc) === 'function' ? item.doc(output) : item.doc;
-
-					self.$events[e] && self.emit(e, output, old);
-					item.count++;
-					doc = output;
-					is = true;
+						doc[key] = val;
 				}
 			}
+		} else
+			docs[dindex] = typeof(f.doc) === 'function' ? fil.doc(doc) : fil.doc;
 
-			if (is) {
+		self.$events[e] && self.emit(e, doc, old);
+		f.builder.$options.backup && f.builder.$backupdoc(rec.doc);
+	};
 
-				if (backup) {
-					for (var i = 0; i < length; i++) {
-						var item = filter[i];
-						item.backup && item.backup.write(rec.doc + NEWLINE);
-						item.builder.$options.backup && item.builder.$backupdoc(rec.doc);
-					}
-				}
+	var updateflush = function(docs, doc, dindex) {
 
-				var upd = JSON.stringify(doc).replace(REGBOOL, JSONBOOL);
-				if (upd === rec.doc)
-					continue;
+		doc = docs[dindex];
 
-				var was = true;
+		var rec = fs.docsbuffer[dindex];
+		var upd = JSON.stringify(doc).replace(REGBOOL, JSONBOOL);
+		if (upd === rec.doc)
+			return;
 
-				if (!change)
-					change = true;
+		!change && (change = true);
 
-				if (rec.doc.length === upd.length) {
-					var b = Buffer.byteLength(upd);
-					if (rec.length === b) {
-						fs.write(upd + NEWLINE, rec.position);
-						was = false;
-					}
-				}
+		var was = true;
+		!change && (change = true);
 
-				if (was) {
-					var tmp = '-' + rec.doc.substring(1) + NEWLINE;
-					fs.write(tmp, rec.position);
-					fs.write2(upd + NEWLINE);
-				}
+		if (rec.doc.length === upd.length) {
+			var b = Buffer.byteLength(upd);
+			if (rec.length === b) {
+				fs.write(upd + NEWLINE, rec.position);
+				was = false;
 			}
+		}
 
-			if (filters === length)
-				return false;
+		if (was) {
+			var tmp = fs.remchar + rec.doc.substring(1) + NEWLINE;
+			fs.write(tmp, rec.position);
+			fs.write2(upd + NEWLINE);
 		}
 	};
 
-	fs.$callback = function() {
-		for (var i = 0; i < length; i++) {
-			var item = filter[i];
-			if (item.insert && !item.count) {
-				item.builder.$insertcallback && item.builder.$insertcallback(item.insert, item.builder.$repository || EMPTYOBJECT);
-				var tmp = self.insert(item.insert);
-				tmp.$callback = item.builder.$callback;
-				tmp.$options.log = item.builder.$options.log;
-			} else {
-				item.builder.$options.log && item.builder.log();
-				item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count, item.filter.repository);
-			}
-		}
+	fs.ondocuments = function() {
+		filters.compare2(JSON.parse('[' + fs.docs + ']', jsonparser), update, updateflush);
+	};
 
+	fs.$callback = function() {
+		filters.done();
 		fs = null;
 		self.$writting = false;
 		self.next(0);
@@ -1631,74 +1579,70 @@ DP.$update_inmemory = function() {
 	}
 
 	var filter = self.pending_update.splice(0);
-	var length = filter.length;
 	var change = false;
+	var filters = new NoSQLReader();
 
-	for (var i = 0; i < length; i++) {
-		var fil = filter[i];
-		fil.compare = fil.builder.compile();
-		fil.filter = { repository: fil.builder.$repository, options: fil.builder.$options, arg: fil.builder.$params, fn: fil.builder.$functions };
-	}
+	for (var i = 0; i < filter.length; i++)
+		filters.add(filter[i].builder, true);
 
 	return self.$inmemory(function() {
 
-		var data = self.inmemory['#'];
+		var old;
 
-		for (var a = 0, al = data.length; a < al; a++) {
+		var update = function(docs, doc, dindex, f, findex) {
 
-			var doc = data[a];
+			var fil = filter[findex];
+			var e = fil.keys ? 'modify' : 'update';
 
-			for (var i = 0; i < length; i++) {
+			if (!old)
+				old = self.$events[e] ? CLONE(doc) : 0;
 
-				var item = filter[i];
-				var builder = item.builder;
-				item.filter.index = j;
-				var output = item.compare(doc, item.filter, j);
-				if (output) {
+			if (f.first)
+				f.canceled = true;
 
-					var e = item.keys ? 'modify' : 'update';
-					var old = self.$events[e] ? CLONE(output) : 0;
-
-					builder.$options.backup && builder.$backupdoc(doc);
-
-					if (item.keys) {
-						for (var j = 0, jl = item.keys.length; j < jl; j++) {
-							var val = item.doc[item.keys[j]];
-							if (val !== undefined) {
-								if (typeof(val) === 'function')
-									doc[item.keys[j]] = val(doc[item.keys[j]], doc);
-								else
-									doc[item.keys[j]] = val;
+			if (fil.keys) {
+				for (var j = 0; j < fil.keys.length; j++) {
+					var key = fil.keys[j];
+					var val = fil.doc[key];
+					if (val !== undefined) {
+						if (typeof(val) === 'function')
+							doc[key] = val(doc[key], doc);
+						else if (fil.inc && fil.inc[key]) {
+							switch (fil.inc[key]) {
+								case '+':
+									doc[key] = (doc[key] || 0) + val;
+									break;
+								case '-':
+									doc[key] = (doc[key] || 0) - val;
+									break;
+								case '*':
+									doc[key] = (doc[key] || 0) + val;
+									break;
+								case '/':
+									doc[key] = (doc[key] || 0) / val;
+									break;
 							}
-						}
-					} else
-						doc = typeof(item.doc) === 'function' ? item.doc(doc) : item.doc;
-
-					self.$events[e] && self.emit(e, doc, old);
-					item.count++;
-					if (!change)
-						change = true;
+						} else
+							doc[key] = val;
+					}
 				}
-			}
-		}
+			} else
+				docs[dindex] = typeof(f.doc) === 'function' ? fil.doc(doc) : fil.doc;
 
-		self.$save();
+			self.$events[e] && self.emit(e, doc, old);
+			f.builder.$options.backup && f.builder.$backupdoc(old);
+			return 1;
+		};
 
-		for (var i = 0; i < length; i++) {
-			var item = filter[i];
-			if (item.insert && !item.count) {
-				item.builder.$insertcallback && item.builder.$insertcallback(item.insert, item.builder.$repository || EMPTYOBJECT);
-				var tmp = self.insert(item.insert);
-				tmp.$callback = item.builder.$callback;
-				tmp.$options.log = item.builder.$options.log;
-			} else {
-				var e = item.keys ? 'modify' : 'update';
-				item.count && self.$events[e] && self.emit(e, item.doc);
-				item.builder.$options.log && item.builder.log();
-				item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count, item.filter.repository);
-			}
-		}
+		var updateflush = function(docs, doc) {
+			!change && (change = true);
+			self.$events.update && self.emit('update', doc, old);
+			old = null;
+		};
 
+		filters.compare2(self.inmemory['#'], update, updateflush);
+
+		change && self.$save();
 		setImmediate(function() {
 			self.next(0);
 			change && self.$events.change && self.emit('change', 'update');
@@ -1750,24 +1694,8 @@ DP.$reader2 = function(filename, items, callback, reader) {
 		}
 	}
 
-	var filter = items;
-	var length = filter.length;
-	var first = true;
-	var indexer = 0;
-
-	for (var i = 0; i < length; i++) {
-		var fil = filter[i];
-		if (!fil.builder.$options.first || fil.builder.$options.sort)
-			first = false;
-		fil.scalarcount = 0;
-		fil.compare = fil.builder.compile();
-		fil.filter = { repository: fil.builder.$repository, options: fil.builder.$options, arg: fil.builder.$params, fn: fil.builder.$functions };
-	}
-
-	if (first && length > 1)
-		first = false;
-
 	var fs = new NoSQLStream(self.filename);
+	var filters = new NoSQLReader(items);
 
 	if (self.buffersize)
 		fs.buffersize = self.buffersize;
@@ -1776,144 +1704,11 @@ DP.$reader2 = function(filename, items, callback, reader) {
 		fs.buffercount = self.buffercount;
 
 	fs.ondocuments = function() {
-
-		var docs = JSON.parse('[' + fs.docs + ']', jsonparser);
-		var val;
-
-		for (var j = 0; j < docs.length; j++) {
-			var json = docs[j];
-			indexer++;
-			for (var i = 0; i < length; i++) {
-				var item = filter[i];
-				var builder = item.builder;
-				item.filter.index = indexer;
-				var output = item.compare(json, item.filter, indexer);
-				if (!output)
-					continue;
-
-				item.count++;
-
-				if (!builder.$inlinesort && ((builder.$options.skip && builder.$options.skip >= item.count) || (builder.$options.take && builder.$options.take <= item.counter)))
-					continue;
-
-				item.counter++;
-
-				if (item.type)
-					continue;
-
-				switch (builder.$options.scalar) {
-					case 'count':
-						item.scalar = item.scalar ? item.scalar + 1 : 1;
-						break;
-					case 'sum':
-						val = output[builder.$options.scalarfield] || 0;
-						item.scalar = item.scalar ? item.scalar + val : val;
-						break;
-					case 'min':
-						val = output[builder.$options.scalarfield] || 0;
-						if (val != null) {
-							if (item.scalar) {
-								if (item.scalar > val)
-									item.scalar = val;
-							} else
-								item.scalar = val;
-						}
-						break;
-					case 'max':
-						val = output[builder.$options.scalarfield];
-						if (val != null) {
-							if (item.scalar) {
-								if (item.scalar < val)
-									item.scalar = val;
-							} else
-								item.scalar = val;
-						}
-						break;
-					case 'avg':
-						val = output[builder.$options.scalarfield];
-						if (val != null) {
-							item.scalar = item.scalar ? item.scalar + val : val;
-							item.scalarcount++;
-						}
-						break;
-					case 'group':
-						!item.scalar && (item.scalar = {});
-						val = output[builder.$options.scalarfield];
-						if (val != null) {
-							if (item.scalar[val])
-								item.scalar[val]++;
-							else
-								item.scalar[val] = 1;
-						}
-						break;
-					default:
-						if (builder.$inlinesort)
-							nosqlinlinesorter(item, builder, output);
-						else if (item.response)
-							item.response.push(output);
-						else
-							item.response = [output];
-						break;
-				}
-
-				if (first)
-					return false;
-			}
-		}
+		return filters.compare(JSON.parse('[' + fs.docs + ']', jsonparser));
 	};
 
 	fs.$callback = function() {
-
-		for (var i = 0; i < length; i++) {
-			var item = filter[i];
-			var builder = item.builder;
-			var output;
-
-			if (builder.$options.scalar || !builder.$options.sort) {
-
-				if (builder.$options.scalar)
-					output = builder.$options.scalar === 'avg' ? item.scalar / item.scalarcount : item.scalar;
-				else if (builder.$options.first)
-					output = item.response ? item.response[0] : undefined;
-				else if (builder.$options.listing)
-					output = listing(builder, item);
-				else
-					output = item.response || [];
-
-				builder.$callback2(errorhandling(null, builder, output), item.type === 1 ? item.count : output, item.count);
-				continue;
-			}
-
-			if (item.count) {
-				if (builder.$options.sort.name) {
-					if (!builder.$inlinesort || builder.$options.take !== item.response.length)
-						item.response.quicksort(builder.$options.sort.name, builder.$options.sort.asc);
-				} else if (builder.$options.sort === null)
-					item.response.random();
-				else
-					item.response.sort(builder.$options.sort);
-
-				if (builder.$options.skip && builder.$options.take)
-					item.response = item.response.splice(builder.$options.skip, builder.$options.take);
-				else if (builder.$options.skip)
-					item.response = item.response.splice(builder.$options.skip);
-				else if (!builder.$inlinesort && builder.$options.take)
-					item.response = item.response.splice(0, builder.$options.take);
-			}
-
-			if (builder.$options.first)
-				output = item.response ? item.response[0] : undefined;
-			else {
-				if (builder.$options.listing)
-					output = listing(builder, item);
-				else
-					output = item.response || [];
-			}
-
-			builder.$callback2(errorhandling(null, builder, output), item.type === 1 ? item.count : output, item.count);
-			builder.done();
-		}
-
+		filters.done();
 		fs = null;
 		callback();
 	};
@@ -1929,7 +1724,6 @@ DP.$reader2 = function(filename, items, callback, reader) {
 DP.$reader3 = function() {
 
 	var self = this;
-
 	self.step = 11;
 
 	if (!self.pending_reader2.length) {
@@ -1939,24 +1733,8 @@ DP.$reader3 = function() {
 
 	self.$reading = true;
 
-	var filter = self.pending_reader2.splice(0);
-	var length = filter.length;
-	var first = true;
-	var indexer = 0;
-
-	for (var i = 0; i < length; i++) {
-		var fil = filter[i];
-		if (!fil.builder.$options.first)
-			first = false;
-		fil.scalarcount = 0;
-		fil.compare = fil.builder.compile();
-		fil.filter = { repository: fil.builder.$repository, options: fil.builder.$options, arg: fil.builder.$params, fn: fil.builder.$functions };
-	}
-
-	if (first && length > 1)
-		first = false;
-
 	var fs = new NoSQLStream(self.filename);
+	var filters = new NoSQLReader(self.pending_reader2.splice(0));
 
 	if (self.buffersize)
 		fs.buffersize = self.buffersize;
@@ -1965,159 +1743,11 @@ DP.$reader3 = function() {
 		fs.buffercount = self.buffercount;
 
 	fs.ondocuments = function() {
-
-		var docs = JSON.parse('[' + fs.docs + ']', jsonparser);
-		var val;
-
-		for (var j = 0; j < docs.length; j++) {
-			var json = docs[j];
-			indexer++;
-
-			var done = true;
-
-			for (var i = 0; i < length; i++) {
-
-				var item = filter[i];
-
-				if (item.done)
-					continue;
-				else if (done)
-					done = false;
-
-				var builder = item.builder;
-				item.filter.index = indexer;
-
-				var output = item.compare(json, item.filter, indexer);
-				if (!output)
-					continue;
-
-				item.count++;
-
-				if (!builder.$inlinesort && ((builder.$options.skip && builder.$options.skip >= item.count) || (builder.$options.take && builder.$options.take <= item.counter)))
-					continue;
-
-				item.counter++;
-
-				if (!builder.$inlinesort && !item.done)
-					item.done = builder.$options.take && builder.$options.take <= item.counter;
-
-				if (item.type)
-					continue;
-
-				switch (builder.$options.scalar) {
-					case 'count':
-						item.scalar = item.scalar ? item.scalar + 1 : 1;
-						break;
-					case 'sum':
-						val = output[builder.$options.scalarfield] || 0;
-						item.scalar = item.scalar ? item.scalar + val : val;
-						break;
-					case 'min':
-						val = output[builder.$options.scalarfield] || 0;
-						if (val != null) {
-							if (item.scalar) {
-								if (item.scalar > val)
-									item.scalar = val;
-							} else
-								item.scalar = val;
-						}
-						break;
-					case 'max':
-						val = output[builder.$options.scalarfield];
-						if (val != null) {
-							if (item.scalar) {
-								if (item.scalar < val)
-									item.scalar = val;
-							} else
-								item.scalar = val;
-						}
-						break;
-					case 'avg':
-						val = output[builder.$options.scalarfield];
-						if (val != null) {
-							item.scalar = item.scalar ? item.scalar + val : val;
-							item.scalarcount++;
-						}
-						break;
-					case 'group':
-						!item.scalar && (item.scalar = {});
-						val = output[builder.$options.scalarfield];
-						if (val != null) {
-							if (item.scalar[val])
-								item.scalar[val]++;
-							else
-								item.scalar[val] = 1;
-						}
-						break;
-					default:
-						if (builder.$inlinesort)
-							nosqlinlinesorter(item, builder, output);
-						else if (item.response)
-							item.response.push(output);
-						else
-							item.response = [output];
-						break;
-				}
-
-				if (first)
-					return false;
-			}
-
-			if (done)
-				return false;
-		}
+		return filters.compare(JSON.parse('[' + fs.docs + ']', jsonparser));
 	};
 
 	fs.$callback = function() {
-
-		for (var i = 0; i < length; i++) {
-			var item = filter[i];
-			var builder = item.builder;
-			var output;
-
-			if (builder.$options.scalar || !builder.$options.sort) {
-
-				if (builder.$options.scalar)
-					output = builder.$options.scalar === 'avg' ? item.scalar / item.scalarcount : item.scalar;
-				else if (builder.$options.first)
-					output = item.response ? item.response[0] : undefined;
-				else if (builder.$options.listing)
-					output = listing(builder, item);
-				else
-					output = item.response || [];
-
-				builder.$callback2(errorhandling(null, builder, output), item.type === 1 ? item.count : output, item.count);
-				continue;
-			}
-
-			if (item.count) {
-				if (builder.$options.sort.name) {
-					if (!builder.$inlinesort || builder.$options.take !== item.response.length)
-						item.response.quicksort(builder.$options.sort.name, builder.$options.sort.asc);
-				} else if (builder.$options.sort === null)
-					item.response.random();
-				else
-					item.response.sort(builder.$options.sort);
-
-				if (builder.$options.skip && builder.$options.take)
-					item.response = item.response.splice(builder.$options.skip, builder.$options.take);
-				else if (builder.$options.skip)
-					item.response = item.response.splice(builder.$options.skip);
-				else if (!builder.$inlinesort && builder.$options.take)
-					item.response = item.response.splice(0, builder.$options.take);
-			}
-
-			if (builder.$options.first)
-				output = item.response ? item.response[0] : undefined;
-			else if (builder.$options.listing)
-				output = listing(builder, item);
-			else
-				output = item.response || [];
-
-			builder.$callback2(errorhandling(null, builder, output), item.type === 1 ? item.count : output, item.count);
-			builder.done();
-		}
-
+		filters.done();
 		self.$reading = false;
 		fs = null;
 		self.next(0);
@@ -2230,149 +1860,11 @@ function nosqlresort(arr, builder, doc) {
 }
 
 DP.$reader2_inmemory = function(items, callback) {
-
 	var self = this;
-	var filter = items;
-	var length = filter.length;
-	var name = '#';
-
-	for (var i = 0; i < length; i++) {
-		var fil = filter[i];
-		fil.compare = fil.builder.compile();
-		fil.filter = { repository: fil.builder.$repository, options: fil.builder.$options, arg: fil.builder.$params, fn: fil.builder.$functions };
-	}
-
+	var filters = new NoSQLReader(items);
 	return self.$inmemory(function() {
-
-		var data = self.inmemory[name];
-		var val;
-
-		for (var j = 0, jl = data.length; j < jl; j++) {
-			var json = data[j];
-			for (var i = 0; i < length; i++) {
-				var item = filter[i];
-				var builder = item.builder;
-				item.filter.index = j;
-				var output = item.compare(U.clone(json), item.filter, j);
-				if (!output)
-					continue;
-
-				item.count++;
-
-				if (!builder.$options.sort && ((builder.$options.skip && builder.$options.skip >= item.count) || (builder.$options.take && builder.$options.take <= item.counter)))
-					continue;
-
-				item.counter++;
-
-				if (item.type)
-					continue;
-
-				switch (builder.$options.scalar) {
-					case 'count':
-						item.scalar = item.scalar ? item.scalar + 1 : 1;
-						break;
-					case 'sum':
-						val = json[builder.$options.scalarfield] || 0;
-						item.scalar = item.scalar ? item.scalar + val : val;
-						break;
-					case 'min':
-						val = json[builder.$options.scalarfield] || 0;
-						if (val != null) {
-							if (item.scalar) {
-								if (item.scalar > val)
-									item.scalar = val;
-							} else
-								item.scalar = val;
-						}
-						break;
-					case 'max':
-						val = json[builder.$options.scalarfield];
-						if (val != null) {
-							if (item.scalar) {
-								if (item.scalar < val)
-									item.scalar = val;
-							} else
-								item.scalar = val;
-						}
-						break;
-					case 'avg':
-						val = json[builder.$options.scalarfield];
-						if (val != null) {
-							item.scalar = item.scalar ? item.scalar + val : 0;
-							if (item.scalarcount)
-								item.scalarcount++;
-							else
-								item.scalarcount = 1;
-						}
-						break;
-					case 'group':
-						!item.scalar && (item.scalar = {});
-						val = output[builder.$options.scalarfield];
-						if (val != null) {
-							if (item.scalar[val])
-								item.scalar[val]++;
-							else
-								item.scalar[val] = 1;
-						}
-						break;
-
-					default:
-						if (item.response)
-							item.response.push(output);
-						else
-							item.response = [output];
-						break;
-				}
-			}
-		}
-
-		for (var i = 0; i < length; i++) {
-			var item = filter[i];
-			var builder = item.builder;
-			var output;
-
-			if (builder.$options.scalar || !builder.$options.sort) {
-
-				if (builder.$options.scalar)
-					output = builder.$options.scalar === 'avg' ? item.scalar / item.counter : item.scalar;
-				else if (builder.$options.first)
-					output = item.response ? item.response[0] : undefined;
-				else if (builder.$options.listing)
-					output = listing(builder, item);
-				else
-					output = item.response || [];
-
-				builder.$callback2(errorhandling(null, builder, output), item.type === 1 ? item.count : output, item.count);
-				continue;
-			}
-
-			if (item.count) {
-				if (builder.$options.sort.name)
-					item.response.quicksort(builder.$options.sort.name, builder.$options.sort.asc);
-				else if (builder.$options.sort === EMPTYOBJECT)
-					item.response.random();
-				else
-					item.response.sort(builder.$options.sort);
-
-				if (builder.$options.skip && builder.$options.take)
-					item.response = item.response.splice(builder.$options.skip, builder.$options.take);
-				else if (builder.$options.skip)
-					item.response = item.response.splice(builder.$options.skip);
-				else if (builder.$options.take)
-					item.response = item.response.splice(0, builder.$options.take);
-			}
-
-			if (builder.$options.first)
-				output = item.response ? item.response[0] : undefined;
-			else if (builder.$options.listing)
-				output = listing(builder, item);
-			else
-				output = item.response || [];
-
-			builder.$callback2(errorhandling(null, builder, output), item.type === 1 ? item.count : output, item.count);
-			builder.done();
-		}
-
+		filters.compare(self.inmemory['#']);
+		filters.done();
 		callback();
 	});
 };
@@ -2391,10 +1883,8 @@ DP.$remove = function() {
 
 	var fs = new NoSQLStream(self.filename);
 	var filter = self.pending_remove.splice(0);
-	var length = filter.length;
+	var filters = new NoSQLReader(filter);
 	var change = false;
-	var indexer = 0;
-	var backup = false;
 
 	if (self.buffersize)
 		fs.buffersize = self.buffersize;
@@ -2402,63 +1892,25 @@ DP.$remove = function() {
 	if (self.buffercount)
 		fs.buffercount = self.buffercount;
 
-	for (var i = 0; i < length; i++) {
-		var fil = filter[i];
-		fil.compare = fil.builder.compile();
-		fil.filter = { repository: fil.builder.$repository, options: fil.builder.$options, arg: fil.builder.$params, fn: fil.builder.$functions };
-		if (fil.backup || fil.builder.$options.backup)
-			backup = true;
-	}
+	var remove = function(docs, d, dindex, f) {
+		var rec = fs.docsbuffer[dindex];
+		f.builder.$options.backup && f.builder.$backupdoc(rec.doc);
+		return 1;
+	};
+
+	var removeflush = function(docs, d, dindex) {
+		var rec = fs.docsbuffer[dindex];
+		!change && (change = true);
+		self.$events.remove && self.emit('remove', d);
+		fs.write(fs.remchar + rec.doc.substring(1) + NEWLINE, rec.position);
+	};
 
 	fs.ondocuments = function() {
-
-		var docs = JSON.parse('[' + fs.docs + ']', jsonparser);
-
-		for (var j = 0; j < docs.length; j++) {
-
-			indexer++;
-			var removed = false;
-			var doc = docs[j];
-			var rec = fs.docsbuffer[j];
-
-			for (var i = 0; i < length; i++) {
-				var item = filter[i];
-				item.filter.index = indexer;
-				var output = item.compare(doc, item.filter, indexer);
-				if (output) {
-					removed = true;
-					doc = output;
-					break;
-				}
-			}
-
-			if (removed) {
-
-				if (backup) {
-					for (var i = 0; i < length; i++) {
-						var item = filter[i];
-						item.backup && item.backup.write(rec.doc + NEWLINE);
-						item.builder.$options.backup && item.builder.$backupdoc(rec.doc);
-					}
-				}
-
-				if (!change)
-					change = true;
-
-				item.count++;
-				self.$events.remove && self.emit('remove', doc);
-				fs.write('-' + rec.doc.substring(1) + NEWLINE, rec.position);
-			}
-		}
+		filters.compare2(JSON.parse('[' + fs.docs + ']', jsonparser), remove, removeflush);
 	};
 
 	fs.$callback = function() {
-		for (var i = 0; i < length; i++) {
-			var item = filter[i];
-			item.builder.$options.log && item.builder.log();
-			item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count, item.filter.repository);
-		}
-
+		filters.done();
 		fs = null;
 		self.$writting = false;
 		self.next(0);
@@ -2565,57 +2017,29 @@ DP.$remove_inmemory = function() {
 		return self;
 	}
 
-	var filter = self.pending_remove.splice(0);
-	var length = filter.length;
 	var change = false;
-
-	for (var i = 0; i < length; i++) {
-		var fil = filter[i];
-		fil.compare = fil.builder.compile();
-		fil.filter = { repository: fil.builder.$repository, options: fil.builder.$options, arg: fil.builder.$params, fn: fil.builder.$functions };
-	}
+	var filters = new NoSQLReader(self.pending_remove.splice(0));
 
 	return self.$inmemory(function() {
+		var cache = self.inmemory['#'].slice(0);
 
-		var data = self.inmemory['#'];
-		var arr = [];
+		var remove = function(docs, d, dindex, f) {
+			f.builder.$options.backup && f.builder.$backupdoc(d);
+			return 1;
+		};
 
-		for (var j = 0, jl = data.length; j < jl; j++) {
-			var json = data[j];
-			var removed = false;
+		var removeflush = function(docs, d) {
+			!change && (change = true);
+			self.$events.remove && self.emit('remove', d);
+			var data = self.inmemory['#'];
+			var index = data.indexOf(d);
+			if (index !== -1)
+				self.inmemory['#'].splice(index, index + 1);
+		};
 
-			for (var i = 0; i < length; i++) {
-				var item = filter[i];
-				item.filter.index = j;
-				if (item.compare(json, item.filter, j)) {
-					removed = true;
-					break;
-				}
-			}
-
-			if (removed) {
-				for (var i = 0; i < length; i++) {
-					var item = filter[i];
-					item.backup && item.backup.write(JSON.stringify(json));
-					item.count++;
-				}
-				change = true;
-				self.$events.remove && self.emit('remove', json);
-			} else
-				arr.push(json);
-		}
-
-		if (change) {
-			self.inmemory['#'] = arr;
-			self.$save();
-		}
-
-		for (var i = 0; i < length; i++) {
-			var item = filter[i];
-			item.builder.$options.log && item.builder.log();
-			item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count);
-		}
-
+		filters.compare2(cache, remove, removeflush);
+		change && self.$save();
+		filters.done();
 		self.next(0);
 		change && self.$events.change && self.emit('change', 'remove');
 	});
@@ -3003,6 +2427,16 @@ DatabaseBuilder.prototype.empty = function(name) {
 	return self;
 };
 
+DatabaseBuilder.prototype.map = function(name, code) {
+	var self = this;
+	var data = { name: name, code: code };
+	if (self.$options.mappers)
+		self.$options.mappers.push(data);
+	else
+		self.$options.mappers = [data];
+	return self;
+};
+
 DatabaseBuilder.prototype.backup = function(user) {
 	if (this.db.filenameBackup)
 		this.$options.backup = typeof(user) === 'string' ? user : 'unknown';
@@ -3374,6 +2808,18 @@ DatabaseBuilder.prototype.compile = function(noTrimmer) {
 	self.$inlinesort = !!(opt.take && opt.sort && opt.sort !== null);
 	self.$limit = (opt.take || 0) + (opt.skip || 0);
 	var key = opt.id ? self.db.name + '_' + opt.id : code.hash();
+
+	if (opt.mappers) {
+		var tmp = '';
+		self.$mappers = [];
+		for (var i = 0; i < opt.mappers.length; i++) {
+			var m = opt.mappers[i];
+			tmp += ('doc.{0}=item.builder.$mappers[\'{1}\'](doc,R);'.format(m.name, i));
+			self.$mappers.push(new Function('doc', 'repository', code));
+		}
+		self.$mappersexec = new Function('doc', 'R', tmp.join(''));
+	}
+
 	return CACHE[key] ? CACHE[key] : (CACHE[key] = new Function('doc', '$F', 'index', code));
 };
 
@@ -5892,7 +5338,7 @@ TP.remove = function() {
 	var self = this;
 	self.readonly && self.throwReadonly();
 	var builder = new DatabaseBuilder(self);
-	self.pending_remove.push({ builder: builder, count: 0 });
+	self.pending_remove.push(builder);
 	setImmediate(next_operation, self, 3);
 	return builder;
 };
@@ -5906,7 +5352,7 @@ TP.listing = function(builder) {
 		builder = new DatabaseBuilder(self);
 	builder.$options.listing = true;
 	builder.$take = builder.$options.take = 100;
-	self.pending_reader.push({ builder: builder, count: 0, counter: 0 });
+	self.pending_reader.push(builder);
 	setImmediate(next_operation, self, 4);
 	return builder;
 };
@@ -5918,7 +5364,7 @@ TP.find = function(builder) {
 		builder.db = self;
 	else
 		builder = new DatabaseBuilder(self);
-	self.pending_reader.push({ builder: builder, count: 0, counter: 0 });
+	self.pending_reader.push(builder);
 	setImmediate(next_operation, self, 4);
 	return builder;
 };
@@ -5929,7 +5375,7 @@ TP.find2 = function(builder) {
 		builder.db = self;
 	else
 		builder = new DatabaseBuilder(self);
-	self.pending_reader2.push({ builder: builder, count: 0, counter: 0 });
+	self.pending_reader2.push(builder);
 	setImmediate(next_operation, self, 11);
 	return builder;
 };
@@ -6038,7 +5484,8 @@ TP.count = function() {
 	var self = this;
 	self.readonly && self.throwReadonly();
 	var builder = new DatabaseBuilder(self);
-	self.pending_reader.push({ builder: builder, count: 0, type: 1 });
+	builder.$options.readertype = 1;
+	self.pending_reader.push(builder);
 	setImmediate(next_operation, self, 4);
 	return builder;
 };
@@ -6048,7 +5495,7 @@ TP.one = function() {
 	self.readonly && self.throwReadonly();
 	var builder = new DatabaseBuilder(self);
 	builder.first();
-	self.pending_reader.push({ builder: builder, count: 0 });
+	self.pending_reader.push(builder);
 	setImmediate(next_operation, self, 4);
 	return builder;
 };
@@ -6058,7 +5505,7 @@ TP.one2 = function() {
 	self.readonly && self.throwReadonly();
 	var builder = new DatabaseBuilder(self);
 	builder.first();
-	self.pending_reader2.push({ builder: builder, count: 0 });
+	self.pending_reader2.push(builder);
 	setImmediate(next_operation, self, 11);
 	return builder;
 };
@@ -6068,7 +5515,7 @@ TP.top = function(max) {
 	self.readonly && self.throwReadonly();
 	var builder = new DatabaseBuilder(self);
 	builder.take(max);
-	self.pending_reader.push({ builder: builder, count: 0, counter: 0 });
+	self.pending_reader.push(builder);
 	setImmediate(next_operation, self, 4);
 	return builder;
 };
@@ -6202,42 +5649,13 @@ TP.$reader = function() {
 
 	self.$reading = true;
 
-	var filter = self.pending_reader.splice(0);
-	var length = filter.length;
-	var first = true;
-	var indexer = 0;
-	var keys = {};
-	var keyscount = 0;
-
-	for (var i = 0; i < length; i++) {
-		var fil = filter[i];
-		if (!fil.builder.$options.first || fil.builder.$options.sort)
-			first = false;
-		if (fil.builder.$keys == null && keys)
-			keys = null;
-		else if (keys) {
-			if (fil.builder.$options.fields) {
-				for (var j = 0; j < fil.builder.$keys.length; j++) {
-					keyscount++;
-					keys[fil.builder.$keys[j]] = 1;
-				}
-			} else
-				keys = null;
-		}
-
-		fil.scalarcount = 0;
-		fil.compare = fil.builder.compile();
-		fil.filter = { repository: fil.builder.$repository, options: fil.builder.$options, arg: fil.builder.$params, fn: fil.builder.$functions };
-	}
-
-	if (first && length > 1)
-		first = false;
-
 	var fs = new NoSQLStream(self.filename);
+	var filters = new NoSQLReader(self.pending_reader.splice(0));
 	var data = {};
+	var indexer = 0;
 
 	fs.divider = '\n';
-	data.keys = keys && keyscount ? Object.keys(keys) : self.$keys;
+	data.keys = self.$keys;
 
 	if (self.buffersize)
 		fs.buffersize = self.buffersize;
@@ -6248,146 +5666,19 @@ TP.$reader = function() {
 	fs.ondocuments = function() {
 
 		var lines = fs.docs.split(fs.divider);
-		var val;
+		var arr = [];
 
 		for (var j = indexer ? 0 : 1; j < lines.length; j++) {
-
 			data.line = lines[j].split('|');
 			data.index = indexer++;
-
-			indexer++;
-
-			var obj = self.parseData(data);
-
-			for (var i = 0; i < length; i++) {
-				var item = filter[i];
-				var builder = item.builder;
-				item.filter.index = indexer;
-
-				var output = item.compare(obj, item.filter, indexer);
-				if (!output)
-					continue;
-
-				item.count++;
-
-				if (!builder.$inlinesort && ((builder.$options.skip && builder.$options.skip >= item.count) || (builder.$options.take && builder.$options.take <= item.counter)))
-					continue;
-
-				item.counter++;
-
-				if (item.type)
-					continue;
-
-				switch (builder.$options.scalar) {
-					case 'count':
-						item.scalar = item.scalar ? item.scalar + 1 : 1;
-						break;
-					case 'sum':
-						val = output[builder.$options.scalarfield] || 0;
-						item.scalar = item.scalar ? item.scalar + val : val;
-						break;
-					case 'min':
-						val = output[builder.$options.scalarfield] || 0;
-						if (val != null) {
-							if (item.scalar) {
-								if (item.scalar > val)
-									item.scalar = val;
-							} else
-								item.scalar = val;
-						}
-						break;
-					case 'max':
-						val = output[builder.$options.scalarfield];
-						if (val != null) {
-							if (item.scalar) {
-								if (item.scalar < val)
-									item.scalar = val;
-							} else
-								item.scalar = val;
-						}
-						break;
-					case 'avg':
-						val = output[builder.$options.scalarfield];
-						if (val != null) {
-							item.scalar = item.scalar ? item.scalar + val : val;
-							item.scalarcount++;
-						}
-						break;
-					case 'group':
-						!item.scalar && (item.scalar = {});
-						val = output[builder.$options.scalarfield];
-						if (val != null) {
-							if (item.scalar[val])
-								item.scalar[val]++;
-							else
-								item.scalar[val] = 1;
-						}
-						break;
-					default:
-						if (builder.$inlinesort)
-							nosqlinlinesorter(item, builder, output);
-						else if (item.response)
-							item.response.push(output);
-						else
-							item.response = [output];
-						break;
-				}
-
-				if (first)
-					return false;
-			}
+			arr.push(self.parseData(data));
 		}
+
+		return filters.compare(arr, jsonparser);
 	};
 
 	fs.$callback = function() {
-		for (var i = 0; i < length; i++) {
-			var item = filter[i];
-			var builder = item.builder;
-			var output;
-
-			if (builder.$options.scalar || !builder.$options.sort) {
-
-				if (builder.$options.scalar)
-					output = builder.$options.scalar === 'avg' ? item.scalar / item.scalarcount : item.scalar;
-				else if (builder.$options.first)
-					output = item.response ? item.response[0] : undefined;
-				else if (builder.$options.listing)
-					output = listing(builder, item);
-				else
-					output = item.response || [];
-
-				builder.$callback2(errorhandling(null, builder, output), item.type === 1 ? item.count : output, item.count);
-				continue;
-			}
-
-			if (item.count) {
-				if (builder.$options.sort.name) {
-					if (!builder.$inlinesort || builder.$options.take !== item.response.length)
-						item.response.quicksort(builder.$options.sort.name, builder.$options.sort.asc);
-				} else if (builder.$options.sort === null)
-					item.response.random();
-				else
-					item.response.sort(builder.$options.sort);
-
-				if (builder.$options.skip && builder.$options.take)
-					item.response = item.response.splice(builder.$options.skip, builder.$options.take);
-				else if (builder.$options.skip)
-					item.response = item.response.splice(builder.$options.skip);
-				else if (!builder.$inlinesort && builder.$options.take)
-					item.response = item.response.splice(0, builder.$options.take);
-			}
-
-			if (builder.$options.first)
-				output = item.response ? item.response[0] : undefined;
-			else if (builder.$options.listing)
-				output = listing(builder, item);
-			else
-				output = item.response || [];
-
-			builder.$callback2(errorhandling(null, builder, output), item.type === 1 ? item.count : output, item.count);
-			builder.done();
-		}
-
+		filters.done();
 		fs = null;
 		self.$reading = false;
 		self.next(0);
@@ -6410,42 +5701,13 @@ TP.$reader3 = function() {
 
 	self.$reading = true;
 
-	var filter = self.pending_reader2.splice(0);
-	var length = filter.length;
-	var first = true;
-	var indexer = 0;
-	var keys = {};
-	var keyscount = 0;
-
-	for (var i = 0; i < length; i++) {
-		var fil = filter[i];
-		if (!fil.builder.$options.first || fil.builder.$options.sort)
-			first = false;
-		if (fil.builder.$keys == null && keys)
-			keys = null;
-		else if (keys) {
-			if (fil.builder.$options.fields) {
-				for (var j = 0; j < fil.builder.$keys.length; j++) {
-					keyscount++;
-					keys[fil.builder.$keys[j]] = 1;
-				}
-			} else
-				keys = null;
-		}
-
-		fil.scalarcount = 0;
-		fil.compare = fil.builder.compile();
-		fil.filter = { repository: fil.builder.$repository, options: fil.builder.$options, arg: fil.builder.$params, fn: fil.builder.$functions };
-	}
-
-	if (first && length > 1)
-		first = false;
-
 	var fs = new NoSQLStream(self.filename);
+	var filters = new NoSQLReader(self.pending_reader2.splice(0));
 	var data = {};
+	var indexer = 0;
 
 	fs.divider = '\n';
-	data.keys = keys && keyscount ? Object.keys(keys) : self.$keys;
+	data.keys = self.$keys;
 
 	if (self.buffersize)
 		fs.buffersize = self.buffersize;
@@ -6456,152 +5718,23 @@ TP.$reader3 = function() {
 	fs.ondocuments = function() {
 
 		var lines = fs.docs.split(fs.divider);
-		var val;
+		var arr = [];
 
 		for (var j = 0; j < lines.length; j++) {
-
 			data.line = lines[j].split('|');
-
 			if (!TABLERECORD[data.line[0]])
 				continue;
-
 			data.index = indexer++;
-			indexer++;
-
-			var obj = self.parseData(data);
-
-			for (var i = 0; i < length; i++) {
-				var item = filter[i];
-				var builder = item.builder;
-				item.filter.index = indexer;
-
-				var output = item.compare(obj, item.filter, indexer);
-				if (!output)
-					continue;
-
-				item.count++;
-
-				if (!builder.$inlinesort && ((builder.$options.skip && builder.$options.skip >= item.count) || (builder.$options.take && builder.$options.take <= item.counter)))
-					continue;
-
-				item.counter++;
-
-				if (item.type)
-					continue;
-
-				switch (builder.$options.scalar) {
-					case 'count':
-						item.scalar = item.scalar ? item.scalar + 1 : 1;
-						break;
-					case 'sum':
-						val = output[builder.$options.scalarfield] || 0;
-						item.scalar = item.scalar ? item.scalar + val : val;
-						break;
-					case 'min':
-						val = output[builder.$options.scalarfield] || 0;
-						if (val != null) {
-							if (item.scalar) {
-								if (item.scalar > val)
-									item.scalar = val;
-							} else
-								item.scalar = val;
-						}
-						break;
-					case 'max':
-						val = output[builder.$options.scalarfield];
-						if (val != null) {
-							if (item.scalar) {
-								if (item.scalar < val)
-									item.scalar = val;
-							} else
-								item.scalar = val;
-						}
-						break;
-					case 'avg':
-						val = output[builder.$options.scalarfield];
-						if (val != null) {
-							item.scalar = item.scalar ? item.scalar + val : val;
-							item.scalarcount++;
-						}
-						break;
-					case 'group':
-						!item.scalar && (item.scalar = {});
-						val = output[builder.$options.scalarfield];
-						if (val != null) {
-							if (item.scalar[val])
-								item.scalar[val]++;
-							else
-								item.scalar[val] = 1;
-						}
-						break;
-					default:
-						if (builder.$inlinesort)
-							nosqlinlinesorter(item, builder, output);
-						else if (item.response)
-							item.response.push(output);
-						else
-							item.response = [output];
-						break;
-				}
-
-				if (first)
-					return false;
-			}
+			arr.push(self.parseData(data));
 		}
+
+		return filters.compare(arr, jsonparser);
 	};
 
 	fs.$callback = function() {
-
-		for (var i = 0; i < length; i++) {
-			var item = filter[i];
-			var builder = item.builder;
-			var output;
-
-			if (builder.$options.scalar || !builder.$options.sort) {
-
-				if (builder.$options.scalar)
-					output = builder.$options.scalar === 'avg' ? item.scalar / item.scalarcount : item.scalar;
-				else if (builder.$options.first)
-					output = item.response ? item.response[0] : undefined;
-				else if (builder.$options.listing)
-					output = listing(builder, item);
-				else
-					output = item.response || [];
-
-				builder.$callback2(errorhandling(null, builder, output), item.type === 1 ? item.count : output, item.count);
-				continue;
-			}
-
-			if (item.count) {
-				if (builder.$options.sort.name) {
-					if (!builder.$inlinesort || builder.$options.take !== item.response.length)
-						item.response.quicksort(builder.$options.sort.name, builder.$options.sort.asc);
-				} else if (builder.$options.sort === null)
-					item.response.random();
-				else
-					item.response.sort(builder.$options.sort);
-
-				if (builder.$options.skip && builder.$options.take)
-					item.response = item.response.splice(builder.$options.skip, builder.$options.take);
-				else if (builder.$options.skip)
-					item.response = item.response.splice(builder.$options.skip);
-				else if (!builder.$inlinesort && builder.$options.take)
-					item.response = item.response.splice(0, builder.$options.take);
-			}
-
-			if (builder.$options.first)
-				output = item.response ? item.response[0] : undefined;
-			else if (builder.$options.listing)
-				output = listing(builder, item);
-			else
-				output = item.response || [];
-
-			builder.$callback2(errorhandling(null, builder, output), item.type === 1 ? item.count : output, item.count);
-			builder.done();
-		}
-
-		self.$reading = false;
+		filters.done();
 		fs = null;
+		self.$reading = false;
 		self.next(0);
 	};
 
@@ -6621,39 +5754,17 @@ TP.$update = function() {
 
 	self.$writting = true;
 
-	var filter = self.pending_update.splice(0);
-	var length = filter.length;
-	var backup = false;
-	var filters = 0;
-	var change = false;
-	var keys = {};
-	var keyscount = 0;
-
-	for (var i = 0; i < length; i++) {
-		var fil = filter[i];
-		fil.compare = fil.builder.compile(true);
-		fil.filter = { repository: fil.builder.$repository, options: fil.builder.$options, arg: fil.builder.$params, fn: fil.builder.$functions };
-
-		if (fil.backup || fil.builder.$options.backup)
-			backup = true;
-
-		if (fil.builder.$keys == null)
-			keys = null;
-		else {
-			for (var j = 0; j < fil.builder.$keys.length; j++) {
-				keyscount++;
-				keys[fil.builder.$keys[j]] = 1;
-			}
-		}
-
-	}
-
-	var indexer = 0;
 	var fs = new NoSQLStream(self.filename);
-	fs.divider = '\n';
+	var filter = self.pending_update.splice(0);
+	var filters = new NoSQLReader();
+	var change = false;
+	var indexer = 0;
+	var data = { keys: self.$keys };
 
-	var data = {};
-	data.keys = keys && keyscount ? Object.keys(keys) : self.$keys;
+	for (var i = 0; i < filter.length; i++)
+		filters.add(filter[i].builder, true);
+
+	fs.divider = '\n';
 
 	if (self.buffersize)
 		fs.buffersize = self.buffersize;
@@ -6661,134 +5772,97 @@ TP.$update = function() {
 	if (self.buffercount)
 		fs.buffercount = self.buffercount;
 
+	var update = function(docs, doc, dindex, f, findex) {
+
+		var rec = fs.docsbuffer[dindex];
+
+		var fil = filter[findex];
+		var e = fil.keys ? 'modify' : 'update';
+		var old = self.$events[e] ? CLONE(doc) : 0;
+
+		if (f.first)
+			f.canceled = true;
+
+		if (fil.keys) {
+			for (var j = 0; j < fil.keys.length; j++) {
+				var key = fil.keys[j];
+				var val = fil.doc[key];
+				if (val !== undefined) {
+					if (typeof(val) === 'function')
+						doc[key] = val(doc[key], doc);
+					else if (fil.inc && fil.inc[key]) {
+						switch (fil.inc[key]) {
+							case '+':
+								doc[key] = (doc[key] || 0) + val;
+								break;
+							case '-':
+								doc[key] = (doc[key] || 0) - val;
+								break;
+							case '*':
+								doc[key] = (doc[key] || 0) + val;
+								break;
+							case '/':
+								doc[key] = (doc[key] || 0) / val;
+								break;
+						}
+					} else
+						doc[key] = val;
+				}
+			}
+		} else
+			docs[dindex] = typeof(f.doc) === 'function' ? fil.doc(doc) : fil.doc;
+
+		self.$events[e] && self.emit(e, doc, old);
+		f.builder.$options.backup && f.builder.$backupdoc(rec.doc);
+	};
+
+	var updateflush = function(docs, doc, dindex) {
+
+		doc = docs[dindex];
+
+		var rec = fs.docsbuffer[dindex];
+		var upd = self.stringify(doc, null, rec.length);
+
+		if (upd === rec.doc)
+			return;
+
+		!change && (change = true);
+
+		var b = Buffer.byteLength(upd);
+		if (rec.length === b) {
+			fs.write(upd + NEWLINE, rec.position);
+		} else {
+			var tmp = fs.remchar + rec.doc.substring(1) + NEWLINE;
+			fs.write(tmp, rec.position);
+			fs.write2(upd + NEWLINE);
+		}
+
+	};
+
 	fs.ondocuments = function() {
 
 		var lines = fs.docs.split(fs.divider);
-		var val;
+		var arr = [];
+
+		if (!indexer)
+			arr.push(EMPTYOBJECT);
 
 		for (var a = indexer ? 0 : 1; a < lines.length; a++) {
-
 			data.line = lines[a].split('|');
 			data.length = lines[a].length;
 			data.index = indexer++;
-
-			var is = false;
-			var rec = fs.docsbuffer[a];
-			var doc = self.parseData(data, data.keys === self.$keys ? EMPTYOBJECT : null);
-
-			for (var i = 0; i < length; i++) {
-
-				var item = filter[i];
-				if (item.skip)
-					continue;
-
-				item.filter.index = indexer;
-
-				var output = item.compare(doc, item.filter, indexer);
-				if (output) {
-
-					if (item.filter.options.first) {
-						item.skip = true;
-						filters++;
-					}
-
-					if (data.keys !== self.$keys) {
-						var tmp = data.keys;
-						data.keys = self.$keys;
-						output = self.parseData(data, output);
-						data.keys = tmp;
-					}
-
-					var e = item.keys ? 'modify' : 'update';
-					var old = self.$events[e] ? CLONE(output) : 0;
-
-					if (item.keys) {
-						for (var j = 0; j < item.keys.length; j++) {
-							var key = item.keys[j];
-							var val = item.doc[key];
-							if (val !== undefined) {
-								if (typeof(val) === 'function')
-									output[key] = val(output[key], output);
-								else if (item.inc && item.inc[key]) {
-									switch (item.inc[key]) {
-										case '+':
-											output[key] = (output[key] || 0) + val;
-											break;
-										case '-':
-											output[key] = (output[key] || 0) - val;
-											break;
-										case '*':
-											output[key] = (output[key] || 0) + val;
-											break;
-										case '/':
-											output[key] = (output[key] || 0) / val;
-											break;
-									}
-								} else
-									output[key] = val;
-							}
-						}
-					} else
-						output = typeof(item.doc) === 'function' ? item.doc(output) : item.doc;
-
-					self.$events[e] && self.emit(e, output, old);
-					item.count++;
-					doc = output;
-					is = true;
-				}
-			}
-
-			if (is) {
-
-				if (backup) {
-					for (var i = 0; i < length; i++) {
-						var item = filter[i];
-						item.backup && item.backup.write(rec.doc + NEWLINE);
-						item.builder.$options.backup && item.builder.$backupdoc(rec.doc);
-					}
-				}
-
-				var upd = self.stringify(doc, null, rec.length);
-				if (upd === rec.doc)
-					continue;
-
-				if (!change)
-					change = true;
-
-				var b = Buffer.byteLength(upd);
-				if (rec.length === b) {
-					fs.write(upd + NEWLINE, rec.position);
-				} else {
-					var tmp = fs.remchar + rec.doc.substring(1) + NEWLINE;
-					fs.write(tmp, rec.position);
-					fs.write2(upd + NEWLINE);
-				}
-			}
-
-			if (filters === length)
-				return false;
+			arr.push(self.parseData(data, EMPTYOBJECT));
 		}
+
+		filters.compare2(arr, update, updateflush);
 	};
 
+
 	fs.$callback = function() {
-
-		for (var i = 0; i < length; i++) {
-			var item = filter[i];
-			if (item.insert && !item.count) {
-				item.builder.$insertcallback && item.builder.$insertcallback(item.insert, item.builder.$repository || EMPTYOBJECT);
-				var tmp = self.insert(item.insert);
-				tmp.$callback = item.builder.$callback;
-				tmp.$options.log = item.builder.$options.log;
-			} else {
-				item.builder.$options.log && item.builder.log();
-				item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count, item.filter.repository);
-			}
-		}
-
+		filters.done();
 		fs = null;
 		self.$writting = false;
 		self.next(0);
-
 		change && self.$events.change && self.emit('change', 'update');
 	};
 
@@ -6810,12 +5884,9 @@ TP.$remove = function() {
 
 	var fs = new NoSQLStream(self.filename);
 	var filter = self.pending_remove.splice(0);
-	var length = filter.length;
+	var filters = new NoSQLReader(filter);
 	var change = false;
 	var indexer = 0;
-	var backup = false;
-	var keys = {};
-	var keyscount = 0;
 
 	fs.divider = '\n';
 
@@ -6825,78 +5896,37 @@ TP.$remove = function() {
 	if (self.buffercount)
 		fs.buffercount = self.buffercount;
 
-	for (var i = 0; i < length; i++) {
-		var fil = filter[i];
-		fil.compare = fil.builder.compile(true);
-		fil.filter = { repository: fil.builder.$repository, options: fil.builder.$options, arg: fil.builder.$params, fn: fil.builder.$functions };
-		if (fil.backup || fil.builder.$options.backup)
-			backup = true;
-		if (fil.builder.$keys == null)
-			keys = null;
-		else {
-			for (var j = 0; j < fil.builder.$keys.length; j++) {
-				keyscount++;
-				keys[fil.builder.$keys[j]] = 1;
-			}
-		}
-	}
+	var data = { keys: self.$keys };
 
-	var data = {};
-	data.keys = keys && keyscount ? Object.keys(keys) : self.$keys;
+	var remove = function(docs, d, dindex, f) {
+		var rec = fs.docsbuffer[dindex + 1];
+		f.builder.$options.backup && f.builder.$backupdoc(rec.doc);
+		return 1;
+	};
+
+	var removeflush = function(docs, d, dindex) {
+		var rec = fs.docsbuffer[dindex + 1];
+		!change && (change = true);
+		self.$events.remove && self.emit('remove', d);
+		fs.write(fs.remchar + rec.doc.substring(1) + NEWLINE, rec.position);
+	};
 
 	fs.ondocuments = function() {
 
 		var lines = fs.docs.split(fs.divider);
+		var arr = [];
 
 		for (var a = indexer ? 0 : 1; a < lines.length; a++) {
-
 			data.line = lines[a].split('|');
 			data.index = indexer++;
-
-			indexer++;
-			var removed = false;
-			var doc = self.parseData(data);
-			var rec = fs.docsbuffer[a];
-
-			for (var i = 0; i < length; i++) {
-				var item = filter[i];
-				item.filter.index = indexer;
-				var output = item.compare(doc, item.filter, indexer);
-				if (output) {
-					removed = true;
-					doc = output;
-					break;
-				}
-			}
-
-			if (removed) {
-
-				if (backup) {
-					for (var i = 0; i < length; i++) {
-						var item = filter[i];
-						item.backup && item.backup.write(rec.doc + NEWLINE);
-						item.builder.$options.backup && item.builder.$backupdoc(rec.doc);
-					}
-				}
-
-				if (!change)
-					change = true;
-
-				item.count++;
-				self.$events.remove && self.emit('remove', doc);
-				fs.write(fs.remchar + rec.doc.substring(1) + NEWLINE, rec.position);
-			}
+			arr.push(self.parseData(data));
 		}
+
+		filters.compare2(arr, remove, removeflush);
 	};
 
 	fs.$callback = function() {
-
-		for (var i = 0; i < length; i++) {
-			var item = filter[i];
-			item.builder.$options.log && item.builder.log();
-			item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count, item.filter.repository);
-		}
-
+		filters.done();
 		fs = null;
 		self.$writting = false;
 		self.next(0);
@@ -7127,8 +6157,10 @@ TP.parseData = function(data, cache) {
 	var esc = data.line[0] === '*';
 	var val, alloc;
 
-	if (cache && data.keys.length === data.line.length - 2)
-		alloc = data.line[data.line.length - 1].length - 1;
+	if (cache && data.keys.length === data.line.length - 2) {
+		// alloc = data.line[data.line.length - 1].length - 1;
+		alloc = data.line[data.line.length - 1].length;
+	}
 
 	for (var i = 0; i < data.keys.length; i++) {
 		var key = data.keys[i];
@@ -7171,7 +6203,7 @@ TP.parseData = function(data, cache) {
 		}
 	}
 
-	alloc && (obj.$$alloc = { size: alloc, length: data.length });
+	alloc >= 0 && (obj.$$alloc = { size: alloc, length: data.length });
 	return obj;
 };
 
@@ -7224,7 +6256,7 @@ TP.stringify = function(doc, insert, byteslen) {
 	if (doc.$$alloc) {
 		var l = output.length;
 		var a = doc.$$alloc;
-		if (l < a.length) {
+		if (l <= a.length) {
 			var s = (a.length - l) - 1;
 			if (s > 0) {
 				output += '|'.padRight(s, '.');
@@ -7353,132 +6385,227 @@ function jsonparser(key, value) {
 // item.filter = builder.makefilter();
 // item.index = DOCUMENT_COUNTER;
 
-exports.compare = function(item, obj) {
+function NoSQLReader(builder) {
+	var self = this;
+	self.builders = [];
+	self.canceled = 0;
+	builder && self.add(builder);
+}
 
-	var val;
-	var builder = item.builder;
-
-	item.filter.index = item.index;
-
-	var output = item.compare(obj, item.filter, item.index);
-	if (!output)
-		return;
-
-	item.count++;
-
-	if (!builder.$inlinesort && ((builder.$options.skip && builder.$options.skip >= item.count) || (builder.$options.take && builder.$options.take <= item.counter)))
-		return;
-
-	item.counter++;
-
-	if (!builder.$inlinesort && !item.done)
-		item.done = builder.$options.take && builder.$options.take <= item.counter;
-
-	if (item.type)
-		return;
-
-	switch (builder.$options.scalar) {
-		case 'count':
-			item.scalar = item.scalar ? item.scalar + 1 : 1;
-			break;
-		case 'sum':
-			val = output[builder.$options.scalarfield] || 0;
-			item.scalar = item.scalar ? item.scalar + val : val;
-			break;
-		case 'min':
-			val = output[builder.$options.scalarfield] || 0;
-			if (val != null) {
-				if (item.scalar) {
-					if (item.scalar > val)
-						item.scalar = val;
-				} else
-					item.scalar = val;
-			}
-			break;
-		case 'max':
-			val = output[builder.$options.scalarfield];
-			if (val != null) {
-				if (item.scalar) {
-					if (item.scalar < val)
-						item.scalar = val;
-				} else
-					item.scalar = val;
-			}
-			break;
-		case 'avg':
-			val = output[builder.$options.scalarfield];
-			if (val != null) {
-				item.scalar = item.scalar ? item.scalar + val : val;
-				item.scalarcount++;
-			}
-			break;
-		case 'group':
-			!item.scalar && (item.scalar = {});
-			val = output[builder.$options.scalarfield];
-			if (val != null) {
-				if (item.scalar[val])
-					item.scalar[val]++;
-				else
-					item.scalar[val] = 1;
-			}
-			break;
-		default:
-			if (builder.$inlinesort)
-				nosqlinlinesorter(item, builder, output);
-			else if (item.response)
-				item.response.push(output);
-			else
-				item.response = [output];
-			break;
+NoSQLReader.prototype.add = function(builder, noTrimmer) {
+	var self = this;
+	if (builder instanceof Array) {
+		for (var i = 0; i < builder.length; i++)
+			self.add(builder[i]);
+	} else {
+		var item = {};
+		item.scalarcount = 0;
+		item.count = 0;
+		item.counter = 0;
+		item.builder = builder;
+		item.compare = builder.compile(noTrimmer);
+		item.filter = builder.makefilter();
+		item.first = builder.$options.first && !builder.$options.sort;
+		self.builders.push(item);
 	}
-
-	return item.first ? false : true;
+	return self;
 };
 
-exports.callback = function(item, err) {
+NoSQLReader.prototype.compare2 = function(docs, custom, done) {
+	var self = this;
+	for (var i = 0; i < docs.length; i++) {
 
-	var builder = item.builder;
-	var output;
+		var doc = docs[i];
 
-	if (builder.$options.scalar || !builder.$options.sort) {
+		if (self.builders.length === self.canceled)
+			return false;
 
-		if (builder.$options.scalar)
-			output = builder.$options.scalar === 'avg' ? item.scalar / item.scalarcount : item.scalar;
-		else if (builder.$options.first)
+		var is = false;
+
+		for (var j = 0; j < self.builders.length; j++) {
+
+			var item = self.builders[j];
+			if (item.canceled)
+				continue;
+
+			var output = item.compare(doc, item.filter, j);
+			if (!output)
+				continue;
+
+			item.is = false;
+
+			// @TODO: add "first" checking
+			if (custom) {
+				!is && (is = true);
+				item.count++;
+				var canceled = item.canceled;
+				var c = custom(docs, output, i, item, j);
+				if (!canceled && item.canceled)
+					self.canceled++;
+				if (c === 1)
+					break;
+				else
+					continue;
+			}
+		}
+
+		is && done && done(docs, doc, i, self.builders);
+	}
+};
+
+NoSQLReader.prototype.compare = function(docs) {
+
+	var self = this;
+	for (var i = 0; i < docs.length; i++) {
+
+		var doc = docs[i];
+
+		if (self.builders.length === self.canceled)
+			return false;
+
+		for (var j = 0; j < self.builders.length; j++) {
+
+			var item = self.builders[j];
+			if (item.canceled)
+				continue;
+
+			var output = item.compare(doc, item.filter, j);
+			if (!output)
+				continue;
+
+			var b = item.builder;
+			item.count++;
+
+			if (!b.$inlinesort && ((b.$options.skip && b.$options.skip >= item.count) || (b.$options.take && b.$options.take <= item.counter)))
+				continue;
+
+			item.counter++;
+
+			if (!b.$inlinesort && !item.done) {
+				item.done = b.$options.take && b.$options.take <= item.counter;
+				if (item.done)
+					continue;
+			}
+
+			if (b.$options.readertype)
+				continue;
+
+			b.$mappersexec && b.$mappersexec(doc, item.filter);
+
+			var val;
+
+			switch (b.$options.scalar) {
+				case 'count':
+					item.scalar = item.scalar ? item.scalar + 1 : 1;
+					break;
+				case 'sum':
+					val = output[b.$options.scalarfield] || 0;
+					item.scalar = item.scalar ? item.scalar + val : val;
+					break;
+				case 'min':
+					val = output[b.$options.scalarfield] || 0;
+					if (val != null) {
+						if (item.scalar) {
+							if (item.scalar > val)
+								item.scalar = val;
+						} else
+							item.scalar = val;
+					}
+					break;
+				case 'max':
+					val = output[b.$options.scalarfield];
+					if (val != null) {
+						if (item.scalar) {
+							if (item.scalar < val)
+								item.scalar = val;
+						} else
+							item.scalar = val;
+					}
+					break;
+				case 'avg':
+					val = output[b.$options.scalarfield];
+					if (val != null) {
+						item.scalar = item.scalar ? item.scalar + val : val;
+						item.scalarcount++;
+					}
+					break;
+				case 'group':
+					!item.scalar && (item.scalar = {});
+					val = output[b.$options.scalarfield];
+					if (val != null) {
+						if (item.scalar[val])
+							item.scalar[val]++;
+						else
+							item.scalar[val] = 1;
+					}
+					break;
+				default:
+					if (b.$inlinesort)
+						nosqlinlinesorter(item, b, output);
+					else if (item.response)
+						item.response.push(output);
+					else
+						item.response = [output];
+					break;
+			}
+
+			if (item.first) {
+				item.canceled = true;
+				self.canceled++;
+			}
+		}
+	}
+};
+
+NoSQLReader.prototype.done = function() {
+
+	var self = this;
+	for (var i = 0; i < self.builders.length; i++) {
+
+		var item = self.builders[i];
+		var builder = item.builder;
+		var output;
+
+		if (builder.$options.scalar || !builder.$options.sort) {
+			if (builder.$options.scalar)
+				output = builder.$options.scalar === 'avg' ? item.scalar / item.scalarcount : item.scalar;
+			else if (builder.$options.first)
+				output = item.response ? item.response[0] : undefined;
+			else if (builder.$options.listing)
+				output = listing(builder, item);
+			else
+				output = item.response || [];
+			builder.$callback2(errorhandling(null, builder, output), builder.$options.readertype === 1 ? item.count : output, item.count);
+			continue;
+		}
+
+		if (item.count) {
+			if (builder.$options.sort.name) {
+				if (!builder.$inlinesort || builder.$options.take !== item.response.length)
+					item.response.quicksort(builder.$options.sort.name, builder.$options.sort.asc);
+			} else if (builder.$options.sort === null)
+				item.response.random();
+			else
+				item.response.sort(builder.$options.sort);
+
+			if (builder.$options.skip && builder.$options.take)
+				item.response = item.response.splice(builder.$options.skip, builder.$options.take);
+			else if (builder.$options.skip)
+				item.response = item.response.splice(builder.$options.skip);
+			else if (!builder.$inlinesort && builder.$options.take)
+				item.response = item.response.splice(0, builder.$options.take);
+		}
+
+		if (builder.$options.first)
 			output = item.response ? item.response[0] : undefined;
 		else if (builder.$options.listing)
 			output = listing(builder, item);
 		else
 			output = item.response || [];
 
-		builder.$callback2(errorhandling(err, builder, output), item.type === 1 ? item.count : output, item.count);
-		return;
+		builder.$callback2(errorhandling(null, builder, output), builder.$options.readertype === 1 ? item.count : output, item.count);
+		builder.done();
 	}
-
-	if (item.count) {
-		if (builder.$options.sort.name) {
-			if (!builder.$inlinesort || builder.$options.take !== item.response.length)
-				item.response.quicksort(builder.$options.sort.name, builder.$options.sort.asc);
-		} else if (builder.$options.sort === null)
-			item.response.random();
-		else
-			item.response.sort(builder.$options.sort);
-
-		if (builder.$options.skip && builder.$options.take)
-			item.response = item.response.splice(builder.$options.skip, builder.$options.take);
-		else if (builder.$options.skip)
-			item.response = item.response.splice(builder.$options.skip);
-		else if (!builder.$inlinesort && builder.$options.take)
-			item.response = item.response.splice(0, builder.$options.take);
-	}
-
-	if (builder.$options.first)
-		output = item.response ? item.response[0] : undefined;
-	else if (builder.$options.listing)
-		output = listing(builder, item);
-	else
-		output = item.response || [];
-
-	builder.$callback2(errorhandling(err, builder, output), item.type === 1 ? item.count : output, item.count);
-	builder.done();
 };
+
+exports.NoSQLReader = NoSQLReader;
