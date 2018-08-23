@@ -2815,10 +2815,11 @@ DatabaseBuilder.prototype.compile = function(noTrimmer) {
 		self.$mappers = [];
 		for (var i = 0; i < opt.mappers.length; i++) {
 			var m = opt.mappers[i];
-			tmp += ('doc.{0}=item.builder.$mappers[\'{1}\'](doc,R);'.format(m.name, i));
-			self.$mappers.push(new Function('doc', 'repository', code));
+			tmp += ('doc.{0}=item.builder.$mappers[{1}](doc,item.filter.repository,item.filter.repository);'.format(m.name, i));
+			opt.fields && opt.fields.push(m.name);
+			self.$mappers.push(new Function('doc', 'repository', 'R', m.code.lastIndexOf('return ') === -1 ? ('return ' + m.code) : m.code));
 		}
-		self.$mappersexec = new Function('doc', 'R', tmp.join(''));
+		self.$mappersexec = new Function('doc', 'item', tmp);
 	}
 
 	return CACHE[key] ? CACHE[key] : (CACHE[key] = new Function('doc', '$F', 'index', code));
@@ -6526,7 +6527,7 @@ NoSQLReader.prototype.compare = function(docs) {
 			if (b.$options.readertype)
 				continue;
 
-			b.$mappersexec && b.$mappersexec(doc, item.filter);
+			b.$mappersexec && b.$mappersexec(output, item);
 
 			var val;
 
