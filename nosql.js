@@ -5074,10 +5074,10 @@ SP.find = function(beg, end, threads) {
 		threads = 1;
 
 	var builder = new DatabaseBuilder(self);
-	var filters = new NoSQLReader([builder]);
 
 	self.listing(beg, end, function(err, storage) {
 
+		var filters = new NoSQLReader([builder]);
 		var count = (storage.length / threads) >> 0;
 		var opt = { cwd: F.directory };
 		var filename = module.filename.replace(/\.js$/, '') + 'crawler.js';
@@ -5107,6 +5107,10 @@ SP.count = function(beg, end, threads) {
 	var builder = this.find(beg, end, threads);
 	builder.$options.readertype = 1;
 	return builder;
+};
+
+SP.scalar = function(type, field) {
+	return this.find().scalar(type, field);
 };
 
 SP.scan = function(beg, end, mapreduce, callback, reverse) {
@@ -6528,7 +6532,6 @@ NoSQLReader.prototype.compare = function(docs) {
 				continue;
 
 			b.$mappersexec && b.$mappersexec(output, item);
-
 			var val;
 
 			switch (b.$options.scalar) {
