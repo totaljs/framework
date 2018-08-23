@@ -6429,20 +6429,21 @@ NoSQLReader.prototype.compare2 = function(docs, custom, done) {
 				continue;
 
 			item.is = false;
+			!is && (is = true);
+			item.count++;
+			var canceled = item.canceled;
+			var c = custom(docs, output, i, item, j);
 
-			// @TODO: add "first" checking
-			if (custom) {
-				!is && (is = true);
-				item.count++;
-				var canceled = item.canceled;
-				var c = custom(docs, output, i, item, j);
-				if (!canceled && item.canceled)
-					self.canceled++;
-				if (c === 1)
-					break;
-				else
-					continue;
-			}
+			if (item.first) {
+				item.canceled = true;
+				self.canceled++;
+			} else if (!canceled && item.canceled)
+				self.canceled++;
+
+			if (c === 1)
+				break;
+			else
+				continue;
 		}
 
 		is && done && done(docs, doc, i, self.builders);
@@ -6477,11 +6478,8 @@ NoSQLReader.prototype.compare = function(docs) {
 
 			item.counter++;
 
-			if (!b.$inlinesort && !item.done) {
+			if (!b.$inlinesort && !item.done)
 				item.done = b.$options.take && b.$options.take <= item.counter;
-				if (item.done)
-					continue;
-			}
 
 			if (b.$options.readertype)
 				continue;
