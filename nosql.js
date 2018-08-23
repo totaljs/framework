@@ -1103,6 +1103,7 @@ DP.remove = function() {
 	self.readonly && self.throwReadonly();
 	var builder = new DatabaseBuilder(self);
 	self.pending_remove.push(builder);
+	builder.$options.readertype = 1;
 	setImmediate(next_operation, self, 3);
 	return builder;
 };
@@ -5299,6 +5300,7 @@ TP.update = function(doc, insert) {
 	var self = this;
 	self.readonly && self.throwReadonly();
 	var builder = new DatabaseBuilder(self);
+	builder.$options.readertype = 1;
 	self.pending_update.push({ builder: builder, doc: doc, count: 0, insert: insert === true ? doc : insert });
 	setImmediate(next_operation, self, 2);
 	return builder;
@@ -5328,6 +5330,7 @@ TP.modify = function(doc, insert) {
 					break;
 			}
 		}
+		builder.$options.readertype = 1;
 		self.pending_update.push({ builder: builder, doc: data, count: 0, keys: keys, inc: inc, insert: insert === true ? data : insert });
 		setImmediate(next_operation, self, 2);
 	}
@@ -5339,6 +5342,7 @@ TP.remove = function() {
 	self.readonly && self.throwReadonly();
 	var builder = new DatabaseBuilder(self);
 	self.pending_remove.push(builder);
+	builder.$options.readertype = 1;
 	setImmediate(next_operation, self, 3);
 	return builder;
 };
@@ -6376,14 +6380,6 @@ function errorhandling(err, builder, response) {
 function jsonparser(key, value) {
 	return typeof(value) === 'string' && value.isJSONDate() ? new Date(value) : value;
 }
-
-// Item requirements:
-// item.first = false;
-// item.scalarcount = 0;
-// item.builder = builder;
-// item.compare = builder.compile();
-// item.filter = builder.makefilter();
-// item.index = DOCUMENT_COUNTER;
 
 function NoSQLReader(builder) {
 	var self = this;
