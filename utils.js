@@ -99,6 +99,10 @@ for (var i=0; i <DIACRITICS.length; i+=1)
 	for (var chars=DIACRITICS[i].c,j=0;j<chars.length;j+=1)
 		DIACRITICSMAP[chars[j]]=DIACRITICS[i].b;
 
+const DP = Date.prototype;
+const SP = String.prototype;
+const NP = Number.prototype;
+
 DIACRITICS = null;
 
 var CONTENTTYPES = {
@@ -2721,8 +2725,6 @@ DP.add = function(type, value) {
 	return dt;
 };
 
-const DP = Date.prototype;
-
 /**
  * Date difference
  * @param  {Date/Number/String} date Optional.
@@ -2991,8 +2993,6 @@ DP.toUTC = function(ticks) {
 DP.parseDate = function() {
 	return this;
 };
-
-const SP = String.prototype;
 
 SP.isJSONDate = function() {
 	var l = this.length - 1;
@@ -4099,8 +4099,6 @@ SP.soundex = function() {
 SP.removeTags = function() {
 	return this.replace(regexpTags, '');
 };
-
-const NP = Number.prototype;
 
 NP.floor = function(decimals) {
 	return Math.floor(this * Math.pow(10, decimals)) / Math.pow(10, decimals);

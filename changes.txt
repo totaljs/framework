@@ -1,7 +1,8 @@
 ======= 3.0.1
 
 - added: CSS variables support default values `border-radius: $radius || 10px`
-- added: NoSQL storage `.find()` + `.count()` with multiple thread support
+- added: NoSQL storage `.find()` + `.count()` + '.scalar(type, field)' with multiple thread support
+- added: `U.reader()`
 
 - improved: NoSQL reader
 
