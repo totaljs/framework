@@ -5066,6 +5066,48 @@ SP.listing = function(beg, end, callback) {
 	return self;
 };
 
+SP.find = function(beg, end, threads) {
+	var self = this;
+
+	if (!threads)
+		threads = 1;
+
+	var builder = new DatabaseBuilder(self);
+	var filters = new NoSQLReader([builder]);
+
+	self.listing(beg, end, function(err, storage) {
+
+		var count = (storage.length / threads) >> 0;
+		var opt = { cwd: F.directory };
+		var filename = module.filename.replace(/\.js$/, '') + 'crawler.js';
+		var counter = 0;
+		var finish = threads;
+
+		for (var i = 0; i < threads; i++) {
+			var fork = require('child_process').fork(filename, EMPTYARRAY, opt);
+			var files = (i === threads - 1) ? storage : storage.splice(0, count);
+			fork.send({ TYPE: 'init', files: files, builder: builder.stringify() });
+			fork.on('message', function(msg) {
+				counter += msg.count;
+				msg.response && msg.response.length && filters.compare(msg.response);
+				finish--;
+				if (finish === 0) {
+					filters.builders[0].count = counter;
+					filters.done();
+				}
+			});
+		}
+	});
+
+	return builder;
+};
+
+SP.count = function(beg, end, threads) {
+	var builder = this.find(beg, end, threads);
+	builder.$options.readertype = 1;
+	return builder;
+};
+
 SP.scan = function(beg, end, mapreduce, callback, reverse) {
 	var self = this;
 
