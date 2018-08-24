@@ -21,7 +21,7 @@
 
 /**
  * @module NoSQL
- * @version 3.0.0
+ * @version 3.0.1
  */
 
 'use strict';
@@ -1356,12 +1356,12 @@ DP.$inmemory = function(callback) {
 		var arr = data.toString('utf8').split('\n');
 		for (var i = 0, length = arr.length; i < length; i++) {
 			var item = arr[i];
-			if (!item)
-				continue;
-			try {
-				item = JSON.parse(item.trim(), jsonparser);
-				item && self.inmemory[view].push(item);
-			} catch (e) {}
+			if (item) {
+				try {
+					item = JSON.parse(item.trim(), jsonparser);
+					item && self.inmemory[view].push(item);
+				} catch (e) {}
+			}
 		}
 
 		callback();
@@ -1646,6 +1646,7 @@ DP.$update_inmemory = function() {
 		change && self.$save();
 		setImmediate(function() {
 			self.next(0);
+			filters.done();
 			change && self.$events.change && self.emit('change', 'update');
 		});
 	});
@@ -1862,8 +1863,9 @@ function nosqlresort(arr, builder, doc) {
 
 DP.$reader2_inmemory = function(items, callback) {
 	var self = this;
-	var filters = new NoSQLReader(items);
 	return self.$inmemory(function() {
+		var filters = new NoSQLReader(items);
+		filters.clone = true;
 		filters.compare(self.inmemory['#']);
 		filters.done();
 		callback();
@@ -2255,7 +2257,8 @@ DatabaseBuilder.prototype.$callback2 = function(err, response, count, repository
 	if (err || !self.$join) {
 		self.$options.log && self.log();
 		self.$done && setImmediate(self.$done);
-		return self.$callback(err, response, count, repository);
+		self.$callback && self.$callback(err, response, count, repository);
+		return;
 	}
 
 	self.$response = response;
@@ -2280,8 +2283,8 @@ DatabaseBuilder.prototype.$callback2 = function(err, response, count, repository
 		}
 
 		self.$options.log && self.log();
-		self.$callback(err, response, count, repository);
 		self.$done && setImmediate(self.$done);
+		self.$callback && self.$callback(err, response, count, repository);
 	});
 
 	return self;
@@ -6502,7 +6505,7 @@ NoSQLReader.prototype.compare = function(docs) {
 	var self = this;
 	for (var i = 0; i < docs.length; i++) {
 
-		var doc = docs[i];
+		var doc = self.clone ? U.clone(docs[i]) : docs[i];
 
 		if (self.builders.length === self.canceled)
 			return false;
