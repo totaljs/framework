@@ -6,6 +6,7 @@ const CONSOLE = process.argv.indexOf('restart') === -1;
 const META = {};
 const INTERNAL = { '/sitemap': 1, '/versions': 1, '/workflows': 1, '/dependencies': 1, '/config': 1, '/config-release': 1, '/config-debug': 1 };
 const isWindows = require('os').platform().substring(0, 3).toLowerCase() === 'win';
+const REGAPPEND = /\/--[a-z0-9]+/i;
 
 META.version = 1;
 META.created = new Date();
@@ -112,11 +113,15 @@ exports.make = function(callback) {
 			for (var i = 0, length = files.length; i < length; i++) {
 				var file = files[i].substring(Length);
 				var type = 0;
-
 				if (file.startsWith(F.config['directory-databases']))
 					type = 1;
 				else if (file.startsWith(F.config['directory-public']))
 					type = 2;
+				else if (REGAPPEND.test(file)) {
+					file = file.replace(/\/--/g, '/');
+					type = 3;
+				}
+
 				Files.push({ name: file, filename: files[i], type: type });
 			}
 
@@ -216,7 +221,7 @@ function copyFiles(files, callback) {
 		var filename = Path.join(path, file.name);
 		var exists = false;
 		var ext = U.getExtension(file.name);
-		var append = false;
+		var append = file.type === 3;
 
 		try {
 			exists = Fs.statSync(filename) != null;

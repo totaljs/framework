@@ -3,6 +3,7 @@
 - added: CSS variables support default values `border-radius: $radius || 10px`
 - added: NoSQL storage `.find()` + `.count()` + '.scalar(type, field)' with multiple thread support
 - added: `U.reader()`
+- added: `bundles` supports merging files between bundle and project, project file must start with e.g. `--name.js`
 
 - improved: NoSQL reader
 
