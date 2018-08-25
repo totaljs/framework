@@ -7451,26 +7451,20 @@ F.$websocketcontinue = function(req, path) {
 	var auth = F.onAuthorize;
 	if (auth) {
 		auth.call(F, req, req.websocket, req.flags, function(isLogged, user) {
-
 			if (user)
 				req.user = user;
-
 			var route = F.lookup_websocket(req, req.websocket.uri.pathname, isLogged ? 1 : 2);
 			if (route) {
 				F.$websocketcontinue_process(route, req, path);
-			} else {
-				req.websocket.close();
-				req.connection.destroy();
-			}
+			} else
+				req.websocket.$close(4001, '401: unauthorized');
 		});
 	} else {
 		var route = F.lookup_websocket(req, req.websocket.uri.pathname, 0);
 		if (route) {
 			F.$websocketcontinue_process(route, req, path);
-		} else {
-			req.websocket.close();
-			req.connection.destroy();
-		}
+		} else
+			req.websocket.$close(4004, '404: not found');
 	}
 };
 
@@ -7479,8 +7473,7 @@ F.$websocketcontinue_process = function(route, req, path) {
 	var socket = req.websocket;
 
 	if (!socket.prepare(route.flags, route.protocols, route.allow, route.length)) {
-		socket.close();
-		req.connection.destroy();
+		socket.$close(4001, '401: unauthorized');
 		return;
 	}
 
@@ -13583,6 +13576,28 @@ WebSocketClient.prototype.cookie = function(name) {
 	return this.req.cookie(name);
 };
 
+WebSocketClient.prototype.$close = function(code, message) {
+
+	var self = this;
+
+	if ((self.req.headers['user-agent'] || '').indexOf('Total.js') !== -1) {
+		self.close();
+		return;
+	}
+
+	var header = SOCKET_RESPONSE.format(self.$websocket_key(self.req));
+	self.socket.write(U.createBuffer(header, 'binary'));
+	self.ready = true;
+	self.close(message, code);
+
+	setTimeout(function(self) {
+		self.req = null;
+		self.socket = null;
+	}, 1000, self);
+
+	return self;
+};
+
 WebSocketClient.prototype.prepare = function(flags, protocols, allow, length) {
 
 	flags = flags || EMPTYARRAY;
@@ -13623,6 +13638,7 @@ WebSocketClient.prototype.prepare = function(flags, protocols, allow, length) {
 	var header = protocols.length ? (compress ? SOCKET_RESPONSE_PROTOCOL_COMPRESS : SOCKET_RESPONSE_PROTOCOL).format(self.$websocket_key(self.req), protocols.join(', ')) : (compress ? SOCKET_RESPONSE_COMPRESS : SOCKET_RESPONSE).format(self.$websocket_key(self.req));
 
 	self.socket.write(U.createBuffer(header, 'binary'));
+	self.ready = true;
 
 	if (compress) {
 		self.inflatepending = [];
@@ -13630,10 +13646,10 @@ WebSocketClient.prototype.prepare = function(flags, protocols, allow, length) {
 		self.inflate = Zlib.createInflateRaw(WEBSOCKET_COMPRESS_OPTIONS);
 		self.inflate.$websocket = self;
 		self.inflate.on('error', function() {
-			if (self.$uerror)
-				return;
-			self.$uerror = true;
-			self.close('Unexpected error');
+			if (!self.$uerror) {
+				self.$uerror = true;
+				self.close('Invalid data', 1003);
+			}
 		});
 		self.inflate.on('data', websocket_inflate);
 
@@ -13642,10 +13658,10 @@ WebSocketClient.prototype.prepare = function(flags, protocols, allow, length) {
 		self.deflate = Zlib.createDeflateRaw(WEBSOCKET_COMPRESS_OPTIONS);
 		self.deflate.$websocket = self;
 		self.deflate.on('error', function() {
-			if (self.$uerror)
-				return;
-			self.$uerror = true;
-			self.close('Unexpected error');
+			if (!self.$uerror) {
+				self.$uerror = true;
+				self.close('Invalid data', 1003);
+			}
 		});
 		self.deflate.on('data', websocket_deflate);
 	}
@@ -13833,9 +13849,8 @@ WebSocketClient.prototype.$parse = function() {
 	// total message length (data + header)
 	var mlength = index + length;
 
-	// ???
 	if (mlength > this.length) {
-		this.close('Maximum request length exceeded.');
+		this.close('Frame is too large', 1009);
 		return;
 	}
 
@@ -13963,7 +13978,7 @@ WebSocketClient.prototype.parseInflate = function() {
 			self.inflatelock = false;
 
 			if (data.length > self.length) {
-				self.close('Maximum request length exceeded.');
+				self.close('Frame is too large', 1009);
 				return;
 			}
 
@@ -14062,14 +14077,14 @@ WebSocketClient.prototype.sendDeflate = function() {
 		self.deflatelock = true;
 		self.deflate.write(buf);
 		self.deflate.flush(function() {
-			if (!self.deflatechunks)
-				return;
-			var data = buffer_concat(self.deflatechunks, self.deflatechunkslength);
-			data = data.slice(0, data.length - 4);
-			self.deflatelock = false;
-			self.deflatechunks = null;
-			self.socket.write(U.getWebSocketFrame(0, data, self.type === 1 ? 0x02 : 0x01, true));
-			self.sendDeflate();
+			if (self.deflatechunks) {
+				var data = buffer_concat(self.deflatechunks, self.deflatechunkslength);
+				data = data.slice(0, data.length - 4);
+				self.deflatelock = false;
+				self.deflatechunks = null;
+				self.socket.write(U.getWebSocketFrame(0, data, self.type === 1 ? 0x02 : 0x01, true));
+				self.sendDeflate();
+			}
 		});
 	}
 };
@@ -14093,11 +14108,16 @@ WebSocketClient.prototype.ping = function() {
  * @return {WebSocketClient}
  */
 WebSocketClient.prototype.close = function(message, code) {
-	if (!this.isClosed) {
-		this.isClosed = true;
-		this.socket.end(U.getWebSocketFrame(code || 1000, message ? (F.config['default-websocket-encodedecode'] ? encodeURIComponent(message) : message) : '', 0x08));
+	var self = this;
+	if (!self.isClosed) {
+		self.isClosed = true;
+		if (self.ready)
+			self.socket.end(U.getWebSocketFrame(code || 1000, message ? (F.config['default-websocket-encodedecode'] ? encodeURIComponent(message) : message) : '', 0x08));
+		else
+			self.socket.end();
+		self.req.connection.destroy();
 	}
-	return this;
+	return self;
 };
 
 /**
