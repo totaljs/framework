@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkDebug
- * @version 3.0.0
+ * @version 3.0.1
  */
 
 const Path = require('path');
@@ -91,6 +91,7 @@ function runwatching() {
 	const isRELOAD = !!options.livereload;
 	const SPEED = isRELOAD ? 1000 : 1500;
 	const ARGV = CLONE(process.argv);
+	const PIDNAME = FILENAME.replace(/\.js$/, '.pid');
 
 	function copyFile(oldname, newname, callback) {
 		var writer = Fs.createWriteStream(newname);
@@ -149,6 +150,7 @@ function runwatching() {
 		var WS = null;
 		var speed = isRELOAD ? 1000 : 4000;
 
+		blacklist['/' + PIDNAME] = 1;
 		blacklist['/debug.pid'] = 1;
 		blacklist['/debug.js'] = 1;
 		blacklist['/bundle.json'] = 1;
@@ -408,7 +410,7 @@ function runwatching() {
 
 			console.log(prefix.substring(8) + 'DEBUG PID: ' + process.pid + ' (v' + VERSION + ')');
 
-			pid = Path.join(directory, 'debug.pid');
+			pid = Path.join(directory, PIDNAME);
 			Fs.writeFileSync(pid, process.pid);
 
 			setInterval(function() {
@@ -434,7 +436,7 @@ function runwatching() {
 		refresh_directory();
 	}
 
-	var filename = Path.join(directory, 'debug.pid');
+	var filename = Path.join(directory, PIDNAME);
 	if (Fs.existsSync(filename)) {
 		Fs.unlinkSync(filename);
 		setTimeout(app, 3500);
