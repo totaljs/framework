@@ -5,12 +5,15 @@
 - added: `U.reader()`
 - added: `bundles` supports merging files between bundle and project, project file must start with e.g. `--name.js`
 
-- improved: NoSQL reader
+- updated: `debug` mode creates a `start_name_script.pid` instead of `debug.pid`
 
 - fixed: a critical bug with storing uploaded files via `httpfile.fs()` or `httpfile.nosql()`
 - fixed: `nosql.update()` and `nosql.modify()` methods if the first argument is a function
 - fixed: `F.wait()` in the test mode
 - fixed: `LOCALIZE()` for nested directories
+- fixed: sending of error handling when WebSocketClient is starting (for example: `unauthorized`)
+
+- improved: NoSQL reader
 
 ======= 3.0.0
 
