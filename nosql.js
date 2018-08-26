@@ -5953,13 +5953,13 @@ TP.$remove = function() {
 	var data = { keys: self.$keys };
 
 	var remove = function(docs, d, dindex, f) {
-		var rec = fs.docsbuffer[dindex + 1];
+		var rec = fs.docsbuffer[dindex];
 		f.builder.$options.backup && f.builder.$backupdoc(rec.doc);
 		return 1;
 	};
 
 	var removeflush = function(docs, d, dindex) {
-		var rec = fs.docsbuffer[dindex + 1];
+		var rec = fs.docsbuffer[dindex];
 		!change && (change = true);
 		self.$events.remove && self.emit('remove', d);
 		fs.write(fs.remchar + rec.doc.substring(1) + NEWLINE, rec.position);
@@ -5969,6 +5969,9 @@ TP.$remove = function() {
 
 		var lines = fs.docs.split(fs.divider);
 		var arr = [];
+
+		if (!indexer)
+			arr.push(EMPTYOBJECT);
 
 		for (var a = indexer ? 0 : 1; a < lines.length; a++) {
 			data.line = lines[a].split('|');
