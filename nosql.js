@@ -1534,9 +1534,7 @@ DP.$update = function() {
 			return;
 
 		!change && (change = true);
-
 		var was = true;
-		!change && (change = true);
 
 		if (rec.doc.length === upd.length) {
 			var b = Buffer.byteLength(upd);
@@ -1558,10 +1556,26 @@ DP.$update = function() {
 	};
 
 	fs.$callback = function() {
-		filters.done();
+
 		fs = null;
 		self.$writting = false;
 		self.next(0);
+
+		for (var i = 0; i < filters.builders.length; i++) {
+			var item = filters.builders[i];
+			var fil = filter[i];
+			if (fil.insert && !item.count) {
+				item.builder.$insertcallback && item.builder.$insertcallback(fil.insert, item.builder.$repository || EMPTYOBJECT);
+				var tmp = self.insert(fil.insert);
+				tmp.$callback = item.builder.$callback;
+				tmp.$options.log = item.builder.$options.log;
+				item.builder.$callback = null;
+			} else {
+				item.builder.$options.log && item.builder.log();
+				item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count, item.repository);
+			}
+		}
+
 		change && self.$events.change && self.emit('change', 'update');
 	};
 
@@ -1644,9 +1658,23 @@ DP.$update_inmemory = function() {
 		filters.compare2(self.inmemory['#'], update, updateflush);
 
 		change && self.$save();
+
+		for (var i = 0; i < filter.length; i++) {
+			var item = filter[i];
+			if (item.insert && !item.count) {
+				item.builder.$insertcallback && item.builder.$insertcallback(item.insert, item.builder.$repository || EMPTYOBJECT);
+				var tmp = self.insert(item.insert);
+				tmp.$callback = item.builder.$callback;
+				tmp.$options.log = item.builder.$options.log;
+				item.builder.$callback = null;
+			} else {
+				item.builder.$options.log && item.builder.log();
+				item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count, item.filter.repository);
+			}
+		}
+
 		setImmediate(function() {
 			self.next(0);
-			filters.done();
 			change && self.$events.change && self.emit('change', 'update');
 		});
 	});
@@ -5890,7 +5918,6 @@ TP.$update = function() {
 			fs.write(tmp, rec.position);
 			fs.write2(upd + NEWLINE);
 		}
-
 	};
 
 	fs.ondocuments = function() {
@@ -5913,10 +5940,26 @@ TP.$update = function() {
 
 
 	fs.$callback = function() {
-		filters.done();
+
 		fs = null;
 		self.$writting = false;
 		self.next(0);
+
+		for (var i = 0; i < filters.builders.length; i++) {
+			var item = filters.builders[i];
+			var fil = filter[i];
+			if (fil.insert && !item.count) {
+				item.builder.$insertcallback && item.builder.$insertcallback(fil.insert, item.builder.$repository || EMPTYOBJECT);
+				var tmp = self.insert(fil.insert);
+				tmp.$callback = item.builder.$callback;
+				tmp.$options.log = item.builder.$options.log;
+				item.builder.$callback = null;
+			} else {
+				item.builder.$options.log && item.builder.log();
+				item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count, item.repository);
+			}
+		}
+
 		change && self.$events.change && self.emit('change', 'update');
 	};
 
@@ -6611,46 +6654,46 @@ NoSQLReader.prototype.done = function() {
 		var item = self.builders[i];
 		var builder = item.builder;
 		var output;
+		var opt = builder.$options;
 
-		if (builder.$options.scalar || !builder.$options.sort) {
-			if (builder.$options.scalar)
-				output = builder.$options.scalar === 'avg' ? item.scalar / item.scalarcount : item.scalar;
-			else if (builder.$options.first)
+		if (opt.scalar || !opt.sort) {
+			if (opt.scalar)
+				output = opt.scalar === 'avg' ? item.scalar / item.scalarcount : item.scalar;
+			else if (opt.first)
 				output = item.response ? item.response[0] : undefined;
-			else if (builder.$options.listing)
+			else if (opt.listing)
 				output = listing(builder, item);
 			else
 				output = item.response || [];
-			builder.$callback2(errorhandling(null, builder, output), builder.$options.readertype === 1 ? item.count : output, item.count);
+			builder.$callback2(errorhandling(null, builder, output), opt.readertype === 1 ? item.count : output, item.count);
 			continue;
 		}
 
 		if (item.count) {
-			if (builder.$options.sort.name) {
-				if (!builder.$inlinesort || builder.$options.take !== item.response.length)
-					item.response.quicksort(builder.$options.sort.name, builder.$options.sort.asc);
-			} else if (builder.$options.sort === null)
+			if (opt.sort.name) {
+				if (!builder.$inlinesort || opt.take !== item.response.length)
+					item.response.quicksort(opt.sort.name, opt.sort.asc);
+			} else if (opt.sort === null)
 				item.response.random();
 			else
-				item.response.sort(builder.$options.sort);
+				item.response.sort(opt.sort);
 
-			if (builder.$options.skip && builder.$options.take)
-				item.response = item.response.splice(builder.$options.skip, builder.$options.take);
-			else if (builder.$options.skip)
-				item.response = item.response.splice(builder.$options.skip);
-			else if (!builder.$inlinesort && builder.$options.take)
-				item.response = item.response.splice(0, builder.$options.take);
+			if (opt.skip && opt.take)
+				item.response = item.response.splice(opt.skip, opt.take);
+			else if (opt.skip)
+				item.response = item.response.splice(opt.skip);
+			else if (!builder.$inlinesort && opt.take)
+				item.response = item.response.splice(0, opt.take);
 		}
 
-		if (builder.$options.first)
+		if (opt.first)
 			output = item.response ? item.response[0] : undefined;
-		else if (builder.$options.listing)
+		else if (opt.listing)
 			output = listing(builder, item);
 		else
 			output = item.response || [];
 
-		builder.$callback2(errorhandling(null, builder, output), builder.$options.readertype === 1 ? item.count : output, item.count);
-		builder.done();
+		builder.$callback2(errorhandling(null, builder, output), opt.readertype === 1 ? item.count : output, item.count);
 	}
 };
 
