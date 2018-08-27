@@ -12,6 +12,7 @@
 - fixed: `F.wait()` in the test mode
 - fixed: `LOCALIZE()` for nested directories
 - fixed: sending of error handling when WebSocketClient is starting (for example: `unauthorized`)
+- fixed: `versions` and `auto` feature with enabled `F.wait()`
 
 - improved: NoSQL reader
 

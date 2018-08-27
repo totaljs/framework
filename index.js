@@ -8461,9 +8461,19 @@ F.$configure_versions = function(arr, clean) {
 	return F;
 };
 
-function makehash(url, callback) {
-	url = 'http://' + (F.ip === 'auto' ? '0.0.0.0' : F.ip) + ':' + F.port + url;
-	U.download(url, ['get'], function(err, stream, status) {
+function makehash(url, callback, count) {
+	var target = 'http://' + (F.ip === 'auto' ? '0.0.0.0' : F.ip) + ':' + F.port + url;
+	U.download(target, ['get'], function(err, stream, status) {
+
+		// Maybe F.wait()
+		if (status === 503) {
+			// Unhandled problem
+			if (count > 60)
+				callback('');
+			else
+				setTimeout((url, callback, count) => makehash(url, callback, (count || 1) + 1), 1000, url, callback, count);
+			return;
+		}
 
 		if (status !== 200) {
 			callback('');
