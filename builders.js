@@ -2555,7 +2555,7 @@ function clone(obj) {
 
 		// Because here can be a problem with MongoDB.ObjectID
 		// I assume plain/simple model
-		if (val.constructor === Object)
+		if (val && val.constructor === Object)
 			o[m] = clone(obj[m]);
 		else
 			o[m] = val;
