@@ -4,6 +4,7 @@
 - added: NoSQL storage `.find()` + `.count()` + '.scalar(type, field)' with multiple thread support
 - added: `U.reader()`
 - added: `bundles` supports merging files between bundle and project, project file must start with e.g. `--name.js`
+- added: `.bundlesignore` support with similiar functionality like `.gitignore`
 
 - updated: `debug` mode creates a `start_name_script.pid` instead of `debug.pid`
 

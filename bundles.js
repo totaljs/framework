@@ -14,6 +14,7 @@ META.total = 'v' + F.version_header;
 META.node = F.version_node;
 META.files = [];
 META.directories = [];
+META.ignore = () => true;
 
 exports.make = function(callback) {
 
@@ -24,6 +25,10 @@ exports.make = function(callback) {
 		console.log('--------------------- BUNDLING ---------------------');
 		console.time('Done');
 	}
+
+	try {
+		META.ignore = makeignore(Fs.readFileSync(Path.join(path, '.bundlesignore')).toString('utf8').split('\n'));
+	} catch (e) {}
 
 	blacklist[F.config['directory-temp']] = 1;
 	blacklist[F.config['directory-bundles']] = 1;
@@ -150,6 +155,41 @@ exports.make = function(callback) {
 
 };
 
+function makeignore(arr) {
+
+	var ext;
+	var code = ['var path=P.substring(0,P.lastIndexOf(\'/\') + 1);', 'var ext=U.getExtension(P);', 'var name=U.getName(P).replace(\'.\' + ext, \'\');'];
+
+	for (var i = 0; i < arr.length; i++) {
+		var item = arr[i];
+		var index = item.lastIndexOf('*.');
+
+		if (index !== -1) {
+			// only extensions on this path
+			ext = item.substring(index + 2);
+			item = item.substring(0, index);
+			code.push('tmp=\'{0}\';'.format(item));
+			code.push('if((!tmp||path===tmp)&&ext===\'{0}\')return;'.format(ext));
+			continue;
+		}
+
+		ext = U.getExtension(item);
+		if (ext) {
+			// only filename
+			index = item.lastIndexOf('/');
+			code.push('tmp=\'{0}\';'.format(item.substring(0, index + 1)));
+			code.push('if(path===tmp&&U.getName(\'{0}\').replace(\'.{1}\', \'\')===name&&ext===\'{1}\')return;'.format(item.substring(index + 1), ext));
+			continue;
+		}
+
+		// all nested path
+		code.push('if(path.startsWith(\'{0}\'))return;'.format(item.replace('*', '')));
+	}
+
+	code.push('return true');
+	return new Function('P', code.join(''));
+}
+
 function normalize(path) {
 	return isWindows ? path.replace(/\\/g, '/') : path;
 }
@@ -217,6 +257,9 @@ function createDirectories(dirs, callback) {
 function copyFiles(files, callback) {
 	var path = F.path.root(F.config['directory-src']);
 	files.wait(function(file, next) {
+
+		if (!META.ignore(file.name))
+			return next();
 
 		var filename = Path.join(path, file.name);
 		var exists = false;
