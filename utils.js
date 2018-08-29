@@ -2227,7 +2227,7 @@ function validate_builder_default(name, value, entity) {
 
 	var type = typeof(value);
 
-	// Enum + KeyValue (8+9)
+	// Enum + KeyValue + Custom (8+9+10)
 	if (entity.type > 7)
 		return value !== undefined;
 

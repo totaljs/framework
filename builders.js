@@ -643,6 +643,11 @@ SchemaBuilderEntity.prototype.$parse = function(name, value, required, custom) {
 			return result;
 		}
 
+		if (value instanceof SchemaBuilderEntity)
+			result.type = 7;
+		else
+			result.type = 10;
+
 		return result;
 	}
 
@@ -1879,6 +1884,13 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 					} else
 						item[property] = null;
 
+					break;
+
+				case 10:
+					// custom object type
+					item[property] = type.raw(val == null ? '' : val.toString());
+					if (item[property] === undefined)
+						item[property] = null;
 					break;
 			}
 			continue;
