@@ -6486,6 +6486,13 @@ F.initialize = function(http, debug, options) {
 	global.DEBUG = debug;
 	global.RELEASE = !debug;
 	global.I = global.isomorphic = F.isomorphic;
+
+	if (options.tests) {
+		F.testlist = options.tests;
+		for (var i = 0; i < F.testlist.length; i++)
+			F.testlist[i] = F.testlist[i].replace(/\.js$/, '');
+	}
+
 	F.$bundle(function() {
 
 		F.$configure_configs();

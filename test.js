@@ -168,8 +168,16 @@ global.TESTUSER = function(user, flags) {
 };
 
 exports.load = function() {
-	U.ls(F.path.tests(), function(files) {
+	var dir = F.path.tests();
+	U.ls(dir, function(files) {
 		files.waitFor(function(filename, next) {
+
+			if (F.testlist) {
+				var tn = filename.replace(dir, '').replace(/\.js$/, '');
+				if (F.testlist.indexOf(tn) === -1)
+					return next();
+			}
+
 			T.current = { filename: filename, items: [] };
 			var m = require(filename);
 			T.current.module = m;
