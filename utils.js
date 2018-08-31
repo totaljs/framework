@@ -2059,7 +2059,7 @@ exports.parseFloat = function(obj, def) {
  * @return {Boolean}
  */
 exports.isArray = function(obj) {
-	return obj instanceof Array;
+	return Object.prototype.toString.call(input) === '[object Array]';
 };
 
 /**
