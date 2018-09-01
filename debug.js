@@ -262,14 +262,19 @@ function runwatching() {
 							if (files[filename]) {
 								var tmp = isViewPublic(filename);
 								if (tmp) {
+									var skip = true;
 									if (isBUNDLE) {
-										copyFile(filename, Path.join(SRC, tmp));
-										console.log(log);
+										if (filename.lastIndexOf('--') === -1)
+											copyFile(filename, Path.join(SRC, tmp));
+										else
+											skip = false;
 									}
-									files[filename] = ticks;
-									reload = true;
-									next();
-									return;
+									if (skip) {
+										files[filename] = ticks;
+										reload = true;
+										next();
+										return;
+									}
 								}
 							}
 
