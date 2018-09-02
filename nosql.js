@@ -1669,7 +1669,7 @@ DP.$update_inmemory = function() {
 				item.builder.$callback = null;
 			} else {
 				item.builder.$options.log && item.builder.log();
-				item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count, item.filter.repository);
+				item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count, item.repository);
 			}
 		}
 
