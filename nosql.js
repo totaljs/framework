@@ -5140,8 +5140,8 @@ SP.count = function(beg, end, threads) {
 	return builder;
 };
 
-SP.scalar = function(type, field) {
-	return this.find().scalar(type, field);
+SP.scalar = function(beg, end, type, field, threads) {
+	return this.find(beg, end, threads).scalar(type, field);
 };
 
 SP.scan = function(beg, end, mapreduce, callback, reverse) {
