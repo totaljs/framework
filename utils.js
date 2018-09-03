@@ -6122,12 +6122,18 @@ function Reader() {}
 const RP = Reader.prototype;
 
 RP.clear = function() {
+
 	var self = this;
-	var builder = self.reader.builders[0];
-	builder.scalarcount = 0;
-	builder.count = 0;
-	builder.counter = 0;
-	builder.response = null;
+	var builders = self.reader.builders;
+
+	for (var i = 0; i < builders.length; i++) {
+		var builder = builders[i];
+		builder.scalarcount = 0;
+		builder.count = 0;
+		builder.counter = 0;
+		builder.response = null;
+	}
+
 	return self;
 };
 
@@ -6142,7 +6148,12 @@ RP.push = function(data) {
 RP.find = function() {
 	var self = this;
 	var builder = new framework_nosql.DatabaseBuilder();
-	self.reader = new framework_nosql.NoSQLReader(builder);
+
+	if (self.reader)
+		self.reader.add(builder);
+	else
+		self.reader = new framework_nosql.NoSQLReader(builder);
+
 	return builder;
 };
 
