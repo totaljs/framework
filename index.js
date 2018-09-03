@@ -21,7 +21,7 @@
 
 /**
  * @module Framework
- * @version 3.0.1
+ * @version 3.1.0
  */
 
 'use strict';
@@ -626,8 +626,8 @@ var PERF = {};
 function Framework() {
 
 	this.$id = null; // F.id ==> property
-	this.version = 3001;
-	this.version_header = '3.0.1';
+	this.version = 3100;
+	this.version_header = '3.1.0';
 	this.version_node = process.version.toString();
 	this.syshash = (Os.hostname() + '-' + Os.platform() + '-' + Os.arch() + '-' + Os.release() + '-' + Os.tmpdir()).md5();
 
@@ -14848,8 +14848,8 @@ function extend_response(PROTO) {
 		if (self.headersSent || self.success)
 			return;
 
-		var cookieHeaderStart = name + '=';
-		var builder = [cookieHeaderStart + value];
+		var cookiename = name + '=';
+		var builder = [cookiename + value];
 		var type = typeof(expires);
 
 		if (expires && !U.isDate(expires) && type === 'object') {
@@ -14872,11 +14872,32 @@ function extend_response(PROTO) {
 		if (options.httpOnly || options.httponly || options.HttpOnly)
 			builder.push('HttpOnly');
 
+		var same = options.security || options.samesite || options.sameSite;
+		if (same) {
+			switch (same) {
+				case 1:
+					same = 'lax';
+					break;
+				case 2:
+					same = 'strict';
+					break;
+			}
+			builder.push('SameSite=' + same);
+		}
+
 		var arr = self.getHeader('set-cookie') || [];
 
 		// Cookie, already, can be in array, resulting in duplicate 'set-cookie' header
-		var idx = arr.findIndex(cookieStr => cookieStr.startsWith(cookieHeaderStart));
-		idx !== -1 && arr.splice(idx, 1);
+		if (arr.length) {
+			var l = cookiename.length;
+			for (var i = 0; i < arr.length; i++) {
+				if (arr[i].substring(0, l) === cookiename) {
+					arr.splice(i, 1);
+					break;
+				}
+			}
+		}
+
 		arr.push(builder.join('; '));
 		self.setHeader('Set-Cookie', arr);
 		return self;
