@@ -6121,11 +6121,21 @@ exports.Callback = function(count, callback) {
 function Reader() {}
 const RP = Reader.prototype;
 
+RP.clear = function() {
+	var self = this;
+	var builder = self.reader.builders[0];
+	builder.scalarcount = 0;
+	builder.count = 0;
+	builder.counter = 0;
+	builder.response = null;
+	return self;
+};
+
 RP.push = function(data) {
-	if (data == null || !data.length)
+	if (data == null)
 		this.reader.done();
 	else
-		this.reader.compare(data);
+		this.reader.compare(data instanceof Array ? data : [data]);
 	return this;
 };
 
