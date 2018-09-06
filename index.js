@@ -6351,6 +6351,7 @@ global.LOAD = F.load = function(debug, types, pwd) {
 		switch (debug.toLowerCase().replace(/\.|\s/g, '-')) {
 			case 'release':
 			case 'production':
+				debug = false;
 				break;
 
 			case 'debug':
