@@ -15,6 +15,7 @@
 - fixed: `LOCALIZE()` for nested directories
 - fixed: sending of error handling when WebSocketClient is starting (for example: `unauthorized`)
 - fixed: `versions` and `auto` feature with enabled `F.wait()`
+- fixed: `LOAD('release')` a release mode
 
 - improved: NoSQL reader
 
