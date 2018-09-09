@@ -6,6 +6,7 @@
 - added: `bundles` supports merging files between bundle and project, project file must start with e.g. `--name.js`
 - added: `.bundlesignore` support with similiar functionality like `.gitignore`
 - added: support for `SameSite` cookie attribute
+- added: NOSQL/TABLE supports `!field` as a boolean toggle in modify/update method
 
 - updated: `debug` mode creates a `start_name_script.pid` instead of `debug.pid`
 

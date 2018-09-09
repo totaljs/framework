@@ -892,6 +892,7 @@ DP.modify = function(doc, insert) {
 		for (var i = 0; i < keys.length; i++) {
 			var key = keys[i];
 			switch (key[0]) {
+				case '!':
 				case '+':
 				case '-':
 				case '*':
@@ -1500,6 +1501,9 @@ DP.$update = function() {
 						doc[key] = val(doc[key], doc);
 					else if (fil.inc && fil.inc[key]) {
 						switch (fil.inc[key]) {
+							case '!':
+								doc[key] = !doc[key];
+								break;
 							case '+':
 								doc[key] = (doc[key] || 0) + val;
 								break;
@@ -1624,6 +1628,9 @@ DP.$update_inmemory = function() {
 							doc[key] = val(doc[key], doc);
 						else if (fil.inc && fil.inc[key]) {
 							switch (fil.inc[key]) {
+								case '!':
+									doc[key] = !doc[key];
+									break;
 								case '+':
 									doc[key] = (doc[key] || 0) + val;
 									break;
@@ -5395,6 +5402,7 @@ TP.modify = function(doc, insert) {
 		for (var i = 0; i < keys.length; i++) {
 			var key = keys[i];
 			switch (key[0]) {
+				case '!':
 				case '+':
 				case '-':
 				case '*':
@@ -5874,6 +5882,9 @@ TP.$update = function() {
 						doc[key] = val(doc[key], doc);
 					else if (fil.inc && fil.inc[key]) {
 						switch (fil.inc[key]) {
+							case '!':
+								doc[key] = doc[key] == null ? true : !doc[key];
+								break;
 							case '+':
 								doc[key] = (doc[key] || 0) + val;
 								break;
@@ -5937,7 +5948,6 @@ TP.$update = function() {
 
 		filters.compare2(arr, update, updateflush);
 	};
-
 
 	fs.$callback = function() {
 
@@ -6505,9 +6515,13 @@ NoSQLReader.prototype.add = function(builder, noTrimmer) {
 
 NoSQLReader.prototype.compare2 = function(docs, custom, done) {
 	var self = this;
+
 	for (var i = 0; i < docs.length; i++) {
 
 		var doc = docs[i];
+
+		if (doc === EMPTYOBJECT)
+			continue;
 
 		if (self.builders.length === self.canceled)
 			return false;
