@@ -1522,7 +1522,7 @@ DP.$update = function() {
 				}
 			}
 		} else
-			docs[dindex] = typeof(fil.doc) === 'function' ? fil.doc(doc) : fil.doc;
+			docs[dindex] = typeof(fil.doc) === 'function' ? fil.doc(doc, f.filter.repository) : fil.doc;
 
 		self.$events[e] && self.emit(e, doc, old);
 		f.builder.$options.backup && f.builder.$backupdoc(rec.doc);
@@ -1649,7 +1649,7 @@ DP.$update_inmemory = function() {
 					}
 				}
 			} else
-				docs[dindex] = typeof(fil.doc) === 'function' ? fil.doc(doc) : fil.doc;
+				docs[dindex] = typeof(fil.doc) === 'function' ? fil.doc(doc, f.filter.repository) : fil.doc;
 
 			self.$events[e] && self.emit(e, doc, old);
 			f.builder.$options.backup && f.builder.$backupdoc(old);
@@ -5903,7 +5903,7 @@ TP.$update = function() {
 				}
 			}
 		} else
-			docs[dindex] = typeof(fil.doc) === 'function' ? fil.doc(doc) : fil.doc;
+			docs[dindex] = typeof(fil.doc) === 'function' ? fil.doc(doc, f.filter.repository) : fil.doc;
 
 		self.$events[e] && self.emit(e, doc, old);
 		f.builder.$options.backup && f.builder.$backupdoc(rec.doc);
