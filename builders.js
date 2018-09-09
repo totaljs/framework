@@ -2152,9 +2152,9 @@ SchemaBuilderEntity.prototype.hook = function(name, model, options, callback, sk
 
 	var $type = 'hook';
 
-	if (skip === true) {
-		var builder = new ErrorBuilder();
+	if (skip === true || model instanceof SchemaInstance) {
 
+		var builder = new ErrorBuilder();
 		self.resourceName && builder.setResource(self.resourceName);
 		self.resourcePrefix && builder.setPrefix(self.resourcePrefix);
 
@@ -2286,7 +2286,7 @@ SchemaBuilderEntity.prototype.$execute = function(type, name, model, options, ca
 	if (model && !controller && model.$$controller)
 		controller = model.$$controller;
 
-	if (skip === true) {
+	if (skip === true || model instanceof SchemaInstance) {
 		var builder = new ErrorBuilder();
 		self.resourceName && builder.setResource(self.resourceName);
 		self.resourcePrefix && builder.setPrefix(self.resourcePrefix);
@@ -2526,7 +2526,10 @@ function clone(obj) {
 					o[i] = obj[i];
 				continue;
 			}
-			o[i] = clone(obj[i]);
+			if (obj[i] instanceof SchemaInstance)
+				o[i] = obj[i].$clean();
+			else
+				o[i] = clone(obj[i]);
 		}
 
 		return o;
@@ -2541,8 +2544,13 @@ function clone(obj) {
 
 		var val = obj[m];
 
-		if (val instanceof SchemaInstance) {
+		if (val instanceof Array) {
 			o[m] = clone(val);
+			continue;
+		}
+
+		if (val instanceof SchemaInstance) {
+			o[m] = val.$clean();
 			continue;
 		}
 
