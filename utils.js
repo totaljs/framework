@@ -4700,10 +4700,20 @@ AP.quicksort = AP.orderBy = function(name, asc) {
 	if (typeof(name) === 'boolean') {
 		asc = name;
 		name = undefined;
-	}
-
-	if (asc === undefined)
+	} else if (asc === undefined)
 		asc = true;
+	else {
+		switch (asc) {
+			case 'asc':
+			case 'ASC':
+				asc = true;
+				break;
+			case 'desc':
+			case 'DESC':
+				asc = false;
+				break;
+		}
+	}
 
 	var self = this;
 	var type = 0;
