@@ -4681,6 +4681,12 @@ global.RUN = function(name, value, callback, param, controller) {
 		value = EMPTYOBJECT;
 	}
 
+	if (param instanceof global.Controller || (param && param.isWebSocket)) {
+		controller = param;
+		param = EMPTYOBJECT;
+	} else if (param instanceof OperationOptions)
+		controller = param.controller;
+
 	if (typeof(name) === 'string')
 		name = name.split(',').trim();
 
@@ -4690,6 +4696,7 @@ global.RUN = function(name, value, callback, param, controller) {
 	opt.meta = {};
 	opt.meta.items = name;
 	opt.response = {};
+	opt.errors = error;
 
 	opt.callback = function(value) {
 
