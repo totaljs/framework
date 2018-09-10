@@ -7,8 +7,10 @@
 - added: `.bundlesignore` support with similiar functionality like `.gitignore`
 - added: support for `SameSite` cookie attribute
 - added: NOSQL/TABLE supports `!field` as a boolean toggle in modify/update method
+- added: `RUN()` for executing multiple Total.js operations
 
 - updated: `debug` mode creates a `start_name_script.pid` instead of `debug.pid`
+- updated: `NEWOPERATION()` supports `repeat` and `stop` argument
 
 - fixed: a critical bug with storing uploaded files via `httpfile.fs()` or `httpfile.nosql()`
 - fixed: `nosql.update()` and `nosql.modify()` methods if the first argument is a function

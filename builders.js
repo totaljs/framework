@@ -3046,6 +3046,9 @@ function ErrorBuilder(onResource) {
 	// Hidden: when the .push() contains a classic Error instance
 	// this.unexpected;
 
+	// A default path for .push()
+	// this.path;
+
 	!onResource && this._resource();
 }
 
@@ -3390,6 +3393,9 @@ ErrorBuilder.prototype.push = function(name, error, path, index, prefix) {
 		this.status = path;
 		path = undefined;
 	}
+
+	if (this.path && !path)
+		path = this.path;
 
 	if (!error && typeof(name) === 'string') {
 		var m = name.length;
@@ -4589,7 +4595,10 @@ function $decodeURIComponent(value) {
 	}
 }
 
-global.NEWOPERATION = function(name, fn) {
+global.NEWOPERATION = function(name, fn, repeat, stop) {
+
+	// @repeat {Number} How many times will be the operation repeated after error?
+	// @stop {Boolean} Stop when the error is thrown
 
 	// Remove operation
 	if (fn == null) {
@@ -4600,6 +4609,9 @@ global.NEWOPERATION = function(name, fn) {
 	operations[name] = fn;
 	operations[name].$owner = F.$owner();
 	operations[name].$newversion = REGEXP_NEWOPERATION.test(fn.toString());
+	operations[name].$repeat = repeat;
+	operations[name].$stop = stop;
+
 	return this;
 };
 
@@ -4618,25 +4630,32 @@ global.OPERATION = function(name, value, callback, param, controller) {
 	if (fn) {
 		if (fn.$newversion) {
 			var self = new OperationOptions(error, value, param, controller);
-			if (callback && callback !== NOOP) {
-				self.callback = function(value) {
-					if (arguments.length > 1) {
-						if (value instanceof Error || (value instanceof ErrorBuilder && value.hasError())) {
-							self.error.push(value);
-							value = EMPTYOBJECT;
-						} else
-							value = arguments[1];
-					} else if (value instanceof Error || (value instanceof ErrorBuilder && value.hasError())) {
+			self.$repeat = fn.$repeat;
+			self.callback = function(value) {
+
+				if (arguments.length > 1) {
+					if (value instanceof Error || (value instanceof ErrorBuilder && value.hasError())) {
 						self.error.push(value);
 						value = EMPTYOBJECT;
-					}
+					} else
+						value = arguments[1];
+				} else if (value instanceof Error || (value instanceof ErrorBuilder && value.hasError())) {
+					self.error.push(value);
+					value = EMPTYOBJECT;
+				}
 
-					callback(self.error.hasError() ? self.error : null, value, self.options);
-					return self;
-				};
-			} else
-				self.callback = NOOP;
+				if (self.error.items.length && self.$repeat) {
+					self.error.clear();
+					self.$repeat--;
+					fn(self);
+				} else
+					callback && callback(self.error.hasError() ? self.error : null, value, self.options);
+
+				return self;
+			};
+
 			fn(self);
+
 		} else
 			fn(error, value, function(value) {
 				if (callback) {
@@ -4651,6 +4670,80 @@ global.OPERATION = function(name, value, callback, param, controller) {
 		error.push('Operation "{0}" not found.'.format(name));
 		callback && callback(error, EMPTYOBJECT, param);
 	}
+};
+
+global.RUN = function(name, value, callback, param, controller) {
+
+	if (typeof(value) === 'function') {
+		controller = param;
+		param = callback;
+		callback = value;
+		value = EMPTYOBJECT;
+	}
+
+	if (typeof(name) === 'string')
+		name = name.split(',').trim();
+
+	var error = new ErrorBuilder();
+	var opt = new OperationOptions(error, value, param, controller);
+
+	opt.meta = {};
+	opt.meta.items = name;
+	opt.response = {};
+
+	opt.callback = function(value) {
+
+		if (arguments.length > 1) {
+			if (value instanceof Error || (value instanceof ErrorBuilder && value.hasError())) {
+				opt.error.push(value);
+				value = EMPTYOBJECT;
+			} else
+				value = arguments[1];
+		} else if (value instanceof Error || (value instanceof ErrorBuilder && value.hasError())) {
+			opt.error.push(value);
+			value = EMPTYOBJECT;
+		}
+
+		if (opt.error.items.length && opt.$repeat > 0) {
+			opt.error.clear();
+			opt.$repeat--;
+			opt.repeated = true;
+			setImmediate(opt => opt.$current(opt), opt);
+		} else {
+			opt.error.items.length && error.push(opt.error);
+			if (opt.error.items.length && opt.$current.$stop) {
+				name = null;
+				opt.next = null;
+				callback(error, opt.response, opt);
+			} else {
+				opt.response[opt.meta.current] = value;
+				opt.meta.prev = opt.meta.current;
+				opt.$next();
+			}
+		}
+	};
+
+	name.wait(function(key, next, index) {
+
+		var fn = operations[key];
+		if (!fn) {
+			// What now?
+			// F.error('Operation "{0}" not found'.format(key), 'RUN()');
+			return next();
+		}
+
+		opt.repeated = false;
+		opt.error = new ErrorBuilder();
+		opt.error.path = 'operation: ' + key;
+		opt.meta.index = index;
+		opt.meta.current = key;
+		opt.$repeat = fn.$repeat;
+		opt.$current = fn;
+		opt.$next = next;
+		opt.meta.next = name[index];
+		fn(opt);
+
+	}, () => callback(error.items.length ? error : null, opt.response, opt));
 };
 
 function OperationOptions(error, value, options, controller) {
