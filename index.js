@@ -2146,6 +2146,10 @@ global.ROUTE = F.web = F.route = function(url, funcExecute, flags, length, langu
 					tmp.push(flag);
 					break;
 			}
+
+			if (flag === 'get')
+				priority -= 2;
+
 		}
 
 		if (isROLE && !membertype) {
