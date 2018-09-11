@@ -8,6 +8,7 @@
 - added: support for `SameSite` cookie attribute
 - added: NOSQL/TABLE supports `!field` as a boolean toggle in modify/update method
 - added: `RUN()` for executing multiple Total.js operations
+- added: a new global alias `CONF` (it's a reference to config) for `F.config`
 
 - updated: `debug` mode creates a `start_name_script.pid` instead of `debug.pid`
 - updated: `NEWOPERATION()` supports `repeat` and `stop` argument
@@ -21,6 +22,7 @@
 - fixed: `LOAD('release')` a release mode
 - fixed: `SchemaInstance.$clean()` for nested schemas
 - fixed: extracting `bundles` (added `/flow/` and `/dashboard/`)
+- fixed: subdomain routing for `localhost`
 
 - improved: NoSQL reader
 

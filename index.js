@@ -62,6 +62,7 @@ const REG_WINDOWSPATH = /\\/g;
 const REG_SCRIPTCONTENT = /<|>|;/;
 const REG_HTTPHTTPS = /^(\/)?(http|https):\/\//i;
 const REG_NOCOMPRESS = /[.|-]+min(@[a-z0-9]*)?\.(css|js)$/i;
+const REG_WWW = /^www\./i;
 const REG_TEXTAPPLICATION = /text|application/;
 const REG_ENCODINGCLEANER = /[;\s]charset=utf-8/g;
 const REG_SKIPERROR = /epipe|invalid\sdistance/i;
@@ -625,13 +626,15 @@ var PERF = {};
 
 function Framework() {
 
-	this.$id = null; // F.id ==> property
-	this.version = 3100;
-	this.version_header = '3.1.0';
-	this.version_node = process.version.toString();
-	this.syshash = (Os.hostname() + '-' + Os.platform() + '-' + Os.arch() + '-' + Os.release() + '-' + Os.tmpdir()).md5();
+	var self = this;
 
-	this.config = {
+	self.$id = null; // F.id ==> property
+	self.version = 3100;
+	self.version_header = '3.1.0';
+	self.version_node = process.version.toString();
+	self.syshash = (Os.hostname() + '-' + Os.platform() + '-' + Os.arch() + '-' + Os.release() + '-' + Os.tmpdir()).md5();
+
+	global.CONF = self.config = {
 
 		debug: true,
 		trace: true,
@@ -640,8 +643,8 @@ function Framework() {
 		name: 'Total.js',
 		version: '1.0.0',
 		author: '',
-		secret: this.syshash,
-		'secret-uid': this.syshash.substring(10),
+		secret: self.syshash,
+		'secret-uid': self.syshash.substring(10),
 
 		'security.txt': 'Contact: mailto:support@totaljs.com\nContact: https://www.totaljs.com/contact/',
 		'etag-version': '',
@@ -746,24 +749,24 @@ function Framework() {
 		'default-interval-uptodate': 5
 	};
 
-	global.G = this.global = {};
-	this.$bundling = true;
-	this.resources = {};
-	this.connections = {};
-	this.functions = {};
-	this.themes = {};
-	this.versions = null;
-	this.workflows = {};
-	this.uptodates = null;
-	this.schedules = [];
+	global.G = self.global = {};
+	self.$bundling = true;
+	self.resources = {};
+	self.connections = {};
+	self.functions = {};
+	self.themes = {};
+	self.versions = null;
+	self.workflows = {};
+	self.uptodates = null;
+	self.schedules = [];
 
-	this.isDebug = true;
-	this.isTest = false;
-	this.isLoaded = false;
-	this.isWorker = true;
-	this.isCluster = process.env.PASSENGER_APP_ENV ? false : require('cluster').isWorker;
+	self.isDebug = true;
+	self.isTest = false;
+	self.isLoaded = false;
+	self.isWorker = true;
+	self.isCluster = process.env.PASSENGER_APP_ENV ? false : require('cluster').isWorker;
 
-	this.routes = {
+	self.routes = {
 		sitemap: null,
 		web: [],
 		system: {},
@@ -783,27 +786,27 @@ function Framework() {
 		resources: {}
 	};
 
-	this.owners = [];
-	this.modificators = null;
-	this.helpers = {};
-	this.modules = {};
-	this.models = {};
-	this.sources = {};
-	this.controllers = {};
-	this.dependencies = {};
-	this.isomorphic = {};
-	this.components = { has: false, css: false, js: false, views: {}, instances: {}, version: null, links: '', groups: {}, files: {} };
-	this.convertors = [];
-	this.convertors2 = null;
-	this.tests = [];
-	this.errors = [];
-	this.problems = [];
-	this.changes = [];
-	this.server = null;
-	this.port = 0;
-	this.ip = '';
+	self.owners = [];
+	self.modificators = null;
+	self.helpers = {};
+	self.modules = {};
+	self.models = {};
+	self.sources = {};
+	self.controllers = {};
+	self.dependencies = {};
+	self.isomorphic = {};
+	self.components = { has: false, css: false, js: false, views: {}, instances: {}, version: null, links: '', groups: {}, files: {} };
+	self.convertors = [];
+	self.convertors2 = null;
+	self.tests = [];
+	self.errors = [];
+	self.problems = [];
+	self.changes = [];
+	self.server = null;
+	self.port = 0;
+	self.ip = '';
 
-	this.validators = {
+	self.validators = {
 		email: new RegExp('^[a-zA-Z0-9-_.+]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$'),
 		url: /^(https?:\/\/(?:www\.|(?!www))[^\s.#!:?+=&@!$'~*,;/()[\]]+\.[^\s#!?+=&@!$'~*,;()[\]\\]{2,}\/?|www\.[^\s#!:.?+=&@!$'~*,;/()[\]]+\.[^\s#!?+=&@!$'~*,;()[\]\\]{2,}\/?)/i,
 		phone: /^[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}$/im,
@@ -811,17 +814,17 @@ function Framework() {
 		uid: /^\d{14,}[a-z]{3}[01]{1}$/
 	};
 
-	this.workers = {};
-	this.databases = {};
-	this.databasescleaner = {};
-	this.directory = HEADERS.workers.cwd = directory;
-	this.isLE = Os.endianness ? Os.endianness() === 'LE' : true;
-	this.isHTTPS = false;
+	self.workers = {};
+	self.databases = {};
+	self.databasescleaner = {};
+	self.directory = HEADERS.workers.cwd = directory;
+	self.isLE = Os.endianness ? Os.endianness() === 'LE' : true;
+	self.isHTTPS = false;
 
 	// It's hidden
-	// this.waits = {};
+	// self.waits = {};
 
-	this.temporary = {
+	self.temporary = {
 		path: {},
 		notfound: {},
 		processing: {},
@@ -836,7 +839,7 @@ function Framework() {
 		service: { redirect: 0, request: 0, file: 0 }
 	};
 
-	this.stats = {
+	self.stats = {
 
 		performance: {
 			request: 0,
@@ -904,29 +907,29 @@ function Framework() {
 	};
 
 	// intialize cache
-	this.cache = new FrameworkCache();
-	this.path = new FrameworkPath();
+	self.cache = new FrameworkCache();
+	self.path = new FrameworkPath();
 
-	this._request_check_redirect = false;
-	this._request_check_referer = false;
-	this._request_check_POST = false;
-	this._request_check_robot = false;
-	this._request_check_mobile = false;
-	this._length_middleware = 0;
-	this._length_request_middleware = 0;
-	this._length_files = 0;
-	this._length_wait = 0;
-	this._length_themes = 0;
-	this._length_cors = 0;
-	this._length_subdomain_web = 0;
-	this._length_subdomain_websocket = 0;
-	this._length_convertors = 0;
+	self._request_check_redirect = false;
+	self._request_check_referer = false;
+	self._request_check_POST = false;
+	self._request_check_robot = false;
+	self._request_check_mobile = false;
+	self._length_middleware = 0;
+	self._length_request_middleware = 0;
+	self._length_files = 0;
+	self._length_wait = 0;
+	self._length_themes = 0;
+	self._length_cors = 0;
+	self._length_subdomain_web = 0;
+	self._length_subdomain_websocket = 0;
+	self._length_convertors = 0;
 
-	this.isVirtualDirectory = false;
-	this.isTheme = false;
-	this.isWindows = Os.platform().substring(0, 3).toLowerCase() === 'win';
+	self.isVirtualDirectory = false;
+	self.isTheme = false;
+	self.isWindows = Os.platform().substring(0, 3).toLowerCase() === 'win';
 
-	this.$events = {};
+	self.$events = {};
 }
 
 // ======================================================
@@ -6465,7 +6468,7 @@ F.initialize = function(http, debug, options) {
 	var ip = options.ip;
 	var listenpath = options.listenpath;
 
-	options.config && U.extend(F.config, options.config, true);
+	options.config && U.extend_headers2(F.config, options.config);
 
 	if (options.debug || options['allow-debug'])
 		F.config['allow-debug'] = true;
@@ -14189,9 +14192,11 @@ function extend_request(PROTO) {
 		get: function() {
 			if (this._subdomain)
 				return this._subdomain;
-			var subdomain = this.uri.host.toLowerCase().replace(/^www\./i, '').split('.');
-			if (subdomain.length > 2)
-				this._subdomain = subdomain.slice(0, subdomain.length - 2); // example: [subdomain].domain.com
+			var subdomain = this.uri.hostname.toLowerCase().replace(REG_WWW, '').split('.');
+			if (subdomain.length > 2) // example: [subdomain].domain.com
+				this._subdomain = subdomain.slice(0, subdomain.length - 2);
+			else if (subdomain.length > 1 && subdomain[subdomain.length - 1] === 'localhost') // example: [subdomain].localhost
+				this._subdomain = subdomain.slice(0, subdomain.length - 1);
 			else
 				this._subdomain = null;
 			return this._subdomain;
