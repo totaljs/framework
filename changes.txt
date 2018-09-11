@@ -20,6 +20,7 @@
 - fixed: `versions` and `auto` feature with enabled `F.wait()`
 - fixed: `LOAD('release')` a release mode
 - fixed: `SchemaInstance.$clean()` for nested schemas
+- fixed: extracting `bundles` (added `/flow/` and `/dashboard/`)
 
 - improved: NoSQL reader
 

@@ -33,10 +33,9 @@ exports.make = function(callback) {
 	blacklist[F.config['directory-temp']] = 1;
 	blacklist[F.config['directory-bundles']] = 1;
 	blacklist[F.config['directory-src']] = 1;
+	blacklist[F.config['directory-logs']] = 1;
 	blacklist['/node_modules/'] = 1;
-	// blacklist['/debug.js'] = 1;
 	blacklist['/debug.pid'] = 1;
-	//blacklist['/package.json'] = 1;
 	blacklist['/package-lock.json'] = 1;
 
 	var Files = [];
@@ -118,7 +117,8 @@ exports.make = function(callback) {
 			for (var i = 0, length = files.length; i < length; i++) {
 				var file = files[i].substring(Length);
 				var type = 0;
-				if (file.startsWith(F.config['directory-databases']))
+
+				if (file.startsWith(F.config['directory-databases']) || file.startsWith('/flow/') || file.startsWith('/dashboard/'))
 					type = 1;
 				else if (file.startsWith(F.config['directory-public']))
 					type = 2;
@@ -158,7 +158,7 @@ exports.make = function(callback) {
 function makeignore(arr) {
 
 	var ext;
-	var code = ['var path=P.substring(0,P.lastIndexOf(\'/\') + 1);', 'var ext=U.getExtension(P);', 'var name=U.getName(P).replace(\'.\' + ext, \'\');'];
+	var code = ['var path=P.substring(0,P.lastIndexOf(\'/\')+1);', 'var ext=U.getExtension(P);', 'var name=U.getName(P).replace(\'.\'+ ext,\'\');'];
 
 	for (var i = 0; i < arr.length; i++) {
 		var item = arr[i];
@@ -215,10 +215,13 @@ function cleanFiles(callback) {
 	if (meta.files && meta.files.length) {
 		for (var i = 0, length = meta.files.length; i < length; i++) {
 			var filename = meta.files[i];
-			try {
-				F.consoledebug('Remove', filename);
-				Fs.unlinkSync(Path.join(path, filename));
-			} catch (e) {}
+			var dir = filename.substring(0, filename.indexOf('/', 1) + 1);
+			if (!blacklist[dir]) {
+				try {
+					F.consoledebug('Remove', filename);
+					Fs.unlinkSync(Path.join(path, filename));
+				} catch (e) {}
+			}
 		}
 	}
 
@@ -226,7 +229,8 @@ function cleanFiles(callback) {
 		meta.directories.quicksort('length', false);
 		for (var i = 0, length = meta.directories.length; i < length; i++) {
 			try {
-				Fs.rmdirSync(Path.join(path, meta.directories[i]));
+				if (!blacklist[meta.directories[i]])
+					Fs.rmdirSync(Path.join(path, meta.directories[i]));
 			} catch (e) {}
 		}
 	}
@@ -285,9 +289,9 @@ function copyFiles(files, callback) {
 			append = true;
 
 		if (CONSOLE && exists) {
-			F.config['allow-debug'] && F.consoledebug(append ? 'EXT: ' : 'REW:', p);
+			F.config['allow-debug'] && F.consoledebug(append ? 'EXT:' : 'REW:', p);
 		} else
-			F.consoledebug(append ? 'EXT:' :   'COP:', p);
+			F.consoledebug(append ? 'EXT:' : 'COP:', p);
 
 		if (append) {
 			Fs.appendFile(filename, '\n' + Fs.readFileSync(file.filename).toString('utf8'), next);
