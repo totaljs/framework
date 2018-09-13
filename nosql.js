@@ -2408,6 +2408,13 @@ DatabaseBuilder.prototype.join = function(field, name) {
 	return join;
 };
 
+DatabaseBuilder.prototype.statement = function(id, fn) {
+	this.id = id;
+	this.$iscache = CACHE[self.db.name + '_' + id] == null;
+	fn.call(this, this);
+	return this;
+};
+
 DatabaseBuilder.prototype.first = function() {
 	this.$options.first = true;
 	return this.take(1);
@@ -2425,13 +2432,15 @@ DatabaseBuilder.prototype.filter = function(fn) {
 		self.$functions = [];
 
 	var index = self.$functions.push(fn) - 1;
-	var code = '$is=!!fn[{0}].call($F,doc,index,repository);'.format(index);
 
-	if (self.$scope)
-		code = 'if(!$is){' + code + '}';
+	if (!self.$iscache) {
+		var code = '$is=!!fn[{0}].call($F,doc,index,repository);'.format(index);
+		if (self.$scope)
+			code = 'if(!$is){' + code + '}';
+		self.$code.push(code);
+		!self.$scope && self.$code.push('if(!$is)return;');
+	}
 
-	self.$code.push(code);
-	!self.$scope && self.$code.push('if(!$is)return;');
 	self.$counter++;
 	return self;
 };
@@ -2446,33 +2455,43 @@ DatabaseBuilder.prototype.scalar = function(type, name) {
 
 DatabaseBuilder.prototype.contains = function(name) {
 	var self = this;
-	var code = '$is=doc.{0} instanceof Array?!!doc.{0}.length:!!doc.{0};'.format(name);
-	if (self.$scope)
-		code = 'if(!$is){' + code + '}';
-	self.$code.push(code);
-	!self.$scope && self.$code.push('if(!$is)return;');
+
+	if (!self.$iscache) {
+		var code = '$is=doc.{0} instanceof Array?!!doc.{0}.length:!!doc.{0};'.format(name);
+		if (self.$scope)
+			code = 'if(!$is){' + code + '}';
+		self.$code.push(code);
+		!self.$scope && self.$code.push('if(!$is)return;');
+	}
+
 	self.$counter++;
 	return self;
 };
 
 DatabaseBuilder.prototype.empty = function(name) {
 	var self = this;
-	var code = '$is=doc.{0} instanceof Array?!doc.{0}.length:!doc.{0};'.format(name);
-	if (self.$scope)
-		code = 'if(!$is){' + code + '}';
-	self.$code.push(code);
-	!self.$scope && self.$code.push('if(!$is)return;');
+
+	if (!self.$iscache) {
+		var code = '$is=doc.{0} instanceof Array?!doc.{0}.length:!doc.{0};'.format(name);
+		if (self.$scope)
+			code = 'if(!$is){' + code + '}';
+		self.$code.push(code);
+		!self.$scope && self.$code.push('if(!$is)return;');
+	}
+
 	self.$counter++;
 	return self;
 };
 
 DatabaseBuilder.prototype.map = function(name, code) {
 	var self = this;
-	var data = { name: name, code: code };
-	if (self.$options.mappers)
-		self.$options.mappers.push(data);
-	else
-		self.$options.mappers = [data];
+	if (!self.$iscache) {
+		var data = { name: name, code: code };
+		if (self.$options.mappers)
+			self.$options.mappers.push(data);
+		else
+			self.$options.mappers = [data];
+	}
 	return self;
 };
 
@@ -2503,39 +2522,43 @@ DatabaseBuilder.prototype.where = function(name, operator, value) {
 	var date = framework_utils.isDate(value);
 	self.$params[key] = date ? value.getTime() : value;
 
-	switch (operator) {
-		case '=':
-			operator = '==';
-			break;
-		case '<>':
-			operator = '!=';
-			break;
+	if (!self.$iscache) {
+		switch (operator) {
+			case '=':
+				operator = '==';
+				break;
+			case '<>':
+				operator = '!=';
+				break;
+		}
+
+		code = (date ? '$is=(doc.{0} instanceof Date?doc.{0}:new Date(doc.{0})).getTime(){2}arg.{1};' : '$is=doc.{0}{2}arg.{1};');
+		if (self.$scope)
+			code = 'if(!$is){' + code + '}';
+		self.$code.push(code.format(name, key, operator));
+		!self.$scope && self.$code.push('if(!$is)return;');
+		self.$keys && self.$keys.push(name);
 	}
 
-	code = (date ? '$is=(doc.{0} instanceof Date?doc.{0}:new Date(doc.{0})).getTime(){2}arg.{1};' : '$is=doc.{0}{2}arg.{1};');
-
-	if (self.$scope)
-		code = 'if(!$is){' + code + '}';
-
-	self.$keys && self.$keys.push(name);
-	self.$code.push(code.format(name, key, operator));
-	!self.$scope && self.$code.push('if(!$is)return;');
 	return self;
 };
 
 DatabaseBuilder.prototype.query = function(code) {
 	var self = this;
 
-	code = '$is=(' + code + ');';
+	if (!self.$iscache) {
+		code = '$is=(' + code + ');';
 
-	if (self.$scope)
-		code = 'if(!$is){' + code + '}';
+		if (self.$scope)
+			code = 'if(!$is){' + code + '}';
 
-	if (self.$keys)
-		self.$keys = null;
+		if (self.$keys)
+			self.$keys = null;
 
-	self.$code.push(code);
-	!self.$scope && self.$code.push('if(!$is)return;');
+		self.$code.push(code);
+		!self.$scope && self.$code.push('if(!$is)return;');
+	}
+
 	self.$counter++;
 	return self;
 };
@@ -2551,13 +2574,14 @@ DatabaseBuilder.prototype.month = function(name, operator, value) {
 
 	self.$params[key] = value;
 
-	var code = compare_datetype('month', name, key, operator);
-	if (self.$scope)
-		code = 'if(!$is){' + code + '}';
-
-	self.$keys && self.$keys.push(name);
-	self.$code.push(code);
-	!self.$scope && self.$code.push('if(!$is)return;');
+	if (!self.$iscache) {
+		var code = compare_datetype('month', name, key, operator);
+		if (self.$scope)
+			code = 'if(!$is){' + code + '}';
+		self.$keys && self.$keys.push(name);
+		self.$code.push(code);
+		!self.$scope && self.$code.push('if(!$is)return;');
+	}
 	return self;
 };
 
@@ -2572,13 +2596,15 @@ DatabaseBuilder.prototype.day = function(name, operator, value) {
 
 	self.$params[key] = value;
 
-	var code = compare_datetype('day', name, key, operator);
-	if (self.$scope)
-		code = 'if(!$is){' + code + '}';
+	if (!self.$iscache) {
+		var code = compare_datetype('day', name, key, operator);
+		if (self.$scope)
+			code = 'if(!$is){' + code + '}';
 
-	self.$keys && self.$keys.push(name);
-	self.$code.push(code);
-	!self.$scope && self.$code.push('if(!$is)return;');
+		self.$keys && self.$keys.push(name);
+		self.$code.push(code);
+		!self.$scope && self.$code.push('if(!$is)return;');
+	}
 	return self;
 };
 
@@ -2593,14 +2619,17 @@ DatabaseBuilder.prototype.year = function(name, operator, value) {
 
 	self.$params[key] = value;
 
-	var code = compare_datetype('year', name, key, operator);
-	if (self.$scope)
-		code = 'if(!$is){' + code + '}';
+	if (!self.$iscache) {
+		var code = compare_datetype('year', name, key, operator);
+		if (self.$scope)
+			code = 'if(!$is){' + code + '}';
 
-	self.$keys && self.$keys.push(name);
+		self.$keys && self.$keys.push(name);
 
-	self.$code.push(code);
-	!self.$scope && self.$code.push('if(!$is)return;');
+		self.$code.push(code);
+		!self.$scope && self.$code.push('if(!$is)return;');
+	}
+
 	return self;
 };
 
@@ -2615,13 +2644,16 @@ DatabaseBuilder.prototype.hour = function(name, operator, value) {
 
 	self.$params[key] = value;
 
-	var code = compare_datetype('hour', name, key, operator);
-	if (self.$scope)
-		code = 'if(!$is){' + code + '}';
+	if (!self.$iscache) {
+		var code = compare_datetype('hour', name, key, operator);
+		if (self.$scope)
+			code = 'if(!$is){' + code + '}';
 
-	self.$keys && self.$keys.push(name);
-	self.$code.push(code);
-	!self.$scope && self.$code.push('if(!$is)return;');
+		self.$keys && self.$keys.push(name);
+		self.$code.push(code);
+		!self.$scope && self.$code.push('if(!$is)return;');
+	}
+
 	return self;
 };
 
@@ -2636,13 +2668,16 @@ DatabaseBuilder.prototype.minute = function(name, operator, value) {
 
 	self.$params[key] = value;
 
-	var code = compare_datetype('minute', name, key, operator);
-	if (self.$scope)
-		code = 'if(!$is){' + code + '}';
+	if (!self.$iscache) {
+		var code = compare_datetype('minute', name, key, operator);
+		if (self.$scope)
+			code = 'if(!$is){' + code + '}';
 
-	self.$keys && self.$keys.push(name);
-	self.$code.push(code);
-	!self.$scope && self.$code.push('if(!$is)return;');
+		self.$keys && self.$keys.push(name);
+		self.$code.push(code);
+		!self.$scope && self.$code.push('if(!$is)return;');
+	}
+
 	return self;
 };
 
@@ -2652,44 +2687,55 @@ DatabaseBuilder.prototype.like = DatabaseBuilder.prototype.search = function(nam
 	var code;
 	var key = 'l' + (self.$counter++);
 
-	if (!where)
-		where = '*';
+	if (!self.$iscache) {
+		if (!where)
+			where = '*';
 
-	switch (where) {
-		case 'beg':
-			code = '$is=doc.{0}?doc.{0}.startsWith(arg.{1}):false;';
-			break;
-		case 'end':
-			code = '$is=doc.{0}?doc.{0}.endsWith(arg.{1}):false;';
-			break;
-		case '*':
-			code = '$is=false;if(doc.{0}){if(doc.{0} instanceof Array){for(var $i=0;$i<doc.{0}.length;$i++){if(doc.{0}[$i].toLowerCase().indexOf(arg.{1})!==-1){$is=true;break;}}}else{$is=doc.{0}.toLowerCase?doc.{0}.toLowerCase().indexOf(arg.{1})!==-1:false}}';
+		switch (where) {
+			case 'beg':
+				code = '$is=doc.{0}?doc.{0}.startsWith(arg.{1}):false;';
+				break;
+			case 'end':
+				code = '$is=doc.{0}?doc.{0}.endsWith(arg.{1}):false;';
+				break;
+			case '*':
+				code = '$is=false;if(doc.{0}){if(doc.{0} instanceof Array){for(var $i=0;$i<doc.{0}.length;$i++){if(doc.{0}[$i].toLowerCase().indexOf(arg.{1})!==-1){$is=true;break;}}}else{$is=doc.{0}.toLowerCase?doc.{0}.toLowerCase().indexOf(arg.{1})!==-1:false}}';
+				if (value instanceof Array)
+					value = value.join(' ');
+				value = value.toLowerCase();
+				break;
+		}
+
+		self.$params[key] = value;
+
+		if (self.$scope)
+			code = 'if(!$is){' + code + '}';
+
+		self.$keys && self.$keys.push(name);
+		self.$code.push(code.format(name, key));
+		!self.$scope && self.$code.push('if(!$is)return;');
+	} else {
+		if (!where || where === '*') {
 			if (value instanceof Array)
 				value = value.join(' ');
 			value = value.toLowerCase();
-			break;
+		}
+		self.$params[key] = value;
 	}
 
-	self.$params[key] = value;
-
-	if (self.$scope)
-		code = 'if(!$is){' + code + '}';
-
-	self.$keys && self.$keys.push(name);
-	self.$code.push(code.format(name, key));
-	!self.$scope && self.$code.push('if(!$is)return;');
 	return self;
 };
 
 DatabaseBuilder.prototype.regexp = function(name, value) {
 	var self = this;
-	var code = '$is=false;if(doc.{0}&&doc.{0}.toLowerCase){$is=({1}).test(doc.{0})}';
-	if (self.$scope)
-		code = 'if(!$is){' + code + '}';
-
-	self.$keys && self.$keys.push(name);
-	self.$code.push(code.format(name, value.toString()));
-	!self.$scope && self.$code.push('if(!$is)return;');
+	if (!self.$iscache) {
+		var code = '$is=false;if(doc.{0}&&doc.{0}.toLowerCase){$is=({1}).test(doc.{0})}';
+		if (self.$scope)
+			code = 'if(!$is){' + code + '}';
+		self.$keys && self.$keys.push(name);
+		self.$code.push(code.format(name, value.toString()));
+		!self.$scope && self.$code.push('if(!$is)return;');
+	}
 	return self;
 };
 
@@ -2708,18 +2754,19 @@ DatabaseBuilder.prototype.fulltext = function(name, value, weight) {
 			value = value.toLowerCase().split(' ');
 	}
 
-	self.$keys && self.$keys.push(name);
-
-	var count = 1;
-	if (weight)
-		count = ((value.length / 100) * weight) >> 0;
-
-	var code = '$is=false;if(doc.{0}&&doc.{0}.toLowerCase){var $a={2},$b=doc.{0}.toLowerCase();for(var $i=0;$i<arg.{1}.length;$i++){if($b.indexOf(arg.{1}[$i])!==-1){$a--;if(!$a){$is=true;break}}}}';
 	self.$params[key] = value;
-	if (self.$scope)
-		code = 'if(!$is){' + code + '}';
-	self.$code.push(code.format(name, key, count || 1));
-	!self.$scope && self.$code.push('if(!$is)return;');
+
+	if (!self.$iscache) {
+		self.$keys && self.$keys.push(name);
+		var count = 1;
+		if (weight)
+			count = ((value.length / 100) * weight) >> 0;
+		var code = '$is=false;if(doc.{0}&&doc.{0}.toLowerCase){var $a={2},$b=doc.{0}.toLowerCase();for(var $i=0;$i<arg.{1}.length;$i++){if($b.indexOf(arg.{1}[$i])!==-1){$a--;if(!$a){$is=true;break}}}}';
+		if (self.$scope)
+			code = 'if(!$is){' + code + '}';
+		self.$code.push(code.format(name, key, count || 1));
+		!self.$scope && self.$code.push('if(!$is)return;');
+	}
 	return self;
 };
 
@@ -2840,13 +2887,35 @@ DatabaseBuilder.prototype.repository = function(key, value) {
 };
 
 DatabaseBuilder.prototype.compile = function(noTrimmer) {
+
 	var self = this;
+	var key = opt.id ? self.db.name + '_' + opt.id : null;
+	var cache = key ? CACHE[key] : null;
+
+	self.$inlinesort = !!(opt.take && opt.sort && opt.sort !== null);
+	self.$limit = (opt.take || 0) + (opt.skip || 0);
+
+	if (key && cache) {
+		self.$mappers = cache.mitems;
+		self.$mappersexec = cache.mexec;
+		self.$keys = cache.keys;
+		return cache.filter;
+	}
+
 	var raw = self.$code.join('');
 	var code = 'var repository=$F.repository,options=$F.options,arg=$F.arg,fn=$F.fn,$is=false,$tmp;var R=repository;' + raw + (self.$code.length && raw.substring(raw.length - 7) !== 'return;' ? 'if(!$is)return;' : '') + (noTrimmer ? 'return doc' : 'if(options.fields){var $doc={};for(var $i=0;$i<options.fields.length;$i++){var prop=options.fields[$i];$doc[prop]=doc[prop]}if(options.sort)$doc[options.sort.name]=doc[options.sort.name];return $doc}else if(options.fields2){var $doc={};var $keys=Object.keys(doc);for(var $i=0;$i<$keys.length;$i++){var prop=$keys[$i];!options.fields2[prop]&&($doc[prop]=doc[prop])}return $doc}else{return doc}');
 	var opt = self.$options;
-	self.$inlinesort = !!(opt.take && opt.sort && opt.sort !== null);
-	self.$limit = (opt.take || 0) + (opt.skip || 0);
-	var key = opt.id ? self.db.name + '_' + opt.id : code.hash();
+
+	if (!key) {
+		key = code.hash();
+		cache = CACHE[key];
+		if (cache) {
+			self.$mappers = cache.mitems;
+			self.$mappersexec = cache.mexec;
+			self.$keys = cache.keys;
+			return cache.filter;
+		}
+	}
 
 	if (opt.mappers) {
 		var tmp = '';
@@ -2860,7 +2929,13 @@ DatabaseBuilder.prototype.compile = function(noTrimmer) {
 		self.$mappersexec = new Function('doc', 'item', tmp);
 	}
 
-	return CACHE[key] ? CACHE[key] : (CACHE[key] = new Function('doc', '$F', 'index', code));
+	var cache = {};
+	cache.filter = new Function('doc', '$F', 'index', code);
+	cache.mexec = self.$mappersexec;
+	cache.mitems = self.$mappers;
+	cache.keys = cache.$keys;
+	CACHE[key] = cache;
+	return cache.filter;
 };
 
 DatabaseBuilder.prototype.in = function(name, value) {
