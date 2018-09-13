@@ -2777,21 +2777,22 @@ DatabaseBuilder.prototype.fulltext = function(name, value, weight) {
 
 DatabaseBuilder2.prototype.stringify = DatabaseBuilder.prototype.stringify = function() {
 
+	var self = this;
 	var obj = {};
 
-	obj.options = this.$options;
-	obj.code = this.$code;
-	obj.params = this.$params;
-	obj.insert = this.$insertcallback ? this.$insertcallback.toString() : null;
+	obj.options = self.$options;
+	obj.code = self.$code;
+	obj.params = self.$params;
+	obj.insert = self.$insertcallback ? self.$insertcallback.toString() : null;
 
-	if (this.$functions) {
+	if (self.$functions) {
 		obj.functions = [];
-		for (var i = 0; i < this.$functions.length; i++)
-			obj.functions.push(this.$functions[i].toString());
+		for (var i = 0; i < self.$functions.length; i++)
+			obj.functions.push(self.$functions[i].toString());
 	}
 
-	if (this.$repository)
-		obj.repository = this.$repository;
+	if (self.$repository)
+		obj.repository = self.$repository;
 
 	return JSON.stringify(obj);
 };
