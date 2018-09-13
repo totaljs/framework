@@ -1851,7 +1851,7 @@ global.ROUTE = F.web = F.route = function(url, funcExecute, flags, length, langu
 		}
 
 
-		url = url.replace(/(^|\s?)\*[a-z0-9].*?$/i, function(text) {
+		url = url.replace(/(^|\s?)\*([a-z0-9]|\s).*?$/i, function(text) {
 			!flags && (flags = []);
 			flags.push(text.trim());
 			return '';
@@ -2024,20 +2024,23 @@ global.ROUTE = F.web = F.route = function(url, funcExecute, flags, length, langu
 					workflow = null;
 				}
 
-				schema = schema.replace(/\\/g, '/').split('/');
+				schema = schema.replace(/\\/g, '/').split('/').trim();
 
-				if (schema.length === 1) {
-					schema[1] = schema[0];
-					schema[0] = 'default';
-				}
+				if (schema.length) {
 
-				index = schema[1].indexOf('#');
-				if (index !== -1) {
-					schema[2] = schema[1].substring(index + 1).trim();
-					schema[1] = schema[1].substring(0, index).trim();
-					(schema[2] && schema[2][0] !== '*') && (schema[2] = '*' + schema[2]);
-				}
+					if (schema.length === 1) {
+						schema[1] = schema[0];
+						schema[0] = 'default';
+					}
 
+					index = schema[1].indexOf('#');
+					if (index !== -1) {
+						schema[2] = schema[1].substring(index + 1).trim();
+						schema[1] = schema[1].substring(0, index).trim();
+						(schema[2] && schema[2][0] !== '*') && (schema[2] = '*' + schema[2]);
+					}
+
+				} // else it's an operation
 				continue;
 			}
 
@@ -16618,8 +16621,17 @@ function controller_json_workflow(id) {
 	var self = this;
 	self.id = id;
 	var w = self.route.workflow;
+
 	if (w instanceof Object) {
 		if (!w.type) {
+
+
+			// IS IT AN OPERATION?
+			if (!self.route.schema.length) {
+				OPERATION(w.id, EMPTYOBJECT, w.view ? self.callback(w.view) : self.callback(), self);
+				return;
+			}
+
 			var schema = GETSCHEMA(self.route.schema[0], self.route.schema[1]);
 
 			if (!schema) {
@@ -16662,6 +16674,13 @@ function controller_json_workflow_multiple(id) {
 	var w = self.route.workflow;
 	if (w instanceof Object) {
 		if (!w.type) {
+
+			// IS IT AN OPERATION?
+			if (!self.route.schema.length) {
+				RUN(w.id, EMPTYOBJECT, w.view ? self.callback(w.view) : self.callback(), null, self, w.index ? w.id[w.index] : null);
+				return;
+			}
+
 			var schema = GETSCHEMA(self.route.schema[0], self.route.schema[1]);
 
 			if (!schema) {

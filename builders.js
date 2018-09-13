@@ -4672,7 +4672,7 @@ global.OPERATION = function(name, value, callback, param, controller) {
 	}
 };
 
-global.RUN = function(name, value, callback, param, controller) {
+global.RUN = function(name, value, callback, param, controller, result) {
 
 	if (typeof(value) === 'function') {
 		controller = param;
@@ -4750,7 +4750,7 @@ global.RUN = function(name, value, callback, param, controller) {
 		opt.meta.next = name[index];
 		fn(opt);
 
-	}, () => callback(error.items.length ? error : null, opt.response, opt));
+	}, () => callback(error.items.length ? error : null, result ? opt.response[result] : opt.response, opt));
 };
 
 function OperationOptions(error, value, options, controller) {
