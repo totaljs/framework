@@ -2408,19 +2408,18 @@ DatabaseBuilder.prototype.join = function(field, name) {
 	return join;
 };
 
-DatabaseBuilder.prototype.statement = function(id, fn) {
-	this.id = id;
-	this.$iscache = CACHE[self.db.name + '_' + id] == null;
-	fn.call(this, this);
-	return this;
-};
-
 DatabaseBuilder.prototype.first = function() {
 	this.$options.first = true;
 	return this.take(1);
 };
 
-DatabaseBuilder.prototype.make = function(fn) {
+DatabaseBuilder.prototype.make = function(id, fn) {
+	if (fn == null) {
+		fn = id;
+	} else {
+		this.$options.id = id;
+		this.$iscache = !!CACHE[this.db.name + '_' + id];
+	}
 	fn.call(this, this);
 	return this;
 };
@@ -2743,6 +2742,7 @@ DatabaseBuilder.prototype.fulltext = function(name, value, weight) {
 
 	var self = this;
 	var key = 'l' + (self.$counter++);
+	var key2 = 'l' + (self.$counter++);
 
 	if (value instanceof Array) {
 		for (var i = 0; i < value.length; i++)
@@ -2756,17 +2756,22 @@ DatabaseBuilder.prototype.fulltext = function(name, value, weight) {
 
 	self.$params[key] = value;
 
+	var count = 1;
+
+	if (weight)
+		count = ((value.length / 100) * weight) >> 0;
+
+	self.$params[key2] = count || 1;
+
 	if (!self.$iscache) {
 		self.$keys && self.$keys.push(name);
-		var count = 1;
-		if (weight)
-			count = ((value.length / 100) * weight) >> 0;
-		var code = '$is=false;if(doc.{0}&&doc.{0}.toLowerCase){var $a={2},$b=doc.{0}.toLowerCase();for(var $i=0;$i<arg.{1}.length;$i++){if($b.indexOf(arg.{1}[$i])!==-1){$a--;if(!$a){$is=true;break}}}}';
+		var code = '$is=false;if(doc.{0}&&doc.{0}.toLowerCase){var $a=arg.{2},$b=doc.{0}.toLowerCase();for(var $i=0;$i<arg.{1}.length;$i++){if($b.indexOf(arg.{1}[$i])!==-1){$a--;if(!$a){$is=true;break}}}}';
 		if (self.$scope)
 			code = 'if(!$is){' + code + '}';
-		self.$code.push(code.format(name, key, count || 1));
+		self.$code.push(code.format(name, key, key2));
 		!self.$scope && self.$code.push('if(!$is)return;');
 	}
+
 	return self;
 };
 
@@ -2872,7 +2877,8 @@ DatabaseBuilder.prototype.random = function() {
 
 DatabaseBuilder.prototype.sort = function(name, desc) {
 	var self = this;
-	self.$options.sort = { name: name, asc: desc ? false : true };
+	if (!self.$iscache)
+		self.$options.sort = { name: name, asc: desc ? false : true };
 	return self;
 };
 
@@ -2889,6 +2895,7 @@ DatabaseBuilder.prototype.repository = function(key, value) {
 DatabaseBuilder.prototype.compile = function(noTrimmer) {
 
 	var self = this;
+	var opt = self.$options;
 	var key = opt.id ? self.db.name + '_' + opt.id : null;
 	var cache = key ? CACHE[key] : null;
 
@@ -2899,12 +2906,13 @@ DatabaseBuilder.prototype.compile = function(noTrimmer) {
 		self.$mappers = cache.mitems;
 		self.$mappersexec = cache.mexec;
 		self.$keys = cache.keys;
+		self.$options.sort = cache.sort;
+		self.$functions = cache.functions;
 		return cache.filter;
 	}
 
 	var raw = self.$code.join('');
 	var code = 'var repository=$F.repository,options=$F.options,arg=$F.arg,fn=$F.fn,$is=false,$tmp;var R=repository;' + raw + (self.$code.length && raw.substring(raw.length - 7) !== 'return;' ? 'if(!$is)return;' : '') + (noTrimmer ? 'return doc' : 'if(options.fields){var $doc={};for(var $i=0;$i<options.fields.length;$i++){var prop=options.fields[$i];$doc[prop]=doc[prop]}if(options.sort)$doc[options.sort.name]=doc[options.sort.name];return $doc}else if(options.fields2){var $doc={};var $keys=Object.keys(doc);for(var $i=0;$i<$keys.length;$i++){var prop=$keys[$i];!options.fields2[prop]&&($doc[prop]=doc[prop])}return $doc}else{return doc}');
-	var opt = self.$options;
 
 	if (!key) {
 		key = code.hash();
@@ -2913,6 +2921,8 @@ DatabaseBuilder.prototype.compile = function(noTrimmer) {
 			self.$mappers = cache.mitems;
 			self.$mappersexec = cache.mexec;
 			self.$keys = cache.keys;
+			self.$options.sort = cache.sort;
+			self.$functions = cache.functions;
 			return cache.filter;
 		}
 	}
@@ -2934,6 +2944,8 @@ DatabaseBuilder.prototype.compile = function(noTrimmer) {
 	cache.mexec = self.$mappersexec;
 	cache.mitems = self.$mappers;
 	cache.keys = cache.$keys;
+	cache.sort = self.$options.sort;
+	cache.functions = self.$functions;
 	CACHE[key] = cache;
 	return cache.filter;
 };
@@ -2941,26 +2953,30 @@ DatabaseBuilder.prototype.compile = function(noTrimmer) {
 DatabaseBuilder.prototype.in = function(name, value) {
 	var self = this;
 	var key = 'in' + (self.$counter++);
-	self.$keys && self.$keys.push(name);
 	self.$params[key] = value instanceof Array ? value : [value];
-	var code = 'if($is)$is=false;$tmp=doc.{0};if($tmp instanceof Array){for(var $i=0;$i<$tmp.length;$i++){if(arg.{1}.indexOf($tmp[$i])!==-1){$is=true;break}}}else{if(arg.{1}.indexOf($tmp)!==-1)$is=true}'.format(name, key);
-	if (self.$scope)
-		code = 'if(!$is){' + code + '}';
-	self.$code.push(code);
-	!self.$scope && self.$code.push('if(!$is)return;');
+	if (!self.$iscache) {
+		self.$keys && self.$keys.push(name);
+		var code = 'if($is)$is=false;$tmp=doc.{0};if($tmp instanceof Array){for(var $i=0;$i<$tmp.length;$i++){if(arg.{1}.indexOf($tmp[$i])!==-1){$is=true;break}}}else{if(arg.{1}.indexOf($tmp)!==-1)$is=true}'.format(name, key);
+		if (self.$scope)
+			code = 'if(!$is){' + code + '}';
+		self.$code.push(code);
+		!self.$scope && self.$code.push('if(!$is)return;');
+	}
 	return self;
 };
 
 DatabaseBuilder.prototype.notin = function(name, value) {
 	var self = this;
 	var key = 'in' + (self.$counter++);
-	self.$keys && self.$keys.push(name);
 	self.$params[key] = value instanceof Array ? value : [value];
-	var code = '$is=true;$tmp=doc.{0};if($tmp instanceof Array){for(var $i=0;$i<$tmp.length;$i++){if(arg.{1}.indexOf($tmp[$i])!==-1){$is=false;break}}}else{if(arg.{1}.indexOf($tmp)!==-1)$is=false}'.format(name, key);
-	if (self.$scope)
-		code = 'if(!$is){' + code + '}';
-	self.$code.push(code);
-	!self.$scope && self.$code.push('if(!$is)return;');
+	if (!self.$iscache) {
+		self.$keys && self.$keys.push(name);
+		var code = '$is=true;$tmp=doc.{0};if($tmp instanceof Array){for(var $i=0;$i<$tmp.length;$i++){if(arg.{1}.indexOf($tmp[$i])!==-1){$is=false;break}}}else{if(arg.{1}.indexOf($tmp)!==-1)$is=false}'.format(name, key);
+		if (self.$scope)
+			code = 'if(!$is){' + code + '}';
+		self.$code.push(code);
+		!self.$scope && self.$code.push('if(!$is)return;');
+	}
 	return self;
 };
 
@@ -2968,33 +2984,46 @@ DatabaseBuilder.prototype.between = function(name, a, b) {
 	var self = this;
 	var keya = 'ba' + (self.$counter++);
 	var keyb = 'bb' + (self.$counter++);
-	var code = '$is=doc.{0}>=arg.{1}&&doc.{0}<=arg.{2};'.format(name, keya, keyb);
-	if (self.$scope)
-		code = 'if(!$is){' + code + '}';
-	self.$keys && self.$keys.push(name);
+
 	self.$params[keya] = a;
 	self.$params[keyb] = b;
-	self.$code.push(code);
-	!self.$scope && self.$code.push('if(!$is)return;');
+
+	if (!self.$iscache) {
+		var code = '$is=doc.{0}>=arg.{1}&&doc.{0}<=arg.{2};'.format(name, keya, keyb);
+		if (self.$scope)
+			code = 'if(!$is){' + code + '}';
+		self.$keys && self.$keys.push(name);
+		self.$code.push(code);
+		!self.$scope && self.$code.push('if(!$is)return;');
+	}
 	return self;
 };
 
 DatabaseBuilder.prototype.or = function() {
-	this.$code.push('$is=false;');
-	this.$scope = 1;
-	return this;
+	var self = this;
+	if (!self.$iscache) {
+		self.$code.push('$is=false;');
+		self.$scope = 1;
+	}
+	return self;
 };
 
 DatabaseBuilder.prototype.end = function() {
-	this.$scope = 0;
-	this.$code.push('if(!$is)return;');
-	return this;
+	var self = this;
+	if (!self.$iscache) {
+		self.$scope = 0;
+		self.$code.push('if(!$is)return;');
+	}
+	return self;
 };
 
 DatabaseBuilder.prototype.and = function() {
-	this.$code.push('$is=false;');
-	this.$scope = 0;
-	return this;
+	var self = this;
+	if (!self.$iscache) {
+		self.$code.push('$is=false;');
+		self.$scope = 0;
+	}
+	return self;
 };
 
 DatabaseBuilder.prototype.done = function() {
@@ -3003,26 +3032,21 @@ DatabaseBuilder.prototype.done = function() {
 	return this;
 };
 
-DatabaseBuilder.prototype.cache = function() {
-	// this.$cache_key = '$nosql_' + key;
-	// this.$cache_expire = expire;
-	OBSOLETE('DatabaseBuilder.cache()', 'NoSQL database supports in-memory mode.');
-	return this;
-};
-
 DatabaseBuilder.prototype.fields = function() {
 	var self = this;
-	var opt = self.$options;
-	for (var i = 0, length = arguments.length; i < length; i++) {
-		var name = arguments[i];
-		if (name[0] === '-') {
-			!opt.fields2 && (opt.fields2 = {});
-			opt.fields2[name.substring(1)] = 1;
-		} else {
-			!opt.fields && (opt.fields = []);
-			opt.fields.push(name);
+	if (!self.$iscache) {
+		var opt = self.$options;
+		for (var i = 0, length = arguments.length; i < length; i++) {
+			var name = arguments[i];
+			if (name[0] === '-') {
+				!opt.fields2 && (opt.fields2 = {});
+				opt.fields2[name.substring(1)] = 1;
+			} else {
+				!opt.fields && (opt.fields = []);
+				opt.fields.push(name);
+			}
+			self.$keys && self.$keys.push(name);
 		}
-		self.$keys && self.$keys.push(name);
 	}
 	return self;
 };
@@ -3030,21 +3054,23 @@ DatabaseBuilder.prototype.fields = function() {
 DatabaseBuilder.prototype.code = function(code) {
 	var self = this;
 
-	if (typeof(code) === 'function') {
-		code = code.toString();
-		code = code.substring(code.indexOf('{') + 1, code.lastIndexOf('}'));
+	if (!self.$iscache) {
+		if (typeof(code) === 'function') {
+			code = code.toString();
+			code = code.substring(code.indexOf('{') + 1, code.lastIndexOf('}'));
+		}
+
+		code = code.trim();
+
+		if (self.$scope)
+			code = 'if(!$is){' + code + '}';
+
+		self.$code.push(code + ';');
+		!self.$scope && self.$code.push('if(!$is)return;');
+
+		if (self.$keys)
+			self.$keys = null;
 	}
-
-	code = code.trim();
-
-	if (self.$scope)
-		code = 'if(!$is){' + code + '}';
-
-	self.$code.push(code + ';');
-	!self.$scope && self.$code.push('if(!$is)return;');
-
-	if (self.$keys)
-		self.$keys = null;
 
 	return self;
 };
@@ -3056,16 +3082,17 @@ DatabaseBuilder.prototype.prepare = function(fn) {
 		self.$functions = [];
 
 	var index = self.$functions.push(fn) - 1;
-	var code = '$tmp=fn[{0}].call($F,U.clone(doc),index,repository);if(typeof($tmp)==\'boolean\'){$is=$tmp}else{doc=$tmp;$is=$tmp!=null}'.format(index);
 
-	if (self.$scope)
-		code = 'if(!$is){' + code + '}';
+	if (!self.$iscache) {
+		var code = '$tmp=fn[{0}].call($F,U.clone(doc),index,repository);if(typeof($tmp)==\'boolean\'){$is=$tmp}else{doc=$tmp;$is=$tmp!=null}'.format(index);
+		if (self.$scope)
+			code = 'if(!$is){' + code + '}';
+		if (self.$keys)
+			self.$keys = null;
+		self.$code.push(code);
+		!self.$scope && self.$code.push('if(!$is)return;');
+	}
 
-	if (self.$keys)
-		self.$keys = null;
-
-	self.$code.push(code);
-	!self.$scope && self.$code.push('if(!$is)return;');
 	return this;
 };
 
@@ -6580,7 +6607,9 @@ NoSQLReader.prototype.add = function(builder, noTrimmer) {
 		item.count = 0;
 		item.counter = 0;
 		item.builder = builder;
+		console.time('compile');
 		item.compare = builder.compile(noTrimmer);
+		console.timeEnd('compile');
 		item.filter = builder.makefilter();
 		item.first = builder.$options.first && !builder.$options.sort;
 		self.builders.push(item);
