@@ -1498,7 +1498,7 @@ DP.$update = function() {
 				var val = fil.doc[key];
 				if (val !== undefined) {
 					if (typeof(val) === 'function')
-						doc[key] = val(doc[key], doc);
+						doc[key] = val(doc[key], doc, f.filter.repository);
 					else if (fil.inc && fil.inc[key]) {
 						switch (fil.inc[key]) {
 							case '!':
@@ -5956,7 +5956,7 @@ TP.$update = function() {
 				var val = fil.doc[key];
 				if (val !== undefined) {
 					if (typeof(val) === 'function')
-						doc[key] = val(doc[key], doc);
+						doc[key] = val(doc[key], doc, f.filter.repository);
 					else if (fil.inc && fil.inc[key]) {
 						switch (fil.inc[key]) {
 							case '!':
@@ -5992,7 +5992,6 @@ TP.$update = function() {
 
 		var rec = fs.docsbuffer[dindex];
 		var upd = self.stringify(doc, null, rec.length);
-
 		if (upd === rec.doc)
 			return;
 
