@@ -4714,7 +4714,7 @@ global.RUN = function(name, value, callback, param, controller, result) {
 		if (opt.error.items.length && opt.$repeat > 0) {
 			opt.error.clear();
 			opt.$repeat--;
-			opt.repeated = true;
+			opt.repeated++;
 			setImmediate(opt => opt.$current(opt), opt);
 		} else {
 			opt.error.items.length && error.push(opt.error);
@@ -4739,7 +4739,7 @@ global.RUN = function(name, value, callback, param, controller, result) {
 			return next();
 		}
 
-		opt.repeated = false;
+		opt.repeated = 0;
 		opt.error = new ErrorBuilder();
 		opt.error.path = 'operation: ' + key;
 		opt.meta.index = index;
