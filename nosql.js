@@ -1580,7 +1580,10 @@ DP.$update = function() {
 			}
 		}
 
-		change && self.$events.change && self.emit('change', 'update');
+		if (change) {
+			self.$events.change && self.emit('change', 'update');
+			!F.databasescleaner[self.name] && (F.databasescleaner[self.name] = 1);
+		}
 	};
 
 	fs.openupdate();
@@ -1952,7 +1955,10 @@ DP.$remove = function() {
 		fs = null;
 		self.$writting = false;
 		self.next(0);
-		change && self.$events.change && self.emit('change', 'remove');
+		if (change) {
+			self.$events.change && self.emit('change', 'remove');
+			!F.databasescleaner[self.name] && (F.databasescleaner[self.name] = 1);
+		}
 	};
 
 	fs.openupdate();
@@ -2413,10 +2419,8 @@ DatabaseBuilder.prototype.first = function() {
 	return this.take(1);
 };
 
-DatabaseBuilder.prototype.make = function(id, fn) {
-	if (fn == null) {
-		fn = id;
-	} else {
+DatabaseBuilder.prototype.make = function(fn, id) {
+	if (id) {
 		this.$options.id = id;
 		this.$iscache = !!CACHE[this.db.name + '_' + id];
 	}
@@ -2530,13 +2534,11 @@ DatabaseBuilder.prototype.where = function(name, operator, value) {
 				operator = '!=';
 				break;
 		}
-
 		code = (date ? '$is=(doc.{0} instanceof Date?doc.{0}:new Date(doc.{0})).getTime(){2}arg.{1};' : '$is=doc.{0}{2}arg.{1};');
 		if (self.$scope)
 			code = 'if(!$is){' + code + '}';
 		self.$code.push(code.format(name, key, operator));
 		!self.$scope && self.$code.push('if(!$is)return;');
-		self.$keys && self.$keys.push(name);
 	}
 
 	return self;
@@ -2547,19 +2549,19 @@ DatabaseBuilder.prototype.query = function(code) {
 
 	if (!self.$iscache) {
 		code = '$is=(' + code + ');';
-
 		if (self.$scope)
 			code = 'if(!$is){' + code + '}';
-
-		if (self.$keys)
-			self.$keys = null;
-
 		self.$code.push(code);
 		!self.$scope && self.$code.push('if(!$is)return;');
 	}
 
 	self.$counter++;
 	return self;
+};
+
+DatabaseBuilder.prototype.param = function(key, value) {
+	this.$params[key] = value;
+	return this;
 };
 
 DatabaseBuilder.prototype.month = function(name, operator, value) {
@@ -2577,7 +2579,6 @@ DatabaseBuilder.prototype.month = function(name, operator, value) {
 		var code = compare_datetype('month', name, key, operator);
 		if (self.$scope)
 			code = 'if(!$is){' + code + '}';
-		self.$keys && self.$keys.push(name);
 		self.$code.push(code);
 		!self.$scope && self.$code.push('if(!$is)return;');
 	}
@@ -2599,8 +2600,6 @@ DatabaseBuilder.prototype.day = function(name, operator, value) {
 		var code = compare_datetype('day', name, key, operator);
 		if (self.$scope)
 			code = 'if(!$is){' + code + '}';
-
-		self.$keys && self.$keys.push(name);
 		self.$code.push(code);
 		!self.$scope && self.$code.push('if(!$is)return;');
 	}
@@ -2622,9 +2621,6 @@ DatabaseBuilder.prototype.year = function(name, operator, value) {
 		var code = compare_datetype('year', name, key, operator);
 		if (self.$scope)
 			code = 'if(!$is){' + code + '}';
-
-		self.$keys && self.$keys.push(name);
-
 		self.$code.push(code);
 		!self.$scope && self.$code.push('if(!$is)return;');
 	}
@@ -2647,8 +2643,6 @@ DatabaseBuilder.prototype.hour = function(name, operator, value) {
 		var code = compare_datetype('hour', name, key, operator);
 		if (self.$scope)
 			code = 'if(!$is){' + code + '}';
-
-		self.$keys && self.$keys.push(name);
 		self.$code.push(code);
 		!self.$scope && self.$code.push('if(!$is)return;');
 	}
@@ -2671,8 +2665,6 @@ DatabaseBuilder.prototype.minute = function(name, operator, value) {
 		var code = compare_datetype('minute', name, key, operator);
 		if (self.$scope)
 			code = 'if(!$is){' + code + '}';
-
-		self.$keys && self.$keys.push(name);
 		self.$code.push(code);
 		!self.$scope && self.$code.push('if(!$is)return;');
 	}
@@ -2710,7 +2702,6 @@ DatabaseBuilder.prototype.like = DatabaseBuilder.prototype.search = function(nam
 		if (self.$scope)
 			code = 'if(!$is){' + code + '}';
 
-		self.$keys && self.$keys.push(name);
 		self.$code.push(code.format(name, key));
 		!self.$scope && self.$code.push('if(!$is)return;');
 	} else {
@@ -2731,7 +2722,6 @@ DatabaseBuilder.prototype.regexp = function(name, value) {
 		var code = '$is=false;if(doc.{0}&&doc.{0}.toLowerCase){$is=({1}).test(doc.{0})}';
 		if (self.$scope)
 			code = 'if(!$is){' + code + '}';
-		self.$keys && self.$keys.push(name);
 		self.$code.push(code.format(name, value.toString()));
 		!self.$scope && self.$code.push('if(!$is)return;');
 	}
@@ -2764,7 +2754,6 @@ DatabaseBuilder.prototype.fulltext = function(name, value, weight) {
 	self.$params[key2] = count || 1;
 
 	if (!self.$iscache) {
-		self.$keys && self.$keys.push(name);
 		var code = '$is=false;if(doc.{0}&&doc.{0}.toLowerCase){var $a=arg.{2},$b=doc.{0}.toLowerCase();for(var $i=0;$i<arg.{1}.length;$i++){if($b.indexOf(arg.{1}[$i])!==-1){$a--;if(!$a){$is=true;break}}}}';
 		if (self.$scope)
 			code = 'if(!$is){' + code + '}';
@@ -2906,7 +2895,6 @@ DatabaseBuilder.prototype.compile = function(noTrimmer) {
 	if (key && cache) {
 		self.$mappers = cache.mitems;
 		self.$mappersexec = cache.mexec;
-		self.$keys = cache.keys;
 		self.$options.sort = cache.sort;
 		return cache.filter;
 	}
@@ -2920,7 +2908,6 @@ DatabaseBuilder.prototype.compile = function(noTrimmer) {
 		if (cache) {
 			self.$mappers = cache.mitems;
 			self.$mappersexec = cache.mexec;
-			self.$keys = cache.keys;
 			self.$options.sort = cache.sort;
 			return cache.filter;
 		}
@@ -2942,7 +2929,6 @@ DatabaseBuilder.prototype.compile = function(noTrimmer) {
 	cache.filter = new Function('doc', '$F', 'index', code);
 	cache.mexec = self.$mappersexec;
 	cache.mitems = self.$mappers;
-	cache.keys = cache.$keys;
 	cache.sort = self.$options.sort;
 	CACHE[key] = cache;
 	return cache.filter;
@@ -2953,7 +2939,6 @@ DatabaseBuilder.prototype.in = function(name, value) {
 	var key = 'in' + (self.$counter++);
 	self.$params[key] = value instanceof Array ? value : [value];
 	if (!self.$iscache) {
-		self.$keys && self.$keys.push(name);
 		var code = 'if($is)$is=false;$tmp=doc.{0};if($tmp instanceof Array){for(var $i=0;$i<$tmp.length;$i++){if(arg.{1}.indexOf($tmp[$i])!==-1){$is=true;break}}}else{if(arg.{1}.indexOf($tmp)!==-1)$is=true}'.format(name, key);
 		if (self.$scope)
 			code = 'if(!$is){' + code + '}';
@@ -2968,7 +2953,6 @@ DatabaseBuilder.prototype.notin = function(name, value) {
 	var key = 'in' + (self.$counter++);
 	self.$params[key] = value instanceof Array ? value : [value];
 	if (!self.$iscache) {
-		self.$keys && self.$keys.push(name);
 		var code = '$is=true;$tmp=doc.{0};if($tmp instanceof Array){for(var $i=0;$i<$tmp.length;$i++){if(arg.{1}.indexOf($tmp[$i])!==-1){$is=false;break}}}else{if(arg.{1}.indexOf($tmp)!==-1)$is=false}'.format(name, key);
 		if (self.$scope)
 			code = 'if(!$is){' + code + '}';
@@ -2990,7 +2974,6 @@ DatabaseBuilder.prototype.between = function(name, a, b) {
 		var code = '$is=doc.{0}>=arg.{1}&&doc.{0}<=arg.{2};'.format(name, keya, keyb);
 		if (self.$scope)
 			code = 'if(!$is){' + code + '}';
-		self.$keys && self.$keys.push(name);
 		self.$code.push(code);
 		!self.$scope && self.$code.push('if(!$is)return;');
 	}
@@ -3043,7 +3026,6 @@ DatabaseBuilder.prototype.fields = function() {
 				!opt.fields && (opt.fields = []);
 				opt.fields.push(name);
 			}
-			self.$keys && self.$keys.push(name);
 		}
 	}
 	return self;
@@ -3065,9 +3047,6 @@ DatabaseBuilder.prototype.code = function(code) {
 
 		self.$code.push(code + ';');
 		!self.$scope && self.$code.push('if(!$is)return;');
-
-		if (self.$keys)
-			self.$keys = null;
 	}
 
 	return self;
@@ -3085,8 +3064,6 @@ DatabaseBuilder.prototype.prepare = function(fn) {
 		var code = '$tmp=fn[{0}].call($F,U.clone(doc),index,repository);if(typeof($tmp)==\'boolean\'){$is=$tmp}else{doc=$tmp;$is=$tmp!=null}'.format(index);
 		if (self.$scope)
 			code = 'if(!$is){' + code + '}';
-		if (self.$keys)
-			self.$keys = null;
 		self.$code.push(code);
 		!self.$scope && self.$code.push('if(!$is)return;');
 	}
@@ -6070,7 +6047,10 @@ TP.$update = function() {
 			}
 		}
 
-		change && self.$events.change && self.emit('change', 'update');
+		if (change) {
+			self.$events.change && self.emit('change', 'update');
+			!F.databasescleaner[self.$name] && (F.databasescleaner[self.$name] = 1);
+		}
 	};
 
 	fs.openupdate();
@@ -6140,7 +6120,10 @@ TP.$remove = function() {
 		fs = null;
 		self.$writting = false;
 		self.next(0);
-		change && self.$events.change && self.emit('change', 'remove');
+		if (change) {
+			self.$events.change && self.emit('change', 'remove');
+			!F.databasescleaner[self.$name] && (F.databasescleaner[self.$name] = 1);
+		}
 	};
 
 	fs.openupdate();
@@ -6160,7 +6143,7 @@ TP.$clean = function() {
 	var length = filter.length;
 	var now = Date.now();
 
-	F.databasescleaner[self.name] = undefined;
+	F.databasescleaner[self.$name] = undefined;
 	F.config['nosql-logger'] && PRINTLN('NoSQL Table "{0}" cleaning (beg)'.format(self.name));
 
 	var fs = new NoSQLStream(self.filename);
@@ -6526,7 +6509,7 @@ TP.free = function(force) {
 	if (!force && !self.$free)
 		return self;
 	self.removeAllListeners(true);
-	delete F.databases['$' + self.name];
+	delete F.databases[self.$name];
 	return self;
 };
 

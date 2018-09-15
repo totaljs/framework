@@ -24,6 +24,7 @@
 - fixed: `SchemaInstance.$clean()` for nested schemas
 - fixed: extracting `bundles` (added `/flow/` and `/dashboard/`)
 - fixed: subdomain routing for `localhost`
+- fixed: service for database cleaner
 
 - improved: NoSQL reader
 
