@@ -2180,7 +2180,7 @@ function DatabaseBuilder(db) {
 	this.$scope = 0;
 	this.$callback = NOOP;
 	this.$code = [];
-	this.$params = {};
+	this.$args = {};
 	this.$options = {};
 	this.$repository = {};
 	this.$counter = 0;
@@ -2190,7 +2190,7 @@ function DatabaseBuilder(db) {
 DatabaseBuilder.prototype.promise = promise;
 
 DatabaseBuilder.prototype.makefilter = function() {
-	return { repository: this.$repository, options: this.$options, arg: this.$params, fn: this.$functions };
+	return { repository: this.$repository, options: this.$options, arg: this.$args, fn: this.$functions };
 };
 
 DatabaseBuilder.prototype.id = function(id) {
@@ -2258,7 +2258,7 @@ DatabaseBuilder.prototype.$callbackjoin = function(callback) {
 						builder.$code = join.builder.$code.slice(0);
 						U.extend_headers2(builder.$options, join.builder.$options);
 						builder.$repository = join.builder.$repository;
-						builder.$params = CLONE(join.builder.$params);
+						builder.$args = CLONE(join.builder.$args);
 					}
 
 					builder.$take = join.builder.$take;
@@ -2523,7 +2523,7 @@ DatabaseBuilder.prototype.where = function(name, operator, value) {
 	}
 
 	var date = framework_utils.isDate(value);
-	self.$params[key] = date ? value.getTime() : value;
+	self.$args[key] = date ? value.getTime() : value;
 
 	if (!self.$iscache) {
 		switch (operator) {
@@ -2559,8 +2559,8 @@ DatabaseBuilder.prototype.query = function(code) {
 	return self;
 };
 
-DatabaseBuilder.prototype.param = function(key, value) {
-	this.$params[key] = value;
+DatabaseBuilder.prototype.arg = function(key, value) {
+	this.$args[key] = value;
 	return this;
 };
 
@@ -2573,7 +2573,7 @@ DatabaseBuilder.prototype.month = function(name, operator, value) {
 		operator = '=';
 	}
 
-	self.$params[key] = value;
+	self.$args[key] = value;
 
 	if (!self.$iscache) {
 		var code = compare_datetype('month', name, key, operator);
@@ -2594,7 +2594,7 @@ DatabaseBuilder.prototype.day = function(name, operator, value) {
 		operator = '=';
 	}
 
-	self.$params[key] = value;
+	self.$args[key] = value;
 
 	if (!self.$iscache) {
 		var code = compare_datetype('day', name, key, operator);
@@ -2615,7 +2615,7 @@ DatabaseBuilder.prototype.year = function(name, operator, value) {
 		operator = '=';
 	}
 
-	self.$params[key] = value;
+	self.$args[key] = value;
 
 	if (!self.$iscache) {
 		var code = compare_datetype('year', name, key, operator);
@@ -2637,7 +2637,7 @@ DatabaseBuilder.prototype.hour = function(name, operator, value) {
 		operator = '=';
 	}
 
-	self.$params[key] = value;
+	self.$args[key] = value;
 
 	if (!self.$iscache) {
 		var code = compare_datetype('hour', name, key, operator);
@@ -2659,7 +2659,7 @@ DatabaseBuilder.prototype.minute = function(name, operator, value) {
 		operator = '=';
 	}
 
-	self.$params[key] = value;
+	self.$args[key] = value;
 
 	if (!self.$iscache) {
 		var code = compare_datetype('minute', name, key, operator);
@@ -2697,7 +2697,7 @@ DatabaseBuilder.prototype.like = DatabaseBuilder.prototype.search = function(nam
 				break;
 		}
 
-		self.$params[key] = value;
+		self.$args[key] = value;
 
 		if (self.$scope)
 			code = 'if(!$is){' + code + '}';
@@ -2710,7 +2710,7 @@ DatabaseBuilder.prototype.like = DatabaseBuilder.prototype.search = function(nam
 				value = value.join(' ');
 			value = value.toLowerCase();
 		}
-		self.$params[key] = value;
+		self.$args[key] = value;
 	}
 
 	return self;
@@ -2744,14 +2744,14 @@ DatabaseBuilder.prototype.fulltext = function(name, value, weight) {
 			value = value.toLowerCase().split(' ');
 	}
 
-	self.$params[key] = value;
+	self.$args[key] = value;
 
 	var count = 1;
 
 	if (weight)
 		count = ((value.length / 100) * weight) >> 0;
 
-	self.$params[key2] = count || 1;
+	self.$args[key2] = count || 1;
 
 	if (!self.$iscache) {
 		var code = '$is=false;if(doc.{0}&&doc.{0}.toLowerCase){var $a=arg.{2},$b=doc.{0}.toLowerCase();for(var $i=0;$i<arg.{1}.length;$i++){if($b.indexOf(arg.{1}[$i])!==-1){$a--;if(!$a){$is=true;break}}}}';
@@ -2771,7 +2771,7 @@ DatabaseBuilder2.prototype.stringify = DatabaseBuilder.prototype.stringify = fun
 
 	obj.options = self.$options;
 	obj.code = self.$code;
-	obj.params = self.$params;
+	obj.args = self.$args;
 	obj.insert = self.$insertcallback ? self.$insertcallback.toString() : null;
 
 	if (self.$functions) {
@@ -2791,7 +2791,7 @@ DatabaseBuilder2.prototype.parse = DatabaseBuilder.prototype.parse = function(da
 	data = JSON.parse(data, jsonparser);
 	this.$options = data.options;
 	this.$code = data.code;
-	this.$params = data.params;
+	this.$args = data.args;
 	this.$take = data.options.take;
 	this.$skip = data.options.skip;
 	this.$repository = data.repository;
@@ -2937,7 +2937,7 @@ DatabaseBuilder.prototype.compile = function(noTrimmer) {
 DatabaseBuilder.prototype.in = function(name, value) {
 	var self = this;
 	var key = 'in' + (self.$counter++);
-	self.$params[key] = value instanceof Array ? value : [value];
+	self.$args[key] = value instanceof Array ? value : [value];
 	if (!self.$iscache) {
 		var code = 'if($is)$is=false;$tmp=doc.{0};if($tmp instanceof Array){for(var $i=0;$i<$tmp.length;$i++){if(arg.{1}.indexOf($tmp[$i])!==-1){$is=true;break}}}else{if(arg.{1}.indexOf($tmp)!==-1)$is=true}'.format(name, key);
 		if (self.$scope)
@@ -2951,7 +2951,7 @@ DatabaseBuilder.prototype.in = function(name, value) {
 DatabaseBuilder.prototype.notin = function(name, value) {
 	var self = this;
 	var key = 'in' + (self.$counter++);
-	self.$params[key] = value instanceof Array ? value : [value];
+	self.$args[key] = value instanceof Array ? value : [value];
 	if (!self.$iscache) {
 		var code = '$is=true;$tmp=doc.{0};if($tmp instanceof Array){for(var $i=0;$i<$tmp.length;$i++){if(arg.{1}.indexOf($tmp[$i])!==-1){$is=false;break}}}else{if(arg.{1}.indexOf($tmp)!==-1)$is=false}'.format(name, key);
 		if (self.$scope)
@@ -2967,8 +2967,8 @@ DatabaseBuilder.prototype.between = function(name, a, b) {
 	var keya = 'ba' + (self.$counter++);
 	var keyb = 'bb' + (self.$counter++);
 
-	self.$params[keya] = a;
-	self.$params[keyb] = b;
+	self.$args[keya] = a;
+	self.$args[keyb] = b;
 
 	if (!self.$iscache) {
 		var code = '$is=doc.{0}>=arg.{1}&&doc.{0}<=arg.{2};'.format(name, keya, keyb);
