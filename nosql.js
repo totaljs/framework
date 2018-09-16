@@ -873,6 +873,8 @@ DP.update = function(doc, insert) {
 	var builder = new DatabaseBuilder(self);
 	var data = framework_builders.isSchema(doc) ? doc.$clean() : doc;
 	builder.$options.readertype = 1;
+	if (typeof(data) === 'string')
+		data = new Function('doc', 'repository', 'arg', data.indexOf('return ') === -1 ? ('return (' + data + ')') : data);
 	self.pending_update.push({ builder: builder, doc: data, insert: insert === true ? data : insert });
 	setImmediate(next_operation, self, 2);
 	return builder;
@@ -889,6 +891,7 @@ DP.modify = function(doc, insert) {
 	builder.$options.readertype = 1;
 
 	if (keys.length) {
+		var tmp;
 		for (var i = 0; i < keys.length; i++) {
 			var key = keys[i];
 			switch (key[0]) {
@@ -898,9 +901,15 @@ DP.modify = function(doc, insert) {
 				case '*':
 				case '/':
 					!inc && (inc = {});
-					var tmp = key.substring(1);
+					tmp = key.substring(1);
 					inc[tmp] = key[0];
 					doc[tmp] = doc[key];
+					doc[key] = undefined;
+					keys[i] = tmp;
+					break;
+				case '$':
+					tmp = key.substring(1);
+					doc[tmp] = new Function('val', 'doc', 'repository', 'arg', doc[key].indexOf('return ') === -1 ? ('return (' + doc[key] + ')') : doc[key]);
 					doc[key] = undefined;
 					keys[i] = tmp;
 					break;
@@ -1498,7 +1507,7 @@ DP.$update = function() {
 				var val = fil.doc[key];
 				if (val !== undefined) {
 					if (typeof(val) === 'function')
-						doc[key] = val(doc[key], doc, f.filter.repository);
+						doc[key] = val(doc[key], doc, f.filter.repository, f.filter.arg);
 					else if (fil.inc && fil.inc[key]) {
 						switch (fil.inc[key]) {
 							case '!':
@@ -1522,7 +1531,7 @@ DP.$update = function() {
 				}
 			}
 		} else
-			docs[dindex] = typeof(fil.doc) === 'function' ? fil.doc(doc, f.filter.repository) : fil.doc;
+			docs[dindex] = typeof(fil.doc) === 'function' ? fil.doc(doc, f.filter.repository, f.filter.arg) : fil.doc;
 
 		self.$events[e] && self.emit(e, doc, old);
 		f.builder.$options.backup && f.builder.$backupdoc(rec.doc);
@@ -2546,7 +2555,6 @@ DatabaseBuilder.prototype.where = function(name, operator, value) {
 
 DatabaseBuilder.prototype.query = function(code) {
 	var self = this;
-
 	if (!self.$iscache) {
 		code = '$is=(' + code + ');';
 		if (self.$scope)
@@ -2900,7 +2908,7 @@ DatabaseBuilder.prototype.compile = function(noTrimmer) {
 	}
 
 	var raw = self.$code.join('');
-	var code = 'var repository=$F.repository,options=$F.options,arg=$F.arg,fn=$F.fn,$is=false,$tmp;var R=repository;' + raw + (self.$code.length && raw.substring(raw.length - 7) !== 'return;' ? 'if(!$is)return;' : '') + (noTrimmer ? 'return doc' : 'if(options.fields){var $doc={};for(var $i=0;$i<options.fields.length;$i++){var prop=options.fields[$i];$doc[prop]=doc[prop]}if(options.sort)$doc[options.sort.name]=doc[options.sort.name];return $doc}else if(options.fields2){var $doc={};var $keys=Object.keys(doc);for(var $i=0;$i<$keys.length;$i++){var prop=$keys[$i];!options.fields2[prop]&&($doc[prop]=doc[prop])}return $doc}else{return doc}');
+	var code = 'var R=repository=$F.repository,options=$F.options,arg=$F.arg,fn=$F.fn,$is=false,$tmp;' + raw + (self.$code.length && raw.substring(raw.length - 7) !== 'return;' ? 'if(!$is)return;' : '') + (noTrimmer ? 'return doc' : 'if(options.fields){var $doc={};for(var $i=0;$i<options.fields.length;$i++){var prop=options.fields[$i];$doc[prop]=doc[prop]}if(options.sort)$doc[options.sort.name]=doc[options.sort.name];return $doc}else if(options.fields2){var $doc={};var $keys=Object.keys(doc);for(var $i=0;$i<$keys.length;$i++){var prop=$keys[$i];!options.fields2[prop]&&($doc[prop]=doc[prop])}return $doc}else{return doc}');
 
 	if (!key) {
 		key = self.db.name + '_' + raw.hash();
@@ -3028,27 +3036,6 @@ DatabaseBuilder.prototype.fields = function() {
 			}
 		}
 	}
-	return self;
-};
-
-DatabaseBuilder.prototype.code = function(code) {
-	var self = this;
-
-	if (!self.$iscache) {
-		if (typeof(code) === 'function') {
-			code = code.toString();
-			code = code.substring(code.indexOf('{') + 1, code.lastIndexOf('}'));
-		}
-
-		code = code.trim();
-
-		if (self.$scope)
-			code = 'if(!$is){' + code + '}';
-
-		self.$code.push(code + ';');
-		!self.$scope && self.$code.push('if(!$is)return;');
-	}
-
 	return self;
 };
 
@@ -5463,6 +5450,8 @@ TP.update = function(doc, insert) {
 	self.readonly && self.throwReadonly();
 	var builder = new DatabaseBuilder(self);
 	builder.$options.readertype = 1;
+	if (typeof(doc) === 'string')
+		doc = new Function('doc', 'repository', 'arg', doc.indexOf('return ') === -1 ? ('return (' + doc + ')') : doc);
 	self.pending_update.push({ builder: builder, doc: doc, count: 0, insert: insert === true ? doc : insert });
 	setImmediate(next_operation, self, 2);
 	return builder;
@@ -5488,6 +5477,12 @@ TP.modify = function(doc, insert) {
 					var tmp = key.substring(1);
 					inc[tmp] = key[0];
 					doc[tmp] = doc[key];
+					doc[key] = undefined;
+					keys[i] = tmp;
+					break;
+				case '$':
+					tmp = key.substring(1);
+					doc[tmp] = new Function('value', 'doc', 'repository', 'arg', doc[key].indexOf('return ') === -1 ? ('return (' + doc[key] + ')') : doc[key]);
 					doc[key] = undefined;
 					keys[i] = tmp;
 					break;
@@ -5956,7 +5951,7 @@ TP.$update = function() {
 				var val = fil.doc[key];
 				if (val !== undefined) {
 					if (typeof(val) === 'function')
-						doc[key] = val(doc[key], doc, f.filter.repository);
+						doc[key] = val(doc[key], doc, f.filter.repository, f.filter.arg);
 					else if (fil.inc && fil.inc[key]) {
 						switch (fil.inc[key]) {
 							case '!':
@@ -5980,7 +5975,7 @@ TP.$update = function() {
 				}
 			}
 		} else
-			docs[dindex] = typeof(fil.doc) === 'function' ? fil.doc(doc, f.filter.repository) : fil.doc;
+			docs[dindex] = typeof(fil.doc) === 'function' ? fil.doc(doc, f.filter.repository, f.filter.arg) : fil.doc;
 
 		self.$events[e] && self.emit(e, doc, old);
 		f.builder.$options.backup && f.builder.$backupdoc(rec.doc);
