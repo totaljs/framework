@@ -1531,7 +1531,7 @@ DP.$update = function() {
 				}
 			}
 		} else
-			docs[dindex] = typeof(fil.doc) === 'function' ? fil.doc(doc, f.filter.repository, f.filter.arg) : fil.doc;
+			docs[dindex] = typeof(fil.doc) === 'function' ? (fil.doc(doc, f.filter.repository, f.filter.arg) || doc) : fil.doc;
 
 		self.$events[e] && self.emit(e, doc, old);
 		f.builder.$options.backup && f.builder.$backupdoc(rec.doc);
@@ -5975,7 +5975,7 @@ TP.$update = function() {
 				}
 			}
 		} else
-			docs[dindex] = typeof(fil.doc) === 'function' ? fil.doc(doc, f.filter.repository, f.filter.arg) : fil.doc;
+			docs[dindex] = typeof(fil.doc) === 'function' ? (fil.doc(doc, f.filter.repository, f.filter.arg) || doc) : fil.doc;
 
 		self.$events[e] && self.emit(e, doc, old);
 		f.builder.$options.backup && f.builder.$backupdoc(rec.doc);
