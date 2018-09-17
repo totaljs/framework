@@ -1169,7 +1169,7 @@ DP.stream = function(fn, repository, callback) {
 };
 
 DP.throwReadonly = function(e) {
-	throw new Error('Database "{0}" is readonly.'.format(this.name) + (e ? '\n' + e.toString() : '');
+	throw new Error('Database "{0}" is readonly.'.format(this.name) + (e ? '\n' + e.toString() : ''));
 };
 
 DP.scalar = function(type, field) {
