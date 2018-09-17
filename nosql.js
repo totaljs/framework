@@ -584,7 +584,7 @@ function Table(name, filename) {
 		if (schema && t.stringifySchema() !== schema)
 			t.extend(schema);
 
-	}).on('error', function() {
+	}).on('error', function(e) {
 		if (schema) {
 			t.parseSchema(schema.replace(/;|,/g, '|').trim().split('|'));
 			Fs.writeFileSync(t.filename, t.stringifySchema() + NEWLINE, 'utf8');
@@ -601,7 +601,7 @@ function Table(name, filename) {
 			t.pending_locks.length && (t.pending_locks = []);
 			t.pending_clean.length && (t.pending_clean = []);
 			t.pending_clear.length && (t.pending_clear = []);
-			t.throwReadonly();
+			t.throwReadonly(e);
 		}
 	});
 }
@@ -1168,8 +1168,8 @@ DP.stream = function(fn, repository, callback) {
 	return self;
 };
 
-DP.throwReadonly = function() {
-	throw new Error('Database "{0}" is readonly.'.format(this.name));
+DP.throwReadonly = function(e) {
+	throw new Error('Database "{0}" is readonly.'.format(this.name) + (e ? '\n' + e.toString() : '');
 };
 
 DP.scalar = function(type, field) {
