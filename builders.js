@@ -4723,7 +4723,11 @@ global.RUN = function(name, value, callback, param, controller, result) {
 				opt.next = null;
 				callback(error, opt.response, opt);
 			} else {
-				opt.response[opt.meta.current] = value;
+
+				if (result && (result === opt.meta.current || result === opt.name))
+					opt.output = value;
+
+				opt.response[opt.name] = value;
 				opt.meta.prev = opt.meta.current;
 				opt.$next();
 			}
@@ -4742,6 +4746,7 @@ global.RUN = function(name, value, callback, param, controller, result) {
 		opt.repeated = 0;
 		opt.error = new ErrorBuilder();
 		opt.error.path = 'operation: ' + key;
+		opt.name = opt.meta.current;
 		opt.meta.index = index;
 		opt.meta.current = key;
 		opt.$repeat = fn.$repeat;
@@ -4750,7 +4755,7 @@ global.RUN = function(name, value, callback, param, controller, result) {
 		opt.meta.next = name[index];
 		fn(opt);
 
-	}, () => callback(error.items.length ? error : null, result ? opt.response[result] : opt.response, opt));
+	}, () => callback(error.items.length ? error : null, result ? opt.output : opt.response, opt));
 };
 
 function OperationOptions(error, value, options, controller) {
