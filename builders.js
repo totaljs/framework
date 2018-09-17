@@ -4691,6 +4691,16 @@ global.RUN = function(name, value, callback, param, controller, result) {
 		controller = param.controller;
 	}
 
+	if (!result) {
+		if (typeof(param) === 'string') {
+			result = param;
+			param = EMPTYOBJECT;
+		} else if (typeof(controller) === 'string') {
+			result = controller;
+			controller = null;
+		}
+	}
+
 	if (typeof(name) === 'string')
 		name = name.split(',').trim();
 
@@ -4750,9 +4760,8 @@ global.RUN = function(name, value, callback, param, controller, result) {
 		opt.repeated = 0;
 		opt.error = new ErrorBuilder();
 		opt.error.path = 'operation: ' + key;
-		opt.name = opt.meta.current;
 		opt.meta.index = index;
-		opt.meta.current = key;
+		opt.name = opt.meta.current = key;
 		opt.$repeat = fn.$repeat;
 		opt.$current = fn;
 		opt.$next = next;
