@@ -7001,7 +7001,7 @@ F.service = function(count) {
 		keys = Object.keys(F.databasescleaner);
 		keys.wait(function(item, next) {
 			if (item[0] === '$')
-				TABLE(item).clean(next);
+				TABLE(item.substring(1)).clean(next);
 			else
 				NOSQL(item).clean(next);
 		});
