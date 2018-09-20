@@ -2875,8 +2875,7 @@ DatabaseBuilder.prototype.random = function() {
 
 DatabaseBuilder.prototype.sort = function(name, desc) {
 	var self = this;
-	if (!self.$iscache)
-		self.$options.sort = { name: name, asc: desc ? false : true };
+	self.$options.sort = { name: name, asc: desc ? false : true };
 	return self;
 };
 
@@ -2903,7 +2902,6 @@ DatabaseBuilder.prototype.compile = function(noTrimmer) {
 	if (key && cache) {
 		self.$mappers = cache.mitems;
 		self.$mappersexec = cache.mexec;
-		self.$options.sort = cache.sort;
 		return cache.filter;
 	}
 
@@ -2916,7 +2914,6 @@ DatabaseBuilder.prototype.compile = function(noTrimmer) {
 		if (cache) {
 			self.$mappers = cache.mitems;
 			self.$mappersexec = cache.mexec;
-			self.$options.sort = cache.sort;
 			return cache.filter;
 		}
 	}
@@ -2937,7 +2934,6 @@ DatabaseBuilder.prototype.compile = function(noTrimmer) {
 	cache.filter = new Function('doc', '$F', 'index', code);
 	cache.mexec = self.$mappersexec;
 	cache.mitems = self.$mappers;
-	cache.sort = self.$options.sort;
 	CACHE[key] = cache;
 	return cache.filter;
 };
@@ -3023,17 +3019,15 @@ DatabaseBuilder.prototype.done = function() {
 
 DatabaseBuilder.prototype.fields = function() {
 	var self = this;
-	if (!self.$iscache) {
-		var opt = self.$options;
-		for (var i = 0, length = arguments.length; i < length; i++) {
-			var name = arguments[i];
-			if (name[0] === '-') {
-				!opt.fields2 && (opt.fields2 = {});
-				opt.fields2[name.substring(1)] = 1;
-			} else {
-				!opt.fields && (opt.fields = []);
-				opt.fields.push(name);
-			}
+	var opt = self.$options;
+	for (var i = 0, length = arguments.length; i < length; i++) {
+		var name = arguments[i];
+		if (name[0] === '-') {
+			!opt.fields2 && (opt.fields2 = {});
+			opt.fields2[name.substring(1)] = 1;
+		} else {
+			!opt.fields && (opt.fields = []);
+			opt.fields.push(name);
 		}
 	}
 	return self;
