@@ -2682,44 +2682,44 @@ DP.add = function(type, value) {
 		case 'sec':
 		case 'second':
 		case 'seconds':
-			dt.setSeconds(dt.getSeconds() + value);
+			dt.setUTCSeconds(dt.getUTCSeconds() + value);
 			return dt;
 		case 'm':
 		case 'mm':
 		case 'minute':
 		case 'min':
 		case 'minutes':
-			dt.setMinutes(dt.getMinutes() + value);
+			dt.setUTCMinutes(dt.getUTCMinutes() + value);
 			return dt;
 		case 'h':
 		case 'hh':
 		case 'hour':
 		case 'hours':
-			dt.setHours(dt.getHours() + value);
+			dt.setUTCHours(dt.getUTCHours() + value);
 			return dt;
 		case 'd':
 		case 'dd':
 		case 'day':
 		case 'days':
-			dt.setDate(dt.getDate() + value);
+			dt.setUTCDate(dt.getUTCDate() + value);
 			return dt;
 		case 'w':
 		case 'ww':
 		case 'week':
 		case 'weeks':
-			dt.setDate(dt.getDate() + (value * 7));
+			dt.setUTCDate(dt.getUTCDate() + (value * 7));
 			return dt;
 		case 'M':
 		case 'MM':
 		case 'month':
 		case 'months':
-			dt.setMonth(dt.getMonth() + value);
+			dt.setUTCMonth(dt.getUTCMonth() + value);
 			return dt;
 		case 'y':
 		case 'yyyy':
 		case 'year':
 		case 'years':
-			dt.setFullYear(dt.getFullYear() + value);
+			dt.setUTCFullYear(dt.getUTCFullYear() + value);
 			return dt;
 	}
 	return dt;
@@ -2800,16 +2800,16 @@ DP.extend = function(date) {
 
 			arr = m.split(':');
 			tmp = +arr[0];
-			tmp >= 0 && dt.setHours(tmp);
+			tmp >= 0 && dt.setUTCHours(tmp);
 
 			if (arr[1]) {
 				tmp = +arr[1];
-				tmp >= 0 && dt.setMinutes(tmp);
+				tmp >= 0 && dt.setUTCMinutes(tmp);
 			}
 
 			if (arr[2]) {
 				tmp = +arr[2];
-				tmp >= 0 && dt.setSeconds(tmp);
+				tmp >= 0 && dt.setUTCSeconds(tmp);
 			}
 
 			continue;
@@ -2819,16 +2819,16 @@ DP.extend = function(date) {
 			arr = m.split('-');
 
 			tmp = +arr[0];
-			tmp && dt.setFullYear(tmp);
+			tmp && dt.setUTCFullYear(tmp);
 
 			if (arr[1]) {
 				tmp = +arr[1];
-				tmp >= 0 && dt.setMonth(tmp - 1);
+				tmp >= 0 && dt.setUTCMonth(tmp - 1);
 			}
 
 			if (arr[2]) {
 				tmp = +arr[2];
-				tmp >= 0 && dt.setDate(tmp);
+				tmp >= 0 && dt.setUTCDate(tmp);
 			}
 
 			continue;
@@ -2839,16 +2839,16 @@ DP.extend = function(date) {
 
 			if (arr[2]) {
 				tmp = +arr[2];
-				!isNaN(tmp) && dt.setFullYear(tmp);
+				!isNaN(tmp) && dt.setUTCFullYear(tmp);
 			}
 
 			if (arr[1]) {
 				tmp = +arr[1];
-				!isNaN(tmp) && dt.setMonth(tmp - 1);
+				!isNaN(tmp) && dt.setUTCMonth(tmp - 1);
 			}
 
 			tmp = +arr[0];
-			!isNaN(tmp) && dt.setDate(tmp);
+			!isNaN(tmp) && dt.setUTCDate(tmp);
 
 			continue;
 		}
