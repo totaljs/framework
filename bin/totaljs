@@ -315,8 +315,8 @@ function parse_csv(content) {
 		if (arr.length <= 1)
 			return;
 
-		var key = arr[0].trim().replace(/(^\")|(\"$)/g, '');
-		var value = arr[2].trim().replace(/(^\")|(\"$)/g, '');
+		var key = arr[0].trim().replace(/(^")|("$)/g, '');
+		var value = arr[2].trim().replace(/(^")|("$)/g, '');
 		if (!key || !value)
 			return;
 
@@ -810,7 +810,7 @@ function git(dir, type) {
 		}
 
 		F.path.mkdir(dir);
-		exec('git clone https://github.com/totaljs/{0}.git {1}'.format(type, dir), function(err) {
+		exec('git clone https://github.com/totaljs/{0}.git {1}'.format(type, dir), function() {
 			F.path.mkdir(path.join(dir, '/node_modules/'));
 			F.rmdir(path.join(dir, '.git'), function() {
 				F.unlink(path.join(dir, '.gitignore'), function() {
