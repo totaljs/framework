@@ -316,7 +316,7 @@ function parse_csv(content) {
 			return;
 
 		var key = arr[0].trim().replace(/(^\")|(\"$)/g, '');
-		var value = arr[1].trim().replace(/(^\")|(\"$)/g, '');
+		var value = arr[2].trim().replace(/(^\")|(\"$)/g, '');
 		if (!key || !value)
 			return;
 
