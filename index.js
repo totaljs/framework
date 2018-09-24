@@ -868,6 +868,7 @@ function Framework() {
 			path: 0,
 			upload: 0,
 			schema: 0,
+			operation: 0,
 			blocked: 0,
 			'delete': 0,
 			mobile: 0,
@@ -14600,13 +14601,18 @@ function extend_request(PROTO) {
 
 	PROTO.$total_validate = function(route, next, code) {
 
-		this.$total_schema = false;
-
-		if (!this.$total_route.schema || this.method === 'DELETE')
-			return next(this, code);
-
 		var self = this;
-		F.onSchema(this, this.$total_route.schema[0], this.$total_route.schema[1], function(err, body) {
+		self.$total_schema = false;
+
+		if (!self.$total_route.schema || self.method === 'DELETE')
+			return next(self, code);
+
+		if (!self.$total_route.schema[1]) {
+			F.stats.request.operation++;
+			return next(self, code);
+		}
+
+		F.onSchema(self, self.$total_route.schema[0], self.$total_route.schema[1], function(err, body) {
 
 			if (err) {
 				self.$total_400(err);
