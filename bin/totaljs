@@ -307,10 +307,16 @@ function parse_csv(content) {
 	var output = {};
 	var max = 0;
 
-	content.split('\n').forEach(function(line) {
+	content.split('\n').forEach(function(line, index) {
+
+		if (!index)
+			return;
+
 		line = line.trim();
+
 		if (!line)
 			return;
+
 		var arr = line.split(';');
 		if (arr.length <= 1)
 			return;
