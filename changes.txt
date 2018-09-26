@@ -12,6 +12,7 @@
 - added: NOSQL/TABLE modify supports `!field` as boolean toggle
 - added: NOSQL/TABLE modify supports a new type `$age: 'js_code'` with some JS code
 - added: NOSQL/TABLE update supports a new type `'js_code'` with some JS code
+- added: a new config item `default-restbuilder-timeout : 10000`
 
 - updated: `debug` mode creates a `start_name_script.pid` instead of `debug.pid`
 - updated: `NEWOPERATION()` supports `repeat` and `stop` argument

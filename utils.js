@@ -485,7 +485,7 @@ global.REQUEST = exports.request = function(url, flags, data, callback, cookies,
 	if (callback === NOOP)
 		callback = null;
 
-	var options = { length: 0, timeout: timeout || 10000, evt: new EventEmitter2(), encoding: typeof(encoding) !== 'string' ? ENCODING : encoding, callback: callback, post: false, redirect: 0 };
+	var options = { length: 0, timeout: timeout || CONF['default-restbuilder-timeout'], evt: new EventEmitter2(), encoding: typeof(encoding) !== 'string' ? ENCODING : encoding, callback: callback, post: false, redirect: 0 };
 	var method;
 	var type = 0;
 	var isCookies = false;

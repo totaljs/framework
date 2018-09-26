@@ -709,6 +709,7 @@ function Framework() {
 		// in milliseconds
 		'default-request-timeout': 3000,
 		'default-dependency-timeout': 1500,
+		'default-restbuilder-timeout': 10000,
 
 		// otherwise is used ImageMagick (Heroku supports ImageMagick)
 		// gm = graphicsmagick or im = imagemagick
@@ -8625,6 +8626,7 @@ F.$configure_configs = function(arr, rewrite) {
 			case 'default-interval-websocket-ping':
 			case 'default-interval-clear-dnscache':
 			case 'default-dependency-timeout':
+			case 'default-restbuilder-timeout':
 			case 'nosql-cleaner':
 				obj[name] = U.parseInt(value);
 				break;
