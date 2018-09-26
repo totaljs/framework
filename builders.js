@@ -4610,7 +4610,7 @@ global.NEWOPERATION = function(name, fn, repeat, stop) {
 	operations[name].$owner = F.$owner();
 	operations[name].$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	operations[name].$repeat = repeat;
-	operations[name].$stop = stop;
+	operations[name].$stop = stop !== false;
 
 	return this;
 };
