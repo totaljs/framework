@@ -625,6 +625,12 @@ global.REQUEST = exports.request = function(url, flags, data, callback, cookies,
 	}
 
 	var uri = Url.parse(url);
+
+	if (!uri.hostname || !uri.host) {
+		callback && callback(new Error('URL doesn\'t contain a hostname'), '', 0);
+		return;
+	}
+
 	uri.method = method;
 	uri.headers = headers;
 	options.uri = uri;
