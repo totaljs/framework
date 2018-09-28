@@ -739,6 +739,7 @@ function Framework() {
 		'nosql-inmemory': null, // String Array
 		'nosql-cleaner': 1440,
 		'nosql-logger': true,
+		logger: false,
 
 		// Used in F.service()
 		// All values are in minutes
@@ -12004,6 +12005,8 @@ Controller.prototype.callback = function(view) {
 	var self = this;
 	return function(err, data) {
 
+		CONF.logger && self.req.$logger && F.ilogger(null, self.req);
+
 		if (self.res && self.res.success)
 			return;
 
@@ -16425,6 +16428,10 @@ function existsSync(filename, file) {
 	}
 }
 
+function getLoggerMiddleware(name) {
+	return 'MIDDLEWARE("' + name + '")';
+}
+
 function async_middleware(index, req, res, middleware, callback, options, controller) {
 
 	if (res.success || res.headersSent || res.finished) {
@@ -16444,10 +16451,13 @@ function async_middleware(index, req, res, middleware, callback, options, contro
 	}
 
 	var output;
+	var $now;
+
+	if (CONF.logger)
+		$now = Date.now();
 
 	if (item.$newversion) {
 		var opt = req.$total_middleware;
-
 		if (!index || !opt) {
 			opt = req.$total_middleware = new MiddlewareOptions();
 			opt.req = req;
@@ -16457,6 +16467,7 @@ function async_middleware(index, req, res, middleware, callback, options, contro
 			opt.controller = controller;
 			opt.callback2 = callback;
 			opt.next = function(err) {
+				CONF.logger && F.ilogger(getLoggerMiddleware(name), req, $now);
 				var mid = req.$total_middleware;
 				if (err === false) {
 					req.$total_route && req.$total_success();
@@ -16476,6 +16487,7 @@ function async_middleware(index, req, res, middleware, callback, options, contro
 
 	} else {
 		output = item.call(framework, req, res, function(err) {
+			CONF.logger && F.ilogger(getLoggerMiddleware(name), req, $now);
 			if (err === false) {
 				req.$total_route && req.$total_success();
 				callback = null;
@@ -16630,9 +16642,10 @@ function controller_json_workflow(id) {
 	self.id = id;
 	var w = self.route.workflow;
 
+	CONF.logger && (self.req.$logger = []);
+
 	if (w instanceof Object) {
 		if (!w.type) {
-
 
 			// IS IT AN OPERATION?
 			if (!self.route.schema.length) {
@@ -16680,6 +16693,9 @@ function controller_json_workflow_multiple(id) {
 	var self = this;
 	self.id = id;
 	var w = self.route.workflow;
+
+	CONF.logger && (self.req.$logger = []);
+
 	if (w instanceof Object) {
 		if (!w.type) {
 
@@ -16742,6 +16758,61 @@ function parseSchema(name) {
 	F.temporary.internal['$$$' + name] = schema;
 	return schema;
 }
+
+function ilogger(body) {
+	F.path.verify('logs');
+	U.queue('F.ilogger', 5, (next) => Fs.appendFile(U.combine(F.config['directory-logs'], 'logger.log'), body, next));
+}
+
+F.ilogger = function(name, req, ts) {
+
+	if (req && req instanceof Controller)
+		req = req.req;
+
+	var isc = CONF.logger === 'console';
+	var divider = '';
+
+	for (var i = 0; i < (isc ? 60 : 220); i++)
+		divider += '-';
+
+	var msg;
+
+	if (req && !name && req.$logger && req.$logger.length) {
+
+		msg = req.method + ' ' + req.url;
+
+		req.$logger.unshift(msg);
+		req.$logger.push(divider + '\n');
+
+		if (isc)
+			console.log(req.$logger.join('\n'));
+		else
+			ilogger(req.$logger.join('\n'));
+
+		req.$logger = null;
+		return;
+	}
+
+	if (!name)
+		return;
+
+	var dt = new Date();
+
+	msg = dt.format('yyyy-MM-dd HH:mm:ss') + ' | ' + name.padRight(40, ' ') + ' | ' + (((dt.getTime() - ts) / 1000).format(3) + ' sec.').padRight(12) + ' | ' + (req ? (req.method + ' ' + req.url).max(70) : '').padRight(70);
+
+	if (isc) {
+		if (req && req.$logger)
+			req.$logger.push(msg);
+		else
+			console.log(msg + '\n' + divider);
+	} else {
+		msg = msg + ' | ' + (req ? (req.ip || '') : '').padRight(20) + ' | ' + (req && req.headers ? (req.headers['user-agent'] || '') : '');
+		if (req && req.$logger)
+			req.$logger.push(msg);
+		else
+			ilogger(msg + '\n' + divider + '\n');
+	}
+};
 
 // Because of controller prototypes
 // It's used in F.view() and F.viewCompile()
