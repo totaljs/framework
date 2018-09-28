@@ -16772,7 +16772,7 @@ F.ilogger = function(name, req, ts) {
 	var isc = CONF.logger === 'console';
 	var divider = '';
 
-	for (var i = 0; i < (isc ? 60 : 220); i++)
+	for (var i = 0; i < (isc ? 64 : 220); i++)
 		divider += '-';
 
 	var msg;
@@ -16782,12 +16782,14 @@ F.ilogger = function(name, req, ts) {
 		msg = req.method + ' ' + req.url;
 
 		req.$logger.unshift(msg);
-		req.$logger.push(divider + '\n');
+		req.$logger.push(divider);
 
 		if (isc)
 			console.log(req.$logger.join('\n'));
-		else
+		else {
+			req.$logger.push('');
 			ilogger(req.$logger.join('\n'));
+		}
 
 		req.$logger = null;
 		return;
