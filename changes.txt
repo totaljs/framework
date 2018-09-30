@@ -30,6 +30,7 @@
 - fixed: extracting `bundles` (added `/flow/` and `/dashboard/`)
 - fixed: subdomain routing for `localhost`
 - fixed: service for database cleaner
+- fixed: rendering group of components
 
 - improved: NoSQL reader
 

@@ -11312,10 +11312,19 @@ Controller.prototype.head = function() {
 	var self = this;
 
 	if (!arguments.length) {
-		// OBSOLETE: this is useless
-		// F.emit('controller-render-head', self);
 		var author = self.repository[REPOSITORY_META_AUTHOR] || self.config.author;
-		return (author ? '<meta name="author" content="' + author + '" />' : '') + (self.repository[REPOSITORY_HEAD] || '');
+		var plus = '';
+		if (self.$hasComponents) {
+			if (self.$hasComponents instanceof Array) {
+				for (var i = 0; i < self.$hasComponents.length; i++) {
+					var group = F.components.groups[self.$hasComponents[i]];
+					if (group)
+						plus += group.links;
+				}
+			} else
+				plus = F.components.links;
+		}
+		return (author ? '<meta name="author" content="' + author + '" />' : '') + (self.repository[REPOSITORY_HEAD] || '') + plus;
 	}
 
 	var header = (self.repository[REPOSITORY_HEAD] || '');
@@ -11532,7 +11541,9 @@ Controller.prototype.$import = function() {
 		}
 
 		if (filename === 'components' && F.components.has) {
-			builder += F.components.links;
+			// Generated in controller.head()
+			// self.$hasComponents = true;
+			// builder += F.components.links;
 			continue;
 		}
 

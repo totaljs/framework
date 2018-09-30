@@ -55,8 +55,6 @@ const REG_BLOCK_BEG = /@\{block.*?\}/i;
 const REG_BLOCK_END = /@\{end\}/i;
 const REG_SKIP_1 = /\('|"/;
 const REG_SKIP_2 = /,(\s)?\w+/;
-const REG_HEAD = /<\/head>/i;
-const REG_COMPONENTS = /@{(\s)?(component|components)(\s)?\(/i;
 const REG_COMPONENTS_GROUP = /('|")[a-z0-9]+('|")/i;
 const HTTPVERBS = { 'get': true, 'post': true, 'options': true, 'put': true, 'delete': true, 'patch': true, 'upload': true, 'head': true, 'trace': true, 'propfind': true };
 const RENDERNOW = ['self.$import(', 'self.route', 'self.$js(', 'self.$css(', 'self.$favicon(', 'self.$script(', '$STRING(self.resource(', '$STRING(RESOURCE(', 'self.translate(', 'language', 'self.sitemap_url(', 'self.sitemap_name(', '$STRING(CONFIG(', '$STRING(config.', '$STRING(config[', '$STRING(CONF.', '$STRING(CONF[', '$STRING(config('];
@@ -1724,39 +1722,6 @@ function view_parse(content, minify, filename, controller) {
 	var index = 0;
 	var isCookie = false;
 
-	if (!controller.$hasComponents)
-		controller.$hasComponents = REG_COMPONENTS.test(content) && REG_HEAD.test(content);
-
-	if (controller.$hasComponents) {
-
-		index = content.indexOf('@{import(');
-
-		var add = true;
-		while (index !== -1) {
-			var str = content.substring(index, content.indexOf(')', index));
-			if (str.indexOf('components') !== -1) {
-				add = false;
-				break;
-			} else
-				index = content.indexOf('@{import(', index + str.length);
-		}
-
-		if (add && controller.$hasComponents) {
-			if (controller.$hasComponents instanceof Array) {
-				content = content.replace(REG_HEAD, function(text) {
-					var str = '';
-					for (var i = 0; i < controller.$hasComponents.length; i++) {
-						var group = F.components.groups[controller.$hasComponents[i]];
-						if (group)
-							str += group.links;
-					}
-					return str + text;
-				});
-			} else
-				content = content.replace(REG_HEAD, text => F.components.links + text);
-		}
-	}
-
 	function escaper(value) {
 
 		var is = REG_TAGREMOVE.test(value);
@@ -1938,24 +1903,24 @@ function view_parse(content, minify, filename, controller) {
 						if (!a) {
 							var isMeta = tmp.indexOf('\'meta\'') !== -1;
 							var isHead = tmp.indexOf('\'head\'') !== -1;
-							var isComponent = tmp.indexOf('\'components\'') !== -1;
-							tmp = tmp.replace(/'(meta|head|components)',/g, '').replace(/(,,|,\)|\s{1,})/g, '');
-							if (isMeta || isHead || isComponent) {
+							tmp = tmp.replace(/'(meta|head)',/g, '').replace(/(,,|,\)|\s{1,})/g, '');
+							if (isMeta || isHead) {
 								var tmpimp = '';
 								if (isMeta)
 									tmpimp += (isMeta ? '\'meta\'' : '');
 								if (isHead)
 									tmpimp += (tmpimp ? ',' : '') + (isHead ? '\'head\'' : '');
-								if (isComponent)
-									tmpimp += (tmpimp ? ',' : '') + (isComponent ? '\'components\'' : '');
 								builder += '+self.$import(' + tmpimp + ')';
 							}
 						}
+						if (tmp.indexOf('components') !== -1)
+							controller.$hasComponents = true;
 						can = true;
 						break;
 					}
 				}
-			}
+			} else if (!controller.$hasComponents && tmp.indexOf('components') !== -1)
+				controller.$hasComponents = true;
 
 			if (can && !counter) {
 				try {
@@ -2000,7 +1965,8 @@ function view_parse(content, minify, filename, controller) {
 	if (RELEASE)
 		builder = builder.replace(/(\+\$EMPTY\+)/g, '+').replace(/(\$output=\$EMPTY\+)/g, '$output=').replace(/(\$output\+=\$EMPTY\+)/g, '$output+=').replace(/(\}\$output\+=\$EMPTY)/g, '}').replace(/(\{\$output\+=\$EMPTY;)/g, '{').replace(/(\+\$EMPTY\+)/g, '+').replace(/(>'\+'<)/g, '><').replace(/'\+'/g, '');
 
-	var fn = '(function(self,repository,model,session,query,body,url,global,helpers,user,config,functions,index,output,files,mobile,settings){var get=query;var post=body;var G=F.global;var R=this.repository;var M=model;var theme=this.themeName;var language=this.language;var sitemap=this.repository.$sitemap;' + (isCookie ? 'var cookie=function(name){return self.req.cookie(name)};' : '') + (functions.length ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})';
+	var fn = ('(function(self,repository,model,session,query,body,url,global,helpers,user,config,functions,index,output,files,mobile,settings){self.$hasComponents=' + (controller.$hasComponents instanceof Array ? JSON.stringify(controller.$hasComponents).replace(/"/g, '\'') : controller.$hasComponents === true ? 'true' : 'null') + ';var get=query;var post=body;var G=F.global;var R=this.repository;var M=model;var theme=this.themeName;var language=this.language;var sitemap=this.repository.$sitemap;' + (isCookie ? 'var cookie=function(name){return self.req.cookie(name)};' : '') + (functions.length ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})');
+
 	try {
 		fn = eval(fn);
 	} catch (e) {
