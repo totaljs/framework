@@ -19,6 +19,7 @@
 - updated: `debug` mode creates a `start_name_script.pid` instead of `debug.pid`
 - updated: `NEWOPERATION()` supports `repeat` and `stop` argument
 - updated: routing, now it supports operations in the form `ROUTE('..  * --> @save_operation @load_operation (response)')`
+- updated: `ROUTE()` supports multiple HTTP method declaration `ROUTE('GET,POST,PUT /something/', action)`
 
 - fixed: a critical bug with storing uploaded files via `httpfile.fs()` or `httpfile.nosql()`
 - fixed: `nosql.update()` and `nosql.modify()` methods if the first argument is a function

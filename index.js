@@ -1854,12 +1854,17 @@ global.ROUTE = F.web = F.route = function(url, funcExecute, flags, length, langu
 			url = url.substring(index + 1).trim();
 		}
 
-
 		url = url.replace(/(^|\s?)\*([a-z0-9]|\s).*?$/i, function(text) {
 			!flags && (flags = []);
 			flags.push(text.trim());
 			return '';
 		});
+
+		if (method.indexOf(',') !== -1) {
+			!flags && (flags = []);
+			method.split(',').forEach(m => flags.push(m.trim()));
+			method = '';
+		}
 	}
 
 	if (url[0] === '#') {
