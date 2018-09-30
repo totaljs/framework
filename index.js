@@ -691,6 +691,7 @@ function Framework() {
 		'default-layout': 'layout',
 		'default-theme': '',
 		'default-proxy': '',
+		'default-request-maxkeys': 33,
 
 		// default maximum request size / length
 		// default 10 kB
@@ -8619,6 +8620,7 @@ F.$configure_configs = function(arr, rewrite) {
 			case 'default-cors-maxage':
 			case 'default-request-timeout':
 			case 'default-request-maxlength':
+			case 'default-request-maxkeys':
 			case 'default-websocket-maxlength':
 			case 'default-interval-clear-cache':
 			case 'default-interval-clear-resources':
@@ -8777,6 +8779,8 @@ F.$configure_configs = function(arr, rewrite) {
 
 	if (F.config['allow-performance'])
 		http.globalAgent.maxSockets = 9999;
+
+	QUERYPARSEROPTIONS.maxKeys = F.config['default-request-maxkeys'] || 33;
 
 	var xpowered = F.config['default-xpoweredby'];
 
