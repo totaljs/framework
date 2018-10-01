@@ -358,6 +358,12 @@ global.$MAKE = function(schema, model, filter, callback, novalidate, argument) {
 	var o = framework_builders.getschema(schema[0], schema[1]);
 	var w = null;
 
+	if (typeof(filter) === 'function') {
+		var tmp = callback;
+		callback = filter;
+		filter = tmp;
+	}
+
 	if (filter instanceof Array) {
 		w = {};
 		for (var i = 0; i < filter.length; i++)

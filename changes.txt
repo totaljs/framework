@@ -34,6 +34,7 @@
 - fixed: service for database cleaner
 - fixed: rendering group of components
 - fixed: RESTBuilder - JSON request without param sends an empty object
+- fixed: `$MAKE()` with `callback`
 
 - improved: NoSQL reader
 
