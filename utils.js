@@ -606,6 +606,9 @@ global.REQUEST = exports.request = function(url, flags, data, callback, cookies,
 			data.length && url.indexOf('?') === -1 && (url += '?' + data);
 			data = '';
 		}
+
+		if (type === 1 && (data === EMPTYOBJECT || !data))
+			data = BUFEMPTYJSON;
 	}
 
 	if (data && type !== 4) {
@@ -6186,6 +6189,8 @@ RP.scalar = function(type, field) {
 exports.reader = function() {
 	return new Reader();
 };
+
+const BUFEMPTYJSON = exports.createBuffer('{}');
 
 global.WAIT = exports.wait;
 !global.F && require('./index');

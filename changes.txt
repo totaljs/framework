@@ -33,6 +33,7 @@
 - fixed: subdomain routing for `localhost`
 - fixed: service for database cleaner
 - fixed: rendering group of components
+- fixed: RESTBuilder - JSON request without param sends an empty object
 
 - improved: NoSQL reader
 
