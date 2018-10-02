@@ -36,6 +36,7 @@
 - fixed: RESTBuilder - JSON request without param sends an empty object
 - fixed: `$MAKE()` with `callback`
 - fixed: `String.slug()` for UTF - Chinese/Japan/Arabic/etc. chars
+- fixed: async rendering of `components`
 
 - improved: NoSQL reader
 
