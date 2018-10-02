@@ -275,7 +275,6 @@ exports.wait = function(fnValid, fnCallback, timeout, interval) {
 			clearInterval(id_interval);
 			clearTimeout(id_timeout);
 			fnCallback && fnCallback(null, true);
-			return;
 		}
 
 	}, interval || 500);
@@ -4048,6 +4047,11 @@ SP.slug = SP.toSlug = SP.toLinker = SP.linker = function(max) {
 		var c = self[i];
 		var code = self.charCodeAt(i);
 
+		if (code > 540){
+			builder = '';
+			break;
+		}
+
 		if (builder.length >= max)
 			break;
 
@@ -4060,8 +4064,17 @@ SP.slug = SP.toSlug = SP.toLinker = SP.linker = function(max) {
 		if ((code > 47 && code < 58) || (code > 94 && code < 123))
 			builder += c;
 	}
-	var l = builder.length - 1;
-	return builder[l] === '-' ? builder.substring(0, l) : builder;
+
+	if (builder.length > 1) {
+		length = builder.length - 1;
+		return builder[length] === '-' ? builder.substring(0, length) : builder;
+	} else if (!length)
+		return '';
+
+	length = self.length;
+	self = self.replace(/\s/g, '');
+	builder = self.crc32(true).toString(36) + '';
+	return self[0].charCodeAt(0).toString(32) + builder + self[self.length - 1].charCodeAt(0).toString(32) + length;
 };
 
 SP.pluralize = function(zero, one, few, other) {
