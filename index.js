@@ -12825,10 +12825,8 @@ Controller.prototype.$viewrender = function(filename, generator, model, headers,
 
 				obj.options = obj.settings = item.settings;
 				obj.next = obj.callback = function(model) {
-
 					if (arguments.length > 1)
 						model = arguments[1];
-
 					item.value = self.component(item.name, item.settings, model);
 					value = value.replace(item.replace, item.value);
 					if (isLayout && self.precache)
@@ -12892,7 +12890,7 @@ Controller.prototype.$viewrender = function(filename, generator, model, headers,
 					done.callback && done.callback(null, value);
 				}
 
-			}, 3);
+			});
 
 			return cachekey ? value : (partial ? (fn => done.callback = fn) : self);
 		}
