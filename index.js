@@ -605,9 +605,14 @@ var directory = U.$normalize(require.main ? Path.dirname(require.main.filename) 
 // F.service() changes the values below:
 var DATE_EXPIRES = new Date().add('y', 1).toUTCString();
 
+const _randomstring = 'abcdefghijklmnoprstuwxy'.split('');
+function random3string() {
+	return _randomstring[(Math.random() * _randomstring.length) >> 0] + _randomstring[(Math.random() * _randomstring.length) >> 0] + _randomstring[(Math.random() * _randomstring.length) >> 0];
+}
+
 const WEBSOCKET_COMPRESS = U.createBuffer([0x00, 0x00, 0xFF, 0xFF]);
 const WEBSOCKET_COMPRESS_OPTIONS = { windowBits: Zlib.Z_DEFAULT_WINDOWBITS };
-const UIDGENERATOR = { date: new Date().format('yyMMddHHmm'), instance: 'abcdefghijklmnoprstuwxy'.split('').random().join('').substring(0, 3), index: 1, types: {} };
+const UIDGENERATOR = { date: new Date().format('yyMMddHHmm'), instance: random3string(), index: 1, types: {} };
 const EMPTYBUFFER = U.createBufferSize(0);
 global.EMPTYBUFFER = EMPTYBUFFER;
 
@@ -6880,6 +6885,7 @@ F.service = function(count) {
 
 	UIDGENERATOR.date = NOW.format('yyMMddHHmm');
 	UIDGENERATOR.index = 1;
+	UIDGENERATOR.instance = random3string();
 
 	var keys;
 

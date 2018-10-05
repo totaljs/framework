@@ -39,6 +39,7 @@
 - fixed: async rendering of `components`
 
 - improved: NoSQL reader
+- improved: `UID()` -> now it changes a random hash each minute
 
 ======= 3.0.0
 
