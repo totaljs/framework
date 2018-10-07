@@ -8,6 +8,7 @@
 - added: support for `SameSite` cookie attribute
 - added: `RUN()` for executing multiple Total.js operations
 - added: a new global alias `CONF` (it's a reference to config) for `F.config`
+- added: a new global alias `FUNC` (it's a reference to functions) for `F.functions`
 - added: `DatabaseBuilder.arg(key, value)` for adding an dynamic argument
 - added: NOSQL/TABLE modify supports `!field` as boolean toggle
 - added: NOSQL/TABLE modify supports a new type `$age: 'js_code'` with some JS code

@@ -767,7 +767,7 @@ function Framework() {
 	self.$bundling = true;
 	self.resources = {};
 	self.connections = {};
-	self.functions = {};
+	global.FUNC = self.functions = {};
 	self.themes = {};
 	self.versions = null;
 	self.workflows = {};
