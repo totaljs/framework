@@ -2557,10 +2557,12 @@ global.MERGE = F.merge = function(url) {
 	if (url[0] !== '/')
 		url = '/' + url;
 
-	var filename = F.path.temp((F.id ? 'i-' + F.id + '_' : '') + 'merged_' + createTemporaryKey(url));
+	var key = createTemporaryKey(url);
+	var filename = F.path.temp((F.id ? 'i-' + F.id + '_' : '') + 'merged_' + key);
 	F.routes.merge[url] = { filename: filename.replace(/\.(js|css)$/g, ext => '.min' + ext), files: arr };
 	Fs.unlink(F.routes.merge[url].filename, NOOP);
 	F.owners.push({ type: 'merge', owner: _owner, id: url });
+	delete F.temporary.notfound[key];
 	return F;
 };
 
@@ -8486,10 +8488,9 @@ F.$configure_versions = function(arr, clean) {
 							var index = key.lastIndexOf('.');
 							filename = key.substring(0, index) + '-' + hash + key.substring(index);
 							F.versions[key] = filename;
-							var keys = Object.keys(F.temporary.other);
-							for (var i = 0; i < keys[i]; i++)
-								if (keys[i].substring(0, 4) === 'view')
-									delete F.temporary.other[keys[i]];
+							F.temporary.views = {};
+							F.temporary.other = {};
+							global.$VIEWCACHE = [];
 						}
 					});
 				});
