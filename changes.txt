@@ -37,6 +37,7 @@
 - fixed: `$MAKE()` with `callback`
 - fixed: `String.slug()` for UTF - Chinese/Japan/Arabic/etc. chars
 - fixed: async rendering of `components`
+- fixed: RESTBuilder cache works only if the response status is `200`
 
 - improved: NoSQL reader
 - improved: `UID()` -> now it changes a random hash each minute

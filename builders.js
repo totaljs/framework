@@ -4610,13 +4610,13 @@ RESTBuilder.prototype.exec = function(callback) {
 				return callback(err, EMPTYOBJECT, output);
 
 			self.$schema.make(self.maketransform(output.value, output), function(err, model) {
-				!err && key && F.cache.add(key, output, self.$cache_expire);
+				!err && key && output.status === 200 && F.cache.add(key, output, self.$cache_expire);
 				callback(err, err ? EMPTYOBJECT : model, output);
 				output.cache = true;
 			});
 
 		} else {
-			!err && key && F.cache.add(key, output, self.$cache_expire);
+			!err && key && output.status === 200 && F.cache.add(key, output, self.$cache_expire);
 			callback(err, self.maketransform(output.value, output), output);
 			output.cache = true;
 		}
