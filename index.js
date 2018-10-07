@@ -14918,7 +14918,7 @@ function extend_response(PROTO) {
 			options = {};
 
 		options.path = options.path || '/';
-		expires &&  builder.push('Expires=' + expires.toUTCString());
+		expires && builder.push('Expires=' + expires.toUTCString());
 		options.domain && builder.push('Domain=' + options.domain);
 		options.path && builder.push('Path=' + options.path);
 		options.secure && builder.push('Secure');
