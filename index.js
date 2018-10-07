@@ -8486,6 +8486,10 @@ F.$configure_versions = function(arr, clean) {
 							var index = key.lastIndexOf('.');
 							filename = key.substring(0, index) + '-' + hash + key.substring(index);
 							F.versions[key] = filename;
+							var keys = Object.keys(F.temporary.other);
+							for (var i = 0; i < keys[i]; i++)
+								if (keys[i].substring(0, 4) === 'view')
+									delete F.temporary.other[keys[i]];
 						}
 					});
 				});
