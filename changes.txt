@@ -40,6 +40,7 @@
 - fixed: async rendering of `components`
 - fixed: RESTBuilder cache works only if the response status is `200`
 - fixed: compressing CSS with `\t` tabs
+- fixed: `controller.autoclear()`
 
 - improved: NoSQL reader
 - improved: `UID()` -> now it changes a random hash each minute

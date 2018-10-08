@@ -12089,7 +12089,7 @@ Controller.prototype.noClear = function(enable) {
 };
 
 Controller.prototype.autoclear = function(enable) {
-	this.req._manual = enable === true;
+	this.req._manual = enable === false;
 	return this;
 };
 
