@@ -4664,10 +4664,11 @@ function $decodeURIComponent(value) {
 	}
 }
 
-global.NEWOPERATION = function(name, fn, repeat, stop) {
+global.NEWOPERATION = function(name, fn, repeat, stop, binderror) {
 
 	// @repeat {Number} How many times will be the operation repeated after error?
 	// @stop {Boolean} Stop when the error is thrown
+	// @binderror {Boolean} Binds error when chaining of operations
 
 	// Remove operation
 	if (fn == null) {
@@ -4680,6 +4681,7 @@ global.NEWOPERATION = function(name, fn, repeat, stop) {
 	operations[name].$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	operations[name].$repeat = repeat;
 	operations[name].$stop = stop !== false;
+	operations[name].$binderror = binderror === true;
 
 	return this;
 };
@@ -4814,7 +4816,12 @@ global.RUN = function(name, value, callback, param, controller, result) {
 			opt.repeated++;
 			setImmediate(opt => opt.$current(opt), opt);
 		} else {
-			opt.error.items.length && error.push(opt.error);
+			if (opt.error.items.length) {
+				error.push(opt.error);
+				if (opt.$current.$binderror)
+					value = opt.error.output(false);
+			}
+
 			if (opt.error.items.length && opt.$current.$stop) {
 				name = null;
 				opt.next = null;

@@ -18,7 +18,7 @@
 - added: a new config item `logger : false` which enables logging for Middleware, Schemas and Operations
 
 - updated: `debug` mode creates a `start_name_script.pid` instead of `debug.pid`
-- updated: `NEWOPERATION()` supports `repeat` and `stop` argument
+- updated: `NEWOPERATION()` supports `repeat`, `stop` and `binderror` arguments (more in docs)
 - updated: routing, now it supports operations in the form `ROUTE('..  * --> @save_operation @load_operation (response)')`
 - updated: `ROUTE()` supports multiple HTTP method declaration `ROUTE('GET,POST,PUT /something/', action)`
 
