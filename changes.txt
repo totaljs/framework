@@ -23,6 +23,7 @@
 - updated: `ROUTE()` supports multiple HTTP method declaration `ROUTE('GET,POST,PUT /something/', action)`
 
 - fixed: a critical bug with storing uploaded files via `httpfile.fs()` or `httpfile.nosql()`
+- fixed: a critical bug with JavaScript minificator
 - fixed: `nosql.update()` and `nosql.modify()` methods if the first argument is a function
 - fixed: `F.wait()` in the test mode
 - fixed: `LOCALIZE()` for nested directories

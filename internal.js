@@ -1202,7 +1202,7 @@ function minify_javascript(data) {
 			}
 		}
 
-		if (c === '+' || c === '-' && next === ' ') {
+		if ((c === '+' || c === '-') && next === ' ') {
 			if (data[index + 1] === c) {
 				index += 2;
 				output.push(c);
