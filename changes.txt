@@ -16,6 +16,7 @@
 - added: a new config item `default-restbuilder-timeout : 10000`
 - added: a new config item `default-request-maxkeys : 33` for restricting query max. keys
 - added: a new config item `logger : false` which enables logging for Middleware, Schemas and Operations
+- added: `SchemaOptions` and `OperationOptions` supports `$.cancel()` method
 
 - updated: `debug` mode creates a `start_name_script.pid` instead of `debug.pid`
 - updated: `NEWOPERATION()` supports `repeat`, `stop` and `binderror` arguments (more in docs)

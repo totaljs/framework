@@ -91,6 +91,16 @@ SchemaOptions.prototype = {
 	}
 };
 
+SchemaOptions.prototype.cancel = function() {
+	var self = this;
+	self.callback = self.next = null;
+	self.error = null;
+	self.controller = null;
+	self.model = null;
+	self.options = null;
+	return self;
+};
+
 SchemaOptions.prototype.clean = function() {
 	return this.model.$clean();
 };
@@ -4916,6 +4926,16 @@ OperationOptions.prototype = {
 	get query() {
 		return this.controller ? this.controller.query : null;
 	}
+};
+
+OperationOptions.prototype.cancel = function() {
+	var self = this;
+	self.callback = null;
+	self.error = null;
+	self.controller = null;
+	self.options = null;
+	self.model = self.value = null;
+	return self;
 };
 
 OperationOptions.prototype.DB = function() {
