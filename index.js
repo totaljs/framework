@@ -715,6 +715,9 @@ function Framework() {
 		'default-response-maxage': '11111111',
 		'default-errorbuilder-status': 200,
 
+		// Default originators
+		'default-cors': null,
+
 		// Seconds (2 minutes)
 		'default-cors-maxage': 120,
 
@@ -1660,7 +1663,7 @@ global.CORS = F.cors = function(url, flags, credentials) {
 	}
 
 	var route = {};
-	var origins = [];
+	var origin = [];
 	var methods = [];
 	var headers = [];
 	var age;
@@ -1683,8 +1686,14 @@ global.CORS = F.cors = function(url, flags, credentials) {
 				continue;
 			}
 
+			if (flag.substring(0, 2) === '//') {
+				origin.push('http:' + flag);
+				origin.push('https:' + flag);
+				continue;
+			}
+
 			if (flag.startsWith('http://') || flag.startsWith('https://')) {
-				origins.push(flag);
+				origin.push(flag);
 				continue;
 			}
 
@@ -1713,6 +1722,9 @@ global.CORS = F.cors = function(url, flags, credentials) {
 	if (!methods.length)
 		methods = 'POST,PUT,GET,DELETE,PATCH,GET,HEAD'.split(',');
 
+	if (!origin.length && CONF['default-cors'])
+		origin = CONF['default-cors'];
+
 	route.isWILDCARD = url.lastIndexOf('*') !== -1;
 
 	var index = url.indexOf('{');
@@ -1731,7 +1743,7 @@ global.CORS = F.cors = function(url, flags, credentials) {
 	route.hash = url.hash();
 	route.owner = _owner;
 	route.url = framework_internal.routeSplitCreate(url);
-	route.origins = origins.length ? origins : null;
+	route.origin = origin.length ? origin : null;
 	route.methods = methods.length ? methods : null;
 	route.headers = headers.length ? headers : null;
 	route.credentials = credentials;
@@ -1744,10 +1756,10 @@ global.CORS = F.cors = function(url, flags, credentials) {
 	if (e) {
 
 		// Extends existing
-		if (route.origins && e.origins)
-			corsextend(route.origins, e.origins);
-		else if (e.origins && !route.origins)
-			e.origins = null;
+		if (route.origin && e.origin)
+			corsextend(route.origin, e.origin);
+		else if (e.origin && !route.origin)
+			e.origin = null;
 
 		if (route.methods && e.methods)
 			corsextend(route.methods, e.methods);
@@ -2987,7 +2999,7 @@ global.WEBSOCKET = F.websocket = function(url, funcInitialize, flags, length) {
 
 		flag = flag.toString().toLowerCase();
 
-		// Origins
+		// Origin
 		if (flag.startsWith('http://') || flag.startsWith('https://')) {
 			!allow && (allow = []);
 			allow.push(flag);
@@ -7258,7 +7270,7 @@ F.$requestcontinue = function(req, res, headers) {
 	req.flags = flags;
 	F.$events['request-begin'] && F.emit('request-begin', req, res);
 
-	var isCORS = (F._length_cors || F.routes.corsall) && req.headers['origin'] != null;
+	var isCORS = (F._length_cors || F.routes.corsall) && req.headers.origin != null;
 
 	switch (first) {
 		case 'G':
@@ -7337,7 +7349,9 @@ F.$cors = function(req, res, fn, arg) {
 	var isAllowed = F.routes.corsall;
 	var cors, origin;
 	var headers = req.headers;
+
 	if (!isAllowed) {
+
 		for (var i = 0; i < F._length_cors; i++) {
 			cors = F.routes.cors[i];
 			if (framework_internal.routeCompare(req.path, cors.url, false, cors.isWILDCARD)) {
@@ -7383,11 +7397,11 @@ F.$cors = function(req, res, fn, arg) {
 			}
 		}
 
-		origin = headers['origin'].toLowerCase();
-		if (!stop && cors.origins) {
+		if (!stop && cors.origin) {
+			origin = headers.origin.toLowerCase();
 			isAllowed = false;
-			for (var i = 0, length = cors.origins.length; i < length; i++) {
-				if (cors.origins[i].indexOf(origin) !== -1) {
+			for (var i = 0, length = cors.origin.length; i < length; i++) {
+				if (cors.origin[i].indexOf(origin) !== -1) {
 					isAllowed = true;
 					break;
 				}
@@ -7395,9 +7409,20 @@ F.$cors = function(req, res, fn, arg) {
 			if (!isAllowed)
 				stop = true;
 		}
+	} else if (CONF['default-cors']) {
+		origin = headers.origin.toLowerCase();
+		if (CONF['default-cors'].indexOf(origin) === -1) {
+			stop = true;
+			isAllowed = false;
+		}
 	}
 
-	res.setHeader('Access-Control-Allow-Origin', F.routes.corsall ? headers['origin'] : (cors.origins ? cors.origins : cors.credentials ? isAllowed ? origin : cors.origins ? cors.origins : origin : headers['origin']));
+	if (stop)
+		origin = 'null';
+	else
+		origin = headers.origin;
+
+	res.setHeader('Access-Control-Allow-Origin', origin);
 
 	if (!cors || cors.credentials)
 		res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -8690,6 +8715,23 @@ F.$configure_configs = function(arr, rewrite) {
 
 				OBSOLETE(name, 'is renamed to "' + tmp + '"');
 				obj[tmp] = value;
+				break;
+
+			case 'default-cors':
+				value = value.replace(/,/g, ' ').split(' ');
+				tmp = [];
+				for (var j = 0; j < value.length; j++) {
+					var co = (value[j] || '').trim();
+					if (co) {
+						co = co.toLowerCase();
+						if (co.substring(0, 2) === '//') {
+							tmp.push('http:' + co);
+							tmp.push('https:' + co);
+						} else
+							tmp.push(co);
+					}
+				}
+				obj[name] = tmp.length ? tmp : null;
 				break;
 
 			case 'allow-handle-static-files':
@@ -13680,7 +13722,7 @@ WebSocketClient.prototype.prepare = function(flags, protocols, allow, length) {
 
 	self.length = length;
 
-	var origin = self.req.headers['origin'] || '';
+	var origin = self.req.headers.origin || '';
 	var length = allow.length;
 
 	if (length && allow.indexOf('*') === -1) {

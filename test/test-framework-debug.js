@@ -140,7 +140,7 @@ function test_routing(next) {
 
 			// "access-control-allow-origin" doesn't support * (wildcard) when "access-control-allow-credentials" is set to true
 			// node.js doesn't support duplicates headers
-			assert.ok(headers['access-control-allow-origin'] === 'http://www.petersirka.eu', 'CORS, headers problem 1');
+			assert.ok(headers['access-control-allow-origin'] === 'null', 'CORS, headers problem 1');
 			assert.ok(headers['access-control-allow-credentials'] === 'true', 'CORS, headers problem 2');
 			assert.ok(headers['access-control-allow-methods'] === 'POST, PUT, DELETE, OPTIONS', 'CORS, headers problem 3');
 			assert.ok(headers['access-control-allow-headers'] === 'x-ping', 'CORS, headers problem 4');

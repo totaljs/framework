@@ -14,6 +14,7 @@
 - added: NOSQL/TABLE modify supports a new type `$age: 'js_code'` with some JS code
 - added: NOSQL/TABLE update supports a new type `'js_code'` with some JS code
 - added: a new config item `default-restbuilder-timeout : 10000`
+- added: a new config item `default-cors : https://www.totaljs.com, https://www.componentator.com` which allows originators for `CORS()` method
 - added: a new config item `default-request-maxkeys : 33` for restricting query max. keys
 - added: a new config item `logger : false` which enables logging for Middleware, Schemas and Operations
 - added: `SchemaOptions` and `OperationOptions` supports `$.cancel()` method
@@ -46,6 +47,7 @@
 
 - improved: NoSQL reader
 - improved: `UID()` -> now it changes a random hash each minute
+- improved: CORS
 
 ======= 3.0.0
 
