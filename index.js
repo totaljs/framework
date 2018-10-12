@@ -1687,13 +1687,12 @@ global.CORS = F.cors = function(url, flags, credentials) {
 			}
 
 			if (flag.substring(0, 2) === '//') {
-				origin.push('http:' + flag);
-				origin.push('https:' + flag);
+				origin.push(flag.substring(2));
 				continue;
 			}
 
 			if (flag.startsWith('http://') || flag.startsWith('https://')) {
-				origin.push(flag);
+				origin.push(flag.substring(flag.indexOf('/') + 2));
 				continue;
 			}
 
@@ -7349,6 +7348,7 @@ F.$cors = function(req, res, fn, arg) {
 	var isAllowed = F.routes.corsall;
 	var cors, origin;
 	var headers = req.headers;
+	var key;
 
 	if (!isAllowed) {
 
@@ -7365,29 +7365,18 @@ F.$cors = function(req, res, fn, arg) {
 
 		var stop = false;
 
-		if (!isAllowed)
-			stop = true;
+		key = 'cors' + cors.hash + '_' + headers.origin;
 
-		isAllowed = false;
+		if (F.temporary.other[key]) {
+			stop = F.temporary.other[key] === 2;
+		} else {
 
-		if (!stop && cors.headers) {
 			isAllowed = false;
-			for (var i = 0, length = cors.headers.length; i < length; i++) {
-				if (headers[cors.headers[i]]) {
-					isAllowed = true;
-					break;
-				}
-			}
-			if (!isAllowed)
-				stop = true;
-		}
 
-		if (!stop && cors.methods) {
-			isAllowed = false;
-			var current = headers['access-control-request-method'] || req.method;
-			if (current !== 'OPTIONS') {
-				for (var i = 0, length = cors.methods.length; i < length; i++) {
-					if (current === cors.methods[i]) {
+			if (cors.headers) {
+				isAllowed = false;
+				for (var i = 0, length = cors.headers.length; i < length; i++) {
+					if (headers[cors.headers[i]]) {
 						isAllowed = true;
 						break;
 					}
@@ -7395,25 +7384,47 @@ F.$cors = function(req, res, fn, arg) {
 				if (!isAllowed)
 					stop = true;
 			}
-		}
 
-		if (!stop && cors.origin) {
-			origin = headers.origin.toLowerCase();
-			isAllowed = false;
-			for (var i = 0, length = cors.origin.length; i < length; i++) {
-				if (cors.origin[i].indexOf(origin) !== -1) {
-					isAllowed = true;
-					break;
+			if (!stop && cors.methods) {
+				isAllowed = false;
+				var current = headers['access-control-request-method'] || req.method;
+				if (current !== 'OPTIONS') {
+					for (var i = 0, length = cors.methods.length; i < length; i++) {
+						if (current === cors.methods[i]) {
+							isAllowed = true;
+							break;
+						}
+					}
+					if (!isAllowed)
+						stop = true;
 				}
 			}
-			if (!isAllowed)
-				stop = true;
+
+			if (!stop && cors.origin) {
+				origin = headers.origin.toLowerCase().substring(headers.origin.indexOf('/') + 2);
+				if (origin !== headers.host) {
+					isAllowed = false;
+					for (var i = 0, length = cors.origin.length; i < length; i++) {
+						if (cors.origin[i].indexOf(origin) !== -1) {
+							isAllowed = true;
+							break;
+						}
+					}
+					if (!isAllowed)
+						stop = true;
+				}
+			}
+
+			F.temporary.other[key] = stop ? 2 : 1;
 		}
 	} else if (CONF['default-cors']) {
-		origin = headers.origin.toLowerCase();
-		if (CONF['default-cors'].indexOf(origin) === -1) {
-			stop = true;
-			isAllowed = false;
+		key = headers.origin;
+		if (F.temporary.other[key]) {
+			stop = F.temporary.other[key] === 2;
+		} else {
+			origin = key.toLowerCase().substring(key.indexOf('/') + 2);
+			stop = origin !== headers.host && CONF['default-cors'].indexOf(origin) === -1;
+			F.temporary.other[key] = stop ? 2 : 1;
 		}
 	}
 
