@@ -8736,10 +8736,9 @@ F.$configure_configs = function(arr, rewrite) {
 					if (co) {
 						co = co.toLowerCase();
 						if (co.substring(0, 2) === '//') {
-							tmp.push('http:' + co);
-							tmp.push('https:' + co);
-						} else
 							tmp.push(co);
+						} else
+							tmp.push(co.substring(co.indexOf('/') + 2));
 					}
 				}
 				obj[name] = tmp.length ? tmp : null;
