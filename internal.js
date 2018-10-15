@@ -1913,14 +1913,11 @@ function view_parse(content, minify, filename, controller) {
 								builder += '+self.$import(' + tmpimp + ')';
 							}
 						}
-						if (tmp.indexOf('components') !== -1)
-							controller.$hasComponents = true;
 						can = true;
 						break;
 					}
 				}
-			} else if (!controller.$hasComponents && tmp.indexOf('components') !== -1)
-				controller.$hasComponents = true;
+			}
 
 			if (can && !counter) {
 				try {
@@ -2184,12 +2181,10 @@ function view_prepare(command, dynamicCommand, functions, controller) {
 			if (!controller.$hasComponents)
 				controller.$hasComponents = [];
 
-			if (controller.$hasComponents instanceof Array) {
-				var group = command.match(REG_COMPONENTS_GROUP);
-				if (group && group.length) {
-					group = group[0].toString().replace(/'|"'/g, '');
-					controller.$hasComponents.indexOf(group) === -1 && controller.$hasComponents.push(group);
-				}
+			var group = command.match(REG_COMPONENTS_GROUP);
+			if (group && group.length) {
+				group = group[0].toString().replace(/'|"'/g, '');
+				controller.$hasComponents.indexOf(group) === -1 && controller.$hasComponents.push(group);
 			}
 
 			return 'self.$' + command + (command.indexOf('(') === -1 ? '()' : '');
@@ -2199,7 +2194,6 @@ function view_prepare(command, dynamicCommand, functions, controller) {
 
 		case 'component':
 
-			controller.$hasComponents = true;
 			tmp = command.indexOf('\'');
 
 			var is = false;
@@ -2216,8 +2210,14 @@ function view_prepare(command, dynamicCommand, functions, controller) {
 					is = true;
 			}
 
-
 			if (is) {
+
+				if (tmp.group) {
+					!controller.$hasComponents && (controller.$hasComponents = []);
+					controller.$hasComponents.push(tmp.group);
+				} else
+					controller.$hasComponents = true;
+
 				var settings = command.substring(11 + name.length + 2, command.length - 1).trim();
 				if (settings === ')')
 					settings = '';

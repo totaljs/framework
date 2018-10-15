@@ -10280,9 +10280,13 @@ Controller.prototype.getSchema = function() {
 Controller.prototype.component = function(name, settings, model) {
 	var filename = F.components.views[name];
 	if (filename) {
-		var generator = framework_internal.viewEngine(name, filename, this);
+		var self = this;
+		var tmp = F.components.instances[name];
+		self.$hasComponents && (self.$hasComponents = []);
+		self.$hasComponents.push(tmp.group);
+		var generator = framework_internal.viewEngine(name, filename, self);
 		if (generator)
-			return generator.call(this, this, this.repository, model || this.$model, this.session, this.query, this.body, this.url, F.global, F.helpers, this.user, this.config, F.functions, 0, this.outputPartial, this.req.files, this.req.mobile, settings || EMPTYOBJECT);
+			return generator.call(self, self, self.repository, model || self.$model, self.session, self.query, self.body, self.url, F.global, F.helpers, self.user, self.config, F.functions, 0, self.outputPartial, self.req.files, self.req.mobile, settings || EMPTYOBJECT);
 	}
 	return '';
 };
@@ -11016,6 +11020,7 @@ Controller.prototype.$view = function(name, model, expire, key) {
 	}
 
 	var value = self.view(name, model, null, true, true, cache);
+
 	if (!value)
 		return '';
 
