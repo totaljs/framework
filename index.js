@@ -12661,7 +12661,11 @@ Controller.prototype.proxy = Controller.prototype.proxy2 = function(url, callbac
 		} else {
 			self.status = code;
 			callback && callback(err, data, code, headers);
-			self.content(data, (headers['content-type'] || 'text/plain').replace(REG_ENCODINGCLEANER, ''));
+			var ct = (headers['content-type'] || 'text/plain').replace(REG_ENCODINGCLEANER, '');
+			if (data instanceof Buffer)
+				self.binary(data, ct);
+			else
+				self.content(data, ct);
 		}
 
 	}, null, h, ENCODING, timeout || 10000);
