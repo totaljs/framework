@@ -23,6 +23,7 @@
 - updated: `NEWOPERATION()` supports `repeat`, `stop` and `binderror` arguments (more in docs)
 - updated: routing, now it supports operations in the form `ROUTE('..  * --> @save_operation @load_operation (response)')`
 - updated: `ROUTE()` supports multiple HTTP method declaration `ROUTE('GET,POST,PUT /something/', action)`
+- updated: `REQUEST()` can return binary data if the content-type is not `text/*` or `application/*`.
 
 - fixed: a critical bug with storing uploaded files via `httpfile.fs()` or `httpfile.nosql()`
 - fixed: a critical bug with JavaScript minificator
@@ -44,6 +45,7 @@
 - fixed: RESTBuilder cache works only if the response status is `200`
 - fixed: compressing CSS with `\t` tabs
 - fixed: `controller.autoclear()`
+- fixed: `controller.proxy()`
 
 - improved: NoSQL reader
 - improved: `UID()` -> now it changes a random hash each minute

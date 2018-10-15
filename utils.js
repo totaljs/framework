@@ -89,6 +89,7 @@ const REG_ROOT = /@\{#\}(\/)?/g;
 const REG_NOREMAP = /@\{noremap\}(\n)?/g;
 const REG_REMAP = /href=".*?"|src=".*?"/gi;
 const REG_URLEXT = /(https|http|wss|ws|file):\/\/|\/\/[a-z0-9]|[a-z]:/i;
+const REG_TEXTAPPLICATION = /text|application/i;
 
 exports.MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 exports.DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -973,17 +974,23 @@ function request_response(res, uri, options) {
 		}
 
 		var self = this;
-		var str = self._buffer ? self._buffer.toString(options.encoding) : '';
+		var data;
+
+		if (!self.headers['content-type'] || REG_TEXTAPPLICATION.test(self.headers['content-type']))
+			data = self._buffer ? self._buffer.toString(options.encoding) : '';
+		else
+			data = self._buffer;
+
 		self._buffer = undefined;
 
 		if (options.evt) {
-			options.evt.$events.end && options.evt.emit('end', str, self.statusCode, self.headers, uri.host, options.cookies);
+			options.evt.$events.end && options.evt.emit('end', data, self.statusCode, self.headers, uri.host, options.cookies);
 			options.evt.removeAllListeners();
 			options.evt = null;
 		}
 
 		if (options.callback) {
-			options.callback(null, uri.method === 'HEAD' ? self.headers : str, self.statusCode, self.headers, uri.host, options.cookies);
+			options.callback(null, uri.method === 'HEAD' ? self.headers : data, self.statusCode, self.headers, uri.host, options.cookies);
 			options.callback = null;
 		}
 
