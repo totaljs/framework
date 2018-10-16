@@ -12848,14 +12848,14 @@ Controller.prototype.$viewrender = function(filename, generator, model, headers,
 
 	try {
 
-		value = generator.call(self, self, self.repository, model, self.session, self.query, self.body, self.url, F.global, helpers, self.user, self.config, F.functions, 0, partial ? self.outputPartial : self.output, self.req.files, self.req.mobile, EMPTYOBJECT);
-
 		if (generator.components.length) {
 			if (!self.repository[REPOSITORY_COMPONENTS])
 				self.repository[REPOSITORY_COMPONENTS] = {};
 			for (var i = 0; i < generator.components.length; i++)
 				self.repository[REPOSITORY_COMPONENTS][generator.components[i]] = 1;
 		}
+
+		value = generator.call(self, self, self.repository, model, self.session, self.query, self.body, self.url, F.global, helpers, self.user, self.config, F.functions, 0, partial ? self.outputPartial : self.output, self.req.files, self.req.mobile, EMPTYOBJECT);
 
 	} catch (ex) {
 
