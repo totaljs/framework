@@ -50,6 +50,7 @@
 - improved: NoSQL reader
 - improved: `UID()` -> now it changes a random hash each minute
 - improved: CORS
+- improved: rendering of components
 
 ======= 3.0.0
 
