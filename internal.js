@@ -1769,6 +1769,7 @@ function view_parse(content, minify, filename, controller) {
 	var isCOMPILATION = false;
 	var builderTMP = '';
 	var sectionName = '';
+	var components = {};
 	var text;
 
 	while (command) {
@@ -1893,7 +1894,7 @@ function view_parse(content, minify, filename, controller) {
 			builder += '}$output+=$EMPTY';
 		} else {
 
-			tmp = view_prepare(command.command, newCommand, functionsName, controller, filename);
+			tmp = view_prepare(command.command, newCommand, functionsName, controller, components);
 			var can = false;
 
 			// Inline rendering is supported only in release mode
@@ -1913,14 +1914,11 @@ function view_parse(content, minify, filename, controller) {
 								builder += '+self.$import(' + tmpimp + ')';
 							}
 						}
-						if (tmp.indexOf('components') !== -1)
-							controller.$hasComponents = true;
 						can = true;
 						break;
 					}
 				}
-			} else if (!controller.$hasComponents && tmp.indexOf('components') !== -1)
-				controller.$hasComponents = true;
+			}
 
 			if (can && !counter) {
 				try {
@@ -1965,10 +1963,11 @@ function view_parse(content, minify, filename, controller) {
 	if (RELEASE)
 		builder = builder.replace(/(\+\$EMPTY\+)/g, '+').replace(/(\$output=\$EMPTY\+)/g, '$output=').replace(/(\$output\+=\$EMPTY\+)/g, '$output+=').replace(/(\}\$output\+=\$EMPTY)/g, '}').replace(/(\{\$output\+=\$EMPTY;)/g, '{').replace(/(\+\$EMPTY\+)/g, '+').replace(/(>'\+'<)/g, '><').replace(/'\+'/g, '');
 
-	var fn = ('(function(self,repository,model,session,query,body,url,global,helpers,user,config,functions,index,output,files,mobile,settings){self.$hasComponents=' + (controller.$hasComponents instanceof Array ? JSON.stringify(controller.$hasComponents).replace(/"/g, '\'') : controller.$hasComponents === true ? 'true' : 'null') + ';var get=query;var post=body;var G=F.global;var R=this.repository;var M=model;var theme=this.themeName;var language=this.language;var sitemap=this.repository.$sitemap;' + (isCookie ? 'var cookie=function(name){return self.req.cookie(name)};' : '') + (functions.length ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})');
+	var fn = ('(function(self,repository,model,session,query,body,url,global,helpers,user,config,functions,index,output,files,mobile,settings){var G=F.global;var R=this.repository;var M=model;var theme=this.themeName;var language=this.language;var sitemap=this.repository.$sitemap;' + (isCookie ? 'var cookie=function(name){return self.req.cookie(name)};' : '') + (functions.length ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})');
 
 	try {
 		fn = eval(fn);
+		fn.components = Object.keys(components);
 	} catch (e) {
 		throw new Error(filename + ': ' + e.message.toString());
 	}
@@ -1988,7 +1987,7 @@ function view_parse_plus(builder) {
 	return c !== '!' && c !== '?' && c !== '+' && c !== '.' && c !== ':';
 }
 
-function view_prepare(command, dynamicCommand, functions, controller) {
+function view_prepare(command, dynamicCommand, functions, controller, components) {
 
 	var a = command.indexOf('.');
 	var b = command.indexOf('(');
@@ -2053,8 +2052,6 @@ function view_prepare(command, dynamicCommand, functions, controller) {
 		case 'G':
 		case 'model':
 		case 'repository':
-		case 'get':
-		case 'post':
 		case 'query':
 		case 'global':
 		case 'session':
@@ -2181,15 +2178,10 @@ function view_prepare(command, dynamicCommand, functions, controller) {
 
 		case 'components':
 
-			if (!controller.$hasComponents)
-				controller.$hasComponents = [];
-
-			if (controller.$hasComponents instanceof Array) {
-				var group = command.match(REG_COMPONENTS_GROUP);
-				if (group && group.length) {
-					group = group[0].toString().replace(/'|"'/g, '');
-					controller.$hasComponents.indexOf(group) === -1 && controller.$hasComponents.push(group);
-				}
+			var group = command.match(REG_COMPONENTS_GROUP);
+			if (group && group.length) {
+				group = group[0].toString().replace(/'|"'/g, '');
+				components[group] = 1;
 			}
 
 			return 'self.$' + command + (command.indexOf('(') === -1 ? '()' : '');
@@ -2199,7 +2191,6 @@ function view_prepare(command, dynamicCommand, functions, controller) {
 
 		case 'component':
 
-			controller.$hasComponents = true;
 			tmp = command.indexOf('\'');
 
 			var is = false;
@@ -2216,11 +2207,15 @@ function view_prepare(command, dynamicCommand, functions, controller) {
 					is = true;
 			}
 
+			if (tmp)
+				components[tmp.group] = 1;
 
 			if (is) {
+
 				var settings = command.substring(11 + name.length + 2, command.length - 1).trim();
 				if (settings === ')')
 					settings = '';
+
 				$VIEWASYNC++;
 				return '\'@{-{0}-}\'+(function(index){!controller.$viewasync&&(controller.$viewasync=[]);controller.$viewasync.push({replace:\'@{-{0}-}\',name:\'{1}\',settings:{2}});return $EMPTY})({0})'.format($VIEWASYNC, name, settings || 'null');
 			}
@@ -2988,7 +2983,7 @@ function modificators(value, filename, type) {
 	return value;
 }
 
-function viewengine_load(name, filename, controller) {
+function viewengine_load(name, filename, controller, component) {
 
 	var precompiled = F.routes.views[name];
 	if (precompiled)
@@ -3004,7 +2999,7 @@ function viewengine_load(name, filename, controller) {
 
 	generator = viewengine_read(filename, controller);
 
-	if (!F.isDebug)
+	if (component || !F.isDebug)
 		F.temporary.views[key] = generator;
 
 	return generator;

@@ -82,6 +82,7 @@ const REPOSITORY_META_AUTHOR = '$author';
 const REPOSITORY_META_IMAGE = '$image';
 const REPOSITORY_PLACE = '$place';
 const REPOSITORY_SITEMAP = '$sitemap';
+const REPOSITORY_COMPONENTS = '$components';
 const ATTR_END = '"';
 const ETAG = '858';
 const CONCAT = [null, null];
@@ -4113,7 +4114,11 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 			}
 		}
 
-		if (obj && obj.group) {
+		if (obj) {
+
+			if (!obj.group)
+				obj.group = 'default';
+
 			key = obj.group.crc32(true);
 			temporary += '_g' + key;
 			tmp = F.components.groups[obj.group];
@@ -4130,8 +4135,8 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 				tmp.css = true;
 			}
 
-			tmp.version = NOW.getTime();
-			tmp.links = (tmp.js ? '<script src="{0}js?group={2}&version={1}"></script>'.format(link, tmp.version, key) : '') + (tmp.css ? '<link type="text/css" rel="stylesheet" href="{0}css?group={2}&version={1}" />'.format(link, tmp.version, key) : '');
+			tmp.version = GUID(5);
+			tmp.links = (tmp.js ? '<script src="{0}js?group={2}_{1}"></script>'.format(link, tmp.version, key) : '') + (tmp.css ? '<link type="text/css" rel="stylesheet" href="{0}css?group={2}_{1}" />'.format(link, tmp.version, key) : '');
 		}
 
 		!skipEmit && setTimeout(function() {
@@ -10280,9 +10285,17 @@ Controller.prototype.getSchema = function() {
 Controller.prototype.component = function(name, settings, model) {
 	var filename = F.components.views[name];
 	if (filename) {
-		var generator = framework_internal.viewEngine(name, filename, this);
-		if (generator)
-			return generator.call(this, this, this.repository, model || this.$model, this.session, this.query, this.body, this.url, F.global, F.helpers, this.user, this.config, F.functions, 0, this.outputPartial, this.req.files, this.req.mobile, settings || EMPTYOBJECT);
+		var self = this;
+		var generator = framework_internal.viewEngine(name, filename, self, true);
+		if (generator) {
+			if (generator.components.length) {
+				if (!self.repository[REPOSITORY_COMPONENTS])
+					self.repository[REPOSITORY_COMPONENTS] = {};
+				for (var i = 0; i < generator.components.length; i++)
+					self.repository[REPOSITORY_COMPONENTS][generator.components[i]] = 1;
+			}
+			return generator.call(self, self, self.repository, model || self.$model, self.session, self.query, self.body, self.url, F.global, F.helpers, self.user, self.config, F.functions, 0, self.outputPartial, self.req.files, self.req.mobile, settings || EMPTYOBJECT);
+		}
 	}
 	return '';
 };
@@ -11008,14 +11021,12 @@ Controller.prototype.$view = function(name, model, expire, key) {
 	if (expire) {
 		cache = '$view.' + name + '.' + (key || '');
 		var output = self.cache.read2(cache);
-		if (output) {
-			if (output.components)
-				self.$hasComponents = true;
+		if (output)
 			return output.body;
-		}
 	}
 
 	var value = self.view(name, model, null, true, true, cache);
+
 	if (!value)
 		return '';
 
@@ -11392,15 +11403,11 @@ Controller.prototype.head = function() {
 	if (!arguments.length) {
 		var author = self.repository[REPOSITORY_META_AUTHOR] || self.config.author;
 		var plus = '';
-		if (self.$hasComponents) {
-			if (self.$hasComponents instanceof Array) {
-				for (var i = 0; i < self.$hasComponents.length; i++) {
-					var group = F.components.groups[self.$hasComponents[i]];
-					if (group)
-						plus += group.links;
-				}
-			} else
-				plus = F.components.links;
+		var components = self.repository[REPOSITORY_COMPONENTS];
+		if (components) {
+			var keys = Object.keys(components);
+			for (var i = 0; i < keys.length; i++)
+				plus += F.components.groups[keys[i]].links;
 		}
 		return (author ? '<meta name="author" content="' + author + '" />' : '') + (self.repository[REPOSITORY_HEAD] || '') + plus;
 	}
@@ -11620,8 +11627,6 @@ Controller.prototype.$import = function() {
 
 		if (filename === 'components' && F.components.has) {
 			// Generated in controller.head()
-			// self.$hasComponents = true;
-			// builder += F.components.links;
 			continue;
 		}
 
@@ -12842,7 +12847,16 @@ Controller.prototype.$viewrender = function(filename, generator, model, headers,
 	var helpers = F.helpers;
 
 	try {
+
 		value = generator.call(self, self, self.repository, model, self.session, self.query, self.body, self.url, F.global, helpers, self.user, self.config, F.functions, 0, partial ? self.outputPartial : self.output, self.req.files, self.req.mobile, EMPTYOBJECT);
+
+		if (generator.components.length) {
+			if (!self.repository[REPOSITORY_COMPONENTS])
+				self.repository[REPOSITORY_COMPONENTS] = {};
+			for (var i = 0; i < generator.components.length; i++)
+				self.repository[REPOSITORY_COMPONENTS][generator.components[i]] = 1;
+		}
+
 	} catch (ex) {
 
 		err = new Error('View "' + filename + '": ' + ex.message);
@@ -13043,9 +13057,6 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
 	self.layoutName = output.layout;
 	self.themeName = output.theme;
 
-	if (output.components)
-		self.$hasComponents = true;
-
 	var res = self.res;
 
 	res.options.code = self.status || 200;
@@ -13112,7 +13123,7 @@ Controller.prototype.$memorize_prepare = function(key, expires, disabled, fnTo, 
 			return;
 		}
 
-		var options = { content: value, type: contentType || CT_TEXT, layout: self.layoutName, theme: self.themeName, components: (self.$viewasync ? true : false) || (self.$hasComponents ? true : false) };
+		var options = { content: value, type: contentType || CT_TEXT, layout: self.layoutName, theme: self.themeName };
 		if (headers)
 			options.headers = headers;
 
@@ -15484,7 +15495,13 @@ function extend_response(PROTO) {
 
 			if (F.components.has && F.components[req.extension] && req.uri.pathname === F.config['static-url-components'] + req.extension) {
 				res.noCompress = true;
-				filename = F.path.temp('components' + (req.query.group ? '_g' + req.query.group : '') + '.' + req.extension);
+				res.options.components = true;
+				var g = req.query.group ? req.query.group.substring(0, req.query.group.length - 6) : '';
+				filename = F.path.temp('components' + (g ? '_g' + g : '') + '.' + req.extension);
+				if (g)
+					req.$key = 'components_' + g + '.' + req.extension;
+				else
+					req.$key = 'components.' + req.extension;
 			}
 
 			res.options.filename = filename;
@@ -15658,7 +15675,8 @@ function extend_response(PROTO) {
 			return res;
 		}
 
-		(DEBUG || res.$nocache) && F.isProcessed(req.$key) && (F.temporary.path[req.$key] = undefined);
+		if (!res.options.components && (DEBUG || res.$nocache))
+			F.isProcessed(req.$key) && (F.temporary.path[req.$key] = undefined);
 
 		if (name[1] && !compress)
 			headers[HEADER_LENGTH] = name[1];
