@@ -11406,8 +11406,11 @@ Controller.prototype.head = function() {
 		var components = self.repository[REPOSITORY_COMPONENTS];
 		if (components) {
 			var keys = Object.keys(components);
-			for (var i = 0; i < keys.length; i++)
-				plus += F.components.groups[keys[i]].links;
+			for (var i = 0; i < keys.length; i++) {
+				var com = F.components.groups[keys[i]];
+				if (com)
+					plus += com.links;
+			}
 		}
 		return (author ? '<meta name="author" content="' + author + '" />' : '') + (self.repository[REPOSITORY_HEAD] || '') + plus;
 	}
