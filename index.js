@@ -293,6 +293,11 @@ global.NOMEM = global.NOSQLMEMORY = (name, view) => global.framework_nosql.inmem
 global.CONFIG = function(name, val) {
 	return arguments.length === 1 ? F.config[name] : (F.config[name] = val);
 };
+
+global.CACHE = function(name, value, expire, persistent) {
+	return arguments.length === 1 ? F.cache.get2(name) : F.cache.set(name, value, expire, null, persistent);
+};
+
 global.UPTODATE = (type, url, options, interval, callback) => F.uptodate(type, url, options, interval, callback);
 global.INSTALL = (type, name, declaration, options, callback) => F.install(type, name, declaration, options, callback);
 global.UNINSTALL = (type, name, options) => F.uninstall(type, name, options);
