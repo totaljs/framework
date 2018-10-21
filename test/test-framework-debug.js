@@ -29,6 +29,8 @@ framework.on('ready', function() {
 	});
 	t.on('exit', () => assert.ok(a === true, 'F.load() in worker'));
 	assert.ok(F.config.array.length === 4, 'Problem with config sub types.');
+	assert.ok(CONF.testhex === 123456, 'config: hex encode');
+	assert.ok(CONF.testbase === 123456, 'config: base encode');
 });
 
 framework.onAuthorize = function(req, res, flags, cb) {

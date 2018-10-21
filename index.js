@@ -8672,6 +8672,11 @@ F.$configure_configs = function(arr, rewrite) {
 		value = str.substring(index + 1).trim();
 		index = name.indexOf('(');
 
+		if (value.substring(0, 7) === 'base64 ' && value.length > 8)
+			value = U.createBuffer(value.substring(7).trim(), 'base64').toString('utf8');
+		else if (value.substring(0, 4) === 'hex ' && value.length > 6)
+			value = U.createBuffer(value.substring(4).trim(), 'hex').toString('utf8');
+
 		if (index !== -1) {
 			subtype = name.substring(index + 1, name.indexOf(')')).trim().toLowerCase();
 			name = name.substring(0, index).trim();
