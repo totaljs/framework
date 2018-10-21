@@ -485,7 +485,7 @@ global.REQUEST = exports.request = function(url, flags, data, callback, cookies,
 	if (callback === NOOP)
 		callback = null;
 
-	var options = { length: 0, timeout: timeout || CONF['default-restbuilder-timeout'], evt: new EventEmitter2(), encoding: typeof(encoding) !== 'string' ? ENCODING : encoding, callback: callback, post: false, redirect: 0 };
+	var options = { length: 0, timeout: timeout || CONF.default_restbuilder_timeout, evt: new EventEmitter2(), encoding: typeof(encoding) !== 'string' ? ENCODING : encoding, callback: callback, post: false, redirect: 0 };
 	var method;
 	var type = 0;
 	var isCookies = false;
@@ -641,8 +641,8 @@ global.REQUEST = exports.request = function(url, flags, data, callback, cookies,
 	if (options.resolve && (uri.hostname === 'localhost' || uri.hostname.charCodeAt(0) < 64))
 		options.resolve = null;
 
-	if (F.config['default-proxy'] && !proxy && !PROXYBLACKLIST[uri.hostname])
-		proxy = parseProxy(F.config['default-proxy']);
+	if (CONF.default_proxy && !proxy && !PROXYBLACKLIST[uri.hostname])
+		proxy = parseProxy(CONF.default_proxy);
 
 	if (proxy && (uri.hostname === 'localhost' || uri.hostname === '127.0.0.1'))
 		proxy = null;
@@ -1180,8 +1180,8 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 		headers['Content-Length'] = options.data.length;
 	}
 
-	if (F.config['default-proxy'] && !proxy && !PROXYBLACKLIST[uri.hostname])
-		proxy = parseProxy(F.config['default-proxy']);
+	if (CONF.default_proxy && !proxy && !PROXYBLACKLIST[uri.hostname])
+		proxy = parseProxy(CONF.default_proxy);
 
 	options.proxy = proxy;
 
@@ -3023,7 +3023,7 @@ SP.ROOT = function(noremap) {
 		return '';
 	}).replace(REG_ROOT, $urlmaker);
 
-	if (!noremap && F.config['default-root'])
+	if (!noremap && CONF.default_root)
 		str = str.replace(REG_REMAP, $urlremap);
 
 	return str;
@@ -3031,12 +3031,12 @@ SP.ROOT = function(noremap) {
 
 function $urlremap(text) {
 	var pos = text[0] === 'h' ? 6 : 5;
-	return REG_URLEXT.test(text) ? text : ((text[0] === 'h' ? 'href' : 'src') + '="' + F.config['default-root'] + (text[pos] === '/' ? text.substring(pos + 1) : text));
+	return REG_URLEXT.test(text) ? text : ((text[0] === 'h' ? 'href' : 'src') + '="' + CONF.default_root + (text[pos] === '/' ? text.substring(pos + 1) : text));
 }
 
 function $urlmaker(text) {
 	var c = text[4];
-	return F.config['default-root'] ? F.config['default-root'] : (c || '');
+	return CONF.default_root ? CONF.default_root : (c || '');
 }
 
 if (!SP.trim) {
@@ -3492,7 +3492,7 @@ SP.parseConfig = function(def, onerr) {
 				obj[name] = (/true|on|1|enabled/i).test(value);
 				break;
 			case 'config':
-				obj[name] = F.config[value];
+				obj[name] = CONF[value];
 				break;
 			case 'eval':
 			case 'object':
@@ -3857,7 +3857,7 @@ SP.encrypt = function(key, isUnique, secret) {
 	for (var i = 0; i < str.length; i++)
 		sum += str.charCodeAt(i);
 
-	return (sum + checksum((secret || F.config.secret) + key)) + '-' + str;
+	return (sum + checksum((secret || CONF.secret) + key)) + '-' + str;
 };
 
 SP.decrypt = function(key, secret) {
@@ -3871,7 +3871,7 @@ SP.decrypt = function(key, secret) {
 		return null;
 
 	var hash = this.substring(index + 1);
-	var sum = checksum((secret || F.config.secret) + key);
+	var sum = checksum((secret || CONF.secret) + key);
 	for (var i = 0; i < hash.length; i++)
 		sum += hash.charCodeAt(i);
 
@@ -3910,7 +3910,7 @@ exports.encryptUID = function(val, key) {
 	var sum = 0;
 
 	if (!key)
-		key = F.config.secret;
+		key = CONF.secret;
 
 	val = val.toString();
 
@@ -3920,7 +3920,7 @@ exports.encryptUID = function(val, key) {
 	for (var i = 0; i < key.length; i++)
 		sum += key.charCodeAt(i);
 
-	return (num ? 'n' : 'x') + (F.config['secret-uid'] + val + sum + key).crc32(true).toString(16) + 'x' + val;
+	return (num ? 'n' : 'x') + (CONF.secret_uid + val + sum + key).crc32(true).toString(16) + 'x' + val;
 };
 
 exports.decryptUID = function(val, key) {
@@ -5792,7 +5792,7 @@ exports.parseTheme = function(value) {
 	if (index === -1)
 		return '';
 	value = value.substring(1, index);
-	return value === '?' ? F.config['default-theme'] : value;
+	return value === '?' ? CONF.default_theme : value;
 };
 
 exports.set = function(obj, path, value) {

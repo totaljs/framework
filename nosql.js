@@ -567,7 +567,7 @@ function Table(name, filename) {
 	t.counter = new Counter(t);
 	t.$meta();
 
-	var schema = F.config['table.' + name];
+	var schema = CONF['table.' + name];
 
 	Fs.createReadStream(t.filename, { end: 1200 }).once('data', function(chunk) {
 
@@ -958,55 +958,55 @@ DP.backup = function(filename, callback) {
 
 	pending.push(function(next) {
 		F.path.exists(self.filename, function(e) {
-			e && list.push(Path.join(F.config['directory-databases'], self.name + EXTENSION));
+			e && list.push(Path.join(CONF.directory_databases, self.name + EXTENSION));
 			next();
 		});
 	});
 
 	pending.push(function(next) {
 		F.path.exists(F.path.databases(self.name + EXTENSION_META), function(e) {
-			e && list.push(Path.join(F.config['directory-databases'], self.name + EXTENSION_META));
+			e && list.push(Path.join(CONF.directory_databases, self.name + EXTENSION_META));
 			next();
 		});
 	});
 
 	pending.push(function(next) {
 		F.path.exists(self.filenameBackup, function(e) {
-			e && list.push(Path.join(F.config['directory-databases'], self.name + EXTENSION_BACKUP));
+			e && list.push(Path.join(CONF.directory_databases, self.name + EXTENSION_BACKUP));
 			next();
 		});
 	});
 
 	pending.push(function(next) {
 		F.path.exists(self.filenameCounter, function(e) {
-			e && list.push(Path.join(F.config['directory-databases'], self.name + EXTENSION + EXTENSION_COUNTER));
+			e && list.push(Path.join(CONF.directory_databases, self.name + EXTENSION + EXTENSION_COUNTER));
 			next();
 		});
 	});
 
 	pending.push(function(next) {
 		F.path.exists(self.filenameLog, function(e) {
-			e && list.push(Path.join(F.config['directory-databases'], self.name + EXTENSION_LOG));
+			e && list.push(Path.join(CONF.directory_databases, self.name + EXTENSION_LOG));
 			next();
 		});
 	});
 
 	pending.push(function(next) {
 		F.path.exists(F.path.databases(self.name + '-binary'), function(e, size, file) {
-			e && !file && list.push(Path.join(F.config['directory-databases'], self.name + '-binary'));
+			e && !file && list.push(Path.join(CONF.directory_databases, self.name + '-binary'));
 			next();
 		});
 	});
 
 	pending.push(function(next) {
 		F.path.exists(F.path.databases(self.name + '-storage'), function(e, size, file) {
-			e && !file && list.push(Path.join(F.config['directory-databases'], self.name + '-storage'));
+			e && !file && list.push(Path.join(CONF.directory_databases, self.name + '-storage'));
 			next();
 		});
 	});
 
 	pending.push(function(next) {
-		var filename = Path.join(F.config['directory-databases'], self.name + EXTENSION_MAPREDUCE);
+		var filename = Path.join(CONF.directory_databases, self.name + EXTENSION_MAPREDUCE);
 		F.path.exists(F.path.root(filename), function(e) {
 			e && list.push(filename);
 			next();
@@ -2007,7 +2007,7 @@ DP.$clean = function() {
 	var now = Date.now();
 
 	F.databasescleaner[self.name] = undefined;
-	F.config['nosql-logger'] && PRINTLN('NoSQL embedded "{0}" cleaning (beg)'.format(self.name));
+	CONF.nosql_logger && PRINTLN('NoSQL embedded "{0}" cleaning (beg)'.format(self.name));
 
 	var fs = new NoSQLStream(self.filename);
 	var writer = Fs.createWriteStream(self.filename + '-tmp');
@@ -2030,7 +2030,7 @@ DP.$clean = function() {
 
 	writer.on('finish', function() {
 		Fs.rename(self.filename + '-tmp', self.filename, function() {
-			F.config['nosql-logger'] && PRINTLN('NoSQL embedded "{0}" cleaning (end, {1}s)'.format(self.name, (((Date.now() - now) / 1000) >> 0)));
+			CONF.nosql_logger && PRINTLN('NoSQL embedded "{0}" cleaning (end, {1}s)'.format(self.name, (((Date.now() - now) / 1000) >> 0)));
 			for (var i = 0; i < length; i++)
 				filter[i]();
 			self.$events.clean && self.emit('clean');
@@ -6132,7 +6132,7 @@ TP.$clean = function() {
 	var now = Date.now();
 
 	F.databasescleaner[self.$name] = undefined;
-	F.config['nosql-logger'] && PRINTLN('NoSQL Table "{0}" cleaning (beg)'.format(self.name));
+	CONF.nosql_logger && PRINTLN('NoSQL Table "{0}" cleaning (beg)'.format(self.name));
 
 	var fs = new NoSQLStream(self.filename);
 	var writer = Fs.createWriteStream(self.filename + '-tmp');
@@ -6155,7 +6155,7 @@ TP.$clean = function() {
 
 	writer.on('finish', function() {
 		Fs.rename(self.filename + '-tmp', self.filename, function() {
-			F.config['nosql-logger'] && PRINTLN('NoSQL Table "{0}" cleaning (end, {1}s)'.format(self.name, (((Date.now() - now) / 1000) >> 0)));
+			CONF.nosql_logger && PRINTLN('NoSQL Table "{0}" cleaning (end, {1}s)'.format(self.name, (((Date.now() - now) / 1000) >> 0)));
 			for (var i = 0; i < length; i++)
 				filter[i]();
 			self.$events.clean && self.emit('clean');

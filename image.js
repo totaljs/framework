@@ -141,7 +141,7 @@ function Image(filename, useImageMagick, width, height) {
 	this.builder = [];
 	this.filename = type === 'string' ? filename : null;
 	this.currentStream = type === 'object' ? filename : null;
-	this.isIM = useImageMagick == null ? F.config['default-image-converter'] === 'im' : useImageMagick;
+	this.isIM = useImageMagick == null ? CONF.default_image_converter === 'im' : useImageMagick;
 	this.outputType = type === 'string' ? framework_utils.getExtension(filename) : 'jpg';
 	this.islimit = false;
 }
@@ -338,7 +338,7 @@ Image.prototype.cmd = function(filenameFrom, filenameTo) {
 	var cmd = '';
 
 	if (!self.islimit) {
-		var tmp = F.config['default-image-consumption'];
+		var tmp = CONF.default_image_consumption;
 		self.limit('memory', (1500 / 100) * tmp);
 		self.limit('map', (3000 / 100) * tmp);
 	}
@@ -365,7 +365,7 @@ Image.prototype.arg = function(first, last) {
 	first && arr.push(first);
 
 	if (!self.islimit) {
-		var tmp = F.config['default-image-consumption'];
+		var tmp = CONF.default_image_consumption;
 		self.limit('memory', (1500 / 100) * tmp);
 		self.limit('map', (3000 / 100) * tmp);
 	}

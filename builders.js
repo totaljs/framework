@@ -3111,16 +3111,16 @@ SchemaInstance.prototype.$constant = function(name) {
 function ErrorBuilder(onResource) {
 
 	this.items = [];
-	this.transformName = transforms['error_default'];
+	this.transformName = transforms.error_default;
 	this.onResource = onResource;
-	this.resourceName = F.config['default-errorbuilder-resource-name'];
-	this.resourcePrefix = F.config['default-errorbuilder-resource-prefix'] || '';
+	this.resourceName = CONF.default_errorbuilder_resource_name;
+	this.resourcePrefix = CONF.default_errorbuilder_resource_prefix || '';
 	this.isResourceCustom = false;
 	this.count = 0;
 	this.replacer = [];
 	this.isPrepared = false;
 	this.contentType = 'application/json';
-	this.status = F.config['default-errorbuilder-status'] || 200;
+	this.status = CONF.default_errorbuilder_status || 200;
 
 	// Hidden: when the .push() contains a classic Error instance
 	// this.unexpected;

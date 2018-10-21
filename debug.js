@@ -107,25 +107,25 @@ function runwatching() {
 
 		const fork = require('child_process').fork;
 		const directories = [
-			U.combine(F.config['directory-components']),
-			U.combine(F.config['directory-controllers']),
-			U.combine(F.config['directory-definitions']),
-			U.combine(F.config['directory-operations']),
-			U.combine(F.config['directory-isomorphic']),
-			U.combine(F.config['directory-modules']),
-			U.combine(F.config['directory-models']),
-			U.combine(F.config['directory-schemas']),
-			U.combine(F.config['directory-resources']),
-			U.combine(F.config['directory-source']),
-			U.combine(F.config['directory-workers']),
-			U.combine(F.config['directory-packages']),
-			U.combine(F.config['directory-themes']),
-			U.combine(F.config['directory-configs']),
-			U.combine(F.config['directory-bundles']),
+			U.combine(CONF.directory_components),
+			U.combine(CONF.directory_controllers),
+			U.combine(CONF.directory_definitions),
+			U.combine(CONF.directory_operations),
+			U.combine(CONF.directory_isomorphic),
+			U.combine(CONF.directory_modules),
+			U.combine(CONF.directory_models),
+			U.combine(CONF.directory_schemas),
+			U.combine(CONF.directory_resources),
+			U.combine(CONF.directory_source),
+			U.combine(CONF.directory_workers),
+			U.combine(CONF.directory_packages),
+			U.combine(CONF.directory_themes),
+			U.combine(CONF.directory_configs),
+			U.combine(CONF.directory_bundles),
 			U.combine('/startup/')
 		];
 
-		const SRC = U.combine(F.config['directory-src']);
+		const SRC = U.combine(CONF.directory_src);
 		const prefix = '----------------> ';
 
 		options.watch && options.watch.forEach(function(item) {
@@ -173,13 +173,13 @@ function runwatching() {
 		}
 
 		try {
-			Fs.statSync(F.path.root(F.config['directory-bundles']));
+			Fs.statSync(F.path.root(CONF.directory_bundles));
 			isBUNDLE = true;
 		} catch(e) {}
 
 		if (isBUNDLE || isRELOAD) {
-			directories.push(U.combine(F.config['directory-public']));
-			directories.push(U.combine(F.config['directory-views']));
+			directories.push(U.combine(CONF.directory_public));
+			directories.push(U.combine(CONF.directory_views));
 		}
 
 		function onFilter(path, isDirectory) {
@@ -225,12 +225,12 @@ function runwatching() {
 			var index = fn.indexOf('/', 1);
 			var dir = fn.substring(0, index + 1);
 
-			if (dir === F.config['directory-themes']) {
+			if (dir === CONF.directory_themes) {
 				index = fn.indexOf('/', index + 1);
 				dir = fn.substring(index, fn.indexOf('/', index + 1) + 1);
 			}
 
-			return F.config['directory-views'] === dir || F.config['directory-public'] === dir ? fn : '';
+			return CONF.directory_views === dir || CONF.directory_public === dir ? fn : '';
 		}
 
 		function refresh() {

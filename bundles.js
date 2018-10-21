@@ -30,10 +30,10 @@ exports.make = function(callback) {
 		META.ignore = makeignore(Fs.readFileSync(Path.join(path, '.bundlesignore')).toString('utf8').split('\n'));
 	} catch (e) {}
 
-	blacklist[F.config['directory-temp']] = 1;
-	blacklist[F.config['directory-bundles']] = 1;
-	blacklist[F.config['directory-src']] = 1;
-	blacklist[F.config['directory-logs']] = 1;
+	blacklist[CONF.directory_temp] = 1;
+	blacklist[CONF.directory_bundles] = 1;
+	blacklist[CONF.directory_src] = 1;
+	blacklist[CONF.directory_logs] = 1;
 	blacklist['/node_modules/'] = 1;
 	blacklist['/debug.pid'] = 1;
 	blacklist['/package-lock.json'] = 1;
@@ -47,11 +47,11 @@ exports.make = function(callback) {
 	async.push(cleanFiles);
 
 	async.push(function(next) {
-		var target = F.path.root(F.config['directory-src']);
-		U.ls(F.path.root(F.config['directory-bundles']), function(files) {
+		var target = F.path.root(CONF.directory_src);
+		U.ls(F.path.root(CONF.directory_bundles), function(files) {
 			var dirs = {};
 			files.wait(function(filename, resume) {
-				var dbpath = F.config['directory-databases'];
+				var dbpath = CONF.directory_databases;
 
 				F.restore(filename, target, resume, function(p, dir) {
 
@@ -118,9 +118,9 @@ exports.make = function(callback) {
 				var file = files[i].substring(Length);
 				var type = 0;
 
-				if (file.startsWith(F.config['directory-databases']) || file.startsWith('/flow/') || file.startsWith('/dashboard/'))
+				if (file.startsWith(CONF.directory_databases) || file.startsWith('/flow/') || file.startsWith('/dashboard/'))
 					type = 1;
-				else if (file.startsWith(F.config['directory-public']))
+				else if (file.startsWith(CONF.directory_public))
 					type = 2;
 				else if (REGAPPEND.test(file)) {
 					file = file.replace(/\/--/g, '/');
@@ -144,7 +144,7 @@ exports.make = function(callback) {
 	});
 
 	async.push(function(next) {
-		Fs.writeFileSync(Path.join(F.path.root(F.config['directory-src']), 'bundle.json'), JSON.stringify(META, null, '\t'));
+		Fs.writeFileSync(Path.join(F.path.root(CONF.directory_src), 'bundle.json'), JSON.stringify(META, null, '\t'));
 		next();
 	});
 
@@ -196,13 +196,13 @@ function normalize(path) {
 
 function cleanFiles(callback) {
 
-	var path = F.path.root(F.config['directory-src']);
+	var path = F.path.root(CONF.directory_src);
 	var length = path.length - 1;
 	var blacklist = {};
 
-	blacklist[F.config['directory-public']] = 1;
-	blacklist[F.config['directory-private']] = 1;
-	blacklist[F.config['directory-databases']] = 1;
+	blacklist[CONF.directory_public] = 1;
+	blacklist[CONF.directory_private] = 1;
+	blacklist[CONF.directory_databases] = 1;
 
 	var meta;
 
@@ -240,7 +240,7 @@ function cleanFiles(callback) {
 
 function createDirectories(dirs, callback) {
 
-	var path = F.path.root(F.config['directory-src']);
+	var path = F.path.root(CONF.directory_src);
 
 	try {
 		Fs.mkdirSync(path);
@@ -259,7 +259,7 @@ function createDirectories(dirs, callback) {
 }
 
 function copyFiles(files, callback) {
-	var path = F.path.root(F.config['directory-src']);
+	var path = F.path.root(CONF.directory_src);
 	files.wait(function(file, next) {
 
 		if (!META.ignore(file.name))
@@ -289,7 +289,7 @@ function copyFiles(files, callback) {
 			append = true;
 
 		if (CONSOLE && exists) {
-			F.config['allow-debug'] && F.consoledebug(append ? 'EXT:' : 'REW:', p);
+			CONF.allow_debug && F.consoledebug(append ? 'EXT:' : 'REW:', p);
 		} else
 			F.consoledebug(append ? 'EXT:' : 'COP:', p);
 
@@ -299,7 +299,7 @@ function copyFiles(files, callback) {
 			copyFile(file.filename, filename, next);
 
 		if (CONSOLE && exists)
-			F.config['allow-debug'] && F.consoledebug('REW:', p);
+			CONF.allow_debug && F.consoledebug('REW:', p);
 		else
 			F.consoledebug('COP:', p);
 

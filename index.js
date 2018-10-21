@@ -66,6 +66,7 @@ const REG_WWW = /^www\./i;
 const REG_TEXTAPPLICATION = /text|application/;
 const REG_ENCODINGCLEANER = /[;\s]charset=utf-8/g;
 const REG_SKIPERROR = /epipe|invalid\sdistance/i;
+const REG_OLDCONF = /-/g;
 const REG_UTF8 = /[^\x20-\x7E]+/;
 const FLAGS_INSTALL = ['get'];
 const FLAGS_DOWNLOAD = ['get', 'dnscache'];
@@ -291,7 +292,7 @@ global.NOSQLSTORAGE = (name) => F.nosql(name).storage;
 global.NOCOUNTER = global.NOSQLCOUNTER = (name) => F.nosql(name).counter;
 global.NOMEM = global.NOSQLMEMORY = (name, view) => global.framework_nosql.inmemory(name, view);
 global.CONFIG = function(name, val) {
-	return arguments.length === 1 ? F.config[name] : (F.config[name] = val);
+	return arguments.length === 1 ? CONF[name] : (CONF[name] = val);
 };
 
 global.CACHE = function(name, value, expire, persistent) {
@@ -655,121 +656,135 @@ function Framework() {
 
 		debug: true,
 		trace: true,
-		'trace-console': true,
+		trace_console: true,
 
 		name: 'Total.js',
 		version: '1.0.0',
 		author: '',
 		secret: self.syshash,
-		'secret-uid': self.syshash.substring(10),
+		secret_uid: self.syshash.substring(10),
 
 		'security.txt': 'Contact: mailto:support@totaljs.com\nContact: https://www.totaljs.com/contact/',
-		'etag-version': '',
-		'directory-src': '/.src/',
-		'directory-bundles': '/bundles/',
-		'directory-controllers': '/controllers/',
-		'directory-components': '/components/',
-		'directory-views': '/views/',
-		'directory-definitions': '/definitions/',
-		'directory-temp': '/tmp/',
-		'directory-models': '/models/',
-		'directory-schemas': '/schemas/',
-		'directory-operations': '/operations/',
-		'directory-resources': '/resources/',
-		'directory-public': '/public/',
-		'directory-public-virtual': '/app/',
-		'directory-modules': '/modules/',
-		'directory-source': '/source/',
-		'directory-logs': '/logs/',
-		'directory-tests': '/tests/',
-		'directory-databases': '/databases/',
-		'directory-workers': '/workers/',
-		'directory-packages': '/packages/',
-		'directory-private': '/private/',
-		'directory-isomorphic': '/isomorphic/',
-		'directory-configs': '/configs/',
-		'directory-services': '/services/',
-		'directory-themes': '/themes/',
+		etag_version: '',
+		directory_src: '/.src/',
+		directory_bundles: '/bundles/',
+		directory_controllers: '/controllers/',
+		directory_components: '/components/',
+		directory_views: '/views/',
+		directory_definitions: '/definitions/',
+		directory_temp: '/tmp/',
+		directory_models: '/models/',
+		directory_schemas: '/schemas/',
+		directory_operations: '/operations/',
+		directory_resources: '/resources/',
+		directory_public: '/public/',
+		directory_public_virtual: '/app/',
+		directory_modules: '/modules/',
+		directory_source: '/source/',
+		directory_logs: '/logs/',
+		directory_tests: '/tests/',
+		directory_databases: '/databases/',
+		directory_workers: '/workers/',
+		directory_packages: '/packages/',
+		directory_private: '/private/',
+		directory_isomorphic: '/isomorphic/',
+		directory_configs: '/configs/',
+		directory_services: '/services/',
+		directory_themes: '/themes/',
 
 		// all HTTP static request are routed to directory-public
-		'static-url': '',
-		'static-url-script': '/js/',
-		'static-url-style': '/css/',
-		'static-url-image': '/img/',
-		'static-url-video': '/video/',
-		'static-url-font': '/fonts/',
-		'static-url-download': '/download/',
-		'static-url-components': '/components.',
-		'static-accepts': { flac: true, jpg: true, jpeg: true, png: true, gif: true, ico: true, js: true, css: true, txt: true, xml: true, woff: true, woff2: true, otf: true, ttf: true, eot: true, svg: true, zip: true, rar: true, pdf: true, docx: true, xlsx: true, doc: true, xls: true, html: true, htm: true, appcache: true, manifest: true, map: true, ogv: true, ogg: true, mp4: true, mp3: true, webp: true, webm: true, swf: true, package: true, json: true, md: true, m4v: true, jsx: true, heif: true, heic: true },
+		static_url: '',
+		static_url_script: '/js/',
+		static_url_style: '/css/',
+		static_url_image: '/img/',
+		static_url_video: '/video/',
+		static_url_font: '/fonts/',
+		static_url_download: '/download/',
+		static_url_components: '/components.',
+		static_accepts: { flac: true, jpg: true, jpeg: true, png: true, gif: true, ico: true, js: true, css: true, txt: true, xml: true, woff: true, woff2: true, otf: true, ttf: true, eot: true, svg: true, zip: true, rar: true, pdf: true, docx: true, xlsx: true, doc: true, xls: true, html: true, htm: true, appcache: true, manifest: true, map: true, ogv: true, ogg: true, mp4: true, mp3: true, webp: true, webm: true, swf: true, package: true, json: true, md: true, m4v: true, jsx: true, heif: true, heic: true },
 
 		// 'static-accepts-custom': [],
 
-		'default-xpoweredby': 'Total.js',
-		'default-layout': 'layout',
-		'default-theme': '',
-		'default-proxy': '',
-		'default-request-maxkeys': 33,
+		default_xpoweredby: 'Total.js',
+		default_layout: 'layout',
+		default_theme: '',
+		default_proxy: '',
+		default_request_maxkeys: 33,
 
 		// default maximum request size / length
 		// default 10 kB
-		'default-request-maxlength': 10,
-		'default-websocket-maxlength': 2,
-		'default-websocket-encodedecode': true,
-		'default-maxopenfiles': 0,
-		'default-timezone': '',
-		'default-root': '',
-		'default-response-maxage': '11111111',
-		'default-errorbuilder-status': 200,
+		default_request_maxlength: 10,
+		default_websocket_maxlength: 2,
+		default_websocket_encodedecode: true,
+		default_maxopenfiles: 0,
+		default_timezone: '',
+		default_root: '',
+		default_response_maxage: '11111111',
+		default_errorbuilder_status: 200,
 
 		// Default originators
-		'default-cors': null,
+		default_cors: null,
 
 		// Seconds (2 minutes)
-		'default-cors-maxage': 120,
+		default_cors_maxage: 120,
 
 		// in milliseconds
-		'default-request-timeout': 3000,
-		'default-dependency-timeout': 1500,
-		'default-restbuilder-timeout': 10000,
+		default_request_timeout: 3000,
+		default_dependency_timeout: 1500,
+		default_restbuilder_timeout: 10000,
 
 		// otherwise is used ImageMagick (Heroku supports ImageMagick)
 		// gm = graphicsmagick or im = imagemagick
-		'default-image-converter': 'gm',
-		'default-image-quality': 93,
-		'default-image-consumption': 30,
+		default_image_converter: 'gm',
+		default_image_quality: 93,
+		default_image_consumption: 30,
 
-		'allow-static-files': true,
-		'allow-gzip': true,
-		'allow-websocket': true,
-		'allow-websocket-compression': true,
-		'allow-compile': true,
-		'allow-compile-script': true,
-		'allow-compile-style': true,
-		'allow-compile-html': true,
-		'allow-compile-build': true,
-		'allow-performance': false,
-		'allow-custom-titles': false,
-		'allow-cache-snapshot': false,
-		'allow-cache-cluster': false,
-		'allow-debug': false,
-		'allow-head': false,
-		'allow-filter-errors': true,
-		'allow-clear-temp': true,
-		'allow-ssc-validation': false,
-		'nosql-worker': false,
-		'nosql-inmemory': null, // String Array
-		'nosql-cleaner': 1440,
-		'nosql-logger': true,
+		allow_static_files: true,
+		allow_gzip: true,
+		allow_websocket: true,
+		allow_websocket_compression: true,
+		allow_compile: true,
+		allow_compile_script: true,
+		allow_compile_style: true,
+		allow_compile_html: true,
+		allow_performance: false,
+		allow_custom_titles: false,
+		allow_cache_snapshot: false,
+		allow_cache_cluster: false,
+		allow_debug: false,
+		allow_head: false,
+		allow_filter_errors: true,
+		allow_clear_temp: true,
+		allow_ssc_validation: false,
+		nosql_worker: false,
+		nosql_inmemory: null, // String Array
+		nosql_cleaner: 1440,
+		nosql_logger: true,
 		logger: false,
 
 		// Used in F.service()
 		// All values are in minutes
-		'default-interval-clear-resources': 20,
-		'default-interval-clear-cache': 10,
-		'default-interval-clear-dnscache': 120,
-		'default-interval-precompile-views': 61,
-		'default-interval-websocket-ping': 3,
-		'default-interval-uptodate': 5
+		default_interval_clear_resources: 20,
+		default_interval_clear_cache: 10,
+		default_interval_clear_dnscache: 120,
+		default_interval_precompile_views: 61,
+		default_interval_websocket_ping: 3,
+		default_interval_uptodate: 5,
+
+		set ['mail-address-reply'] (val) {
+			CONF['mail_address_reply'] = val;
+			return null;
+		},
+
+		set ['mail-address-from'] (val) {
+			CONF['mail_address_from'] = val;
+			return null;
+		},
+
+		set ['mail-address-copy'] (val) {
+			CONF['mail_address_copy'] = val;
+			return null;
+		}
 	};
 
 	global.G = self.global = {};
@@ -1202,9 +1217,9 @@ F.useSMTP = function(smtp, options, callback) {
 	Mail.try(smtp, options, function(err) {
 
 		if (!err) {
-			delete F.temporary['mail-settings'];
-			F.config['mail-smtp'] = smtp;
-			F.config['mail-smtp-options'] = options;
+			delete F.temporary.mail_settings;
+			CONF.mail_smtp = smtp;
+			CONF.mail_smtp_options = options;
 		}
 
 		if (callback)
@@ -1340,11 +1355,6 @@ global.TABLE = function(name) {
 	return db;
 };
 
-global.GRAPHDB = function(name) {
-	var key = 'gdb_' + name;
-	return F.databases[key] ? F.databases[key] : F.databases[key] = require('./graphdb').load(name, +(F.config['graphdb.' + name] || 0));
-};
-
 F.stop = F.kill = function(signal) {
 
 	if (F.isKilled)
@@ -1362,7 +1372,7 @@ F.stop = F.kill = function(signal) {
 
 	framework_nosql.kill(signal);
 
-	F.emit('exit', signal);
+	EMIT('exit', signal);
 
 	if (!F.isWorker && process.send)
 		TRY(() => process.send('total:stop'));
@@ -1727,8 +1737,8 @@ global.CORS = F.cors = function(url, flags, credentials) {
 	if (!methods.length)
 		methods = 'POST,PUT,GET,DELETE,PATCH,GET,HEAD'.split(',');
 
-	if (!origin.length && CONF['default-cors'])
-		origin = CONF['default-cors'];
+	if (!origin.length && CONF.default_cors)
+		origin = CONF.default_cors;
 
 	route.isWILDCARD = url.lastIndexOf('*') !== -1;
 
@@ -1752,7 +1762,7 @@ global.CORS = F.cors = function(url, flags, credentials) {
 	route.methods = methods.length ? methods : null;
 	route.headers = headers.length ? headers : null;
 	route.credentials = credentials;
-	route.age = age || F.config['default-cors-maxage'];
+	route.age = age || CONF.default_cors_maxage;
 
 	var e = F.routes.cors.findItem(function(item) {
 		return item.hash === route.hash;
@@ -2366,7 +2376,7 @@ global.ROUTE = F.web = F.route = function(url, funcExecute, flags, length, langu
 		method += (method ? ',' : '') + 'get';
 	}
 
-	if (F.config['allow-head'] && flags.indexOf('get') !== -1) {
+	if (CONF.allow_head && flags.indexOf('get') !== -1) {
 		flags.append('head');
 		method += (method ? ',' : '') + 'head';
 	}
@@ -2430,9 +2440,9 @@ global.ROUTE = F.web = F.route = function(url, funcExecute, flags, length, langu
 	r.flags2 = flags_to_object(flags);
 	r.method = method;
 	r.execute = funcExecute;
-	r.length = (length || F.config['default-request-maxlength']) * 1024;
+	r.length = (length || CONF.default_request_maxlength) * 1024;
 	r.middleware = middleware;
-	r.timeout = timeout === undefined ? (isDELAY ? 0 : F.config['default-request-timeout']) : timeout;
+	r.timeout = timeout === undefined ? (isDELAY ? 0 : CONF.default_request_timeout) : timeout;
 	r.isGET = flags.indexOf('get') !== -1;
 	r.isMULTIPLE = isMULTIPLE;
 	r.isJSON = isJSON;
@@ -2496,7 +2506,7 @@ global.ROUTE = F.web = F.route = function(url, funcExecute, flags, length, langu
 	if (isMOBILE)
 		F._request_check_mobile = true;
 
-	F.emit('route', 'web', instance);
+	EMIT('route', 'web', instance);
 	return instance;
 };
 
@@ -2642,7 +2652,7 @@ global.MAP = F.map = function(url, filename, filter) {
 		isPackage = true;
 	} else if (c === '=') {
 		if (F.isWindows)
-			filename = U.combine(F.config['directory-themes'], filename.substring(1));
+			filename = U.combine(CONF.directory_themes, filename.substring(1));
 		else
 			filename = F.path.themes(filename.substring(1));
 		isPackage = true;
@@ -3095,7 +3105,7 @@ global.WEBSOCKET = F.websocket = function(url, funcInitialize, flags, length) {
 	r.onInitialize = funcInitialize;
 	r.protocols = protocols || EMPTYARRAY;
 	r.allow = allow || [];
-	r.length = (length || F.config['default-websocket-maxlength']) * 1024;
+	r.length = (length || CONF.default_websocket_maxlength) * 1024;
 	r.isWEBSOCKET = true;
 	r.MEMBER = membertype;
 	r.isJSON = isJSON;
@@ -3115,13 +3125,13 @@ global.WEBSOCKET = F.websocket = function(url, funcInitialize, flags, length) {
 	r.type = 'websocket';
 	F.routes.websockets.push(r);
 	F.initwebsocket && F.initwebsocket();
-	F.emit('route', 'websocket', r);
+	EMIT('route', 'websocket', r);
 	!_controller && F.$routesSort(2);
 	return instance;
 };
 
 F.initwebsocket = function() {
-	if (F.routes.websockets.length && F.config['allow-websocket'] && F.server) {
+	if (F.routes.websockets.length && CONF.allow_websocket && F.server) {
 		F.server.on('upgrade', F.$upgrade);
 		F.initwebsocket = null;
 	}
@@ -3238,7 +3248,7 @@ global.FILE = F.file = function(fnValidation, fnExecute, flags) {
 
 	F.routes.files.push(r);
 	F.routes.files.sort((a, b) => !a.url ? -1 : !b.url ? 1 : a.url.length > b.url.length ? -1 : 1);
-	F.emit('route', 'file', r);
+	EMIT('route', 'file', r);
 	F._length_files++;
 	return F;
 };
@@ -3411,7 +3421,7 @@ F.errorcallback = function(err) {
  * @return {Framework}
  */
 F.problem = F.wtf = function(message, name, uri, ip) {
-	F.$events.problem && F.emit('problem', message, name, uri, ip);
+	F.$events.problem && EMIT('problem', message, name, uri, ip);
 
 	if (message instanceof framework_builders.ErrorBuilder)
 		message = message.plain();
@@ -3442,7 +3452,7 @@ global.PRINTLN = function(msg) {
  * @return {Framework}
  */
 F.change = function(message, name, uri, ip) {
-	F.$events.change && F.emit('change', message, name, uri, ip);
+	F.$events.change && EMIT('change', message, name, uri, ip);
 
 	if (message instanceof framework_builders.ErrorBuilder)
 		message = message.plain();
@@ -3470,10 +3480,10 @@ F.change = function(message, name, uri, ip) {
  */
 F.trace = function(message, name, uri, ip) {
 
-	if (!F.config.trace)
+	if (!CONF.trace)
 		return F;
 
-	F.$events.trace && F.emit('trace', message, name, uri, ip);
+	F.$events.trace && EMIT('trace', message, name, uri, ip);
 
 	if (message instanceof framework_builders.ErrorBuilder)
 		message = message.plain();
@@ -3484,7 +3494,7 @@ F.trace = function(message, name, uri, ip) {
 	var obj = { message: message, name: name, url: uri ? typeof(uri) === 'string' ? uri : Parser.format(uri) : undefined, ip: ip, date: NOW };
 	F.logger('traces', obj.message, 'url: ' + obj.url, 'source: ' + obj.name, 'ip: ' + obj.ip);
 
-	F.config['trace-console'] && console.log(NOW.format('yyyy-MM-dd HH:mm:ss'), '[trace]', message, '|', 'url: ' + obj.url, 'source: ' + obj.name, 'ip: ' + obj.ip);
+	CONF.trace_console && console.log(NOW.format('yyyy-MM-dd HH:mm:ss'), '[trace]', message, '|', 'url: ' + obj.url, 'source: ' + obj.name, 'ip: ' + obj.ip);
 
 	if (F.traces) {
 		F.traces.push(obj);
@@ -3509,7 +3519,7 @@ global.MODULE = F.module = function(name) {
  * @return {Framework}
  */
 F.modify = function(fn) {
-	OBSOLETE('F.modify()', 'This method will be removed from in versions.');
+	OBSOLETE('F.modify()', 'This method will be removed in new versions.');
 	if (!F.modificators)
 		F.modificators = [];
 	F.modificators.push(fn);
@@ -3521,18 +3531,18 @@ F.$bundle = function(callback) {
 
 	var makebundle = function() {
 		require('./bundles').make(function() {
-			F.directory = HEADERS.workers.cwd = directory = F.path.root(F.config['directory-src']);
+			F.directory = HEADERS.workers.cwd = directory = F.path.root(CONF.directory_src);
 			callback();
 		});
 	};
 
 	try {
-		Fs.statSync(F.path.root(F.config['directory-bundles']));
+		Fs.statSync(F.path.root(CONF.directory_bundles));
 		if (F.$bundling) {
 			makebundle();
 			return;
 		} else
-			F.directory = HEADERS.workers.cwd = directory = F.path.root(F.config['directory-src']);
+			F.directory = HEADERS.workers.cwd = directory = F.path.root(CONF.directory_src);
 	} catch(e) {}
 	callback();
 };
@@ -3599,7 +3609,7 @@ F.$load = function(types, targetdirectory, callback, packageName) {
 
 	if (!types || types.indexOf('modules') !== -1) {
 		operations.push(function(resume) {
-			dir = U.combine(targetdirectory, isPackage ? '/modules/' : F.config['directory-modules']);
+			dir = U.combine(targetdirectory, isPackage ? '/modules/' : CONF.directory_modules);
 			arr = [];
 			listing(dir, 0, arr, '.js');
 			arr.forEach((item) => dependencies.push(next => F.install('module', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next, packageName)));
@@ -3609,7 +3619,7 @@ F.$load = function(types, targetdirectory, callback, packageName) {
 
 	if (!types || types.indexOf('isomorphic') !== -1) {
 		operations.push(function(resume) {
-			dir = U.combine(targetdirectory, isPackage ? '/isomorphic/' : F.config['directory-isomorphic']);
+			dir = U.combine(targetdirectory, isPackage ? '/isomorphic/' : CONF.directory_isomorphic);
 			arr = [];
 			listing(dir, 0, arr, '.js');
 			arr.forEach((item) => dependencies.push(next => F.install('isomorphic', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next, packageName)));
@@ -3619,7 +3629,7 @@ F.$load = function(types, targetdirectory, callback, packageName) {
 
 	if (!types || types.indexOf('packages') !== -1) {
 		operations.push(function(resume) {
-			dir = U.combine(targetdirectory, isPackage ? '/packages/' : F.config['directory-packages']);
+			dir = U.combine(targetdirectory, isPackage ? '/packages/' : CONF.directory_packages);
 			arr = [];
 			listing(dir, 0, arr, '.package');
 			var dirtmp = U.$normalize(dir);
@@ -3666,7 +3676,7 @@ F.$load = function(types, targetdirectory, callback, packageName) {
 
 	if (!types || types.indexOf('models') !== -1) {
 		operations.push(function(resume) {
-			dir = U.combine(targetdirectory, isPackage ? '/models/' : F.config['directory-models']);
+			dir = U.combine(targetdirectory, isPackage ? '/models/' : CONF.directory_models);
 			arr = [];
 			listing(dir, 0, arr);
 			arr.forEach((item) => dependencies.push(next => F.install('model', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next, packageName)));
@@ -3676,7 +3686,7 @@ F.$load = function(types, targetdirectory, callback, packageName) {
 
 	if (!types || types.indexOf('schemas') !== -1) {
 		operations.push(function(resume) {
-			dir = U.combine(targetdirectory, isPackage ? '/schemas/' : F.config['directory-schemas']);
+			dir = U.combine(targetdirectory, isPackage ? '/schemas/' : CONF.directory_schemas);
 			arr = [];
 			listing(dir, 0, arr);
 			arr.forEach((item) => dependencies.push(next => F.install('schema', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next, packageName)));
@@ -3686,7 +3696,7 @@ F.$load = function(types, targetdirectory, callback, packageName) {
 
 	if (!types || types.indexOf('operations') !== -1) {
 		operations.push(function(resume) {
-			dir = U.combine(targetdirectory, isPackage ? '/operations/' : F.config['directory-operations']);
+			dir = U.combine(targetdirectory, isPackage ? '/operations/' : CONF.directory_operations);
 			arr = [];
 			listing(dir, 0, arr);
 			arr.forEach((item) => dependencies.push(next => F.install('operation', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next, packageName)));
@@ -3697,7 +3707,7 @@ F.$load = function(types, targetdirectory, callback, packageName) {
 	if (!types || types.indexOf('themes') !== -1) {
 		operations.push(function(resume) {
 			arr = [];
-			dir = U.combine(targetdirectory, isPackage ? '/themes/' : F.config['directory-themes']);
+			dir = U.combine(targetdirectory, isPackage ? '/themes/' : CONF.directory_themes);
 			listing(dir, 0, arr, undefined, true);
 			arr.forEach(function(item) {
 				var themeName = item.name;
@@ -3713,7 +3723,7 @@ F.$load = function(types, targetdirectory, callback, packageName) {
 
 	if (!types || types.indexOf('definitions') !== -1) {
 		operations.push(function(resume) {
-			dir = U.combine(targetdirectory, isPackage ? '/definitions/' : F.config['directory-definitions']);
+			dir = U.combine(targetdirectory, isPackage ? '/definitions/' : CONF.directory_definitions);
 			arr = [];
 			listing(dir, 0, arr);
 			arr.forEach((item) => dependencies.push(next => F.install('definition', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next, packageName)));
@@ -3724,7 +3734,7 @@ F.$load = function(types, targetdirectory, callback, packageName) {
 	if (!types || types.indexOf('controllers') !== -1) {
 		operations.push(function(resume) {
 			arr = [];
-			dir = U.combine(targetdirectory, isPackage ? '/controllers/' : F.config['directory-controllers']);
+			dir = U.combine(targetdirectory, isPackage ? '/controllers/' : CONF.directory_controllers);
 			listing(dir, 0, arr);
 			arr.forEach((item) => dependencies.push(next => F.install('controller', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next, packageName)));
 			resume();
@@ -3734,7 +3744,7 @@ F.$load = function(types, targetdirectory, callback, packageName) {
 	if (!types || types.indexOf('components') !== -1) {
 		operations.push(function(resume) {
 			arr = [];
-			dir = U.combine(targetdirectory, isPackage ? '/components/' : F.config['directory-components']);
+			dir = U.combine(targetdirectory, isPackage ? '/components/' : CONF.directory_components);
 			listing(dir, 0, arr, '.html');
 			arr.forEach((item) => dependencies.push(next => F.install('component', item.name, item.filename, undefined, undefined, undefined, undefined, undefined, undefined, next, packageName)));
 			resume();
@@ -3971,8 +3981,8 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 		F.dependencies[key].count++;
 
 		setTimeout(function() {
-			F.emit(type + '#' + name);
-			F.emit('install', type, name);
+			EMIT(type + '#' + name);
+			EMIT('install', type, name);
 			F.temporary.ready[type + '#' + name] = NOW;
 		}, 500);
 
@@ -3983,9 +3993,9 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 	if (type === 'config' || type === 'configuration' || type === 'settings') {
 		F.$configure_configs(declaration instanceof Array ? declaration : declaration.toString().split('\n'), true);
 		setTimeout(function() {
-			delete F.temporary['mail-settings'];
-			F.emit(type + '#' + name, F.config);
-			F.emit('install', type, name);
+			delete F.temporary.mail_settings;
+			EMIT(type + '#' + name, CONF);
+			EMIT('install', type, name);
 			F.temporary.ready[type + '#' + name] = NOW;
 		}, 500);
 
@@ -3999,8 +4009,8 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 
 		F.$configure_versions(declaration.toString().split('\n'));
 		setTimeout(function() {
-			F.emit(type + '#' + name);
-			F.emit('install', type, name);
+			EMIT(type + '#' + name);
+			EMIT('install', type, name);
 			F.temporary.ready[type + '#' + name] = NOW;
 		}, 500);
 
@@ -4014,8 +4024,8 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 
 		F.$configure_workflows(declaration.toString().split('\n'));
 		setTimeout(function() {
-			F.emit(type + '#' + name);
-			F.emit('install', type, name);
+			EMIT(type + '#' + name);
+			EMIT('install', type, name);
 			F.temporary.ready[type + '#' + name] = NOW;
 			F.consoledebug('install', type + '#' + name);
 		}, 500);
@@ -4029,8 +4039,8 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 
 		F.$configure_sitemap(declaration.toString().split('\n'));
 		setTimeout(function() {
-			F.emit(type + '#' + name);
-			F.emit('install', type, name);
+			EMIT(type + '#' + name);
+			EMIT('install', type, name);
 			F.temporary.ready[type + '#' + name] = NOW;
 			F.consoledebug('install', type + '#' + name);
 		}, 500);
@@ -4053,8 +4063,8 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 		content = parseComponent(internal ? declaration : Fs.readFileSync(declaration).toString(ENCODING), name);
 
 		if (F.$bundling) {
-			content.js && Fs.appendFileSync(F.path.temp(temporary + '.js'), hash + (F.config.debug ? component_debug(name, content.js, 'js') : content.js) + hash.substring(0, hash.length - 1));
-			content.css && Fs.appendFileSync(F.path.temp(temporary + '.css'), hash + (F.config.debug ? component_debug(name, content.css, 'css') : content.css) + hash.substring(0, hash.length - 1));
+			content.js && Fs.appendFileSync(F.path.temp(temporary + '.js'), hash + (CONF.debug ? component_debug(name, content.js, 'js') : content.js) + hash.substring(0, hash.length - 1));
+			content.css && Fs.appendFileSync(F.path.temp(temporary + '.css'), hash + (CONF.debug ? component_debug(name, content.css, 'css') : content.css) + hash.substring(0, hash.length - 1));
 		}
 
 		if (content.js)
@@ -4076,7 +4086,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 
 		F.components.has = true;
 
-		var link = F.config['static-url-components'];
+		var link = CONF.static_url_components;
 		F.components.version = NOW.getTime();
 		F.components.links = (F.components.js ? '<script src="{0}js?version={1}"></script>'.format(link, F.components.version) : '') + (F.components.css ? '<link type="text/css" rel="stylesheet" href="{0}css?version={1}" />'.format(link, F.components.version) : '');
 
@@ -4096,7 +4106,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 				_controller = '';
 				obj.name = name;
 				F.components.instances[name] = obj;
-				obj && typeof(obj.install) === 'function' && obj.install(options || F.config[_owner], name);
+				obj && typeof(obj.install) === 'function' && obj.install(options || CONF[_owner], name);
 			} catch(e) {
 				F.error(e, 'F.install(\'component\', \'{0}\')'.format(name));
 			}
@@ -4110,7 +4120,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 				obj.$owner = _owner;
 				_controller = '';
 				F.components.instances[name] = obj;
-				typeof(obj.install) === 'function' && obj.install(options || F.config[_owner], name);
+				typeof(obj.install) === 'function' && obj.install(options || CONF[_owner], name);
 				(function(name) {
 					setTimeout(function() {
 						delete require.cache[name];
@@ -4131,12 +4141,12 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 				tmp = F.components.groups[obj.group] = {};
 
 			if (content.js) {
-				Fs.appendFileSync(F.path.temp(temporary + '.js'), hash + (F.config.debug ? component_debug(name, content.js, 'js') : content.js) + hash.substring(0, hash.length - 1));
+				Fs.appendFileSync(F.path.temp(temporary + '.js'), hash + (CONF.debug ? component_debug(name, content.js, 'js') : content.js) + hash.substring(0, hash.length - 1));
 				tmp.js = true;
 			}
 
 			if (content.css) {
-				Fs.appendFileSync(F.path.temp(temporary + '.css'), hash + (F.config.debug ? component_debug(name, content.css, 'css') : content.css) + hash.substring(0, hash.length - 1));
+				Fs.appendFileSync(F.path.temp(temporary + '.css'), hash + (CONF.debug ? component_debug(name, content.css, 'css') : content.css) + hash.substring(0, hash.length - 1));
 				tmp.css = true;
 			}
 
@@ -4145,8 +4155,8 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 		}
 
 		!skipEmit && setTimeout(function() {
-			F.emit(type + '#' + name);
-			F.emit('install', type, name);
+			EMIT(type + '#' + name);
+			EMIT('install', type, name);
 			F.temporary.ready[type + '#' + name] = NOW;
 		}, 500);
 
@@ -4159,7 +4169,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 	if (type === 'package') {
 
 		var id = Path.basename(declaration, '.' + U.getExtension(declaration));
-		var dir = F.config['directory-temp'][0] === '~' ? Path.join(F.config['directory-temp'].substring(1), id + '.package') : Path.join(F.path.root(), F.config['directory-temp'], id + '.package');
+		var dir = CONF.directory_temp[0] === '~' ? Path.join(CONF.directory_temp.substring(1), id + '.package') : Path.join(F.path.root(), CONF.directory_temp, id + '.package');
 
 		F.routes.packages[id] = dir;
 
@@ -4171,12 +4181,12 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 				return;
 			}
 
-			F.install('module', id, filename, options || F.config['package#' + name], function(err) {
+			F.install('module', id, filename, options || CONF['package#' + name], function(err) {
 				setTimeout(function() {
-					F.emit('module#' + name);
-					F.emit(type + '#' + name);
-					F.emit('install', 'module', name);
-					F.emit('install', type, name);
+					EMIT('module#' + name);
+					EMIT(type + '#' + name);
+					EMIT('install', 'module', name);
+					EMIT('install', type, name);
 					F.temporary.ready['package#' + name] = NOW;
 					F.temporary.ready['module#' + name] = NOW;
 				}, 500);
@@ -4201,11 +4211,11 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 		obj.$owner = _owner;
 		F.temporary.owners[_owner] = true;
 
-		typeof(obj.install) === 'function' && obj.install(options || F.config[_owner], name);
+		typeof(obj.install) === 'function' && obj.install(options || CONF[_owner], name);
 
 		!skipEmit && setTimeout(function() {
-			F.emit(type + '#' + name);
-			F.emit('install', type, name);
+			EMIT(type + '#' + name);
+			EMIT('install', type, name);
 			F.temporary.ready[type + '#' + name] = NOW;
 		}, 500);
 
@@ -4224,14 +4234,14 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 	if (type === 'package2') {
 		type = type.substring(0, type.length - 1);
 		var id = U.getName(declaration, '.package');
-		var dir = F.config['directory-temp'][0] === '~' ? Path.join(F.config['directory-temp'].substring(1), id) : Path.join(F.path.root(), F.config['directory-temp'], id);
+		var dir = CONF.directory_temp[0] === '~' ? Path.join(CONF.directory_temp.substring(1), id) : Path.join(F.path.root(), CONF.directory_temp, id);
 		var filename = Path.join(dir, 'index.js');
-		F.install('module', id.replace(/\.package$/i, ''), filename, options || F.config['package#' + name], function(err) {
+		F.install('module', id.replace(/\.package$/i, ''), filename, options || CONF['package#' + name], function(err) {
 			setTimeout(function() {
-				F.emit('module#' + name);
-				F.emit(type + '#' + name);
-				F.emit('install', type, name);
-				F.emit('install', 'module', name);
+				EMIT('module#' + name);
+				EMIT(type + '#' + name);
+				EMIT('install', type, name);
+				EMIT('install', 'module', name);
 				F.temporary.ready['package#' + name] = NOW;
 				F.temporary.ready['module#' + name] = NOW;
 			}, 500);
@@ -4260,8 +4270,8 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 		Fs.writeFileSync(item.filename, framework_internal.modificators(declaration, name));
 
 		setTimeout(function() {
-			F.emit(type + '#' + name);
-			F.emit('install', type, name);
+			EMIT(type + '#' + name);
+			EMIT('install', type, name);
 			F.temporary.ready[type + '#' + name] = NOW;
 		}, 500);
 
@@ -4310,8 +4320,8 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 		callback && callback(null, name);
 
 		setTimeout(function() {
-			F.emit(type + '#' + name);
-			F.emit('install', type, name);
+			EMIT(type + '#' + name);
+			EMIT('install', type, name);
 			F.temporary.ready[type + '#' + name] = NOW;
 		}, 500);
 
@@ -4380,8 +4390,8 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 		callback && callback(null, name);
 
 		setTimeout(function() {
-			F.emit(type + '#' + name, obj);
-			F.emit('install', type, name, obj);
+			EMIT(type + '#' + name, obj);
+			EMIT('install', type, name, obj);
 			F.temporary.ready[type + '#' + name] = NOW;
 		}, 500);
 
@@ -4479,11 +4489,11 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 		else
 			F.sources[name] = obj;
 
-		typeof(obj.install) === 'function' && obj.install(options || F.config[type + '#' + name], name);
+		typeof(obj.install) === 'function' && obj.install(options || CONF[type + '#' + name], name);
 
 		!skipEmit && setTimeout(function() {
-			F.emit(type + '#' + name, obj);
-			F.emit('install', type, name, obj);
+			EMIT(type + '#' + name, obj);
+			EMIT('install', type, name, obj);
 			F.temporary.ready[type + '#' + name] = NOW;
 		}, 500);
 
@@ -4571,7 +4581,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 			} else {
 				F.$configure_configs('@' + name + '/config');
 
-				if (F.config.debug)
+				if (CONF.debug)
 					F.$configure_configs('@' + name + '/config-debug');
 				else
 					F.$configure_configs('@' + name + '/config-release');
@@ -4688,7 +4698,7 @@ F.install_prepare = function(noRecursive) {
 		if (keys.length)
 			throw new Error('Dependency exception, missing dependencies for: ' + keys.join(', ').trim());
 		delete F.temporary.other.dependencies;
-	}, F.config['default-dependency-timeout']);
+	}, CONF.default_dependency_timeout);
 
 	if (!keys.length || noRecursive)
 		return F;
@@ -4707,7 +4717,7 @@ F.install_make = function(key, name, obj, options, callback, skipEmit, type) {
 	_controller = routeID;
 	_owner = type + '#' + name.replace(/\.package$/gi, '');
 
-	typeof(obj.install) === 'function' && obj.install(options || F.config[_owner], name);
+	typeof(obj.install) === 'function' && obj.install(options || CONF[_owner], name);
 	me.processed = true;
 
 	var id = (type === 'module' ? '#' : '') + name;
@@ -4735,8 +4745,8 @@ F.install_make = function(key, name, obj, options, callback, skipEmit, type) {
 
 	if (!skipEmit) {
 		setTimeout(function() {
-			F.emit(type + '#' + name, obj);
-			F.emit('install', type, name, obj);
+			EMIT(type + '#' + name, obj);
+			EMIT('install', type, name, obj);
 			F.temporary.ready[type + '#' + name] = NOW;
 		}, 500);
 	}
@@ -5005,7 +5015,7 @@ F.uninstall = function(type, name, options, skipEmit, packageName) {
 		F.consoledebug('uninstall', type + '#' + name);
 	}
 
-	!skipEmit && F.emit('uninstall', type, name);
+	!skipEmit && EMIT('uninstall', type, name);
 	return F;
 };
 
@@ -5092,7 +5102,7 @@ F.register = function(path) {
 		path = F.path.package(path.substring(1));
 	else if (c === '=') {
 		if (path[1] === '?')
-			F.path.themes(F.config['default-theme'] + path.substring(2));
+			F.path.themes(CONF.default_theme + path.substring(2));
 		else
 			path = F.path.themes(path.substring(1));
 	}
@@ -5181,8 +5191,8 @@ F.onMapping = function(url, def, ispublic, encode) {
 		url = '/' + url;
 
 	var tmp = url;
-	if (F.config['default-root'])
-		tmp = tmp.substring(F.config['default-root'].length - 1);
+	if (CONF.default_root)
+		tmp = tmp.substring(CONF.default_root.length - 1);
 
 	// component files
 	if (tmp[1] === '~') {
@@ -5429,16 +5439,16 @@ F.onMail = function(address, subject, body, callback, replyTo) {
 	} else
 		message.to(address);
 
-	message.from(F.config['mail-address-from'] || '', F.config.name);
+	message.from(CONF.mail_address_from || '', CONF.name);
 
 	if (replyTo)
 		message.reply(replyTo);
 	else {
-		tmp = F.config['mail-address-reply'];
+		tmp = CONF.mail_address_reply;
 		tmp && tmp.length > 3 && message.reply(tmp);
 	}
 
-	tmp = F.config['mail-address-copy'];
+	tmp = CONF.mail_address_copy;
 	tmp && tmp.length > 3 && message.bcc(tmp);
 
 	message.$sending = setImmediate(cb => message.send2(cb), callback);
@@ -5459,7 +5469,7 @@ F.onMeta = function() {
 
 		switch (i) {
 			case 0:
-				builder += '<title>' + (arg + (F.url !== '/' && !F.config['allow-custom-titles'] ? ' - ' + F.config.name : '')) + '</title>';
+				builder += '<title>' + (arg + (F.url !== '/' && !CONF.allow_custom_titles ? ' - ' + CONF.name : '')) + '</title>';
 				break;
 			case 1:
 				builder += '<meta name="description" content="' + arg + '" />';
@@ -5499,7 +5509,7 @@ global.LOG = F.log = function() {
 	}
 
 	F.path.verify('logs');
-	U.queue('F.log', 5, (next) => Fs.appendFile(U.combine(F.config['directory-logs'], filename + '.log'), time + ' | ' + str + '\n', next));
+	U.queue('F.log', 5, (next) => Fs.appendFile(U.combine(CONF.directory_logs, filename + '.log'), time + ' | ' + str + '\n', next));
 	return F;
 };
 
@@ -5521,7 +5531,7 @@ global.LOGGER = F.logger = function() {
 	}
 
 	F.path.verify('logs');
-	U.queue('F.logger', 5, (next) => Fs.appendFile(U.combine(F.config['directory-logs'], arguments[0] + '.log'), dt + ' | ' + str + '\n', next));
+	U.queue('F.logger', 5, (next) => Fs.appendFile(U.combine(CONF.directory_logs, arguments[0] + '.log'), dt + ' | ' + str + '\n', next));
 	return F;
 };
 
@@ -5537,7 +5547,7 @@ global.LOGMAIL = F.logmail = function(address, subject, body, callback) {
 	}
 
 	if (!subject)
-		subject = F.config.name + ' v' + F.config.version;
+		subject = CONF.name + ' v' + CONF.version;
 
 	var body = '<!DOCTYPE html><html><head><title>' + subject + '</title><meta charset="utf-8" /></head><body><pre style="max-width:600px;font-size:13px;line-height:16px">' + (typeof(body) === 'object' ? JSON.stringify(body).escape() : body) + '</pre></body></html>';
 	return F.onMail(address, subject, body, callback);
@@ -5574,13 +5584,13 @@ F.usage = function(detailed) {
 		memoryTotal: (memory.heapTotal / 1024 / 1024).floor(2),
 		memoryUsage: (memory.heapUsed / 1024 / 1024).floor(2),
 		memoryRss: (memory.rss / 1024 / 1024).floor(2),
-		mode: F.config.debug ? 'debug' : 'release',
+		mode: CONF.debug ? 'debug' : 'release',
 		port: F.port,
 		ip: F.ip,
 		directory: process.cwd()
 	};
 
-	if (F.config['nosql-worker'])
+	if (CONF.nosql_worker)
 		output.framework.pidnosql = framework_nosql.pid();
 
 	var keys = Object.keys(U.queuecache);
@@ -5730,7 +5740,7 @@ function compile_merge(res) {
 	var merge = F.routes.merge[uri.pathname];
 	var filename = merge.filename;
 
-	if (!F.config.debug && existsSync(filename)) {
+	if (!CONF.debug && existsSync(filename)) {
 		var stats = Fs.statSync(filename);
 		var tmp = F.temporary.path[req.$key] = [filename, stats.size, stats.mtime.toUTCString()];
 		compile_gzip(tmp, function() {
@@ -5867,7 +5877,7 @@ function component_debug(filename, value, extension) {
 F.compile_virtual = function(res) {
 
 	var req = res.req;
-	var tmpname = res.options.filename.replace(F.config['directory-public'], F.config['directory-public-virtual']);
+	var tmpname = res.options.filename.replace(CONF.directory_public, CONF.directory_public_virtual);
 
 	if (tmpname === res.options.filename) {
 		F.temporary.notfound[req.$key] = true;
@@ -5885,13 +5895,13 @@ F.compile_virtual = function(res) {
 			return;
 		}
 
-		if (!res.noCompress && COMPRESSIONSPECIAL[req.extension] && F.config['allow-compile'] && !REG_NOCOMPRESS.test(res.options.filename)) {
+		if (!res.noCompress && COMPRESSIONSPECIAL[req.extension] && CONF.allow_compile && !REG_NOCOMPRESS.test(res.options.filename)) {
 			res.options.filename = tmpname;
 			return compile_file(res);
 		}
 
 		var tmp = F.temporary.path[req.$key] = [tmpname, size, stats.mtime.toUTCString()];
-		if (F.config['allow-gzip'] && COMPRESSION[U.getContentType(req.extension)]) {
+		if (CONF.allow_gzip && COMPRESSION[U.getContentType(req.extension)]) {
 			compile_gzip(tmp, function() {
 				delete F.temporary.processing[req.$key];
 				res.$file();
@@ -5919,11 +5929,11 @@ function compile_check(res) {
 
 		if (e) {
 
-			if (!res.noCompress && COMPRESSIONSPECIAL[req.extension] && F.config['allow-compile'] && !REG_NOCOMPRESS.test(res.options.filename))
+			if (!res.noCompress && COMPRESSIONSPECIAL[req.extension] && CONF.allow_compile && !REG_NOCOMPRESS.test(res.options.filename))
 				return compile_file(res);
 
 			var tmp = F.temporary.path[req.$key] = [res.options.filename, size, stats.mtime.toUTCString()];
-			if (F.config['allow-gzip'] && COMPRESSION[U.getContentType(req.extension)]) {
+			if (CONF.allow_gzip && COMPRESSION[U.getContentType(req.extension)]) {
 				compile_gzip(tmp, function() {
 					res.$file();
 					delete F.temporary.processing[req.$key];
@@ -5971,10 +5981,10 @@ function compile_content(extension, content, filename) {
 
 	switch (extension) {
 		case 'js':
-			return F.config['allow-compile-script'] ? framework_internal.compile_javascript(content, filename) : content;
+			return CONF.allow_compile_script ? framework_internal.compile_javascript(content, filename) : content;
 
 		case 'css':
-			content = F.config['allow-compile-style'] ? framework_internal.compile_css(content, filename) : content;
+			content = CONF.allow_compile_style ? framework_internal.compile_css(content, filename) : content;
 			var matches = content.match(REG_COMPILECSS);
 			if (matches) {
 				for (var i = 0, length = matches.length; i < length; i++) {
@@ -6280,7 +6290,7 @@ F.exists = function(req, res, max, callback) {
 	var filename = F.path.temp(name);
 	var httpcachevalid = false;
 
-	RELEASE && (req.headers['if-none-match'] === ETAG + F.config['etag-version']) && (httpcachevalid = true);
+	RELEASE && (req.headers['if-none-match'] === ETAG + CONF.etag_version) && (httpcachevalid = true);
 
 	if (F.isProcessed(name) || httpcachevalid) {
 		res.options.filename = filename;
@@ -6336,7 +6346,7 @@ F.isProcessing = function(filename) {
 	if (index !== -1)
 		name = name.substring(0, index);
 
-	filename = U.combine(F.config['directory-public'], $decodeURIComponent(name));
+	filename = U.combine(CONF.directory_public, $decodeURIComponent(name));
 	return !!F.temporary.processing[filename];
 };
 
@@ -6434,7 +6444,7 @@ global.LOAD = F.load = function(debug, types, pwd) {
 	}
 
 	F.isWorker = true;
-	F.config.debug = debug;
+	CONF.debug = debug;
 	F.isDebug = debug;
 
 	global.DEBUG = debug;
@@ -6459,7 +6469,7 @@ global.LOAD = F.load = function(debug, types, pwd) {
 
 			F.consoledebug('init');
 			F.cache.init();
-			F.emit('init');
+			EMIT('init');
 
 			F.$load(types, directory, function() {
 
@@ -6469,8 +6479,8 @@ global.LOAD = F.load = function(debug, types, pwd) {
 				setTimeout(function() {
 
 					try {
-						F.emit('load', F);
-						F.emit('ready', F);
+						EMIT('load', F);
+						EMIT('ready', F);
 					} catch (err) {
 						F.error(err, 'F.on("load/ready")');
 					}
@@ -6491,7 +6501,7 @@ global.LOAD = F.load = function(debug, types, pwd) {
 
 				}, 500);
 
-				if (F.config['allow-debug']) {
+				if (CONF.allow_debug) {
 					F.consoledebug('done');
 					F.usagesnapshot();
 				}
@@ -6518,10 +6528,10 @@ F.initialize = function(http, debug, options) {
 	var ip = options.ip;
 	var listenpath = options.listenpath;
 
-	options.config && U.extend_headers2(F.config, options.config);
+	options.config && U.extend_headers2(CONF, options.config);
 
-	if (options.debug || options['allow-debug'])
-		F.config['allow-debug'] = true;
+	if (options.debug || options['allow-debug'] || options.allow_debug)
+		CONF.allow_debug = true;
 
 	F.isHTTPS = http.STATUS_CODES === undefined;
 
@@ -6531,7 +6541,7 @@ F.initialize = function(http, debug, options) {
 	if (options.id)
 		F.id = options.id;
 
-	F.config.debug = debug;
+	CONF.debug = debug;
 	F.isDebug = debug;
 
 	if (options.bundling != null)
@@ -6556,21 +6566,21 @@ F.initialize = function(http, debug, options) {
 		F.isTest && F.$configure_configs('config-test', true);
 		F.cache.init();
 		F.consoledebug('init');
-		F.emit('init');
+		EMIT('init');
 
 		if (!port) {
-			if (F.config['default-port'] === 'auto') {
+			if (CONF.default_port === 'auto') {
 				var envPort = +(process.env.PORT || '');
 				if (!isNaN(envPort))
 					port = envPort;
 			} else
-				port = F.config['default-port'];
+				port = CONF.default_port;
 		}
 
 		F.port = port || 8000;
 
 		if (ip !== null) {
-			F.ip = ip || F.config['default-ip'] || '0.0.0.0';
+			F.ip = ip || CONF.default_ip || '0.0.0.0';
 			if (F.ip === 'null' || F.ip === 'undefined' || F.ip === 'auto')
 				F.ip = null;
 		} else
@@ -6579,7 +6589,7 @@ F.initialize = function(http, debug, options) {
 		if (F.ip == null)
 			F.ip = '0.0.0.0';
 
-		!listenpath && (listenpath = F.config['default-listenpath']);
+		!listenpath && (listenpath = CONF.default_listenpath);
 		F.listenpath = listenpath;
 
 		if (F.server) {
@@ -6602,7 +6612,7 @@ F.initialize = function(http, debug, options) {
 			else
 				F.server = http.createServer(F.listener);
 
-			F.config['allow-performance'] && F.server.on('connection', connection_tunning);
+			CONF.allow_performance && F.server.on('connection', connection_tunning);
 			F.initwebsocket && F.initwebsocket();
 			F.consoledebug('HTTP listening');
 
@@ -6626,7 +6636,7 @@ F.initialize = function(http, debug, options) {
 				else
 					listen();
 
-				if (F.config['allow-debug']) {
+				if (CONF.allow_debug) {
 					F.consoledebug('done');
 					F.usagesnapshot();
 				}
@@ -6637,8 +6647,8 @@ F.initialize = function(http, debug, options) {
 				setTimeout(function() {
 
 					try {
-						F.emit('load', F);
-						F.emit('ready', F);
+						EMIT('load', F);
+						EMIT('ready', F);
 					} catch (err) {
 						F.error(err, 'F.on("load/ready")');
 					}
@@ -6744,8 +6754,8 @@ F.mode = function(http, name, options) {
 				debug = true;
 				break;
 		}
-		F.config.debug = debug;
-		F.config.trace = debug;
+		CONF.debug = debug;
+		CONF.trace = debug;
 		F.isDebug = debug;
 		global.DEBUG = debug;
 		global.RELEASE = !debug;
@@ -6784,7 +6794,7 @@ F.mode = function(http, name, options) {
 			break;
 	}
 
-	F.config.trace = debug;
+	CONF.trace = debug;
 	F.consoledebug('startup');
 	F.$startup(function() {
 		F.consoledebug('startup (done)');
@@ -6833,7 +6843,7 @@ F.custom = function(mode, http, request, response, options) {
 			break;
 	}
 
-	F.config.trace = debug;
+	CONF.trace = debug;
 	F.consoledebug('startup');
 	F.$startup(function() {
 		F.consoledebug('startup (done)');
@@ -6850,14 +6860,14 @@ F.console = function() {
 	console.log('Node.js       : ' + process.version);
 	console.log('Total.js      : v' + F.version_header);
 	console.log('OS            : ' + Os.platform() + ' ' + Os.release());
-	F.config['nosql-worker'] && console.log('NoSQL PID     : ' + framework_nosql.pid());
+	CONF.nosql_worker && console.log('NoSQL PID     : ' + framework_nosql.pid());
 	console.log('Memory        : ' + memory.heapUsed.filesize(2) + ' / ' + memory.heapTotal.filesize(2));
 	console.log('====================================================');
-	console.log('Name          : ' + F.config.name);
-	console.log('Version       : ' + F.config.version);
-	console.log('Author        : ' + F.config.author);
+	console.log('Name          : ' + CONF.name);
+	console.log('Version       : ' + CONF.version);
+	console.log('Author        : ' + CONF.author);
 	console.log('Date          : ' + NOW.format('yyyy-MM-dd HH:mm:ss'));
-	console.log('Mode          : ' + (F.config.debug ? 'debug' : 'release'));
+	console.log('Mode          : ' + (CONF.debug ? 'debug' : 'release'));
 	console.log('====================================================');
 	console.log('Directory     : ' + process.cwd());
 	console.log('node_modules  : ' + PATHMODULES);
@@ -6875,7 +6885,7 @@ F.usagesnapshot = function(filename) {
 
 F.consoledebug = function() {
 
-	if (!F.config['allow-debug'])
+	if (!CONF.allow_debug)
 		return F;
 
 	var arr = [new Date().format('yyyy-MM-dd HH:mm:ss'), '--------->'];
@@ -6890,10 +6900,10 @@ F.consoledebug = function() {
  * @return {Framework}
  */
 F.reconnect = function() {
-	if (F.config['default-port'] !== undefined)
-		F.port = F.config['default-port'];
-	if (F.config['default-ip'] !== undefined)
-		F.ip = F.config['default-ip'];
+	if (CONF.default_port !== undefined)
+		F.port = CONF.default_port;
+	if (CONF.default_ip !== undefined)
+		F.ip = CONF.default_ip;
 	F.server.close(() => F.server.listen(F.port, F.ip));
 	return F;
 };
@@ -6937,8 +6947,8 @@ F.service = function(count) {
 	F.temporary.notfound = {};
 
 	// every 7 minutes (default) service clears static cache
-	if (count % F.config['default-interval-clear-cache'] === 0) {
-		F.$events.clear && F.emit('clear', 'temporary', F.temporary);
+	if (count % CONF.default_interval_clear_cache === 0) {
+		F.$events.clear && EMIT('clear', 'temporary', F.temporary);
 		F.temporary.path = {};
 		F.temporary.range = {};
 		F.temporary.views = {};
@@ -6953,24 +6963,24 @@ F.service = function(count) {
 			F.databases[key] && F.databases[key].inmemorylastusage < dt && F.databases[key].release();
 
 		releasegc = true;
-		F.config['allow-debug'] && F.consoledebug('clear temporary cache');
+		CONF.allow_debug && F.consoledebug('clear temporary cache');
 	}
 
 	// every 61 minutes (default) services precompile all (installed) views
-	if (count % F.config['default-interval-precompile-views'] === 0) {
+	if (count % CONF.default_interval_precompile_views === 0) {
 		for (var key in F.routes.views) {
 			var item = F.routes.views[key];
 			F.install('view', key, item.url, null);
 		}
 	}
 
-	if (count % F.config['default-interval-clear-dnscache'] === 0) {
-		F.$events.clear && F.emit('clear', 'dns');
+	if (count % CONF.default_interval_clear_dnscache === 0) {
+		F.$events.clear && EMIT('clear', 'dns');
 		U.clearDNS();
-		F.config['allow-debug'] && F.consoledebug('clear DNS cache');
+		CONF.allow_debug && F.consoledebug('clear DNS cache');
 	}
 
-	var ping = F.config['default-interval-websocket-ping'];
+	var ping = CONF.default_interval_websocket_ping;
 	if (ping > 0 && count % ping === 0) {
 		var has = false;
 		for (var item in F.connections) {
@@ -6981,10 +6991,10 @@ F.service = function(count) {
 				has = true;
 			}
 		}
-		has && F.config['allow-debug'] && F.consoledebug('ping websocket connections');
+		has && CONF.allow_debug && F.consoledebug('ping websocket connections');
 	}
 
-	if (F.uptodates && (count % F.config['default-interval-uptodate'] === 0) && F.uptodates.length) {
+	if (F.uptodates && (count % CONF.default_interval_uptodate === 0) && F.uptodates.length) {
 		var hasUpdate = false;
 		F.uptodates.wait(function(item, next) {
 
@@ -6995,10 +7005,10 @@ F.service = function(count) {
 			item.count++;
 
 			setTimeout(function() {
-				F.config['allow-debug'] && F.consoledebug('uptodate', item.type + '#' + item.url);
+				CONF.allow_debug && F.consoledebug('uptodate', item.type + '#' + item.url);
 				F.install(item.type, item.url, item.options, function(err, name, skip) {
 
-					F.config['allow-debug'] && F.consoledebug('uptodate', item.type + '#' + item.url + ' (done)');
+					CONF.allow_debug && F.consoledebug('uptodate', item.type + '#' + item.url + ' (done)');
 
 					if (skip)
 						return next();
@@ -7009,7 +7019,7 @@ F.service = function(count) {
 					} else {
 						hasUpdate = true;
 						item.name = name;
-						F.$events.uptodate && F.emit('uptodate', item.type, name);
+						F.$events.uptodate && EMIT('uptodate', item.type, name);
 					}
 
 					item.callback && item.callback(err, name);
@@ -7031,17 +7041,17 @@ F.service = function(count) {
 	}
 
 	// every 20 minutes (default) service clears resources
-	if (count % F.config['default-interval-clear-resources'] === 0) {
-		F.$events.clear && F.emit('clear', 'resources');
+	if (count % CONF.default_interval_clear_resources === 0) {
+		F.$events.clear && EMIT('clear', 'resources');
 		F.resources = {};
 		releasegc = true;
-		F.config['allow-debug'] && F.consoledebug('clear resources');
+		CONF.allow_debug && F.consoledebug('clear resources');
 	}
 
 	// Update expires date
 	count % 1000 === 0 && (DATE_EXPIRES = NOW.add('y', 1).toUTCString());
 
-	if (count % F.config['nosql-cleaner'] === 0 && F.config['nosql-cleaner']) {
+	if (count % CONF.nosql_cleaner === 0 && CONF.nosql_cleaner) {
 		keys = Object.keys(F.databasescleaner);
 		keys.wait(function(item, next) {
 			if (item[0] === '$')
@@ -7051,16 +7061,16 @@ F.service = function(count) {
 		});
 	}
 
-	F.$events.service && F.emit('service', count);
+	F.$events.service && EMIT('service', count);
 
-	if (F.config['allow-debug']) {
+	if (CONF.allow_debug) {
 		F.consoledebug('service ({0}x)'.format(count));
 		F.usagesnapshot();
 	}
 
 	releasegc && global.gc && setTimeout(function() {
 		global.gc();
-		F.config['allow-debug'] && F.consoledebug('gc()');
+		CONF.allow_debug && F.consoledebug('gc()');
 	}, 1000);
 
 	// Run schedules
@@ -7084,7 +7094,7 @@ F.service = function(count) {
 		else
 			F.schedules.splice(index, 1);
 
-		F.config['allow-debug'] && F.consoledebug('schedule', schedule.id);
+		CONF.allow_debug && F.consoledebug('schedule', schedule.id);
 		schedule.fn.call(F);
 	}
 
@@ -7114,7 +7124,7 @@ F.listener = function(req, res) {
 	req.uri = framework_internal.parseURI(req);
 
 	F.stats.request.request++;
-	F.$events.request && F.emit('request', req, res);
+	F.$events.request && EMIT('request', req, res);
 
 	if (F._request_check_redirect) {
 		var redirect = F.routes.redirects[req.$protocol + '://' + req.host];
@@ -7133,7 +7143,7 @@ F.listener = function(req, res) {
 	req.xhr = headers['x-requested-with'] === 'XMLHttpRequest';
 	res.success = false;
 	req.user = req.session = null;
-	req.isStaticFile = F.config['allow-static-files'] && U.isStaticFile(req.uri.pathname);
+	req.isStaticFile = CONF.allow_static_files && U.isStaticFile(req.uri.pathname);
 
 	if (req.isStaticFile)
 		req.extension = U.getExtension(req.uri.pathname);
@@ -7254,7 +7264,7 @@ F.$requestcontinue = function(req, res, headers) {
 		flags.push('sse');
 	}
 
-	if (F.config.debug) {
+	if (CONF.debug) {
 		req.$flags += 'h';
 		flags.push('debug');
 	}
@@ -7277,7 +7287,7 @@ F.$requestcontinue = function(req, res, headers) {
 	}
 
 	req.flags = flags;
-	F.$events['request-begin'] && F.emit('request-begin', req, res);
+	F.$events['request-begin'] && EMIT('request-begin', req, res);
 
 	var isCORS = (F._length_cors || F.routes.corsall) && req.headers.origin != null;
 
@@ -7427,13 +7437,13 @@ F.$cors = function(req, res, fn, arg) {
 
 			F.temporary.other[key] = stop ? 2 : 1;
 		}
-	} else if (CONF['default-cors']) {
+	} else if (CONF.default_cors) {
 		key = headers.origin;
 		if (F.temporary.other[key]) {
 			stop = F.temporary.other[key] === 2;
 		} else {
 			origin = key.toLowerCase().substring(key.indexOf('/') + 2);
-			stop = origin !== headers.host && CONF['default-cors'].indexOf(origin) === -1;
+			stop = origin !== headers.host && CONF.default_cors.indexOf(origin) === -1;
 			F.temporary.other[key] = stop ? 2 : 1;
 		}
 	}
@@ -7467,7 +7477,7 @@ F.$cors = function(req, res, fn, arg) {
 
 	if (stop) {
 		fn = null;
-		F.$events['request-end'] && F.emit('request-end', req, res);
+		F.$events['request-end'] && EMIT('request-end', req, res);
 		F.reqstats(false, false);
 		F.stats.request.blocked++;
 		res.writeHead(404);
@@ -7479,7 +7489,7 @@ F.$cors = function(req, res, fn, arg) {
 		return fn(req, res, arg);
 
 	fn = null;
-	F.$events['request-end'] && F.emit('request-end', req, res);
+	F.$events['request-end'] && EMIT('request-end', req, res);
 	F.reqstats(false, false);
 	res.writeHead(200);
 	res.end();
@@ -7506,7 +7516,7 @@ F.$upgrade = function(req, socket, head) {
 
 	req.uri = framework_internal.parseURI(req);
 
-	F.$events.websocket && F.emit('websocket', req, socket, head);
+	F.$events.websocket && EMIT('websocket', req, socket, head);
 	F.stats.request.websocket++;
 
 	req.session = null;
@@ -7628,7 +7638,7 @@ global.MODEL = F.model = function(name) {
 	var obj = F.models[name];
 	if (obj || obj === null)
 		return obj;
-	var filename = U.combine(F.config['directory-models'], name + '.js');
+	var filename = U.combine(CONF.directory_models, name + '.js');
 	existsSync(filename) && F.install('model', name, filename, undefined, undefined, undefined, true);
 	return F.models[name] || null;
 };
@@ -7643,7 +7653,7 @@ global.INCLUDE = global.SOURCE = F.source = function(name, options, callback) {
 	var obj = F.sources[name];
 	if (obj || obj === null)
 		return obj;
-	var filename = U.combine(F.config['directory-source'], name + '.js');
+	var filename = U.combine(CONF.directory_source, name + '.js');
 	existsSync(filename) && F.install('source', name, filename, options, callback, undefined, true);
 	return F.sources[name] || null;
 };
@@ -7725,8 +7735,8 @@ global.VIEW = F.view = function(name, model, layout, repository, language) {
 	if (theme) {
 		controller.themeName = theme;
 		name = prepare_viewname(name);
-	} else if (this.onTheme)
-		controller.themeName = this.onTheme(controller);
+	} else if (F.onTheme)
+		controller.themeName = F.onTheme(controller);
 	else
 		controller.themeName = undefined;
 
@@ -7787,7 +7797,7 @@ F.clear = function(callback, isInit) {
 	var plus = F.id ? 'i-' + F.id + '_' : '';
 
 	if (isInit) {
-		if (!F.config['allow-clear-temp']) {
+		if (!CONF.allow_clear_temp) {
 			if (F.$bundling) {
 				// clears only JS and CSS files
 				U.ls(dir, function(files) {
@@ -7934,7 +7944,7 @@ F.encrypt = function(value, key, isUnique) {
 	else if (type === 'object')
 		value = JSON.stringify(value);
 
-	return value.encrypt(F.config.secret + '=' + key, isUnique);
+	return value.encrypt(CONF.secret + '=' + key, isUnique);
 };
 
 /**
@@ -7955,7 +7965,7 @@ F.decrypt = function(value, key, jsonConvert) {
 	if (typeof(jsonConvert) !== 'boolean')
 		jsonConvert = true;
 
-	var response = (value || '').decrypt(F.config.secret + '=' + key);
+	var response = (value || '').decrypt(CONF.secret + '=' + key);
 	return response ? (jsonConvert ? (response.isJSON() ? response.parseJSON(true) : null) : response) : null;
 };
 
@@ -7973,7 +7983,7 @@ F.hash = function(type, value, salt) {
 	if (typeof(salt) === 'string')
 		plus = salt;
 	else if (salt !== false)
-		plus = (F.config.secret || '');
+		plus = (CONF.secret || '');
 
 	hash.update(value.toString() + plus, ENCODING);
 	return hash.digest('hex');
@@ -8010,7 +8020,7 @@ F.resource = function(name, key) {
 		}
 	}
 
-	var filename = U.combine(F.config['directory-resources'], name + '.resource');
+	var filename = U.combine(CONF.directory_resources, name + '.resource');
 	var empty = false;
 	if (existsSync(filename))
 		body += (body ? '\n' : '') + Fs.readFileSync(filename).toString(ENCODING);
@@ -8595,7 +8605,7 @@ F.$configure_configs = function(arr, rewrite) {
 	if (!arr) {
 
 		var filenameA = U.combine('/', 'config');
-		var filenameB = U.combine('/', 'config-' + (F.config.debug ? 'debug' : 'release'));
+		var filenameB = U.combine('/', 'config-' + (CONF.debug ? 'debug' : 'release'));
 
 		arr = [];
 
@@ -8626,8 +8636,8 @@ F.$configure_configs = function(arr, rewrite) {
 	}
 
 	var done = function() {
-		process.title = 'total: ' + F.config.name.removeDiacritics().toLowerCase().replace(REG_EMPTY, '-').substring(0, 8);
-		F.isVirtualDirectory = existsSync(U.combine(F.config['directory-public-virtual']));
+		process.title = 'total: ' + CONF.name.removeDiacritics().toLowerCase().replace(REG_EMPTY, '-').substring(0, 8);
+		F.isVirtualDirectory = existsSync(U.combine(CONF.directory_public_virtual));
 	};
 
 	if (!(arr instanceof Array) || !arr.length) {
@@ -8671,51 +8681,80 @@ F.$configure_configs = function(arr, rewrite) {
 		switch (name) {
 			case 'secret':
 			case 'secret-uid':
+			case 'secret_uid':
+				name = name.replace(REG_OLDCONF, '_');
 				obj[name] = value;
 				break;
 			case 'default-request-length':
-				OBSOLETE(name, 'You need to use "default-request-maxlength"');
-				obj['default-request-maxlength'] = U.parseInt(value);
+				OBSOLETE(name, 'You need to use "default_request_maxlength"');
+				obj.default_request_maxlength = U.parseInt(value);
 				break;
 			case 'default-websocket-request-length':
-				OBSOLETE(name, 'You need to use "default-websocket-maxlength"');
-				obj['default-websocket-maxlength'] = U.parseInt(value);
+				OBSOLETE(name, 'You need to use "default_websocket_maxlength"');
+				obj.default_websocket_maxlength = U.parseInt(value);
 				break;
 			case 'default-maximum-file-descriptors':
-				OBSOLETE(name, 'You need to use "default-maxopenfiles"');
-				obj['default-maxopenfiles'] = U.parseInt(value);
+				OBSOLETE(name, 'You need to use "default_maxopenfiles"');
+				obj.default_maxopenfiles = U.parseInt(value);
 				break;
-			case 'default-cors-maxage':
-			case 'default-request-timeout':
-			case 'default-request-maxlength':
-			case 'default-request-maxkeys':
-			case 'default-websocket-maxlength':
-			case 'default-interval-clear-cache':
-			case 'default-interval-clear-resources':
-			case 'default-interval-precompile-views':
-			case 'default-interval-uptodate':
-			case 'default-interval-websocket-ping':
-			case 'default-interval-clear-dnscache':
-			case 'default-dependency-timeout':
-			case 'default-restbuilder-timeout':
-			case 'nosql-cleaner':
+			case 'default-cors-maxage': // old
+			case 'default-request-timeout': // old
+			case 'default-request-maxlength': // old
+			case 'default-request-maxkeys': // old
+			case 'default-websocket-maxlength': // old
+			case 'default-interval-clear-cache': // old
+			case 'default-interval-clear-resources': // old
+			case 'default-interval-precompile-views': // old
+			case 'default-interval-uptodate': // old
+			case 'default-interval-websocket-ping': // old
+			case 'default-interval-clear-dnscache': // old
+			case 'default-dependency-timeout': // old
+			case 'default-restbuilder-timeout': // old
+			case 'nosql-cleaner': // old
+			case 'default-errorbuilder-status': // old
+			case 'default-maxopenfiles': // old
+			case 'default_maxopenfiles':
+			case 'default_errorbuilder_status':
+			case 'default_cors_maxage':
+			case 'default_request_timeout':
+			case 'default_request_maxlength':
+			case 'default_request_maxkeys':
+			case 'default_websocket_maxlength':
+			case 'default_interval_clear_cache':
+			case 'default_interval_clear_resources':
+			case 'default_interval_precompile_views':
+			case 'default_interval_uptodate':
+			case 'default_interval_websocket_ping':
+			case 'default_interval_clear_dnscache':
+			case 'default_dependency_timeout':
+			case 'default_restbuilder_timeout':
+			case 'nosql_cleaner':
+				name = obsolete_config(name);
 				obj[name] = U.parseInt(value);
 				break;
-			case 'default-image-consumption':
-			case 'default-image-quality':
+			case 'default-image-consumption': // old
+			case 'default-image-quality': // old
+			case 'default_image_consumption':
+			case 'default_image_quality':
+				name = obsolete_config(name);
 				obj[name] = U.parseInt(value.replace(/%|\s/g, ''));
 				break;
 
-			case 'static-accepts-custom':
+			case 'static-accepts-custom': // old
+			case 'static_accepts_custom':
 				accepts = value.replace(REG_ACCEPTCLEANER, '').split(',');
 				break;
 
-			case 'default-root':
+			case 'default-root': // old
+			case 'default_root':
+				name = obsolete_config(name);
 				if (value)
 					obj[name] = U.path(value);
 				break;
 
-			case 'static-accepts':
+			case 'static-accepts': // old
+			case 'static_accepts':
+				name = obsolete_config(name);
 				obj[name] = {};
 				tmp = value.replace(REG_ACCEPTCLEANER, '').split(',');
 				for (var j = 0; j < tmp.length; j++)
@@ -8730,7 +8769,7 @@ F.$configure_configs = function(arr, rewrite) {
 			case 'mail.address.reply':
 
 				if (name === 'mail.address.bcc')
-					tmp = 'mail-address-copy';
+					tmp = 'mail_address_copy';
 				else
 					tmp = name.replace(/\./g, '-');
 
@@ -8738,7 +8777,9 @@ F.$configure_configs = function(arr, rewrite) {
 				obj[tmp] = value;
 				break;
 
-			case 'default-cors':
+			case 'default-cors': // old
+			case 'default_cors':
+				name = obsolete_config(name);
 				value = value.replace(/,/g, ' ').split(' ');
 				tmp = [];
 				for (var j = 0; j < value.length; j++) {
@@ -8755,43 +8796,73 @@ F.$configure_configs = function(arr, rewrite) {
 				break;
 
 			case 'allow-handle-static-files':
-				OBSOLETE('config["allow-handle-static-files"]', 'The key has been renamed to "allow-static-files"');
-				obj['allow-static-files'] = true;
+				OBSOLETE('config["allow-handle-static-files"]', 'The key has been renamed to "allow_static_files"');
+				obj.allow_static_files = true;
 				break;
 
 			case 'disable-clear-temporary-directory':
-				OBSOLETE('disable-clear-temporary-directory', 'You need to use "allow-clear-temp : true|false"');
-				obj['allow-clear-temp'] = !(value.toLowerCase() === 'true' || value === '1' || value === 'on');
+				OBSOLETE('disable-clear-temporary-directory', 'You need to use "allow_clear_temp : true|false"');
+				obj.allow_clear_temp = !(value.toLowerCase() === 'true' || value === '1' || value === 'on');
 				break;
 
 			case 'disable-strict-server-certificate-validation':
-				OBSOLETE('disable-strict-server-certificate-validation', 'You need to use "allow-ssc-validation : true|false"');
-				obj['allow-ssc-validation'] = !(value.toLowerCase() === 'true' || value === '1' || value === 'on');
+				OBSOLETE('disable-strict-server-certificate-validation', 'You need to use "allow_ssc_validation : true|false"');
+				obj.allow_ssc_validation = !(value.toLowerCase() === 'true' || value === '1' || value === 'on');
 				break;
 
-			case 'allow-compile-html':
-			case 'allow-compile-script':
-			case 'allow-compile-style':
-			case 'allow-ssc-validation':
-			case 'allow-debug':
-			case 'allow-gzip':
-			case 'allow-performance':
-			case 'allow-static-files':
-			case 'allow-websocket':
-			case 'allow-clear-temp':
-			case 'allow-cache-snapshot':
+			case 'allow-compile': // old
+			case 'allow-compile-html': // old
+			case 'allow-compile-script': // old
+			case 'allow-compile-style': // old
+			case 'allow-ssc-validation': // old
+			case 'allow-debug': // old
+			case 'allow-gzip': // old
+			case 'allow-head': // old
+			case 'allow-performance': // old
+			case 'allow-static-files': // old
+			case 'allow-websocket': // old
+			case 'allow-websocket-compression': // old
+			case 'allow-clear-temp': // old
+			case 'allow-cache-snapshot': // old
+			case 'allow-cache-cluster': // old
+			case 'allow-custom-titles': // old
+			case 'nosql-worker': // old
+			case 'nosql-logger': // old
+			case 'allow-filter-errors': // old
+			case 'default-websocket-encodedecode': // old
+			case 'allow_compile':
+			case 'allow_compile_html':
+			case 'allow_compile_script':
+			case 'allow_compile_style':
+			case 'allow_ssc_validation':
+			case 'allow_debug':
+			case 'allow_gzip':
+			case 'allow_head':
+			case 'allow_performance':
+			case 'allow_static_files':
+			case 'allow_websocket':
+			case 'allow_websocket_compression':
+			case 'allow_clear_temp':
+			case 'allow_cache_snapshot':
+			case 'allow_cache_cluster':
+			case 'allow_filter_errors':
+			case 'allow_custom_titles':
 			case 'trace':
-			case 'nosql-worker':
-			case 'nosql-logger':
+			case 'nosql_worker':
+			case 'nosql_logger':
+			case 'default_websocket_encodedecode':
+				name = obsolete_config(name);
 				obj[name] = value.toLowerCase() === 'true' || value === '1' || value === 'on';
 				break;
 
-			case 'nosql-inmemory':
+			case 'nosql-inmemory': // old
+			case 'nosql_inmemory':
+				name = obsolete_config(name);
 				obj[name] = typeof(value) === 'string' ? value.split(',').trim() : value instanceof Array ? value : null;
 				break;
 
 			case 'allow-compress-html':
-				obj['allow-compile-html'] = value.toLowerCase() === 'true' || value === '1' || value === 'on';
+				obj.allow_compile_html = value.toLowerCase() === 'true' || value === '1' || value === 'on';
 				break;
 
 			case 'version':
@@ -8800,6 +8871,34 @@ F.$configure_configs = function(arr, rewrite) {
 
 			case 'security.txt':
 				obj[name] = value ? value.split(',').trim().join('\n') : '';
+				break;
+
+			// backward compatibility
+			case 'mail-smtp': // old
+			case 'mail-smtp-options': // old
+			case 'mail-address-from': // old
+			case 'mail-address-copy': // old
+			case 'mail-address-bcc': // old
+			case 'mail-address-reply': // old
+			case 'default-image-converter': // old
+			case 'static-url': // old
+			case 'static-url-script': // old
+			case 'static-url-style': // old
+			case 'static-url-image': // old
+			case 'static-url-video': // old
+			case 'static-url-font': // old
+			case 'static-url-download': // old
+			case 'static-url-components': // old
+			case 'default-xpoweredby': // old
+			case 'default-layout': // old
+			case 'default-theme': // old
+			case 'default-proxy': // old
+			case 'default-timezone': // old
+			case 'default-response-maxage': // old
+			case 'default-errorbuilder-resource-name': // old
+			case 'default-errorbuilder-resource-prefix': // old
+				name = obsolete_config(name);
+				obj[name] = value;
 				break;
 
 			default:
@@ -8834,44 +8933,44 @@ F.$configure_configs = function(arr, rewrite) {
 		}
 	}
 
-	U.extend(F.config, obj, rewrite);
+	U.extend(CONF, obj, rewrite);
 
-	if (!F.config['secret-uid'])
-		F.config['secret-uid'] = (F.config.name).crc32(true).toString();
+	if (!CONF.secret_uid)
+		CONF.secret_uid = (CONF.name).crc32(true).toString();
 
-	var tmp = F.config['mail-smtp-options'];
+	var tmp = CONF.mail_smtp_options;
 	if (typeof(tmp) === 'string' && tmp) {
 		tmp = new Function('return ' + tmp)();
-		F.config['mail-smtp-options'] = tmp;
+		CONF.mail_smtp_options = tmp;
 	}
 
-	if (!F.config['directory-temp'])
-		F.config['directory-temp'] = '~' + U.path(Path.join(Os.tmpdir(), 'totaljs' + F.directory.hash()));
+	if (!CONF.directory_temp)
+		CONF.directory_temp = '~' + U.path(Path.join(Os.tmpdir(), 'totaljs' + F.directory.hash()));
 
-	if (!F.config['etag-version'])
-		F.config['etag-version'] = F.config.version.replace(/\.|\s/g, '');
+	if (!CONF.etag_version)
+		CONF.etag_version = CONF.version.replace(/\.|\s/g, '');
 
-	if (F.config['default-timezone'])
-		process.env.TZ = F.config['default-timezone'];
+	if (CONF.default_timezone)
+		process.env.TZ = CONF.default_timezone;
 
-	F.config['nosql-worker'] && framework_nosql.worker();
-	F.config['nosql-inmemory'] && F.config['nosql-inmemory'].forEach(n => framework_nosql.inmemory(n));
-	accepts && accepts.length && accepts.forEach(accept => F.config['static-accepts'][accept] = true);
+	CONF.nosql_worker && framework_nosql.worker();
+	CONF.nosql_inmemory && CONF.nosql_inmemory.forEach(n => framework_nosql.inmemory(n));
+	accepts && accepts.length && accepts.forEach(accept => CONF.static_accepts[accept] = true);
 
-	if (F.config['allow-ssc-validation'] === false)
+	if (CONF.allow_ssc_validation === false)
 		process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
-	if (F.config['allow-performance'])
+	if (CONF.allow_performance)
 		http.globalAgent.maxSockets = 9999;
 
-	QUERYPARSEROPTIONS.maxKeys = F.config['default-request-maxkeys'] || 33;
+	QUERYPARSEROPTIONS.maxKeys = CONF.default_request_maxkeys || 33;
 
-	var xpowered = F.config['default-xpoweredby'];
+	var xpowered = CONF.default_xpoweredby;
 
 	Object.keys(HEADERS).forEach(function(key) {
 		Object.keys(HEADERS[key]).forEach(function(subkey) {
 			if (RELEASE && subkey === 'Cache-Control')
-				HEADERS[key][subkey] = HEADERS[key][subkey].replace(/max-age=\d+/, 'max-age=' + F.config['default-response-maxage']);
+				HEADERS[key][subkey] = HEADERS[key][subkey].replace(/max-age=\d+/, 'max-age=' + CONF.default_response_maxage);
 			if (subkey === 'X-Powered-By') {
 				if (xpowered)
 					HEADERS[key][subkey] = xpowered;
@@ -8881,11 +8980,19 @@ F.$configure_configs = function(arr, rewrite) {
 		});
 	});
 
-	IMAGEMAGICK = F.config['default-image-converter'] === 'im';
+	IMAGEMAGICK = CONF.default_image_converter === 'im';
 	done();
-	F.emit('configure', F.config);
+	EMIT('configure', CONF);
 	return F;
 };
+
+function obsolete_config(name) {
+	if (name.indexOf('-') === -1)
+		return name;
+	var n = name.replace(REG_OLDCONF, '_');
+	OBSOLETE('config[\'' + name + '\']', 'Replace key "{0}" to "{1}" in your config file'.format(name, n));
+	return n;
+}
 
 /**
  * Create URL: JavaScript (according to config['static-url-script'])
@@ -8893,7 +9000,7 @@ F.$configure_configs = function(arr, rewrite) {
  * @return {String}
  */
 F.routeScript = function(name, theme) {
-	return F.$routeStatic(name, F.config['static-url-script'], theme);
+	return F.$routeStatic(name, CONF.static_url_script, theme);
 };
 
 /**
@@ -8902,27 +9009,27 @@ F.routeScript = function(name, theme) {
  * @return {String}
  */
 F.routeStyle = function(name, theme) {
-	return F.$routeStatic(name, F.config['static-url-style'], theme);
+	return F.$routeStatic(name, CONF.static_url_style, theme);
 };
 
 F.routeImage = function(name, theme) {
-	return F.$routeStatic(name, F.config['static-url-image'], theme);
+	return F.$routeStatic(name, CONF.static_url_image, theme);
 };
 
 F.routeVideo = function(name, theme) {
-	return F.$routeStatic(name, F.config['static-url-video'], theme);
+	return F.$routeStatic(name, CONF.static_url_video, theme);
 };
 
 F.routeFont = function(name, theme) {
-	return F.$routeStatic(name, F.config['static-url-font'], theme);
+	return F.$routeStatic(name, CONF.static_url_font, theme);
 };
 
 F.routeDownload = function(name, theme) {
-	return F.$routeStatic(name, F.config['static-url-download'], theme);
+	return F.$routeStatic(name, CONF.static_url_download, theme);
 };
 
 F.routeStatic = function(name, theme) {
-	return F.$routeStatic(name, F.config['static-url'], theme);
+	return F.$routeStatic(name, CONF.static_url, theme);
 };
 
 F.$routeStatic = function(name, directory, theme) {
@@ -8941,7 +9048,7 @@ F.$routeStatic = function(name, directory, theme) {
 		if (index !== -1) {
 			theme = name.substring(1, index);
 			if (theme === '?') {
-				theme = F.config['default-theme'];
+				theme = CONF.default_theme;
 				name = name.substring(index);
 			} else
 				name = name.substring(index + 1);
@@ -9155,7 +9262,7 @@ F.lookup_websocket = function(req, url, membertype) {
 F.accept = function(extension, contentType) {
 	if (extension[0] === '.')
 		extension = extension.substring(1);
-	F.config['static-accepts'][extension] = true;
+	CONF.static_accepts[extension] = true;
 	contentType && U.setContentType(extension, contentType);
 	return F;
 };
@@ -9196,7 +9303,7 @@ F.worker = function(name, id, timeout, args) {
 	if (fork)
 		return fork;
 
-	var filename = name[0] === '@' ? F.path.package(name.substring(1)) : U.combine(F.config['directory-workers'], name);
+	var filename = name[0] === '@' ? F.path.package(name.substring(1)) : U.combine(CONF.directory_workers, name);
 
 	if (!args)
 		args = [];
@@ -9380,7 +9487,7 @@ FrameworkPath.prototype.verify = function(name) {
 	var prop = '$directory-' + name;
 	if (F.temporary.path[prop])
 		return F;
-	var directory = F.config['directory-' + name] || name;
+	var directory = CONF['directory_' + name] || name;
 	var dir = U.combine(directory);
 	!existsSync(dir) && Fs.mkdirSync(dir);
 	F.temporary.path[prop] = true;
@@ -9435,43 +9542,43 @@ FrameworkPath.prototype.exists = function(path, callback) {
 };
 
 FrameworkPath.prototype.public = function(filename) {
-	return U.combine(F.config['directory-public'], filename);
+	return U.combine(CONF.directory_public, filename);
 };
 
 FrameworkPath.prototype.public_cache = function(filename) {
 	var key = 'public_' + filename;
 	var item = F.temporary.other[key];
-	return item ? item : F.temporary.other[key] = U.combine(F.config['directory-public'], filename);
+	return item ? item : F.temporary.other[key] = U.combine(CONF.directory_public, filename);
 };
 
 FrameworkPath.prototype.private = function(filename) {
-	return U.combine(F.config['directory-private'], filename);
+	return U.combine(CONF.directory_private, filename);
 };
 
 FrameworkPath.prototype.isomorphic = function(filename) {
-	return U.combine(F.config['directory-isomorphic'], filename);
+	return U.combine(CONF.directory_isomorphic, filename);
 };
 
 FrameworkPath.prototype.configs = function(filename) {
-	return U.combine(F.config['directory-configs'], filename);
+	return U.combine(CONF.directory_configs, filename);
 };
 
 FrameworkPath.prototype.virtual = function(filename) {
-	return U.combine(F.config['directory-public-virtual'], filename);
+	return U.combine(CONF.directory_public_virtual, filename);
 };
 
 FrameworkPath.prototype.logs = function(filename) {
 	this.verify('logs');
-	return U.combine(F.config['directory-logs'], filename);
+	return U.combine(CONF.directory_logs, filename);
 };
 
 FrameworkPath.prototype.models = function(filename) {
-	return U.combine(F.config['directory-models'], filename);
+	return U.combine(CONF.directory_models, filename);
 };
 
 FrameworkPath.prototype.temp = function(filename) {
 	this.verify('temp');
-	return U.combine(F.config['directory-temp'], filename);
+	return U.combine(CONF.directory_temp, filename);
 };
 
 FrameworkPath.prototype.temporary = function(filename) {
@@ -9479,52 +9586,52 @@ FrameworkPath.prototype.temporary = function(filename) {
 };
 
 FrameworkPath.prototype.views = function(filename) {
-	return U.combine(F.config['directory-views'], filename);
+	return U.combine(CONF.directory_views, filename);
 };
 
 FrameworkPath.prototype.workers = function(filename) {
-	return U.combine(F.config['directory-workers'], filename);
+	return U.combine(CONF.directory_workers, filename);
 };
 
 FrameworkPath.prototype.databases = function(filename) {
 	this.verify('databases');
-	return U.combine(F.config['directory-databases'], filename);
+	return U.combine(CONF.directory_databases, filename);
 };
 
 FrameworkPath.prototype.modules = function(filename) {
-	return U.combine(F.config['directory-modules'], filename);
+	return U.combine(CONF.directory_modules, filename);
 };
 
 FrameworkPath.prototype.controllers = function(filename) {
-	return U.combine(F.config['directory-controllers'], filename);
+	return U.combine(CONF.directory_controllers, filename);
 };
 
 FrameworkPath.prototype.definitions = function(filename) {
-	return U.combine(F.config['directory-definitions'], filename);
+	return U.combine(CONF.directory_definitions, filename);
 };
 
 FrameworkPath.prototype.tests = function(filename) {
-	return U.combine(F.config['directory-tests'], filename);
+	return U.combine(CONF.directory_tests, filename);
 };
 
 FrameworkPath.prototype.resources = function(filename) {
-	return U.combine(F.config['directory-resources'], filename);
+	return U.combine(CONF.directory_resources, filename);
 };
 
 FrameworkPath.prototype.services = function(filename) {
-	return U.combine(F.config['directory-services'], filename);
+	return U.combine(CONF.directory_services, filename);
 };
 
 FrameworkPath.prototype.packages = function(filename) {
-	return U.combine(F.config['directory-packages'], filename);
+	return U.combine(CONF.directory_packages, filename);
 };
 
 FrameworkPath.prototype.themes = function(filename) {
-	return U.combine(F.config['directory-themes'], filename);
+	return U.combine(CONF.directory_themes, filename);
 };
 
 FrameworkPath.prototype.components = function(filename) {
-	return U.combine(F.config['directory-components'], filename);
+	return U.combine(CONF.directory_components, filename);
 };
 
 FrameworkPath.prototype.root = function(filename) {
@@ -9542,7 +9649,7 @@ FrameworkPath.prototype.package = function(name, filename) {
 		}
 	}
 
-	var tmp = F.config['directory-temp'];
+	var tmp = CONF.directory_temp;
 	var p = tmp[0] === '~' ? Path.join(tmp.substring(1), name + '.package', filename || '') : Path.join(directory, tmp, name + '.package', filename || '');
 	return F.isWindows ? p.replace(REG_WINDOWSPATH, '/') : p;
 };
@@ -9561,7 +9668,7 @@ FrameworkCache.prototype.init = function() {
 	var self = this;
 	clearInterval(self.interval);
 	self.interval = setInterval(() => F.cache.recycle(), 1000 * 60);
-	if (F.config['allow-cache-snapshot'])
+	if (CONF.allow_cache_snapshot)
 		self.load(() => self.loadpersistent());
 	else
 		self.loadpersistent();
@@ -9631,7 +9738,7 @@ FrameworkCache.prototype.stop = function() {
 
 FrameworkCache.prototype.clear = function(sync) {
 	this.items = {};
-	F.isCluster && sync !== false && F.config['allow-cache-cluster'] && process.send(CLUSTER_CACHE_CLEAR);
+	F.isCluster && sync !== false && CONF.allow_cache_cluster && process.send(CLUSTER_CACHE_CLEAR);
 	this.savePersist();
 	return this;
 };
@@ -9652,13 +9759,13 @@ FrameworkCache.prototype.recycle = function() {
 		else if (value.expire < NOW) {
 			if (value.persist)
 				isPersist = true;
-			F.emit('cache-expire', o, value.value);
+			EMIT('cache-expire', o, value.value);
 			delete items[o];
 		}
 	}
 
 	isPersist && this.savePersist();
-	F.config['allow-cache-snapshot'] && this.save();
+	CONF.allow_cache_snapshot && this.save();
 	F.service(this.count);
 	return this;
 };
@@ -9670,7 +9777,7 @@ FrameworkCache.prototype.set2 = function(name, value, expire, sync) {
 FrameworkCache.prototype.set = FrameworkCache.prototype.add = function(name, value, expire, sync, persist) {
 	var type = typeof(expire);
 
-	if (F.isCluster && sync !== false && F.config['allow-cache-cluster']) {
+	if (F.isCluster && sync !== false && CONF.allow_cache_cluster) {
 		CLUSTER_CACHE_SET.key = name;
 		CLUSTER_CACHE_SET.value = value;
 		CLUSTER_CACHE_SET.expire = expire;
@@ -9694,7 +9801,7 @@ FrameworkCache.prototype.set = FrameworkCache.prototype.add = function(name, val
 	}
 
 	this.items[name] = obj;
-	F.$events['cache-set'] && F.emit('cache-set', name, value, expire, sync !== false);
+	F.$events['cache-set'] && EMIT('cache-set', name, value, expire, sync !== false);
 	return value;
 };
 
@@ -9708,7 +9815,7 @@ FrameworkCache.prototype.read = FrameworkCache.prototype.get = function(key, def
 
 	if (value.expire < NOW) {
 		this.items[key] = undefined;
-		F.$events['cache-expire'] && F.emit('cache-expire', key, value.value);
+		F.$events['cache-expire'] && EMIT('cache-expire', key, value.value);
 		return def;
 	}
 
@@ -9723,7 +9830,7 @@ FrameworkCache.prototype.read2 = FrameworkCache.prototype.get2 = function(key, d
 
 	if (value.expire < NOW) {
 		this.items[key] = undefined;
-		F.$events['cache-expire'] && F.emit('cache-expire', key, value.value);
+		F.$events['cache-expire'] && EMIT('cache-expire', key, value.value);
 		return def;
 	}
 
@@ -9745,7 +9852,7 @@ FrameworkCache.prototype.remove = function(name, sync) {
 		this.items[name] = undefined;
 	}
 
-	if (F.isCluster && sync !== false && F.config['allow-cache-cluster']) {
+	if (F.isCluster && sync !== false && CONF.allow_cache_cluster) {
 		CLUSTER_CACHE_REMOVE.key = name;
 		process.send(CLUSTER_CACHE_REMOVE);
 	}
@@ -9771,7 +9878,7 @@ FrameworkCache.prototype.removeAll = function(search, sync) {
 		count++;
 	}
 
-	if (F.isCluster && sync !== false && F.config['allow-cache-cluster']) {
+	if (F.isCluster && sync !== false && CONF.allow_cache_cluster) {
 		CLUSTER_CACHE_REMOVEALL.key = search;
 		process.send(CLUSTER_CACHE_REMOVEALL);
 	}
@@ -9837,8 +9944,8 @@ function Controller(name, req, res, currentView) {
 	// controller.type === 1 - server sent events
 	// this.type = 0;
 
-	// this.layoutName = F.config['default-layout'];
-	// this.themeName = F.config['default-theme'];
+	// this.layoutName =CONF.default_layout;
+	// this.themeName =CONF.default_theme;
 	// this.status = 200;
 
 	// this.isLayout = false;
@@ -9941,7 +10048,7 @@ Controller.prototype = {
 	},
 
 	get config() {
-		return F.config;
+		return CONF;
 	},
 
 	get controllers() {
@@ -9949,7 +10056,7 @@ Controller.prototype = {
 	},
 
 	get isDebug() {
-		return F.config.debug;
+		return CONF.debug;
 	},
 
 	get isTest() {
@@ -10299,7 +10406,7 @@ Controller.prototype.component = function(name, settings, model) {
 				for (var i = 0; i < generator.components.length; i++)
 					self.repository[REPOSITORY_COMPONENTS][generator.components[i]] = 1;
 			}
-			return generator.call(self, self, self.repository, model || self.$model, self.session, self.query, self.body, self.url, F.global, F.helpers, self.user, self.config, F.functions, 0, self.outputPartial, self.req.files, self.req.mobile, settings || EMPTYOBJECT);
+			return generator.call(self, self, self.repository, model || self.$model, self.session, self.query, self.body, self.url, F.global, F.helpers, self.user, CONF, F.functions, 0, self.outputPartial, self.req.files, self.req.mobile, settings || EMPTYOBJECT);
 		}
 	}
 	return '';
@@ -10689,7 +10796,7 @@ Controller.prototype.$meta = function() {
 		return '';
 	}
 
-	F.$events['controller-render-meta'] && F.emit('controller-render-meta', self);
+	F.$events['controller-render-meta'] && EMIT('controller-render-meta', self);
 	var repository = self.repository;
 	return F.onMeta.call(self, repository[REPOSITORY_META_TITLE], repository[REPOSITORY_META_DESCRIPTION], repository[REPOSITORY_META_KEYWORDS], repository[REPOSITORY_META_IMAGE]);
 };
@@ -11406,7 +11513,7 @@ Controller.prototype.head = function() {
 	var self = this;
 
 	if (!arguments.length) {
-		var author = self.repository[REPOSITORY_META_AUTHOR] || self.config.author;
+		var author = self.repository[REPOSITORY_META_AUTHOR] || CONF.author;
 		var plus = '';
 		var components = self.repository[REPOSITORY_COMPONENTS];
 		if (components) {
@@ -12587,7 +12694,7 @@ Controller.prototype.close = function(end) {
 		self.isConnected = false;
 		self.res.success = true;
 		F.reqstats(false, false);
-		F.$events['request-end'] && F.emit('request-end', self.req, self.res);
+		F.$events['request-end'] && EMIT('request-end', self.req, self.res);
 		self.type = 0;
 		end && self.res.end();
 		self.req.clear(true);
@@ -12601,7 +12708,7 @@ Controller.prototype.close = function(end) {
 
 	self.res.success = true;
 	F.reqstats(false, false);
-	F.$events['request-end'] && F.emit('request-end', self.req, self.res);
+	F.$events['request-end'] && EMIT('request-end', self.req, self.res);
 	end && self.res.end();
 	self.req.clear(true);
 	return self;
@@ -12710,9 +12817,9 @@ Controller.prototype.view = function(name, model, headers, partial, noasync, cac
 		return self;
 
 	if (self.layoutName === undefined)
-		self.layoutName = F.config['default-layout'];
+		self.layoutName = CONF.default_layout;
 	if (self.themeName === undefined)
-		self.themeName = F.config['default-theme'];
+		self.themeName = CONF.default_theme;
 
 	// theme root `~some_view`
 	// views root `~~some_view`
@@ -12863,7 +12970,7 @@ Controller.prototype.$viewrender = function(filename, generator, model, headers,
 				self.repository[REPOSITORY_COMPONENTS][generator.components[i]] = 1;
 		}
 
-		value = generator.call(self, self, self.repository, model, self.session, self.query, self.body, self.url, F.global, helpers, self.user, self.config, F.functions, 0, partial ? self.outputPartial : self.output, self.req.files, self.req.mobile, EMPTYOBJECT);
+		value = generator.call(self, self, self.repository, model, self.session, self.query, self.body, self.url, F.global, helpers, self.user, CONF, F.functions, 0, partial ? self.outputPartial : self.output, self.req.files, self.req.mobile, EMPTYOBJECT);
 
 	} catch (ex) {
 
@@ -13202,7 +13309,7 @@ WebSocket.prototype = {
 	},
 
 	get config() {
-		return F.config;
+		return CONF;
 	},
 
 	get cache() {
@@ -13210,7 +13317,7 @@ WebSocket.prototype = {
 	},
 
 	get isDebug() {
-		return F.config.debug;
+		return CONF.debug;
 	},
 
 	get path() {
@@ -13530,7 +13637,7 @@ WebSocket.prototype.destroy = function(problem) {
 		return self;
 
 	self.close();
-	self.$events.destroy && self.emit('destroy');
+	self.$events.destroy && selEMIT('destroy');
 
 	setTimeout(function() {
 
@@ -13778,7 +13885,7 @@ WebSocketClient.prototype.prepare = function(flags, protocols, allow, length) {
 		}
 	}
 
-	var compress = (F.config['allow-websocket-compression'] && self.req.headers['sec-websocket-extensions'] || '').indexOf('permessage-deflate') !== -1;
+	var compress = (CONF.allow_websocket_compression && self.req.headers['sec-websocket-extensions'] || '').indexOf('permessage-deflate') !== -1;
 	var header = protocols.length ? (compress ? SOCKET_RESPONSE_PROTOCOL_COMPRESS : SOCKET_RESPONSE_PROTOCOL).format(self.$websocket_key(self.req), protocols.join(', ')) : (compress ? SOCKET_RESPONSE_COMPRESS : SOCKET_RESPONSE).format(self.$websocket_key(self.req));
 
 	self.socket.write(U.createBuffer(header, 'binary'));
@@ -13841,7 +13948,7 @@ WebSocketClient.prototype.upgrade = function(container) {
 	self.socket.on('end', websocket_close);
 	self.container.$add(self);
 	self.container.$refresh();
-	F.$events['websocket-begin'] && F.emit('websocket-begin', self.container, self);
+	F.$events['websocket-begin'] && EMIT('websocket-begin', self.container, self);
 	self.container.$events.open && self.container.emit('open', self);
 	return self;
 };
@@ -13924,7 +14031,7 @@ WebSocketClient.prototype.$ondata = function(data) {
 			this.closemessage = current.buffer.slice(4).toString('utf8');
 			this.closecode = current.buffer[2] << 8 | current.buffer[3];
 
-			if (this.closemessage && F.config['default-websocket-encodedecode'])
+			if (this.closemessage && CONF.default_websocket_encodedecode)
 				this.closemessage = $decodeURIComponent(this.closemessage);
 
 			this.close();
@@ -14080,7 +14187,7 @@ WebSocketClient.prototype.$decode = function() {
 		case 3: // JSON
 			if (data instanceof Buffer)
 				data = data.toString(ENCODING);
-			F.config['default-websocket-encodedecode'] === true && (data = $decodeURIComponent(data));
+			CONF.default_websocket_encodedecode === true && (data = $decodeURIComponent(data));
 			if (data.isJSON()) {
 				var tmp = F.onParseJSON(data, this.req);
 				if (tmp !== undefined)
@@ -14091,7 +14198,7 @@ WebSocketClient.prototype.$decode = function() {
 		default: // TEXT
 			if (data instanceof Buffer)
 				data = data.toString(ENCODING);
-			this.container.emit('message', this, F.config['default-websocket-encodedecode'] === true ? $decodeURIComponent(data) : data);
+			this.container.emit('message', this, CONF.default_websocket_encodedecode === true ? $decodeURIComponent(data) : data);
 			break;
 	}
 
@@ -14174,7 +14281,7 @@ WebSocketClient.prototype.$onclose = function() {
 	this.container.$refresh();
 	this.container.$events.close && this.container.emit('close', this, this.closecode, this.closemessage);
 	this.socket.removeAllListeners();
-	F.$events['websocket-end'] && F.emit('websocket-end', this.container, this);
+	F.$events['websocket-end'] && EMIT('websocket-end', this.container, this);
 };
 
 /**
@@ -14190,7 +14297,7 @@ WebSocketClient.prototype.send = function(message, raw, replacer) {
 
 	if (this.type !== 1) {
 		var data = this.type === 3 ? (raw ? message : JSON.stringify(message, replacer)) : (message || '').toString();
-		if (F.config['default-websocket-encodedecode'] === true && data)
+		if (CONF.default_websocket_encodedecode === true && data)
 			data = encodeURIComponent(data);
 		if (this.deflate) {
 			this.deflatepending.push(U.createBuffer(data));
@@ -14256,7 +14363,7 @@ WebSocketClient.prototype.close = function(message, code) {
 	if (!self.isClosed) {
 		self.isClosed = true;
 		if (self.ready)
-			self.socket.end(U.getWebSocketFrame(code || 1000, message ? (F.config['default-websocket-encodedecode'] ? encodeURIComponent(message) : message) : '', 0x08));
+			self.socket.end(U.getWebSocketFrame(code || 1000, message ? (CONF.default_websocket_encodedecode ? encodeURIComponent(message) : message) : '', 0x08));
 		else
 			self.socket.end();
 		self.req.connection.destroy();
@@ -14542,7 +14649,7 @@ function extend_request(PROTO) {
 		this.$total_header = header;
 		if (this.$total_route) {
 			F.path.verify('temp');
-			framework_internal.parseMULTIPART(this, header, this.$total_route, F.config['directory-temp']);
+			framework_internal.parseMULTIPART(this, header, this.$total_route, CONF.directory_temp);
 		} else
 			this.$total_status(404);
 	};
@@ -14568,7 +14675,7 @@ function extend_request(PROTO) {
 		F.reqstats(false, false);
 		this.res.writeHead(status);
 		this.res.end(U.httpStatus(status));
-		F.$events['request-end'] && F.emit('request-end', this, this.res);
+		F.$events['request-end'] && EMIT('request-end', this, this.res);
 		this.clear(true);
 	};
 
@@ -14590,7 +14697,7 @@ function extend_request(PROTO) {
 
 		if (isError || !route) {
 			F.stats.response['error' + status]++;
-			status !== 500 && F.$events['error'] && F.emit('error' + status, this, res, this.$total_exception);
+			status !== 500 && F.$events['error'] && EMIT('error' + status, this, res, this.$total_exception);
 		}
 
 		if (!route) {
@@ -14659,8 +14766,8 @@ function extend_request(PROTO) {
 				return;
 
 			var ctrlname = '@' + name;
-			F.$events.controller && F.emit('controller', controller, name, this.$total_route.options);
-			F.$events[ctrlname] && F.emit(ctrlname, controller, name, this.$total_route.options);
+			F.$events.controller && EMIT('controller', controller, name, this.$total_route.options);
+			F.$events[ctrlname] && EMIT(ctrlname, controller, name, this.$total_route.options);
 
 			if (controller.isCanceled)
 				return;
@@ -15144,7 +15251,7 @@ function extend_response(PROTO) {
 		if (!accept && isGZIP(req))
 			accept = 'gzip';
 
-		var compress = F.config['allow-gzip'] && accept.indexOf('gzip') !== -1;
+		var compress = CONF.allow_gzip && accept.indexOf('gzip') !== -1;
 		if (isHEAD) {
 			compress && (headers['Content-Encoding'] = 'gzip');
 			res.writeHead(200, headers);
@@ -15351,7 +15458,7 @@ function extend_response(PROTO) {
 
 			var options = { protocol: uri.protocol, auth: uri.auth, method: 'GET', hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: headers };
 			var connection = options.protocol === 'https:' ? require('https') : http;
-			var gzip = F.config['allow-gzip'] && (res.req.headers['accept-encoding'] || '').lastIndexOf('gzip') !== -1;
+			var gzip = CONF.allow_gzip && (res.req.headers['accept-encoding'] || '').lastIndexOf('gzip') !== -1;
 
 			var client = connection.get(options, function(response) {
 
@@ -15457,13 +15564,13 @@ function extend_response(PROTO) {
 		if (res.success || res.headersSent)
 			return res;
 
-		if (!F.config['static-accepts'][req.extension]) {
+		if (!CONF.static_accepts[req.extension]) {
 			res.throw404();
 			return res;
 		}
 
-		if (SECURITYTXT[req.url] && F.config['security.txt']) {
-			res.send(200, F.config['security.txt'], 'text/plain');
+		if (SECURITYTXT[req.url] && CONF['security.txt']) {
+			res.send(200, CONF['security.txt'], 'text/plain');
 			return;
 		}
 
@@ -15501,7 +15608,7 @@ function extend_response(PROTO) {
 
 		if (!canresize) {
 
-			if (F.components.has && F.components[req.extension] && req.uri.pathname === F.config['static-url-components'] + req.extension) {
+			if (F.components.has && F.components[req.extension] && req.uri.pathname === CONF.static_url_components + req.extension) {
 				res.noCompress = true;
 				res.options.components = true;
 				var g = req.query.group ? req.query.group.substring(0, req.query.group.length - 6) : '';
@@ -15611,7 +15718,7 @@ function extend_response(PROTO) {
 		if (name === undefined) {
 
 			if (F.temporary.processing[req.$key]) {
-				if (req.processing > F.config['default-request-timeout']) {
+				if (req.processing > CONF.default_request_timeout) {
 					res.throw408();
 				} else {
 					req.processing += 500;
@@ -15632,7 +15739,7 @@ function extend_response(PROTO) {
 
 		!accept && isGZIP(req) && (accept = 'gzip');
 
-		var compress = F.config['allow-gzip'] && COMPRESSION[contentType] && accept.indexOf('gzip') !== -1 && name.length > 2;
+		var compress = CONF.allow_gzip && COMPRESSION[contentType] && accept.indexOf('gzip') !== -1 && name.length > 2;
 		var range = req.headers.range;
 		var canCache = !res.$nocache && RELEASE && contentType !== 'text/cache-manifest';
 
@@ -15676,7 +15783,7 @@ function extend_response(PROTO) {
 		else if (!res.options.lastmodified)
 			headers['Last-Modified'] = name[2];
 
-		headers.Etag = ETAG + F.config['etag-version'];
+		headers.Etag = ETAG + CONF.etag_version;
 
 		if (range) {
 			$file_range(name[0], range, headers, res);
@@ -15756,7 +15863,7 @@ function extend_response(PROTO) {
 		var accept = req.headers['accept-encoding'] || '';
 		!accept && isGZIP(req) && (accept = 'gzip');
 
-		var compress = F.config['allow-gzip'] && COMPRESSION[options.type] && accept.indexOf('gzip') !== -1;
+		var compress = CONF.allow_gzip && COMPRESSION[options.type] && accept.indexOf('gzip') !== -1;
 		var headers = compress ? HEADERS.binary_compress : HEADERS.binary;
 
 		headers['Vary'] = 'Accept-Encoding' + (req.$mobile ? ', User-Agent' : '');
@@ -15815,7 +15922,7 @@ function extend_response(PROTO) {
 		var accept = req.headers['accept-encoding'] || '';
 		!accept && isGZIP(req) && (accept = 'gzip');
 
-		var compress = (options.compress === undefined || options.compress) && F.config['allow-gzip'] && COMPRESSION[options.type] && accept.indexOf('gzip') !== -1;
+		var compress = (options.compress === undefined || options.compress) && CONF.allow_gzip && COMPRESSION[options.type] && accept.indexOf('gzip') !== -1;
 		var headers;
 
 		if (RELEASE) {
@@ -15916,7 +16023,7 @@ function extend_response(PROTO) {
 		}
 
 		if (F.temporary.processing[req.$key]) {
-			if (req.processing > F.config['default-request-timeout']) {
+			if (req.processing > CONF.default_request_timeout) {
 				res.throw408();
 			} else {
 				req.processing += 500;
@@ -15964,7 +16071,7 @@ function extend_response(PROTO) {
 		var accept = req.headers['accept-encoding'] || '';
 		!accept && isGZIP(req) && (accept = 'gzip');
 
-		var gzip = F.config['allow-gzip'] && (options.compress === undefined || options.compress) ? accept.indexOf('gzip') !== -1 : false;
+		var gzip = CONF.allow_gzip && (options.compress === undefined || options.compress) ? accept.indexOf('gzip') !== -1 : false;
 		var headers;
 
 		if (req.$mobile)
@@ -16079,7 +16186,7 @@ function extend_response(PROTO) {
 			req.$total_execute(res.options.code, true);
 		}
 
-		F.$events[key] && F.emit(key, req, res, res.options.problem);
+		F.$events[key] && EMIT(key, req, res, res.options.problem);
 		return res;
 	};
 }
@@ -16109,7 +16216,7 @@ function $file_notmodified(res, name) {
 	if (res.getHeader('ETag'))
 		delete headers.Etag;
 	else
-		headers.Etag = ETAG + F.config['etag-version'];
+		headers.Etag = ETAG + CONF.etag_version;
 
 	headers[HEADER_TYPE] = U.getContentType(req.extension);
 	res.writeHead(304, headers);
@@ -16313,7 +16420,7 @@ function $image_filename(exists, size, isFile, stats, res) {
 function response_end(res) {
 	F.reqstats(false, res.req.isStaticFile);
 	res.success = true;
-	!res.req.isStaticFile && F.$events['request-end'] && F.emit('request-end', res.req, res);
+	!res.req.isStaticFile && F.$events['request-end'] && EMIT('request-end', res.req, res);
 	res.req.clear(true);
 	res.controller && res.req.$total_success();
 
@@ -16356,14 +16463,14 @@ process.on('uncaughtException', function(e) {
 		console.log('\nThe IP address and the PORT is already in use.\nYou must change the PORT\'s number or IP address.\n');
 		process.exit('SIGTERM');
 		return;
-	} else if (F.config['allow-filter-errors'] && REG_SKIPERROR.test(err))
+	} else if (CONF.allow_filter_errors && REG_SKIPERROR.test(err))
 		return;
 
 	F.error(e, '', null);
 });
 
 function fsFileRead(filename, callback, a, b, c) {
-	U.queue('F.files', F.config['default-maxopenfiles'], function(next) {
+	U.queue('F.files', CONF.default_maxopenfiles, function(next) {
 		Fs.readFile(filename, function(err, result) {
 			next();
 			callback(err, result, a, b, c);
@@ -16372,7 +16479,7 @@ function fsFileRead(filename, callback, a, b, c) {
 }
 
 function fsFileExists(filename, callback, a, b, c) {
-	U.queue('F.files', F.config['default-maxopenfiles'], function(next) {
+	U.queue('F.files', CONF.default_maxopenfiles, function(next) {
 		Fs.lstat(filename, function(err, stats) {
 			next();
 			callback(!err && stats.isFile(), stats ? stats.size : 0, stats ? stats.isFile() : false, stats, a, b, c);
@@ -16401,7 +16508,7 @@ function fsStreamRead(filename, options, callback, res) {
 	} else
 		opt = HEADERS.fsStreamRead;
 
-	U.queue('F.files', F.config['default-maxopenfiles'], function(next) {
+	U.queue('F.files', CONF.default_maxopenfiles, function(next) {
 		var stream = Fs.createReadStream(filename, opt);
 		stream.on('error', NOOP);
 		callback(stream, next, res);
@@ -16491,11 +16598,11 @@ process.on('message', function(msg, h) {
 		msg.TYPE === 'cache-clear' && F.cache.clear(false);
 		msg.TYPE === 'req' && F.cluster.req(msg);
 		msg.TYPE === 'res' && msg.target === F.id && F.cluster.res(msg);
-		msg.TYPE === 'emit' && F.$events[msg.name] && F.emit(msg.name, msg.data);
+		msg.TYPE === 'emit' && F.$events[msg.name] && EMIT(msg.name, msg.data);
 		msg.TYPE === 'nosql-meta' && NOSQL(msg.name).meta(msg.key, msg.value, true);
 		msg.TYPE === 'table-meta' && TABLE(msg.name).meta(msg.key, msg.value, true);
 	}
-	F.$events.message && F.emit('message', msg, h);
+	F.$events.message && EMIT('message', msg, h);
 });
 
 function prepare_error(e) {
@@ -16508,7 +16615,7 @@ function prepare_error(e) {
 }
 
 function prepare_filename(name) {
-	return name[0] === '@' ? (F.isWindows ? U.combine(F.config['directory-temp'], name.substring(1)) : F.path.package(name.substring(1))) : U.combine('/', name);
+	return name[0] === '@' ? (F.isWindows ? U.combine(CONF.directory_temp, name.substring(1)) : F.path.package(name.substring(1))) : U.combine('/', name);
 }
 
 function prepare_staticurl(url, isDirectory) {
@@ -16878,7 +16985,7 @@ function parseSchema(name) {
 
 function ilogger(body) {
 	F.path.verify('logs');
-	U.queue('F.ilogger', 5, (next) => Fs.appendFile(U.combine(F.config['directory-logs'], 'logger.log'), body, next));
+	U.queue('F.ilogger', 5, (next) => Fs.appendFile(U.combine(CONF.directory_logs, 'logger.log'), body, next));
 }
 
 F.ilogger = function(name, req, ts) {

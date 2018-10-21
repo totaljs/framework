@@ -7,7 +7,7 @@ require('../index');
 // NOSQL('test').on('modify', console.log);
 // NOSQL('test').update({ name: GUID(5) }).between('index', 1, 3).callback(console.log);
 
-F.config['table.test'] = 'index:number | name:string';
+CONF['table.test'] = 'index:number | name:string';
 
 TABLE('test').find().take(10).skip(10).callback(console.log);
 

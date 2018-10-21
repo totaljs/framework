@@ -771,7 +771,7 @@ HFP.isAudio = function() {
 
 HFP.image = function(im) {
 	if (im === undefined)
-		im = F.config['default-image-converter'] === 'im';
+		im = CONF.default_image_converter === 'im';
 	return framework_image.init(this.path, im, this.width, this.height);
 };
 
@@ -1813,7 +1813,7 @@ function view_parse(content, minify, filename, controller) {
 
 		if (cmd[0] === '\'' || cmd[0] === '"') {
 			if (cmd[1] === '%') {
-				var t = F.config[cmd.substring(2, cmd.length - 1)];
+				var t = CONF[cmd.substring(2, cmd.length - 1)];
 				if (t != null)
 					builder += '+' + DELIMITER + t + DELIMITER;
 			} else
@@ -1922,7 +1922,7 @@ function view_parse(content, minify, filename, controller) {
 
 			if (can && !counter) {
 				try {
-					var r = (new Function('self', 'config', 'return ' + tmp))(controller, F.config).replace(REG_7, '\\\\').replace(REG_8, '\\\'');
+					var r = (new Function('self', 'config', 'return ' + tmp))(controller, CONF).replace(REG_7, '\\\\').replace(REG_8, '\\\'');
 					if (r) {
 						txtindex = $VIEWCACHE.indexOf(r);
 						if (txtindex === -1) {
@@ -2044,7 +2044,7 @@ function view_prepare(command, dynamicCommand, functions, controller, components
 			return '$STRING(' + command + ')';
 
 		case 'root':
-			var r = F.config['default-root'];
+			var r = CONF.default_root;
 			return '\'' + (r ? r.substring(0, r.length - 1) : r) + '\'';
 
 		case 'M':
@@ -2503,7 +2503,7 @@ function compressView(html, minify) {
  */
 function compressJS(html, index, filename, nomarkup) {
 
-	if (!F.config['allow-compile-script'])
+	if (!CONF.allow_compile_script)
 		return html;
 
 	var strFrom = '<script type="text/javascript">';
@@ -2534,7 +2534,7 @@ function compressJS(html, index, filename, nomarkup) {
 
 function compressCSS(html, index, filename, nomarkup) {
 
-	if (!F.config['allow-compile-style'])
+	if (!CONF.allow_compile_style)
 		return html;
 
 	var strFrom = '<style type="text/css">';
@@ -2917,7 +2917,7 @@ function compressHTML(html, minify, isChunk) {
  * @return {Object}
  */
 function viewengine_read(path, controller) {
-	var config = F.config;
+	var config = CONF;
 	var out = path[0] === '.';
 	var filename = out ? path.substring(1) : F.path.views(path);
 	var key;
@@ -2930,7 +2930,7 @@ function viewengine_read(path, controller) {
 	}
 
 	if (existsSync(filename))
-		return view_parse(view_parse_localization(modificators(Fs.readFileSync(filename).toString('utf8'), filename), controller.language), config['allow-compile-html'], filename, controller);
+		return view_parse(view_parse_localization(modificators(Fs.readFileSync(filename).toString('utf8'), filename), controller.language), config.allow_compile_html, filename, controller);
 
 	var index;
 
@@ -2941,7 +2941,7 @@ function viewengine_read(path, controller) {
 			if (index !== -1) {
 				filename = filename.substring(0, filename.lastIndexOf('/', index - 1)) + filename.substring(index);
 				if (existsSync(filename))
-					return view_parse(view_parse_localization(modificators(Fs.readFileSync(filename).toString('utf8'), filename), controller.language), config['allow-compile-html'], filename, controller);
+					return view_parse(view_parse_localization(modificators(Fs.readFileSync(filename).toString('utf8'), filename), controller.language), config.allow_compile_html, filename, controller);
 			}
 		}
 
@@ -2961,7 +2961,7 @@ function viewengine_read(path, controller) {
 	filename = F.path.views(path.substring(index + 1));
 
 	if (existsSync(filename))
-		return view_parse(view_parse_localization(modificators(Fs.readFileSync(filename).toString('utf8'), filename), controller.language), config['allow-compile-html'], filename, controller);
+		return view_parse(view_parse_localization(modificators(Fs.readFileSync(filename).toString('utf8'), filename), controller.language), config.allow_compile_html, filename, controller);
 
 	if (RELEASE)
 		F.temporary.other[key] = null;
@@ -3011,7 +3011,7 @@ function viewengine_dynamic(content, language, controller, cachekey) {
 	if (generator)
 		return generator;
 
-	generator = view_parse(view_parse_localization(modificators(content, ''), language), F.config['allow-compile-html'], null, controller);
+	generator = view_parse(view_parse_localization(modificators(content, ''), language), CONF.allow_compile_html, null, controller);
 
 	if (cachekey && !F.isDebug)
 		F.temporary.views[cachekey] = generator;
@@ -3044,7 +3044,7 @@ function cleanURL(url, index) {
 }
 
 exports.preparePath = function(path, remove) {
-	var root = F.config['default-root'];
+	var root = CONF.default_root;
 	if (!root)
 		return path;
 	var is = path[0] === '/';
@@ -3286,7 +3286,7 @@ function markup(body) {
 		return body;
 
 	var G = F.global;
-	var config = F.config;
+	var config = CONF;
 	var resource = F.resource;
 	var r = [];
 
@@ -3312,10 +3312,10 @@ function markup(body) {
 		if (ALLOWEDMARKUP[name]) {
 			switch (cmd) {
 				case 'author':
-					cmd = 'F.config.author';
+					cmd = 'CONF.author';
 					break;
 				case 'root':
-					cmd = 'F.config[\'default-root\']';
+					cmd = 'CONF.default_root';
 					break;
 			}
 

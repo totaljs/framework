@@ -326,13 +326,13 @@ Message.prototype.attachmentInline = Message.prototype.attachmentinline = functi
 };
 
 Message.prototype.send2 = function(callback) {
-	var opt = F.temporary['mail-settings'];
+	var opt =  F.temporary.mail_settings;
 	if (!opt) {
-		var config = F.config['mail-smtp-options'];
+		var config = CONF.mail_smtp_options;
 		config && (opt = config);
-		F.temporary['mail-settings'] = opt || {};
+		F.temporary.mail_settings = opt || {};
 	}
-	mailer.send(F.config['mail-smtp'], opt, this, callback);
+	mailer.send(CONF.mail_smtp, opt, this, callback);
 	return this;
 };
 
@@ -507,10 +507,10 @@ Mailer.prototype.try = function(smtp, options, callback) {
 
 Mailer.prototype.send2 = function(messages, callback) {
 
-	var opt = F.temporary['mail-settings'];
+	var opt = F.temporary.mail_settings;
 
 	if (!opt) {
-		var config = F.config['mail-smtp-options'];
+		var config = CONF.mail_smtp_options;
 		if (config) {
 			if (typeof(config) === 'object')
 				opt = config;
@@ -521,10 +521,10 @@ Mailer.prototype.send2 = function(messages, callback) {
 		if (!opt)
 			opt = {};
 
-		F.temporary['mail-settings'] = opt;
+		F.temporary.mail_settings = opt;
 	}
 
-	return this.send(F.config['mail-smtp'], opt, messages, callback);
+	return this.send(CONF.mail_smtp, opt, messages, callback);
 };
 
 Mailer.prototype.send = function(smtp, options, messages, callback) {
@@ -573,7 +573,7 @@ Mailer.prototype.send = function(smtp, options, messages, callback) {
 	if (!smtp)  {
 		var err = new Error('No SMTP server configuration. Mail message won\'t be sent.');
 		callback && callback(err);
-		F.error(err, 'mail-smtp');
+		F.error(err, 'mail_smtp');
 		return self;
 	}
 

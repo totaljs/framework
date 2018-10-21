@@ -361,11 +361,11 @@ function main() {
 			var port = cmd.parseInt();
 			if (port) {
 
-				F.config['directory-temp'] = '~' + path.join(os.tmpdir(), 'totaljs' + dir.hash());
-				F.config['directory-public'] = '~' + dir;
-				F.config['allow-compile-html'] = false;
-				F.config['allow-compile-script'] = false;
-				F.config['allow-compile-style'] = false;
+				CONF.directory_temp = '~' + path.join(os.tmpdir(), 'totaljs' + dir.hash());
+				CONF.directory_public = '~' + dir;
+				CONF.allow_compile_html = false;
+				CONF.allow_compile_script = false;
+				CONF.allow_compile_style = false;
 
 				F.accept('.less', 'text/less');
 
