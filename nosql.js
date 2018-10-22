@@ -567,7 +567,7 @@ function Table(name, filename) {
 	t.counter = new Counter(t);
 	t.$meta();
 
-	var schema = CONF['table.' + name];
+	var schema = CONF['table_' + name] || CONF['table.' + name];
 
 	Fs.createReadStream(t.filename, { end: 1200 }).once('data', function(chunk) {
 
