@@ -771,6 +771,16 @@ function Framework() {
 		default_interval_websocket_ping: 3,
 		default_interval_uptodate: 5,
 
+		set ['mail-smtp'] (val) {
+			CONF['mail_smtp'] = val;
+			return null;
+		},
+
+		set ['mail-smtp-options'] (val) {
+			CONF['mail_smtp_options'] = val;
+			return null;
+		},
+
 		set ['mail-address-reply'] (val) {
 			CONF['mail_address_reply'] = val;
 			return null;
