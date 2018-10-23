@@ -6573,6 +6573,7 @@ NoSQLReader.prototype.add = function(builder, noTrimmer) {
 	} else {
 		var item = {};
 		item.scalarcount = 0;
+		item.all = 0;
 		item.count = 0;
 		item.counter = 0;
 		item.builder = builder;
@@ -6586,7 +6587,6 @@ NoSQLReader.prototype.add = function(builder, noTrimmer) {
 
 NoSQLReader.prototype.compare2 = function(docs, custom, done) {
 	var self = this;
-
 	for (var i = 0; i < docs.length; i++) {
 
 		var doc = docs[i];
@@ -6605,7 +6605,7 @@ NoSQLReader.prototype.compare2 = function(docs, custom, done) {
 			if (item.canceled)
 				continue;
 
-			var output = item.compare(doc, item.filter, j);
+			var output = item.compare(doc, item.filter, item.all++);
 			if (!output)
 				continue;
 
@@ -6647,7 +6647,7 @@ NoSQLReader.prototype.compare = function(docs) {
 			if (item.canceled)
 				continue;
 
-			var output = item.compare(doc, item.filter, j);
+			var output = item.compare(doc, item.filter, item.all++);
 			if (!output)
 				continue;
 
