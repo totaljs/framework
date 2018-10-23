@@ -1476,7 +1476,7 @@ F.schedule = function(date, repeat, fn) {
 
 	if (type === 'string') {
 		date = date.parseDate();
-		repeat && date < NOW && (date = NOW.add(repeat));
+		repeat && date < NOW && (date = date.add(repeat));
 	} else if (type === 'number')
 		date = new Date(date);
 
@@ -1491,6 +1491,7 @@ F.clearSchedule = function(id) {
 	F.schedules = F.schedules.remove('id', id);
 	return F;
 };
+
 
 /**
  * Auto resize picture according the path

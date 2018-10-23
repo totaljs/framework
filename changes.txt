@@ -48,6 +48,7 @@
 - fixed: compressing CSS with `\t` tabs
 - fixed: `controller.autoclear()`
 - fixed: `controller.proxy()`
+- fixed: `repeat` mode in `SCHEDULE()`
 
 - improved: NoSQL reader
 - improved: `UID()` -> now it changes a random hash each minute
