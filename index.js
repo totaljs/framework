@@ -1475,7 +1475,7 @@ F.schedule = function(date, repeat, fn) {
 	var type = typeof(date);
 
 	if (type === 'string') {
-		date = date.parseDate();
+		date = date.parseDate().toUTC();
 		repeat && date < NOW && (date = date.add(repeat));
 	} else if (type === 'number')
 		date = new Date(date);
