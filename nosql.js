@@ -3061,6 +3061,13 @@ function Counter(db) {
 	t.key = (db instanceof Table ? 'table' : 'nosql') + db.name.hash();
 	t.type = 0; // 1 === saving, 2 === reading
 	t.$events = {};
+	t.$cb_save = function() {
+		t.tid = undefined;
+		if (F.isCluster)
+			clusterlock(t, '$save');
+		else
+			t.$save();
+	};
 }
 
 const CP = Counter.prototype;
@@ -3161,7 +3168,7 @@ CP.min = function(id, count) {
 			arr[1] = count;
 	}
 
-	setTimeout2(self.key, () => self.save(), self.TIMEOUT, 5);
+	self.save();
 	this.$events.min && self.emit('min', id, count || 1);
 	return self;
 };
@@ -3187,8 +3194,8 @@ CP.max = function(id, count) {
 			arr[1] = count;
 	}
 
-	setTimeout2(self.key, () => self.save(), self.TIMEOUT, 5);
-	this.$events.max && self.emit('max', id, count || 1);
+	self.save();
+	self.$events.max && self.emit('max', id, count || 1);
 	return self;
 };
 
@@ -3208,7 +3215,7 @@ CP.inc = CP.hit = function(id, count) {
 	else
 		self.cache[key] += count || 1;
 
-	setTimeout2(self.key, () => self.save(), self.TIMEOUT, 5);
+	self.save();
 	this.$events.sum && self.emit('sum', id, count || 1);
 	this.$events.hits && self.emit('hit', id, count || 1);
 	return self;
@@ -3224,7 +3231,7 @@ CP.remove = function(id) {
 	else
 		self.cache[id] = null;
 
-	setTimeout2(self.key, () => self.save(), self.TIMEOUT, 5);
+	self.save();
 	self.emit('remove', id);
 	return self;
 };
@@ -3987,16 +3994,15 @@ function counter_parse_days_all(output, value, year, opt) {
 
 CP.save = function() {
 	var self = this;
-	if (F.isCluster)
-		clusterlock(self, '$save');
-	else
-		self.$save();
+	!self.tid && (self.tid = setTimeout(self.$cb_save, self.TIMEOUT));
 	return self;
 };
 
 CP.$save = function() {
 
 	var self = this;
+
+	self.tid && clearTimeout(self.tid);
 	self.db.readonly && self.db.throwReadonly();
 
 	if (self.type) {
