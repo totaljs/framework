@@ -6975,6 +6975,11 @@ F.service = function(count) {
 
 		releasegc = true;
 		CONF.allow_debug && F.consoledebug('clear temporary cache');
+
+		keys = Object.keys(F.temporary.internal);
+		for (var i = 0; i < keys.length; i++)
+			if (!F.temporary.internal[keys[i]])
+				delete F.temporary.internal[keys[i]];
 	}
 
 	// every 61 minutes (default) services precompile all (installed) views
@@ -16752,20 +16757,35 @@ function async_middleware(index, req, res, middleware, callback, options, contro
 
 global.setTimeout2 = function(name, fn, timeout, limit, param) {
 	var key = ':' + name;
+	var internal = F.temporary.internal;
+
 	if (limit > 0) {
-		var key2 = key + ':limit';
-		if (F.temporary.internal[key2] >= limit)
+
+		var key2 = key + '_limit';
+		var key3 = key + '_fn';
+
+		if (internal[key2] >= limit) {
+			internal[key] && clearTimeout(internal[key]);
+			internal[key] = internal[key2] = internal[key3] = undefined;
+			fn();
 			return;
-		F.temporary.internal[key2] = (F.temporary.internal[key2] || 0) + 1;
-		F.temporary.internal[key] && clearTimeout(F.temporary.internal[key]);
-		return F.temporary.internal[key] = setTimeout(function(param) {
-			F.temporary.internal[key2] = undefined;
+		}
+
+		internal[key] && clearTimeout(internal[key]);
+		internal[key2] = (internal[key2] || 0) + 1;
+
+		return internal[key] = setTimeout(function(param, key) {
+			F.temporary.internal[key] = F.temporary.internal[key + '_limit'] = F.temporary.internal[key + '_fn'] = undefined;
 			fn && fn(param);
-		}, timeout, param);
+		}, timeout, param, key);
 	}
 
-	F.temporary.internal[key] && clearTimeout(F.temporary.internal[key]);
-	return F.temporary.internal[key] = setTimeout(fn, timeout, param);
+	if (internal[key]) {
+		clearTimeout(internal[key]);
+		internal[key] = undefined;
+	}
+
+	return internal[key] = setTimeout(fn, timeout, param);
 };
 
 global.clearTimeout2 = function(name) {
