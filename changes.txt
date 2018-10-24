@@ -30,6 +30,7 @@
 - fixed: a critical bug with storing uploaded files via `httpfile.fs()` or `httpfile.nosql()`
 - fixed: a critical bug with JavaScript minificator
 - fixed: a critical bug with NoSQL counter and freezing app
+- fixed: a critical bug with rendering of multiple async components
 - fixed: `nosql.update()` and `nosql.modify()` methods if the first argument is a function
 - fixed: `F.wait()` in the test mode
 - fixed: `LOCALIZE()` for nested directories
