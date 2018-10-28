@@ -20,6 +20,7 @@
 - added: `SchemaOptions` and `OperationOptions` supports `$.cancel()` method
 - added: `CACHE(name, [value], [expire], [persistent])` alias for `F.cache.get2()` and `F.cache.set()` or `F.cache.set2()`
 - added: encryption of config values
+- added: `F.refresh()` for refreshing of internal cache
 
 - updated: `debug` mode creates a `start_name_script.pid` instead of `debug.pid`
 - updated: `NEWOPERATION()` supports `repeat`, `stop` and `binderror` arguments (more in docs)

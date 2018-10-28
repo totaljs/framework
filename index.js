@@ -1023,6 +1023,38 @@ F.dir = function(path) {
 	directory = path;
 };
 
+F.refresh = function() {
+
+	NOW = new Date();
+
+	F.$events.clear && EMIT('clear', 'temporary', F.temporary);
+	F.temporary.path = {};
+	F.temporary.range = {};
+	F.temporary.views = {};
+	F.temporary.other = {};
+	global.$VIEWCACHE && global.$VIEWCACHE.length && (global.$VIEWCACHE = []);
+
+	// Clears command cache
+	Image.clear();
+
+	CONF.allow_debug && F.consoledebug('clear temporary cache');
+
+	var keys = Object.keys(F.temporary.internal);
+	for (var i = 0; i < keys.length; i++)
+		if (!F.temporary.internal[keys[i]])
+			delete F.temporary.internal[keys[i]];
+
+	F.$events.clear && EMIT('clear', 'resources');
+	F.resources = {};
+	CONF.allow_debug && F.consoledebug('clear resources');
+
+	F.$events.clear && EMIT('clear', 'dns');
+	U.clearDNS();
+	CONF.allow_debug && F.consoledebug('clear DNS cache');
+
+	return F;
+};
+
 F.prototypes = function(fn) {
 	var proto = {};
 	proto.Chunker = framework_utils.Chunker.prototype;
