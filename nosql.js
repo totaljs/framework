@@ -577,17 +577,22 @@ function Table(name, filename) {
 		}
 
 		t.parseSchema(chunk.toString('utf8').split('\n', 1)[0].split('|'));
-
 		t.ready = true;
-		t.next(0);
 
-		if (schema && t.stringifySchema() !== schema)
+		if (schema && t.stringifySchema() !== schema) {
+			t.$header = Buffer.byteLength(t.stringifySchema()) + 1;
 			t.extend(schema);
+		} else
+			t.$header = Buffer.byteLength(schema ? schema : t.stringifySchema()) + 1;
+
+		t.next(0);
 
 	}).on('error', function(e) {
 		if (schema) {
 			t.parseSchema(schema.replace(/;|,/g, '|').trim().split('|'));
-			Fs.writeFileSync(t.filename, t.stringifySchema() + NEWLINE, 'utf8');
+			var bschema = t.stringifySchema();
+			t.$header = Buffer.byteLength(bschema) + 1;
+			Fs.writeFileSync(t.filename, bschema + NEWLINE, 'utf8');
 			t.ready = true;
 			t.next(0);
 		} else {
@@ -1146,8 +1151,11 @@ DP.find2 = function(builder) {
 	var self = this;
 	if (builder instanceof DatabaseBuilder)
 		builder.db = self;
-	else
+	else {
 		builder = new DatabaseBuilder(self);
+		builder.$options.notall = true;
+	}
+
 	if (self.readonly)
 		return self.find(builder);
 	self.pending_reader2.push(builder);
@@ -5535,8 +5543,11 @@ TP.find2 = function(builder) {
 	var self = this;
 	if (builder)
 		builder.db = self;
-	else
+	else {
 		builder = new DatabaseBuilder(self);
+		builder.$options.notall = true;
+	}
+
 	self.pending_reader2.push(builder);
 	setImmediate(next_operation, self, 11);
 	return builder;
@@ -5563,13 +5574,14 @@ TP.extend = function(schema, callback) {
 
 		var olds = self.$schema;
 		var oldk = self.$keys;
+		var oldl = self.$size;
+		var oldh = Buffer.byteLength(self.stringifySchema() + NEWLINE);
 
 		self.parseSchema(schema.replace(/;|,/g, '|').trim().split('|'));
 
 		var meta = self.stringifySchema() + NEWLINE;
 		var news = self.$schema;
 		var newk = self.$keys;
-
 		self.$schema = olds;
 		self.$keys = oldk;
 
@@ -5594,7 +5606,13 @@ TP.extend = function(schema, callback) {
 		});
 
 		data.keys = self.$keys;
+		fs.start = oldh;
 		fs.divider = '\n';
+
+		if (oldl)
+			self.linesize = oldl;
+
+		var size = self.$size;
 
 		fs.ondocuments = function() {
 
@@ -5603,8 +5621,9 @@ TP.extend = function(schema, callback) {
 
 			self.$schema = olds;
 			self.$keys = oldk;
+			self.$size = oldl;
 
-			for (var a = count ? 0 : 1; a < lines.length; a++) {
+			for (var a = 0; a < lines.length; a++) {
 				data.line = lines[a].split('|');
 				data.index = count++;
 				var doc = self.parseData(data);
@@ -5614,6 +5633,7 @@ TP.extend = function(schema, callback) {
 			self.$schema = news;
 			self.$keys = newk;
 
+			self.$size = size;
 			var buffer = '';
 			for (var i = 0; i < items.length; i++)
 				buffer += self.stringify(items[i], true) + NEWLINE;
@@ -5623,6 +5643,7 @@ TP.extend = function(schema, callback) {
 		fs.$callback = function() {
 			self.$schema = news;
 			self.$keys = newk;
+			self.$header = Buffer.byteLength(meta);
 			writer.end();
 			fs = null;
 		};
@@ -5816,7 +5837,11 @@ TP.$reader = function() {
 	var data = {};
 	var indexer = 0;
 
+	fs.array = true;
+	fs.start = self.$header;
+	fs.linesize = self.$size;
 	fs.divider = '\n';
+
 	data.keys = self.$keys;
 
 	if (self.buffersize)
@@ -5827,16 +5852,16 @@ TP.$reader = function() {
 
 	fs.ondocuments = function() {
 
-		var lines = fs.docs.split(fs.divider);
+		var lines = fs.docs;
 		var arr = [];
 
-		for (var j = indexer ? 0 : 1; j < lines.length; j++) {
+		for (var j = 0; j < lines.length; j++) {
 			data.line = lines[j].split('|');
 			data.index = indexer++;
 			arr.push(self.parseData(data));
 		}
 
-		return filters.compare(arr, jsonparser);
+		return filters.compare(arr);
 	};
 
 	fs.$callback = function() {
@@ -5868,6 +5893,9 @@ TP.$reader3 = function() {
 	var data = {};
 	var indexer = 0;
 
+	fs.array = true;
+	fs.start = self.$header;
+	fs.linesize = self.$size;
 	fs.divider = '\n';
 	data.keys = self.$keys;
 
@@ -5879,18 +5907,18 @@ TP.$reader3 = function() {
 
 	fs.ondocuments = function() {
 
-		var lines = fs.docs.split(fs.divider);
+		var lines = fs.docs;
 		var arr = [];
 
 		for (var j = 0; j < lines.length; j++) {
 			data.line = lines[j].split('|');
-			if (!TABLERECORD[data.line[0]])
-				continue;
-			data.index = indexer++;
-			arr.push(self.parseData(data));
+			if (TABLERECORD[data.line[0]]) {
+				data.index = indexer++;
+				arr.push(self.parseData(data));
+			}
 		}
 
-		return filters.compare(arr, jsonparser);
+		return filters.compare(arr);
 	};
 
 	fs.$callback = function() {
@@ -5926,6 +5954,9 @@ TP.$update = function() {
 	for (var i = 0; i < filter.length; i++)
 		filters.add(filter[i].builder, true);
 
+	fs.array = true;
+	fs.start = self.$header;
+	fs.linesize = self.$size;
 	fs.divider = '\n';
 
 	if (self.buffersize)
@@ -5937,7 +5968,6 @@ TP.$update = function() {
 	var update = function(docs, doc, dindex, f, findex) {
 
 		var rec = fs.docsbuffer[dindex];
-
 		var fil = filter[findex];
 		var e = fil.keys ? 'modify' : 'update';
 		var old = self.$events[e] ? CLONE(doc) : 0;
@@ -5987,6 +6017,7 @@ TP.$update = function() {
 
 		var rec = fs.docsbuffer[dindex];
 		var upd = self.stringify(doc, null, rec.length);
+
 		if (upd === rec.doc)
 			return;
 
@@ -6004,13 +6035,10 @@ TP.$update = function() {
 
 	fs.ondocuments = function() {
 
-		var lines = fs.docs.split(fs.divider);
+		var lines = fs.docs;
 		var arr = [];
 
-		if (!indexer)
-			arr.push(EMPTYOBJECT);
-
-		for (var a = indexer ? 0 : 1; a < lines.length; a++) {
+		for (var a = 0; a < lines.length; a++) {
 			data.line = lines[a].split('|');
 			data.length = lines[a].length;
 			data.index = indexer++;
@@ -6069,6 +6097,9 @@ TP.$remove = function() {
 	var change = false;
 	var indexer = 0;
 
+	fs.array = true;
+	fs.start = self.$header;
+	fs.linesize = self.$size;
 	fs.divider = '\n';
 
 	if (self.buffersize)
@@ -6094,13 +6125,13 @@ TP.$remove = function() {
 
 	fs.ondocuments = function() {
 
-		var lines = fs.docs.split(fs.divider);
+		var lines = fs.docs;
 		var arr = [];
 
 		if (!indexer)
 			arr.push(EMPTYOBJECT);
 
-		for (var a = indexer ? 0 : 1; a < lines.length; a++) {
+		for (var a = 0; a < lines.length; a++) {
 			data.line = lines[a].split('|');
 			data.index = indexer++;
 			arr.push(self.parseData(data));
@@ -6143,6 +6174,8 @@ TP.$clean = function() {
 	var fs = new NoSQLStream(self.filename);
 	var writer = Fs.createWriteStream(self.filename + '-tmp');
 
+	fs.start = self.$header;
+	fs.linesize = self.$size;
 	fs.divider = NEWLINE;
 
 	if (self.buffersize)
@@ -6232,6 +6265,9 @@ TP.$streamer = function() {
 	var data = {};
 
 	data.keys = self.$keys;
+
+	fs.array = true;
+	fs.start = self.$header;
 	fs.divider = '\n';
 
 	if (self.buffersize)
@@ -6241,8 +6277,8 @@ TP.$streamer = function() {
 		fs.buffercount = self.buffercount;
 
 	fs.ondocuments = function() {
-		var lines = fs.docs.split(fs.divider);
-		for (var a = count ? 0 : 1; a < lines.length; a++) {
+		var lines = fs.docs;
+		for (var a = 0; a < lines.length; a++) {
 			data.line = lines[a].split('|');
 			data.index = count++;
 			var doc = self.parseData(data);
@@ -6271,36 +6307,61 @@ TP.allocations = function(enable) {
 TP.parseSchema = function() {
 	var self = this;
 	var arr = arguments[0] instanceof Array ? arguments[0] : arguments;
+	var sized = true;
 
 	self.$schema = {};
 	self.$keys = [];
+	self.$size = 2;
 
 	for (var i = 0; i < arr.length; i++) {
 		var arg = arr[i].split(':');
 		var type = 0;
-		switch ((arg[1] || '').toLowerCase().trim()) {
+		var T = (arg[1] || '').toLowerCase().trim();
+		var size = 0;
+
+		var index = T.indexOf('(');
+		if (index != -1) {
+			size = +T.substring(index + 1, T.lastIndexOf(')'));
+			T = T.substring(0, index);
+		}
+
+		switch (T) {
 			case 'number':
 				type = 2;
+				!size && (size = 16);
 				break;
 			case 'boolean':
 			case 'bool':
 				type = 3;
+				size = 1;
 				break;
 			case 'date':
 				type = 4;
+				size = 13;
 				break;
 			case 'object':
 				type = 5;
+				size = 0;
+				sized = false;
 				break;
 			case 'string':
 			default:
 				type = 1;
+				if (!size)
+					sized = false;
 				break;
 		}
 		var name = arg[0].trim();
-		self.$schema[name] = { type: type, pos: i };
+		self.$schema[name] = { type: type, pos: i, size: size };
 		self.$keys.push(name);
+		self.$size += size + 1;
 	}
+
+	if (sized) {
+		self.$allocations = false;
+		self.$size++; // newline
+	} else
+		self.$size = 0;
 
 	return self;
 };
@@ -6318,8 +6379,15 @@ TP.stringifySchema = function() {
 
 		switch (meta.type) {
 			case 2:
+
 				type = 'number';
+
+				// string
+				if (self.$size && meta.size !== 16)
+					type += '(' + (meta.size) + ')';
+
 				break;
+
 			case 3:
 				type = 'boolean';
 				break;
@@ -6328,6 +6396,11 @@ TP.stringifySchema = function() {
 				break;
 			case 5:
 				type = 'object';
+				break;
+			default:
+				// string
+				if (meta.size)
+					type += '(' + (meta.size) + ')';
 				break;
 		}
 
@@ -6362,29 +6435,43 @@ TP.parseData = function(data, cache) {
 			continue;
 
 		var pos = meta.pos + 1;
+		var line = data.line[pos];
+
+		if (self.$size) {
+			for (var j = line.length - 1; j > -1; j--) {
+				if (line[j] !== ' ') {
+					line = line.substring(0, j + 1);
+					break;
+				}
+			}
+		}
 
 		switch (meta.type) {
 			case 1: // String
-				obj[key] = data.line[pos];
+				obj[key] = line;
 				if (esc && obj[key])
 					obj[key] = obj[key].replace(REGTUNESCAPE, regtescapereverse);
+				if (self.$size && obj[key].indexOf('\\u') !== -1)
+					obj[key] = obj[key].fromUnicode();
 				break;
 			case 2: // Number
-				val = +data.line[pos];
+				val = +line;
 				obj[key] = val < 0 || val > 0 ? val : 0;
 				break;
 			case 3: // Boolean
-				val = data.line[pos];
+				val = line;
 				obj[key] = BOOLEAN[val] == 1;
 				break;
 			case 4: // Date
-				val = data.line[pos];
+				val = line;
 				obj[key] = val ? new Date(val[10] === 'T' ? val : +val) : null;
 				break;
 			case 5: // Object
-				val = data.line[pos];
+				val = line;
 				if (esc && val)
 					val = val.replace(REGTUNESCAPE, regtescapereverse);
+				if (self.$size && obj[key].indexOf('\\u') !== -1)
+					obj[key] = obj[key].fromUnicode();
 				obj[key] = val ? val.parseJSON(true) : null;
 				break;
 		}
@@ -6408,21 +6495,67 @@ TP.stringify = function(doc, insert, byteslen) {
 
 		switch (meta.type) {
 			case 1: // String
-				val = val ? val : '';
-				size += 4;
+
+				if (self.$size) {
+					switch (typeof(val)) {
+						case 'number':
+							val = val + '';
+							break;
+						case 'boolean':
+							val = val ? '1' : '0';
+							break;
+						case 'object':
+							var is = !!val;
+							val = JSON.stringify(val);
+							if (!is)
+								val = val.toUnicode();
+							break;
+						case 'string':
+							val = val.toUnicode();
+							break;
+					}
+
+					if (val.length > meta.size)
+						val = val.substring(0, meta.size);
+					else
+						val = val.padRight(meta.size, ' ');
+
+					// bytes
+					var diff = meta.size - Buffer.byteLength(val);
+					if (diff > 0) {
+						for (var j = 0; j < diff; j++)
+							val += ' ';
+					}
+
+				} else {
+					val = val ? val : '';
+					if (meta.size && val.length > meta.sized)
+						val = val.substring(0, meta.size);
+					size += 4;
+				}
+
 				break;
 			case 2: // Number
-				val = (val || 0);
-				size += 2;
+				val = (val || 0) + '';
+				if (self.$size) {
+					if (val.length < meta.size)
+						val = val.padRight(meta.size, ' ');
+				} else
+					size += 2;
 				break;
+
 			case 3: // Boolean
 				val = (val == true ? '1' : '0');
 				break;
+
 			case 4: // Date
-				// val = val ? val.toISOString() : '';
 				val = val ? val instanceof Date ? val.getTime() : val : '';
-				!val && (size += 13);
+				if (self.$size)
+					val = (val + '').padRight(meta.size, ' ');
+				else if (!val)
+					size += 10;
 				break;
+
 			case 5: // Object
 				val = val ? JSON.stringify(val) : '';
 				size += 4;
@@ -6440,7 +6573,9 @@ TP.stringify = function(doc, insert, byteslen) {
 		output += '|' + val;
 	}
 
-	if (doc.$$alloc) {
+	if (self.$size && (insert || byteslen)) {
+		output += '|';
+	} else if (doc.$$alloc) {
 		var l = output.length;
 		var a = doc.$$alloc;
 		if (l <= a.length) {
@@ -6665,7 +6800,7 @@ NoSQLReader.prototype.compare = function(docs) {
 
 			item.counter++;
 
-			if (!b.$inlinesort && !item.done)
+			if (b.$options.notall && !b.$inlinesort && !item.done)
 				item.done = b.$options.take && b.$options.take <= item.counter;
 
 			if (b.$options.readertype)
@@ -6729,7 +6864,7 @@ NoSQLReader.prototype.compare = function(docs) {
 					break;
 			}
 
-			if (item.first) {
+			if (item.first || item.done) {
 				item.canceled = true;
 				self.canceled++;
 			}
