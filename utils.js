@@ -3763,22 +3763,28 @@ SP.capitalize = function(first) {
 	return builder;
 };
 
-
-SP.toUnicode = function() {
-	var result = '';
-	var self = this;
-	var length = self.length;
-	for(var i = 0; i < length; ++i){
-		if(self.charCodeAt(i) > 126 || self.charCodeAt(i) < 32)
-			result += '\\u' + self.charCodeAt(i).hex(4);
+String.prototype.toUnicode = function() {
+	var output = '';
+	for (var i = 0; i < this.length; i++) {
+		var c = this[i].charCodeAt(0);
+		if(c > 126 || c < 32)
+			output += '\\u' + ('000' + c.toString(16)).substr(-4);
 		else
-			result += self[i];
+			output += this[i];
 	}
-	return result;
+	return output;
 };
 
-SP.fromUnicode = function() {
-	return unescape(this.replace(regexpUNICODE, (match, v) => String.fromCharCode(parseInt(v, 16))));
+String.prototype.fromUnicode = function() {
+	var output = '';
+	for (var i = 0; i < this.length; i++) {
+		if (this[i] === '\\' && this[i + 1] === 'u') {
+			output += String.fromCharCode(parseInt(this[i + 2] + this[i + 3] + this[i + 4] + this[i + 5], 16));
+			i += 5;
+		} else
+			output += this[i];
+	}
+	return output;
 };
 
 SP.sha1 = function(salt) {
