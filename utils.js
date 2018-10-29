@@ -6166,19 +6166,15 @@ exports.Callback = function(count, callback) {
 function Reader() {}
 const RP = Reader.prototype;
 
-RP.clear = function() {
-
+RP.done = function() {
 	var self = this;
-	var builders = self.reader.builders;
+	self.reader.done();
+	return self;
+};
 
-	for (var i = 0; i < builders.length; i++) {
-		var builder = builders[i];
-		builder.scalarcount = 0;
-		builder.count = 0;
-		builder.counter = 0;
-		builder.response = null;
-	}
-
+RP.reset = function() {
+	var self = this;
+	self.reader.reset();
 	return self;
 };
 
