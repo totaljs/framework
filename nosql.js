@@ -2206,6 +2206,24 @@ function DatabaseBuilder(db) {
 
 DatabaseBuilder.prototype.promise = promise;
 
+DatabaseBuilder.prototype.reset = function() {
+	var self = this;
+	var reader = self.$nosqlreader;
+	if (reader) {
+		for (var i = 0; i < reader.builders.length; i++) {
+			var item = reader.builders[i];
+			if (item.builder === self) {
+				item.response = null;
+				item.scalar = null;
+				item.counter = 0;
+				item.count = 0;
+				item.scalarcount = 0;
+			}
+		}
+	}
+	return self;
+};
+
 DatabaseBuilder.prototype.makefilter = function() {
 	return { repository: this.$repository, options: this.$options, arg: this.$args, fn: this.$functions };
 };
@@ -6721,6 +6739,7 @@ NoSQLReader.prototype.add = function(builder, noTrimmer) {
 		item.compare = builder.compile(noTrimmer);
 		item.filter = builder.makefilter();
 		item.first = builder.$options.first && !builder.$options.sort;
+		builder.$nosqlreader = self;
 		self.builders.push(item);
 	}
 	return self;
@@ -6872,55 +6891,81 @@ NoSQLReader.prototype.compare = function(docs) {
 	}
 };
 
-NoSQLReader.prototype.done = function() {
-
+NoSQLReader.prototype.reset = function() {
 	var self = this;
 	for (var i = 0; i < self.builders.length; i++) {
-
 		var item = self.builders[i];
-		var builder = item.builder;
-		var output;
-		var opt = builder.$options;
+		item.canceled = false;
+		item.response = null;
+		item.scalar = null;
+		item.counter = 0;
+		item.count = 0;
+		item.scalarcount = 0;
+	}
+	self.canceled = 0;
+	return self;
+};
 
-		if (opt.scalar || !opt.sort) {
-			if (opt.scalar)
-				output = opt.scalar === 'avg' ? item.scalar / item.scalarcount : item.scalar;
-			else if (opt.first)
-				output = item.response ? item.response[0] : undefined;
-			else if (opt.listing)
-				output = listing(builder, item);
-			else
-				output = item.response || [];
-			builder.$callback2(errorhandling(null, builder, output), opt.readertype === 1 ? item.count : output, item.count);
-			continue;
-		}
+NoSQLReader.prototype.callback = function(item) {
 
-		if (item.count) {
-			if (opt.sort.name) {
-				if (!builder.$inlinesort || opt.take !== item.response.length)
-					item.response.quicksort(opt.sort.name, opt.sort.asc);
-			} else if (opt.sort === null)
-				item.response.random();
-			else
-				item.response.sort(opt.sort);
+	var self = this;
+	var builder = item.builder;
+	var output;
+	var opt = builder.$options;
 
-			if (opt.skip && opt.take)
-				item.response = item.response.splice(opt.skip, opt.take);
-			else if (opt.skip)
-				item.response = item.response.splice(opt.skip);
-			else if (!builder.$inlinesort && opt.take)
-				item.response = item.response.splice(0, opt.take);
-		}
+	if (item.canceled) {
+		item.canceled = false;
+		if (self.canceled)
+			self.canceled--;
+	}
 
-		if (opt.first)
+	if (opt.scalar || !opt.sort) {
+		if (opt.scalar)
+			output = opt.scalar === 'avg' ? item.scalar / item.scalarcount : item.scalar;
+		else if (opt.first)
 			output = item.response ? item.response[0] : undefined;
 		else if (opt.listing)
 			output = listing(builder, item);
 		else
 			output = item.response || [];
-
 		builder.$callback2(errorhandling(null, builder, output), opt.readertype === 1 ? item.count : output, item.count);
+		return self;
 	}
+
+	if (item.count) {
+		if (opt.sort.name) {
+			if (!builder.$inlinesort || opt.take !== item.response.length)
+				item.response.quicksort(opt.sort.name, opt.sort.asc);
+		} else if (opt.sort === null)
+			item.response.random();
+		else
+			item.response.sort(opt.sort);
+
+		if (opt.skip && opt.take)
+			item.response = item.response.splice(opt.skip, opt.take);
+		else if (opt.skip)
+			item.response = item.response.splice(opt.skip);
+		else if (!builder.$inlinesort && opt.take)
+			item.response = item.response.splice(0, opt.take);
+	}
+
+	if (opt.first)
+		output = item.response ? item.response[0] : undefined;
+	else if (opt.listing)
+		output = listing(builder, item);
+	else
+		output = item.response || [];
+
+	builder.$callback2(errorhandling(null, builder, output), opt.readertype === 1 ? item.count : output, item.count);
+	return self;
+};
+
+NoSQLReader.prototype.done = function() {
+	var self = this;
+	for (var i = 0; i < self.builders.length; i++)
+		self.callback(self.builders[i]);
+	self.canceled = 0;
+	return self;
 };
 
 exports.NoSQLReader = NoSQLReader;
