@@ -6213,6 +6213,8 @@ TP.$clean = function() {
 	var fs = new NoSQLStream(self.filename);
 	var writer = Fs.createWriteStream(self.filename + '-tmp');
 
+	writer.write(self.stringifySchema() + NEWLINE);
+
 	fs.start = self.$header;
 	fs.linesize = self.$size;
 	fs.divider = NEWLINE;
@@ -6456,10 +6458,8 @@ TP.parseData = function(data, cache) {
 	var esc = data.line[0] === '*';
 	var val, alloc;
 
-	if (cache && data.keys.length === data.line.length - 2) {
-		// alloc = data.line[data.line.length - 1].length - 1;
+	if (cache && !self.$size && data.keys.length === data.line.length - 2)
 		alloc = data.line[data.line.length - 1].length;
-	}
 
 	for (var i = 0; i < data.keys.length; i++) {
 		var key = data.keys[i];
@@ -6802,7 +6802,7 @@ NoSQLReader.prototype.compare2 = function(docs, custom, done) {
 			!is && (is = true);
 
 			item.counter++;
-			item.builder.$each && item.builder.$each(item, output);
+			item.builder.$each && item.builder.$each(item, doc);
 
 			var canceled = item.canceled;
 			var c = custom(docs, output, i, item, j);
