@@ -3,16 +3,17 @@ require('./index');
 const Fs = require('fs');
 const Path = require('path');
 const CONSOLE = process.argv.indexOf('restart') === -1;
-const META = {};
 const INTERNAL = { '/sitemap': 1, '/versions': 1, '/workflows': 1, '/dependencies': 1, '/config': 1, '/config-release': 1, '/config-debug': 1 };
 const isWindows = require('os').platform().substring(0, 3).toLowerCase() === 'win';
 const REGAPPEND = /\/--[a-z0-9]+/i;
+const META = {};
 
 META.version = 1;
 META.created = new Date();
 META.total = 'v' + F.version_header;
 META.node = F.version_node;
 META.files = [];
+META.skip = false;
 META.directories = [];
 META.ignore = () => true;
 
@@ -45,6 +46,11 @@ exports.make = function(callback) {
 	var async = [];
 
 	async.push(cleanFiles);
+
+	async.push(function(next) {
+		META.skip && (async.length = 0);
+		next();
+	});
 
 	async.push(function(next) {
 		var target = F.path.root(CONF.directory_src);
@@ -208,6 +214,13 @@ function cleanFiles(callback) {
 
 	try {
 		meta = U.parseJSON(Fs.readFileSync(Path.join(path, 'bundle.json')).toString('utf8'), true) || {};
+
+		if (CONF.bundling === 'shallow') {
+			META.skip = true;
+			callback();
+			return;
+		}
+
 	} catch (e) {
 		meta = {};
 	}

@@ -17,10 +17,12 @@
 - added: a new config item `default-cors : https://www.totaljs.com, https://www.componentator.com` which allows originators for `CORS()` method
 - added: a new config item `default-request-maxkeys : 33` for restricting query max. keys
 - added: a new config item `logger : false` which enables logging for Middleware, Schemas and Operations
+- added: a new config item `bundling : shallow` which enables shallow bundling (if `bundle.json` exists then the bundles won't be extracted)
 - added: `SchemaOptions` and `OperationOptions` supports `$.cancel()` method
 - added: `CACHE(name, [value], [expire], [persistent])` alias for `F.cache.get2()` and `F.cache.set()` or `F.cache.set2()`
 - added: encryption of config values
 - added: `F.refresh()` for refreshing of internal cache
+- added: `DatabaseBuilder.each(fn)` for browsing of evaluated records
 
 - updated: `debug` mode creates a `start_name_script.pid` instead of `debug.pid`
 - updated: `NEWOPERATION()` supports `repeat`, `stop` and `binderror` arguments (more in docs)
