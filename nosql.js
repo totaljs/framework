@@ -2940,6 +2940,7 @@ DatabaseBuilder.prototype.compile = function(noTrimmer) {
 		if (cache) {
 			self.$mappers = cache.mitems;
 			self.$mappersexec = cache.mexec;
+			self.$each = cache.each;
 			return cache.filter;
 		}
 	}
@@ -2956,10 +2957,14 @@ DatabaseBuilder.prototype.compile = function(noTrimmer) {
 		self.$mappersexec = new Function('doc', 'item', tmp);
 	}
 
+	if (opt.each)
+		self.$each = new Function('item', 'doc', 'repository', 'R', opt.each.join(''));
+
 	var cache = {};
 	cache.filter = new Function('doc', '$F', 'index', code);
 	cache.mexec = self.$mappersexec;
 	cache.mitems = self.$mappers;
+	cache.each = self.$each;
 	CACHE[key] = cache;
 	return cache.filter;
 };
@@ -3087,8 +3092,11 @@ DatabaseBuilder.prototype.each = function(fn) {
 	var index = self.$functions.push(fn) - 1;
 
 	if (!self.$iscache) {
-		var code = '$tmp=fn[{0}].call($F,doc,index,repository);'.format(index);
-		self.$code.push(code);
+		var code = 'item.filter.fn[{0}].call(item,doc,item.filter.repository,item.filter.repository);'.format(index);
+		if (self.$options.each)
+			self.$options.each.push(code);
+		else
+			self.$options.each = [code];
 	}
 
 	return self;
@@ -6841,6 +6849,7 @@ NoSQLReader.prototype.compare = function(docs) {
 			if (b.$options.readertype)
 				continue;
 
+			b.$each && b.$each(item, output);
 			b.$mappersexec && b.$mappersexec(output, item);
 			var val;
 
@@ -6944,7 +6953,7 @@ NoSQLReader.prototype.callback = function(item) {
 			output = listing(builder, item);
 		else
 			output = item.response || [];
-		builder.$callback2(errorhandling(null, builder, output), opt.readertype === 1 ? item.count : output, item.count);
+		builder.$callback2(errorhandling(null, builder, output), opt.readertype === 1 ? item.count : output, item.count, item.filter.repository);
 		return self;
 	}
 
@@ -6972,7 +6981,7 @@ NoSQLReader.prototype.callback = function(item) {
 	else
 		output = item.response || [];
 
-	builder.$callback2(errorhandling(null, builder, output), opt.readertype === 1 ? item.count : output, item.count);
+	builder.$callback2(errorhandling(null, builder, output), opt.readertype === 1 ? item.count : output, item.count, item.filter.repository);
 	return self;
 };
 
