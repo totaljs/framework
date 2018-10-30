@@ -1585,15 +1585,15 @@ DP.$update = function() {
 		for (var i = 0; i < filters.builders.length; i++) {
 			var item = filters.builders[i];
 			var fil = filter[i];
-			if (fil.insert && !item.count) {
-				item.builder.$insertcallback && item.builder.$insertcallback(fil.insert, item.builder.$repository || EMPTYOBJECT);
+			if (fil.insert && !item.counter) {
+				item.builder.$insertcallback && item.builder.$insertcallback(fil.insert, item.filter.repository || EMPTYOBJECT);
 				var tmp = self.insert(fil.insert);
 				tmp.$callback = item.builder.$callback;
 				tmp.$options.log = item.builder.$options.log;
 				item.builder.$callback = null;
 			} else {
 				item.builder.$options.log && item.builder.log();
-				item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count, item.repository);
+				item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.counter), item.counter, item.count, item.filter.repository);
 			}
 		}
 
@@ -1688,15 +1688,15 @@ DP.$update_inmemory = function() {
 
 		for (var i = 0; i < filter.length; i++) {
 			var item = filter[i];
-			if (item.insert && !item.count) {
-				item.builder.$insertcallback && item.builder.$insertcallback(item.insert, item.builder.$repository || EMPTYOBJECT);
+			if (item.insert && !item.counter) {
+				item.builder.$insertcallback && item.builder.$insertcallback(item.insert, item.filter.repository || EMPTYOBJECT);
 				var tmp = self.insert(item.insert);
 				tmp.$callback = item.builder.$callback;
 				tmp.$options.log = item.builder.$options.log;
 				item.builder.$callback = null;
 			} else {
 				item.builder.$options.log && item.builder.log();
-				item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count, item.repository);
+				item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.counter), item.counter, item.count, item.filter.repository);
 			}
 		}
 
@@ -6100,14 +6100,14 @@ TP.$update = function() {
 			var item = filters.builders[i];
 			var fil = filter[i];
 			if (fil.insert && !item.count) {
-				item.builder.$insertcallback && item.builder.$insertcallback(fil.insert, item.builder.$repository || EMPTYOBJECT);
+				item.builder.$insertcallback && item.builder.$insertcallback(fil.insert, item.filter.repository);
 				var tmp = self.insert(fil.insert);
 				tmp.$callback = item.builder.$callback;
 				tmp.$options.log = item.builder.$options.log;
 				item.builder.$callback = null;
 			} else {
 				item.builder.$options.log && item.builder.log();
-				item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count, item.repository);
+				item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.counter), item.counter, item.count, item.filter.repository);
 			}
 		}
 
@@ -6169,9 +6169,6 @@ TP.$remove = function() {
 
 		var lines = fs.docs;
 		var arr = [];
-
-		if (!indexer)
-			arr.push(EMPTYOBJECT);
 
 		for (var a = 0; a < lines.length; a++) {
 			data.line = lines[a].split('|');
@@ -6771,6 +6768,7 @@ NoSQLReader.prototype.add = function(builder, noTrimmer) {
 
 NoSQLReader.prototype.compare2 = function(docs, custom, done) {
 	var self = this;
+
 	for (var i = 0; i < docs.length; i++) {
 
 		var doc = docs[i];
@@ -6793,9 +6791,19 @@ NoSQLReader.prototype.compare2 = function(docs, custom, done) {
 			if (!output)
 				continue;
 
-			item.is = false;
-			!is && (is = true);
+			// WTF?
+			// item.is = false;
+
 			item.count++;
+
+			if ((item.builder.$options.skip && item.builder.$options.skip >= item.count) || (item.builder.$options.take && item.builder.$options.take <= item.counter))
+				continue;
+
+			!is && (is = true);
+
+			item.counter++;
+			item.builder.$each && item.builder.$each(item, output);
+
 			var canceled = item.canceled;
 			var c = custom(docs, output, i, item, j);
 
@@ -6953,7 +6961,7 @@ NoSQLReader.prototype.callback = function(item) {
 			output = listing(builder, item);
 		else
 			output = item.response || [];
-		builder.$callback2(errorhandling(null, builder, output), opt.readertype === 1 ? item.count : output, item.count, item.filter.repository);
+		builder.$callback2(errorhandling(null, builder, output), opt.readertype === 1 ? item.counter : output, item.count, item.filter.repository);
 		return self;
 	}
 
@@ -6981,7 +6989,7 @@ NoSQLReader.prototype.callback = function(item) {
 	else
 		output = item.response || [];
 
-	builder.$callback2(errorhandling(null, builder, output), opt.readertype === 1 ? item.count : output, item.count, item.filter.repository);
+	builder.$callback2(errorhandling(null, builder, output), opt.readertype === 1 ? item.counter : output, item.count, item.filter.repository);
 	return self;
 };
 
