@@ -3075,7 +3075,23 @@ DatabaseBuilder.prototype.prepare = function(fn) {
 		!self.$scope && self.$code.push('if(!$is)return;');
 	}
 
-	return this;
+	return self;
+};
+
+DatabaseBuilder.prototype.each = function(fn) {
+	var self = this;
+
+	if (!self.$functions)
+		self.$functions = [];
+
+	var index = self.$functions.push(fn) - 1;
+
+	if (!self.$iscache) {
+		var code = '$tmp=fn[{0}].call($F,doc,index,repository);'.format(index);
+		self.$code.push(code);
+	}
+
+	return self;
 };
 
 function Counter(db) {
