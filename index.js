@@ -2587,6 +2587,8 @@ F.routing = function(name) {
  */
 global.MERGE = F.merge = function(url) {
 
+	F.temporary.other['merge_' + url] = 1;
+
 	if (url[0] === '#')
 		url = sitemapurl(url.substring(1));
 
@@ -5244,6 +5246,9 @@ F.onMapping = function(url, def, ispublic, encode) {
 		return F.components.files[name] && F.components.files[name][tmp.substring(index + 1)] ? (F.path.temp() + tmp.substring(1)) : null;
 	}
 
+	if (F.routes.mapping[url])
+		return F.routes.mapping[url];
+
 	if (F._length_themes) {
 		var index = tmp.indexOf('/', 2);
 		if (index !== -1) {
@@ -5252,9 +5257,6 @@ F.onMapping = function(url, def, ispublic, encode) {
 				return F.themes[themeName] + 'public' + tmp.substring(index);
 		}
 	}
-
-	if (F.routes.mapping[url])
-		return F.routes.mapping[url];
 
 	def = framework_internal.preparePath(def, true);
 
@@ -8591,7 +8593,22 @@ F.$configure_versions = function(arr, clean) {
 						if (hash) {
 							var index = key.lastIndexOf('.');
 							filename = key.substring(0, index) + '-' + hash + key.substring(index);
+
 							F.versions[key] = filename;
+
+							if (!F.routes.merge[key] && !F.temporary.other['merge_' + key]) {
+								var index = key.indexOf('/', 1);
+								var theme = index === -1 ? null : key.substring(1, index);
+								if (theme) {
+									if (F.themes[theme])
+										key = F.themes[theme] + 'public' + key.substring(index);
+									else
+										key = F.path.public(key);
+								} else
+									key = F.path.public(key);
+								F.map(filename, key);
+							}
+
 							F.temporary.views = {};
 							F.temporary.other = {};
 							global.$VIEWCACHE = [];
