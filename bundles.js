@@ -57,6 +57,10 @@ exports.make = function(callback) {
 		U.ls(F.path.root(CONF.directory_bundles), function(files) {
 			var dirs = {};
 			files.wait(function(filename, resume) {
+
+				if (!filename.endsWith('.bundle'))
+					return resume();
+
 				var dbpath = CONF.directory_databases;
 
 				F.restore(filename, target, resume, function(p, dir) {

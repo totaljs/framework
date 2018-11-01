@@ -3574,15 +3574,54 @@ F.modify = function(fn) {
 
 F.$bundle = function(callback) {
 
+	var bundledir = F.path.root(CONF.directory_bundles);
+
 	var makebundle = function() {
-		require('./bundles').make(function() {
-			F.directory = HEADERS.workers.cwd = directory = F.path.root(CONF.directory_src);
-			callback();
+
+		var arr = Fs.readdirSync(bundledir);
+		var url = [];
+
+		for (var i = 0; i < arr.length; i++) {
+			if (arr[i].endsWith('.url'))
+				url.push(arr[i]);
+		}
+
+		url.wait(function(item, next) {
+
+			var filename = F.path.root(CONF.directory_bundles) + item.replace('.url', '.bundle');
+			var link = Fs.readFileSync(F.path.root(CONF.directory_bundles) + item).toString('utf8');
+
+			F.consoledebug('Download bundle: ' + link);
+
+			U.download(link, FLAGS_INSTALL, function(err, response) {
+
+				if (err) {
+					F.error(err, 'Bundle: ' + link);
+					next();
+					return;
+				}
+
+				var stream = Fs.createWriteStream(filename);
+
+				response.pipe(stream);
+				response.on('error', function(err) {
+					F.error(err, 'Bundle: ' + link);
+					next();
+				});
+
+				CLEANUP(stream, next);
+			});
+
+		}, function() {
+			require('./bundles').make(function() {
+				F.directory = HEADERS.workers.cwd = directory = F.path.root(CONF.directory_src);
+				callback();
+			});
 		});
 	};
 
 	try {
-		Fs.statSync(F.path.root(CONF.directory_bundles));
+		Fs.statSync(bundledir);
 		if (F.$bundling) {
 			makebundle();
 			return;
