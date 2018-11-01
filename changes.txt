@@ -39,6 +39,7 @@
 - fixed: `LOCALIZE()` for nested directories
 - fixed: sending of error handling when WebSocketClient is starting (for example: `unauthorized`)
 - fixed: `versions` and `auto` feature with enabled `F.wait()`
+- fixed: `versions` and `auto` feature with direct link to file
 - fixed: `LOAD('release')` a release mode
 - fixed: `SchemaInstance.$clean()` for nested schemas
 - fixed: extracting `bundles` (added `/flow/` and `/dashboard/`)
