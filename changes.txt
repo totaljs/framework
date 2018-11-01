@@ -23,7 +23,7 @@
 - added: encryption of config values
 - added: `F.refresh()` for refreshing of internal cache
 - added: `DatabaseBuilder.each(fn)` for browsing of evaluated records
-- added: Bundles can be downloaded from URL address
+- added: Bundles can be downloaded from URL addresses
 
 - updated: `debug` mode creates a `start_name_script.pid` instead of `debug.pid`
 - updated: `NEWOPERATION()` supports `repeat`, `stop` and `binderror` arguments (more in docs)
