@@ -1686,8 +1686,8 @@ DP.$update_inmemory = function() {
 
 		change && self.$save();
 
-		for (var i = 0; i < filter.length; i++) {
-			var item = filter[i];
+		for (var i = 0; i < filters.builders.length; i++) {
+			var item = filters.builders[i];
 			if (item.insert && !item.counter) {
 				item.builder.$insertcallback && item.builder.$insertcallback(item.insert, item.filter.repository || EMPTYOBJECT);
 				var tmp = self.insert(item.insert);
@@ -6961,6 +6961,7 @@ NoSQLReader.prototype.callback = function(item) {
 			output = listing(builder, item);
 		else
 			output = item.response || [];
+
 		builder.$callback2(errorhandling(null, builder, output), opt.readertype === 1 ? item.counter : output, item.count, item.filter.repository);
 		return self;
 	}
