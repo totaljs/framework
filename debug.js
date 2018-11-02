@@ -258,6 +258,14 @@ function runwatching() {
 
 						var ticks = stat.mtime.getTime();
 						if (files[filename] != null && files[filename] !== ticks) {
+
+							if (filename.endsWith('.bundle') && files[filename.replace(/\.bundle$/, '.url')]) {
+								// Bundle from URL address
+								files[filename] = ticks;
+								next();
+								return;
+							}
+
 							var log = stamp.replace('#', files[filename] === 0 ? 'ADD' : 'UPD') + prefix + normalize(filename.replace(directory, ''));
 							if (files[filename]) {
 								var tmp = isViewPublic(filename);
