@@ -2262,8 +2262,15 @@ DatabaseBuilder.prototype.$callbackjoin = function(callback) {
 			for (var i = 0; i < response.length; i++) {
 				var item = response[i];
 				var val = item[join.b];
-				if (val !== undefined && unique.indexOf(val) === -1)
-					unique.push(val);
+				if (val !== undefined) {
+					if (val instanceof Array) {
+						for (var j = 0; j < val.length; j++) {
+							if (unique.indexOf(val[j]) === -1)
+								unique.push(val[j]);
+						}
+					} else if (unique.indexOf(val) === -1)
+						unique.push(val);
+				}
 			}
 		} else if (response) {
 			var val = response[join.b];
@@ -2341,8 +2348,8 @@ DatabaseBuilder.prototype.$callback2 = function(err, response, count, repository
 	self.$callbackjoin(function() {
 
 		var keys = Object.keys(self.$join);
-
 		var jl = keys.length;
+
 		if (response instanceof Array) {
 			for (var i = 0, length = response.length; i < length; i++) {
 				var item = response[i];
@@ -2368,23 +2375,44 @@ DatabaseBuilder.prototype.$callback2 = function(err, response, count, repository
 
 function findItem(items, field, value) {
 	for (var i = 0, length = items.length; i < length; i++) {
-		if (items[i][field] === value)
+		if (value instanceof Array) {
+			for (var j = 0; j < value.length; j++) {
+				if (items[i][field] === value[j])
+					return items[i];
+			}
+		} else if (items[i][field] === value)
 			return items[i];
 	}
 }
 
 function findScalar(items, value) {
+	var sum = null;
 	for (var i = 0, length = items.length; i < length; i++) {
-		if (items[i].id === value)
-			return items[i].response || null;
+		var item = items[i];
+		if (value instanceof Array) {
+			for (var j = 0; j < value.length; j++) {
+				if (item.id === value[j]) {
+					sum = sum == null ? item.response : (sum + item.response);
+					break;
+				}
+			}
+		} else if (item.id === value)
+			sum = sum == null ? item.response : (sum + item.response);
 	}
-	return null;
+	return sum;
 }
 
 function findItems(items, field, value) {
 	var arr = [];
 	for (var i = 0, length = items.length; i < length; i++) {
-		if (items[i][field] === value)
+		if (value instanceof Array) {
+			for (var j = 0; j < value.length; j++) {
+				if (items[i][field] === value[j]) {
+					arr.push(items[i]);
+					break;
+				}
+			}
+		} else if (items[i][field] === value)
 			arr.push(items[i]);
 	}
 	return arr;
