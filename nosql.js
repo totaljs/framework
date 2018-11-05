@@ -2167,7 +2167,7 @@ DatabaseBuilder2.prototype.log = function(msg, user) {
 	var self = this;
 	if (msg) {
 		NOW = new Date();
-		self.$options.log = (self.$options.log ? self.$options.log : '') + NOW.format('yyyy-MM-dd HH:mm:ss') + ' | ' + (user ? user.padRight(20) + ' | ' : '') + msg + NEWLINE;
+		self.$options.log = (self.$options.log ? self.$options.log : '') + NOW.toUTC().format('yyyy-MM-dd HH:mm:ss') + ' | ' + (user ? user.padRight(20) + ' | ' : '') + msg + NEWLINE;
 	} else if (self.$options.log) {
 		self.db.filenameLog && Fs.appendFile(self.db.filenameLog, self.$options.log, F.errorcallback);
 		self.$options.log = '';
@@ -2242,7 +2242,7 @@ DatabaseBuilder.prototype.log = function(msg, user) {
 	var self = this;
 	if (msg) {
 		NOW = new Date();
-		self.$options.log = (self.$options.log ? self.$options.log : '') + NOW.format('yyyy-MM-dd HH:mm:ss') + ' | ' + (user ? user.padRight(20) + ' | ' : '') + msg + NEWLINE;
+		self.$options.log = (self.$options.log ? self.$options.log : '') + NOW.toUTC().format('yyyy-MM-dd HH:mm:ss') + ' | ' + (user ? user.padRight(20) + ' | ' : '') + msg + NEWLINE;
 	} else if (self.$options.log) {
 		self.db.filenameLog && Fs.appendFile(self.db.filenameLog, self.$options.log, F.errorcallback);
 		self.$options.log = '';
@@ -2570,7 +2570,7 @@ DatabaseBuilder.prototype.backup = function(user) {
 };
 
 DatabaseBuilder.prototype.$backupdoc = function(doc) {
-	this.db.filenameBackup && Fs.appendFile(this.db.filenameBackup, NOW.format('yyyy-MM-dd HH:mm') + ' | ' + this.$options.backup.padRight(20) + ' | ' + (typeof(doc) === 'string' ? doc : JSON.stringify(doc)) + NEWLINE, F.errorcallback);
+	this.db.filenameBackup && Fs.appendFile(this.db.filenameBackup, NOW.toUTC().format('yyyy-MM-dd HH:mm') + ' | ' + this.$options.backup.padRight(20) + ' | ' + (typeof(doc) === 'string' ? doc : JSON.stringify(doc)) + NEWLINE, F.errorcallback);
 	return this;
 };
 
