@@ -1148,7 +1148,7 @@ global.EMIT = F.emit = function(name, a, b, c, d, e, f, g) {
 	return F;
 };
 
-F.once = function(name, fn) {
+global.ONCE = F.once = function(name, fn) {
 	fn.$once = true;
 	return F.on(name, fn);
 };
