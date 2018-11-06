@@ -32,6 +32,7 @@
 - updated: `ROUTE()` supports multiple HTTP method declaration `ROUTE('GET,POST,PUT /something/', action)`
 - updated: `REQUEST()` can return binary data if the content-type is not `text/*` or `application/*`
 - updated: NoSQL joins support array values
+- updated: `ROUTING(id:|search, [flags])` method
 
 - fixed: a critical bug with storing uploaded files via `httpfile.fs()` or `httpfile.nosql()`
 - fixed: a critical bug with JavaScript minificator

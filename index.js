@@ -311,7 +311,6 @@ global.CREATE = (group, name) => framework_builders.getschema(group, name).defau
 global.SCRIPT = (body, value, callback, param) => F.script(body, value, callback, param);
 global.SINGLETON = (name, def) => SINGLETONS[name] || (SINGLETONS[name] = (new Function('return ' + (def || '{}')))());
 global.FUNCTION = (name) => F.functions[name] || NOOP;
-global.ROUTING = (name) => F.routing(name);
 global.SCHEDULE = (date, each, fn, param) => F.schedule(date, each, fn, param);
 global.FINISHED = framework_internal.onFinished;
 global.DESTROY = framework_internal.destroyStream;
@@ -1896,7 +1895,6 @@ global.GROUP = F.group = function() {
  * @param {Number} timeout Response timeout.
  * @return {Framework}
  */
-
 global.ROUTE = F.web = F.route = function(url, funcExecute, flags, length, language) {
 
 	var name;
@@ -1922,6 +1920,7 @@ global.ROUTE = F.web = F.route = function(url, funcExecute, flags, length, langu
 		flags = tmp;
 	}
 
+	var search = (typeof(url) === 'string' ? url.toLowerCase().replace(/\s{2,}/g, ' ') : '') + (flags ? (' ' + flags.where(n => typeof(n) === 'string' && n.substring(0, 2) !== '//' && n[2] !== ':').join(' ')).toLowerCase() : '');
 	var method = '';
 	var CUSTOM = typeof(url) === 'function' ? url : null;
 	if (CUSTOM)
@@ -2463,6 +2462,7 @@ global.ROUTE = F.web = F.route = function(url, funcExecute, flags, length, langu
 	var instance = new FrameworkRoute();
 	var r = instance.route;
 	r.hash = hash;
+	r.search = search.split(' ');
 	r.id = id;
 	r.name = name.trim();
 	r.groups = flags_to_object(groups);
@@ -2516,6 +2516,7 @@ global.ROUTE = F.web = F.route = function(url, funcExecute, flags, length, langu
 	r.regexp = reg;
 	r.regexpIndexer = regIndex;
 	r.type = 'web';
+	r.remove = remove_route_web;
 
 	if (r.isUPLOAD)
 		PERF.upload = true;
@@ -2559,20 +2560,62 @@ function flags_to_object(flags) {
 	return obj;
 }
 
+function remove_route_web() {
+
+	if (this.isSYSTEM) {
+		var keys = Object.keys(F.routes.system);
+		for (var i = 0; i < keys.length; i++) {
+			if (F.routes.system[keys[i]] === this) {
+				delete F.routes.system[keys];
+				F.temporary.other = {};
+				return;
+			}
+		}
+	}
+
+	var index = F.routes.web.indexOf(this);
+	if (index !== -1) {
+		F.routes.web.splice(index, 1);
+		F.$routesSort();
+		F.temporary.other = {};
+	}
+}
+
 /**
  * Get routing by name
  * @param {String} name
  * @return {Object}
  */
-F.routing = function(name) {
+global.ROUTING = F.routing = function(name, flags) {
+
+	var id = name.substring(0, 3) === 'id:' ? name.substring(3) : null;
+	if (id)
+		name = null;
+
+	var search = id ? null : (name.toLowerCase().replace(/\s{2,}/g, ' ') + (flags ? (' ' + flags.where(n => typeof(n) === 'string' && n.substring(0, 2) !== '//' && n[2] !== ':').join(' ')).toLowerCase() : '')).split(' ');
+
 	for (var i = 0, length = F.routes.web.length; i < length; i++) {
 		var route = F.routes.web[i];
-		if (route.name === name) {
-			var url = U.path(route.url.join('/'));
-			if (url[0] !== '/')
-				url = '/' + url;
-			return { controller: route.controller, url: url, id: route.id, flags: route.flags, middleware: route.middleware, execute: route.execute, timeout: route.timeout, options: route.options, length: route.length };
+		var is = true;
+		if (id && route.id !== id)
+			is = false;
+		else if (search) {
+			for (var j = 0; j < search.length; j++) {
+				if (route.search.indexOf(search[j]) === -1) {
+					is = false;
+					break;
+				}
+			}
 		}
+
+		if (!is)
+			continue;
+
+		var url = U.path(route.url.join('/'));
+		if (url[0] !== '/')
+			url = '/' + url;
+
+		return route;
 	}
 };
 
