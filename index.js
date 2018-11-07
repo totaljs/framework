@@ -870,12 +870,14 @@ function Framework() {
 
 	// Fix for workers crash (port in use) when debugging main process with --inspect or --debug
 	// See: https://github.com/nodejs/node/issues/14325 and https://github.com/nodejs/node/issues/9435
-	process.execArgv.forEach((val, i, arr) => {
-		if (val.indexOf('inspect') != -1 || val.indexOf('debug') != -1) {
-			// Setting inspect/debug port to random unused
-			arr[i] = '--inspect=0';
+	for (var i = 0; i < process.execArgv.length; i++) {
+		// Setting inspect/debug port to random unused
+		if ((/inspect|debug/).test(process.execArgv[i])) {
+			process.execArgv[i] = '--inspect=0';
+			break;
 		}
-	});
+	}
+
 	HEADERS.workers.execArgv = process.execArgv;
 
 	// It's hidden
