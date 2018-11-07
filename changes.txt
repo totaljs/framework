@@ -59,6 +59,7 @@
 - fixed: `controller.autoclear()`
 - fixed: `controller.proxy()`
 - fixed: `repeat` mode in `SCHEDULE()`
+- fixed: `--inspect` argument for Workers
 
 - improved: NoSQL reader
 - improved: `UID()` -> now it changes a random hash each minute
