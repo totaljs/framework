@@ -171,7 +171,6 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory) {
 		}
 
 		header = parse_multipart_header(header);
-
 		tmp.$step = 1;
 		tmp.$is = header[1] !== null;
 		tmp.name = header[0];
@@ -1413,11 +1412,14 @@ MultipartParser.prototype.write = function(buffer) {
 	for (i = 0; i < len; i++) {
 		c = buffer[i];
 		switch (state) {
+
 			case S.PARSER_UNINITIALIZED:
 				return i;
+
 			case S.START:
 				index = 0;
 				state = S.START_BOUNDARY;
+
 			case S.START_BOUNDARY:
 				if (index == boundary.length - 2) {
 					if (c === HYPHEN)
@@ -1445,10 +1447,12 @@ MultipartParser.prototype.write = function(buffer) {
 				if (c === boundary[index + 2])
 					index++;
 				break;
+
 			case S.HEADER_FIELD_START:
 				state = S.HEADER_FIELD;
 				mark('headerField');
 				index = 0;
+
 			case S.HEADER_FIELD:
 				if (c === CR) {
 					clear('headerField');
@@ -1472,12 +1476,15 @@ MultipartParser.prototype.write = function(buffer) {
 				cl = lower(c);
 				if (cl < A || cl > Z)
 					return i;
+
 				break;
+
 			case S.HEADER_VALUE_START:
 				if (c === SPACE)
 					break;
 				mark('headerValue');
 				state = S.HEADER_VALUE;
+
 			case S.HEADER_VALUE:
 				if (c === CR) {
 					dataCallback('headerValue', true);
@@ -1485,23 +1492,26 @@ MultipartParser.prototype.write = function(buffer) {
 					state = S.HEADER_VALUE_ALMOST_DONE;
 				}
 				break;
+
 			case S.HEADER_VALUE_ALMOST_DONE:
 				if (c !== LF)
 					return i;
 				state = S.HEADER_FIELD_START;
 				break;
+
 			case S.HEADERS_ALMOST_DONE:
 				if (c !== LF)
 					return i;
 				callback('headersEnd');
 				state = S.PART_DATA_START;
 				break;
+
 			case S.PART_DATA_START:
 				state = S.PART_DATA;
 				mark('partData');
+
 			case S.PART_DATA:
 				prevIndex = index;
-
 				if (!index) {
 					// boyer-moore derrived algorithm to safely skip non-boundary data
 					i += boundaryEnd;
@@ -1566,8 +1576,10 @@ MultipartParser.prototype.write = function(buffer) {
 					i--;
 				}
 				break;
+
 			case S.END:
 				break;
+
 			default:
 				return i;
 		}
