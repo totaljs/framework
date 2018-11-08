@@ -1939,18 +1939,20 @@ global.ROUTE = F.web = F.route = function(url, funcExecute, flags, length, langu
 		url = '/';
 
 	if (url) {
+
 		url = url.replace(/\t/g, ' ');
-		var index = url.indexOf(' ');
-		if (index !== -1) {
-			method = url.substring(0, index).toLowerCase().trim();
-			url = url.substring(index + 1).trim();
-		}
 
 		url = url.replace(/(^|\s?)\*([a-z0-9]|\s).*?$/i, function(text) {
 			!flags && (flags = []);
 			flags.push(text.trim());
 			return '';
-		});
+		}).trim();
+
+		var index = url.indexOf(' ');
+		if (index !== -1) {
+			method = url.substring(0, index).toLowerCase().trim();
+			url = url.substring(index + 1).trim();
+		}
 
 		if (method.indexOf(',') !== -1) {
 			!flags && (flags = []);
