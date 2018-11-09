@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkImage
- * @version 3.0.0
+ * @version 3.1.0
  */
 
 'use strict';
@@ -665,6 +665,10 @@ Image.prototype.flip = function() {
 
 Image.prototype.flop = function() {
 	return this.push('-flop', null, 10);
+};
+
+Image.prototype.define = function(value) {
+	return this.push('-define', value, 10, true);
 };
 
 Image.prototype.minify = function() {
