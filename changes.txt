@@ -60,7 +60,8 @@
 - fixed: `controller.autoclear()`
 - fixed: `controller.proxy()`
 - fixed: `repeat` mode in `SCHEDULE()`
-- fixed: `--inspect` argument for Workers
+- fixed: `--inspect` argument for Workers by Tema Smirnov
+- fixed: TLS in SMTP mail sender
 
 - improved: NoSQL reader
 - improved: `UID()` -> now it changes a random hash each minute
