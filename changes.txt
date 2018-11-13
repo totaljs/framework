@@ -25,6 +25,7 @@
 - added: `DatabaseBuilder.each(fn)` for browsing of evaluated records
 - added: Bundles can be downloaded from URL addresses
 - added: `ONCE()` alias to `F.once()`
+- added: `image.define(value)` performs `convert -define 'value'`
 
 - updated: `debug` mode creates a `start_name_script.pid` instead of `debug.pid`
 - updated: `NEWOPERATION()` supports `repeat`, `stop` and `binderror` arguments (more in docs)
@@ -59,7 +60,8 @@
 - fixed: `controller.autoclear()`
 - fixed: `controller.proxy()`
 - fixed: `repeat` mode in `SCHEDULE()`
-- fixed: `--inspect` argument for Workers
+- fixed: `--inspect` argument for Workers by Tema Smirnov
+- fixed: TLS in SMTP mail sender
 
 - improved: NoSQL reader
 - improved: `UID()` -> now it changes a random hash each minute

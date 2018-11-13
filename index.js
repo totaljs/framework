@@ -6429,9 +6429,7 @@ F.exists = function(req, res, max, callback) {
 
 	var name = req.$key = createTemporaryKey(req);
 	var filename = F.path.temp(name);
-	var httpcachevalid = false;
-
-	RELEASE && (req.headers['if-none-match'] === ETAG + CONF.etag_version) && (httpcachevalid = true);
+	var httpcachevalid = RELEASE && (req.headers['if-none-match'] === (ETAG + CONF.etag_version));
 
 	if (F.isProcessed(name) || httpcachevalid) {
 		res.options.filename = filename;

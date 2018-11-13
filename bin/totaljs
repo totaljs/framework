@@ -563,6 +563,11 @@ function main() {
 			return;
 		}
 
+		if (cmd === '-openplatform-app' || cmd === 'openplatform-app') {
+			git(dir, 'openplatform-application');
+			return;
+		}
+
 		if (cmd === '-flow' || cmd === 'flow') {
 			git(dir, 'emptyproject-flow');
 			return;
