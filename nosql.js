@@ -2256,7 +2256,7 @@ DatabaseBuilder.prototype.$callbackjoin = function(callback) {
 
 		var join = self.$join[key];
 		var response = self.$response;
-		var unique = [];
+		var unique = new Set();
 
 		if (response instanceof Array && response.length) {
 			for (var i = 0; i < response.length; i++) {
@@ -2264,18 +2264,16 @@ DatabaseBuilder.prototype.$callbackjoin = function(callback) {
 				var val = item[join.b];
 				if (val !== undefined) {
 					if (val instanceof Array) {
-						for (var j = 0; j < val.length; j++) {
-							if (unique.indexOf(val[j]) === -1)
-								unique.push(val[j]);
-						}
-					} else if (unique.indexOf(val) === -1)
-						unique.push(val);
+						for (var j = 0; j < val.length; j++)
+							unique.add(val[j]);
+					} else
+						unique.add(val);
 				}
 			}
 		} else if (response) {
 			var val = response[join.b];
-			if (val !== undefined && unique.indexOf(val) === -1)
-				unique.push(val);
+			if (val !== undefined)
+				unique.add(val);
 		}
 
 		var isTable = self.db instanceof Table;
@@ -2283,8 +2281,8 @@ DatabaseBuilder.prototype.$callbackjoin = function(callback) {
 
 		if (join.scalartype) {
 			join.items = [];
-			join.count = unique.length;
-			for (var i = 0; i < unique.length; i++) {
+			join.count = unique.size;
+			for (var m of unique.values()) {
 				(function(val) {
 					var builder = db.scalar(join.scalartype, join.scalarfield).callback(function(err, response) {
 						join.items.push({ id: val, response: response });
@@ -2309,20 +2307,20 @@ DatabaseBuilder.prototype.$callbackjoin = function(callback) {
 					builder.$scope = join.builder.$scope;
 					builder.where(join.a, val);
 
-				})(unique[i]);
+				})(m);
 			}
 		} else {
 
-			if (unique.length) {
+			if (unique.size) {
 				join.builder.$options.fields && join.builder.$options.fields.push(join.a);
 				join.builder.$callback = function(err, docs) {
 					join.items = docs;
 					next();
 				};
 				if (isTable)
-					db.find(join.builder).in(join.a, unique);
+					db.find(join.builder).in(join.a, Array.from(unique));
 				else
-					db.find(join.builder).in(join.a, unique);
+					db.find(join.builder).in(join.a, Array.from(unique));
 			} else {
 				join.items = join.builder.$options.first ? null : [];
 				next();
