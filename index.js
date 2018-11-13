@@ -9660,6 +9660,13 @@ FrameworkPath.prototype.verify = function(name) {
 
 FrameworkPath.prototype.mkdir = function(p) {
 
+	var key = '$directory-' + p;
+
+	if (F.temporary.path[key])
+		return F;
+
+	F.temporary.path[key] = true;
+
 	var is = F.isWindows;
 	var s = '';
 
@@ -9682,6 +9689,9 @@ FrameworkPath.prototype.mkdir = function(p) {
 		if (p[l] === '/')
 			p = p.substring(0, l);
 	}
+
+	if (existsSync(p))
+		return F;
 
 	var arr = is ? p.replace(/\//g, '\\').split('\\') : p.split('/');
 	var directory = s;
