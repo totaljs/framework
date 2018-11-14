@@ -63,6 +63,7 @@
 - fixed: `repeat` mode in `SCHEDULE()`
 - fixed: `--inspect` argument for Workers by Tema Smirnov
 - fixed: TLS in SMTP mail sender
+- fixed: applying of versions
 
 - improved: NoSQL reader
 - improved: `UID()` -> now it changes a random hash each minute

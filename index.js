@@ -49,7 +49,7 @@ const COMPRESSIONSPECIAL = { 'js': 1, 'css': 1 };
 const REG_TEMPORARY = /\//g;
 const REG_MOBILE = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet/i;
 const REG_ROBOT = /search|agent|bot|crawler|spider/i;
-const REG_VERSIONS = /(href|src)="[a-zA-Z0-9/:\-.]+\.(jpg|js|css|png|apng|gif|svg|html|ico|json|less|sass|scss|swf|txt|webp|heif|heic|jpeg|woff|woff2|xls|xlsx|xml|xsl|xslt|zip|rar|csv|doc|docx|eps|gzip|jpe|jpeg|manifest|mov|mp3|flac|mp4|ogg|package|pdf)"/gi;
+const REG_VERSIONS = /(href|src)="[a-zA-Z0-9/:\-.\_]+\.(jpg|js|css|png|apng|gif|svg|html|ico|json|less|sass|scss|swf|txt|webp|heif|heic|jpeg|woff|woff2|xls|xlsx|xml|xsl|xslt|zip|rar|csv|doc|docx|eps|gzip|jpe|jpeg|manifest|mov|mp3|flac|mp4|ogg|package|pdf)"/gi;
 const REG_COMPILECSS = /url\(.*?\)/g;
 const REG_ROUTESTATIC = /^(\/\/|https:|http:)+/;
 const REG_NEWIMPL = /^(async\s)?function(\s)?([a-zA-Z$][a-zA-Z0-9$]+)?(\s)?\([a-zA-Z0-9$]+\)|^function anonymous\(\$/;
