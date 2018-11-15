@@ -16772,7 +16772,7 @@ process.on('message', function(msg, h) {
 		msg.TYPE === 'cache-clear' && F.cache.clear(false);
 		msg.TYPE === 'req' && F.cluster.req(msg);
 		msg.TYPE === 'res' && msg.target === F.id && F.cluster.res(msg);
-		msg.TYPE === 'emit' && F.$events[msg.name] && EMIT(msg.name, msg.data);
+		msg.TYPE === 'emit' && F.$events[msg.name] && EMIT(msg.name, msg.a, msg.b, msg.c, msg.d, msg.e);
 		msg.TYPE === 'nosql-meta' && NOSQL(msg.name).meta(msg.key, msg.value, true);
 		msg.TYPE === 'table-meta' && TABLE(msg.name).meta(msg.key, msg.value, true);
 	}
