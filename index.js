@@ -3730,8 +3730,9 @@ F.$load = function(types, targetdirectory, callback, packageName) {
 			var ext = U.getExtension(o);
 			if (ext)
 				ext = '.' + ext;
-			if (ext !== extension)
+			if (ext !== extension || o[0] === '.' || o.endsWith('-bk' + extension))
 				return;
+
 			var name = (level ? U.$normalize(directory).replace(dir, '') + '/' : '') + o.substring(0, o.length - ext.length);
 			output.push({ name: name[0] === '/' ? name.substring(1) : name, filename: Path.join(dir, name) + extension });
 		});
