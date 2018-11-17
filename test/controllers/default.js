@@ -101,6 +101,12 @@ exports.install = function() {
 	F.route('/live/', viewLive);
 	F.route('/live/incoming/', viewLiveIncoming, ['mixed']);
 
+	ROUTE('GET  /api/static/orders/      *Orders   --> @query');
+	ROUTE('GET  /api/static/users/       *Users    --> @query');
+	ROUTE('POST /api/static/orders/      *Orders   --> @save');
+	ROUTE('GET  /api/dynamic/{schema}/   *{schema} --> @query');
+	ROUTE('POST /api/dynamic/{schema}/   *{schema} --> @save');
+
 	F.redirect('http://www.google.sk', 'http://www.petersirka.sk');
 
 	F.route('#408', function DEFER() {

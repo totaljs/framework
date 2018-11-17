@@ -306,7 +306,6 @@ global.RESOURCE = (name, key) => F.resource(name, key);
 global.TRANSLATE = (name, key) => F.translate(name, key);
 global.TRANSLATOR = (name, text) => F.translator(name, text);
 global.TRACE = (message, name, uri, ip) => F.trace(message, name, uri, ip);
-global.$$$ = global.GETSCHEMA = (group, name, fn, timeout) => framework_builders.getschema(group, name, fn, timeout);
 global.CREATE = (group, name) => framework_builders.getschema(group, name).default();
 global.SCRIPT = (body, value, callback, param) => F.script(body, value, callback, param);
 global.SINGLETON = (name, def) => SINGLETONS[name] || (SINGLETONS[name] = (new Function('return ' + (def || '{}')))());
@@ -1942,7 +1941,7 @@ global.ROUTE = F.web = F.route = function(url, funcExecute, flags, length, langu
 
 		url = url.replace(/\t/g, ' ');
 
-		url = url.replace(/(^|\s?)\*([a-z0-9]|\s).*?$/i, function(text) {
+		url = url.replace(/(^|\s?)\*([{}a-z0-9}]|\s).*?$/i, function(text) {
 			!flags && (flags = []);
 			flags.push(text.trim());
 			return '';
@@ -2066,6 +2065,7 @@ global.ROUTE = F.web = F.route = function(url, funcExecute, flags, length, langu
 	var corsflags = [];
 	var membertype = 0;
 	var isGENERATOR = false;
+	var isDYNAMICSCHEMA = false;
 	var description;
 	var id = null;
 	var groups = [];
@@ -2134,6 +2134,12 @@ global.ROUTE = F.web = F.route = function(url, funcExecute, flags, length, langu
 					if (schema.length === 1) {
 						schema[1] = schema[0];
 						schema[0] = 'default';
+
+						// Is dynamic schema?
+						if (schema[1][0] === '{') {
+							isDYNAMICSCHEMA = true;
+							schema[1] = schema[1].substring(1, schema[1].length - 1).trim();
+						}
 					}
 
 					index = schema[1].indexOf('#');
@@ -2378,6 +2384,7 @@ global.ROUTE = F.web = F.route = function(url, funcExecute, flags, length, langu
 	var params = [];
 	var reg = null;
 	var regIndex = null;
+	var dynamicidindex = -1;
 
 	if (url.indexOf('{') !== -1) {
 		routeURL.forEach(function(o, i) {
@@ -2388,6 +2395,9 @@ global.ROUTE = F.web = F.route = function(url, funcExecute, flags, length, langu
 
 			var sub = o.substring(1, o.length - 1);
 			var name = o.substring(1, o.length - 1).trim();
+
+			if (name === 'id')
+				dynamicidindex = i;
 
 			params.push(name);
 
@@ -2492,6 +2502,7 @@ global.ROUTE = F.web = F.route = function(url, funcExecute, flags, length, langu
 	r.urlraw = urlraw;
 	r.url = routeURL;
 	r.param = arr;
+	r.paramidindex = dynamicidindex;
 	r.paramnames = params.length ? params : null;
 	r.flags = flags || EMPTYARRAY;
 	r.flags2 = flags_to_object(flags);
@@ -2525,6 +2536,7 @@ global.ROUTE = F.web = F.route = function(url, funcExecute, flags, length, langu
 	r.isCACHE = !url.startsWith('/#') && !CUSTOM && !arr.length && !isWILDCARD;
 	r.isPARAM = arr.length > 0;
 	r.isDELAY = isDELAY;
+	r.isDYNAMICSCHEMA = isDYNAMICSCHEMA;
 	r.CUSTOM = CUSTOM;
 	r.options = options;
 	r.regexp = reg;
@@ -5539,12 +5551,21 @@ F.$onParseQueryUrl = function(req) {
  * @param {String} name
  * @param {Function(err, body)} callback
  */
-F.onSchema = function(req, group, name, callback, filter, novalidate, workflow) {
-	var schema = GETSCHEMA(group, name);
+F.onSchema = function(req, route, callback) {
+
+	var schema;
+
+	if (route.isDYNAMICSCHEMA) {
+		var index = route.param[route.paramnames.indexOf(route.schema[1])];
+		req.$schemaname = route.schema[0] + '/' + req.split[index];
+		schema = framework_builders.findschema(req.$schemaname);
+	} else
+		schema = GETSCHEMA(route.schema[0], route.schema[1]);
+
 	if (schema)
-		schema.make(req.body, filter, onSchema_callback, callback, novalidate, workflow ? workflow.meta : null);
+		schema.make(req.body, route.schema[2], onSchema_callback, callback, route.novalidate, route.workflow ? route.workflow.meta : null);
 	else
-		callback(new Error('Schema "' + group + '/' + name + '" not found.'));
+		callback('Schema "' + (route.isDYNAMICSCHEMA ? req.$schemaname : (route.schema[0] + '/' + route.schema[1])) + '" not found.');
 };
 
 function onSchema_callback(err, res, callback) {
@@ -10556,7 +10577,7 @@ Controller.prototype.getSchema = function() {
 	var route = this.route;
 	if (!route.schema || !route.schema[1])
 		throw new Error('The controller\'s route does not define any schema.');
-	var schema = GETSCHEMA(route.schema[0], route.schema[1]);
+	var schema = route.isDYNAMICSCHEMA ? framework_builders.findschema(route.schema[0] + '/' + this.params[route.schema[1]]) : GETSCHEMA(route.schema[0], route.schema[1]);
 	if (schema)
 		return schema;
 	throw new Error('Schema "{0}" does not exist.'.format(route.schema[1]));
@@ -15009,10 +15030,12 @@ function extend_request(PROTO) {
 			return next(self, code);
 		}
 
-		F.onSchema(self, self.$total_route.schema[0], self.$total_route.schema[1], function(err, body) {
-
+		F.onSchema(self, self.$total_route, function(err, body) {
 			if (err) {
-				self.$total_400(err);
+				if (self.$total_route.isDYNAMICSCHEMA)
+					self.$total_404(err);
+				else
+					self.$total_400(err);
 				next = null;
 			} else {
 				F.stats.request.schema++;
@@ -15020,8 +15043,7 @@ function extend_request(PROTO) {
 				self.$total_schema = true;
 				next(self, code);
 			}
-
-		}, route.schema[2], route.novalidate, route.workflow);
+		});
 	};
 
 	PROTO.$total_authorize = function(isLogged, user, roles) {
@@ -15191,6 +15213,12 @@ function extend_request(PROTO) {
 		this.$total_route = F.lookup(this, '#400', EMPTYARRAY, 0);
 		this.$total_exception = problem;
 		this.$total_execute(400, true);
+	};
+
+	PROTO.$total_404 = function(problem) {
+		this.$total_route = F.lookup(this, '#404', EMPTYARRAY, 0);
+		this.$total_exception = problem;
+		this.$total_execute(404, true);
 	};
 
 	PROTO.$total_500 = function(problem) {
@@ -17046,19 +17074,21 @@ function parseComponent(body, filename) {
 	return response;
 }
 
-function getSchemaName(schema) {
-	return schema[0] === 'default' ? schema[1] : schema[0] + '/' + schema[1];
+function getSchemaName(schema, params) {
+	return schema[0] === 'default' ? (params ? params[schema[1]] : schema[1]) : schema[0] + '/' + schema[1];
 }
 
 // Default action for workflow routing
 function controller_json_workflow(id) {
 	var self = this;
-	self.id = id;
 	var w = self.route.workflow;
+
+	self.id = self.paramidindex === -1 ? id : self.req.split[self.route.paramidindex];
 
 	CONF.logger && (self.req.$logger = []);
 
 	if (w instanceof Object) {
+
 		if (!w.type) {
 
 			// IS IT AN OPERATION?
@@ -17067,10 +17097,13 @@ function controller_json_workflow(id) {
 				return;
 			}
 
-			var schema = GETSCHEMA(self.route.schema[0], self.route.schema[1]);
-
+			var schema = self.route.isDYNAMICSCHEMA ? framework_builders.findschema(self.req.$schemaname || (self.route.schema[0] + '/' + self.params[self.route.schema[1]])) : GETSCHEMA(self.route.schema[0], self.route.schema[1]);
 			if (!schema) {
-				self.throw500('Schema "{0}" not found.'.format(getSchemaName(self.route.schema)));
+				var err = 'Schema "{0}" not found.'.format(getSchemaName(self.route.schema, self.route.isDYNAMICSCHEMA ? self.params : null));
+				if (self.route.isDYNAMICSCHEMA)
+					self.throw404(err);
+				else
+					self.throw500(err);
 				return;
 			}
 
@@ -17090,6 +17123,7 @@ function controller_json_workflow(id) {
 				w.name = w.id;
 			}
 		}
+
 		if (w.name)
 			self[w.type](w.name, self.callback());
 		else {
@@ -17098,15 +17132,21 @@ function controller_json_workflow(id) {
 			else
 				self.throw500('Operation @' + w.id + ' not found.');
 		}
+
+		if (self.route.isDYNAMICSCHEMA)
+			w.type = '';
+
 	} else
 		self.$exec(w, null, self.callback());
 }
 
 // Default action for workflow routing
 function controller_json_workflow_multiple(id) {
+
 	var self = this;
-	self.id = id;
 	var w = self.route.workflow;
+
+	self.id = self.paramidindex === -1 ? id : self.req.split[self.route.paramidindex];
 
 	CONF.logger && (self.req.$logger = []);
 
@@ -17119,10 +17159,9 @@ function controller_json_workflow_multiple(id) {
 				return;
 			}
 
-			var schema = GETSCHEMA(self.route.schema[0], self.route.schema[1]);
-
+			var schema = self.route.isDYNAMICSCHEMA ? framework_builders.findschema(self.route.schema[0] + '/' + self.params[self.route.schema[1]]) : GETSCHEMA(self.route.schema[0], self.route.schema[1]);
 			if (!schema) {
-				self.throw500('Schema "{0}" not found.'.format(getSchemaName(self.route.schema)));
+				self.throw500('Schema "{0}" not found.'.format(getSchemaName(self.route.schema, self.isDYNAMICSCHEMA ? self.params : null)));
 				return;
 			}
 

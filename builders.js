@@ -36,7 +36,9 @@ const hasOwnProperty = Object.prototype.hasOwnProperty;
 const Qs = require('querystring');
 
 var schemas = {};
+var schemasall = {};
 var operations = {};
+var schemacache = {};
 var transforms = { pagination: {}, error: {}, restbuilder: {} };
 
 function SchemaBuilder(name) {
@@ -237,9 +239,10 @@ SchemaBuilder.prototype.remove = function(name) {
 		var schema = this.collection[name];
 		schema && schema.destroy();
 		schema = null;
+		delete schemasall[name.toLowerCase()];
 		delete this.collection[name];
 	} else {
-		delete schemas[this.name];
+		exports.remove(this.name);
 		this.collection = null;
 	}
 };
@@ -1665,6 +1668,7 @@ SchemaBuilderEntity.prototype.make = function(model, filter, callback, argument,
 	}
 
 	var builder = this.validate(output, undefined, undefined, undefined, filter);
+
 	if (builder.hasError()) {
 		this.onError && this.onError(builder, model, 'make');
 		callback && callback(builder, null, argument);
@@ -3169,7 +3173,7 @@ global.EACHSCHEMA = exports.eachschema = function(group, fn) {
 	}
 };
 
-exports.getschema = function(group, name, fn, timeout) {
+global.$$$ = global.GETSCHEMA = exports.getschema = function(group, name, fn, timeout) {
 
 	if (!name || typeof(name) === 'function') {
 		fn = name;
@@ -3189,6 +3193,10 @@ exports.getschema = function(group, name, fn, timeout) {
 	return g ? g.get(name) : undefined;
 };
 
+exports.findschema = function(groupname) {
+	return schemasall[groupname.toLowerCase()];
+};
+
 exports.newschema = function(group, name) {
 
 	if (!group)
@@ -3198,7 +3206,11 @@ exports.newschema = function(group, name) {
 		schemas[group] = new SchemaBuilder(group);
 
 	var o = schemas[group].create(name);
+	var key = group + '/' + name;
+
 	o.owner = F.$owner();
+	schemasall[key.toLowerCase()] = o;
+
 	return o;
 };
 
@@ -3209,10 +3221,23 @@ exports.newschema = function(group, name) {
  */
 exports.remove = function(group, name) {
 	if (name) {
+
 		var g = schemas[group || DEFAULT_SCHEMA];
 		g && g.remove(name);
-	} else
+		var key = ((group || DEFAULT_SCHEMA) + '/' + name).toLowerCase();
+		delete schemasall[key];
+
+	} else {
+
 		delete schemas[group];
+
+		var lower = group.toLowerCase();
+
+		Object.keys(schemasall).forEach(function(key) {
+			if (key.substring(0, group.length) === lower)
+				delete schemasall[key];
+		});
+	}
 };
 
 global.EACHOPERATION = function(fn) {

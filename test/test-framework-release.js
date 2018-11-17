@@ -5,13 +5,6 @@ var url = 'http://127.0.0.1:8001/';
 var errorStatus = 0;
 var max = 100;
 
-//F.snapshot('/templates/localization.html', '/users/petersirka/desktop/localization.html');
-
-// INSTALL('module', 'https://www.totaljs.com/framework/include.js', { test: true });
-
-//framework.map('/minify/', '@testpackage', ['.html', 'js']);
-//framework.map('/minify/', 'models');
-//framework.map('/minify/', F.path.models());
 framework.onCompileView = function(name, html) {
 	return html + 'COMPILED';
 };
@@ -822,7 +815,7 @@ function test_routing(next) {
 	});
 
 	async.await('theme-green', function(complete) {
-		utils.request(url + '/green/js/default.js', [], function(error, data, code, headers) {
+		utils.request(url + 'green/js/default.js', [], function(error, data, code, headers) {
 			if (error)
 				throw error;
 			assert(data === 'var a=1+1;', 'Themes: problem with static files.');
@@ -831,7 +824,7 @@ function test_routing(next) {
 	});
 
 	async.await('theme-green-merge', function(complete) {
-		utils.request(url + '/merge-theme.js', [], function(error, data, code, headers) {
+		utils.request(url + 'merge-theme.js', [], function(error, data, code, headers) {
 			if (error)
 				throw error;
 			assert(data.indexOf('var a=1+1;') !== -1 && data.indexOf('var b=2+2;'), 'Themes: problem with merging static files');
@@ -840,7 +833,7 @@ function test_routing(next) {
 	});
 
 	async.await('theme-green-map', function(complete) {
-		utils.request(url + '/map-theme.js', [], function(error, data, code, headers) {
+		utils.request(url + 'map-theme.js', [], function(error, data, code, headers) {
 			if (error)
 				throw error;
 			assert(data === 'var a=1+1;', 'Themes: problem with mapping static files.');
@@ -848,11 +841,65 @@ function test_routing(next) {
 		});
 	});
 
-	async.await('theme-green', function(complete) {
-		utils.request(url + 'theme-green/', ['get'], function(error, data, code, headers) {
+	async.await('dynamic-schema-1', function(complete) {
+		utils.request(url + 'api/dynamic/orders/', [], function(error, data, code) {
 			if (error)
 				throw error;
-			console.log('--->', data);
+			assert(code === 200 && data === '{"success":true,"value":"orders"}', 'Dynamic schemas 1');
+			complete();
+		});
+	});
+
+	async.await('dynamic-schema-2', function(complete) {
+		utils.request(url + 'api/dynamic/users/', [], function(error, data, code) {
+			if (error)
+				throw error;
+			assert(code === 200 && data === '{"success":true,"value":"users"}', 'Dynamic schemas 2');
+			complete();
+		});
+	});
+
+	async.await('dynamic-schema-3', function(complete) {
+		utils.request(url + 'api/dynamic/products/', [], function(error, data, code) {
+			if (error)
+				throw error;
+			assert(code === 404, 'Dynamic schemas 3');
+			complete();
+		});
+	});
+
+	async.await('dynamic-schema-4', function(complete) {
+		utils.request(url + 'api/dynamic/orders/', ['post', 'json'], { name: 'Total.js' }, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(code === 200 && data === '{"success":true,"value":"orders"}', 'Dynamic schemas 4');
+			complete();
+		});
+	});
+
+	async.await('static-schema-1', function(complete) {
+		utils.request(url + 'api/static/orders/', [], function(error, data, code) {
+			if (error)
+				throw error;
+			assert(code === 200 && data === '{"success":true,"value":"orders"}', 'static schemas 1');
+			complete();
+		});
+	});
+
+	async.await('static-schema-2', function(complete) {
+		utils.request(url + 'api/static/users/', [], function(error, data, code) {
+			if (error)
+				throw error;
+			assert(code === 200 && data === '{"success":true,"value":"users"}', 'static schemas 2');
+			complete();
+		});
+	});
+
+	async.await('static-schema-3', function(complete) {
+		utils.request(url + 'api/static/orders/', ['post', 'json'], { name: 'Total.js' }, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(code === 200 && data === '{"success":true,"value":"orders"}', 'Dynamic schemas 3');
 			complete();
 		});
 	});
