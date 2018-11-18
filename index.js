@@ -2502,7 +2502,7 @@ global.ROUTE = F.web = F.route = function(url, funcExecute, flags, length, langu
 	r.urlraw = urlraw;
 	r.url = routeURL;
 	r.param = arr;
-	r.paramidindex = dynamicidindex;
+	r.paramidindex = isDYNAMICSCHEMA ? dynamicidindex : -1;
 	r.paramnames = params.length ? params : null;
 	r.flags = flags || EMPTYARRAY;
 	r.flags2 = flags_to_object(flags);
