@@ -17083,7 +17083,7 @@ function controller_json_workflow(id) {
 	var self = this;
 	var w = self.route.workflow;
 
-	self.id = self.paramidindex === -1 ? id : self.req.split[self.route.paramidindex];
+	self.id = self.route.paramidindex === -1 ? id : self.req.split[self.route.paramidindex];
 
 	CONF.logger && (self.req.$logger = []);
 
@@ -17146,7 +17146,7 @@ function controller_json_workflow_multiple(id) {
 	var self = this;
 	var w = self.route.workflow;
 
-	self.id = self.paramidindex === -1 ? id : self.req.split[self.route.paramidindex];
+	self.id = self.route.paramidindex === -1 ? id : self.req.split[self.route.paramidindex];
 
 	CONF.logger && (self.req.$logger = []);
 
