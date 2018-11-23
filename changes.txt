@@ -66,6 +66,7 @@
 - fixed: `--inspect` argument for Workers by Tema Smirnov
 - fixed: TLS in SMTP mail sender
 - fixed: applying of versions
+- fixed: unit-tests reads only `javascript` files
 
 - improved: NoSQL reader
 - improved: `UID()` -> now it changes a random hash each minute
