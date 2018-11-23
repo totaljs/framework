@@ -178,6 +178,9 @@ exports.load = function() {
 					return next();
 			}
 
+			if (U.getExtension(filename) !== 'js')
+				return next();
+
 			T.current = { filename: filename, items: [] };
 			var m = require(filename);
 			T.current.module = m;
