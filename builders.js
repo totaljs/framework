@@ -38,7 +38,6 @@ const Qs = require('querystring');
 var schemas = {};
 var schemasall = {};
 var operations = {};
-var schemacache = {};
 var transforms = { pagination: {}, error: {}, restbuilder: {} };
 
 function SchemaBuilder(name) {
@@ -54,7 +53,22 @@ function SchemaOptions(error, model, options, callback, controller) {
 	this.controller = controller;
 }
 
-SchemaOptions.prototype = {
+function TaskBuilder($) {
+	var t = this;
+	t.value = t.model = {};
+	t.tasks = {};
+	if ($ instanceof SchemaOptions || $ instanceof OperationOptions) {
+		t.error = $.error;
+		t.controller = $.controller;
+	} else {
+		if ($ instanceof Controller)
+			t.controller = $;
+		else if ($ instanceof ErrorBuilder)
+			t.error = $;
+	}
+}
+
+SchemaOptions.prototype = TaskBuilder.prototype = {
 
 	get user() {
 		return this.controller ? this.controller.user : null;
@@ -4953,6 +4967,10 @@ OperationOptions.prototype = {
 	}
 };
 
+SchemaOptions.prototype.tasks = OperationOptions.prototype.tasks = function() {
+	return new TaskBuilder(this);
+};
+
 OperationOptions.prototype.cancel = function() {
 	var self = this;
 	self.callback = null;
@@ -5202,6 +5220,7 @@ global.Pagination = Pagination;
 global.Page = Page;
 global.UrlBuilder = global.URLBuilder = UrlBuilder;
 global.SchemaBuilder = SchemaBuilder;
+global.TaskBuilder = TaskBuilder;
 
 // Uninstall owners
 exports.uninstall = function(owner) {
@@ -5219,11 +5238,63 @@ exports.uninstall = function(owner) {
 	});
 };
 
-exports.restart = function() {
-	schemas = {};
-	operations = {};
-	Object.keys(transforms).forEach(function(key) {
-		if (key.indexOf('_') === -1)
-			transforms[key] = {};
-	});
+TaskBuilder.prototype.invalid = function(error) {
+	var self = this;
+	if (!self.$done) {
+		!self.error && (self.error = new ErrorBuilder());
+		self.error.push(self.current, error);
+		self.done();
+	}
+	return self;
+};
+
+TaskBuilder.prototype.push = function(name, fn) {
+	var self = this;
+	self.tasks[name] = fn;
+	return self;
+};
+
+TaskBuilder.prototype.next = function() {
+	var self = this;
+	if (!self.$done) {
+		self.prev = self.current;
+		for (var i = 0; i < arguments.length; i++) {
+			var task = self.tasks[self.current = arguments[i]];
+			if (task == null)
+				continue;
+			else {
+				task.call(self, self);
+				return self;
+			}
+		}
+		self.done();
+	}
+	return self;
+};
+
+TaskBuilder.prototype.done = function(data) {
+	var self = this;
+	self.$callback && self.$callback(self.error && self.error.is ? self.error : null, data || self.value);
+	self.$done = true;
+	return self;
+};
+
+TaskBuilder.prototype.success = function(data) {
+	return this.done(SUCCESS(true, data));
+};
+
+TaskBuilder.prototype.callback = function(fn) {
+	var self = this;
+	self.$callback = fn;
+	return self;
+};
+
+TaskBuilder.prototype.exec = function(name, callback) {
+	var self = this;
+
+	if (callback)
+		self.$callback = callback;
+
+	self.next(name);
+	return self;
 };

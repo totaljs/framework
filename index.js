@@ -10525,6 +10525,12 @@ Controller.prototype.operation = function(name, value, callback, options) {
 	return this;
 };
 
+Controller.prototype.tasks = function() {
+	var tb = new TaskBuilder(this);
+	// tb.callback(this.callback());
+	return tb;
+};
+
 Controller.prototype.$operation2 = function(name, helper, callback) {
 
 	if (callback == null && typeof(helper) === 'function') {
