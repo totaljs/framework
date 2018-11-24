@@ -5296,6 +5296,7 @@ TaskBuilder.prototype.push = function(name, fn) {
 TaskBuilder.prototype.next = function() {
 	var self = this;
 	if (!self.$done) {
+		self.current && self.controller && CONF.logger && F.ilogger((self.name || 'tasks') + '.' + self.current, self.controller, self.$now);
 		self.prev = self.current;
 		for (var i = 0; i < arguments.length; i++) {
 			var task = self.tasks[self.current = arguments[i]];
@@ -5333,6 +5334,9 @@ TaskBuilder.prototype.exec = function(name, callback) {
 
 	if (callback)
 		self.$callback = callback;
+
+	if (CONF.logger)
+		self.$now = Date.now();
 
 	self.next(name);
 	return self;
