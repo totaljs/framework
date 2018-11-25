@@ -9680,11 +9680,11 @@ FrameworkPath.prototype.verify = function(name) {
 	return F;
 };
 
-FrameworkPath.prototype.mkdir = function(p) {
+FrameworkPath.prototype.mkdir = function(p, cache) {
 
 	var key = '$directory-' + p;
 
-	if (F.temporary.path[key])
+	if (cache && F.temporary.path[key])
 		return F;
 
 	F.temporary.path[key] = true;
