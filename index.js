@@ -6095,13 +6095,15 @@ function compile_check(res) {
 			if (!res.noCompress && COMPRESSIONSPECIAL[req.extension] && CONF.allow_compile && !REG_NOCOMPRESS.test(res.options.filename))
 				return compile_file(res);
 
-			var tmp = F.temporary.path[req.$key] = [res.options.filename, size, stats.mtime.toUTCString()];
+			var tmp = [res.options.filename, size, stats.mtime.toUTCString()];
 			if (CONF.allow_gzip && COMPRESSION[U.getContentType(req.extension)]) {
 				compile_gzip(tmp, function() {
+					F.temporary.path[req.$key] = tmp;
 					res.$file();
 					delete F.temporary.processing[req.$key];
 				});
 			} else {
+				F.temporary.path[req.$key] = tmp;
 				res.$file();
 				delete F.temporary.processing[req.$key];
 			}
@@ -13839,7 +13841,7 @@ WebSocket.prototype.destroy = function(problem) {
 		return self;
 
 	self.close();
-	self.$events.destroy && selEMIT('destroy');
+	self.$events.destroy && self.emit('destroy');
 
 	setTimeout(function() {
 
@@ -15197,14 +15199,6 @@ function extend_request(PROTO) {
 				file.execute(req, res, false);
 
 			return;
-
-			/*
-			} catch (err) {
-				F.error(err, file.controller, req.uri);
-				res.throw500();
-				return;
-			}
-			*/
 		}
 
 		res.continue();
@@ -16004,6 +15998,8 @@ function extend_response(PROTO) {
 
 		if (name[1] && !compress)
 			headers[HEADER_LENGTH] = name[1];
+		else if (compress && name[4])
+			headers[HEADER_LENGTH] = name[4];
 		else if (headers[HEADER_LENGTH])
 			delete headers[HEADER_LENGTH];
 
