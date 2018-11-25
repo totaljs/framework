@@ -5887,8 +5887,9 @@ function compile_file(res) {
 		F.path.verify('temp');
 		Fs.writeFileSync(file, compile_content(req.extension, framework_internal.parseBlock(F.routes.blocks[uri.pathname], buffer.toString(ENCODING)), res.options.filename), ENCODING);
 		var stats = Fs.statSync(file);
-		var tmp = F.temporary.path[req.$key] = [file, stats.size, stats.mtime.toUTCString()];
-		compile_gzip(tmp, function() {
+		var tmp = [file, stats.size, stats.mtime.toUTCString()];
+		compile_gzip(tmp, function(tmp) {
+			F.temporary.path[req.$key] = tmp;
 			delete F.temporary.processing[req.$key];
 			res.$file();
 		});
@@ -5905,9 +5906,10 @@ function compile_merge(res) {
 
 	if (!CONF.debug && existsSync(filename)) {
 		var stats = Fs.statSync(filename);
-		var tmp = F.temporary.path[req.$key] = [filename, stats.size, stats.mtime.toUTCString()];
-		compile_gzip(tmp, function() {
+		var tmp = [filename, stats.size, stats.mtime.toUTCString()];
+		compile_gzip(tmp, function(tmp) {
 			delete F.temporary.processing[req.$key];
+			F.temporary.path[req.$key] = tmp;
 			res.$file();
 		});
 		return;
@@ -5917,9 +5919,10 @@ function compile_merge(res) {
 
 	writer.on('finish', function() {
 		var stats = Fs.statSync(filename);
-		var tmp = F.temporary.path[req.$key] = [filename, stats.size, stats.mtime.toUTCString()];
+		var tmp = [filename, stats.size, stats.mtime.toUTCString()];
 		this.destroy && this.destroy();
-		compile_gzip(tmp, function() {
+		compile_gzip(tmp, function(tmp) {
+			F.temporary.path[req.$key] = tmp;
 			delete F.temporary.processing[req.$key];
 			res.$file();
 		});
@@ -6063,13 +6066,15 @@ F.compile_virtual = function(res) {
 			return compile_file(res);
 		}
 
-		var tmp = F.temporary.path[req.$key] = [tmpname, size, stats.mtime.toUTCString()];
+		var tmp = [tmpname, size, stats.mtime.toUTCString()];
 		if (CONF.allow_gzip && COMPRESSION[U.getContentType(req.extension)]) {
-			compile_gzip(tmp, function() {
+			compile_gzip(tmp, function(tmp) {
+				F.temporary.path[req.$key] = tmp;
 				delete F.temporary.processing[req.$key];
 				res.$file();
 			});
 		} else {
+			F.temporary.path[req.$key] = tmp;
 			delete F.temporary.processing[req.$key];
 			res.$file();
 		}
@@ -6097,7 +6102,7 @@ function compile_check(res) {
 
 			var tmp = [res.options.filename, size, stats.mtime.toUTCString()];
 			if (CONF.allow_gzip && COMPRESSION[U.getContentType(req.extension)]) {
-				compile_gzip(tmp, function() {
+				compile_gzip(tmp, function(tmp) {
 					F.temporary.path[req.$key] = tmp;
 					res.$file();
 					delete F.temporary.processing[req.$key];
@@ -6131,7 +6136,7 @@ function compile_gzip(arr, callback) {
 	CLEANUP(writer, function() {
 		fsFileExists(filename, function(e, size) {
 			arr.push(size);
-			callback();
+			callback(arr);
 		});
 	});
 
