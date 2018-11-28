@@ -14501,27 +14501,29 @@ WebSocketClient.prototype.$onclose = function() {
  */
 WebSocketClient.prototype.send = function(message, raw, replacer) {
 
-	if (this.isClosed)
-		return this;
+	var self = this;
 
-	if (this.type !== 1) {
-		var data = this.type === 3 ? (raw ? message : JSON.stringify(message, replacer)) : (message || '').toString();
+	if (self.isClosed)
+		return self;
+
+	if (self.type !== 1) {
+		var data = self.type === 3 ? (raw ? message : JSON.stringify(message, replacer)) : typeof(message) === 'object' ? JSON.stringify(message, replacer) : message.toString();
 		if (CONF.default_websocket_encodedecode === true && data)
 			data = encodeURIComponent(data);
-		if (this.deflate) {
-			this.deflatepending.push(U.createBuffer(data));
-			this.sendDeflate();
+		if (self.deflate) {
+			self.deflatepending.push(U.createBuffer(data));
+			self.sendDeflate();
 		} else
-			this.socket.write(U.getWebSocketFrame(0, data, 0x01));
+			self.socket.write(U.getWebSocketFrame(0, data, 0x01));
 	} else if (message) {
-		if (this.deflate) {
-			this.deflatepending.push(U.createBuffer(message));
-			this.sendDeflate();
+		if (self.deflate) {
+			self.deflatepending.push(U.createBuffer(message));
+			self.sendDeflate();
 		} else
-			this.socket.write(U.getWebSocketFrame(0, new Int8Array(message), 0x02));
+			self.socket.write(U.getWebSocketFrame(0, new Int8Array(message), 0x02));
 	}
 
-	return this;
+	return self;
 };
 
 WebSocketClient.prototype.sendDeflate = function() {
