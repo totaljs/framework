@@ -13795,11 +13795,17 @@ WebSocket.prototype.change = function(message) {
  * @return {WebSocket}
  */
 WebSocket.prototype.all = function(fn) {
-	if (this._keys) {
-		for (var i = 0, length = this._keys.length; i < length; i++)
-			fn(this.connections[this._keys[i]], i);
+	var arr = fn == null || fn == true ? [] : null;
+	var self = this;
+	if (self._keys) {
+		for (var i = 0, length = self._keys.length; i < length; i++) {
+			if (arr)
+				arr.push(self.connections[self._keys[i]]);
+			else
+				fn(self.connections[self._keys[i]], i);
+		}
 	}
-	return this;
+	return arr ? arr : self;
 };
 
 /**

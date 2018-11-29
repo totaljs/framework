@@ -38,6 +38,7 @@
 - updated: NoSQL joins support array values
 - updated: `ROUTING(id:|search, [flags])` method
 - updated: `F.path.mkdir(path, [cache])` can cache a current satte (default: false)
+- updated: `controller.all()` can return `Array` of all WebSocketClient
 
 - fixed: a critical bug with storing uploaded files via `httpfile.fs()` or `httpfile.nosql()`
 - fixed: a critical bug with JavaScript minificator
