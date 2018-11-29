@@ -6248,6 +6248,16 @@ F.restore = function(filename, target, callback, filter) {
 
 		output.count++;
 
+		tmp.zlib.on('error', function(e) {
+			pending--;
+			var tmp = this.$self;
+			tmp.writer.end();
+			tmp.writer = null;
+			tmp.zlib = null;
+			delete open[tmp.name];
+			F.error(e, 'bundling', path);
+		});
+
 		tmp.zlib.on('data', function(chunk) {
 			this.$self.writer.write(chunk);
 		});
