@@ -70,6 +70,9 @@
 - fixed: applying of versions
 - fixed: unit-tests reads only `javascript` files
 
+- removed: `F.config.debug`
+- removed: `controller.isDebug`
+
 - improved: NoSQL reader
 - improved: `UID()` -> now it changes a random hash each minute
 - improved: CORS

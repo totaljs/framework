@@ -4217,8 +4217,8 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 		content = parseComponent(internal ? declaration : Fs.readFileSync(declaration).toString(ENCODING), name);
 
 		if (F.$bundling) {
-			content.js && Fs.appendFileSync(F.path.temp(temporary + '.js'), hash + (CONF.debug ? component_debug(name, content.js, 'js') : content.js) + hash.substring(0, hash.length - 1));
-			content.css && Fs.appendFileSync(F.path.temp(temporary + '.css'), hash + (CONF.debug ? component_debug(name, content.css, 'css') : content.css) + hash.substring(0, hash.length - 1));
+			content.js && Fs.appendFileSync(F.path.temp(temporary + '.js'), hash + (DEBUG ? component_debug(name, content.js, 'js') : content.js) + hash.substring(0, hash.length - 1));
+			content.css && Fs.appendFileSync(F.path.temp(temporary + '.css'), hash + (DEBUG ? component_debug(name, content.css, 'css') : content.css) + hash.substring(0, hash.length - 1));
 		}
 
 		if (content.js)
@@ -4295,12 +4295,12 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 				tmp = F.components.groups[obj.group] = {};
 
 			if (content.js) {
-				Fs.appendFileSync(F.path.temp(temporary + '.js'), hash + (CONF.debug ? component_debug(name, content.js, 'js') : content.js) + hash.substring(0, hash.length - 1));
+				Fs.appendFileSync(F.path.temp(temporary + '.js'), hash + (DEBUG ? component_debug(name, content.js, 'js') : content.js) + hash.substring(0, hash.length - 1));
 				tmp.js = true;
 			}
 
 			if (content.css) {
-				Fs.appendFileSync(F.path.temp(temporary + '.css'), hash + (CONF.debug ? component_debug(name, content.css, 'css') : content.css) + hash.substring(0, hash.length - 1));
+				Fs.appendFileSync(F.path.temp(temporary + '.css'), hash + (DEBUG ? component_debug(name, content.css, 'css') : content.css) + hash.substring(0, hash.length - 1));
 				tmp.css = true;
 			}
 
@@ -4735,7 +4735,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 			} else {
 				F.$configure_configs('@' + name + '/config');
 
-				if (CONF.debug)
+				if (DEBUG)
 					F.$configure_configs('@' + name + '/config-debug');
 				else
 					F.$configure_configs('@' + name + '/config-release');
@@ -5747,7 +5747,7 @@ F.usage = function(detailed) {
 		memoryTotal: (memory.heapTotal / 1024 / 1024).floor(2),
 		memoryUsage: (memory.heapUsed / 1024 / 1024).floor(2),
 		memoryRss: (memory.rss / 1024 / 1024).floor(2),
-		mode: CONF.debug ? 'debug' : 'release',
+		mode: DEBUG,
 		port: F.port,
 		ip: F.ip,
 		directory: process.cwd()
@@ -5904,7 +5904,7 @@ function compile_merge(res) {
 	var merge = F.routes.merge[uri.pathname];
 	var filename = merge.filename;
 
-	if (!CONF.debug && existsSync(filename)) {
+	if (!DEBUG && existsSync(filename)) {
 		var stats = Fs.statSync(filename);
 		var tmp = [filename, stats.size, stats.mtime.toUTCString()];
 		compile_gzip(tmp, function(tmp) {
@@ -6612,7 +6612,6 @@ global.LOAD = F.load = function(debug, types, pwd) {
 	}
 
 	F.isWorker = true;
-	CONF.debug = debug;
 	F.isDebug = debug;
 
 	global.DEBUG = debug;
@@ -6709,7 +6708,6 @@ F.initialize = function(http, debug, options) {
 	if (options.id)
 		F.id = options.id;
 
-	CONF.debug = debug;
 	F.isDebug = debug;
 
 	if (options.bundling != null)
@@ -6922,7 +6920,7 @@ F.mode = function(http, name, options) {
 				debug = true;
 				break;
 		}
-		CONF.debug = debug;
+		DEBUG = debug;
 		CONF.trace = debug;
 		F.isDebug = debug;
 		global.DEBUG = debug;
@@ -7035,7 +7033,7 @@ F.console = function() {
 	console.log('Version       : ' + CONF.version);
 	console.log('Author        : ' + CONF.author);
 	console.log('Date          : ' + NOW.format('yyyy-MM-dd HH:mm:ss'));
-	console.log('Mode          : ' + (CONF.debug ? 'debug' : 'release'));
+	console.log('Mode          : ' + (DEBUG ? 'debug' : 'release'));
 	console.log('====================================================');
 	console.log('Directory     : ' + process.cwd());
 	console.log('node_modules  : ' + PATHMODULES);
@@ -7437,7 +7435,7 @@ F.$requestcontinue = function(req, res, headers) {
 		flags.push('sse');
 	}
 
-	if (CONF.debug) {
+	if (DEBUG) {
 		req.$flags += 'h';
 		flags.push('debug');
 	}
@@ -8793,7 +8791,7 @@ F.$configure_configs = function(arr, rewrite) {
 	if (!arr) {
 
 		var filenameA = U.combine('/', 'config');
-		var filenameB = U.combine('/', 'config-' + (CONF.debug ? 'debug' : 'release'));
+		var filenameB = U.combine('/', 'config-' + (DEBUG ? 'debug' : 'release'));
 
 		arr = [];
 
@@ -10256,10 +10254,6 @@ Controller.prototype = {
 
 	get controllers() {
 		return F.controllers;
-	},
-
-	get isDebug() {
-		return CONF.debug;
 	},
 
 	get isTest() {
@@ -13526,7 +13520,7 @@ WebSocket.prototype = {
 	},
 
 	get isDebug() {
-		return CONF.debug;
+		return DEBUG;
 	},
 
 	get path() {
