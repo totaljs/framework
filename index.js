@@ -967,7 +967,7 @@ function Framework() {
 
 	// intialize cache
 	self.cache = new FrameworkCache();
-	self.path = new FrameworkPath();
+	self.path = global.PATH = new FrameworkPath();
 
 	self._request_check_redirect = false;
 	self._request_check_referer = false;
@@ -10219,6 +10219,7 @@ Controller.prototype = {
 	},
 
 	get path() {
+		OBSOLETE('controller.path', 'Use: PATH');
 		return F.path;
 	},
 
@@ -10255,10 +10256,12 @@ Controller.prototype = {
 	},
 
 	get cache() {
+		OBSOLETE('controller.cache', 'Use: F.cache or CACHE()');
 		return F.cache;
 	},
 
 	get config() {
+		OBSOLETE('controller.config', 'Use: CONF');
 		return CONF;
 	},
 
@@ -10271,6 +10274,7 @@ Controller.prototype = {
 	},
 
 	get isSecure() {
+		OBSOLETE('controller.isSecure', 'Use: controller.secured');
 		return this.req.isSecure;
 	},
 
@@ -13524,30 +13528,32 @@ WebSocket.prototype = {
 	},
 
 	get global() {
+		OBSOLETE('controller.global', 'Use: G');
 		return F.global;
 	},
 
 	get config() {
+		OBSOLETE('controller.config', 'Use: CONF');
 		return CONF;
 	},
 
 	get cache() {
+		OBSOLETE('controller.cache', 'Use: F.cache or CACHE()');
 		return F.cache;
 	},
 
 	get isDebug() {
+		OBSOLETE('controller.isDebug', 'Use: DEBUG');
 		return DEBUG;
 	},
 
 	get path() {
+		OBSOLETE('controller.path', 'Use: PATH');
 		return F.path;
 	},
 
-	get fs() {
-		return F.fs;
-	},
-
 	get isSecure() {
+		OBSOLETE('controller.isSecure', 'Use: controller.secured');
 		return this.req.isSecure;
 	},
 
@@ -13643,23 +13649,25 @@ WebSocket.prototype.removeAllListeners = function(name) {
  */
 WebSocket.prototype.send = function(message, id, blacklist, replacer) {
 
-	var keys = this._keys;
-	if (!keys || !keys.length)
-		return this;
+	var self = this;
+	var keys = self._keys;
+
+	if (!keys || !keys.length || message === undefined)
+		return self;
 
 	var data;
 	var raw = false;
 
 	for (var i = 0, length = keys.length; i < length; i++) {
 
-		var conn = this.connections[keys[i]];
+		var conn = self.connections[keys[i]];
 
 		if (id) {
 			if (id instanceof Array) {
 				if (!websocket_valid_array(conn.id, id))
 					continue;
 			} else if (id instanceof Function) {
-				if (!websocket_valid_fn(conn.id, conn, id))
+				if (!websocket_valid_fn(conn.id, conn, id, message))
 					continue;
 			} else
 				throw new Error('Invalid "id" argument.');
@@ -13670,7 +13678,7 @@ WebSocket.prototype.send = function(message, id, blacklist, replacer) {
 				if (websocket_valid_array(conn.id, blacklist))
 					continue;
 			} else if (blacklist instanceof Function) {
-				if (websocket_valid_fn(conn.id, conn, blacklist))
+				if (websocket_valid_fn(conn.id, conn, blacklist, message))
 					continue;
 			} else
 				throw new Error('Invalid "blacklist" argument.');
@@ -13688,15 +13696,46 @@ WebSocket.prototype.send = function(message, id, blacklist, replacer) {
 		F.stats.response.websocket++;
 	}
 
-	return this;
+	return self;
+};
+
+WebSocket.prototype.send2 = function(message, comparer, replacer) {
+
+	var self = this;
+	var keys = self._keys;
+	if (!keys || !keys.length || message === undefined)
+		return self;
+
+	var data;
+	var raw = false;
+
+	for (var i = 0, length = keys.length; i < length; i++) {
+
+		var conn = self.connections[keys[i]];
+
+		if (data === undefined) {
+			if (conn.type === 3) {
+				raw = true;
+				data = JSON.stringify(message, replacer);
+			} else
+				data = message;
+		}
+
+		if (comparer && comparer(conn, message)) {
+			conn.send(data, raw);
+			F.stats.response.websocket++;
+		}
+	}
+
+	return self;
 };
 
 function websocket_valid_array(id, arr) {
 	return arr.indexOf(id) !== -1;
 }
 
-function websocket_valid_fn(id, client, fn) {
-	return fn && fn(id, client) ? true : false;
+function websocket_valid_fn(id, client, fn, msg) {
+	return fn && fn(id, client, msg) ? true : false;
 }
 
 /**

@@ -156,7 +156,7 @@ function plain_options() {
 
 function *synchronize() {
 	var self = this;
-	var content = (yield sync(require('fs').readFile)(self.path.public('file.txt'))).toString('utf8');
+	var content = (yield sync(require('fs').readFile)(PATH.public('file.txt'))).toString('utf8');
 	self.plain(content);
 }
 
@@ -439,9 +439,9 @@ function viewIndex() {
 	var self = this;
 	var name = 'controller: ';
 
-	assert.ok(self.path.public('file.txt').endsWith('/public/file.txt'), name + 'path.public');
-	assert.ok(self.path.logs('file.txt').endsWith('/file.txt'), name + 'path.logs');
-	assert.ok(self.path.temp('file.txt').endsWith('/file.txt'), name + 'path.temp');
+	assert.ok(PATH.public('file.txt').endsWith('/public/file.txt'), name + 'path.public');
+	assert.ok(PATH.logs('file.txt').endsWith('/file.txt'), name + 'path.logs');
+	assert.ok(PATH.temp('file.txt').endsWith('/file.txt'), name + 'path.temp');
 
 	self.meta('A', 'B');
 	assert.ok(self.repository['$title'] === 'A' && self.repository['$description'] === 'B', name + 'meta() - write');
@@ -458,7 +458,7 @@ function viewIndex() {
 	assert.ok(framework.model('other/products').ok === 2, 'framework: model() - 2');
 
 	assert.ok(self.secured === false, 'controller.secured');
-	assert.ok(self.config.isDefinition === true, 'definitions()');
+	assert.ok(CONF.isDefinition === true, 'definitions()');
 
 	assert.ok(!self.xhr, name + 'xhr');
 	assert.ok(self.flags.indexOf('get') !== -1, name + 'flags')

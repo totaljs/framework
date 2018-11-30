@@ -28,6 +28,8 @@
 - added: `image.define(value)` performs `convert -define 'value'`
 - added: Total.js JS files (+ packages) tarted with `.` (dot) or ended with `-bk` won't be processed
 - added: A new builder called `TaskBuilder` for creating custom tasks in Schemas or Operations
+- added: `WebSocket.send2(message, [comparer(client, message)], [replacer])` a new method for better sending frames
+- addde: `PATH` as a global alias for `F.path`
 
 - updated: `debug` mode creates a `start_name_script.pid` instead of `debug.pid`
 - updated: `NEWOPERATION()` supports `repeat`, `stop` and `binderror` arguments (more in docs)
