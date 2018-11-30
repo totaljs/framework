@@ -70,6 +70,7 @@
 - fixed: TLS in SMTP mail sender
 - fixed: applying of versions
 - fixed: unit-tests reads only `javascript` files
+- fixed: `controller.invalid()` a problem with ErrorBuilder as a argument
 
 - removed: `F.config.debug`
 - removed: `controller.isDebug`

@@ -10804,6 +10804,12 @@ Controller.prototype.error = function(err) {
 Controller.prototype.invalid = function(status) {
 
 	var self = this;
+
+	if (status instanceof ErrorBuilder) {
+		setImmediate(next_controller_invalid, self, status);
+		return status;
+	}
+
 	var type = typeof(status);
 
 	if (type === 'number')
