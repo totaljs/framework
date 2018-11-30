@@ -11355,7 +11355,7 @@ Controller.prototype.$view = function(name, model, expire, key) {
 
 	if (expire) {
 		cache = '$view.' + name + '.' + (key || '');
-		var output = self.cache.read2(cache);
+		var output = F.cache.read2(cache);
 		if (output)
 			return output.body;
 	}
@@ -11365,7 +11365,7 @@ Controller.prototype.$view = function(name, model, expire, key) {
 	if (!value)
 		return '';
 
-	expire && self.cache.add(cache, { components: value instanceof Function, body: value instanceof Function ? '' : value }, expire, false);
+	expire && F.cache.add(cache, { components: value instanceof Function, body: value instanceof Function ? '' : value }, expire, false);
 	return value;
 };
 
@@ -13382,7 +13382,7 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
 
 	self.themeName && (key += '#' + self.themeName);
 
-	var output = self.cache.read2(key);
+	var output = F.cache.read2(key);
 	if (!output)
 		return self.$memorize_prepare(key, expires, disabled, fnTo, fnFrom);
 
@@ -13473,7 +13473,7 @@ Controller.prototype.$memorize_prepare = function(key, expires, disabled, fnTo, 
 			}
 		}
 
-		self.cache.add(key, options, expires, false);
+		F.cache.add(key, options, expires, false);
 		self.precache = null;
 		delete F.temporary.processing[pk];
 	};
