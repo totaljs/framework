@@ -13721,10 +13721,11 @@ WebSocket.prototype.send2 = function(message, comparer, replacer) {
 				data = message;
 		}
 
-		if (comparer && comparer(conn, message)) {
-			conn.send(data, raw);
-			F.stats.response.websocket++;
-		}
+		if (comparer && !comparer(conn, message))
+			continue;
+
+		conn.send(data, raw);
+		F.stats.response.websocket++;
 	}
 
 	return self;
