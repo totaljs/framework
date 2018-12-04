@@ -7036,9 +7036,9 @@ F.console = function() {
 	console.log('Node.js       : ' + process.version);
 	console.log('Total.js      : v' + F.version_header);
 	console.log('OS            : ' + Os.platform() + ' ' + Os.release());
-	console.log('User          : ' + Os.userInfo().username);
 	CONF.nosql_worker && console.log('NoSQL PID     : ' + framework_nosql.pid());
 	console.log('Memory        : ' + memory.heapUsed.filesize(2) + ' / ' + memory.heapTotal.filesize(2));
+	console.log('User          : ' + Os.userInfo().username);
 	console.log('====================================================');
 	console.log('Name          : ' + CONF.name);
 	console.log('Version       : ' + CONF.version);
