@@ -3393,6 +3393,11 @@ function sitemapurl(url) {
 
 global.LOCALIZE = F.localize = function(url, flags, minify) {
 
+	if (typeof(url) === 'function') {
+		F.onLocale = url;
+		return;
+	}
+
 	if (url[0] === '#')
 		url = sitemapurl(url.substring(1));
 
@@ -3482,7 +3487,6 @@ global.LOCALIZE = F.localize = function(url, flags, minify) {
 		});
 
 	}, flags);
-	return F;
 };
 
 F.$notModified = function(req, res, date) {

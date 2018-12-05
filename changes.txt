@@ -42,6 +42,7 @@
 - updated: `F.path.mkdir(path, [cache])` can cache a current satte (default: false)
 - updated: `controller.all()` can return `Array` of all WebSocketClient
 - updated: startup info by adding user name
+- updated: `LOCALIZE()` now `url` arg can be a function which replaces `F.onLocale`
 
 - fixed: a critical bug with storing uploaded files via `httpfile.fs()` or `httpfile.nosql()`
 - fixed: a critical bug with JavaScript minificator
