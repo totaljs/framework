@@ -1,3 +1,6 @@
 etag-version		: 1
 secret              : total.js test
 array     (Array)   : [1, 2, 3, 4]
+
+testbase            : base64 MTIzNDU2
+testhex             : hex 313233343536

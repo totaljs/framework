@@ -3,16 +3,19 @@ require('./index');
 const Fs = require('fs');
 const Path = require('path');
 const CONSOLE = process.argv.indexOf('restart') === -1;
-const META = {};
 const INTERNAL = { '/sitemap': 1, '/versions': 1, '/workflows': 1, '/dependencies': 1, '/config': 1, '/config-release': 1, '/config-debug': 1 };
 const isWindows = require('os').platform().substring(0, 3).toLowerCase() === 'win';
+const REGAPPEND = /\/--[a-z0-9]+/i;
+const META = {};
 
 META.version = 1;
 META.created = new Date();
 META.total = 'v' + F.version_header;
 META.node = F.version_node;
 META.files = [];
+META.skip = false;
 META.directories = [];
+META.ignore = () => true;
 
 exports.make = function(callback) {
 
@@ -24,13 +27,16 @@ exports.make = function(callback) {
 		console.time('Done');
 	}
 
-	blacklist[F.config['directory-temp']] = 1;
-	blacklist[F.config['directory-bundles']] = 1;
-	blacklist[F.config['directory-src']] = 1;
+	try {
+		META.ignore = makeignore(Fs.readFileSync(Path.join(path, '.bundlesignore')).toString('utf8').split('\n'));
+	} catch (e) {}
+
+	blacklist[CONF.directory_temp] = 1;
+	blacklist[CONF.directory_bundles] = 1;
+	blacklist[CONF.directory_src] = 1;
+	blacklist[CONF.directory_logs] = 1;
 	blacklist['/node_modules/'] = 1;
-	// blacklist['/debug.js'] = 1;
 	blacklist['/debug.pid'] = 1;
-	//blacklist['/package.json'] = 1;
 	blacklist['/package-lock.json'] = 1;
 
 	var Files = [];
@@ -42,11 +48,20 @@ exports.make = function(callback) {
 	async.push(cleanFiles);
 
 	async.push(function(next) {
-		var target = F.path.root(F.config['directory-src']);
-		U.ls(F.path.root(F.config['directory-bundles']), function(files) {
+		META.skip && (async.length = 0);
+		next();
+	});
+
+	async.push(function(next) {
+		var target = F.path.root(CONF.directory_src);
+		U.ls(F.path.root(CONF.directory_bundles), function(files) {
 			var dirs = {};
 			files.wait(function(filename, resume) {
-				var dbpath = F.config['directory-databases'];
+
+				if (!filename.endsWith('.bundle'))
+					return resume();
+
+				var dbpath = CONF.directory_databases;
 
 				F.restore(filename, target, resume, function(p, dir) {
 
@@ -113,10 +128,15 @@ exports.make = function(callback) {
 				var file = files[i].substring(Length);
 				var type = 0;
 
-				if (file.startsWith(F.config['directory-databases']))
+				if (file.startsWith(CONF.directory_databases) || file.startsWith('/flow/') || file.startsWith('/dashboard/'))
 					type = 1;
-				else if (file.startsWith(F.config['directory-public']))
+				else if (file.startsWith(CONF.directory_public))
 					type = 2;
+				else if (REGAPPEND.test(file)) {
+					file = file.replace(/\/--/g, '/');
+					type = 3;
+				}
+
 				Files.push({ name: file, filename: files[i], type: type });
 			}
 
@@ -134,7 +154,7 @@ exports.make = function(callback) {
 	});
 
 	async.push(function(next) {
-		Fs.writeFileSync(Path.join(F.path.root(F.config['directory-src']), 'bundle.json'), JSON.stringify(META, null, '\t'));
+		Fs.writeFileSync(Path.join(F.path.root(CONF.directory_src), 'bundle.json'), JSON.stringify(META, null, '\t'));
 		next();
 	});
 
@@ -145,24 +165,66 @@ exports.make = function(callback) {
 
 };
 
+function makeignore(arr) {
+
+	var ext;
+	var code = ['var path=P.substring(0,P.lastIndexOf(\'/\')+1);', 'var ext=U.getExtension(P);', 'var name=U.getName(P).replace(\'.\'+ ext,\'\');'];
+
+	for (var i = 0; i < arr.length; i++) {
+		var item = arr[i];
+		var index = item.lastIndexOf('*.');
+
+		if (index !== -1) {
+			// only extensions on this path
+			ext = item.substring(index + 2);
+			item = item.substring(0, index);
+			code.push('tmp=\'{0}\';'.format(item));
+			code.push('if((!tmp||path===tmp)&&ext===\'{0}\')return;'.format(ext));
+			continue;
+		}
+
+		ext = U.getExtension(item);
+		if (ext) {
+			// only filename
+			index = item.lastIndexOf('/');
+			code.push('tmp=\'{0}\';'.format(item.substring(0, index + 1)));
+			code.push('if(path===tmp&&U.getName(\'{0}\').replace(\'.{1}\', \'\')===name&&ext===\'{1}\')return;'.format(item.substring(index + 1), ext));
+			continue;
+		}
+
+		// all nested path
+		code.push('if(path.startsWith(\'{0}\'))return;'.format(item.replace('*', '')));
+	}
+
+	code.push('return true');
+	return new Function('P', code.join(''));
+}
+
 function normalize(path) {
 	return isWindows ? path.replace(/\\/g, '/') : path;
 }
 
 function cleanFiles(callback) {
 
-	var path = F.path.root(F.config['directory-src']);
+	var path = F.path.root(CONF.directory_src);
 	var length = path.length - 1;
 	var blacklist = {};
 
-	blacklist[F.config['directory-public']] = 1;
-	blacklist[F.config['directory-private']] = 1;
-	blacklist[F.config['directory-databases']] = 1;
+	blacklist[CONF.directory_public] = 1;
+	blacklist[CONF.directory_private] = 1;
+	blacklist[CONF.directory_databases] = 1;
 
 	var meta;
 
 	try {
 		meta = U.parseJSON(Fs.readFileSync(Path.join(path, 'bundle.json')).toString('utf8'), true) || {};
+
+		if (CONF.bundling === 'shallow') {
+			META.skip = true;
+			callback();
+			return;
+		}
+
 	} catch (e) {
 		meta = {};
 	}
@@ -170,10 +232,13 @@ function cleanFiles(callback) {
 	if (meta.files && meta.files.length) {
 		for (var i = 0, length = meta.files.length; i < length; i++) {
 			var filename = meta.files[i];
-			try {
-				F.consoledebug('Remove', filename);
-				Fs.unlinkSync(Path.join(path, filename));
-			} catch (e) {}
+			var dir = filename.substring(0, filename.indexOf('/', 1) + 1);
+			if (!blacklist[dir]) {
+				try {
+					F.consoledebug('Remove', filename);
+					Fs.unlinkSync(Path.join(path, filename));
+				} catch (e) {}
+			}
 		}
 	}
 
@@ -181,7 +246,8 @@ function cleanFiles(callback) {
 		meta.directories.quicksort('length', false);
 		for (var i = 0, length = meta.directories.length; i < length; i++) {
 			try {
-				Fs.rmdirSync(Path.join(path, meta.directories[i]));
+				if (!blacklist[meta.directories[i]])
+					Fs.rmdirSync(Path.join(path, meta.directories[i]));
 			} catch (e) {}
 		}
 	}
@@ -191,7 +257,7 @@ function cleanFiles(callback) {
 
 function createDirectories(dirs, callback) {
 
-	var path = F.path.root(F.config['directory-src']);
+	var path = F.path.root(CONF.directory_src);
 
 	try {
 		Fs.mkdirSync(path);
@@ -210,13 +276,16 @@ function createDirectories(dirs, callback) {
 }
 
 function copyFiles(files, callback) {
-	var path = F.path.root(F.config['directory-src']);
+	var path = F.path.root(CONF.directory_src);
 	files.wait(function(file, next) {
+
+		if (!META.ignore(file.name))
+			return next();
 
 		var filename = Path.join(path, file.name);
 		var exists = false;
 		var ext = U.getExtension(file.name);
-		var append = false;
+		var append = file.type === 3;
 
 		try {
 			exists = Fs.statSync(filename) != null;
@@ -237,9 +306,9 @@ function copyFiles(files, callback) {
 			append = true;
 
 		if (CONSOLE && exists) {
-			F.config['allow-debug'] && F.consoledebug(append ? 'EXT: ' : 'REW:', p);
+			CONF.allow_debug && F.consoledebug(append ? 'EXT:' : 'REW:', p);
 		} else
-			F.consoledebug(append ? 'EXT:' :   'COP:', p);
+			F.consoledebug(append ? 'EXT:' : 'COP:', p);
 
 		if (append) {
 			Fs.appendFile(filename, '\n' + Fs.readFileSync(file.filename).toString('utf8'), next);
@@ -247,7 +316,7 @@ function copyFiles(files, callback) {
 			copyFile(file.filename, filename, next);
 
 		if (CONSOLE && exists)
-			F.config['allow-debug'] && F.consoledebug('REW:', p);
+			CONF.allow_debug && F.consoledebug('REW:', p);
 		else
 			F.consoledebug('COP:', p);
 

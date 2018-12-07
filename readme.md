@@ -13,8 +13,9 @@ $ npm install -g total.js
 
 [![Support](https://www.totaljs.com/img/button-support.png?v=3)](https://www.totaljs.com/support/)
 
-- [__NEW__ Total.js CMS](http://www.totaljs.com/cms/)
-- [__NEW__ Total.js Eshop](http://www.totaljs.com/eshop/)
+- [__NEW__: Total.js Code editor](http://www.totaljs.com/code/)
+- [Total.js CMS](http://www.totaljs.com/cms/)
+- [Total.js Eshop](http://www.totaljs.com/eshop/)
 - [Total.js Wiki](https://www.totaljs.com/wiki/)
 - [Total.js Flow](https://www.totaljs.com/flow/)
 - [Total.js Flowboard](https://www.totaljs.com/flowboard/)
@@ -29,7 +30,8 @@ $ npm install -g total.js
 - [Total.js modules and packages](https://modules.totaljs.com)
 - [Total.js +100 examples](https://github.com/totaljs/examples)
 - [NoSQL embedded database explorer](https://www.totaljs.com/nosql/)
-- [Download +100 client-side components (jComponent) for free](https://componentator.com)
+- [Download +100 UI components for free](https://componentator.com)
+- [Download +100 CMS widgets for free](https://componentator.com/widgets/)
 
 ---
 

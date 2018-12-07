@@ -307,16 +307,22 @@ function parse_csv(content) {
 	var output = {};
 	var max = 0;
 
-	content.split('\n').forEach(function(line) {
+	content.split('\n').forEach(function(line, index) {
+
+		if (!index)
+			return;
+
 		line = line.trim();
+
 		if (!line)
 			return;
+
 		var arr = line.split(';');
 		if (arr.length <= 1)
 			return;
 
-		var key = arr[0].trim().replace(/(^\")|(\"$)/g, '');
-		var value = arr[1].trim().replace(/(^\")|(\"$)/g, '');
+		var key = arr[0].trim().replace(/(^")|("$)/g, '');
+		var value = arr[2].trim().replace(/(^")|("$)/g, '');
 		if (!key || !value)
 			return;
 
@@ -355,11 +361,11 @@ function main() {
 			var port = cmd.parseInt();
 			if (port) {
 
-				F.config['directory-temp'] = '~' + path.join(os.tmpdir(), 'totaljs' + dir.hash());
-				F.config['directory-public'] = '~' + dir;
-				F.config['allow-compile-html'] = false;
-				F.config['allow-compile-script'] = false;
-				F.config['allow-compile-style'] = false;
+				CONF.directory_temp = '~' + path.join(os.tmpdir(), 'totaljs' + dir.hash());
+				CONF.directory_public = '~' + dir;
+				CONF.allow_compile_html = false;
+				CONF.allow_compile_script = false;
+				CONF.allow_compile_style = false;
 
 				F.accept('.less', 'text/less');
 
@@ -810,7 +816,7 @@ function git(dir, type) {
 		}
 
 		F.path.mkdir(dir);
-		exec('git clone https://github.com/totaljs/{0}.git {1}'.format(type, dir), function(err) {
+		exec('git clone https://github.com/totaljs/{0}.git {1}'.format(type, dir), function() {
 			F.path.mkdir(path.join(dir, '/node_modules/'));
 			F.rmdir(path.join(dir, '.git'), function() {
 				F.unlink(path.join(dir, '.gitignore'), function() {

@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkUtils
- * @version 3.0.0
+ * @version 3.1.0
  */
 
 'use strict';
@@ -89,6 +89,7 @@ const REG_ROOT = /@\{#\}(\/)?/g;
 const REG_NOREMAP = /@\{noremap\}(\n)?/g;
 const REG_REMAP = /href=".*?"|src=".*?"/gi;
 const REG_URLEXT = /(https|http|wss|ws|file):\/\/|\/\/[a-z0-9]|[a-z]:/i;
+const REG_TEXTAPPLICATION = /text|application/i;
 
 exports.MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 exports.DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -98,6 +99,10 @@ var DIACRITICS=[{b:' ',c:'\u00a0'},{b:'0',c:'\u07c0'},{b:'A',c:'\u24b6\uff21\u00
 for (var i=0; i <DIACRITICS.length; i+=1)
 	for (var chars=DIACRITICS[i].c,j=0;j<chars.length;j+=1)
 		DIACRITICSMAP[chars[j]]=DIACRITICS[i].b;
+
+const DP = Date.prototype;
+const SP = String.prototype;
+const NP = Number.prototype;
 
 DIACRITICS = null;
 
@@ -271,7 +276,6 @@ exports.wait = function(fnValid, fnCallback, timeout, interval) {
 			clearInterval(id_interval);
 			clearTimeout(id_timeout);
 			fnCallback && fnCallback(null, true);
-			return;
 		}
 
 	}, interval || 500);
@@ -481,7 +485,7 @@ global.REQUEST = exports.request = function(url, flags, data, callback, cookies,
 	if (callback === NOOP)
 		callback = null;
 
-	var options = { length: 0, timeout: timeout || 10000, evt: new EventEmitter2(), encoding: typeof(encoding) !== 'string' ? ENCODING : encoding, callback: callback, post: false, redirect: 0 };
+	var options = { length: 0, timeout: timeout || CONF.default_restbuilder_timeout, evt: new EventEmitter2(), encoding: typeof(encoding) !== 'string' ? ENCODING : encoding, callback: callback, post: false, redirect: 0 };
 	var method;
 	var type = 0;
 	var isCookies = false;
@@ -602,6 +606,9 @@ global.REQUEST = exports.request = function(url, flags, data, callback, cookies,
 			data.length && url.indexOf('?') === -1 && (url += '?' + data);
 			data = '';
 		}
+
+		if (type === 1 && !data && (data === EMPTYOBJECT || data === '' || data === undefined))
+			data = BUFEMPTYJSON;
 	}
 
 	if (data && type !== 4) {
@@ -621,6 +628,12 @@ global.REQUEST = exports.request = function(url, flags, data, callback, cookies,
 	}
 
 	var uri = Url.parse(url);
+
+	if (!uri.hostname || !uri.host) {
+		callback && callback(new Error('URL doesn\'t contain a hostname'), '', 0);
+		return;
+	}
+
 	uri.method = method;
 	uri.headers = headers;
 	options.uri = uri;
@@ -628,8 +641,8 @@ global.REQUEST = exports.request = function(url, flags, data, callback, cookies,
 	if (options.resolve && (uri.hostname === 'localhost' || uri.hostname.charCodeAt(0) < 64))
 		options.resolve = null;
 
-	if (F.config['default-proxy'] && !proxy && !PROXYBLACKLIST[uri.hostname])
-		proxy = parseProxy(F.config['default-proxy']);
+	if (CONF.default_proxy && !proxy && !PROXYBLACKLIST[uri.hostname])
+		proxy = parseProxy(CONF.default_proxy);
 
 	if (proxy && (uri.hostname === 'localhost' || uri.hostname === '127.0.0.1'))
 		proxy = null;
@@ -664,14 +677,16 @@ function ProxyAgent(options) {
 	self.requests = [];
 }
 
-ProxyAgent.prototype.createConnection = function(pending) {
+const PAP = ProxyAgent.prototype;
+
+PAP.createConnection = function(pending) {
 	var self = this;
 	self.createSocket(pending, function(socket) {
 		pending.request.onSocket(socket);
 	});
 };
 
-ProxyAgent.prototype.createSocket = function(options, callback) {
+PAP.createSocket = function(options, callback) {
 
 	var self = this;
 	var proxy = self.options.proxy;
@@ -719,13 +734,13 @@ function proxyagent_response(res) {
 	res.upgrade = true;
 }
 
-ProxyAgent.prototype.addRequest = function(req, options) {
+PAP.addRequest = function(req, options) {
 	this.createConnection({ host: options.host, port: options.port, request: req });
 };
 
 function createSecureSocket(options, callback) {
 	var self = this;
-	ProxyAgent.prototype.createSocket.call(self, options, function(socket) {
+	PAP.createSocket.call(self, options, function(socket) {
 		PROXYTLS.servername = self.options.uri.hostname;
 		PROXYTLS.headers = self.options.uri.headers;
 		PROXYTLS.socket = socket;
@@ -879,7 +894,7 @@ function request_response(res, uri, options) {
 
 		var tmp = Url.parse(loc);
 		tmp.headers = uri.headers;
-		tmp.agent = false;
+		// tmp.agent = false;
 		tmp.method = uri.method;
 
 		res.req.removeAllListeners();
@@ -959,17 +974,23 @@ function request_response(res, uri, options) {
 		}
 
 		var self = this;
-		var str = self._buffer ? self._buffer.toString(options.encoding) : '';
+		var data;
+
+		if (!self.headers['content-type'] || REG_TEXTAPPLICATION.test(self.headers['content-type']))
+			data = self._buffer ? self._buffer.toString(options.encoding) : '';
+		else
+			data = self._buffer;
+
 		self._buffer = undefined;
 
 		if (options.evt) {
-			options.evt.$events.end && options.evt.emit('end', str, self.statusCode, self.headers, uri.host, options.cookies);
+			options.evt.$events.end && options.evt.emit('end', data, self.statusCode, self.headers, uri.host, options.cookies);
 			options.evt.removeAllListeners();
 			options.evt = null;
 		}
 
 		if (options.callback) {
-			options.callback(null, uri.method === 'HEAD' ? self.headers : str, self.statusCode, self.headers, uri.host, options.cookies);
+			options.callback(null, uri.method === 'HEAD' ? self.headers : data, self.statusCode, self.headers, uri.host, options.cookies);
 			options.callback = null;
 		}
 
@@ -1147,7 +1168,7 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 
 	var uri = Url.parse(url);
 	uri.method = method;
-	uri.agent = false;
+	// uri.agent = false;
 	uri.headers = headers;
 	options.uri = uri;
 
@@ -1159,8 +1180,8 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 		headers['Content-Length'] = options.data.length;
 	}
 
-	if (F.config['default-proxy'] && !proxy && !PROXYBLACKLIST[uri.hostname])
-		proxy = parseProxy(F.config['default-proxy']);
+	if (CONF.default_proxy && !proxy && !PROXYBLACKLIST[uri.hostname])
+		proxy = parseProxy(CONF.default_proxy);
 
 	options.proxy = proxy;
 
@@ -1257,7 +1278,7 @@ function download_response(res, uri, options) {
 
 		var tmp = Url.parse(res.headers['location']);
 		tmp.headers = uri.headers;
-		tmp.agent = false;
+		// tmp.agent = false;
 		tmp.method = uri.method;
 		res.req.removeAllListeners();
 		res.req = null;
@@ -2221,7 +2242,7 @@ function validate_builder_default(name, value, entity) {
 
 	var type = typeof(value);
 
-	// Enum + KeyValue (8+9)
+	// Enum + KeyValue + Custom (8+9+10)
 	if (entity.type > 7)
 		return value !== undefined;
 
@@ -2655,7 +2676,7 @@ exports.ls2 = function(path, callback, filter) {
 	ls(path, callback, true, filter);
 };
 
-Date.prototype.add = function(type, value) {
+DP.add = function(type, value) {
 
 	var self = this;
 
@@ -2676,44 +2697,44 @@ Date.prototype.add = function(type, value) {
 		case 'sec':
 		case 'second':
 		case 'seconds':
-			dt.setSeconds(dt.getSeconds() + value);
+			dt.setUTCSeconds(dt.getUTCSeconds() + value);
 			return dt;
 		case 'm':
 		case 'mm':
 		case 'minute':
 		case 'min':
 		case 'minutes':
-			dt.setMinutes(dt.getMinutes() + value);
+			dt.setUTCMinutes(dt.getUTCMinutes() + value);
 			return dt;
 		case 'h':
 		case 'hh':
 		case 'hour':
 		case 'hours':
-			dt.setHours(dt.getHours() + value);
+			dt.setUTCHours(dt.getUTCHours() + value);
 			return dt;
 		case 'd':
 		case 'dd':
 		case 'day':
 		case 'days':
-			dt.setDate(dt.getDate() + value);
+			dt.setUTCDate(dt.getUTCDate() + value);
 			return dt;
 		case 'w':
 		case 'ww':
 		case 'week':
 		case 'weeks':
-			dt.setDate(dt.getDate() + (value * 7));
+			dt.setUTCDate(dt.getUTCDate() + (value * 7));
 			return dt;
 		case 'M':
 		case 'MM':
 		case 'month':
 		case 'months':
-			dt.setMonth(dt.getMonth() + value);
+			dt.setUTCMonth(dt.getUTCMonth() + value);
 			return dt;
 		case 'y':
 		case 'yyyy':
 		case 'year':
 		case 'years':
-			dt.setFullYear(dt.getFullYear() + value);
+			dt.setUTCFullYear(dt.getUTCFullYear() + value);
 			return dt;
 	}
 	return dt;
@@ -2725,7 +2746,7 @@ Date.prototype.add = function(type, value) {
  * @param  {String} type Date type: minutes, seconds, hours, days, months, years
  * @return {Number}
  */
-Date.prototype.diff = function(date, type) {
+DP.diff = function(date, type) {
 
 	if (arguments.length === 1) {
 		type = date;
@@ -2779,7 +2800,7 @@ Date.prototype.diff = function(date, type) {
 	return NaN;
 };
 
-Date.prototype.extend = function(date) {
+DP.extend = function(date) {
 	var dt = new Date(this);
 	var match = date.match(regexpDATE);
 
@@ -2794,16 +2815,16 @@ Date.prototype.extend = function(date) {
 
 			arr = m.split(':');
 			tmp = +arr[0];
-			tmp >= 0 && dt.setHours(tmp);
+			tmp >= 0 && dt.setUTCHours(tmp);
 
 			if (arr[1]) {
 				tmp = +arr[1];
-				tmp >= 0 && dt.setMinutes(tmp);
+				tmp >= 0 && dt.setUTCMinutes(tmp);
 			}
 
 			if (arr[2]) {
 				tmp = +arr[2];
-				tmp >= 0 && dt.setSeconds(tmp);
+				tmp >= 0 && dt.setUTCSeconds(tmp);
 			}
 
 			continue;
@@ -2813,16 +2834,16 @@ Date.prototype.extend = function(date) {
 			arr = m.split('-');
 
 			tmp = +arr[0];
-			tmp && dt.setFullYear(tmp);
+			tmp && dt.setUTCFullYear(tmp);
 
 			if (arr[1]) {
 				tmp = +arr[1];
-				tmp >= 0 && dt.setMonth(tmp - 1);
+				tmp >= 0 && dt.setUTCMonth(tmp - 1);
 			}
 
 			if (arr[2]) {
 				tmp = +arr[2];
-				tmp >= 0 && dt.setDate(tmp);
+				tmp >= 0 && dt.setUTCDate(tmp);
 			}
 
 			continue;
@@ -2833,16 +2854,16 @@ Date.prototype.extend = function(date) {
 
 			if (arr[2]) {
 				tmp = +arr[2];
-				!isNaN(tmp) && dt.setFullYear(tmp);
+				!isNaN(tmp) && dt.setUTCFullYear(tmp);
 			}
 
 			if (arr[1]) {
 				tmp = +arr[1];
-				!isNaN(tmp) && dt.setMonth(tmp - 1);
+				!isNaN(tmp) && dt.setUTCMonth(tmp - 1);
 			}
 
 			tmp = +arr[0];
-			!isNaN(tmp) && dt.setDate(tmp);
+			!isNaN(tmp) && dt.setUTCDate(tmp);
 
 			continue;
 		}
@@ -2856,7 +2877,7 @@ Date.prototype.extend = function(date) {
  * @param {Date} date
  * @return {Number} Results: -1 = current date is earlier than @date, 0 = current date is same as @date, 1 = current date is later than @date
  */
-Date.prototype.compare = function(date) {
+DP.compare = function(date) {
 
 	var self = this;
 	var r = self.getTime() - date.getTime();
@@ -2892,7 +2913,7 @@ Date.compare = function(d1, d2) {
  * @param {String} format
  * @return {String}
  */
-Date.prototype.format = function(format, resource) {
+DP.format = function(format, resource) {
 
 	if (!format)
 		return this.getUTCFullYear() + '-' + (this.getUTCMonth() + 1).toString().padLeft(2, '0') + '-' + this.getUTCDate().toString().padLeft(2, '0') + 'T' + this.getUTCHours().toString().padLeft(2, '0') + ':' + this.getUTCMinutes().toString().padLeft(2, '0') + ':' + this.getUTCSeconds().toString().padLeft(2, '0') + '.' + this.getUTCMilliseconds().toString().padLeft(3, '0') + 'Z';
@@ -2978,22 +2999,22 @@ exports.$pmam = function(value) {
 	return value >= 12 ? value - 12 : value;
 };
 
-Date.prototype.toUTC = function(ticks) {
+DP.toUTC = function(ticks) {
 	var dt = this.getTime() + this.getTimezoneOffset() * 60000;
 	return ticks ? dt : new Date(dt);
 };
 
 // +v2.2.0 parses JSON dates as dates and this is the fallback for backward compatibility
-Date.prototype.parseDate = function() {
+DP.parseDate = function() {
 	return this;
 };
 
-String.prototype.isJSONDate = function() {
+SP.isJSONDate = function() {
 	var l = this.length - 1;
 	return l > 22 && l < 30 && this[l] === 'Z' && this[10] === 'T' && this[4] === '-' && this[13] === ':' && this[16] === ':';
 };
 
-String.prototype.ROOT = function(noremap) {
+SP.ROOT = function(noremap) {
 
 	var str = this;
 
@@ -3002,7 +3023,7 @@ String.prototype.ROOT = function(noremap) {
 		return '';
 	}).replace(REG_ROOT, $urlmaker);
 
-	if (!noremap && F.config['default-root'])
+	if (!noremap && CONF.default_root)
 		str = str.replace(REG_REMAP, $urlremap);
 
 	return str;
@@ -3010,34 +3031,34 @@ String.prototype.ROOT = function(noremap) {
 
 function $urlremap(text) {
 	var pos = text[0] === 'h' ? 6 : 5;
-	return REG_URLEXT.test(text) ? text : ((text[0] === 'h' ? 'href' : 'src') + '="' + F.config['default-root'] + (text[pos] === '/' ? text.substring(pos + 1) : text));
+	return REG_URLEXT.test(text) ? text : ((text[0] === 'h' ? 'href' : 'src') + '="' + CONF.default_root + (text[pos] === '/' ? text.substring(pos + 1) : text));
 }
 
 function $urlmaker(text) {
 	var c = text[4];
-	return F.config['default-root'] ? F.config['default-root'] : (c || '');
+	return CONF.default_root ? CONF.default_root : (c || '');
 }
 
-if (!String.prototype.trim) {
-	String.prototype.trim = function() {
+if (!SP.trim) {
+	SP.trim = function() {
 		return this.replace(regexpTRIM, '');
 	};
 }
 
-if (!String.prototype.replaceAt) {
-	String.prototype.replaceAt = function(index, character) {
+if (!SP.replaceAt) {
+	SP.replaceAt = function(index, character) {
 		return this.substr(0, index) + character + this.substr(index + character.length);
 	};
 }
 
 /**
  * Checks if the string starts with the text
- * @see {@link http://docs.totaljs.com/String.prototype/#String.prototype.startsWith|Documentation}
+ * @see {@link http://docs.totaljs.com/SP/#SP.startsWith|Documentation}
  * @param {String} text Text to find.
  * @param {Boolean/Number} ignoreCase Ingore case sensitive or position in the string.
  * @return {Boolean}
  */
-String.prototype.startsWith = function(text, ignoreCase) {
+SP.startsWith = function(text, ignoreCase) {
 	var self = this;
 	var length = text.length;
 	var tmp;
@@ -3057,12 +3078,12 @@ String.prototype.startsWith = function(text, ignoreCase) {
 
 /**
  * Checks if the string ends with the text
- * @see {@link http://docs.totaljs.com/String.prototype/#String.prototype.endsWith|Documentation}
+ * @see {@link http://docs.totaljs.com/SP/#SP.endsWith|Documentation}
  * @param {String} text Text to find.
  * @param {Boolean/Number} ignoreCase Ingore case sensitive or position in the string.
  * @return {Boolean}
  */
-String.prototype.endsWith = function(text, ignoreCase) {
+SP.endsWith = function(text, ignoreCase) {
 	var self = this;
 	var length = text.length;
 	var tmp;
@@ -3080,7 +3101,7 @@ String.prototype.endsWith = function(text, ignoreCase) {
 	return tmp.length === length && tmp === text;
 };
 
-String.prototype.replacer = function(find, text) {
+SP.replacer = function(find, text) {
 	var self = this;
 	var beg = self.indexOf(find);
 	return beg === -1 ? self : (self.substring(0, beg) + text + self.substring(beg + find.length));
@@ -3092,7 +3113,7 @@ String.prototype.replacer = function(find, text) {
  * @param {String} salt Optional, salt.
  * @return {String}
  */
-String.prototype.hash = function(type, salt) {
+SP.hash = function(type, salt) {
 	var str = salt ? this + salt : this;
 	switch (type) {
 		case 'md5':
@@ -3112,7 +3133,7 @@ String.prototype.hash = function(type, salt) {
 	}
 };
 
-String.prototype.crc32 = function(unsigned) {
+SP.crc32 = function(unsigned) {
 	var crc = -1;
 	for (var i = 0, length = this.length; i < length; i++)
 		crc = (crc >>> 8) ^ CRC32TABLE[(crc ^ this.charCodeAt(i)) & 0xFF];
@@ -3132,7 +3153,7 @@ function string_hash(s, convert) {
 	return hash;
 }
 
-String.prototype.count = function(text) {
+SP.count = function(text) {
 	var index = 0;
 	var count = 0;
 	do {
@@ -3143,19 +3164,19 @@ String.prototype.count = function(text) {
 	return count;
 };
 
-String.prototype.parseXML = function() {
+SP.parseXML = function() {
 	return F.onParseXML(this);
 };
 
-String.prototype.parseJSON = function(date) {
+SP.parseJSON = function(date) {
 	return exports.parseJSON(this, date);
 };
 
-String.prototype.parseQuery = function() {
+SP.parseQuery = function() {
 	return exports.parseQuery(this);
 };
 
-String.prototype.parseTerminal = function(fields, fn, skip, take) {
+SP.parseTerminal = function(fields, fn, skip, take) {
 
 	var lines = this.split('\n');
 
@@ -3273,7 +3294,7 @@ function parseTerminal2(lines, fn, skip, take) {
 	}
 }
 
-String.prototype.parseDate = function() {
+SP.parseDate = function() {
 	var self = this.trim();
 	var lc = self.charCodeAt(self.length - 1);
 
@@ -3366,7 +3387,7 @@ String.prototype.parseDate = function() {
 	return new Date(parsed[0], parsed[1] - 1, parsed[2], parsed[3], parsed[4] - NOW.getTimezoneOffset(), parsed[5]);
 };
 
-String.prototype.parseDateExpiration = function() {
+SP.parseDateExpiration = function() {
 	var self = this;
 
 	var arr = self.split(' ');
@@ -3385,7 +3406,7 @@ String.prototype.parseDateExpiration = function() {
 	return dt;
 };
 
-String.prototype.contains = function(value, mustAll) {
+SP.contains = function(value, mustAll) {
 	var str = this;
 
 	if (typeof(value) === 'string')
@@ -3408,7 +3429,7 @@ String.prototype.contains = function(value, mustAll) {
  * @param {String} value
  * @return {Number}
  */
-String.prototype.localeCompare2 = function(value) {
+SP.localeCompare2 = function(value) {
 	return COMPARER(this, value);
 };
 
@@ -3418,7 +3439,7 @@ String.prototype.localeCompare2 = function(value) {
  * @onerr {Function} error handling
  * @return {Object}
  */
-String.prototype.parseConfig = function(def, onerr) {
+SP.parseConfig = function(def, onerr) {
 
 	if (typeof(def) === 'function') {
 		onerr = def;
@@ -3471,7 +3492,7 @@ String.prototype.parseConfig = function(def, onerr) {
 				obj[name] = (/true|on|1|enabled/i).test(value);
 				break;
 			case 'config':
-				obj[name] = F.config[value];
+				obj[name] = CONF[value];
 				break;
 			case 'eval':
 			case 'object':
@@ -3506,7 +3527,7 @@ String.prototype.parseConfig = function(def, onerr) {
 	return obj;
 };
 
-String.prototype.format = function() {
+SP.format = function() {
 	var arg = arguments;
 	return this.replace(regexpSTRINGFORMAT, function(text) {
 		var value = arg[+text.substring(1, text.length - 1)];
@@ -3514,7 +3535,7 @@ String.prototype.format = function() {
 	});
 };
 
-String.prototype.encode = function() {
+SP.encode = function() {
 	var output = '';
 	for (var i = 0, length = this.length; i < length; i++) {
 		var c = this[i];
@@ -3542,7 +3563,7 @@ String.prototype.encode = function() {
 	return output;
 };
 
-String.prototype.decode = function() {
+SP.decode = function() {
 	return this.replace(regexpDECODE, function(s) {
 		if (s.charAt(1) !== '#')
 			return ALPHA_INDEX[s] || s;
@@ -3551,15 +3572,15 @@ String.prototype.decode = function() {
 	});
 };
 
-String.prototype.urlEncode = function() {
+SP.urlEncode = function() {
 	return encodeURIComponent(this);
 };
 
-String.prototype.urlDecode = function() {
+SP.urlDecode = function() {
 	return decodeURIComponent(this);
 };
 
-String.prototype.arg = function(obj) {
+SP.arg = function(obj) {
 	return this.replace(regexpARG, function(text) {
 		// Is double?
 		var l = text[1] === '{' ? 2 : 1;
@@ -3568,7 +3589,7 @@ String.prototype.arg = function(obj) {
 	});
 };
 
-String.prototype.params = function(obj) {
+SP.params = function(obj) {
 
 	OBSOLETE('String.params()', 'The method is deprecated instead of it use F.viewCompile() or String.format().');
 
@@ -3639,14 +3660,14 @@ String.prototype.params = function(obj) {
 	});
 };
 
-String.prototype.max = function(length, chars) {
+SP.max = function(length, chars) {
 	var str = this;
 	if (typeof(chars) !== 'string')
 		chars = '...';
 	return str.length > length ? str.substring(0, length - chars.length) + chars : str;
 };
 
-String.prototype.isJSON = function() {
+SP.isJSON = function() {
 	var self = this;
 	if (self.length <= 1)
 		return false;
@@ -3673,48 +3694,48 @@ String.prototype.isJSON = function() {
 	return (a === '"' && b === '"') || (a === '[' && b === ']') || (a === '{' && b === '}') || (a.charCodeAt(0) > 47 && b.charCodeAt(0) < 57);
 };
 
-String.prototype.isURL = function() {
+SP.isURL = function() {
 	return this.length <= 7 ? false : F.validators.url.test(this);
 };
 
-String.prototype.isZIP = function() {
+SP.isZIP = function() {
 	return F.validators.zip.test(this);
 };
 
-String.prototype.isEmail = function() {
+SP.isEmail = function() {
 	return this.length <= 4 ? false : F.validators.email.test(this);
 };
 
-String.prototype.isPhone = function() {
+SP.isPhone = function() {
 	return this.length < 6 ? false : F.validators.phone.test(this);
 };
 
-String.prototype.isUID = function() {
+SP.isUID = function() {
 	return this.length < 18 ? false : F.validators.uid.test(this);
 };
 
-String.prototype.parseInt = function(def) {
+SP.parseInt = function(def) {
 	var str = this.trim();
 	var num = +str;
 	return isNaN(num) ? (def || 0) : num;
 };
 
-String.prototype.parseInt2 = function(def) {
+SP.parseInt2 = function(def) {
 	var num = this.match(regexpINTEGER);
 	return num ? +num[0] : def || 0;
 };
 
-String.prototype.parseFloat2 = function(def) {
+SP.parseFloat2 = function(def) {
 	var num = this.match(regexpFLOAT);
 	return num ? +num[0].toString().replace(/,/g, '.') : def || 0;
 };
 
-String.prototype.parseBool = String.prototype.parseBoolean = function() {
+SP.parseBool = SP.parseBoolean = function() {
 	var self = this.toLowerCase();
 	return self === 'true' || self === '1' || self === 'on';
 };
 
-String.prototype.parseFloat = function(def) {
+SP.parseFloat = function(def) {
 	var str = this.trim();
 	if (str.indexOf(',') !== -1)
 		str = str.replace(',', '.');
@@ -3722,7 +3743,7 @@ String.prototype.parseFloat = function(def) {
 	return isNaN(num) ? (def || 0) : num;
 };
 
-String.prototype.capitalize = function(first) {
+SP.capitalize = function(first) {
 
 	if (first)
 		return this[0].toUpperCase() + this.substring(1);
@@ -3742,49 +3763,55 @@ String.prototype.capitalize = function(first) {
 	return builder;
 };
 
-
 String.prototype.toUnicode = function() {
-	var result = '';
-	var self = this;
-	var length = self.length;
-	for(var i = 0; i < length; ++i){
-		if(self.charCodeAt(i) > 126 || self.charCodeAt(i) < 32)
-			result += '\\u' + self.charCodeAt(i).hex(4);
+	var output = '';
+	for (var i = 0; i < this.length; i++) {
+		var c = this[i].charCodeAt(0);
+		if(c > 126 || c < 32)
+			output += '\\u' + ('000' + c.toString(16)).substr(-4);
 		else
-			result += self[i];
+			output += this[i];
 	}
-	return result;
+	return output;
 };
 
 String.prototype.fromUnicode = function() {
-	return unescape(this.replace(regexpUNICODE, (match, v) => String.fromCharCode(parseInt(v, 16))));
+	var output = '';
+	for (var i = 0; i < this.length; i++) {
+		if (this[i] === '\\' && this[i + 1] === 'u') {
+			output += String.fromCharCode(parseInt(this[i + 2] + this[i + 3] + this[i + 4] + this[i + 5], 16));
+			i += 5;
+		} else
+			output += this[i];
+	}
+	return output;
 };
 
-String.prototype.sha1 = function(salt) {
+SP.sha1 = function(salt) {
 	var hash = Crypto.createHash('sha1');
 	hash.update(this + (salt || ''), ENCODING);
 	return hash.digest('hex');
 };
 
-String.prototype.sha256 = function(salt) {
+SP.sha256 = function(salt) {
 	var hash = Crypto.createHash('sha256');
 	hash.update(this + (salt || ''), ENCODING);
 	return hash.digest('hex');
 };
 
-String.prototype.sha512 = function(salt) {
+SP.sha512 = function(salt) {
 	var hash = Crypto.createHash('sha512');
 	hash.update(this + (salt || ''), ENCODING);
 	return hash.digest('hex');
 };
 
-String.prototype.md5 = function(salt) {
+SP.md5 = function(salt) {
 	var hash = Crypto.createHash('md5');
 	hash.update(this + (salt || ''), ENCODING);
 	return hash.digest('hex');
 };
 
-String.prototype.toSearch = function() {
+SP.toSearch = function() {
 	var str = this.replace(regexpSEARCH, '').trim().toLowerCase().removeDiacritics();
 	var buf = [];
 	var prev = '';
@@ -3801,7 +3828,7 @@ String.prototype.toSearch = function() {
 	return buf.join('');
 };
 
-String.prototype.toKeywords = String.prototype.keywords = function(forSearch, alternative, max_count, max_length, min_length) {
+SP.toKeywords = SP.keywords = function(forSearch, alternative, max_count, max_length, min_length) {
 	return exports.keywords(this, forSearch, alternative, max_count, max_length, min_length);
 };
 
@@ -3812,7 +3839,7 @@ function checksum(val) {
 	return sum;
 }
 
-String.prototype.encrypt = function(key, isUnique, secret) {
+SP.encrypt = function(key, isUnique, secret) {
 	var str = '0' + this;
 	var data_count = str.length;
 	var key_count = key.length;
@@ -3836,10 +3863,10 @@ String.prototype.encrypt = function(key, isUnique, secret) {
 	for (var i = 0; i < str.length; i++)
 		sum += str.charCodeAt(i);
 
-	return (sum + checksum((secret || F.config.secret) + key)) + '-' + str;
+	return (sum + checksum((secret || CONF.secret) + key)) + '-' + str;
 };
 
-String.prototype.decrypt = function(key, secret) {
+SP.decrypt = function(key, secret) {
 
 	var index = this.indexOf('-');
 	if (index === -1)
@@ -3850,7 +3877,7 @@ String.prototype.decrypt = function(key, secret) {
 		return null;
 
 	var hash = this.substring(index + 1);
-	var sum = checksum((secret || F.config.secret) + key);
+	var sum = checksum((secret || CONF.secret) + key);
 	for (var i = 0; i < hash.length; i++)
 		sum += hash.charCodeAt(i);
 
@@ -3889,7 +3916,7 @@ exports.encryptUID = function(val, key) {
 	var sum = 0;
 
 	if (!key)
-		key = F.config.secret;
+		key = CONF.secret;
 
 	val = val.toString();
 
@@ -3899,7 +3926,7 @@ exports.encryptUID = function(val, key) {
 	for (var i = 0; i < key.length; i++)
 		sum += key.charCodeAt(i);
 
-	return (num ? 'n' : 'x') + (F.config['secret-uid'] + val + sum + key).crc32(true).toString(16) + 'x' + val;
+	return (num ? 'n' : 'x') + (CONF.secret_uid + val + sum + key).crc32(true).toString(16) + 'x' + val;
 };
 
 exports.decryptUID = function(val, key) {
@@ -3912,7 +3939,7 @@ exports.decryptUID = function(val, key) {
 	return exports.encryptUID(raw, key) === val ? raw : null;
 };
 
-String.prototype.base64ToFile = function(filename, callback) {
+SP.base64ToFile = function(filename, callback) {
 	var self = this;
 	var index = self.indexOf(',');
 	if (index === -1)
@@ -3923,7 +3950,7 @@ String.prototype.base64ToFile = function(filename, callback) {
 	return this;
 };
 
-String.prototype.base64ToBuffer = function() {
+SP.base64ToBuffer = function() {
 	var self = this;
 
 	var index = self.indexOf(',');
@@ -3935,17 +3962,17 @@ String.prototype.base64ToBuffer = function() {
 	return exports.createBuffer(self.substring(index), 'base64');
 };
 
-String.prototype.base64ContentType = function() {
+SP.base64ContentType = function() {
 	var self = this;
 	var index = self.indexOf(';');
 	return index === -1 ? '' : self.substring(5, index);
 };
 
-String.prototype.removeDiacritics = function() {
+SP.removeDiacritics = function() {
 	return exports.removeDiacritics(this);
 };
 
-String.prototype.indent = function(max, c) {
+SP.indent = function(max, c) {
 	var plus = '';
 	if (c === undefined)
 		c = ' ';
@@ -3954,7 +3981,7 @@ String.prototype.indent = function(max, c) {
 	return plus + this;
 };
 
-String.prototype.isNumber = function(isDecimal) {
+SP.isNumber = function(isDecimal) {
 
 	var self = this;
 	var length = self.length;
@@ -3981,8 +4008,8 @@ String.prototype.isNumber = function(isDecimal) {
 	return true;
 };
 
-if (!String.prototype.padLeft) {
-	String.prototype.padLeft = function(max, c) {
+if (!SP.padLeft) {
+	SP.padLeft = function(max, c) {
 		var self = this;
 		var len = max - self.length;
 		if (len < 0)
@@ -3996,8 +4023,8 @@ if (!String.prototype.padLeft) {
 }
 
 
-if (!String.prototype.padRight) {
-	String.prototype.padRight = function(max, c) {
+if (!SP.padRight) {
+	SP.padRight = function(max, c) {
 		var self = this;
 		var len = max - self.length;
 		if (len < 0)
@@ -4010,7 +4037,7 @@ if (!String.prototype.padRight) {
 	};
 }
 
-String.prototype.insert = function(index, value) {
+SP.insert = function(index, value) {
 	var str = this;
 	var a = str.substring(0, index);
 	var b = value.toString() + str.substring(index);
@@ -4022,7 +4049,7 @@ String.prototype.insert = function(index, value) {
  * @param  {Number} max A maximum length, default: 60 and optional.
  * @return {String}
  */
-String.prototype.slug = String.prototype.toSlug = String.prototype.toLinker = String.prototype.linker = function(max) {
+SP.slug = SP.toSlug = SP.toLinker = SP.linker = function(max) {
 	max = max || 60;
 
 	var self = this.trim().toLowerCase().removeDiacritics();
@@ -4032,6 +4059,11 @@ String.prototype.slug = String.prototype.toSlug = String.prototype.toLinker = St
 	for (var i = 0; i < length; i++) {
 		var c = self[i];
 		var code = self.charCodeAt(i);
+
+		if (code > 540){
+			builder = '';
+			break;
+		}
 
 		if (builder.length >= max)
 			break;
@@ -4045,15 +4077,24 @@ String.prototype.slug = String.prototype.toSlug = String.prototype.toLinker = St
 		if ((code > 47 && code < 58) || (code > 94 && code < 123))
 			builder += c;
 	}
-	var l = builder.length - 1;
-	return builder[l] === '-' ? builder.substring(0, l) : builder;
+
+	if (builder.length > 1) {
+		length = builder.length - 1;
+		return builder[length] === '-' ? builder.substring(0, length) : builder;
+	} else if (!length)
+		return '';
+
+	length = self.length;
+	self = self.replace(/\s/g, '');
+	builder = self.crc32(true).toString(36) + '';
+	return self[0].charCodeAt(0).toString(32) + builder + self[self.length - 1].charCodeAt(0).toString(32) + length;
 };
 
-String.prototype.pluralize = function(zero, one, few, other) {
+SP.pluralize = function(zero, one, few, other) {
 	return this.parseInt().pluralize(zero, one, few, other);
 };
 
-String.prototype.isBoolean = function() {
+SP.isBoolean = function() {
 	var self = this.toLowerCase();
 	return (self === 'true' || self === 'false') ? true : false;
 };
@@ -4062,11 +4103,11 @@ String.prototype.isBoolean = function() {
  * Check if the string contains only letters and numbers.
  * @return {Boolean}
  */
-String.prototype.isAlphaNumeric = function() {
+SP.isAlphaNumeric = function() {
 	return regexpALPHA.test(this);
 };
 
-String.prototype.soundex = function() {
+SP.soundex = function() {
 
 	var arr = this.toLowerCase().split('');
 	var first = arr.shift();
@@ -4090,23 +4131,23 @@ String.prototype.soundex = function() {
 * Remove all Html Tags from a string
 * @return {string}
 */
-String.prototype.removeTags = function() {
+SP.removeTags = function() {
 	return this.replace(regexpTags, '');
 };
 
-Number.prototype.floor = function(decimals) {
+NP.floor = function(decimals) {
 	return Math.floor(this * Math.pow(10, decimals)) / Math.pow(10, decimals);
 };
 
-Number.prototype.padLeft = function(max, c) {
+NP.padLeft = function(max, c) {
 	return this.toString().padLeft(max, c || '0');
 };
 
-Number.prototype.padRight = function(max, c) {
+NP.padRight = function(max, c) {
 	return this.toString().padRight(max, c || '0');
 };
 
-Number.prototype.round = function(precision) {
+NP.round = function(precision) {
 	var m = Math.pow(10, precision) || 1;
 	return Math.round(this * m) / m;
 };
@@ -4117,7 +4158,7 @@ Number.prototype.round = function(precision) {
  * @param {Function} callback
  * @return {Number}
  */
-Number.prototype.async = function(fn, callback) {
+NP.async = function(fn, callback) {
 	var number = this;
 	if (number)
 		fn(number--, () => setImmediate(() => number.async(fn, callback)));
@@ -4133,7 +4174,7 @@ Number.prototype.async = function(fn, callback) {
  * @param {String} separatorDecimal Decimal separator, default '.' if number separator is ',' or ' '.
  * @return {String}
  */
-Number.prototype.format = function(decimals, separator, separatorDecimal) {
+NP.format = function(decimals, separator, separatorDecimal) {
 
 	var self = this;
 
@@ -4184,7 +4225,7 @@ Number.prototype.format = function(decimals, separator, separatorDecimal) {
 	return minus + output + (dec.length ? separatorDecimal + dec : '');
 };
 
-Number.prototype.add = function(value, decimals) {
+NP.add = function(value, decimals) {
 
 	if (value == null)
 		return this;
@@ -4254,7 +4295,7 @@ Number.prototype.add = function(value, decimals) {
 	return num;
 };
 
-Number.prototype.format2 = function(format) {
+NP.format2 = function(format) {
 	var index = 0;
 	var num = this.toString();
 	var beg = 0;
@@ -4363,7 +4404,7 @@ Number.prototype.format2 = function(format) {
 	return this.format(output);
 };
 
-Number.prototype.pluralize = function(zero, one, few, other) {
+NP.pluralize = function(zero, one, few, other) {
 
 	var num = this;
 	var value = '';
@@ -4386,14 +4427,14 @@ Number.prototype.pluralize = function(zero, one, few, other) {
 	return num.format(format) + value.replace(format, '');
 };
 
-Number.prototype.hex = function(length) {
+NP.hex = function(length) {
 	var str = this.toString(16).toUpperCase();
 	while(str.length < length)
 		str = '0' + str;
 	return str;
 };
 
-Number.prototype.VAT = function(percentage, decimals, includedVAT) {
+NP.VAT = function(percentage, decimals, includedVAT) {
 	var num = this;
 	var type = typeof(decimals);
 
@@ -4415,25 +4456,25 @@ Number.prototype.VAT = function(percentage, decimals, includedVAT) {
 	return includedVAT ? (num / ((percentage / 100) + 1)).floor(decimals) : (num * ((percentage / 100) + 1)).floor(decimals);
 };
 
-Number.prototype.discount = function(percentage, decimals) {
+NP.discount = function(percentage, decimals) {
 	var num = this;
 	if (decimals === undefined)
 		decimals = 2;
 	return (num - (num / 100) * percentage).floor(decimals);
 };
 
-Number.prototype.parseDate = function(plus) {
+NP.parseDate = function(plus) {
 	return new Date(this + (plus || 0));
 };
 
-if (!Number.prototype.toRad) {
-	Number.prototype.toRad = function () {
+if (!NP.toRad) {
+	NP.toRad = function () {
 		return this * Math.PI / 180;
 	};
 }
 
 
-Number.prototype.filesize = function(decimals, type) {
+NP.filesize = function(decimals, type) {
 
 	if (typeof(decimals) === 'string') {
 		var tmp = type;
@@ -4501,12 +4542,14 @@ function filesizehelper(number, count) {
 	return number;
 }
 
+var AP = Array.prototype;
+
 /**
  * Take items from array
  * @param {Number} count
  * @return {Array}
  */
-Array.prototype.take = function(count) {
+AP.take = function(count) {
 	var arr = [];
 	var self = this;
 	var length = self.length;
@@ -4524,7 +4567,7 @@ Array.prototype.take = function(count) {
  * @param {Boolean} rewrite Default: false.
  * @return {Array} Returns self
  */
-Array.prototype.extend = function(obj, rewrite) {
+AP.extend = function(obj, rewrite) {
 	var isFn = typeof(obj) === 'function';
 	for (var i = 0, length = this.length; i < length; i++) {
 		if (isFn)
@@ -4540,7 +4583,7 @@ Array.prototype.extend = function(obj, rewrite) {
  * @param {Object} def Default value.
  * @return {Object}
  */
-Array.prototype.first = function(def) {
+AP.first = function(def) {
 	var item = this[0];
 	return item === undefined ? def : item;
 };
@@ -4550,7 +4593,7 @@ Array.prototype.first = function(def) {
  * @param {String} name Optional, property name.
  * @return {Object}
  */
-Array.prototype.toObject = function(name) {
+AP.toObject = function(name) {
 
 	var self = this;
 	var obj = {};
@@ -4572,7 +4615,7 @@ Array.prototype.toObject = function(name) {
  * @param {Array} b Second array.
  * @param {Function(itemA, itemB, indexA, indexB)} executor
  */
-Array.prototype.compare = function(id, b, executor) {
+AP.compare = function(id, b, executor) {
 
 	var a = this;
 	var ak = {};
@@ -4634,7 +4677,7 @@ Array.prototype.compare = function(id, b, executor) {
  * @param {Boolean} remove Optional, remove item from this array if the item doesn't exist int arr (default: false).
  * @return {Array}
  */
-Array.prototype.pair = function(property, arr, fn, remove) {
+AP.pair = function(property, arr, fn, remove) {
 
 	if (property instanceof Array) {
 		var tmp = property;
@@ -4678,12 +4721,12 @@ Array.prototype.pair = function(property, arr, fn, remove) {
  * @param {Object} def Default value.
  * @return {Object}
  */
-Array.prototype.last = function(def) {
+AP.last = function(def) {
 	var item = this[this.length - 1];
 	return item === undefined ? def : item;
 };
 
-Array.prototype.quicksort = Array.prototype.orderBy = function(name, asc) {
+AP.quicksort = AP.orderBy = function(name, asc) {
 
 	var length = this.length;
 	if (!length || length === 1)
@@ -4692,10 +4735,20 @@ Array.prototype.quicksort = Array.prototype.orderBy = function(name, asc) {
 	if (typeof(name) === 'boolean') {
 		asc = name;
 		name = undefined;
-	}
-
-	if (asc === undefined)
+	} else if (asc === undefined)
 		asc = true;
+	else {
+		switch (asc) {
+			case 'asc':
+			case 'ASC':
+				asc = true;
+				break;
+			case 'desc':
+			case 'DESC':
+				asc = false;
+				break;
+		}
+	}
 
 	var self = this;
 	var type = 0;
@@ -4750,7 +4803,7 @@ Array.prototype.quicksort = Array.prototype.orderBy = function(name, asc) {
 	return self;
 };
 
-Array.prototype.trim = function() {
+AP.trim = function() {
 	var self = this;
 	var output = [];
 	for (var i = 0, length = self.length; i < length; i++) {
@@ -4766,7 +4819,7 @@ Array.prototype.trim = function() {
  * @param {Number} count
  * @return {Array}
  */
-Array.prototype.skip = function(count) {
+AP.skip = function(count) {
 	var arr = [];
 	var self = this;
 	var length = self.length;
@@ -4781,7 +4834,7 @@ Array.prototype.skip = function(count) {
  * @param {Object} value Optional.
  * @return {Array}
  */
-Array.prototype.where = function(cb, value) {
+AP.where = function(cb, value) {
 
 	var self = this;
 	var selected = [];
@@ -4812,7 +4865,7 @@ Array.prototype.where = function(cb, value) {
  * @param {Object} value Optional.
  * @return {Array}
  */
-Array.prototype.findItem = Array.prototype.find = function(cb, value) {
+AP.findItem = AP.find = function(cb, value) {
 	var self = this;
 	var index = self.findIndex(cb, value);
 	if (index === -1)
@@ -4820,7 +4873,7 @@ Array.prototype.findItem = Array.prototype.find = function(cb, value) {
 	return self[index];
 };
 
-Array.prototype.findIndex = function(cb, value) {
+AP.findIndex = function(cb, value) {
 
 	var self = this;
 	var isFN = typeof(cb) === 'function';
@@ -4853,7 +4906,7 @@ Array.prototype.findIndex = function(cb, value) {
  * @param {Object} value Optional.
  * @return {Array}
  */
-Array.prototype.remove = function(cb, value) {
+AP.remove = function(cb, value) {
 
 	var self = this;
 	var arr = [];
@@ -4877,7 +4930,7 @@ Array.prototype.remove = function(cb, value) {
 	return arr;
 };
 
-Array.prototype.wait = Array.prototype.waitFor = function(onItem, callback, thread, tmp) {
+AP.wait = AP.waitFor = function(onItem, callback, thread, tmp) {
 
 	var self = this;
 	var init = false;
@@ -4931,7 +4984,7 @@ function next_wait(self, onItem, callback, thread, tmp) {
  * @param {Function} callback Optional
  * @return {Array}
  */
-Array.prototype.async = function(thread, callback, pending) {
+AP.async = function(thread, callback, pending) {
 
 	var self = this;
 
@@ -4970,13 +5023,13 @@ Array.prototype.async = function(thread, callback, pending) {
 	return self;
 };
 
-Array.prototype.randomize = function() {
+AP.randomize = function() {
 	OBSOLETE('Array.randomize()', 'Use Array.random().');
 	return this.random();
 };
 
 // Fisher-Yates shuffle
-Array.prototype.random = function() {
+AP.random = function() {
 	for (var i = this.length - 1; i > 0; i--) {
 		var j = Math.floor(Math.random() * (i + 1));
 		var temp = this[i];
@@ -4986,7 +5039,7 @@ Array.prototype.random = function() {
 	return this;
 };
 
-Array.prototype.limit = function(max, fn, callback, index) {
+AP.limit = function(max, fn, callback, index) {
 
 	if (index === undefined)
 		index = 0;
@@ -5031,7 +5084,7 @@ Array.prototype.limit = function(max, fn, callback, index) {
  * Get unique elements from Array
  * @return {[type]} [description]
  */
-Array.prototype.unique = function(property) {
+AP.unique = function(property) {
 
 	var self = this;
 	var result = [];
@@ -5210,21 +5263,23 @@ Async.prototype = {
 	}
 };
 
-Async.prototype.__proto__ = Object.create(Events.EventEmitter.prototype, {
+const ACP = Async.prototype;
+
+ACP.__proto__ = Object.create(Events.EventEmitter.prototype, {
 	constructor: {
 		value: Async,
 		enumberable: false
 	}
 });
 
-Async.prototype.reload = function() {
+ACP.reload = function() {
 	var self = this;
 	self.tasksAll = Object.keys(self.tasksPending);
 	self.emit('percentage', self.percentage);
 	return self;
 };
 
-Async.prototype.cancel = function(name) {
+ACP.cancel = function(name) {
 
 	var self = this;
 
@@ -5250,7 +5305,7 @@ Async.prototype.cancel = function(name) {
 	return true;
 };
 
-Async.prototype.await = function(name, fn, cb) {
+ACP.await = function(name, fn, cb) {
 
 	var self = this;
 
@@ -5273,7 +5328,7 @@ Async.prototype.await = function(name, fn, cb) {
 	return true;
 };
 
-Async.prototype.wait = function(name, waitingFor, fn, cb) {
+ACP.wait = function(name, waitingFor, fn, cb) {
 
 	var self = this;
 
@@ -5296,34 +5351,34 @@ Async.prototype.wait = function(name, waitingFor, fn, cb) {
 	return true;
 };
 
-Async.prototype.complete = function(fn) {
+ACP.complete = function(fn) {
 	return this.run(fn);
 };
 
-Async.prototype.run = function(fn) {
+ACP.run = function(fn) {
 	this._isRunning = true;
 	fn && this.onComplete.push(fn);
 	this.refresh();
 	return this;
 };
 
-Async.prototype.isRunning = function(name) {
+ACP.isRunning = function(name) {
 	if (!name)
 		return this._isRunning;
 	var task = this.tasksPending[name];
 	return task ? task.isRunning === 1 : false;
 };
 
-Async.prototype.isWaiting = function(name) {
+ACP.isWaiting = function(name) {
 	var task = this.tasksPending[name];
 	return task ? task.isRunning === 0 : false;
 };
 
-Async.prototype.isPending = function(name) {
+ACP.isPending = function(name) {
 	return this.tasksPending[name] ? true : false;
 };
 
-Async.prototype.timeout = function(name, timeout) {
+ACP.timeout = function(name, timeout) {
 	if (timeout)
 		this.tasksTimeout[name] = timeout;
 	else
@@ -5331,7 +5386,7 @@ Async.prototype.timeout = function(name, timeout) {
 	return this;
 };
 
-Async.prototype.refresh = function(name) {
+ACP.refresh = function(name) {
 
 	var self = this;
 
@@ -5398,14 +5453,16 @@ function FileList() {
 	this.advanced = false;
 }
 
-FileList.prototype.reset = function() {
+const FLP = FileList.prototype;
+
+FLP.reset = function() {
 	this.file.length = 0;
 	this.directory.length = 0;
 	this.pendingDirectory.length = 0;
 	return this;
 };
 
-FileList.prototype.walk = function(directory) {
+FLP.walk = function(directory) {
 
 	var self = this;
 
@@ -5427,7 +5484,7 @@ FileList.prototype.walk = function(directory) {
 	});
 };
 
-FileList.prototype.stat = function(path) {
+FLP.stat = function(path) {
 	var self = this;
 
 	Fs.stat(path, function(err, stats) {
@@ -5448,11 +5505,11 @@ FileList.prototype.stat = function(path) {
 	});
 };
 
-FileList.prototype.clean = function(path) {
+FLP.clean = function(path) {
 	return path[path.length - 1] === '/' ? path : path + '/';
 };
 
-FileList.prototype.next = function() {
+FLP.next = function() {
 	var self = this;
 
 	if (self.pending.length) {
@@ -5741,7 +5798,7 @@ exports.parseTheme = function(value) {
 	if (index === -1)
 		return '';
 	value = value.substring(1, index);
-	return value === '?' ? F.config['default-theme'] : value;
+	return value === '?' ? CONF.default_theme : value;
 };
 
 exports.set = function(obj, path, value) {
@@ -5856,7 +5913,9 @@ function EventEmitter2() {
 	this.$events = {};
 }
 
-EventEmitter2.prototype.emit = function(name, a, b, c, d, e, f, g) {
+const EE2P = EventEmitter2.prototype;
+
+EE2P.emit = function(name, a, b, c, d, e, f, g) {
 	var evt = this.$events[name];
 	if (evt) {
 		var clean = false;
@@ -5876,7 +5935,7 @@ EventEmitter2.prototype.emit = function(name, a, b, c, d, e, f, g) {
 	return this;
 };
 
-EventEmitter2.prototype.on = function(name, fn) {
+EE2P.on = function(name, fn) {
 	if (this.$events[name])
 		this.$events[name].push(fn);
 	else
@@ -5884,12 +5943,12 @@ EventEmitter2.prototype.on = function(name, fn) {
 	return this;
 };
 
-EventEmitter2.prototype.once = function(name, fn) {
+EE2P.once = function(name, fn) {
 	fn.$once = true;
 	return this.on(name, fn);
 };
 
-EventEmitter2.prototype.removeListener = function(name, fn) {
+EE2P.removeListener = function(name, fn) {
 	var evt = this.$events[name];
 	if (evt) {
 		evt = evt.remove(n => n === fn);
@@ -5901,7 +5960,7 @@ EventEmitter2.prototype.removeListener = function(name, fn) {
 	return this;
 };
 
-EventEmitter2.prototype.removeAllListeners = function(name) {
+EE2P.removeAllListeners = function(name) {
 	if (name === true)
 		this.$events = EMPTYOBJECT;
 	else if (name)
@@ -5928,7 +5987,9 @@ function Chunker(name, max) {
 	this.filename = F.path.temp(this.filename);
 }
 
-Chunker.prototype.append = Chunker.prototype.write = function(obj) {
+const CHP = Chunker.prototype;
+
+CHP.append = CHP.write = function(obj) {
 	var self = this;
 
 	self.stack.push(obj);
@@ -5956,7 +6017,7 @@ Chunker.prototype.append = Chunker.prototype.write = function(obj) {
 	return self;
 };
 
-Chunker.prototype.end = function() {
+CHP.end = function() {
 	var self = this;
 	var tmp = self.stack.length;
 	if (tmp) {
@@ -5979,7 +6040,7 @@ Chunker.prototype.end = function() {
 	return self;
 };
 
-Chunker.prototype.each = function(onItem, onEnd, indexer) {
+CHP.each = function(onItem, onEnd, indexer) {
 
 	var self = this;
 
@@ -5999,7 +6060,7 @@ Chunker.prototype.each = function(onItem, onEnd, indexer) {
 	return self;
 };
 
-Chunker.prototype.read = function(index, callback) {
+CHP.read = function(index, callback) {
 	var self = this;
 
 	if (self.flushing) {
@@ -6034,7 +6095,7 @@ Chunker.prototype.read = function(index, callback) {
 	return self;
 };
 
-Chunker.prototype.clear = function() {
+CHP.clear = function() {
 	var files = [];
 	for (var i = 0; i < this.index; i++)
 		files.push(this.filename + i + '.chunker');
@@ -6042,7 +6103,7 @@ Chunker.prototype.clear = function() {
 	return this;
 };
 
-Chunker.prototype.destroy = function() {
+CHP.destroy = function() {
 	this.clear();
 	this.indexer = 0;
 	this.flushing = 0;
@@ -6079,13 +6140,14 @@ function Callback(count, callback) {
 	this.pending = count;
 	this.$callback = callback;
 }
+const CP = Callback.prototype;
 
-Callback.prototype.done = function(callback) {
+CP.done = function(callback) {
 	this.$callback = callback;
 	return this;
 };
 
-Callback.prototype.next = function() {
+CP.next = function() {
 	var self = this;
 	self.pending--;
 	if (!self.pending && self.$callback) {
@@ -6100,6 +6162,57 @@ global.Callback = Callback;
 exports.Callback = function(count, callback) {
 	return new Callback(count, callback);
 };
+
+function Reader() {}
+const RP = Reader.prototype;
+
+RP.done = function() {
+	var self = this;
+	self.reader.done();
+	return self;
+};
+
+RP.reset = function() {
+	var self = this;
+	self.reader.reset();
+	return self;
+};
+
+RP.push = function(data) {
+	if (data == null)
+		this.reader.done();
+	else
+		this.reader.compare(data instanceof Array ? data : [data]);
+	return this;
+};
+
+RP.find = function() {
+	var self = this;
+	var builder = new framework_nosql.DatabaseBuilder();
+
+	if (self.reader)
+		self.reader.add(builder);
+	else
+		self.reader = new framework_nosql.NoSQLReader(builder);
+
+	return builder;
+};
+
+RP.count = function() {
+	var builder = this.find();
+	builder.$options.readertype = 1;
+	return builder;
+};
+
+RP.scalar = function(type, field) {
+	return this.find().scalar(type, field);
+};
+
+exports.reader = function() {
+	return new Reader();
+};
+
+const BUFEMPTYJSON = exports.createBuffer('{}');
 
 global.WAIT = exports.wait;
 !global.F && require('./index');

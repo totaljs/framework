@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkBuilders
- * @version 3.0.0
+ * @version 3.1.0
  */
 
 'use strict';
@@ -31,11 +31,12 @@ const DEFAULT_SCHEMA = 'default';
 const SKIP = { $$schema: true, $$async: true, $$repository: true, $$controller: true, $$workflow: true };
 const REGEXP_CLEAN_EMAIL = /\s/g;
 const REGEXP_CLEAN_PHONE = /\s|\.|-|\(|\)/g;
-const REGEXP_NEWOPERATION = /^(async\s)?function(\s)?([a-zA-Z$][a-zA-Z0-9$]+)?(\s)?\([a-zA-Z0-9$]+\)|^function anonymous\(\$/;
+const REGEXP_NEWOPERATION = /^(async\s)?function(\s)?\([a-zA-Z$\s]+\)|^function anonymous\(\$|^\([a-zA-Z$\s]+\)/;
 const hasOwnProperty = Object.prototype.hasOwnProperty;
 const Qs = require('querystring');
 
 var schemas = {};
+var schemasall = {};
 var operations = {};
 var transforms = { pagination: {}, error: {}, restbuilder: {} };
 
@@ -51,6 +52,60 @@ function SchemaOptions(error, model, options, callback, controller) {
 	this.callback = this.next = callback;
 	this.controller = controller;
 }
+
+function TaskBuilder($) {
+	var t = this;
+	t.value = t.model = {};
+	t.tasks = {};
+	if ($ instanceof SchemaOptions || $ instanceof OperationOptions) {
+		t.error = $.error;
+		t.controller = $.controller;
+	} else {
+		if ($ instanceof Controller)
+			t.controller = $;
+		else if ($ instanceof ErrorBuilder)
+			t.error = $;
+	}
+}
+
+TaskBuilder.prototype = {
+
+	get user() {
+		return this.controller ? this.controller.user : null;
+	},
+
+	get session() {
+		return this.controller ? this.controller.session : null;
+	},
+
+	get language() {
+		return (this.controller ? this.controller.language : '') || '';
+	},
+
+	get ip() {
+		return this.controller ? this.controller.ip : null;
+	},
+
+	get id() {
+		return this.controller ? this.controller.id : null;
+	},
+
+	get params() {
+		return this.controller ? this.controller.params : null;
+	},
+
+	get files() {
+		return this.controller ? this.controller.files : null;
+	},
+
+	get body() {
+		return this.controller ? this.controller.body : null;
+	},
+
+	get query() {
+		return this.controller ? this.controller.query : null;
+	}
+};
 
 SchemaOptions.prototype = {
 
@@ -89,6 +144,16 @@ SchemaOptions.prototype = {
 	get query() {
 		return this.controller ? this.controller.query : null;
 	}
+};
+
+SchemaOptions.prototype.cancel = function() {
+	var self = this;
+	self.callback = self.next = null;
+	self.error = null;
+	self.controller = null;
+	self.model = null;
+	self.options = null;
+	return self;
 };
 
 SchemaOptions.prototype.clean = function() {
@@ -227,9 +292,10 @@ SchemaBuilder.prototype.remove = function(name) {
 		var schema = this.collection[name];
 		schema && schema.destroy();
 		schema = null;
+		delete schemasall[name.toLowerCase()];
 		delete this.collection[name];
 	} else {
-		delete schemas[this.name];
+		exports.remove(this.name);
 		this.collection = null;
 	}
 };
@@ -642,6 +708,11 @@ SchemaBuilderEntity.prototype.$parse = function(name, value, required, custom) {
 			result.type = 6;
 			return result;
 		}
+
+		if (value instanceof SchemaBuilderEntity)
+			result.type = 7;
+		else
+			result.type = 10;
 
 		return result;
 	}
@@ -1156,6 +1227,10 @@ SchemaBuilderEntity.prototype.execute = function(TYPE, model, options, callback,
 			controller = model.$$controller;
 
 		var builder = new ErrorBuilder();
+		var $now;
+
+		if (CONF.logger)
+			$now = Date.now();
 
 		self.resourceName && builder.setResource(self.resourceName);
 		self.resourcePrefix && builder.setPrefix(self.resourcePrefix);
@@ -1163,10 +1238,12 @@ SchemaBuilderEntity.prototype.execute = function(TYPE, model, options, callback,
 		if (!isGenerator(self, $type, self[TYPE])) {
 			if (self[TYPE].$newversion)
 				self[TYPE](new SchemaOptions(builder, model, options, function(res) {
+					CONF.logger && F.ilogger(self.getLoggerName($type), controller, $now);
 					self.$process(arguments, model, $type, undefined, builder, res, callback, controller);
 				}, controller));
 			else
 				self[TYPE](builder, model, options, function(res) {
+					CONF.logger && F.ilogger(self.getLoggerName($type), controller, $now);
 					self.$process(arguments, model, $type, undefined, builder, res, callback, controller);
 				}, controller, skip !== true);
 			return self;
@@ -1184,6 +1261,9 @@ SchemaBuilderEntity.prototype.execute = function(TYPE, model, options, callback,
 		};
 
 		var onCallback = function(res) {
+
+			CONF.logger && F.ilogger(self.getLoggerName($type, name), controller, $now);
+
 			if (callback.success)
 				return;
 
@@ -1231,6 +1311,7 @@ SchemaBuilderEntity.prototype.get = SchemaBuilderEntity.prototype.read = functio
 
 	var self = this;
 	var builder = new ErrorBuilder();
+	var $now;
 
 	self.resourceName && builder.setResource(self.resourceName);
 	self.resourcePrefix && builder.setPrefix(self.resourcePrefix);
@@ -1238,16 +1319,21 @@ SchemaBuilderEntity.prototype.get = SchemaBuilderEntity.prototype.read = functio
 	if (controller instanceof SchemaOptions)
 		controller = controller.controller;
 
+	if (CONF.logger)
+		$now = Date.now();
+
 	var output = self.default();
 	var $type = 'get';
 
 	if (!isGenerator(self, $type, self.onGet)) {
 		if (self.onGet.$newversion)
 			self.onGet(new SchemaOptions(builder, output, options, function(res) {
+				CONF.logger && F.ilogger(self.getLoggerName($type, 'get'), controller, $now);
 				self.$process(arguments, output, $type, undefined, builder, res, callback, controller);
 			}, controller));
 		else
 			self.onGet(builder, output, options, function(res) {
+				CONF.logger && F.ilogger(self.getLoggerName($type, 'get'), controller, $now);
 				self.$process(arguments, output, $type, undefined, builder, res, callback, controller);
 			}, controller);
 		return self;
@@ -1265,6 +1351,9 @@ SchemaBuilderEntity.prototype.get = SchemaBuilderEntity.prototype.read = functio
 	};
 
 	var onCallback = function(res) {
+
+		CONF.logger && F.ilogger(self.getLoggerName($type, 'get'), controller, $now);
+
 		if (callback.success)
 			return;
 
@@ -1304,6 +1393,7 @@ SchemaBuilderEntity.prototype.remove = function(options, callback, controller) {
 	var self = this;
 	var builder = new ErrorBuilder();
 	var $type = 'remove';
+	var $now;
 
 	if (!self.onRemove)
 		return callback(new Error('Operation "{0}/{1}" not found'.format(self.name, $type)));
@@ -1311,16 +1401,21 @@ SchemaBuilderEntity.prototype.remove = function(options, callback, controller) {
 	if (controller instanceof SchemaOptions)
 		controller = controller.controller;
 
+	if (CONF.logger)
+		$now = Date.now();
+
 	self.resourceName && builder.setResource(self.resourceName);
 	self.resourcePrefix && builder.setPrefix(self.resourcePrefix);
 
 	if (!isGenerator(self, $type, self.onRemove)) {
 		if (self.onRemove.$newversion)
 			self.onRemove(new SchemaOptions(builder, undefined, options, function(res) {
+				CONF.logger && F.ilogger(self.getLoggerName($type, name), controller, $now);
 				self.$process(arguments, undefined, $type, undefined, builder, res, callback, controller);
 			}, controller));
 		else
 			self.onRemove(builder, options, function(res) {
+				CONF.logger && F.ilogger(self.getLoggerName($type, name), controller, $now);
 				self.$process(arguments, undefined, $type, undefined, builder, res, callback, controller);
 			}, controller);
 		return self;
@@ -1338,6 +1433,8 @@ SchemaBuilderEntity.prototype.remove = function(options, callback, controller) {
 	};
 
 	var onCallback = function(res) {
+
+		CONF.logger && F.ilogger(self.getLoggerName($type, name), controller, $now);
 
 		if (callback.success)
 			return;
@@ -1381,17 +1478,23 @@ SchemaBuilderEntity.prototype.query = function(options, callback, controller) {
 	var self = this;
 	var builder = new ErrorBuilder();
 	var $type = 'query';
+	var $now;
 
 	self.resourceName && builder.setResource(self.resourceName);
 	self.resourcePrefix && builder.setPrefix(self.resourcePrefix);
 
+	if (CONF.logger)
+		$now = Date.now();
+
 	if (!isGenerator(self, $type, self.onQuery)) {
 		if (self.onQuery.$newversion)
 			self.onQuery(new SchemaOptions(builder, undefined, options, function(res) {
+				CONF.logger && F.ilogger(self.getLoggerName($type), controller, $now);
 				self.$process(arguments, undefined, $type, undefined, builder, res, callback, controller);
 			}, controller));
 		else
 			self.onQuery(builder, options, function(res) {
+				CONF.logger && F.ilogger(self.getLoggerName($type), controller, $now);
 				self.$process(arguments, undefined, $type, undefined, builder, res, callback, controller);
 			}, controller);
 		return self;
@@ -1409,6 +1512,8 @@ SchemaBuilderEntity.prototype.query = function(options, callback, controller) {
 	};
 
 	var onCallback = function(res) {
+
+		CONF.logger && F.ilogger(self.getLoggerName($type), controller, $now);
 
 		if (callback.success)
 			return;
@@ -1616,6 +1721,7 @@ SchemaBuilderEntity.prototype.make = function(model, filter, callback, argument,
 	}
 
 	var builder = this.validate(output, undefined, undefined, undefined, filter);
+
 	if (builder.hasError()) {
 		this.onError && this.onError(builder, model, 'make');
 		callback && callback(builder, null, argument);
@@ -1880,6 +1986,13 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 						item[property] = null;
 
 					break;
+
+				case 10:
+					// custom object type
+					item[property] = type.raw(val == null ? '' : val.toString());
+					if (item[property] === undefined)
+						item[property] = null;
+					break;
 			}
 			continue;
 		}
@@ -2140,13 +2253,17 @@ SchemaBuilderEntity.prototype.hook = function(name, model, options, callback, sk
 
 	var $type = 'hook';
 
-	if (skip === true) {
-		var builder = new ErrorBuilder();
+	if (skip === true || model instanceof SchemaInstance) {
 
+		var builder = new ErrorBuilder();
 		self.resourceName && builder.setResource(self.resourceName);
 		self.resourcePrefix && builder.setPrefix(self.resourcePrefix);
 
 		var output = [];
+		var $now;
+
+		if (CONF.logger)
+			$now = Date.now();
 
 		async_wait(hook, function(item, next) {
 			if (item.fn.$newversion)
@@ -2160,6 +2277,7 @@ SchemaBuilderEntity.prototype.hook = function(name, model, options, callback, sk
 					next();
 				}, controller, skip !== true);
 		}, function() {
+			CONF.logger && F.ilogger(self.getLoggerName($type, name), controller, $now);
 			self.$process_hook(model, $type, name, builder, output, callback);
 		}, 0);
 
@@ -2175,19 +2293,25 @@ SchemaBuilderEntity.prototype.hook = function(name, model, options, callback, sk
 
 		var builder = new ErrorBuilder();
 		var output = [];
+		var $now;
 
 		self.resourceName && builder.setResource(self.resourceName);
 		self.resourcePrefix && builder.setPrefix(self.resourcePrefix);
+
+		if (CONF.logger)
+			$now = Date.now();
 
 		async_wait(hook, function(item, next, index) {
 			if (!isGenerator(self, 'hook.' + name + '.' + index, item.fn)) {
 				if (item.fn.$newversion) {
 					item.fn.call(self, new SchemaOptions(builder, model, options, function(res) {
+						CONF.logger && F.ilogger(self.getLoggerName($type, name), controller, $now);
 						output.push(res === undefined ? model : res);
 						next();
 					}, controller));
 				} else {
 					item.fn.call(self, builder, model, options, function(res) {
+						CONF.logger && F.ilogger(self.getLoggerName($type, name), controller, $now);
 						output.push(res === undefined ? model : res);
 						next();
 					}, controller, skip !== true);
@@ -2204,6 +2328,7 @@ SchemaBuilderEntity.prototype.hook = function(name, model, options, callback, sk
 					builder.push(err);
 					next();
 				}, new SchemaOptions(builder, model, options, function(res) {
+					CONF.logger && F.ilogger(self.getLoggerName($type, name), controller, $now);
 					output.push(res == undefined ? model : res);
 					next();
 				}, controller));
@@ -2214,6 +2339,7 @@ SchemaBuilderEntity.prototype.hook = function(name, model, options, callback, sk
 					builder.push(err);
 					next();
 				}, builder, model, options, function(res) {
+					CONF.logger && F.ilogger(self.getLoggerName($type, name), controller, $now);
 					output.push(res == undefined ? model : res);
 					next();
 				}, controller, skip !== true);
@@ -2262,11 +2388,15 @@ SchemaBuilderEntity.prototype.$execute = function(type, name, model, options, ca
 
 	var ref = self[type + 's'];
 	var item = ref ? ref[name] : undefined;
+	var $now;
 
 	if (!item) {
 		callback(new ErrorBuilder().push('', type.capitalize() + ' "{0}" not found.'.format(name)));
 		return self;
 	}
+
+	if (CONF.logger)
+		$now = Date.now();
 
 	if (controller instanceof SchemaOptions)
 		controller = controller.controller;
@@ -2274,16 +2404,18 @@ SchemaBuilderEntity.prototype.$execute = function(type, name, model, options, ca
 	if (model && !controller && model.$$controller)
 		controller = model.$$controller;
 
-	if (skip === true) {
+	if (skip === true || model instanceof SchemaInstance) {
 		var builder = new ErrorBuilder();
 		self.resourceName && builder.setResource(self.resourceName);
 		self.resourcePrefix && builder.setPrefix(self.resourcePrefix);
 		if (item.$newversion)
 			item.call(self, new SchemaOptions(builder, model, options, function(res) {
+				CONF.logger && F.ilogger(self.getLoggerName(type, name), controller, $now);
 				self.$process(arguments, model, type, name, builder, res, callback, controller);
 			}, controller));
 		else
 			item.call(self, builder, model, options, function(res) {
+				CONF.logger && F.ilogger(self.getLoggerName(type, name), controller, $now);
 				self.$process(arguments, model, type, name, builder, res, callback, controller);
 			}, controller, skip !== true);
 		return self;
@@ -2307,10 +2439,12 @@ SchemaBuilderEntity.prototype.$execute = function(type, name, model, options, ca
 		if (!isGenerator(self, type + '.' + name, item)) {
 			if (item.$newversion)
 				item.call(self, new SchemaOptions(builder, model, options, function(res) {
+					CONF.logger && F.ilogger(self.getLoggerName(type, name), controller, $now);
 					self.$process(arguments, model, type, name, builder, res, callback, controller);
 				}, controller));
 			else
 				item.call(self, builder, model, options, function(res) {
+					CONF.logger && F.ilogger(self.getLoggerName(type, name), controller, $now);
 					self.$process(arguments, model, type, name, builder, res, callback, controller);
 				}, controller);
 			return;
@@ -2328,6 +2462,8 @@ SchemaBuilderEntity.prototype.$execute = function(type, name, model, options, ca
 		};
 
 		var onCallback = function(res) {
+
+			CONF.logger && F.ilogger(self.getLoggerName(type, name), controller, $now);
 
 			if (callback.success)
 				return;
@@ -2351,6 +2487,10 @@ SchemaBuilderEntity.prototype.$execute = function(type, name, model, options, ca
 	});
 
 	return self;
+};
+
+SchemaBuilderEntity.prototype.getLoggerName = function(type, name) {
+	return this.name + '.' + type + (name ? ('(\'' + name + '\')') : '()');
 };
 
 /**
@@ -2405,6 +2545,7 @@ SchemaBuilderEntity.prototype.operation = function(name, model, options, callbac
 
 	var builder = new ErrorBuilder();
 	var $type = 'operation';
+	var $now;
 
 	self.resourceName && builder.setResource(self.resourceName);
 	self.resourcePrefix && builder.setPrefix(self.resourcePrefix);
@@ -2415,13 +2556,18 @@ SchemaBuilderEntity.prototype.operation = function(name, model, options, callbac
 	if (model && !controller && model.$$controller)
 		controller = model.$$controller;
 
+	if (CONF.logger)
+		$now = Date.now();
+
 	if (!isGenerator(self, 'operation.' + name, operation)) {
 		if (operation.$newversion) {
 			operation.call(self, new SchemaOptions(builder, model, options, function(res) {
+				CONF.logger && F.ilogger(self.getLoggerName($type, name), controller, $now);
 				self.$process(arguments, model, $type, name, builder, res, callback, controller);
 			}, controller));
 		} else
 			operation.call(self, builder, model, options, function(res) {
+				CONF.logger && F.ilogger(self.getLoggerName($type, name), controller, $now);
 				self.$process(arguments, model, $type, name, builder, res, callback, controller);
 			}, controller, skip !== true);
 		return self;
@@ -2439,6 +2585,8 @@ SchemaBuilderEntity.prototype.operation = function(name, model, options, callbac
 	};
 
 	var onCallback = function(res) {
+
+		CONF.logger && F.ilogger(self.getLoggerName($type, name), controller, $now);
 
 		if (callback.success)
 			return;
@@ -2514,7 +2662,10 @@ function clone(obj) {
 					o[i] = obj[i];
 				continue;
 			}
-			o[i] = clone(obj[i]);
+			if (obj[i] instanceof SchemaInstance)
+				o[i] = obj[i].$clean();
+			else
+				o[i] = clone(obj[i]);
 		}
 
 		return o;
@@ -2529,8 +2680,13 @@ function clone(obj) {
 
 		var val = obj[m];
 
-		if (val instanceof SchemaInstance) {
+		if (val instanceof Array) {
 			o[m] = clone(val);
+			continue;
+		}
+
+		if (val instanceof SchemaInstance) {
+			o[m] = val.$clean();
 			continue;
 		}
 
@@ -2541,7 +2697,12 @@ function clone(obj) {
 			continue;
 		}
 
-		o[m] = clone(obj[m]);
+		// Because here can be a problem with MongoDB.ObjectID
+		// I assume plain/simple model
+		if (val && val.constructor === Object)
+			o[m] = clone(obj[m]);
+		else
+			o[m] = val;
 	}
 
 	return o;
@@ -3007,19 +3168,22 @@ SchemaInstance.prototype.$constant = function(name) {
 function ErrorBuilder(onResource) {
 
 	this.items = [];
-	this.transformName = transforms['error_default'];
+	this.transformName = transforms.error_default;
 	this.onResource = onResource;
-	this.resourceName = F.config['default-errorbuilder-resource-name'];
-	this.resourcePrefix = F.config['default-errorbuilder-resource-prefix'] || '';
+	this.resourceName = CONF.default_errorbuilder_resource_name;
+	this.resourcePrefix = CONF.default_errorbuilder_resource_prefix || '';
 	this.isResourceCustom = false;
 	this.count = 0;
 	this.replacer = [];
 	this.isPrepared = false;
 	this.contentType = 'application/json';
-	this.status = F.config['default-errorbuilder-status'] || 200;
+	this.status = CONF.default_errorbuilder_status || 200;
 
 	// Hidden: when the .push() contains a classic Error instance
 	// this.unexpected;
+
+	// A default path for .push()
+	// this.path;
 
 	!onResource && this._resource();
 }
@@ -3062,7 +3226,7 @@ global.EACHSCHEMA = exports.eachschema = function(group, fn) {
 	}
 };
 
-exports.getschema = function(group, name, fn, timeout) {
+global.$$$ = global.GETSCHEMA = exports.getschema = function(group, name, fn, timeout) {
 
 	if (!name || typeof(name) === 'function') {
 		fn = name;
@@ -3082,6 +3246,10 @@ exports.getschema = function(group, name, fn, timeout) {
 	return g ? g.get(name) : undefined;
 };
 
+exports.findschema = function(groupname) {
+	return schemasall[groupname.toLowerCase()];
+};
+
 exports.newschema = function(group, name) {
 
 	if (!group)
@@ -3091,7 +3259,11 @@ exports.newschema = function(group, name) {
 		schemas[group] = new SchemaBuilder(group);
 
 	var o = schemas[group].create(name);
+	var key = group + '/' + name;
+
 	o.owner = F.$owner();
+	schemasall[key.toLowerCase()] = o;
+
 	return o;
 };
 
@@ -3102,10 +3274,23 @@ exports.newschema = function(group, name) {
  */
 exports.remove = function(group, name) {
 	if (name) {
+
 		var g = schemas[group || DEFAULT_SCHEMA];
 		g && g.remove(name);
-	} else
+		var key = ((group || DEFAULT_SCHEMA) + '/' + name).toLowerCase();
+		delete schemasall[key];
+
+	} else {
+
 		delete schemas[group];
+
+		var lower = group.toLowerCase();
+
+		Object.keys(schemasall).forEach(function(key) {
+			if (key.substring(0, group.length) === lower)
+				delete schemasall[key];
+		});
+	}
 };
 
 global.EACHOPERATION = function(fn) {
@@ -3365,6 +3550,9 @@ ErrorBuilder.prototype.push = function(name, error, path, index, prefix) {
 		this.status = path;
 		path = undefined;
 	}
+
+	if (this.path && !path)
+		path = this.path;
 
 	if (!error && typeof(name) === 'string') {
 		var m = name.length;
@@ -4510,13 +4698,13 @@ RESTBuilder.prototype.exec = function(callback) {
 				return callback(err, EMPTYOBJECT, output);
 
 			self.$schema.make(self.maketransform(output.value, output), function(err, model) {
-				!err && key && F.cache.add(key, output, self.$cache_expire);
+				!err && key && output.status === 200 && F.cache.add(key, output, self.$cache_expire);
 				callback(err, err ? EMPTYOBJECT : model, output);
 				output.cache = true;
 			});
 
 		} else {
-			!err && key && F.cache.add(key, output, self.$cache_expire);
+			!err && key && output.status === 200 && F.cache.add(key, output, self.$cache_expire);
 			callback(err, self.maketransform(output.value, output), output);
 			output.cache = true;
 		}
@@ -4564,7 +4752,11 @@ function $decodeURIComponent(value) {
 	}
 }
 
-global.NEWOPERATION = function(name, fn) {
+global.NEWOPERATION = function(name, fn, repeat, stop, binderror) {
+
+	// @repeat {Number} How many times will be the operation repeated after error?
+	// @stop {Boolean} Stop when the error is thrown
+	// @binderror {Boolean} Binds error when chaining of operations
 
 	// Remove operation
 	if (fn == null) {
@@ -4575,8 +4767,16 @@ global.NEWOPERATION = function(name, fn) {
 	operations[name] = fn;
 	operations[name].$owner = F.$owner();
 	operations[name].$newversion = REGEXP_NEWOPERATION.test(fn.toString());
+	operations[name].$repeat = repeat;
+	operations[name].$stop = stop !== false;
+	operations[name].$binderror = binderror === true;
+
 	return this;
 };
+
+function getLoggerNameOperation(name) {
+	return 'OPERATION(\'' + name + '\')';
+}
 
 global.OPERATION = function(name, value, callback, param, controller) {
 
@@ -4587,33 +4787,48 @@ global.OPERATION = function(name, value, callback, param, controller) {
 		value = EMPTYOBJECT;
 	}
 
+	if (param instanceof Controller) {
+		controller = param;
+		param = undefined;
+	}
+
 	var fn = operations[name];
 	var error = new ErrorBuilder();
+	var $now;
+
+	if (CONF.logger)
+		$now = Date.now();
 
 	if (fn) {
 		if (fn.$newversion) {
 			var self = new OperationOptions(error, value, param, controller);
-			if (callback && callback !== NOOP) {
-				self.callback = function(value) {
-					if (arguments.length > 1) {
-						if (value instanceof Error || (value instanceof ErrorBuilder && value.hasError())) {
-							self.error.push(value);
-							value = EMPTYOBJECT;
-						} else
-							value = arguments[1];
-					} else if (value instanceof Error || (value instanceof ErrorBuilder && value.hasError())) {
+			self.$repeat = fn.$repeat;
+			self.callback = function(value) {
+				CONF.logger && F.ilogger(getLoggerNameOperation(name), controller, $now);
+				if (arguments.length > 1) {
+					if (value instanceof Error || (value instanceof ErrorBuilder && value.hasError())) {
 						self.error.push(value);
 						value = EMPTYOBJECT;
-					}
+					} else
+						value = arguments[1];
+				} else if (value instanceof Error || (value instanceof ErrorBuilder && value.hasError())) {
+					self.error.push(value);
+					value = EMPTYOBJECT;
+				}
 
-					callback(self.error.hasError() ? self.error : null, value, self.options);
-					return self;
-				};
-			} else
-				self.callback = NOOP;
+				if (self.error.items.length && self.$repeat) {
+					self.error.clear();
+					self.$repeat--;
+					fn(self);
+				} else
+					callback && callback(self.error.hasError() ? self.error : null, value, self.options);
+
+				return self;
+			};
 			fn(self);
 		} else
 			fn(error, value, function(value) {
+				CONF.logger && F.ilogger(getLoggerNameOperation(name), controller, $now);
 				if (callback) {
 					if (value instanceof Error) {
 						error.push(value);
@@ -4626,6 +4841,116 @@ global.OPERATION = function(name, value, callback, param, controller) {
 		error.push('Operation "{0}" not found.'.format(name));
 		callback && callback(error, EMPTYOBJECT, param);
 	}
+};
+
+global.RUN = function(name, value, callback, param, controller, result) {
+
+	if (typeof(value) === 'function') {
+		result = controller;
+		controller = param;
+		param = callback;
+		callback = value;
+		value = EMPTYOBJECT;
+	}
+
+	if (param instanceof global.Controller || (param && param.isWebSocket)) {
+		result = controller;
+		controller = param;
+		param = EMPTYOBJECT;
+	} else if (param instanceof OperationOptions) {
+		result = controller;
+		controller = param.controller;
+	}
+
+	if (!result) {
+		if (typeof(param) === 'string') {
+			result = param;
+			param = EMPTYOBJECT;
+		} else if (typeof(controller) === 'string') {
+			result = controller;
+			controller = null;
+		}
+	}
+
+	if (typeof(name) === 'string')
+		name = name.split(',').trim();
+
+	var error = new ErrorBuilder();
+	var opt = new OperationOptions(error, value, param, controller);
+
+	opt.meta = {};
+	opt.meta.items = name;
+	opt.response = {};
+	opt.errors = error;
+
+	opt.callback = function(value) {
+
+		CONF.logger && F.ilogger(getLoggerNameOperation(opt.name), controller, opt.duration);
+
+		if (arguments.length > 1) {
+			if (value instanceof Error || (value instanceof ErrorBuilder && value.hasError())) {
+				opt.error.push(value);
+				value = EMPTYOBJECT;
+			} else
+				value = arguments[1];
+		} else if (value instanceof Error || (value instanceof ErrorBuilder && value.hasError())) {
+			opt.error.push(value);
+			value = EMPTYOBJECT;
+		}
+
+		if (opt.error.items.length && opt.$repeat > 0) {
+			opt.error.clear();
+			opt.$repeat--;
+			opt.repeated++;
+			setImmediate(opt => opt.$current(opt), opt);
+		} else {
+			if (opt.error.items.length) {
+				error.push(opt.error);
+				if (opt.$current.$binderror)
+					value = opt.error.output(false);
+			}
+
+			if (opt.error.items.length && opt.$current.$stop) {
+				name = null;
+				opt.next = null;
+				callback(error, opt.response, opt);
+			} else {
+
+				if (result && (result === opt.meta.current || result === opt.name))
+					opt.output = value;
+
+				opt.response[opt.name] = value;
+				opt.meta.prev = opt.meta.current;
+				opt.$next();
+			}
+		}
+	};
+
+	name.wait(function(key, next, index) {
+
+		var fn = operations[key];
+		if (!fn) {
+			// What now?
+			// F.error('Operation "{0}" not found'.format(key), 'RUN()');
+			return next();
+		}
+
+		opt.repeated = 0;
+		opt.error = new ErrorBuilder();
+		opt.error.path = 'operation: ' + key;
+		opt.meta.index = index;
+		opt.name = opt.meta.current = key;
+		opt.$repeat = fn.$repeat;
+		opt.$current = fn;
+		opt.$next = next;
+		opt.meta.next = name[index];
+
+		if (CONF.logger)
+			opt.duration = Date.now();
+
+		fn(opt);
+
+	}, () => callback(error.items.length ? error : null, result ? opt.output : opt.response, opt));
 };
 
 function OperationOptions(error, value, options, controller) {
@@ -4679,6 +5004,20 @@ OperationOptions.prototype = {
 	get query() {
 		return this.controller ? this.controller.query : null;
 	}
+};
+
+SchemaOptions.prototype.tasks = OperationOptions.prototype.tasks = function() {
+	return new TaskBuilder(this);
+};
+
+OperationOptions.prototype.cancel = function() {
+	var self = this;
+	self.callback = null;
+	self.error = null;
+	self.controller = null;
+	self.options = null;
+	self.model = self.value = null;
+	return self;
 };
 
 OperationOptions.prototype.DB = function() {
@@ -4920,6 +5259,7 @@ global.Pagination = Pagination;
 global.Page = Page;
 global.UrlBuilder = global.URLBuilder = UrlBuilder;
 global.SchemaBuilder = SchemaBuilder;
+global.TaskBuilder = TaskBuilder;
 
 // Uninstall owners
 exports.uninstall = function(owner) {
@@ -4937,11 +5277,67 @@ exports.uninstall = function(owner) {
 	});
 };
 
-exports.restart = function() {
-	schemas = {};
-	operations = {};
-	Object.keys(transforms).forEach(function(key) {
-		if (key.indexOf('_') === -1)
-			transforms[key] = {};
-	});
+TaskBuilder.prototype.invalid = function(error) {
+	var self = this;
+	if (!self.$done) {
+		!self.error && (self.error = new ErrorBuilder());
+		self.error.push(self.current, error);
+		self.done();
+	}
+	return self;
+};
+
+TaskBuilder.prototype.push = function(name, fn) {
+	var self = this;
+	self.tasks[name] = fn;
+	return self;
+};
+
+TaskBuilder.prototype.next = function() {
+	var self = this;
+	if (!self.$done) {
+		self.current && self.controller && CONF.logger && F.ilogger((self.name || 'tasks') + '.' + self.current, self.controller, self.$now);
+		self.prev = self.current;
+		for (var i = 0; i < arguments.length; i++) {
+			var task = self.tasks[self.current = arguments[i]];
+			if (task == null)
+				continue;
+			else {
+				task.call(self, self);
+				return self;
+			}
+		}
+		self.done();
+	}
+	return self;
+};
+
+TaskBuilder.prototype.done = function(data) {
+	var self = this;
+	self.$callback && self.$callback(self.error && self.error.is ? self.error : null, data || self.value);
+	self.$done = true;
+	return self;
+};
+
+TaskBuilder.prototype.success = function(data) {
+	return this.done(SUCCESS(true, data));
+};
+
+TaskBuilder.prototype.callback = function(fn) {
+	var self = this;
+	self.$callback = fn;
+	return self;
+};
+
+TaskBuilder.prototype.exec = function(name, callback) {
+	var self = this;
+
+	if (callback)
+		self.$callback = callback;
+
+	if (CONF.logger)
+		self.$now = Date.now();
+
+	self.next(name);
+	return self;
 };

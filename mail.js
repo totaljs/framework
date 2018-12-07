@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkMail
- * @version 3.0.0
+ * @version 3.1.0
  */
 
 'use strict';
@@ -36,6 +36,8 @@ const REG_STATE = /\d+/;
 const REG_WINLINE = /\r\n/g;
 const REG_NEWLINE = /\n/g;
 const REG_AUTH = /(AUTH LOGIN|AUTH PLAIN)/i;
+const REG_TLS = /TLS/;
+const REG_STARTTLS = /STARTTLS/;
 const EMPTYARRAY = [];
 
 var INDEXSENDER = 0;
@@ -326,13 +328,13 @@ Message.prototype.attachmentInline = Message.prototype.attachmentinline = functi
 };
 
 Message.prototype.send2 = function(callback) {
-	var opt = F.temporary['mail-settings'];
+	var opt =  F.temporary.mail_settings;
 	if (!opt) {
-		var config = F.config['mail-smtp-options'];
+		var config = CONF.mail_smtp_options;
 		config && (opt = config);
-		F.temporary['mail-settings'] = opt || {};
+		F.temporary.mail_settings = opt || {};
 	}
-	mailer.send(F.config['mail-smtp'], opt, this, callback);
+	mailer.send(CONF.mail_smtp, opt, this, callback);
 	return this;
 };
 
@@ -507,10 +509,10 @@ Mailer.prototype.try = function(smtp, options, callback) {
 
 Mailer.prototype.send2 = function(messages, callback) {
 
-	var opt = F.temporary['mail-settings'];
+	var opt = F.temporary.mail_settings;
 
 	if (!opt) {
-		var config = F.config['mail-smtp-options'];
+		var config = CONF.mail_smtp_options;
 		if (config) {
 			if (typeof(config) === 'object')
 				opt = config;
@@ -521,10 +523,10 @@ Mailer.prototype.send2 = function(messages, callback) {
 		if (!opt)
 			opt = {};
 
-		F.temporary['mail-settings'] = opt;
+		F.temporary.mail_settings = opt;
 	}
 
-	return this.send(F.config['mail-smtp'], opt, messages, callback);
+	return this.send(CONF.mail_smtp, opt, messages, callback);
 };
 
 Mailer.prototype.send = function(smtp, options, messages, callback) {
@@ -573,10 +575,11 @@ Mailer.prototype.send = function(smtp, options, messages, callback) {
 	if (!smtp)  {
 		var err = new Error('No SMTP server configuration. Mail message won\'t be sent.');
 		callback && callback(err);
-		F.error(err, 'mail-smtp');
+		F.error(err, 'mail_smtp');
 		return self;
 	}
 
+	obj.smtpoptions = options;
 	obj.socket.$host = smtp;
 	obj.host = smtp.substring(smtp.lastIndexOf('.', smtp.lastIndexOf('.') - 1) + 1);
 	obj.socket.on('error', function(err) {
@@ -811,19 +814,27 @@ Mailer.prototype.$send = function(obj, options, autosend) {
 		switch (code) {
 			case 220:
 
-				if (obj.isTLS) {
+				if (obj.isTLS || REG_TLS.test(line)) {
 					mailer.switchToTLS(obj, options);
-					return;
+				} else {
+					obj.secured = REG_ESMTP.test(line);
+					command = obj.isTLS || (options.user && options.password) || obj.secured ? 'EHLO' : 'HELO';
+					mailer.$writeline(obj, command + ' ' + host);
 				}
 
-				command = obj.isTLS || (options.user && options.password) || REG_ESMTP.test(line) ? 'EHLO' : 'HELO';
-				mailer.$writeline(obj, command + ' ' + host);
-				break;
+				return;
 
 			case 250: // OPERATION
 			case 251: // FORWARD
 			case 235: // VERIFY
 			case 999: // Total.js again
+
+				if (obj.secured && !obj.isTLS && !obj.logged && obj.smtpoptions.user && obj.smtpoptions.password) {
+					// maybe TLS
+					obj.isTLS = true;
+					mailer.$writeline(obj, 'STARTTLS');
+					return;
+				}
 
 				mailer.$writeline(obj, buffer.shift());
 
@@ -857,6 +868,7 @@ Mailer.prototype.$send = function(obj, options, autosend) {
 
 				var value = auth.shift();
 				if (value) {
+					obj.logged = true;
 					mailer.$writeline(obj, value);
 				} else {
 					var err = new Error('Forbidden.');
@@ -878,6 +890,12 @@ Mailer.prototype.$send = function(obj, options, autosend) {
 
 				if (code < 400)
 					return;
+
+				if (!obj.isTLS && code === 530 && REG_STARTTLS.test(line)) {
+					obj.isTLS = true;
+					mailer.$writeline(obj, 'STARTTLS');
+					return;
+				}
 
 				var err = new Error(line);
 

@@ -21,7 +21,7 @@
 
 /**
  * @module WebSocketClient
- * @version 3.0.0
+ * @version 3.1.0
  */
 
 if (!global.framework_utils)
@@ -69,6 +69,7 @@ WebSocketClient.prototype.connect = function(url, protocol, origin) {
 	options.path = url.path;
 	options.query = url.query;
 	options.headers = {};
+	options.headers['User-Agent'] = 'Total.js/v' + F.version_header;
 	options.headers['Sec-WebSocket-Version'] = '13';
 	options.headers['Sec-WebSocket-Key'] = key;
 	options.headers['Sec-Websocket-Extensions'] = (self.options.compress ? 'permessage-deflate, ' : '') + 'client_max_window_bits';
@@ -157,6 +158,8 @@ function websocket_close() {
 	ws.closed = true;
 	ws.$onclose();
 	ws.options.reconnect && setTimeout(function(ws) {
+		ws.isClosed = false;
+		ws._isClosed = false;
 		ws.reconnect++;
 		ws.connect(ws.url, ws.protocol, ws.origin);
 	}, ws.options.reconnect, ws);

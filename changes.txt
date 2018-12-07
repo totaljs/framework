@@ -1,3 +1,89 @@
+======= 3.1.0
+
+- added: CSS variables support default values `border-radius: $radius || 10px`
+- added: NoSQL storage `.find(beg, end, [threads])` + `.count(beg, end, [threads])` + '.scalar(beg, end, type, field, [threads])' with multiple thread support
+- added: `U.reader()`
+- added: `bundles` supports merging files between bundle and project, project file must start with e.g. `--name.js`
+- added: `.bundlesignore` support with similiar functionality like `.gitignore`
+- added: support for `SameSite` cookie attribute
+- added: `RUN()` for executing multiple Total.js operations
+- added: a new global alias `CONF` (it's a reference to config) for `F.config`
+- added: a new global alias `FUNC` (it's a reference to functions) for `F.functions`
+- added: `DatabaseBuilder.arg(key, value)` for adding an dynamic argument
+- added: NOSQL/TABLE modify supports `!field` as boolean toggle
+- added: NOSQL/TABLE modify supports a new type `$age: 'js_code'` with some JS code
+- added: NOSQL/TABLE update supports a new type `'js_code'` with some JS code
+- added: a new config item `default-restbuilder-timeout : 10000`
+- added: a new config item `default-cors : https://www.totaljs.com, https://www.componentator.com` which allows originators for `CORS()` method
+- added: a new config item `default-request-maxkeys : 33` for restricting query max. keys
+- added: a new config item `logger : false` which enables logging for Middleware, Schemas and Operations
+- added: a new config item `bundling : shallow` which enables shallow bundling (if `bundle.json` exists then the bundles won't be extracted)
+- added: `SchemaOptions` and `OperationOptions` supports `$.cancel()` method
+- added: `CACHE(name, [value], [expire], [persistent])` alias for `F.cache.get2()` and `F.cache.set()` or `F.cache.set2()`
+- added: encryption of config values
+- added: `F.refresh()` for refreshing of internal cache
+- added: `DatabaseBuilder.each(fn)` for browsing of evaluated records
+- added: Bundles can be downloaded from URL addresses
+- added: `ONCE()` alias to `F.once()`
+- added: `image.define(value)` performs `convert -define 'value'`
+- added: Total.js JS files (+ packages) tarted with `.` (dot) or ended with `-bk` won't be processed
+- added: A new builder called `TaskBuilder` for creating custom tasks in Schemas or Operations
+- added: `WebSocket.send2(message, [comparer(client, message)], [replacer])` a new method for better sending frames
+- addde: `PATH` as a global alias for `F.path`
+
+- updated: `debug` mode creates a `start_name_script.pid` instead of `debug.pid`
+- updated: `NEWOPERATION()` supports `repeat`, `stop` and `binderror` arguments (more in docs)
+- updated: routing, now it supports operations in the form `ROUTE('..  * --> @save_operation @load_operation (response)')`
+- updated: `ROUTE()` supports multiple HTTP method declaration `ROUTE('GET,POST,PUT /something/', action)`
+- updated: `ROUTE()` supports dynamic schemas
+- updated: `REQUEST()` can return binary data if the content-type is not `text/*` or `application/*`
+- updated: NoSQL joins support array values
+- updated: `ROUTING(id:|search, [flags])` method
+- updated: `F.path.mkdir(path, [cache])` can cache a current satte (default: false)
+- updated: `controller.all()` can return `Array` of all WebSocketClient
+- updated: startup info by adding user name
+- updated: `LOCALIZE()` now `url` arg can be a function which replaces `F.onLocale`
+
+- fixed: a critical bug with storing uploaded files via `httpfile.fs()` or `httpfile.nosql()`
+- fixed: a critical bug with JavaScript minificator
+- fixed: a critical bug with NoSQL counter and freezing app
+- fixed: a critical bug with rendering of multiple async components
+- fixed: a critical bug with GZIP compression (sometimes appeared in Safari)
+- fixed: `nosql.update()` and `nosql.modify()` methods if the first argument is a function
+- fixed: `F.wait()` in the test mode
+- fixed: `LOCALIZE()` for nested directories
+- fixed: sending of error handling when WebSocketClient is starting (for example: `unauthorized`)
+- fixed: `versions` and `auto` feature with enabled `F.wait()`
+- fixed: `versions` and `auto` feature with direct link to file
+- fixed: `LOAD('release')` a release mode
+- fixed: `SchemaInstance.$clean()` for nested schemas
+- fixed: extracting `bundles` (added `/flow/` and `/dashboard/`)
+- fixed: subdomain routing for `localhost`
+- fixed: service for database cleaner
+- fixed: rendering group of components
+- fixed: RESTBuilder - JSON request without param sends an empty object
+- fixed: `$MAKE()` with `callback`
+- fixed: `String.slug()` for UTF - Chinese/Japan/Arabic/etc. chars
+- fixed: async rendering of `components`
+- fixed: RESTBuilder cache works only if the response status is `200`
+- fixed: compressing CSS with `\t` tabs
+- fixed: `controller.autoclear()`
+- fixed: `controller.proxy()`
+- fixed: `repeat` mode in `SCHEDULE()`
+- fixed: `--inspect` argument for Workers by Tema Smirnov
+- fixed: TLS in SMTP mail sender
+- fixed: applying of versions
+- fixed: unit-tests reads only `javascript` files
+- fixed: `controller.invalid()` a problem with ErrorBuilder as a argument
+
+- removed: `F.config.debug`
+- removed: `controller.isDebug`
+
+- improved: NoSQL reader
+- improved: `UID()` -> now it changes a random hash each minute
+- improved: CORS
+- improved: rendering of components
+
 ======= 3.0.0
 
 - added: (IMPORTANT) bundles

@@ -48,23 +48,31 @@ exports.on = function(name, callback) {
 	return F;
 };
 
-exports.emit = function(name, data) {
-	if (Cluster.isMaster) {
-		CLUSTER_EMIT.name = name;
-		CLUSTER_EMIT.data = data;
+exports.emit = function(name, a, b, c, d, e) {
+
+	CLUSTER_EMIT.name = name;
+	CLUSTER_EMIT.a = a;
+	CLUSTER_EMIT.b = b;
+	CLUSTER_EMIT.c = c;
+	CLUSTER_EMIT.d = d;
+	CLUSTER_EMIT.e = e;
+
+	if (Cluster.isMaster)
 		message(CLUSTER_EMIT);
-	} else if (F.isCluster) {
-		CLUSTER_EMIT.name = name;
-		CLUSTER_EMIT.data = data;
+	else if (F.isCluster)
 		process.send(CLUSTER_EMIT);
-	}
+
 	return F;
 };
 
-exports.master = function(name, data) {
+exports.master = function(name, a, b, c, d, e) {
 	if (F.isCluster) {
 		CLUSTER_MASTER.name = name;
-		CLUSTER_MASTER.data = data;
+		CLUSTER_MASTER.a = a;
+		CLUSTER_MASTER.b = b;
+		CLUSTER_MASTER.c = c;
+		CLUSTER_MASTER.d = d;
+		CLUSTER_MASTER.e = e;
 		process.send(CLUSTER_MASTER);
 	}
 	return F;
@@ -233,7 +241,7 @@ function message(m) {
 	if (m.TYPE === 'master') {
 		if (MASTER && MASTER[m.name]) {
 			for (var i = 0, length = MASTER[m.name].length; i < length; i++)
-				MASTER[m.name][i](m.data);
+				MASTER[m.name][i](m.a, m.b, m.c, m.d, m.e);
 		}
 	} else {
 		if (m.target === 'master') {

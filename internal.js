@@ -55,17 +55,15 @@ const REG_BLOCK_BEG = /@\{block.*?\}/i;
 const REG_BLOCK_END = /@\{end\}/i;
 const REG_SKIP_1 = /\('|"/;
 const REG_SKIP_2 = /,(\s)?\w+/;
-const REG_HEAD = /<\/head>/i;
-const REG_COMPONENTS = /@{(\s)?(component|components)(\s)?\(/i;
 const REG_COMPONENTS_GROUP = /('|")[a-z0-9]+('|")/i;
 const HTTPVERBS = { 'get': true, 'post': true, 'options': true, 'put': true, 'delete': true, 'patch': true, 'upload': true, 'head': true, 'trace': true, 'propfind': true };
-const RENDERNOW = ['self.$import(', 'self.route', 'self.$js(', 'self.$css(', 'self.$favicon(', 'self.$script(', '$STRING(self.resource(', '$STRING(RESOURCE(', 'self.translate(', 'language', 'self.sitemap_url(', 'self.sitemap_name(', '$STRING(CONFIG(', '$STRING(config.', '$STRING(config[', '$STRING(config('];
+const RENDERNOW = ['self.$import(', 'self.route', 'self.$js(', 'self.$css(', 'self.$favicon(', 'self.$script(', '$STRING(self.resource(', '$STRING(RESOURCE(', 'self.translate(', 'language', 'self.sitemap_url(', 'self.sitemap_name(', '$STRING(CONFIG(', '$STRING(config.', '$STRING(config[', '$STRING(CONF.', '$STRING(CONF[', '$STRING(config('];
 const REG_NOTRANSLATE = /@\{notranslate\}/gi;
 const REG_NOCOMPRESS = /@\{nocompress\s\w+}/gi;
 const REG_TAGREMOVE = /[^>](\r)\n\s{1,}$/;
 const REG_HELPERS = /helpers\.[a-z0-9A-Z_$]+\(.*?\)+/g;
 const REG_SITEMAP = /\s+(sitemap_navigation\(|sitemap\()+/g;
-const REG_CSS_0 = /\s{2,}/g;
+const REG_CSS_0 = /\s{2,}|\t/g;
 const REG_CSS_1 = /\n/g;
 const REG_CSS_2 = /\s?\{\s{1,}/g;
 const REG_CSS_3 = /\s?\}\s{1,}/g;
@@ -76,11 +74,11 @@ const REG_CSS_7 = /\s\}/g;
 const REG_CSS_8 = /\s\{/g;
 const REG_CSS_9 = /;\}/g;
 const REG_CSS_10 = /\$[a-z0-9-_]+:.*?;/gi;
-const REG_CSS_11 = /\$[a-z0-9-_]+/gi;
+const REG_CSS_11 = /\$.*?(;|\})/gi;
 const REG_CSS_12 = /(margin|padding):.*?(;|})/g;
 const AUTOVENDOR = ['filter', 'appearance', 'column-count', 'column-gap', 'column-rule', 'display', 'transform', 'transform-style', 'transform-origin', 'transition', 'user-select', 'animation', 'perspective', 'animation-name', 'animation-duration', 'animation-timing-function', 'animation-delay', 'animation-iteration-count', 'animation-direction', 'animation-play-state', 'opacity', 'background', 'background-image', 'font-smoothing', 'text-size-adjust', 'backface-visibility', 'box-sizing', 'overflow-scrolling'];
 const WRITESTREAM = { flags: 'w' };
-const ALLOWEDMARKUP = { G: 1, M: 1, R: 1, repository: 1, model: 1, config: 1, global: 1, resource: 1, RESOURCE: 1, CONFIG: 1, author: 1, root: 1, functions: 1, NOW: 1, F: 1 };
+const ALLOWEDMARKUP = { G: 1, M: 1, R: 1, repository: 1, model: 1, CONF: 1, config: 1, global: 1, resource: 1, RESOURCE: 1, CONFIG: 1, author: 1, root: 1, functions: 1, NOW: 1, F: 1 };
 
 var INDEXFILE = 0;
 
@@ -173,7 +171,6 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory) {
 		}
 
 		header = parse_multipart_header(header);
-
 		tmp.$step = 1;
 		tmp.$is = header[1] !== null;
 		tmp.name = header[0];
@@ -773,7 +770,7 @@ HFP.isAudio = function() {
 
 HFP.image = function(im) {
 	if (im === undefined)
-		im = F.config['default-image-converter'] === 'im';
+		im = CONF.default_image_converter === 'im';
 	return framework_image.init(this.path, im, this.width, this.height);
 };
 
@@ -1204,7 +1201,7 @@ function minify_javascript(data) {
 			}
 		}
 
-		if (c === '+' || c === '-' && next === ' ') {
+		if ((c === '+' || c === '-') && next === ' ') {
 			if (data[index + 1] === c) {
 				index += 2;
 				output.push(c);
@@ -1415,11 +1412,14 @@ MultipartParser.prototype.write = function(buffer) {
 	for (i = 0; i < len; i++) {
 		c = buffer[i];
 		switch (state) {
+
 			case S.PARSER_UNINITIALIZED:
 				return i;
+
 			case S.START:
 				index = 0;
 				state = S.START_BOUNDARY;
+
 			case S.START_BOUNDARY:
 				if (index == boundary.length - 2) {
 					if (c === HYPHEN)
@@ -1447,10 +1447,12 @@ MultipartParser.prototype.write = function(buffer) {
 				if (c === boundary[index + 2])
 					index++;
 				break;
+
 			case S.HEADER_FIELD_START:
 				state = S.HEADER_FIELD;
 				mark('headerField');
 				index = 0;
+
 			case S.HEADER_FIELD:
 				if (c === CR) {
 					clear('headerField');
@@ -1474,12 +1476,15 @@ MultipartParser.prototype.write = function(buffer) {
 				cl = lower(c);
 				if (cl < A || cl > Z)
 					return i;
+
 				break;
+
 			case S.HEADER_VALUE_START:
 				if (c === SPACE)
 					break;
 				mark('headerValue');
 				state = S.HEADER_VALUE;
+
 			case S.HEADER_VALUE:
 				if (c === CR) {
 					dataCallback('headerValue', true);
@@ -1487,23 +1492,26 @@ MultipartParser.prototype.write = function(buffer) {
 					state = S.HEADER_VALUE_ALMOST_DONE;
 				}
 				break;
+
 			case S.HEADER_VALUE_ALMOST_DONE:
 				if (c !== LF)
 					return i;
 				state = S.HEADER_FIELD_START;
 				break;
+
 			case S.HEADERS_ALMOST_DONE:
 				if (c !== LF)
 					return i;
 				callback('headersEnd');
 				state = S.PART_DATA_START;
 				break;
+
 			case S.PART_DATA_START:
 				state = S.PART_DATA;
 				mark('partData');
+
 			case S.PART_DATA:
 				prevIndex = index;
-
 				if (!index) {
 					// boyer-moore derrived algorithm to safely skip non-boundary data
 					i += boundaryEnd;
@@ -1568,8 +1576,10 @@ MultipartParser.prototype.write = function(buffer) {
 					i--;
 				}
 				break;
+
 			case S.END:
 				break;
+
 			default:
 				return i;
 		}
@@ -1724,39 +1734,6 @@ function view_parse(content, minify, filename, controller) {
 	var index = 0;
 	var isCookie = false;
 
-	if (!controller.$hasComponents)
-		controller.$hasComponents = REG_COMPONENTS.test(content) && REG_HEAD.test(content);
-
-	if (controller.$hasComponents) {
-
-		index = content.indexOf('@{import(');
-
-		var add = true;
-		while (index !== -1) {
-			var str = content.substring(index, content.indexOf(')', index));
-			if (str.indexOf('components') !== -1) {
-				add = false;
-				break;
-			} else
-				index = content.indexOf('@{import(', index + str.length);
-		}
-
-		if (add && controller.$hasComponents) {
-			if (controller.$hasComponents instanceof Array) {
-				content = content.replace(REG_HEAD, function(text) {
-					var str = '';
-					for (var i = 0; i < controller.$hasComponents.length; i++) {
-						var group = F.components.groups[controller.$hasComponents[i]];
-						if (group)
-							str += group.links;
-					}
-					return str + text;
-				});
-			} else
-				content = content.replace(REG_HEAD, text => F.components.links + text);
-		}
-	}
-
 	function escaper(value) {
 
 		var is = REG_TAGREMOVE.test(value);
@@ -1804,6 +1781,7 @@ function view_parse(content, minify, filename, controller) {
 	var isCOMPILATION = false;
 	var builderTMP = '';
 	var sectionName = '';
+	var components = {};
 	var text;
 
 	while (command) {
@@ -1847,7 +1825,7 @@ function view_parse(content, minify, filename, controller) {
 
 		if (cmd[0] === '\'' || cmd[0] === '"') {
 			if (cmd[1] === '%') {
-				var t = F.config[cmd.substring(2, cmd.length - 1)];
+				var t = CONF[cmd.substring(2, cmd.length - 1)];
 				if (t != null)
 					builder += '+' + DELIMITER + t + DELIMITER;
 			} else
@@ -1928,7 +1906,7 @@ function view_parse(content, minify, filename, controller) {
 			builder += '}$output+=$EMPTY';
 		} else {
 
-			tmp = view_prepare(command.command, newCommand, functionsName, controller, filename);
+			tmp = view_prepare(command.command, newCommand, functionsName, controller, components);
 			var can = false;
 
 			// Inline rendering is supported only in release mode
@@ -1938,16 +1916,13 @@ function view_parse(content, minify, filename, controller) {
 						if (!a) {
 							var isMeta = tmp.indexOf('\'meta\'') !== -1;
 							var isHead = tmp.indexOf('\'head\'') !== -1;
-							var isComponent = tmp.indexOf('\'components\'') !== -1;
-							tmp = tmp.replace(/'(meta|head|components)',/g, '').replace(/(,,|,\)|\s{1,})/g, '');
-							if (isMeta || isHead || isComponent) {
+							tmp = tmp.replace(/'(meta|head)',/g, '').replace(/(,,|,\)|\s{1,})/g, '');
+							if (isMeta || isHead) {
 								var tmpimp = '';
 								if (isMeta)
 									tmpimp += (isMeta ? '\'meta\'' : '');
 								if (isHead)
 									tmpimp += (tmpimp ? ',' : '') + (isHead ? '\'head\'' : '');
-								if (isComponent)
-									tmpimp += (tmpimp ? ',' : '') + (isComponent ? '\'components\'' : '');
 								builder += '+self.$import(' + tmpimp + ')';
 							}
 						}
@@ -1959,7 +1934,7 @@ function view_parse(content, minify, filename, controller) {
 
 			if (can && !counter) {
 				try {
-					var r = (new Function('self', 'config', 'return ' + tmp))(controller, F.config).replace(REG_7, '\\\\').replace(REG_8, '\\\'');
+					var r = (new Function('self', 'config', 'return ' + tmp))(controller, CONF).replace(REG_7, '\\\\').replace(REG_8, '\\\'');
 					if (r) {
 						txtindex = $VIEWCACHE.indexOf(r);
 						if (txtindex === -1) {
@@ -2000,9 +1975,11 @@ function view_parse(content, minify, filename, controller) {
 	if (RELEASE)
 		builder = builder.replace(/(\+\$EMPTY\+)/g, '+').replace(/(\$output=\$EMPTY\+)/g, '$output=').replace(/(\$output\+=\$EMPTY\+)/g, '$output+=').replace(/(\}\$output\+=\$EMPTY)/g, '}').replace(/(\{\$output\+=\$EMPTY;)/g, '{').replace(/(\+\$EMPTY\+)/g, '+').replace(/(>'\+'<)/g, '><').replace(/'\+'/g, '');
 
-	var fn = '(function(self,repository,model,session,query,body,url,global,helpers,user,config,functions,index,output,files,mobile,settings){var get=query;var post=body;var G=F.global;var R=this.repository;var M=model;var theme=this.themeName;var language=this.language;var sitemap=this.repository.$sitemap;' + (isCookie ? 'var cookie=function(name){return self.req.cookie(name)};' : '') + (functions.length ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})';
+	var fn = ('(function(self,repository,model,session,query,body,url,global,helpers,user,config,functions,index,output,files,mobile,settings){var G=F.global;var R=this.repository;var M=model;var theme=this.themeName;var language=this.language;var sitemap=this.repository.$sitemap;' + (isCookie ? 'var cookie=function(name){return self.req.cookie(name)};' : '') + (functions.length ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})');
+
 	try {
 		fn = eval(fn);
+		fn.components = Object.keys(components);
 	} catch (e) {
 		throw new Error(filename + ': ' + e.message.toString());
 	}
@@ -2022,7 +1999,7 @@ function view_parse_plus(builder) {
 	return c !== '!' && c !== '?' && c !== '+' && c !== '.' && c !== ':';
 }
 
-function view_prepare(command, dynamicCommand, functions, controller) {
+function view_prepare(command, dynamicCommand, functions, controller, components) {
 
 	var a = command.indexOf('.');
 	var b = command.indexOf('(');
@@ -2079,7 +2056,7 @@ function view_prepare(command, dynamicCommand, functions, controller) {
 			return '$STRING(' + command + ')';
 
 		case 'root':
-			var r = F.config['default-root'];
+			var r = CONF.default_root;
 			return '\'' + (r ? r.substring(0, r.length - 1) : r) + '\'';
 
 		case 'M':
@@ -2087,13 +2064,12 @@ function view_prepare(command, dynamicCommand, functions, controller) {
 		case 'G':
 		case 'model':
 		case 'repository':
-		case 'get':
-		case 'post':
 		case 'query':
 		case 'global':
 		case 'session':
 		case 'user':
 		case 'config':
+		case 'CONF':
 		case 'controller':
 			return view_is_assign(command) ? ('self.$set(' + command + ')') : ('$STRING(' + command + ').encode()');
 
@@ -2133,6 +2109,7 @@ function view_prepare(command, dynamicCommand, functions, controller) {
 		case '!session':
 		case '!user':
 		case '!config':
+		case '!CONF':
 		case '!functions':
 		case '!model':
 		case '!CONFIG':
@@ -2213,15 +2190,10 @@ function view_prepare(command, dynamicCommand, functions, controller) {
 
 		case 'components':
 
-			if (!controller.$hasComponents)
-				controller.$hasComponents = [];
-
-			if (controller.$hasComponents instanceof Array) {
-				var group = command.match(REG_COMPONENTS_GROUP);
-				if (group && group.length) {
-					group = group[0].toString().replace(/'|"'/g, '');
-					controller.$hasComponents.indexOf(group) === -1 && controller.$hasComponents.push(group);
-				}
+			var group = command.match(REG_COMPONENTS_GROUP);
+			if (group && group.length) {
+				group = group[0].toString().replace(/'|"'/g, '');
+				components[group] = 1;
 			}
 
 			return 'self.$' + command + (command.indexOf('(') === -1 ? '()' : '');
@@ -2231,7 +2203,6 @@ function view_prepare(command, dynamicCommand, functions, controller) {
 
 		case 'component':
 
-			controller.$hasComponents = true;
 			tmp = command.indexOf('\'');
 
 			var is = false;
@@ -2248,11 +2219,15 @@ function view_prepare(command, dynamicCommand, functions, controller) {
 					is = true;
 			}
 
+			if (tmp)
+				components[tmp.group] = 1;
 
 			if (is) {
+
 				var settings = command.substring(11 + name.length + 2, command.length - 1).trim();
 				if (settings === ')')
 					settings = '';
+
 				$VIEWASYNC++;
 				return '\'@{-{0}-}\'+(function(index){!controller.$viewasync&&(controller.$viewasync=[]);controller.$viewasync.push({replace:\'@{-{0}-}\',name:\'{1}\',settings:{2}});return $EMPTY})({0})'.format($VIEWASYNC, name, settings || 'null');
 			}
@@ -2540,7 +2515,7 @@ function compressView(html, minify) {
  */
 function compressJS(html, index, filename, nomarkup) {
 
-	if (!F.config['allow-compile-script'])
+	if (!CONF.allow_compile_script)
 		return html;
 
 	var strFrom = '<script type="text/javascript">';
@@ -2571,7 +2546,7 @@ function compressJS(html, index, filename, nomarkup) {
 
 function compressCSS(html, index, filename, nomarkup) {
 
-	if (!F.config['allow-compile-style'])
+	if (!CONF.allow_compile_style)
 		return html;
 
 	var strFrom = '<style type="text/css">';
@@ -2613,8 +2588,23 @@ function variablesCSS(content) {
 	});
 
 	content = content.replace(REG_CSS_11, function(text) {
-		var variable = variables[text];
-		return variable ? variable : text;
+
+		var index = text.indexOf('||');
+		var variable = '';
+		var last = text[text.length - 1];
+		var len = text.length;
+
+		if (last === ';' || last === '}')
+			len = len - 1;
+		else
+			last = '';
+
+		if (index !== -1)
+			variable = variables[text.substring(0, index).trim()] || text.substring(index + 2, len).trim();
+		else
+			variable = variables[text.substring(0, len).trim()];
+
+		return variable ? (variable + last) : text;
 	}).trim();
 
 	return content;
@@ -2939,7 +2929,7 @@ function compressHTML(html, minify, isChunk) {
  * @return {Object}
  */
 function viewengine_read(path, controller) {
-	var config = F.config;
+	var config = CONF;
 	var out = path[0] === '.';
 	var filename = out ? path.substring(1) : F.path.views(path);
 	var key;
@@ -2952,7 +2942,7 @@ function viewengine_read(path, controller) {
 	}
 
 	if (existsSync(filename))
-		return view_parse(view_parse_localization(modificators(Fs.readFileSync(filename).toString('utf8'), filename), controller.language), config['allow-compile-html'], filename, controller);
+		return view_parse(view_parse_localization(modificators(Fs.readFileSync(filename).toString('utf8'), filename), controller.language), config.allow_compile_html, filename, controller);
 
 	var index;
 
@@ -2963,7 +2953,7 @@ function viewengine_read(path, controller) {
 			if (index !== -1) {
 				filename = filename.substring(0, filename.lastIndexOf('/', index - 1)) + filename.substring(index);
 				if (existsSync(filename))
-					return view_parse(view_parse_localization(modificators(Fs.readFileSync(filename).toString('utf8'), filename), controller.language), config['allow-compile-html'], filename, controller);
+					return view_parse(view_parse_localization(modificators(Fs.readFileSync(filename).toString('utf8'), filename), controller.language), config.allow_compile_html, filename, controller);
 			}
 		}
 
@@ -2983,7 +2973,7 @@ function viewengine_read(path, controller) {
 	filename = F.path.views(path.substring(index + 1));
 
 	if (existsSync(filename))
-		return view_parse(view_parse_localization(modificators(Fs.readFileSync(filename).toString('utf8'), filename), controller.language), config['allow-compile-html'], filename, controller);
+		return view_parse(view_parse_localization(modificators(Fs.readFileSync(filename).toString('utf8'), filename), controller.language), config.allow_compile_html, filename, controller);
 
 	if (RELEASE)
 		F.temporary.other[key] = null;
@@ -3005,7 +2995,7 @@ function modificators(value, filename, type) {
 	return value;
 }
 
-function viewengine_load(name, filename, controller) {
+function viewengine_load(name, filename, controller, component) {
 
 	var precompiled = F.routes.views[name];
 	if (precompiled)
@@ -3021,7 +3011,7 @@ function viewengine_load(name, filename, controller) {
 
 	generator = viewengine_read(filename, controller);
 
-	if (!F.isDebug)
+	if (component || !F.isDebug)
 		F.temporary.views[key] = generator;
 
 	return generator;
@@ -3033,7 +3023,7 @@ function viewengine_dynamic(content, language, controller, cachekey) {
 	if (generator)
 		return generator;
 
-	generator = view_parse(view_parse_localization(modificators(content, ''), language), F.config['allow-compile-html'], null, controller);
+	generator = view_parse(view_parse_localization(modificators(content, ''), language), CONF.allow_compile_html, null, controller);
 
 	if (cachekey && !F.isDebug)
 		F.temporary.views[cachekey] = generator;
@@ -3066,7 +3056,7 @@ function cleanURL(url, index) {
 }
 
 exports.preparePath = function(path, remove) {
-	var root = F.config['default-root'];
+	var root = CONF.default_root;
 	if (!root)
 		return path;
 	var is = path[0] === '/';
@@ -3308,7 +3298,7 @@ function markup(body) {
 		return body;
 
 	var G = F.global;
-	var config = F.config;
+	var config = CONF;
 	var resource = F.resource;
 	var r = [];
 
@@ -3334,10 +3324,10 @@ function markup(body) {
 		if (ALLOWEDMARKUP[name]) {
 			switch (cmd) {
 				case 'author':
-					cmd = 'F.config.author';
+					cmd = 'CONF.author';
 					break;
 				case 'root':
-					cmd = 'F.config[\'default-root\']';
+					cmd = 'CONF.default_root';
 					break;
 			}
 

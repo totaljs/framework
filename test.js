@@ -168,8 +168,19 @@ global.TESTUSER = function(user, flags) {
 };
 
 exports.load = function() {
-	U.ls(F.path.tests(), function(files) {
+	var dir = F.path.tests();
+	U.ls(dir, function(files) {
 		files.waitFor(function(filename, next) {
+
+			if (F.testlist) {
+				var tn = filename.replace(dir, '').replace(/\.js$/, '');
+				if (F.testlist.indexOf(tn) === -1)
+					return next();
+			}
+
+			if (U.getExtension(filename) !== 'js')
+				return next();
+
 			T.current = { filename: filename, items: [] };
 			var m = require(filename);
 			T.current.module = m;
@@ -181,13 +192,17 @@ exports.load = function() {
 			T.current = null;
 			next();
 		}, function() {
-			T.tests.quicksort('priority');
-			F.emit('test-begin', T);
-			console.log('===================== TESTING ======================');
-			console.log('');
-			T.running = true;
-			T.start = Date.now();
-			NEXT();
+			U.wait(function() {
+				return F._length_wait === 0;
+			}, function() {
+				T.tests.quicksort('priority');
+				F.emit('test-begin', T);
+				console.log('===================== TESTING ======================');
+				console.log('');
+				T.running = true;
+				T.start = Date.now();
+				NEXT();
+			});
 		});
 	});
 };

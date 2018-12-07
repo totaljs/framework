@@ -71,10 +71,6 @@ framework.onPictureUrl = function(dimension, id, width, height, alt) {
     return dimension + '-' + id + '.jpg';
 };
 
-framework.onValidate = function(name, value) {
-    return name + value;
-};
-
 // Is read from http://www.totaljs.com/framework/include.js
 //framework.precompile('precompile.layout', 'http://www.totaljs.com/framework/_layout.html');
 //framework.precompile('precompile.homepage', 'http://www.totaljs.com/framework/homepage.html');
