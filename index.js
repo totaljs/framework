@@ -21,7 +21,7 @@
 
 /**
  * @module Framework
- * @version 3.1.0
+ * @version 3.2.0
  */
 
 'use strict';
@@ -4880,9 +4880,17 @@ F.install_make = function(key, name, obj, options, callback, skipEmit, type) {
 
 	var id = (type === 'module' ? '#' : '') + name;
 	var length = F.routes.web.length;
+
 	for (var i = 0; i < length; i++) {
 		if (F.routes.web[i].controller === routeID)
 			F.routes.web[i].controller = id;
+	}
+
+	var tmp = Object.keys(F.routes.system);
+	length = tmp.length;
+	for (var i = 0; i < length; i++) {
+		if (F.routes.system[tmp[i]].controller === routeID)
+			F.routes.system[tmp[i]].controller = id;
 	}
 
 	length = F.routes.websockets.length;
