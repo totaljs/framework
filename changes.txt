@@ -1,5 +1,10 @@
 ======= 3.2.0
 
+- added: `WORKER()` alias to `F.worker()`
+- added: `WORKER2()` alias to `F.worker2()`
+
+- updated: `F.worker2()` returns entire `stdout` buffer in the `callback(err, buffer)`
+
 - fixed: system routing
 
 ======= 3.1.0

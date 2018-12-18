@@ -252,7 +252,7 @@ HEADERS.binary['X-Powered-By'] = 'Total.js';
 HEADERS.authorization = { user: '', password: '', empty: true };
 HEADERS.fsStreamRead = { flags: 'r', mode: '0666', autoClose: true };
 HEADERS.fsStreamReadRange = { flags: 'r', mode: '0666', autoClose: true, start: 0, end: 0 };
-HEADERS.workers = { cwd: '' };
+HEADERS.workers = { cwd: '', silent: true };
 HEADERS.responseLocalize = {};
 HEADERS.responseNotModified = {};
 HEADERS.responseNotModified[HEADER_CACHE] = 'public, max-age=11111111';
@@ -645,8 +645,8 @@ function Framework() {
 	var self = this;
 
 	self.$id = null; // F.id ==> property
-	self.version = 3100;
-	self.version_header = '3.1.0';
+	self.version = 3200;
+	self.version_header = '3.2.0';
 	self.version_node = process.version.toString();
 	self.syshash = (Os.hostname() + '-' + Os.platform() + '-' + Os.arch() + '-' + Os.release() + '-' + Os.tmpdir()).md5();
 
@@ -9489,7 +9489,7 @@ F.accept = function(extension, contentType) {
  * @param {Array} args Additional arguments, optional.
  * @return {ChildProcess}
  */
-F.worker = function(name, id, timeout, args) {
+global.WORKER = F.worker = function(name, id, timeout, args) {
 
 	var fork = null;
 	var type = typeof(id);
@@ -9550,7 +9550,7 @@ F.worker = function(name, id, timeout, args) {
 	return fork;
 };
 
-F.worker2 = function(name, args, callback, timeout) {
+global.WORKER2 = F.worker2 = function(name, args, callback, timeout) {
 
 	if (typeof(args) === 'function') {
 		timeout = callback;
@@ -9569,14 +9569,22 @@ F.worker2 = function(name, args, callback, timeout) {
 	if (fork.__worker2)
 		return fork;
 
+	var output = U.createBufferSize(0);
+
 	fork.__worker2 = true;
 	fork.on('error', function(e) {
-		callback && callback(e);
+		callback && callback(e, output);
 		callback = null;
 	});
 
+	fork.stdout.on('data', function(data) {
+		CONCAT[0] = output;
+		CONCAT[1] = data;
+		output = Buffer.concat(CONCAT);
+	});
+
 	fork.on('exit', function() {
-		callback && callback();
+		callback && callback(null, output);
 		callback = null;
 	});
 
