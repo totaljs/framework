@@ -6920,6 +6920,9 @@ F.https = function(mode, options, middleware) {
 	options == null && (options = {});
 	!options.port && (options.port = +process.argv[2]);
 
+	if (options.port && isNaN(options.port))
+		options.port = 0;
+
 	if (typeof(middleware) === 'function')
 		options.middleware = middleware;
 

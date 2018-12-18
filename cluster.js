@@ -158,6 +158,17 @@ exports.http = function(count, mode, options, callback) {
 		fork();
 };
 
+exports.https = function(count, mode, options, callback) {
+	// Fork will obtain options automatically via event
+	if (Cluster.isMaster) {
+		CLUSTER_REQ.id = 'master';
+		CLUSTER_RES.id = 'master';
+		CLUSTER_EMIT.id = 'master';
+		master(count, mode, options, callback, true);
+	} else
+		fork();
+};
+
 exports.restart = function(index) {
 	if (index === undefined) {
 		for (var i = 0; i < THREADS; i++)
@@ -173,7 +184,7 @@ exports.restart = function(index) {
 	}
 };
 
-function master(count, mode, options, callback) {
+function master(count, mode, options, callback, https) {
 
 	if (count == null || count === 'auto')
 		count = require('os').cpus().length;
@@ -222,7 +233,7 @@ function master(count, mode, options, callback) {
 	};
 
 	count.async(function(i, next) {
-		exec(Math.abs(i - THREADS));
+		exec(Math.abs(i - THREADS), https);
 		can(next);
 	}, function() {
 		callback && callback(FORKS);
@@ -258,7 +269,7 @@ function mastersend(m) {
 		FORKS[i] && FORKS[i].send(m);
 }
 
-function exec(index) {
+function exec(index, https) {
 	var fork = Cluster.fork();
 	fork.$id = index.toString();
 	fork.on('message', message);
@@ -272,7 +283,7 @@ function exec(index) {
 	(function(fork) {
 		setTimeout(function() {
 			OPTIONS.options.id = fork.$id;
-			fork.send({ TYPE: 'init', bundling: !CONTINUE, id: fork.$id, mode: OPTIONS.mode, options: OPTIONS.options, threads: OPTIONS.count, index: index });
+			fork.send({ TYPE: 'init', bundling: !CONTINUE, id: fork.$id, mode: OPTIONS.mode, options: OPTIONS.options, threads: OPTIONS.count, index: index, https: https });
 		}, fork.$id * 500);
 	})(fork);
 }
@@ -290,7 +301,10 @@ function on_init(msg) {
 			CLUSTER_RES.id = msg.id;
 			THREADS = msg.threads;
 			msg.options.bundling = msg.bundling;
-			F.http(msg.mode, msg.options);
+			if (msg.https)
+				F.https(msg.mode, msg.options);
+			else
+				F.http(msg.mode, msg.options);
 			F.isCluster = true;
 			F.removeListener(msg.TYPE, on_init);
 			break;

@@ -2,6 +2,7 @@
 
 - added: `WORKER()` alias to `F.worker()`
 - added: `WORKER2()` alias to `F.worker2()`
+- added: `F.cluster.https()`
 
 - updated: `F.worker2()` returns entire `stdout` buffer in the `callback(err, buffer)`
 
