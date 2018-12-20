@@ -6993,13 +6993,13 @@ NoSQLReader.prototype.callback = function(item) {
 	}
 
 	if (item.count) {
-		if (opt.sort.name) {
+
+		if (opt.sort === null)
+			item.response.random();
+		else if (opt.sort.name) {
 			if (!builder.$inlinesort || opt.take !== item.response.length)
 				item.response.quicksort(opt.sort.name, opt.sort.asc);
-		} else if (opt.sort === null)
-			item.response.random();
-		else
-			item.response.sort(opt.sort);
+		}
 
 		if (opt.skip && opt.take)
 			item.response = item.response.splice(opt.skip, opt.take);
