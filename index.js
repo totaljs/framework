@@ -11817,7 +11817,7 @@ Controller.prototype.$isValue = function(bool, charBeg, charEnd, value) {
 	return charBeg + value + charEnd;
 };
 
-Controller.prototype.$options = function(arr, selected, name, value) {
+Controller.prototype.$options = function(arr, selected, name, value, disabled) {
 
 	var type = typeof(arr);
 	if (!arr)
@@ -11832,7 +11832,7 @@ Controller.prototype.$options = function(arr, selected, name, value) {
 		arr = Object.keys(arr);
 	}
 
-	if (!U.isArray(arr))
+	if (!(arr instanceof Array))
 		arr = [arr];
 
 	selected = selected || '';
@@ -11840,10 +11840,12 @@ Controller.prototype.$options = function(arr, selected, name, value) {
 	var options = '';
 
 	if (!isObject) {
-		if (value === undefined)
+		if (value == null)
 			value = value || name || 'value';
-		if (name === undefined)
-			name = name || 'name';
+		if (name == null)
+			name = 'name';
+		if (disabled == null)
+			disabled = 'disabled';
 	}
 
 	var isSelected = false;
@@ -11858,6 +11860,7 @@ Controller.prototype.$options = function(arr, selected, name, value) {
 		var text = '';
 		var val = '';
 		var sel = false;
+		var dis = false;
 
 		if (isObject) {
 			if (name === true) {
@@ -11883,6 +11886,13 @@ Controller.prototype.$options = function(arr, selected, name, value) {
 			if (typeof(val) === 'function')
 				val = val(i, text);
 
+			dis = o[disabled];
+
+			if (typeof(disabled) === 'function')
+				dis = disabled(i, val, text);
+			else
+				dis = dis ? true : false;
+
 		} else {
 			text = o;
 			val = o;
@@ -11893,7 +11903,7 @@ Controller.prototype.$options = function(arr, selected, name, value) {
 			isSelected = sel;
 		}
 
-		options += '<option value="' + val.toString().encode() + '"' + (sel ? ' selected="selected"' : '') + '>' + text.toString().encode() + '</option>';
+		options += '<option value="' + val.toString().encode() + '"' + (sel ? ' selected="selected"' : '') + (dis ? ' disabled="disabled"' : '') + '>' + text.toString().encode() + '</option>';
 	}
 
 	return options;
