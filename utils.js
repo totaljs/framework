@@ -607,7 +607,7 @@ global.REQUEST = exports.request = function(url, flags, data, callback, cookies,
 			data = '';
 		}
 
-		if (type === 1 && !data && (data === EMPTYOBJECT || data === '' || data === undefined) && options.post)
+		if (type === 1 && !data && (data === EMPTYOBJECT || data === '' || data === undefined))
 			data = BUFEMPTYJSON;
 	}
 
