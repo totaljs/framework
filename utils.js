@@ -597,6 +597,7 @@ global.REQUEST = exports.request = function(url, flags, data, callback, cookies,
 		method = 'GET';
 
 	if (type < 3) {
+
 		if (typeof(data) !== 'string')
 			data = type === 1 ? JSON.stringify(data) : Qs.stringify(data);
 		else if (data[0] === '?')
@@ -607,7 +608,7 @@ global.REQUEST = exports.request = function(url, flags, data, callback, cookies,
 			data = '';
 		}
 
-		if (type === 1 && !data && (data === EMPTYOBJECT || data === '' || data === undefined))
+		if (type === 1 && !data && (data === EMPTYOBJECT || data === '' || data === undefined) && options.post)
 			data = BUFEMPTYJSON;
 	}
 
