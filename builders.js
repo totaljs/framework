@@ -5312,6 +5312,20 @@ TaskBuilder.prototype.next = function() {
 	return self;
 };
 
+TaskBuilder.prototype.next2 = function(name) {
+	var self = this;
+	return function(err) {
+		if (err)
+			self.invalid(err);
+		else {
+			if (name == null)
+				self.done();
+			else
+				self.next(name);
+		}
+	};
+};
+
 TaskBuilder.prototype.done = function(data) {
 	var self = this;
 	self.$callback && self.$callback(self.error && self.error.is ? self.error : null, data || self.value);
@@ -5319,8 +5333,28 @@ TaskBuilder.prototype.done = function(data) {
 	return self;
 };
 
+TaskBuilder.prototype.done2 = function(send_value) {
+	var self = this;
+	return function(err, data) {
+		if (err)
+			self.invalid(err);
+		else
+			self.done(send_value ? data : null);
+	};
+};
+
 TaskBuilder.prototype.success = function(data) {
 	return this.done(SUCCESS(true, data));
+};
+
+TaskBuilder.prototype.success2 = function(send_value) {
+	var self = this;
+	return function(err, data) {
+		if (err)
+			self.invalid(err);
+		else
+			self.done(SUCCESS(true, send_value ? data : null));
+	};
 };
 
 TaskBuilder.prototype.callback = function(fn) {
