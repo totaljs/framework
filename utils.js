@@ -87,6 +87,7 @@ const PROXYOPTIONSHTTP = {};
 const REG_ROOT = /@\{#\}(\/)?/g;
 const REG_NOREMAP = /@\{noremap\}(\n)?/g;
 const REG_REMAP = /href=".*?"|src=".*?"/gi;
+const REG_AJAX = /('|")+(!)?(GET|POST|PUT|DELETE|PATH)\s(\(.*?\)\s)?\//g;
 const REG_URLEXT = /(https|http|wss|ws|file):\/\/|\/\/[a-z0-9]|[a-z]:/i;
 const REG_TEXTAPPLICATION = /text|application/i;
 
@@ -3024,7 +3025,7 @@ SP.ROOT = function(noremap) {
 	}).replace(REG_ROOT, $urlmaker);
 
 	if (!noremap && CONF.default_root)
-		str = str.replace(REG_REMAP, $urlremap);
+		str = str.replace(REG_REMAP, $urlremap).replace(REG_AJAX, $urlajax);
 
 	return str;
 };
@@ -3032,6 +3033,10 @@ SP.ROOT = function(noremap) {
 function $urlremap(text) {
 	var pos = text[0] === 'h' ? 6 : 5;
 	return REG_URLEXT.test(text) ? text : ((text[0] === 'h' ? 'href' : 'src') + '="' + CONF.default_root + (text[pos] === '/' ? text.substring(pos + 1) : text));
+}
+
+function $urlajax(text) {
+	return text.substring(0, text.length - 1) + CONF.default_root;
 }
 
 function $urlmaker(text) {
