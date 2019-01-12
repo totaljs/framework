@@ -7701,7 +7701,7 @@ F.$cors = function(req, res, fn, arg) {
  */
 F.$upgrade = function(req, socket, head) {
 
-	if ((req.headers.upgrade || '').toLowerCase() !== 'websocket')
+	if ((req.headers.upgrade || '').toLowerCase() !== 'websocket' || F._length_wait)
 		return;
 
 	// disables timeout
