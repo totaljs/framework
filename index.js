@@ -7270,6 +7270,9 @@ F.service = function(count) {
 		CONF.allow_debug && F.consoledebug('gc()');
 	}, 1000);
 
+	if (WORKERID > 9999999999)
+		WORKERID = 0;
+
 	// Run schedules
 	if (!F.schedules.length)
 		return F;
@@ -9484,6 +9487,10 @@ F.accept = function(extension, contentType) {
 	return F;
 };
 
+// A temporary variable for generating Worker ID
+// It's faster than Date.now()
+var WORKERID = 0;
+
 /**
  * Run worker
  * @param {String} name
@@ -9528,7 +9535,7 @@ global.WORKER = F.worker = function(name, id, timeout, args) {
 	fork = Child.fork(filename[filename.length - 3] === '.' ? filename : filename + '.js', args, HEADERS.workers);
 
 	if (!id)
-		id = name + '_' + new Date().getTime();
+		id = name + '_' + (WORKERID++);
 
 	fork.__id = id;
 	F.workers[id] = fork;
@@ -9568,7 +9575,7 @@ global.WORKER2 = F.worker2 = function(name, args, callback, timeout) {
 	if (args && !(args instanceof Array))
 		args = [args];
 
-	var fork = F.worker(name, name, timeout, args);
+	var fork = F.worker(name, 'worker' + (WORKERID++), timeout, args);
 	if (fork.__worker2)
 		return fork;
 
