@@ -11,6 +11,7 @@
 - updated: `F.worker2()` returns entire `stdout` buffer in the `callback(err, buffer)`
 - updated: `$options()` by adding `disabled` key
 - updated: `String.ROOT()` by adding a support for jComponent `AJAX()` calls
+- updated: `RESTBuilder.method(method, [data])` added `data` argument
 
 - fixed: system routing
 - fixed: NoSQL sorting, solved a strange problem
