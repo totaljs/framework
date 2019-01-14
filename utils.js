@@ -3751,7 +3751,7 @@ SP.parseFloat = function(def) {
 SP.capitalize = function(first) {
 
 	if (first)
-		return this[0].toUpperCase() + this.substring(1);
+		return (this[0] || '').toUpperCase() + this.substring(1);
 
 	var builder = '';
 	var c;
