@@ -6660,9 +6660,6 @@ global.LOAD = F.load = function(debug, types, pwd) {
 			F.cache.init();
 			EMIT('init');
 
-			if (CONF.allow_ssc_validation === false)
-				process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-
 			F.$load(types, directory, function() {
 
 				F.isLoaded = true;
@@ -6816,9 +6813,6 @@ F.initialize = function(http, debug, options) {
 		// clears static files
 		F.consoledebug('clear temporary');
 		F.clear(function() {
-
-			if (CONF.allow_ssc_validation === false)
-				process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 			F.consoledebug('clear temporary (done)');
 			F.$load(undefined, directory, function() {
@@ -9170,6 +9164,8 @@ F.$configure_configs = function(arr, rewrite) {
 		tmp = new Function('return ' + tmp)();
 		CONF.mail_smtp_options = tmp;
 	}
+
+	process.env.NODE_TLS_REJECT_UNAUTHORIZED = CONF.allow_ssc_validation === false ? '0' : '1';
 
 	if (!CONF.directory_temp)
 		CONF.directory_temp = '~' + U.path(Path.join(Os.tmpdir(), 'totaljs' + F.directory.hash()));
