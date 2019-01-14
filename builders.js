@@ -4378,9 +4378,10 @@ RESTP.xhr = function() {
 	return this;
 };
 
-RESTP.method = function(method) {
+RESTP.method = function(method, data) {
 	this.$method = method.toLowerCase();
 	this.$flags = null;
+	data && this.raw(data);
 	return this;
 };
 
