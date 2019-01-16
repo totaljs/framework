@@ -1677,6 +1677,8 @@ function localize(language, command) {
 	return output;
 }
 
+var VIEW_IF = { 'if ': 1, 'if(': 1 };
+
 function view_parse(content, minify, filename, controller) {
 
 	content = removeComments(content).ROOT();
@@ -1896,8 +1898,8 @@ function view_parse(content, minify, filename, controller) {
 				newCommand = '';
 			}
 
-		} else if (cmd.substring(0, 3) === 'if ') {
-			builder += ';if (' + view_prepare_keywords(cmd).substring(3) + '){$output+=$EMPTY';
+		} else if (VIEW_IF[cmd.substring(0, 3)]) {
+			builder += ';if (' + (cmd.substring(2, 3) === '(' ? '(' : '') + view_prepare_keywords(cmd).substring(3) + '){$output+=$EMPTY';
 		} else if (cmd7 === 'else if') {
 			builder += '} else if (' + view_prepare_keywords(cmd).substring(7) + ') {$output+=$EMPTY';
 		} else if (cmd === 'else') {
