@@ -806,7 +806,7 @@ function request_call(uri, options) {
 			for (var i = 0, length = keys.length; i < length; i++) {
 				var value = options.data[keys[i]];
 				if (value != null) {
-					req.write((options.first ? '' : NEWLINE) + '--' + options.boundary + NEWLINE + 'Content-Disposition: form-data; name="' + keys[i] + '"' + NEWLINE + NEWLINE + encodeURIComponent(value.toString()));
+					req.write((options.first ? '' : NEWLINE) + '--' + options.boundary + NEWLINE + 'Content-Disposition: form-data; name="' + keys[i] + '"' + NEWLINE + NEWLINE + value.toString());
 					if (options.first)
 						options.first = false;
 				}

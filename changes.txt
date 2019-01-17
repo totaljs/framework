@@ -18,6 +18,7 @@
 - fixed: `U.request()` with `GET` method by @khaledkhalil94 (it doesn't send JSON data if `data` is null/undefined)
 - fixed: `F.wait()` in WebSocket
 - fixed: `String.capitalize(true)`
+- fixed: `REQUEST()` uploading additional multi part form data (removed encoding)
 
 ======= 3.1.0
 

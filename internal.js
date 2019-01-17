@@ -105,10 +105,10 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory) {
 
 	var parser = new MultipartParser();
 	var size = 0;
-	var stream;
 	var maximumSize = route.length;
-	var tmp;
 	var close = 0;
+	var stream;
+	var tmp;
 	var rm;
 	var fn_close = function() {
 		close--;
