@@ -492,6 +492,7 @@ global.REQUEST = exports.request = function(url, flags, data, callback, cookies,
 	var def;
 	var proxy;
 
+
 	if (headers) {
 		headers = exports.extend({}, headers);
 		def = headers[CT];
@@ -604,7 +605,12 @@ global.REQUEST = exports.request = function(url, flags, data, callback, cookies,
 			data = data.substring(1);
 
 		if (!options.post) {
-			data.length && url.indexOf('?') === -1 && (url += '?' + data);
+			if (data.length) {
+				if (url.indexOf('?') === -1)
+					url += '?' + data;
+				else
+					url += '&' + data;
+			}
 			data = '';
 		}
 

@@ -6831,6 +6831,7 @@ F.initialize = function(http, debug, options) {
 		// clears static files
 		F.consoledebug('clear temporary');
 		F.clear(function() {
+
 			F.consoledebug('clear temporary (done)');
 			F.$load(undefined, directory, function() {
 
@@ -9182,6 +9183,8 @@ F.$configure_configs = function(arr, rewrite) {
 		CONF.mail_smtp_options = tmp;
 	}
 
+	process.env.NODE_TLS_REJECT_UNAUTHORIZED = CONF.allow_ssc_validation === false ? '0' : '1';
+
 	if (!CONF.directory_temp)
 		CONF.directory_temp = '~' + U.path(Path.join(Os.tmpdir(), 'totaljs' + F.directory.hash()));
 
@@ -9194,9 +9197,6 @@ F.$configure_configs = function(arr, rewrite) {
 	CONF.nosql_worker && framework_nosql.worker();
 	CONF.nosql_inmemory && CONF.nosql_inmemory.forEach(n => framework_nosql.inmemory(n));
 	accepts && accepts.length && accepts.forEach(accept => CONF.static_accepts[accept] = true);
-
-	if (CONF.allow_ssc_validation === false)
-		process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 	if (CONF.allow_performance)
 		http.globalAgent.maxSockets = 9999;
