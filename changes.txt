@@ -19,6 +19,7 @@
 - fixed: `F.wait()` in WebSocket
 - fixed: `String.capitalize(true)`
 - fixed: view engine conditions defined in `<script>`
+- fixed: auto-redirects in `U.download()`
 
 ======= 3.1.0
 

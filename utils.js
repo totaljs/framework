@@ -1283,7 +1283,13 @@ function download_response(res, uri, options) {
 
 		options.redirect++;
 
-		var tmp = Url.parse(res.headers['location']);
+		var loc = res.headers['location'];
+		var proto = loc.substring(0, 6);
+
+		if (proto !== 'http:/' && proto !== 'https:')
+			loc = uri.protocol + '//' + uri.hostname + loc;
+
+		var tmp = Url.parse(loc);
 		tmp.headers = uri.headers;
 		// tmp.agent = false;
 		tmp.method = uri.method;
@@ -1303,7 +1309,7 @@ function download_response(res, uri, options) {
 			return download_call(tmp, options);
 		}
 
-		exports.resolve(res.headers['location'], function(err, u) {
+		exports.resolve(loc, function(err, u) {
 			if (!err)
 				tmp.host = u.host;
 			res.removeAllListeners();
