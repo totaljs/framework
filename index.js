@@ -6795,9 +6795,27 @@ F.initialize = function(http, debug, options) {
 
 		var listen = function() {
 
-			if (options.https)
-				F.server = http.createServer(options.https, F.listener);
-			else
+			if (options.https) {
+
+				var meta = options.https;
+
+				if (typeof(meta.key) === 'string') {
+					if (meta.key.indexOf('.') === -1)
+						meta.key = U.createBuffer(meta.key, 'base64');
+					else
+						meta.key = Fs.readFileSync(meta.key);
+				}
+
+				if (typeof(meta.cert) === 'string') {
+					if (meta.cert.indexOf('.') === -1)
+						meta.cert = U.createBuffer(meta.cert, 'base64');
+					else
+						meta.cert = Fs.readFileSync(meta.cert);
+				}
+
+				F.server = http.createServer(meta, F.listener);
+
+			} else
 				F.server = http.createServer(F.listener);
 
 			CONF.allow_performance && F.server.on('connection', connection_tunning);
