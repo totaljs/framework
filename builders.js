@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkBuilders
- * @version 3.1.0
+ * @version 3.2.0
  */
 
 'use strict';
@@ -356,6 +356,14 @@ SchemaBuilderEntity.prototype.allow = function() {
 	return self;
 };
 
+SchemaBuilderEntity.prototype.before = function(name, fn) {
+	var self = this;
+	if (!self.preparation)
+		self.preparation = {};
+	self.preparation[name] = fn;
+	return self;
+};
+
 SchemaBuilderEntity.prototype.required = function(name, fn) {
 
 	var self = this;
@@ -398,6 +406,9 @@ SchemaBuilderEntity.prototype.clear = function() {
 	self.schema = {};
 	self.properties = [];
 	self.fields = [];
+
+	if (self.preparation)
+		self.preparation = null;
 
 	if (self.dependencies)
 		self.dependencies = null;
@@ -500,8 +511,15 @@ SchemaBuilderEntity.prototype.inherit = function(group, name) {
 		copy_inherit(self, 'constants', schema.constants);
 
 		schema.properties.forEach(function(item) {
-			self.properties.indexOf(item) === -1 && self.properties.push(item);
+			self.properties.indexOf(item) === -1 && schema.properties.push(item);
 		});
+
+		if (schema.preparation) {
+			self.preparation = {};
+			Object.keys(schema.preparation).forEach(function(key) {
+				self.preparation[key] = schema.preparation[key];
+			});
+		}
 
 		if (schema.onPrepare) {
 			if (!self.$onPrepare)
@@ -1751,6 +1769,9 @@ SchemaBuilderEntity.prototype.$onprepare = function(name, value, index, model) {
 
 	if (this.onPrepare)
 		val = this.onPrepare(name, val, index, model);
+
+	if (this.preparation && this.preparation[name])
+		val = this.preparation[name](val, model, index);
 
 	return val === undefined ? value : val;
 };
