@@ -28,7 +28,7 @@
 
 const REQUIRED = 'The field "@" is invalid.';
 const DEFAULT_SCHEMA = 'default';
-const SKIP = { $$schema: true, $$async: true, $$repository: true, $$controller: true, $$workflow: true };
+const SKIP = { $$schema: true, $$async: true, $$repository: true, $$controller: true, $$workflow: true, $$parent: true };
 const REGEXP_CLEAN_EMAIL = /\s/g;
 const REGEXP_CLEAN_PHONE = /\s|\.|-|\(|\)/g;
 const REGEXP_NEWOPERATION = /^(async\s)?function(\s)?\([a-zA-Z$\s]+\)|^function anonymous\(\$|^\([a-zA-Z$\s]+\)/;
@@ -2002,6 +2002,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 					entity = self.parent.get(type.raw);
 					if (entity) {
 						item[property] = entity.prepare(val, undefined);
+						item[property].$$parent = item;
 						dependencies && dependencies.push({ name: type.raw, value: self.$onprepare(property, item[property], undefined, model) });
 					} else
 						item[property] = null;
@@ -2119,6 +2120,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 					entity = self.parent.get(type.raw);
 					if (entity) {
 						tmp = entity.prepare(tmp, dependencies);
+						tmp.$$parent = item;
 						if (dependencies)
 							dependencies.push({ name: type.raw, value: self.$onprepare(property, tmp, j, model) });
 					} else
@@ -2792,6 +2794,15 @@ function async_wait(arr, onItem, onCallback, index) {
 	else
 		onCallback();
 }
+
+Object.defineProperty(SchemaInstance.prototype, '$parent', {
+	get: function() {
+		return this.$$parent;
+	},
+	set: function(value) {
+		this.$$parent = value;
+	}
+});
 
 SchemaInstance.prototype.$response = function(index) {
 	var a = this.$$async;
