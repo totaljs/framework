@@ -23,6 +23,7 @@
 - fixed: `REQUEST()` uploading of additional multipart/form-data (removed encoding)
 - fixed: view engine conditions defined in `<script>`
 - fixed: auto-redirects in `U.download()`
+- fixed: image streams resizing
 
 ======= 3.1.0
 
