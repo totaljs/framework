@@ -4347,6 +4347,12 @@ Binary.prototype.insert = function(name, buffer, custom, callback) {
 			custom = buffer;
 			buffer = null;
 		}
+
+		if (typeof(custom) === 'function') {
+			callback = custom;
+			custom = null;
+		}
+
 	} else if (typeof(custom) === 'function') {
 		callback = custom;
 		custom = null;
