@@ -90,6 +90,8 @@ const REG_REMAP = /href=".*?"|src=".*?"/gi;
 const REG_AJAX = /('|")+(!)?(GET|POST|PUT|DELETE|PATH)\s(\(.*?\)\s)?\//g;
 const REG_URLEXT = /(https|http|wss|ws|file):\/\/|\/\/[a-z0-9]|[a-z]:/i;
 const REG_TEXTAPPLICATION = /text|application/i;
+const REG_DATE = /\.|-|\/|\\|:|\s/g;
+const REG_TIME = /am|pm/i;
 
 exports.MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 exports.DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -3311,7 +3313,36 @@ function parseTerminal2(lines, fn, skip, take) {
 	}
 }
 
-SP.parseDate = function() {
+function parseDateFormat(format, val) {
+
+	format = format.split(REG_DATE);
+	var tmp = val.split(REG_DATE);
+	var dt = {};
+
+	for (var i = 0; i < format.length; i++) {
+		var type = format[i];
+		if (tmp[i])
+			dt[type[0]] = +tmp[i];
+	}
+
+	var h = dt.h || dt.H;
+
+	if (h != null) {
+		var ampm = val.match(REG_TIME);
+		if (ampm) {
+			if (ampm[0].toLowerCase() === 'pm')
+				h += 12;
+		}
+	}
+
+	return new Date(dt.y || 0, (dt.M || 1) - 1, dt.d || 0, h, dt.m || 0, dt.s || 0);
+}
+
+SP.parseDate = function(format) {
+
+	if (format)
+		return parseDateFormat(format, this);
+
 	var self = this.trim();
 	var lc = self.charCodeAt(self.length - 1);
 
