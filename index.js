@@ -617,7 +617,27 @@ function random3string() {
 
 const WEBSOCKET_COMPRESS = U.createBuffer([0x00, 0x00, 0xFF, 0xFF]);
 const WEBSOCKET_COMPRESS_OPTIONS = { windowBits: Zlib.Z_DEFAULT_WINDOWBITS };
-const UIDGENERATOR = { date: new Date().format('yyMMddHHmm'), instance: random3string(), index: 1, types: {} };
+const UIDGENERATOR = { types: {}  };
+
+function UIDGENERATOR_REFRESH() {
+
+	var year = NOW.getYear().toString();
+
+	UIDGENERATOR.date = NOW.format('yyMMddHHmm');
+	UIDGENERATOR.index = 1;
+	UIDGENERATOR.instance = random3string();
+
+	var keys;
+
+	if (UIDGENERATOR.multiple) {
+		keys = Object.keys(UIDGENERATOR.types);
+		for (var i = 0; i < keys.length; i++)
+			UIDGENERATOR.types[keys[i]] = 0;
+	}
+}
+
+UIDGENERATOR_REFRESH();
+
 const EMPTYBUFFER = U.createBufferSize(0);
 global.EMPTYBUFFER = EMPTYBUFFER;
 
@@ -7127,18 +7147,9 @@ F.reconnect = function() {
  */
 F.service = function(count) {
 
-	UIDGENERATOR.date = NOW.format('yyMMddHHmm');
-	UIDGENERATOR.index = 1;
-	UIDGENERATOR.instance = random3string();
+	UIDGENERATOR_REFRESH();
 
 	var keys;
-
-	if (UIDGENERATOR.multiple) {
-		keys = Object.keys(UIDGENERATOR.types);
-		for (var i = 0; i < keys.length; i++)
-			UIDGENERATOR.types[keys[i]] = 0;
-	}
-
 	var releasegc = false;
 
 	if (F.temporary.service.request)
