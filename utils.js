@@ -3731,6 +3731,53 @@ SP.isUID = function() {
 	return this.length < 18 ? false : F.validators.uid.test(this);
 };
 
+SP.parseUID = function() {
+	var self = this;
+
+	var y = self.substring(0, 2);
+	var M = self.substring(2, 4);
+	var d = self.substring(4, 6);
+	var H = self.substring(6, 8);
+	var m = self.substring(8, 10);
+
+	var beg = 0;
+	var end = 0;
+	var index = 10;
+
+	while (true) {
+
+		var c = self[index];
+
+		if (!c)
+			break;
+
+		if (!beg && c !== '0')
+			beg = index;
+
+		if (c.charCodeAt(0) > 96) {
+			end = index;
+			break;
+		}
+
+		index++;
+	}
+
+	var obj = {};
+	obj.date = new Date(+('20' + y), (+M) - 1, +d, +H, +m, 0);
+	obj.index = +self.substring(beg, end);
+	obj.hash = self.substring(end, end + 3);
+	obj.century = self.substring(end + 4);
+
+	if (obj.century) {
+		obj.century = 20 + (+obj.century);
+		obj.date.setYear(obj.date.getFullYear() + 100);
+	} else
+		obj.century = 21;
+
+	obj.valid = (obj.index % 2 ? 1 : 0) === (+self.substring(end + 3, end + 4));
+	return obj;
+};
+
 SP.parseInt = function(def) {
 	var str = this.trim();
 	var num = +str;
