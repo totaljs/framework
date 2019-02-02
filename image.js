@@ -223,8 +223,6 @@ Image.prototype.save = function(filename, callback, writer) {
 	if (F.isWindows)
 		command = command.replace(REGEXP_PATH, '\\');
 
-	console.log('--->', command);
-
 	var cmd = exec(command, function(err) {
 
 		// clean up
