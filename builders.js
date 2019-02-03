@@ -242,7 +242,7 @@ SchemaOptions.prototype.success = function(a, b) {
 SchemaOptions.prototype.done = function(arg) {
 	var self = this;
 	return function(err, response) {
-		if (err && !(err instanceof ErrorBuilder)) {
+		if (err) {
 			self.error.push(err);
 			self.callback();
 		} else if (arg)
@@ -5063,15 +5063,15 @@ OperationOptions.prototype.done = function(arg) {
 	var self = this;
 	return function(err, response) {
 
-		if (err && !(err instanceof ErrorBuilder)) {
+		if (err) {
 			self.error.push(err);
 			self.callback();
+		} else {
+			if (arg)
+				self.callback(SUCCESS(err == null, response));
+			else
+				self.callback(SUCCESS(err == null));
 		}
-
-		if (arg)
-			self.callback(SUCCESS(err == null, response));
-		else
-			self.callback(SUCCESS(err == null));
 	};
 };
 
