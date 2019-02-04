@@ -1048,6 +1048,10 @@ Framework.prototype = {
 var framework = new Framework();
 global.framework = global.F = module.exports = framework;
 
+F.callback_redirect = function(url) {
+	this.url = url;
+};
+
 F.dir = function(path) {
 	F.directory = path;
 	directory = path;
@@ -12527,6 +12531,10 @@ Controller.prototype.callback = function(view) {
 			}
 			return is && err.unexpected ? self.view500(err) : self.view404(err);
 		}
+
+		// Hack for schemas
+		if (data instanceof F.callback_redirect)
+			return self.redirect(data.url);
 
 		if (typeof(view) === 'string')
 			self.view(view, data);

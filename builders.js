@@ -156,6 +156,11 @@ SchemaOptions.prototype.cancel = function() {
 	return self;
 };
 
+SchemaOptions.prototype.redirect = function(url) {
+	this.callback(new F.callback_redirect(url));
+	return this;
+};
+
 SchemaOptions.prototype.clean = function() {
 	return this.model.$clean();
 };
@@ -5053,6 +5058,11 @@ OperationOptions.prototype.cancel = function() {
 	self.options = null;
 	self.model = self.value = null;
 	return self;
+};
+
+OperationOptions.prototype.redirect = function(url) {
+	this.callback(new F.callback_redirect(url));
+	return this;
 };
 
 OperationOptions.prototype.DB = function() {

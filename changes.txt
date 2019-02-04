@@ -9,6 +9,8 @@
 - added: new `RESTBuilder` aliases `.DELETE()`, `.PUT()`, `.POST()`, `.PATCH() and `.GET()`
 - added: `schema.before(key, (value, index, index) => value)` is a simple and new alternative to `schema.setPrepare()`
 - added: `SchemaInstance.$parent` returns a parent schema (if the schema is nested schema)
+- added: `SchemaOptions.redirect(url)` can perform a redirect from the schema
+- added: `OperationOptions.redirect(url)` can perform a redirect from the operation
 
 - updated: `F.worker2()` returns entire `stdout` buffer in the `callback(err, buffer)`
 - updated: `$options()` by adding `disabled` key
