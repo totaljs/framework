@@ -3335,7 +3335,7 @@ function parseDateFormat(format, val) {
 		}
 	}
 
-	return new Date(dt.y || 0, (dt.M || 1) - 1, dt.d || 0, h, dt.m || 0, dt.s || 0);
+	return new Date(dt.y || 0, (dt.M || 1) - 1, dt.d || 0, h || 0, dt.m || 0, dt.s || 0);
 }
 
 SP.parseDate = function(format) {
