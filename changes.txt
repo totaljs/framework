@@ -27,6 +27,7 @@
 - fixed: view engine conditions defined in `<script>`
 - fixed: auto-redirects in `U.download()`
 - fixed: image streams resizing
+- fixed: `@{'%config_key'}` a problem with rendering a value with `'`
 
 ======= 3.1.0
 

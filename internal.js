@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkInternal
- * @version 3.0.0
+ * @version 3.2.0
  */
 
 'use strict';
@@ -1829,7 +1829,7 @@ function view_parse(content, minify, filename, controller) {
 			if (cmd[1] === '%') {
 				var t = CONF[cmd.substring(2, cmd.length - 1)];
 				if (t != null)
-					builder += '+' + DELIMITER + t + DELIMITER;
+					builder += '+' + DELIMITER + (t.toString()).replace(/'/g, "\\'") + DELIMITER;
 			} else
 				builder += '+' + DELIMITER + (new Function('self', 'return self.$import(' + cmd[0] + '!' + cmd.substring(1) + ')'))(controller) + DELIMITER;
 		} else if (cmd7 === 'compile' && cmd.lastIndexOf(')') === -1) {
