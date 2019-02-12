@@ -11,6 +11,7 @@
 - added: `SchemaInstance.$parent` returns a parent schema (if the schema is nested schema)
 - added: `SchemaOptions.redirect(url)` can perform a redirect from the schema
 - added: `OperationOptions.redirect(url)` can perform a redirect from the operation
+- added: `.ics` extension as acceptable file for the web server
 
 - updated: `F.worker2()` returns entire `stdout` buffer in the `callback(err, buffer)`
 - updated: `$options()` by adding `disabled` key
