@@ -828,7 +828,7 @@ Mailer.prototype.$send = function(obj, options, autosend) {
 					mailer.switchToTLS(obj, options);
 				} else {
 					obj.secured = REG_ESMTP.test(line);
-					command = options.heloidentifier ? options.heloidentifier : (obj.isTLS || (options.user && options.password) || obj.secured ? 'EHLO' : 'HELO');
+					command = options.heloid ? options.heloid : (obj.isTLS || (options.user && options.password) || obj.secured ? 'EHLO' : 'HELO');
 					mailer.$writeline(obj, command + ' ' + host);
 				}
 
