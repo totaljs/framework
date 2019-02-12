@@ -18,6 +18,8 @@
 - updated: `String.ROOT()` by adding a support for jComponent `AJAX()` calls
 - updated: `RESTBuilder.method(method, [data])` added `data` argument
 - updated: `String.parseDate([format])` added `format` argument
+- updated: SMTP settings contain `heloid` as `heloidentifier` (manually can be defined `HELO` or `EHLO` command)
+- updated: SMTP hostname is computed from email if SMTP is not specified
 
 - fixed: system routing
 - fixed: NoSQL sorting, solved a strange problem

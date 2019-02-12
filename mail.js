@@ -334,6 +334,16 @@ Message.prototype.send2 = function(callback) {
 		config && (opt = config);
 		F.temporary.mail_settings = opt || {};
 	}
+
+	// Computes a hostname
+	if (!CONF.mail_smtp) {
+		var ea = (this.addressFrom.address || this.addressFrom);
+		ea = ea.substring(ea.lastIndexOf('@') + 1);
+		if (ea)
+			ea = 'smtp.' + ea;
+		CONF.mail_smtp = ea;
+	}
+
 	mailer.send(CONF.mail_smtp, opt, this, callback);
 	return this;
 };
@@ -818,7 +828,7 @@ Mailer.prototype.$send = function(obj, options, autosend) {
 					mailer.switchToTLS(obj, options);
 				} else {
 					obj.secured = REG_ESMTP.test(line);
-					command = obj.isTLS || (options.user && options.password) || obj.secured ? 'EHLO' : 'HELO';
+					command = options.heloidentifier ? options.heloidentifier : (obj.isTLS || (options.user && options.password) || obj.secured ? 'EHLO' : 'HELO');
 					mailer.$writeline(obj, command + ' ' + host);
 				}
 
