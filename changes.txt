@@ -7,7 +7,7 @@
 - added: `TaskBuilder.success2([send_value])` returns `function` with wrapped `.success()`
 - added: `TaskBuilder.next2(name)` returns `function` with wrapped `.next()`
 - added: new `RESTBuilder` aliases `.DELETE()`, `.PUT()`, `.POST()`, `.PATCH() and `.GET()`
-- added: `schema.before(key, (value, index, index) => value)` is a simple and new alternative to `schema.setPrepare()`
+- added: `schema.before(key, (value, model, index) => value)` is a simple and new alternative to `schema.setPrepare()`
 - added: `SchemaInstance.$parent` returns a parent schema (if the schema is nested schema)
 - added: `SchemaOptions.redirect(url)` can perform a redirect from the schema
 - added: `OperationOptions.redirect(url)` can perform a redirect from the operation
