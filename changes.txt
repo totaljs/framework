@@ -33,7 +33,7 @@
 - fixed: image streams resizing
 - fixed: `@{'%config_key'}` a problem with rendering a value with `'`
 
-- removed: `X-Powered-By`
+- removed: `X-Powered-By: Total.js`
 
 ======= 3.1.0
 
