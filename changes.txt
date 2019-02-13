@@ -21,6 +21,7 @@
 - updated: SMTP settings contain `heloid` as `heloidentifier` (manually can be defined `HELO` or `EHLO` command)
 - updated: SMTP hostname is computed from email if SMTP is not specified
 
+- fixed: critical bug with security + improved security
 - fixed: system routing
 - fixed: NoSQL sorting, solved a strange problem
 - fixed: `U.request()` with `GET` method by @khaledkhalil94 (it doesn't send JSON data if `data` is null/undefined)
@@ -31,6 +32,8 @@
 - fixed: auto-redirects in `U.download()`
 - fixed: image streams resizing
 - fixed: `@{'%config_key'}` a problem with rendering a value with `'`
+
+- removed: `X-Powered-By`
 
 ======= 3.1.0
 

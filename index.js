@@ -68,6 +68,7 @@ const REG_ENCODINGCLEANER = /[;\s]charset=utf-8/g;
 const REG_SKIPERROR = /epipe|invalid\sdistance/i;
 const REG_OLDCONF = /-/g;
 const REG_UTF8 = /[^\x20-\x7E]+/;
+const REG_TRAVEL = /(\/)?\.\.\//g;
 const FLAGS_INSTALL = ['get'];
 const FLAGS_DOWNLOAD = ['get', 'dnscache'];
 const QUERYPARSEROPTIONS = { maxKeys: 33 };
@@ -116,7 +117,6 @@ var SUCCESSHELPER = { success: true };
 // Cached headers for repeated usage
 HEADERS.responseCode = {};
 HEADERS.responseCode[HEADER_TYPE] = CT_TEXT;
-HEADERS.responseCode['X-Powered-By'] = 'Total.js';
 HEADERS.redirect = {};
 HEADERS.redirect[HEADER_TYPE] = CT_HTML + '; charset=utf-8';
 HEADERS.redirect[HEADER_LENGTH] = '0';
@@ -125,18 +125,15 @@ HEADERS.sse[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
 HEADERS.sse['Pragma'] = 'no-cache';
 HEADERS.sse['Expires'] = '-1';
 HEADERS.sse[HEADER_TYPE] = 'text/event-stream';
-HEADERS.sse['X-Powered-By'] = 'Total.js';
 HEADERS.file_lastmodified = {};
 HEADERS.file_lastmodified['Access-Control-Allow-Origin'] = '*';
 HEADERS.file_lastmodified[HEADER_CACHE] = 'public, max-age=11111111';
-HEADERS.file_lastmodified['X-Powered-By'] = 'Total.js';
 HEADERS.file_release_compress = {};
 HEADERS.file_release_compress[HEADER_CACHE] = 'public, max-age=11111111';
 HEADERS.file_release_compress['Vary'] = 'Accept-Encoding';
 HEADERS.file_release_compress['Access-Control-Allow-Origin'] = '*';
 HEADERS.file_release_compress['Last-Modified'] = 'Mon, 01 Jan 2001 08:00:00 GMT';
 HEADERS.file_release_compress['Content-Encoding'] = 'gzip';
-HEADERS.file_release_compress['X-Powered-By'] = 'Total.js';
 HEADERS.file_release_compress_range = {};
 HEADERS.file_release_compress_range['Accept-Ranges'] = 'bytes';
 HEADERS.file_release_compress_range[HEADER_CACHE] = 'public, max-age=11111111';
@@ -146,13 +143,11 @@ HEADERS.file_release_compress_range['Last-Modified'] = 'Mon, 01 Jan 2001 08:00:0
 HEADERS.file_release_compress_range['Content-Encoding'] = 'gzip';
 HEADERS.file_release_compress_range[HEADER_LENGTH] = '0';
 HEADERS.file_release_compress_range['Content-Range'] = '';
-HEADERS.file_release_compress_range['X-Powered-By'] = 'Total.js';
 HEADERS.file_release = {};
 HEADERS.file_release[HEADER_CACHE] = 'public, max-age=11111111';
 HEADERS.file_release['Vary'] = 'Accept-Encoding';
 HEADERS.file_release['Access-Control-Allow-Origin'] = '*';
 HEADERS.file_release['Last-Modified'] = 'Mon, 01 Jan 2001 08:00:00 GMT';
-HEADERS.file_release['X-Powered-By'] = 'Total.js';
 HEADERS.file_release_range = {};
 HEADERS.file_release_range['Accept-Ranges'] = 'bytes';
 HEADERS.file_release_range[HEADER_CACHE] = 'public, max-age=11111111';
@@ -161,7 +156,6 @@ HEADERS.file_release_range['Access-Control-Allow-Origin'] = '*';
 HEADERS.file_release_range['Last-Modified'] = 'Mon, 01 Jan 2001 08:00:00 GMT';
 HEADERS.file_release_range[HEADER_LENGTH] = '0';
 HEADERS.file_release_range['Content-Range'] = '';
-HEADERS.file_release_range['X-Powered-By'] = 'Total.js';
 HEADERS.file_debug_compress = {};
 HEADERS.file_debug_compress[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
 HEADERS.file_debug_compress['Vary'] = 'Accept-Encoding';
@@ -169,7 +163,6 @@ HEADERS.file_debug_compress['Access-Control-Allow-Origin'] = '*';
 HEADERS.file_debug_compress['Pragma'] = 'no-cache';
 HEADERS.file_debug_compress['Expires'] = '-1';
 HEADERS.file_debug_compress['Content-Encoding'] = 'gzip';
-HEADERS.file_debug_compress['X-Powered-By'] = 'Total.js';
 HEADERS.file_debug_compress_range = {};
 HEADERS.file_debug_compress_range['Accept-Ranges'] = 'bytes';
 HEADERS.file_debug_compress_range[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
@@ -180,14 +173,12 @@ HEADERS.file_debug_compress_range['Pragma'] = 'no-cache';
 HEADERS.file_debug_compress_range['Expires'] = '-1';
 HEADERS.file_debug_compress_range[HEADER_LENGTH] = '0';
 HEADERS.file_debug_compress_range['Content-Range'] = '';
-HEADERS.file_debug_compress_range['X-Powered-By'] = 'Total.js';
 HEADERS.file_debug = {};
 HEADERS.file_debug[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
 HEADERS.file_debug['Vary'] = 'Accept-Encoding';
 HEADERS.file_debug['Pragma'] = 'no-cache';
 HEADERS.file_debug['Expires'] = '-1';
 HEADERS.file_debug['Access-Control-Allow-Origin'] = '*';
-HEADERS.file_debug['X-Powered-By'] = 'Total.js';
 HEADERS.file_debug_range = {};
 HEADERS.file_debug_range['Accept-Ranges'] = 'bytes';
 HEADERS.file_debug_range[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
@@ -197,58 +188,47 @@ HEADERS.file_debug_range['Pragma'] = 'no-cache';
 HEADERS.file_debug_range['Expires'] = '-1';
 HEADERS.file_debug_range[HEADER_LENGTH] = '0';
 HEADERS.file_debug_range['Content-Range'] = '';
-HEADERS.file_debug_range['X-Powered-By'] = 'Total.js';
 HEADERS.content_mobile_release = {};
 HEADERS.content_mobile_release[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
 HEADERS.content_mobile_release['Vary'] = 'Accept-Encoding, User-Agent';
 HEADERS.content_mobile_release['Content-Encoding'] = 'gzip';
 HEADERS.content_mobile_release['Expires'] = '-1';
-HEADERS.content_mobile_release['X-Powered-By'] = 'Total.js';
 HEADERS.content_mobile = {};
 HEADERS.content_mobile[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
 HEADERS.content_mobile['Vary'] = 'Accept-Encoding, User-Agent';
 HEADERS.content_mobile['Expires'] = '-1';
-HEADERS.content_mobile['X-Powered-By'] = 'Total.js';
 HEADERS.content_compress = {};
 HEADERS.content_compress[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
 HEADERS.content_compress['Vary'] = 'Accept-Encoding';
 HEADERS.content_compress['Content-Encoding'] = 'gzip';
 HEADERS.content_compress['Expires'] = '-1';
-HEADERS.content_compress['X-Powered-By'] = 'Total.js';
 HEADERS.content = {};
 HEADERS.content[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
 HEADERS.content['Vary'] = 'Accept-Encoding';
 HEADERS.content['Expires'] = '-1';
-HEADERS.content['X-Powered-By'] = 'Total.js';
 HEADERS.stream_release_compress = {};
 HEADERS.stream_release_compress[HEADER_CACHE] = 'public, max-age=11111111';
 HEADERS.stream_release_compress['Access-Control-Allow-Origin'] = '*';
 HEADERS.stream_release_compress['Content-Encoding'] = 'gzip';
-HEADERS.stream_release_compress['X-Powered-By'] = 'Total.js';
 HEADERS.stream_release = {};
 HEADERS.stream_release[HEADER_CACHE] = 'public, max-age=11111111';
 HEADERS.stream_release['Access-Control-Allow-Origin'] = '*';
-HEADERS.stream_release['X-Powered-By'] = 'Total.js';
 HEADERS.stream_debug_compress = {};
 HEADERS.stream_debug_compress[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
 HEADERS.stream_debug_compress['Pragma'] = 'no-cache';
 HEADERS.stream_debug_compress['Expires'] = '-1';
 HEADERS.stream_debug_compress['Access-Control-Allow-Origin'] = '*';
 HEADERS.stream_debug_compress['Content-Encoding'] = 'gzip';
-HEADERS.stream_debug_compress['X-Powered-By'] = 'Total.js';
 HEADERS.stream_debug = {};
 HEADERS.stream_debug[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
 HEADERS.stream_debug['Pragma'] = 'no-cache';
 HEADERS.stream_debug['Expires'] = '-1';
 HEADERS.stream_debug['Access-Control-Allow-Origin'] = '*';
-HEADERS.stream_debug['X-Powered-By'] = 'Total.js';
 HEADERS.binary_compress = {};
 HEADERS.binary_compress[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
 HEADERS.binary_compress['Content-Encoding'] = 'gzip';
-HEADERS.binary_compress['X-Powered-By'] = 'Total.js';
 HEADERS.binary = {};
 HEADERS.binary[HEADER_CACHE] = 'public';
-HEADERS.binary['X-Powered-By'] = 'Total.js';
 HEADERS.authorization = { user: '', password: '', empty: true };
 HEADERS.fsStreamRead = { flags: 'r', mode: '0666', autoClose: true };
 HEADERS.fsStreamReadRange = { flags: 'r', mode: '0666', autoClose: true, start: 0, end: 0 };
@@ -256,15 +236,9 @@ HEADERS.workers = { cwd: '', silent: true };
 HEADERS.responseLocalize = {};
 HEADERS.responseNotModified = {};
 HEADERS.responseNotModified[HEADER_CACHE] = 'public, max-age=11111111';
-HEADERS.responseNotModified['X-Powered-By'] = 'Total.js';
 HEADERS.response503 = {};
 HEADERS.response503[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
 HEADERS.response503[HEADER_TYPE] = CT_HTML;
-HEADERS.response503['X-Powered-By'] = 'Total.js';
-HEADERS.notModifiedEtag = {};
-HEADERS.notModifiedEtag['X-Powered-By'] = 'Total.js';
-HEADERS.notModifiedLastModifiedDate = {};
-HEADERS.notModifiedLastModifiedDate['X-Powered-By'] = 'Total.js';
 
 Object.freeze(HEADERS.authorization);
 
@@ -621,8 +595,6 @@ const UIDGENERATOR = { types: {}  };
 
 function UIDGENERATOR_REFRESH() {
 
-	var year = NOW.getYear().toString();
-
 	UIDGENERATOR.date = NOW.format('yyMMddHHmm');
 	UIDGENERATOR.index = 1;
 	UIDGENERATOR.instance = random3string();
@@ -668,7 +640,7 @@ function Framework() {
 	self.version = 3200;
 	self.version_header = '3.2.0';
 	self.version_node = process.version.toString();
-	self.syshash = (Os.hostname() + '-' + Os.platform() + '-' + Os.arch() + '-' + Os.release() + '-' + Os.tmpdir()).md5();
+	self.syshash = (__dirname + '-' + Os.hostname() + '-' + Os.platform() + '-' + Os.arch() + '-' + Os.release() + '-' + Os.tmpdir() + JSON.stringify(process.versions)).md5();
 
 	global.CONF = self.config = {
 
@@ -723,7 +695,7 @@ function Framework() {
 
 		// 'static-accepts-custom': [],
 
-		default_xpoweredby: 'Total.js',
+		default_xpoweredby: '',
 		default_layout: 'layout',
 		default_theme: '',
 		default_proxy: '',
@@ -7355,6 +7327,7 @@ F.listener = function(req, res) {
 	var headers = req.headers;
 	req.$protocol = ((req.connection && req.connection.encrypted) || ((headers['x-forwarded-proto'] || ['x-forwarded-protocol']) === 'https')) ? 'https' : 'http';
 
+	req.url = req.url.replace(REG_TRAVEL, '');
 	req.uri = framework_internal.parseURI(req);
 
 	F.stats.request.request++;
