@@ -68,7 +68,6 @@ const REG_ENCODINGCLEANER = /[;\s]charset=utf-8/g;
 const REG_SKIPERROR = /epipe|invalid\sdistance/i;
 const REG_OLDCONF = /-/g;
 const REG_UTF8 = /[^\x20-\x7E]+/;
-const REG_TRAVEL = /(\/)?\.\.\//g;
 const FLAGS_INSTALL = ['get'];
 const FLAGS_DOWNLOAD = ['get', 'dnscache'];
 const QUERYPARSEROPTIONS = { maxKeys: 33 };
@@ -7327,7 +7326,19 @@ F.listener = function(req, res) {
 	var headers = req.headers;
 	req.$protocol = ((req.connection && req.connection.encrypted) || ((headers['x-forwarded-proto'] || ['x-forwarded-protocol']) === 'https')) ? 'https' : 'http';
 
-	req.url = req.url.replace(REG_TRAVEL, '');
+	var beg = 0;
+
+	// Removes directory browsing
+	for (var i = 0; i < req.url.length; i++) {
+		if (req.url[i] === '.' && req.url[i + 1] === '/')
+			beg = i + 1;
+		else if (req.url[i] === '?')
+			break;
+	}
+
+	if (beg)
+		req.url = req.url.substring(beg);
+
 	req.uri = framework_internal.parseURI(req);
 
 	F.stats.request.request++;
