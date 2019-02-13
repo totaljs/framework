@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkInternal
- * @version 3.0.0
+ * @version 3.2.0
  */
 
 'use strict';
@@ -105,10 +105,10 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory) {
 
 	var parser = new MultipartParser();
 	var size = 0;
-	var stream;
 	var maximumSize = route.length;
-	var tmp;
 	var close = 0;
+	var stream;
+	var tmp;
 	var rm;
 	var fn_close = function() {
 		close--;
@@ -1677,6 +1677,8 @@ function localize(language, command) {
 	return output;
 }
 
+var VIEW_IF = { 'if ': 1, 'if(': 1 };
+
 function view_parse(content, minify, filename, controller) {
 
 	content = removeComments(content).ROOT();
@@ -1827,7 +1829,7 @@ function view_parse(content, minify, filename, controller) {
 			if (cmd[1] === '%') {
 				var t = CONF[cmd.substring(2, cmd.length - 1)];
 				if (t != null)
-					builder += '+' + DELIMITER + t + DELIMITER;
+					builder += '+' + DELIMITER + (t.toString()).replace(/'/g, "\\'") + DELIMITER;
 			} else
 				builder += '+' + DELIMITER + (new Function('self', 'return self.$import(' + cmd[0] + '!' + cmd.substring(1) + ')'))(controller) + DELIMITER;
 		} else if (cmd7 === 'compile' && cmd.lastIndexOf(')') === -1) {
@@ -1896,8 +1898,8 @@ function view_parse(content, minify, filename, controller) {
 				newCommand = '';
 			}
 
-		} else if (cmd.substring(0, 3) === 'if ') {
-			builder += ';if (' + view_prepare_keywords(cmd).substring(3) + '){$output+=$EMPTY';
+		} else if (VIEW_IF[cmd.substring(0, 3)]) {
+			builder += ';if (' + (cmd.substring(2, 3) === '(' ? '(' : '') + view_prepare_keywords(cmd).substring(3) + '){$output+=$EMPTY';
 		} else if (cmd7 === 'else if') {
 			builder += '} else if (' + view_prepare_keywords(cmd).substring(7) + ') {$output+=$EMPTY';
 		} else if (cmd === 'else') {

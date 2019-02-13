@@ -21,14 +21,14 @@
 
 /**
  * @module FrameworkBuilders
- * @version 3.1.0
+ * @version 3.2.0
  */
 
 'use strict';
 
 const REQUIRED = 'The field "@" is invalid.';
 const DEFAULT_SCHEMA = 'default';
-const SKIP = { $$schema: true, $$async: true, $$repository: true, $$controller: true, $$workflow: true };
+const SKIP = { $$schema: true, $$async: true, $$repository: true, $$controller: true, $$workflow: true, $$parent: true };
 const REGEXP_CLEAN_EMAIL = /\s/g;
 const REGEXP_CLEAN_PHONE = /\s|\.|-|\(|\)/g;
 const REGEXP_NEWOPERATION = /^(async\s)?function(\s)?\([a-zA-Z$\s]+\)|^function anonymous\(\$|^\([a-zA-Z$\s]+\)/;
@@ -156,6 +156,11 @@ SchemaOptions.prototype.cancel = function() {
 	return self;
 };
 
+SchemaOptions.prototype.redirect = function(url) {
+	this.callback(new F.callback_redirect(url));
+	return this;
+};
+
 SchemaOptions.prototype.clean = function() {
 	return this.model.$clean();
 };
@@ -242,7 +247,7 @@ SchemaOptions.prototype.success = function(a, b) {
 SchemaOptions.prototype.done = function(arg) {
 	var self = this;
 	return function(err, response) {
-		if (err && !(err instanceof ErrorBuilder)) {
+		if (err) {
 			self.error.push(err);
 			self.callback();
 		} else if (arg)
@@ -356,6 +361,14 @@ SchemaBuilderEntity.prototype.allow = function() {
 	return self;
 };
 
+SchemaBuilderEntity.prototype.before = function(name, fn) {
+	var self = this;
+	if (!self.preparation)
+		self.preparation = {};
+	self.preparation[name] = fn;
+	return self;
+};
+
 SchemaBuilderEntity.prototype.required = function(name, fn) {
 
 	var self = this;
@@ -398,6 +411,9 @@ SchemaBuilderEntity.prototype.clear = function() {
 	self.schema = {};
 	self.properties = [];
 	self.fields = [];
+
+	if (self.preparation)
+		self.preparation = null;
 
 	if (self.dependencies)
 		self.dependencies = null;
@@ -500,8 +516,15 @@ SchemaBuilderEntity.prototype.inherit = function(group, name) {
 		copy_inherit(self, 'constants', schema.constants);
 
 		schema.properties.forEach(function(item) {
-			self.properties.indexOf(item) === -1 && self.properties.push(item);
+			self.properties.indexOf(item) === -1 && schema.properties.push(item);
 		});
+
+		if (schema.preparation) {
+			self.preparation = {};
+			Object.keys(schema.preparation).forEach(function(key) {
+				self.preparation[key] = schema.preparation[key];
+			});
+		}
 
 		if (schema.onPrepare) {
 			if (!self.$onPrepare)
@@ -1752,6 +1775,9 @@ SchemaBuilderEntity.prototype.$onprepare = function(name, value, index, model) {
 	if (this.onPrepare)
 		val = this.onPrepare(name, val, index, model);
 
+	if (this.preparation && this.preparation[name])
+		val = this.preparation[name](val, model, index);
+
 	return val === undefined ? value : val;
 };
 
@@ -1981,6 +2007,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 					entity = self.parent.get(type.raw);
 					if (entity) {
 						item[property] = entity.prepare(val, undefined);
+						item[property].$$parent = item;
 						dependencies && dependencies.push({ name: type.raw, value: self.$onprepare(property, item[property], undefined, model) });
 					} else
 						item[property] = null;
@@ -2098,6 +2125,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 					entity = self.parent.get(type.raw);
 					if (entity) {
 						tmp = entity.prepare(tmp, dependencies);
+						tmp.$$parent = item;
 						if (dependencies)
 							dependencies.push({ name: type.raw, value: self.$onprepare(property, tmp, j, model) });
 					} else
@@ -2771,6 +2799,15 @@ function async_wait(arr, onItem, onCallback, index) {
 	else
 		onCallback();
 }
+
+Object.defineProperty(SchemaInstance.prototype, '$parent', {
+	get: function() {
+		return this.$$parent;
+	},
+	set: function(value) {
+		this.$$parent = value;
+	}
+});
 
 SchemaInstance.prototype.$response = function(index) {
 	var a = this.$$async;
@@ -4286,7 +4323,9 @@ RESTBuilder.setDefaultTransform = function(name) {
 		delete transforms['restbuilder_default'];
 };
 
-RESTBuilder.prototype.promise = function(fn) {
+var RESTP = RESTBuilder.prototype;
+
+RESTP.promise = function(fn) {
 	var self = this;
 	return new Promise(function(resolve, reject) {
 		self.exec(function(err, result) {
@@ -4298,24 +4337,24 @@ RESTBuilder.prototype.promise = function(fn) {
 	});
 };
 
-RESTBuilder.prototype.proxy = function(value) {
+RESTP.proxy = function(value) {
 	this.$proxy = value;
 	return this;
 };
 
-RESTBuilder.prototype.setTransform = function(name) {
+RESTP.setTransform = function(name) {
 	this.$transform = name;
 	return this;
 };
 
-RESTBuilder.prototype.url = function(url) {
+RESTP.url = function(url) {
 	if (url === undefined)
 		return this.$url;
 	this.$url = url;
 	return this;
 };
 
-RESTBuilder.prototype.file = function(name, filename, buffer) {
+RESTP.file = function(name, filename, buffer) {
 	var obj = { name: name, filename: filename, buffer: buffer };
 	if (this.$files)
 		this.$files.push(obj);
@@ -4324,7 +4363,7 @@ RESTBuilder.prototype.file = function(name, filename, buffer) {
 	return this;
 };
 
-RESTBuilder.prototype.maketransform = function(obj, data) {
+RESTP.maketransform = function(obj, data) {
 	if (this.$transform) {
 		var fn = transforms['restbuilder'][this.$transform];
 		return fn ? fn(obj, data) : obj;
@@ -4332,67 +4371,68 @@ RESTBuilder.prototype.maketransform = function(obj, data) {
 	return obj;
 };
 
-RESTBuilder.prototype.timeout = function(number) {
+RESTP.timeout = function(number) {
 	this.$timeout = number;
 	return this;
 };
 
-RESTBuilder.prototype.maxlength = function(number) {
+RESTP.maxlength = function(number) {
 	this.$length = number;
 	this.$flags = null;
 	return this;
 };
 
-RESTBuilder.prototype.auth = function(user, password) {
+RESTP.auth = function(user, password) {
 	this.$headers['authorization'] = 'Basic ' + framework_utils.createBuffer(user + ':' + password).toString('base64');
 	return this;
 };
 
-RESTBuilder.prototype.schema = function(group, name) {
+RESTP.schema = function(group, name) {
 	this.$schema = exports.getschema(group, name);
 	if (!this.$schema)
 		throw Error('RESTBuilder: Schema "{0}" not found.'.format(name ? (group + '/' + name) : group));
 	return this;
 };
 
-RESTBuilder.prototype.noDnsCache = function() {
+RESTP.noDnsCache = function() {
 	this.$nodnscache = true;
 	this.$flags = null;
 	return this;
 };
 
-RESTBuilder.prototype.noCache = function() {
+RESTP.noCache = function() {
 	this.$nocache = true;
 	return this;
 };
 
-RESTBuilder.prototype.make = function(fn) {
+RESTP.make = function(fn) {
 	fn.call(this, this);
 	return this;
 };
 
-RESTBuilder.prototype.xhr = function() {
+RESTP.xhr = function() {
 	this.$headers['X-Requested-With'] = 'XMLHttpRequest';
 	return this;
 };
 
-RESTBuilder.prototype.method = function(method) {
+RESTP.method = function(method, data) {
 	this.$method = method.toLowerCase();
 	this.$flags = null;
+	data && this.raw(data);
 	return this;
 };
 
-RESTBuilder.prototype.referer = RESTBuilder.prototype.referrer = function(value) {
+RESTP.referer = RESTP.referrer = function(value) {
 	this.$headers['Referer'] = value;
 	return this;
 };
 
-RESTBuilder.prototype.origin = function(value) {
+RESTP.origin = function(value) {
 	this.$headers['Origin'] = value;
 	return this;
 };
 
-RESTBuilder.prototype.robot = function() {
+RESTP.robot = function() {
 	if (this.$headers['User-Agent'])
 		this.$headers['User-Agent'] += ' Bot';
 	else
@@ -4400,7 +4440,7 @@ RESTBuilder.prototype.robot = function() {
 	return this;
 };
 
-RESTBuilder.prototype.mobile = function() {
+RESTP.mobile = function() {
 	if (this.$headers['User-Agent'])
 		this.$headers['User-Agent'] += ' iPhone';
 	else
@@ -4408,7 +4448,7 @@ RESTBuilder.prototype.mobile = function() {
 	return this;
 };
 
-RESTBuilder.prototype.put = function(data) {
+RESTP.put = RESTP.PUT = function(data) {
 	if (this.$method !== 'put') {
 		this.$flags = null;
 		this.$method = 'put';
@@ -4418,7 +4458,7 @@ RESTBuilder.prototype.put = function(data) {
 	return this;
 };
 
-RESTBuilder.prototype.delete = function(data) {
+RESTP.delete = RESTP.DELETE = function(data) {
 	if (this.$method !== 'delete') {
 		this.$flags = null;
 		this.$method = 'delete';
@@ -4428,7 +4468,7 @@ RESTBuilder.prototype.delete = function(data) {
 	return this;
 };
 
-RESTBuilder.prototype.get = function(data) {
+RESTP.get = RESTP.GET = function(data) {
 	if (this.$method !== 'get') {
 		this.$flags = null;
 		this.$method = 'get';
@@ -4437,7 +4477,7 @@ RESTBuilder.prototype.get = function(data) {
 	return this;
 };
 
-RESTBuilder.prototype.post = function(data) {
+RESTP.post = RESTP.POST = function(data) {
 	if (this.$method !== 'post') {
 		this.$flags = null;
 		this.$method = 'post';
@@ -4447,7 +4487,7 @@ RESTBuilder.prototype.post = function(data) {
 	return this;
 };
 
-RESTBuilder.prototype.patch = function(data) {
+RESTP.patch = RESTP.PATCH = function(data) {
 	if (this.$method !== 'patch') {
 		this.$flags = null;
 		this.$method = 'patch';
@@ -4457,7 +4497,7 @@ RESTBuilder.prototype.patch = function(data) {
 	return this;
 };
 
-RESTBuilder.prototype.json = function(data) {
+RESTP.json = function(data) {
 
 	if (this.$type !== 1)
 		this.$flags = null;
@@ -4471,7 +4511,7 @@ RESTBuilder.prototype.json = function(data) {
 	return this;
 };
 
-RESTBuilder.prototype.urlencoded = function(data) {
+RESTP.urlencoded = function(data) {
 
 	if (this.$type !== 2)
 		this.$flags = null;
@@ -4484,7 +4524,7 @@ RESTBuilder.prototype.urlencoded = function(data) {
 	return this;
 };
 
-RESTBuilder.prototype.accept = function(ext) {
+RESTP.accept = function(ext) {
 
 	var type;
 
@@ -4502,7 +4542,7 @@ RESTBuilder.prototype.accept = function(ext) {
 	return this;
 };
 
-RESTBuilder.prototype.xml = function(data) {
+RESTP.xml = function(data) {
 
 	if (this.$type !== 3)
 		this.$flags = null;
@@ -4515,54 +4555,54 @@ RESTBuilder.prototype.xml = function(data) {
 	return this;
 };
 
-RESTBuilder.prototype.redirect = function(value) {
+RESTP.redirect = function(value) {
 	this.$redirect = value;
 	return this;
 };
 
-RESTBuilder.prototype.raw = function(value) {
+RESTP.raw = function(value) {
 	this.$data = value && value.$clean ? value.$clean() : value;
 	return this;
 };
 
-RESTBuilder.prototype.plain = function() {
+RESTP.plain = function() {
 	this.$plain = true;
 	return this;
 };
 
-RESTBuilder.prototype.cook = function(value) {
+RESTP.cook = function(value) {
 	this.$flags = null;
 	this.$persistentcookies = value !== false;
 	return this;
 };
 
-RESTBuilder.prototype.cookies = function(obj) {
+RESTP.cookies = function(obj) {
 	this.$cookies = obj;
 	return this;
 };
 
-RESTBuilder.prototype.cookie = function(name, value) {
+RESTP.cookie = function(name, value) {
 	!this.$cookies && (this.$cookies = {});
 	this.$cookies[name] = value;
 	return this;
 };
 
-RESTBuilder.prototype.header = function(name, value) {
+RESTP.header = function(name, value) {
 	this.$headers[name] = value;
 	return this;
 };
 
-RESTBuilder.prototype.type = function(value) {
+RESTP.type = function(value) {
 	this.$headers['Content-Type'] = value;
 	return this;
 };
 
-RESTBuilder.prototype.cache = function(expire) {
+RESTP.cache = function(expire) {
 	this.$cache_expire = expire;
 	return this;
 };
 
-RESTBuilder.prototype.set = function(name, value) {
+RESTP.set = function(name, value) {
 	if (!this.$data)
 		this.$data = {};
 	if (typeof(name) !== 'object') {
@@ -4575,13 +4615,13 @@ RESTBuilder.prototype.set = function(name, value) {
 	return this;
 };
 
-RESTBuilder.prototype.rem = function(name) {
+RESTP.rem = function(name) {
 	if (this.$data && this.$data[name])
 		this.$data[name] = undefined;
 	return this;
 };
 
-RESTBuilder.prototype.stream = function(callback) {
+RESTP.stream = function(callback) {
 	var self = this;
 	var flags = self.$flags ? self.$flags : [self.$method];
 
@@ -4602,7 +4642,7 @@ RESTBuilder.prototype.stream = function(callback) {
 	return U.download(self.$url, flags, self.$data, callback, self.$cookies, self.$headers, undefined, self.$timeout);
 };
 
-RESTBuilder.prototype.exec = function(callback) {
+RESTP.exec = function(callback) {
 
 	if (!callback)
 		callback = NOOP;
@@ -5020,6 +5060,11 @@ OperationOptions.prototype.cancel = function() {
 	return self;
 };
 
+OperationOptions.prototype.redirect = function(url) {
+	this.callback(new F.callback_redirect(url));
+	return this;
+};
+
 OperationOptions.prototype.DB = function() {
 	return F.database(this.error);
 };
@@ -5028,15 +5073,15 @@ OperationOptions.prototype.done = function(arg) {
 	var self = this;
 	return function(err, response) {
 
-		if (err && !(err instanceof ErrorBuilder)) {
+		if (err) {
 			self.error.push(err);
 			self.callback();
+		} else {
+			if (arg)
+				self.callback(SUCCESS(err == null, response));
+			else
+				self.callback(SUCCESS(err == null));
 		}
-
-		if (arg)
-			self.callback(SUCCESS(err == null, response));
-		else
-			self.callback(SUCCESS(err == null));
 	};
 };
 
@@ -5312,6 +5357,20 @@ TaskBuilder.prototype.next = function() {
 	return self;
 };
 
+TaskBuilder.prototype.next2 = function(name) {
+	var self = this;
+	return function(err) {
+		if (err)
+			self.invalid(err);
+		else {
+			if (name == null)
+				self.done();
+			else
+				self.next(name);
+		}
+	};
+};
+
 TaskBuilder.prototype.done = function(data) {
 	var self = this;
 	self.$callback && self.$callback(self.error && self.error.is ? self.error : null, data || self.value);
@@ -5319,8 +5378,28 @@ TaskBuilder.prototype.done = function(data) {
 	return self;
 };
 
+TaskBuilder.prototype.done2 = function(send_value) {
+	var self = this;
+	return function(err, data) {
+		if (err)
+			self.invalid(err);
+		else
+			self.done(send_value ? data : null);
+	};
+};
+
 TaskBuilder.prototype.success = function(data) {
 	return this.done(SUCCESS(true, data));
+};
+
+TaskBuilder.prototype.success2 = function(send_value) {
+	var self = this;
+	return function(err, data) {
+		if (err)
+			self.invalid(err);
+		else
+			self.done(SUCCESS(true, send_value ? data : null));
+	};
 };
 
 TaskBuilder.prototype.callback = function(fn) {

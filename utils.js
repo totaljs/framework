@@ -62,7 +62,6 @@ const regexpINTEGER = /(^-|\s-)?[0-9]+/g;
 const regexpFLOAT = /(^-|\s-)?[0-9.,]+/g;
 const regexpALPHA = /^[A-Za-z0-9]+$/;
 const regexpSEARCH = /[^a-zA-Zá-žÁ-Ž\d\s:]/g;
-const regexpUNICODE = /\\u([\d\w]{4})/gi;
 const regexpTERMINAL = /[\w\S]+/g;
 const regexpY = /y/g;
 const regexpN = /\n/g;
@@ -88,8 +87,11 @@ const PROXYOPTIONSHTTP = {};
 const REG_ROOT = /@\{#\}(\/)?/g;
 const REG_NOREMAP = /@\{noremap\}(\n)?/g;
 const REG_REMAP = /href=".*?"|src=".*?"/gi;
+const REG_AJAX = /('|")+(!)?(GET|POST|PUT|DELETE|PATH)\s(\(.*?\)\s)?\//g;
 const REG_URLEXT = /(https|http|wss|ws|file):\/\/|\/\/[a-z0-9]|[a-z]:/i;
 const REG_TEXTAPPLICATION = /text|application/i;
+const REG_DATE = /\.|-|\/|\\|:|\s/g;
+const REG_TIME = /am|pm/i;
 
 exports.MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 exports.DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -492,6 +494,7 @@ global.REQUEST = exports.request = function(url, flags, data, callback, cookies,
 	var def;
 	var proxy;
 
+
 	if (headers) {
 		headers = exports.extend({}, headers);
 		def = headers[CT];
@@ -597,17 +600,23 @@ global.REQUEST = exports.request = function(url, flags, data, callback, cookies,
 		method = 'GET';
 
 	if (type < 3) {
+
 		if (typeof(data) !== 'string')
 			data = type === 1 ? JSON.stringify(data) : Qs.stringify(data);
 		else if (data[0] === '?')
 			data = data.substring(1);
 
 		if (!options.post) {
-			data.length && url.indexOf('?') === -1 && (url += '?' + data);
+			if (data.length) {
+				if (url.indexOf('?') === -1)
+					url += '?' + data;
+				else
+					url += '&' + data;
+			}
 			data = '';
 		}
 
-		if (type === 1 && !data && (data === EMPTYOBJECT || data === '' || data === undefined))
+		if (type === 1 && !data && (data === EMPTYOBJECT || data === '' || data === undefined) && options.post)
 			data = BUFEMPTYJSON;
 	}
 
@@ -805,7 +814,7 @@ function request_call(uri, options) {
 			for (var i = 0, length = keys.length; i < length; i++) {
 				var value = options.data[keys[i]];
 				if (value != null) {
-					req.write((options.first ? '' : NEWLINE) + '--' + options.boundary + NEWLINE + 'Content-Disposition: form-data; name="' + keys[i] + '"' + NEWLINE + NEWLINE + encodeURIComponent(value.toString()));
+					req.write((options.first ? '' : NEWLINE) + '--' + options.boundary + NEWLINE + 'Content-Disposition: form-data; name="' + keys[i] + '"' + NEWLINE + NEWLINE + value.toString());
 					if (options.first)
 						options.first = false;
 				}
@@ -1276,7 +1285,13 @@ function download_response(res, uri, options) {
 
 		options.redirect++;
 
-		var tmp = Url.parse(res.headers['location']);
+		var loc = res.headers['location'];
+		var proto = loc.substring(0, 6);
+
+		if (proto !== 'http:/' && proto !== 'https:')
+			loc = uri.protocol + '//' + uri.hostname + loc;
+
+		var tmp = Url.parse(loc);
 		tmp.headers = uri.headers;
 		// tmp.agent = false;
 		tmp.method = uri.method;
@@ -1296,7 +1311,7 @@ function download_response(res, uri, options) {
 			return download_call(tmp, options);
 		}
 
-		exports.resolve(res.headers['location'], function(err, u) {
+		exports.resolve(loc, function(err, u) {
 			if (!err)
 				tmp.host = u.host;
 			res.removeAllListeners();
@@ -3024,7 +3039,7 @@ SP.ROOT = function(noremap) {
 	}).replace(REG_ROOT, $urlmaker);
 
 	if (!noremap && CONF.default_root)
-		str = str.replace(REG_REMAP, $urlremap);
+		str = str.replace(REG_REMAP, $urlremap).replace(REG_AJAX, $urlajax);
 
 	return str;
 };
@@ -3032,6 +3047,10 @@ SP.ROOT = function(noremap) {
 function $urlremap(text) {
 	var pos = text[0] === 'h' ? 6 : 5;
 	return REG_URLEXT.test(text) ? text : ((text[0] === 'h' ? 'href' : 'src') + '="' + CONF.default_root + (text[pos] === '/' ? text.substring(pos + 1) : text));
+}
+
+function $urlajax(text) {
+	return text.substring(0, text.length - 1) + CONF.default_root;
 }
 
 function $urlmaker(text) {
@@ -3294,7 +3313,36 @@ function parseTerminal2(lines, fn, skip, take) {
 	}
 }
 
-SP.parseDate = function() {
+function parseDateFormat(format, val) {
+
+	format = format.split(REG_DATE);
+	var tmp = val.split(REG_DATE);
+	var dt = {};
+
+	for (var i = 0; i < format.length; i++) {
+		var type = format[i];
+		if (tmp[i])
+			dt[type[0]] = +tmp[i];
+	}
+
+	var h = dt.h || dt.H;
+
+	if (h != null) {
+		var ampm = val.match(REG_TIME);
+		if (ampm) {
+			if (ampm[0].toLowerCase() === 'pm')
+				h += 12;
+		}
+	}
+
+	return new Date(dt.y || 0, (dt.M || 1) - 1, dt.d || 0, h || 0, dt.m || 0, dt.s || 0);
+}
+
+SP.parseDate = function(format) {
+
+	if (format)
+		return parseDateFormat(format, this);
+
 	var self = this.trim();
 	var lc = self.charCodeAt(self.length - 1);
 
@@ -3714,6 +3762,53 @@ SP.isUID = function() {
 	return this.length < 18 ? false : F.validators.uid.test(this);
 };
 
+SP.parseUID = function() {
+	var self = this;
+
+	var y = self.substring(0, 2);
+	var M = self.substring(2, 4);
+	var d = self.substring(4, 6);
+	var H = self.substring(6, 8);
+	var m = self.substring(8, 10);
+
+	var beg = 0;
+	var end = 0;
+	var index = 10;
+
+	while (true) {
+
+		var c = self[index];
+
+		if (!c)
+			break;
+
+		if (!beg && c !== '0')
+			beg = index;
+
+		if (c.charCodeAt(0) > 96) {
+			end = index;
+			break;
+		}
+
+		index++;
+	}
+
+	var obj = {};
+	obj.date = new Date(+('20' + y), (+M) - 1, +d, +H, +m, 0);
+	obj.index = +self.substring(beg, end);
+	obj.hash = self.substring(end, end + 3);
+	obj.century = self.substring(end + 4);
+
+	if (obj.century) {
+		obj.century = 20 + (+obj.century);
+		obj.date.setYear(obj.date.getFullYear() + 100);
+	} else
+		obj.century = 21;
+
+	obj.valid = (obj.index % 2 ? 1 : 0) === (+self.substring(end + 3, end + 4));
+	return obj;
+};
+
 SP.parseInt = function(def) {
 	var str = this.trim();
 	var num = +str;
@@ -3746,7 +3841,7 @@ SP.parseFloat = function(def) {
 SP.capitalize = function(first) {
 
 	if (first)
-		return this[0].toUpperCase() + this.substring(1);
+		return (this[0] || '').toUpperCase() + this.substring(1);
 
 	var builder = '';
 	var c;

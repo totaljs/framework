@@ -34,6 +34,7 @@ const Fs = require('fs');
 const REGEXP_SVG = /(width="\d+")+|(height="\d+")+/g;
 const REGEXP_PATH = /\//g;
 const REGEXP_ESCAPE = /'/g;
+const SPAWN_OPT = { shell: true };
 const D = require('os').platform().substring(0, 3).toLowerCase() === 'win' ? '"' : '\'';
 
 var CACHE = {};
@@ -280,8 +281,7 @@ Image.prototype.pipe = function(stream, type, options) {
 	!self.builder.length && self.minify();
 	!type && (type = self.outputType);
 
-	var cmd = spawn(self.isIM ? 'convert' : 'gm', self.arg(self.filename ? wrap(self.filename) : '-', (type ? type + ':' : '') + '-'));
-
+	var cmd = spawn(self.isIM ? 'convert' : 'gm', self.arg(self.filename ? wrap(self.filename) : '-', (type ? type + ':' : '') + '-'), SPAWN_OPT);
 	cmd.stderr.on('data', stream.emit.bind(stream, 'error'));
 	cmd.stdout.on('data', stream.emit.bind(stream, 'data'));
 	cmd.stdout.on('end', stream.emit.bind(stream, 'end'));
@@ -318,8 +318,7 @@ Image.prototype.stream = function(type, writer) {
 	if (!type)
 		type = self.outputType;
 
-	var cmd = spawn(self.isIM ? 'convert' : 'gm', self.arg(self.filename ? wrap(self.filename) : '-', (type ? type + ':' : '') + '-'));
-
+	var cmd = spawn(self.isIM ? 'convert' : 'gm', self.arg(self.filename ? wrap(self.filename) : '-', (type ? type + ':' : '') + '-'), SPAWN_OPT);
 	if (self.currentStream) {
 		if (self.currentStream instanceof Buffer)
 			cmd.stdin.end(self.currentStream);

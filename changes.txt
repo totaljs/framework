@@ -1,3 +1,40 @@
+======= 3.2.0
+
+- added: `WORKER()` alias to `F.worker()`
+- added: `WORKER2()` alias to `F.worker2()`
+- added: `F.cluster.https()`
+- added: `TaskBuilder.done2([send_value])` returns `function` with wrapped `.done()`
+- added: `TaskBuilder.success2([send_value])` returns `function` with wrapped `.success()`
+- added: `TaskBuilder.next2(name)` returns `function` with wrapped `.next()`
+- added: new `RESTBuilder` aliases `.DELETE()`, `.PUT()`, `.POST()`, `.PATCH() and `.GET()`
+- added: `schema.before(key, (value, model, index) => value)` is a simple and new alternative to `schema.setPrepare()`
+- added: `SchemaInstance.$parent` returns a parent schema (if the schema is nested schema)
+- added: `SchemaOptions.redirect(url)` can perform a redirect from the schema
+- added: `OperationOptions.redirect(url)` can perform a redirect from the operation
+- added: `.ics` extension as acceptable file for the web server
+
+- updated: `F.worker2()` returns entire `stdout` buffer in the `callback(err, buffer)`
+- updated: `$options()` by adding `disabled` key
+- updated: `String.ROOT()` by adding a support for jComponent `AJAX()` calls
+- updated: `RESTBuilder.method(method, [data])` added `data` argument
+- updated: `String.parseDate([format])` added `format` argument
+- updated: SMTP settings contain `heloid` as `heloidentifier` (manually can be defined `HELO` or `EHLO` command)
+- updated: SMTP hostname is computed from email if SMTP is not specified
+
+- fixed: critical bug with security + improved security
+- fixed: system routing
+- fixed: NoSQL sorting, solved a strange problem
+- fixed: `U.request()` with `GET` method by @khaledkhalil94 (it doesn't send JSON data if `data` is null/undefined)
+- fixed: `F.wait()` in WebSocket
+- fixed: `String.capitalize(true)`
+- fixed: `REQUEST()` uploading of additional multipart/form-data (removed encoding)
+- fixed: view engine conditions defined in `<script>`
+- fixed: auto-redirects in `U.download()`
+- fixed: image streams resizing
+- fixed: `@{'%config_key'}` a problem with rendering a value with `'`
+
+- removed: `X-Powered-By: Total.js`
+
 ======= 3.1.0
 
 - added: CSS variables support default values `border-radius: $radius || 10px`

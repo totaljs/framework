@@ -21,7 +21,7 @@
 
 /**
  * @module Framework
- * @version 3.1.0
+ * @version 3.2.0
  */
 
 'use strict';
@@ -68,6 +68,7 @@ const REG_ENCODINGCLEANER = /[;\s]charset=utf-8/g;
 const REG_SKIPERROR = /epipe|invalid\sdistance/i;
 const REG_OLDCONF = /-/g;
 const REG_UTF8 = /[^\x20-\x7E]+/;
+const REG_TRAVEL = /(\/)?\.\.\//g;
 const FLAGS_INSTALL = ['get'];
 const FLAGS_DOWNLOAD = ['get', 'dnscache'];
 const QUERYPARSEROPTIONS = { maxKeys: 33 };
@@ -116,7 +117,6 @@ var SUCCESSHELPER = { success: true };
 // Cached headers for repeated usage
 HEADERS.responseCode = {};
 HEADERS.responseCode[HEADER_TYPE] = CT_TEXT;
-HEADERS.responseCode['X-Powered-By'] = 'Total.js';
 HEADERS.redirect = {};
 HEADERS.redirect[HEADER_TYPE] = CT_HTML + '; charset=utf-8';
 HEADERS.redirect[HEADER_LENGTH] = '0';
@@ -125,18 +125,15 @@ HEADERS.sse[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
 HEADERS.sse['Pragma'] = 'no-cache';
 HEADERS.sse['Expires'] = '-1';
 HEADERS.sse[HEADER_TYPE] = 'text/event-stream';
-HEADERS.sse['X-Powered-By'] = 'Total.js';
 HEADERS.file_lastmodified = {};
 HEADERS.file_lastmodified['Access-Control-Allow-Origin'] = '*';
 HEADERS.file_lastmodified[HEADER_CACHE] = 'public, max-age=11111111';
-HEADERS.file_lastmodified['X-Powered-By'] = 'Total.js';
 HEADERS.file_release_compress = {};
 HEADERS.file_release_compress[HEADER_CACHE] = 'public, max-age=11111111';
 HEADERS.file_release_compress['Vary'] = 'Accept-Encoding';
 HEADERS.file_release_compress['Access-Control-Allow-Origin'] = '*';
 HEADERS.file_release_compress['Last-Modified'] = 'Mon, 01 Jan 2001 08:00:00 GMT';
 HEADERS.file_release_compress['Content-Encoding'] = 'gzip';
-HEADERS.file_release_compress['X-Powered-By'] = 'Total.js';
 HEADERS.file_release_compress_range = {};
 HEADERS.file_release_compress_range['Accept-Ranges'] = 'bytes';
 HEADERS.file_release_compress_range[HEADER_CACHE] = 'public, max-age=11111111';
@@ -146,13 +143,11 @@ HEADERS.file_release_compress_range['Last-Modified'] = 'Mon, 01 Jan 2001 08:00:0
 HEADERS.file_release_compress_range['Content-Encoding'] = 'gzip';
 HEADERS.file_release_compress_range[HEADER_LENGTH] = '0';
 HEADERS.file_release_compress_range['Content-Range'] = '';
-HEADERS.file_release_compress_range['X-Powered-By'] = 'Total.js';
 HEADERS.file_release = {};
 HEADERS.file_release[HEADER_CACHE] = 'public, max-age=11111111';
 HEADERS.file_release['Vary'] = 'Accept-Encoding';
 HEADERS.file_release['Access-Control-Allow-Origin'] = '*';
 HEADERS.file_release['Last-Modified'] = 'Mon, 01 Jan 2001 08:00:00 GMT';
-HEADERS.file_release['X-Powered-By'] = 'Total.js';
 HEADERS.file_release_range = {};
 HEADERS.file_release_range['Accept-Ranges'] = 'bytes';
 HEADERS.file_release_range[HEADER_CACHE] = 'public, max-age=11111111';
@@ -161,7 +156,6 @@ HEADERS.file_release_range['Access-Control-Allow-Origin'] = '*';
 HEADERS.file_release_range['Last-Modified'] = 'Mon, 01 Jan 2001 08:00:00 GMT';
 HEADERS.file_release_range[HEADER_LENGTH] = '0';
 HEADERS.file_release_range['Content-Range'] = '';
-HEADERS.file_release_range['X-Powered-By'] = 'Total.js';
 HEADERS.file_debug_compress = {};
 HEADERS.file_debug_compress[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
 HEADERS.file_debug_compress['Vary'] = 'Accept-Encoding';
@@ -169,7 +163,6 @@ HEADERS.file_debug_compress['Access-Control-Allow-Origin'] = '*';
 HEADERS.file_debug_compress['Pragma'] = 'no-cache';
 HEADERS.file_debug_compress['Expires'] = '-1';
 HEADERS.file_debug_compress['Content-Encoding'] = 'gzip';
-HEADERS.file_debug_compress['X-Powered-By'] = 'Total.js';
 HEADERS.file_debug_compress_range = {};
 HEADERS.file_debug_compress_range['Accept-Ranges'] = 'bytes';
 HEADERS.file_debug_compress_range[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
@@ -180,14 +173,12 @@ HEADERS.file_debug_compress_range['Pragma'] = 'no-cache';
 HEADERS.file_debug_compress_range['Expires'] = '-1';
 HEADERS.file_debug_compress_range[HEADER_LENGTH] = '0';
 HEADERS.file_debug_compress_range['Content-Range'] = '';
-HEADERS.file_debug_compress_range['X-Powered-By'] = 'Total.js';
 HEADERS.file_debug = {};
 HEADERS.file_debug[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
 HEADERS.file_debug['Vary'] = 'Accept-Encoding';
 HEADERS.file_debug['Pragma'] = 'no-cache';
 HEADERS.file_debug['Expires'] = '-1';
 HEADERS.file_debug['Access-Control-Allow-Origin'] = '*';
-HEADERS.file_debug['X-Powered-By'] = 'Total.js';
 HEADERS.file_debug_range = {};
 HEADERS.file_debug_range['Accept-Ranges'] = 'bytes';
 HEADERS.file_debug_range[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
@@ -197,74 +188,57 @@ HEADERS.file_debug_range['Pragma'] = 'no-cache';
 HEADERS.file_debug_range['Expires'] = '-1';
 HEADERS.file_debug_range[HEADER_LENGTH] = '0';
 HEADERS.file_debug_range['Content-Range'] = '';
-HEADERS.file_debug_range['X-Powered-By'] = 'Total.js';
 HEADERS.content_mobile_release = {};
 HEADERS.content_mobile_release[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
 HEADERS.content_mobile_release['Vary'] = 'Accept-Encoding, User-Agent';
 HEADERS.content_mobile_release['Content-Encoding'] = 'gzip';
 HEADERS.content_mobile_release['Expires'] = '-1';
-HEADERS.content_mobile_release['X-Powered-By'] = 'Total.js';
 HEADERS.content_mobile = {};
 HEADERS.content_mobile[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
 HEADERS.content_mobile['Vary'] = 'Accept-Encoding, User-Agent';
 HEADERS.content_mobile['Expires'] = '-1';
-HEADERS.content_mobile['X-Powered-By'] = 'Total.js';
 HEADERS.content_compress = {};
 HEADERS.content_compress[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
 HEADERS.content_compress['Vary'] = 'Accept-Encoding';
 HEADERS.content_compress['Content-Encoding'] = 'gzip';
 HEADERS.content_compress['Expires'] = '-1';
-HEADERS.content_compress['X-Powered-By'] = 'Total.js';
 HEADERS.content = {};
 HEADERS.content[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
 HEADERS.content['Vary'] = 'Accept-Encoding';
 HEADERS.content['Expires'] = '-1';
-HEADERS.content['X-Powered-By'] = 'Total.js';
 HEADERS.stream_release_compress = {};
 HEADERS.stream_release_compress[HEADER_CACHE] = 'public, max-age=11111111';
 HEADERS.stream_release_compress['Access-Control-Allow-Origin'] = '*';
 HEADERS.stream_release_compress['Content-Encoding'] = 'gzip';
-HEADERS.stream_release_compress['X-Powered-By'] = 'Total.js';
 HEADERS.stream_release = {};
 HEADERS.stream_release[HEADER_CACHE] = 'public, max-age=11111111';
 HEADERS.stream_release['Access-Control-Allow-Origin'] = '*';
-HEADERS.stream_release['X-Powered-By'] = 'Total.js';
 HEADERS.stream_debug_compress = {};
 HEADERS.stream_debug_compress[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
 HEADERS.stream_debug_compress['Pragma'] = 'no-cache';
 HEADERS.stream_debug_compress['Expires'] = '-1';
 HEADERS.stream_debug_compress['Access-Control-Allow-Origin'] = '*';
 HEADERS.stream_debug_compress['Content-Encoding'] = 'gzip';
-HEADERS.stream_debug_compress['X-Powered-By'] = 'Total.js';
 HEADERS.stream_debug = {};
 HEADERS.stream_debug[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
 HEADERS.stream_debug['Pragma'] = 'no-cache';
 HEADERS.stream_debug['Expires'] = '-1';
 HEADERS.stream_debug['Access-Control-Allow-Origin'] = '*';
-HEADERS.stream_debug['X-Powered-By'] = 'Total.js';
 HEADERS.binary_compress = {};
 HEADERS.binary_compress[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
 HEADERS.binary_compress['Content-Encoding'] = 'gzip';
-HEADERS.binary_compress['X-Powered-By'] = 'Total.js';
 HEADERS.binary = {};
 HEADERS.binary[HEADER_CACHE] = 'public';
-HEADERS.binary['X-Powered-By'] = 'Total.js';
 HEADERS.authorization = { user: '', password: '', empty: true };
 HEADERS.fsStreamRead = { flags: 'r', mode: '0666', autoClose: true };
 HEADERS.fsStreamReadRange = { flags: 'r', mode: '0666', autoClose: true, start: 0, end: 0 };
-HEADERS.workers = { cwd: '' };
+HEADERS.workers = { cwd: '', silent: true };
 HEADERS.responseLocalize = {};
 HEADERS.responseNotModified = {};
 HEADERS.responseNotModified[HEADER_CACHE] = 'public, max-age=11111111';
-HEADERS.responseNotModified['X-Powered-By'] = 'Total.js';
 HEADERS.response503 = {};
 HEADERS.response503[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
 HEADERS.response503[HEADER_TYPE] = CT_HTML;
-HEADERS.response503['X-Powered-By'] = 'Total.js';
-HEADERS.notModifiedEtag = {};
-HEADERS.notModifiedEtag['X-Powered-By'] = 'Total.js';
-HEADERS.notModifiedLastModifiedDate = {};
-HEADERS.notModifiedLastModifiedDate['X-Powered-By'] = 'Total.js';
 
 Object.freeze(HEADERS.authorization);
 
@@ -617,7 +591,25 @@ function random3string() {
 
 const WEBSOCKET_COMPRESS = U.createBuffer([0x00, 0x00, 0xFF, 0xFF]);
 const WEBSOCKET_COMPRESS_OPTIONS = { windowBits: Zlib.Z_DEFAULT_WINDOWBITS };
-const UIDGENERATOR = { date: new Date().format('yyMMddHHmm'), instance: random3string(), index: 1, types: {} };
+const UIDGENERATOR = { types: {}  };
+
+function UIDGENERATOR_REFRESH() {
+
+	UIDGENERATOR.date = NOW.format('yyMMddHHmm');
+	UIDGENERATOR.index = 1;
+	UIDGENERATOR.instance = random3string();
+
+	var keys;
+
+	if (UIDGENERATOR.multiple) {
+		keys = Object.keys(UIDGENERATOR.types);
+		for (var i = 0; i < keys.length; i++)
+			UIDGENERATOR.types[keys[i]] = 0;
+	}
+}
+
+UIDGENERATOR_REFRESH();
+
 const EMPTYBUFFER = U.createBufferSize(0);
 global.EMPTYBUFFER = EMPTYBUFFER;
 
@@ -645,10 +637,10 @@ function Framework() {
 	var self = this;
 
 	self.$id = null; // F.id ==> property
-	self.version = 3100;
-	self.version_header = '3.1.0';
+	self.version = 3200;
+	self.version_header = '3.2.0';
 	self.version_node = process.version.toString();
-	self.syshash = (Os.hostname() + '-' + Os.platform() + '-' + Os.arch() + '-' + Os.release() + '-' + Os.tmpdir()).md5();
+	self.syshash = (__dirname + '-' + Os.hostname() + '-' + Os.platform() + '-' + Os.arch() + '-' + Os.release() + '-' + Os.tmpdir() + JSON.stringify(process.versions)).md5();
 
 	global.CONF = self.config = {
 
@@ -699,11 +691,11 @@ function Framework() {
 		static_url_font: '/fonts/',
 		static_url_download: '/download/',
 		static_url_components: '/components.',
-		static_accepts: { flac: true, jpg: true, jpeg: true, png: true, gif: true, ico: true, js: true, css: true, txt: true, xml: true, woff: true, woff2: true, otf: true, ttf: true, eot: true, svg: true, zip: true, rar: true, pdf: true, docx: true, xlsx: true, doc: true, xls: true, html: true, htm: true, appcache: true, manifest: true, map: true, ogv: true, ogg: true, mp4: true, mp3: true, webp: true, webm: true, swf: true, package: true, json: true, md: true, m4v: true, jsx: true, heif: true, heic: true },
+		static_accepts: { flac: true, jpg: true, jpeg: true, png: true, gif: true, ico: true, js: true, css: true, txt: true, xml: true, woff: true, woff2: true, otf: true, ttf: true, eot: true, svg: true, zip: true, rar: true, pdf: true, docx: true, xlsx: true, doc: true, xls: true, html: true, htm: true, appcache: true, manifest: true, map: true, ogv: true, ogg: true, mp4: true, mp3: true, webp: true, webm: true, swf: true, package: true, json: true, md: true, m4v: true, jsx: true, heif: true, heic: true, ics: true },
 
 		// 'static-accepts-custom': [],
 
-		default_xpoweredby: 'Total.js',
+		default_xpoweredby: '',
 		default_layout: 'layout',
 		default_theme: '',
 		default_proxy: '',
@@ -1027,6 +1019,10 @@ Framework.prototype = {
 
 var framework = new Framework();
 global.framework = global.F = module.exports = framework;
+
+F.callback_redirect = function(url) {
+	this.url = url;
+};
 
 F.dir = function(path) {
 	F.directory = path;
@@ -4880,9 +4876,17 @@ F.install_make = function(key, name, obj, options, callback, skipEmit, type) {
 
 	var id = (type === 'module' ? '#' : '') + name;
 	var length = F.routes.web.length;
+
 	for (var i = 0; i < length; i++) {
 		if (F.routes.web[i].controller === routeID)
 			F.routes.web[i].controller = id;
+	}
+
+	var tmp = Object.keys(F.routes.system);
+	length = tmp.length;
+	for (var i = 0; i < length; i++) {
+		if (F.routes.system[tmp[i]].controller === routeID)
+			F.routes.system[tmp[i]].controller = id;
 	}
 
 	length = F.routes.websockets.length;
@@ -6787,9 +6791,27 @@ F.initialize = function(http, debug, options) {
 
 		var listen = function() {
 
-			if (options.https)
-				F.server = http.createServer(options.https, F.listener);
-			else
+			if (options.https) {
+
+				var meta = options.https;
+
+				if (typeof(meta.key) === 'string') {
+					if (meta.key.indexOf('.') === -1)
+						meta.key = U.createBuffer(meta.key, 'base64');
+					else
+						meta.key = Fs.readFileSync(meta.key);
+				}
+
+				if (typeof(meta.cert) === 'string') {
+					if (meta.cert.indexOf('.') === -1)
+						meta.cert = U.createBuffer(meta.cert, 'base64');
+					else
+						meta.cert = Fs.readFileSync(meta.cert);
+				}
+
+				F.server = http.createServer(meta, F.listener);
+
+			} else
 				F.server = http.createServer(F.listener);
 
 			CONF.allow_performance && F.server.on('connection', connection_tunning);
@@ -6805,6 +6827,7 @@ F.initialize = function(http, debug, options) {
 		// clears static files
 		F.consoledebug('clear temporary');
 		F.clear(function() {
+
 			F.consoledebug('clear temporary (done)');
 			F.$load(undefined, directory, function() {
 
@@ -6911,6 +6934,9 @@ F.https = function(mode, options, middleware) {
 
 	options == null && (options = {});
 	!options.port && (options.port = +process.argv[2]);
+
+	if (options.port && isNaN(options.port))
+		options.port = 0;
 
 	if (typeof(middleware) === 'function')
 		options.middleware = middleware;
@@ -7097,18 +7123,9 @@ F.reconnect = function() {
  */
 F.service = function(count) {
 
-	UIDGENERATOR.date = NOW.format('yyMMddHHmm');
-	UIDGENERATOR.index = 1;
-	UIDGENERATOR.instance = random3string();
+	UIDGENERATOR_REFRESH();
 
 	var keys;
-
-	if (UIDGENERATOR.multiple) {
-		keys = Object.keys(UIDGENERATOR.types);
-		for (var i = 0; i < keys.length; i++)
-			UIDGENERATOR.types[keys[i]] = 0;
-	}
-
 	var releasegc = false;
 
 	if (F.temporary.service.request)
@@ -7259,6 +7276,9 @@ F.service = function(count) {
 		CONF.allow_debug && F.consoledebug('gc()');
 	}, 1000);
 
+	if (WORKERID > 9999999999)
+		WORKERID = 0;
+
 	// Run schedules
 	if (!F.schedules.length)
 		return F;
@@ -7307,6 +7327,7 @@ F.listener = function(req, res) {
 	var headers = req.headers;
 	req.$protocol = ((req.connection && req.connection.encrypted) || ((headers['x-forwarded-proto'] || ['x-forwarded-protocol']) === 'https')) ? 'https' : 'http';
 
+	req.url = req.url.replace(REG_TRAVEL, '');
 	req.uri = framework_internal.parseURI(req);
 
 	F.stats.request.request++;
@@ -7690,7 +7711,7 @@ F.$cors = function(req, res, fn, arg) {
  */
 F.$upgrade = function(req, socket, head) {
 
-	if ((req.headers.upgrade || '').toLowerCase() !== 'websocket')
+	if ((req.headers.upgrade || '').toLowerCase() !== 'websocket' || F._length_wait)
 		return;
 
 	// disables timeout
@@ -9150,6 +9171,8 @@ F.$configure_configs = function(arr, rewrite) {
 		CONF.mail_smtp_options = tmp;
 	}
 
+	process.env.NODE_TLS_REJECT_UNAUTHORIZED = CONF.allow_ssc_validation === false ? '0' : '1';
+
 	if (!CONF.directory_temp)
 		CONF.directory_temp = '~' + U.path(Path.join(Os.tmpdir(), 'totaljs' + F.directory.hash()));
 
@@ -9162,9 +9185,6 @@ F.$configure_configs = function(arr, rewrite) {
 	CONF.nosql_worker && framework_nosql.worker();
 	CONF.nosql_inmemory && CONF.nosql_inmemory.forEach(n => framework_nosql.inmemory(n));
 	accepts && accepts.length && accepts.forEach(accept => CONF.static_accepts[accept] = true);
-
-	if (CONF.allow_ssc_validation === false)
-		process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 	if (CONF.allow_performance)
 		http.globalAgent.maxSockets = 9999;
@@ -9473,6 +9493,10 @@ F.accept = function(extension, contentType) {
 	return F;
 };
 
+// A temporary variable for generating Worker ID
+// It's faster than Date.now()
+var WORKERID = 0;
+
 /**
  * Run worker
  * @param {String} name
@@ -9481,7 +9505,7 @@ F.accept = function(extension, contentType) {
  * @param {Array} args Additional arguments, optional.
  * @return {ChildProcess}
  */
-F.worker = function(name, id, timeout, args) {
+global.WORKER = F.worker = function(name, id, timeout, args) {
 
 	var fork = null;
 	var type = typeof(id);
@@ -9517,7 +9541,7 @@ F.worker = function(name, id, timeout, args) {
 	fork = Child.fork(filename[filename.length - 3] === '.' ? filename : filename + '.js', args, HEADERS.workers);
 
 	if (!id)
-		id = name + '_' + new Date().getTime();
+		id = name + '_' + (WORKERID++);
 
 	fork.__id = id;
 	F.workers[id] = fork;
@@ -9542,7 +9566,7 @@ F.worker = function(name, id, timeout, args) {
 	return fork;
 };
 
-F.worker2 = function(name, args, callback, timeout) {
+global.WORKER2 = F.worker2 = function(name, args, callback, timeout) {
 
 	if (typeof(args) === 'function') {
 		timeout = callback;
@@ -9557,18 +9581,26 @@ F.worker2 = function(name, args, callback, timeout) {
 	if (args && !(args instanceof Array))
 		args = [args];
 
-	var fork = F.worker(name, name, timeout, args);
+	var fork = F.worker(name, 'worker' + (WORKERID++), timeout, args);
 	if (fork.__worker2)
 		return fork;
 
+	var output = U.createBufferSize(0);
+
 	fork.__worker2 = true;
 	fork.on('error', function(e) {
-		callback && callback(e);
+		callback && callback(e, output);
 		callback = null;
 	});
 
+	fork.stdout.on('data', function(data) {
+		CONCAT[0] = output;
+		CONCAT[1] = data;
+		output = Buffer.concat(CONCAT);
+	});
+
 	fork.on('exit', function() {
-		callback && callback();
+		callback && callback(null, output);
 		callback = null;
 	});
 
@@ -11798,7 +11830,7 @@ Controller.prototype.$isValue = function(bool, charBeg, charEnd, value) {
 	return charBeg + value + charEnd;
 };
 
-Controller.prototype.$options = function(arr, selected, name, value) {
+Controller.prototype.$options = function(arr, selected, name, value, disabled) {
 
 	var type = typeof(arr);
 	if (!arr)
@@ -11813,7 +11845,7 @@ Controller.prototype.$options = function(arr, selected, name, value) {
 		arr = Object.keys(arr);
 	}
 
-	if (!U.isArray(arr))
+	if (!(arr instanceof Array))
 		arr = [arr];
 
 	selected = selected || '';
@@ -11821,10 +11853,12 @@ Controller.prototype.$options = function(arr, selected, name, value) {
 	var options = '';
 
 	if (!isObject) {
-		if (value === undefined)
+		if (value == null)
 			value = value || name || 'value';
-		if (name === undefined)
-			name = name || 'name';
+		if (name == null)
+			name = 'name';
+		if (disabled == null)
+			disabled = 'disabled';
 	}
 
 	var isSelected = false;
@@ -11839,6 +11873,7 @@ Controller.prototype.$options = function(arr, selected, name, value) {
 		var text = '';
 		var val = '';
 		var sel = false;
+		var dis = false;
 
 		if (isObject) {
 			if (name === true) {
@@ -11864,6 +11899,13 @@ Controller.prototype.$options = function(arr, selected, name, value) {
 			if (typeof(val) === 'function')
 				val = val(i, text);
 
+			dis = o[disabled];
+
+			if (typeof(disabled) === 'function')
+				dis = disabled(i, val, text);
+			else
+				dis = dis ? true : false;
+
 		} else {
 			text = o;
 			val = o;
@@ -11874,7 +11916,7 @@ Controller.prototype.$options = function(arr, selected, name, value) {
 			isSelected = sel;
 		}
 
-		options += '<option value="' + val.toString().encode() + '"' + (sel ? ' selected="selected"' : '') + '>' + text.toString().encode() + '</option>';
+		options += '<option value="' + val.toString().encode() + '"' + (sel ? ' selected="selected"' : '') + (dis ? ' disabled="disabled"' : '') + '>' + text.toString().encode() + '</option>';
 	}
 
 	return options;
@@ -12462,6 +12504,10 @@ Controller.prototype.callback = function(view) {
 			}
 			return is && err.unexpected ? self.view500(err) : self.view404(err);
 		}
+
+		// Hack for schemas
+		if (data instanceof F.callback_redirect)
+			return self.redirect(data.url);
 
 		if (typeof(view) === 'string')
 			self.view(view, data);
