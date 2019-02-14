@@ -636,8 +636,8 @@ function Framework() {
 	var self = this;
 
 	self.$id = null; // F.id ==> property
-	self.version = 3200;
-	self.version_header = '3.2.0';
+	self.version = 3220;
+	self.version_header = '3.2.2';
 	self.version_node = process.version.toString();
 	self.syshash = (__dirname + '-' + Os.hostname() + '-' + Os.platform() + '-' + Os.arch() + '-' + Os.release() + '-' + Os.tmpdir() + JSON.stringify(process.versions)).md5();
 
