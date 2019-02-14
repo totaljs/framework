@@ -6097,7 +6097,7 @@ function compile_check(res) {
 
 	if (F.routes.merge[uri.pathname]) {
 		compile_merge(res);
-		return F;
+		return;
 	}
 
 	fsFileExists(res.options.filename, function(e, size, sfile, stats) {
@@ -7326,21 +7326,7 @@ F.listener = function(req, res) {
 	var headers = req.headers;
 	req.$protocol = ((req.connection && req.connection.encrypted) || ((headers['x-forwarded-proto'] || ['x-forwarded-protocol']) === 'https')) ? 'https' : 'http';
 
-	var beg = 0;
-
-	// Removes directory browsing
-	for (var i = 0; i < req.url.length; i++) {
-		if (req.url[i] === '.' && req.url[i + 1] === '/')
-			beg = i + 1;
-		else if (req.url[i] === '?')
-			break;
-	}
-
-	if (beg)
-		req.url = req.url.substring(beg);
-
 	req.uri = framework_internal.parseURI(req);
-
 	F.stats.request.request++;
 	F.$events.request && EMIT('request', req, res);
 
@@ -7398,6 +7384,14 @@ F.$requestcontinue = function(req, res, headers) {
 
 	// Validates if this request is the file (static file)
 	if (req.isStaticFile) {
+
+		// Stops path travelsation outside of "public" directory
+		// A potential security issue
+		if (req.uri.pathname.indexOf('./') !== -1) {
+			req.$total_status(404);
+			return;
+		}
+
 		F.stats.request.file++;
 		if (F._length_files)
 			req.$total_file();
