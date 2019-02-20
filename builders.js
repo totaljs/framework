@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkBuilders
- * @version 3.2.0
+ * @version 3.3.0
  */
 
 'use strict';
@@ -248,7 +248,10 @@ SchemaOptions.prototype.done = function(arg) {
 	var self = this;
 	return function(err, response) {
 		if (err) {
-			self.error.push(err);
+
+			if (err !== self.error)
+				self.error.push(err);
+
 			self.callback();
 		} else if (arg)
 			self.callback(SUCCESS(err == null, response));
@@ -1277,8 +1280,12 @@ SchemaBuilderEntity.prototype.execute = function(TYPE, model, options, callback,
 		var onError = function(err) {
 			if (!err || callback.success)
 				return;
+
 			callback.success = true;
-			builder.push(err);
+
+			if (builder !== err)
+				builder.push(err);
+
 			self.onError && self.onError(builder, model, $type);
 			callback(builder);
 		};
@@ -1296,7 +1303,7 @@ SchemaBuilderEntity.prototype.execute = function(TYPE, model, options, callback,
 				res = arguments[1];
 			}
 
-			var has = builder.hasError();
+			var has = builder.is;
 			has && self.onError && self.onError(builder, model, $type);
 			callback.success = true;
 			callback(has ? builder : null, res === undefined ? model : res);
@@ -1368,7 +1375,10 @@ SchemaBuilderEntity.prototype.get = SchemaBuilderEntity.prototype.read = functio
 		if (!err || callback.success)
 			return;
 		callback.success = true;
-		builder.push(err);
+
+		if (builder !== err)
+			builder.push(err);
+
 		self.onError && self.onError(builder, output, $type);
 		callback(builder);
 	};
@@ -1387,7 +1397,7 @@ SchemaBuilderEntity.prototype.get = SchemaBuilderEntity.prototype.read = functio
 		}
 
 		callback.success = true;
-		var has = builder.hasError();
+		var has = builder.is;
 		has && self.onError && self.onError(builder, output, $type);
 		callback(has ? builder : null, res === undefined ? output : res);
 	};
@@ -1450,7 +1460,10 @@ SchemaBuilderEntity.prototype.remove = function(options, callback, controller) {
 		if (!err || callback.success)
 			return;
 		callback.success = true;
-		builder.push(err);
+
+		if (builder !== err)
+			builder.push(err);
+
 		self.onError && self.onError(builder, EMPTYOBJECT, $type);
 		callback(builder);
 	};
@@ -1468,7 +1481,7 @@ SchemaBuilderEntity.prototype.remove = function(options, callback, controller) {
 			res = arguments[1];
 		}
 
-		var has = builder.hasError();
+		var has = builder.is;
 		has && self.onError && self.onError(builder, EMPTYOBJECT, $type);
 		callback.success = true;
 		callback(has ? builder : null, res === undefined ? options : res);
@@ -1529,7 +1542,10 @@ SchemaBuilderEntity.prototype.query = function(options, callback, controller) {
 		if (!err || callback.success)
 			return;
 		callback.success = true;
-		builder.push(err);
+
+		if (builder !== err)
+			builder.push(err);
+
 		self.onError && self.onError(builder, EMPTYOBJECT, $type);
 		callback(builder);
 	};
@@ -1547,10 +1563,10 @@ SchemaBuilderEntity.prototype.query = function(options, callback, controller) {
 			res = arguments[1];
 		}
 
-		var has = builder.hasError();
+		var has = builder.is;
 		has && self.onError && self.onError(builder, EMPTYOBJECT, $type);
 		callback.success = true;
-		callback(builder.hasError() ? builder : null, res);
+		callback(builder.is ? builder : null, res);
 	};
 
 	if (self.onQuery.$newversion)
@@ -1745,7 +1761,7 @@ SchemaBuilderEntity.prototype.make = function(model, filter, callback, argument,
 
 	var builder = this.validate(output, undefined, undefined, undefined, filter);
 
-	if (builder.hasError()) {
+	if (builder.is) {
 		this.onError && this.onError(builder, model, 'make');
 		callback && callback(builder, null, argument);
 	} else
@@ -2190,7 +2206,7 @@ SchemaBuilderEntity.prototype.$process = function(arg, model, type, name, builde
 		response = arg[1];
 	}
 
-	var has = builder.hasError();
+	var has = builder.is;
 	has && self.onError && self.onError(builder, model, type, name);
 
 	if (controller && response instanceof SchemaInstance && !response.$$controller)
@@ -2202,7 +2218,7 @@ SchemaBuilderEntity.prototype.$process = function(arg, model, type, name, builde
 
 SchemaBuilderEntity.prototype.$process_hook = function(model, type, name, builder, result, callback) {
 	var self = this;
-	var has = builder.hasError();
+	var has = builder.is;
 	has && self.onError && self.onError(builder, model, type, name);
 	callback(has ? builder : null, model, result);
 	return self;
@@ -2353,7 +2369,10 @@ SchemaBuilderEntity.prototype.hook = function(name, model, options, callback, sk
 				async.call(self, item.fn)(function(err) {
 					if (!err)
 						return;
-					builder.push(err);
+
+					if (builder !== err)
+						builder.push(err);
+
 					next();
 				}, new SchemaOptions(builder, model, options, function(res) {
 					CONF.logger && F.ilogger(self.getLoggerName($type, name), controller, $now);
@@ -2364,7 +2383,10 @@ SchemaBuilderEntity.prototype.hook = function(name, model, options, callback, sk
 				async.call(self, item.fn)(function(err) {
 					if (!err)
 						return;
-					builder.push(err);
+
+					if (builder !== err)
+						builder.push(err);
+
 					next();
 				}, builder, model, options, function(res) {
 					CONF.logger && F.ilogger(self.getLoggerName($type, name), controller, $now);
@@ -2484,7 +2506,8 @@ SchemaBuilderEntity.prototype.$execute = function(type, name, model, options, ca
 			if (!err || callback.success)
 				return;
 			callback.success = true;
-			builder.push(err);
+			if (builder !== err)
+				builder.push(err);
 			self.onError && self.onError(builder, model, type, name);
 			callback(builder);
 		};
@@ -2502,7 +2525,7 @@ SchemaBuilderEntity.prototype.$execute = function(type, name, model, options, ca
 				res = arguments[1];
 			}
 
-			var has = builder.hasError();
+			var has = builder.is;
 			has && self.onError && self.onError(builder, model, type, name);
 			callback.success = true;
 			callback(has ? builder : null, res === undefined ? model : res);
@@ -2607,7 +2630,8 @@ SchemaBuilderEntity.prototype.operation = function(name, model, options, callbac
 		if (!err || callback.success)
 			return;
 		callback.success = true;
-		builder.push(err);
+		if (builder !== err)
+			builder.push(err);
 		self.onError && self.onError(builder, model, $type, name);
 		callback(builder);
 	};
@@ -2625,7 +2649,7 @@ SchemaBuilderEntity.prototype.operation = function(name, model, options, callbac
 			res = arguments[1];
 		}
 
-		var has = builder.hasError();
+		var has = builder.is;
 		has && self.onError && self.onError(builder, model, $type, name);
 		callback.success = true;
 		callback(has ? builder : null, res);
