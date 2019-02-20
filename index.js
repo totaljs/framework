@@ -21,7 +21,7 @@
 
 /**
  * @module Framework
- * @version 3.2.2
+ * @version 3.3.0
  */
 
 'use strict';
@@ -636,8 +636,8 @@ function Framework() {
 	var self = this;
 
 	self.$id = null; // F.id ==> property
-	self.version = 3220;
-	self.version_header = '3.2.2';
+	self.version = 3300;
+	self.version_header = '3.3.0';
 	self.version_node = process.version.toString();
 	self.syshash = (__dirname + '-' + Os.hostname() + '-' + Os.platform() + '-' + Os.arch() + '-' + Os.release() + '-' + Os.tmpdir() + JSON.stringify(process.versions)).md5();
 
@@ -1867,6 +1867,9 @@ global.GROUP = F.group = function() {
 
 	for (var i = 0; i < arguments.length; i++) {
 		var o = arguments[i];
+
+		if (i === 0 && typeof(o) === 'string')
+			o = o.split(',').trim();
 
 		if (o instanceof Array) {
 			_flags = o;
