@@ -249,7 +249,7 @@ SchemaOptions.prototype.done = function(arg) {
 	return function(err, response) {
 		if (err) {
 
-			if (err !== self.error)
+			if (self.error !== err)
 				self.error.push(err);
 
 			self.callback();
@@ -3574,7 +3574,7 @@ ErrorBuilder.prototype.push = function(name, error, path, index, prefix) {
 	this.isPrepared = false;
 
 	if (name instanceof ErrorBuilder) {
-		if (name.hasError()) {
+		if (name !== this && name.is) {
 			for (var i = 0, length = name.items.length; i < length; i++)
 				this.items.push(name.items[i]);
 			this.count = this.items.length;
@@ -4870,12 +4870,12 @@ global.OPERATION = function(name, value, callback, param, controller) {
 			self.callback = function(value) {
 				CONF.logger && F.ilogger(getLoggerNameOperation(name), controller, $now);
 				if (arguments.length > 1) {
-					if (value instanceof Error || (value instanceof ErrorBuilder && value.hasError())) {
+					if (value instanceof Error || (value instanceof ErrorBuilder && value.is)) {
 						self.error.push(value);
 						value = EMPTYOBJECT;
 					} else
 						value = arguments[1];
-				} else if (value instanceof Error || (value instanceof ErrorBuilder && value.hasError())) {
+				} else if (value instanceof Error || (value instanceof ErrorBuilder && value.is)) {
 					self.error.push(value);
 					value = EMPTYOBJECT;
 				}
@@ -4885,7 +4885,7 @@ global.OPERATION = function(name, value, callback, param, controller) {
 					self.$repeat--;
 					fn(self);
 				} else
-					callback && callback(self.error.hasError() ? self.error : null, value, self.options);
+					callback && callback(self.error.is ? self.error : null, value, self.options);
 
 				return self;
 			};
@@ -4898,7 +4898,7 @@ global.OPERATION = function(name, value, callback, param, controller) {
 						error.push(value);
 						value = EMPTYOBJECT;
 					}
-					callback(error.hasError() ? error : null, value, param);
+					callback(error.is ? error : null, value, param);
 				}
 			});
 	} else {
@@ -4952,12 +4952,12 @@ global.RUN = function(name, value, callback, param, controller, result) {
 		CONF.logger && F.ilogger(getLoggerNameOperation(opt.name), controller, opt.duration);
 
 		if (arguments.length > 1) {
-			if (value instanceof Error || (value instanceof ErrorBuilder && value.hasError())) {
+			if (value instanceof Error || (value instanceof ErrorBuilder && value.is)) {
 				opt.error.push(value);
 				value = EMPTYOBJECT;
 			} else
 				value = arguments[1];
-		} else if (value instanceof Error || (value instanceof ErrorBuilder && value.hasError())) {
+		} else if (value instanceof Error || (value instanceof ErrorBuilder && value.is)) {
 			opt.error.push(value);
 			value = EMPTYOBJECT;
 		}
