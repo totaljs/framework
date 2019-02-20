@@ -1868,9 +1868,6 @@ global.GROUP = F.group = function() {
 	for (var i = 0; i < arguments.length; i++) {
 		var o = arguments[i];
 
-		if (i === 0 && typeof(o) === 'string')
-			o = o.split(',').trim();
-
 		if (o instanceof Array) {
 			_flags = o;
 			continue;

@@ -1,7 +1,3 @@
-======= 3.3.0
-
-- updated: `GROUP(flags, [prefix], callback)` flags argument can be a string
-
 ======= 3.2.0
 
 - added: `WORKER()` alias to `F.worker()`
