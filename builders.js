@@ -1,4 +1,4 @@
-// Copyright 2012-2018 (c) Peter Širka <petersirka@gmail.com>
+// Copyright 2012-2019 (c) Peter Širka <petersirka@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the
@@ -38,6 +38,7 @@ const Qs = require('querystring');
 var schemas = {};
 var schemasall = {};
 var operations = {};
+var tasks = {};
 var transforms = { pagination: {}, error: {}, restbuilder: {} };
 
 function SchemaBuilder(name) {
@@ -55,7 +56,7 @@ function SchemaOptions(error, model, options, callback, controller) {
 
 function TaskBuilder($) {
 	var t = this;
-	t.value = t.model = {};
+	t.value = {};
 	t.tasks = {};
 	if ($ instanceof SchemaOptions || $ instanceof OperationOptions) {
 		t.error = $.error;
@@ -104,6 +105,14 @@ TaskBuilder.prototype = {
 
 	get query() {
 		return this.controller ? this.controller.query : null;
+	},
+
+	get model() {
+		return this.value;
+	},
+
+	set model(val) {
+		this.value = val;
 	}
 };
 
@@ -4816,6 +4825,26 @@ function $decodeURIComponent(value) {
 	}
 }
 
+global.NEWTASK = function(name, fn) {
+	if (fn == null) {
+		delete tasks[name];
+	} else {
+		tasks[name] = {};
+		tasks[name].$owner = F.$owner();
+		var append = function(key, fn) {
+			tasks[name][key] = fn;
+		};
+		fn(append);
+	}
+};
+
+global.TASK = function(taskname, name, callback, options) {
+	var obj = new TaskBuilder(options);
+	obj.taskname = taskname;
+	name && obj.exec(name, callback);
+	return obj;
+};
+
 global.NEWOPERATION = function(name, fn, repeat, stop, binderror) {
 
 	// @repeat {Number} How many times will be the operation repeated after error?
@@ -4825,17 +4854,14 @@ global.NEWOPERATION = function(name, fn, repeat, stop, binderror) {
 	// Remove operation
 	if (fn == null) {
 		delete operations[name];
-		return this;
+	} else {
+		operations[name] = fn;
+		operations[name].$owner = F.$owner();
+		operations[name].$newversion = REGEXP_NEWOPERATION.test(fn.toString());
+		operations[name].$repeat = repeat;
+		operations[name].$stop = stop !== false;
+		operations[name].$binderror = binderror === true;
 	}
-
-	operations[name] = fn;
-	operations[name].$owner = F.$owner();
-	operations[name].$newversion = REGEXP_NEWOPERATION.test(fn.toString());
-	operations[name].$repeat = repeat;
-	operations[name].$stop = stop !== false;
-	operations[name].$binderror = binderror === true;
-
-	return this;
 };
 
 function getLoggerNameOperation(name) {
@@ -5070,8 +5096,8 @@ OperationOptions.prototype = {
 	}
 };
 
-SchemaOptions.prototype.tasks = OperationOptions.prototype.tasks = function() {
-	return new TaskBuilder(this);
+SchemaOptions.prototype.tasks = OperationOptions.prototype.tasks = function(taskname, name, callback, options) {
+	return taskname ? TASK(taskname, name, callback, options || this) : new TaskBuilder(this);
 };
 
 OperationOptions.prototype.cancel = function() {
@@ -5368,7 +5394,8 @@ TaskBuilder.prototype.next = function() {
 		self.current && self.controller && CONF.logger && F.ilogger((self.name || 'tasks') + '.' + self.current, self.controller, self.$now);
 		self.prev = self.current;
 		for (var i = 0; i < arguments.length; i++) {
-			var task = self.tasks[self.current = arguments[i]];
+			self.current = arguments[i];
+			var task = self.tasks[self.current] || (self.taskname ? tasks[self.taskname] && tasks[self.taskname][self.current] : null);
 			if (task == null)
 				continue;
 			else {

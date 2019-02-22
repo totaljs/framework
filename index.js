@@ -680,6 +680,7 @@ function Framework() {
 		directory_configs: '/configs/',
 		directory_services: '/services/',
 		directory_themes: '/themes/',
+		directory_tasks: '/tasks/',
 
 		// all HTTP static request are routed to directory-public
 		static_url: '',
@@ -3847,6 +3848,16 @@ F.$load = function(types, targetdirectory, callback, packageName) {
 		});
 	}
 
+	if (!types || types.indexOf('tasks') !== -1) {
+		operations.push(function(resume) {
+			dir = U.combine(targetdirectory, isPackage ? '/tasks/' : CONF.directory_tasks);
+			arr = [];
+			listing(dir, 0, arr);
+			arr.forEach((item) => dependencies.push(next => F.install('task', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next, packageName)));
+			resume();
+		});
+	}
+
 	if (!types || types.indexOf('operations') !== -1) {
 		operations.push(function(resume) {
 			dir = U.combine(targetdirectory, isPackage ? '/operations/' : CONF.directory_operations);
@@ -4434,7 +4445,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 		return F;
 	}
 
-	if (type === 'definition' || type === 'eval' || type === 'schema' || type === 'operation') {
+	if (type === 'definition' || type === 'eval' || type === 'schema' || type === 'operation' || type === 'task') {
 
 		_controller = '';
 		_owner = (packageName ? packageName + '@' : '') + type + '#' + name;
@@ -4453,8 +4464,7 @@ F.install = function(type, name, declaration, options, callback, internal, useRe
 				(function(name) {
 					setTimeout(() => delete require.cache[name], 1000);
 				})(require.resolve(declaration));
-			}
-			else
+			} else
 				obj = typeof(declaration) === 'function' ? eval('(' + declaration.toString() + ')()') : eval(declaration);
 
 		} catch (ex) {

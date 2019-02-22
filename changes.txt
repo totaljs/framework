@@ -1,5 +1,9 @@
 ======= 3.3.0
 
+- added: `NEWTASK(name, declaration)` for creating preddefined `TaskBuilder`
+- added: `TASK(name, taskname, callback, [controller/SchemaOptions/OperationOptions/ErrorBuilder])` for executing preddefined `TaskBuilder`
+- added: a new config key `directory_tasks` for `TaskBuilder`
+
 - improved Schemas and error handling
 
 ======= 3.2.0
