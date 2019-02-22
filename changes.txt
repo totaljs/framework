@@ -3,6 +3,7 @@
 - added: `NEWTASK(name, declaration)` for creating preddefined `TaskBuilder`
 - added: `TASK(name, taskname, callback, [controller/SchemaOptions/OperationOptions/ErrorBuilder])` for executing preddefined `TaskBuilder`
 - added: a new config key `directory_tasks` for `TaskBuilder`
+- added: a global alias `MODIFY()` for `F.modify()`.
 
 - improved Schemas and error handling
 

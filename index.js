@@ -3632,8 +3632,7 @@ global.MODULE = F.module = function(name) {
  * @param {Function(type, filename, content)} fn The `fn` must return modified value.
  * @return {Framework}
  */
-F.modify = function(fn) {
-	OBSOLETE('F.modify()', 'This method will be removed in new versions.');
+global.MODIFY = F.modify = function(fn) {
 	if (!F.modificators)
 		F.modificators = [];
 	F.modificators.push(fn);
