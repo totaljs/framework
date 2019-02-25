@@ -6,6 +6,7 @@
 - added: a global alias `MODIFY()` for `F.modify()`
 - added: `mailmessage.preview('plain text')`
 - added: `mail.type = 'html'` can be `html` (default) or `plain`
+- added: `$.headers` into the `SchemaOptions`, `OperationOptions` and `TaskBuilder`
 
 - updated: `$.invalid()` without arguments can return a function `function(err)`
 - updated: Mail `unsubscribe` appends new header which enables `unsubscribe` in e.g. iOS

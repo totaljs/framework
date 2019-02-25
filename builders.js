@@ -113,6 +113,10 @@ TaskBuilder.prototype = {
 
 	set model(val) {
 		this.value = val;
+	},
+
+	get headers() {
+		return this.controller && this.controller.req ? this.controller.req.headers : null;
 	}
 };
 
@@ -152,7 +156,12 @@ SchemaOptions.prototype = {
 
 	get query() {
 		return this.controller ? this.controller.query : null;
+	},
+
+	get headers() {
+		return this.controller && this.controller.req ? this.controller.req.headers : null;
 	}
+
 };
 
 SchemaOptions.prototype.cancel = function() {
@@ -5102,7 +5111,12 @@ OperationOptions.prototype = {
 
 	get query() {
 		return this.controller ? this.controller.query : null;
+	},
+
+	get headers() {
+		return this.controller && this.controller.req ? this.controller.req.headers : null;
 	}
+
 };
 
 SchemaOptions.prototype.tasks = OperationOptions.prototype.tasks = function(taskname, name, callback, options) {

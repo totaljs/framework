@@ -272,15 +272,9 @@ global.CACHE = function(name, value, expire, persistent) {
 	return arguments.length === 1 ? F.cache.get2(name) : F.cache.set(name, value, expire, null, persistent);
 };
 
-global.UPTODATE = (type, url, options, interval, callback) => F.uptodate(type, url, options, interval, callback);
-global.INSTALL = (type, name, declaration, options, callback) => F.install(type, name, declaration, options, callback);
-global.UNINSTALL = (type, name, options) => F.uninstall(type, name, options);
-global.RESOURCE = (name, key) => F.resource(name, key);
-global.TRACE = (message, name, uri, ip) => F.trace(message, name, uri, ip);
 global.CREATE = (group, name) => framework_builders.getschema(group, name).default();
 global.SINGLETON = (name, def) => SINGLETONS[name] || (SINGLETONS[name] = (new Function('return ' + (def || '{}')))());
 global.FUNCTION = (name) => F.functions[name] || NOOP;
-global.SCHEDULE = (date, each, fn, param) => F.schedule(date, each, fn, param);
 global.FINISHED = framework_internal.onFinished;
 global.DESTROY = framework_internal.destroyStream;
 global.FILESTORAGE = function(name) {
@@ -1500,7 +1494,7 @@ global.REDIRECT = F.redirect = function(host, newHost, withPath, permanent) {
  * @param {Function} fn
  * @return {Framework}
  */
-F.schedule = function(date, repeat, fn) {
+global.SCHEDULE = F.schedule = function(date, repeat, fn) {
 
 	if (fn === undefined) {
 		fn = repeat;
@@ -3589,7 +3583,7 @@ F.change = function(message, name, uri, ip) {
  * @param {String} ip
  * @return {Framework}
  */
-F.trace = function(message, name, uri, ip) {
+global.TRACE = F.trace = function(message, name, uri, ip) {
 
 	if (!CONF.trace)
 		return F;
@@ -3957,7 +3951,7 @@ F.$startup = function(callback) {
 	return F;
 };
 
-F.uptodate = function(type, url, options, interval, callback, next) {
+global.UPTODATE = F.uptodate = function(type, url, options, interval, callback, next) {
 
 	if (typeof(options) === 'string' && typeof(interval) !== 'string') {
 		interval = options;
@@ -3992,7 +3986,7 @@ F.uptodate = function(type, url, options, interval, callback, next) {
  * @param {String} packageName Internal, optional.
  * @return {Framework}
  */
-F.install = function(type, name, declaration, options, callback, internal, useRequired, skipEmit, uptodateName, next, packageName) {
+global.INSTALL = F.install = function(type, name, declaration, options, callback, internal, useRequired, skipEmit, uptodateName, next, packageName) {
 
 	var obj = null;
 
@@ -4931,7 +4925,7 @@ F.install_make = function(key, name, obj, options, callback, skipEmit, type) {
  * @param {Object} skipEmit Internal, optional.
  * @return {Framework}
  */
-F.uninstall = function(type, name, options, skipEmit, packageName) {
+global.UNINSTALL = F.uninstall = function(type, name, options, skipEmit, packageName) {
 
 	var obj = null;
 	var k, v, tmp;
@@ -8222,7 +8216,7 @@ F.hash = function(type, value, salt) {
  * @param {String} key Resource key.
  * @return {String} String
  */
-F.resource = function(name, key) {
+global.RESOURCE = F.resource = function(name, key) {
 
 	if (!key) {
 		key = name;
@@ -10310,6 +10304,10 @@ Controller.prototype = {
 
 	get uri() {
 		return this.req.uri;
+	},
+
+	get headers() {
+		return this.req.headers;
 	},
 
 	get cache() {
