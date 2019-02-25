@@ -3,9 +3,12 @@
 - added: `NEWTASK(name, declaration)` for creating preddefined `TaskBuilder`
 - added: `TASK(name, taskname, callback, [controller/SchemaOptions/OperationOptions/ErrorBuilder])` for executing preddefined `TaskBuilder`
 - added: a new config key `directory_tasks` for `TaskBuilder`
-- added: a global alias `MODIFY()` for `F.modify()`.
+- added: a global alias `MODIFY()` for `F.modify()`
+- added: `mailmessage.preview('plain text')`
+- added: `mail.type = 'html'` can be `html` (default) or `plain`
 
 - updated: `$.invalid()` without arguments can return a function `function(err)`
+- updated: Mail `unsubscribe` appends new header which enables `unsubscribe` in e.g. iOS
 
 - improved Schemas and error handling
 

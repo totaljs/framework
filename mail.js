@@ -140,25 +140,32 @@ Mailer.prototype.create = function(subject, body) {
  * @property {String} body
  */
 function Message(subject, body) {
-	this.subject = subject || '';
-	this.body = body || '';
-	this.files;
-	this.addressTo = [];
-	this.addressReply;
-	this.addressCC;
-	this.addressBCC;
-	this.addressFrom = { name: '', address: '' };
-	this.closed = false;
-	this.tls = false;
-	this.$callback;
+	var t = this;
+	t.subject = subject || '';
+	t.body = body || '';
+	t.type = 'html';
+	t.files;
+	t.addressTo = [];
+	t.addressReply;
+	t.addressCC;
+	t.addressBCC;
+	t.addressFrom = { name: '', address: '' };
+	t.closed = false;
+	t.tls = false;
+	t.$callback;
 	// Supports (but it's hidden):
-	// this.headers;
-	// this.$unsubscribe;
+	// t.headers;
+	// t.$unsubscribe;
 }
+
+Message.prototype.preview = function(val) {
+	this.$preview = val;
+	return this;
+};
 
 Message.prototype.unsubscribe = function(url) {
 	var tmp = url.substring(0, 6);
-	this.$unsubscribe = tmp === 'http:/' || tmp === 'https:' ? '<' + url + '>' : '<mailto:' + url + '>';
+	this.$unsubscribe = url ? (tmp === 'http:/' || tmp === 'https:' ? '<' + url + '>' : '<mailto:' + url + '>') : null;
 	return this;
 };
 
@@ -700,7 +707,11 @@ Mailer.prototype.$writemessage = function(obj, buffer) {
 
 	message.push('Date: ' + obj.date.toUTCString());
 	message.push('Subject: ' + unicode_encode(msg.subject));
-	msg.$unsubscribe && message.push('List-Unsubscribe: ' + msg.$unsubscribe);
+
+	if (msg.$unsubscribe) {
+		message.push('List-Unsubscribe: ' + msg.$unsubscribe);
+		message.push('List-Unsubscribe-Post: List-Unsubscribe=One-Click');
+	}
 
 	if (msg.addressReply) {
 		length = msg.addressReply.length;
@@ -713,10 +724,18 @@ Mailer.prototype.$writemessage = function(obj, buffer) {
 	message.push('Content-Type: multipart/mixed; boundary=' + obj.boundary);
 	message.push('');
 	message.push('--' + obj.boundary);
-	message.push('Content-Type: ' + (msg.body.indexOf('<') !== -1 && msg.body.lastIndexOf('>') !== -1 ? 'text/html' : 'text/plain') + '; charset=utf-8');
+	message.push('Content-Type: text/' + msg.type + '; charset=utf-8');
 	message.push('Content-Transfer-Encoding: base64');
 	message.push('');
 	message.push(prepareBASE64(framework_utils.createBuffer(msg.body.replace(REG_WINLINE, '\n').replace(REG_NEWLINE, CRLF)).toString('base64')));
+
+	if (msg.type === 'html' && msg.$preview) {
+		message.push('--' + obj.boundary);
+		message.push('Content-Type: text/plain; charset=utf-8');
+		message.push('Content-Transfer-Encoding: base64');
+		message.push('');
+		message.push(prepareBASE64(framework_utils.createBuffer(msg.$preview.replace(REG_WINLINE, '\n').replace(REG_NEWLINE, CRLF)).toString('base64')));
+	}
 
 	obj.message = message.join(CRLF);
 	obj.messagecallback = msg.$callback;
