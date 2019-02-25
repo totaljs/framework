@@ -276,11 +276,8 @@ global.UPTODATE = (type, url, options, interval, callback) => F.uptodate(type, u
 global.INSTALL = (type, name, declaration, options, callback) => F.install(type, name, declaration, options, callback);
 global.UNINSTALL = (type, name, options) => F.uninstall(type, name, options);
 global.RESOURCE = (name, key) => F.resource(name, key);
-global.TRANSLATE = (name, key) => F.translate(name, key);
-global.TRANSLATOR = (name, text) => F.translator(name, text);
 global.TRACE = (message, name, uri, ip) => F.trace(message, name, uri, ip);
 global.CREATE = (group, name) => framework_builders.getschema(group, name).default();
-global.SCRIPT = (body, value, callback, param) => F.script(body, value, callback, param);
 global.SINGLETON = (name, def) => SINGLETONS[name] || (SINGLETONS[name] = (new Function('return ' + (def || '{}')))());
 global.FUNCTION = (name) => F.functions[name] || NOOP;
 global.SCHEDULE = (date, each, fn, param) => F.schedule(date, each, fn, param);
@@ -1327,7 +1324,7 @@ F.$routesSort = function(type) {
 
 F.parseComponent = parseComponent;
 
-F.script = function(body, value, callback, param) {
+global.SCRIPT = F.script = function(body, value, callback, param) {
 
 	var fn;
 	var compilation = value === undefined && callback === undefined;
@@ -7930,7 +7927,12 @@ global.MAIL = F.mail = function(address, subject, view, model, callback, languag
 		controller.language = language;
 	}
 
-	return controller.mail(address, subject, view, model, callback, replyTo);
+	var mail = controller.mail(address, subject, view, model, callback, replyTo);
+
+	if (language != null)
+		mail.language = language;
+
+	return mail;
 };
 
 /**
@@ -8264,7 +8266,7 @@ F.resource = function(name, key) {
  * @param {String} text
  * @return {String}
  */
-F.translate = function(language, text) {
+global.TRANSLATE = F.translate = function(language, text) {
 
 	if (!text) {
 		text = language;
@@ -8284,7 +8286,7 @@ F.translate = function(language, text) {
  * @param {String} text
  * @return {String}
  */
-F.translator = function(language, text) {
+global.TRANSLATOR = F.translator = function(language, text) {
 	return framework_internal.parseLocalization(text, language);
 };
 
