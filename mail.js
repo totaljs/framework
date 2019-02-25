@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkMail
- * @version 3.1.0
+ * @version 3.3.0
  */
 
 'use strict';
@@ -723,15 +723,16 @@ Mailer.prototype.$writemessage = function(obj, buffer) {
 
 	message.push('Content-Type: multipart/mixed; boundary=' + obj.boundary);
 	message.push('');
+
 	message.push('--' + obj.boundary);
-	message.push('Content-Type: text/' + msg.type + '; charset=utf-8');
+	message.push('Content-Type: text/' + msg.type + '; charset="utf-8"; format="fixed"');
 	message.push('Content-Transfer-Encoding: base64');
 	message.push('');
 	message.push(prepareBASE64(framework_utils.createBuffer(msg.body.replace(REG_WINLINE, '\n').replace(REG_NEWLINE, CRLF)).toString('base64')));
 
 	if (msg.type === 'html' && msg.$preview) {
 		message.push('--' + obj.boundary);
-		message.push('Content-Type: text/plain; charset=utf-8');
+		message.push('Content-Type: text/plain; charset="utf-8"');
 		message.push('Content-Transfer-Encoding: base64');
 		message.push('');
 		message.push(prepareBASE64(framework_utils.createBuffer(msg.$preview.replace(REG_WINLINE, '\n').replace(REG_NEWLINE, CRLF)).toString('base64')));
