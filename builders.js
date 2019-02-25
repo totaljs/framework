@@ -270,9 +270,18 @@ SchemaOptions.prototype.done = function(arg) {
 };
 
 SchemaOptions.prototype.invalid = function(name, error, path, index) {
-	this.error.push(name, error, path, index);
-	this.callback();
-	return this;
+	var self = this;
+
+	if (arguments.length) {
+		self.error.push(name, error, path, index);
+		self.callback();
+		return self;
+	}
+
+	return function(err) {
+		self.error.push(err);
+		self.callback();
+	};
 };
 
 SchemaOptions.prototype.repository = function(name, value) {
@@ -5147,9 +5156,19 @@ OperationOptions.prototype.success = function(a, b) {
 };
 
 OperationOptions.prototype.invalid = function(name, error, path, index) {
-	this.error.push(name, error, path, index);
-	this.callback();
-	return this;
+
+	var self = this;
+
+	if (arguments.length) {
+		self.error.push(name, error, path, index);
+		self.callback();
+		return self;
+	}
+
+	return function(err) {
+		self.error.push(err);
+		self.callback();
+	};
 };
 
 global.CONVERT = function(value, schema) {

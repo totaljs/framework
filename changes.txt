@@ -5,6 +5,8 @@
 - added: a new config key `directory_tasks` for `TaskBuilder`
 - added: a global alias `MODIFY()` for `F.modify()`.
 
+- updated: `$.invalid()` without arguments can return a function `function(err)`
+
 - improved Schemas and error handling
 
 ======= 3.2.0
