@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkUtils
- * @version 3.1.0
+ * @version 3.3.0
  */
 
 'use strict';
@@ -3193,6 +3193,58 @@ SP.parseJSON = function(date) {
 
 SP.parseQuery = function() {
 	return exports.parseQuery(this);
+};
+
+SP.parseCSV = function(delimiter) {
+
+	if (!delimiter)
+		delimiter = ',';
+
+	var q = '"';
+	var output = [];
+	var lines = this.split('\n');
+
+	for (var j = 0; j < lines.length; j++) {
+
+		var t = lines[j] + delimiter;
+		var values = {};
+		var skip = false;
+		var p = null;
+		var beg = 0;
+		var index = 97;
+
+		for (var i = 0, length = t.length; i < length; i++) {
+
+			var c = t[i];
+
+			if (c === q && (!p || p === delimiter)) {
+				if (skip) {
+					if (t[i + 1] === delimiter)
+						skip = false;
+				} else
+					skip = true;
+			}
+
+			if (skip)
+				continue;
+
+			if (c === delimiter) {
+
+
+
+				var tmp = t.substring(beg, i).trim();
+				values[String.fromCharCode(index++)] = (tmp[0] === q && tmp[tmp.length - 1] === q ? tmp.substring(1, tmp.length - 1) : tmp).replace(/""/g, q);
+				beg = i + 1;
+			}
+
+			if (c !== ' ')
+				p = c;
+		}
+
+		output.push(values);
+	}
+
+	return output;
 };
 
 SP.parseTerminal = function(fields, fn, skip, take) {
