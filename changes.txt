@@ -11,6 +11,7 @@
 
 - updated: `$.invalid()` without arguments can return a function `function(err)`
 - updated: Mail `unsubscribe` appends new header which enables `unsubscribe` in e.g. iOS
+- updated: `F.modify`, handler contains a new argument `controller`
 
 - improved Schemas and error handling
 
