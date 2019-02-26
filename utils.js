@@ -454,7 +454,7 @@ function parseProxy(p) {
 	var obj = Url.parse(p);
 
 	if (obj.auth)
-		obj._auth = 'Basic ' + U.createBuffer(obj.auth).toString('base64');
+		obj._auth = 'Basic ' + Buffer.from(obj.auth).toString('base64');
 
 	obj.port = +obj.port;
 	return F.temporary.other[key] = obj;
@@ -621,7 +621,7 @@ global.REQUEST = exports.request = function(url, flags, data, callback, cookies,
 	}
 
 	if (data && type !== 4) {
-		options.data = data instanceof Buffer ? data : exports.createBuffer(data, ENCODING);
+		options.data = data instanceof Buffer ? data : Buffer.from(data, ENCODING);
 		headers['Content-Length'] = options.data.length;
 	} else
 		options.data = data;
@@ -1017,11 +1017,11 @@ exports.$$request = function(url, flags, data, cookies, headers, encoding, timeo
 };
 
 exports.btoa = function(str) {
-	return (str instanceof Buffer) ? str.toString('base64') : exports.createBuffer(str.toString(), 'utf8').toString('base64');
+	return (str instanceof Buffer) ? str.toString('base64') : Buffer.from(str.toString(), 'utf8').toString('base64');
 };
 
 exports.atob = function(str) {
-	return exports.createBuffer(str, 'base64').toString('utf8');
+	return Buffer.from(str, 'base64').toString('utf8');
 };
 
 /**
@@ -1185,7 +1185,7 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 		options.resolve = null;
 
 	if (data.length) {
-		options.data = exports.createBuffer(data, ENCODING);
+		options.data = Buffer.from(data, ENCODING);
 		headers['Content-Length'] = options.data.length;
 	}
 
@@ -1397,7 +1397,7 @@ exports.send = function(name, stream, url, callback, cookies, headers, method, t
 
 	var response = function(res) {
 
-		res.body = exports.createBufferSize();
+		res.body = Buffer.alloc(0);
 		res._bufferlength = 0;
 
 		res.on('data', function(chunk) {
@@ -1492,7 +1492,7 @@ exports.upload = function(files, url, callback, cookies, headers, method, timeou
 
 	var response = function(res) {
 
-		res.body = exports.createBufferSize();
+		res.body = Buffer.alloc(0);
 		res._bufferlength = 0;
 
 		res.on('data', function(chunk) {
@@ -1751,7 +1751,7 @@ global.CLONE = exports.clone = function(obj, skip, skipFunctions) {
 		var val = obj[m];
 
 		if (val instanceof Buffer) {
-			var copy = exports.createBufferSize(val.length);
+			var copy = Buffer.alloc(val.length);
 			val.copy(copy);
 			o[m] = copy;
 			continue;
@@ -1884,7 +1884,7 @@ exports.streamer = function(beg, end, callback, skip, stream, raw) {
 	}
 
 	var indexer = 0;
-	var buffer = exports.createBufferSize();
+	var buffer = Buffer.alloc(0);
 	var canceled = false;
 	var fn;
 
@@ -1892,10 +1892,10 @@ exports.streamer = function(beg, end, callback, skip, stream, raw) {
 		skip = 0;
 
 	if (!(beg instanceof Buffer))
-		beg = exports.createBuffer(beg, 'utf8');
+		beg = Buffer.from(beg, 'utf8');
 
 	if (end && !(end instanceof Buffer))
-		end = exports.createBuffer(end, 'utf8');
+		end = Buffer.from(end, 'utf8');
 
 	if (!end) {
 		var length = beg.length;
@@ -2555,7 +2555,7 @@ function jsonparser(key, value) {
 exports.getWebSocketFrame = function(code, message, type, compress) {
 	var messageBuffer = getWebSocketFrameMessageBytes(code, message);
 	var lengthBuffer = getWebSocketFrameLengthBytes(messageBuffer.length);
-	var frameBuffer = exports.createBufferSize(1 + lengthBuffer.length + messageBuffer.length);
+	var frameBuffer = Buffer.alloc(1 + lengthBuffer.length + messageBuffer.length);
 	frameBuffer[0] = 0x80 | type;
 	compress && (frameBuffer[0] |= 0x40);
 	lengthBuffer.copy(frameBuffer, 1, 0, lengthBuffer.length);
@@ -2576,7 +2576,7 @@ function getWebSocketFrameMessageBytes(code, message) {
 	var binary = message instanceof Int8Array || message instanceof Buffer;
 	var length = message.length;
 
-	var messageBuffer = exports.createBufferSize(length + index);
+	var messageBuffer = Buffer.alloc(length + index);
 
 	for (var i = 0; i < length; i++) {
 		if (binary)
@@ -2603,20 +2603,20 @@ function getWebSocketFrameLengthBytes(length) {
 	var lengthBuffer = null;
 
 	if (length <= 125) {
-		lengthBuffer = exports.createBufferSize(1);
+		lengthBuffer = Buffer.alloc(1);
 		lengthBuffer[0] = length;
 		return lengthBuffer;
 	}
 
 	if (length <= 65535) {
-		lengthBuffer = exports.createBufferSize(3);
+		lengthBuffer = Buffer.alloc(3);
 		lengthBuffer[0] = 126;
 		lengthBuffer[1] = (length >> 8) & 255;
 		lengthBuffer[2] = (length) & 255;
 		return lengthBuffer;
 	}
 
-	lengthBuffer = exports.createBufferSize(9);
+	lengthBuffer = Buffer.alloc(9);
 
 	lengthBuffer[0] = 127;
 	lengthBuffer[1] = 0x00;
@@ -4004,7 +4004,7 @@ SP.encrypt = function(key, isUnique, secret) {
 		values[i] = String.fromCharCode(index ^ (key.charCodeAt(i % key_count) ^ random));
 	}
 
-	str = exports.createBuffer(counter + '=' + values.join(''), ENCODING).toString('hex');
+	str = Buffer.from(counter + '=' + values.join(''), ENCODING).toString('hex');
 	var sum = 0;
 
 	for (var i = 0; i < str.length; i++)
@@ -4031,7 +4031,7 @@ SP.decrypt = function(key, secret) {
 	if (sum !== cs)
 		return null;
 
-	var values = exports.createBuffer(hash, 'hex').toString(ENCODING);
+	var values = Buffer.from(hash, 'hex').toString(ENCODING);
 	var index = values.indexOf('=');
 	if (index === -1)
 		return null;
@@ -4106,7 +4106,7 @@ SP.base64ToBuffer = function() {
 	else
 		index++;
 
-	return exports.createBuffer(self.substring(index), 'base64');
+	return Buffer.from(self.substring(index), 'base64');
 };
 
 SP.base64ContentType = function() {
@@ -6152,7 +6152,7 @@ CHP.append = CHP.write = function(obj) {
 		var index = (self.index++);
 
 		if (self.compress) {
-			Zlib.deflate(exports.createBuffer(JSON.stringify(self.stack), ENCODING), function(err, buffer) {
+			Zlib.deflate(Buffer.from(JSON.stringify(self.stack), ENCODING), function(err, buffer) {
 				Fs.writeFile(self.filename + index + '.chunker', buffer, () => self.flushing--);
 			});
 		} else
@@ -6175,7 +6175,7 @@ CHP.end = function() {
 		var index = (self.index++);
 
 		if (self.compress) {
-			Zlib.deflate(exports.createBuffer(JSON.stringify(self.stack), ENCODING), function(err, buffer) {
+			Zlib.deflate(Buffer.from(JSON.stringify(self.stack), ENCODING), function(err, buffer) {
 				Fs.writeFile(self.filename + index + '.chunker', buffer, () => self.flushing--);
 			});
 		} else
@@ -6359,7 +6359,7 @@ exports.reader = function() {
 	return new Reader();
 };
 
-const BUFEMPTYJSON = exports.createBuffer('{}');
+const BUFEMPTYJSON = Buffer.from('{}');
 
 global.WAIT = exports.wait;
 !global.F && require('./index');

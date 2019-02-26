@@ -4434,7 +4434,7 @@ RESTP.maxlength = function(number) {
 };
 
 RESTP.auth = function(user, password) {
-	this.$headers['authorization'] = 'Basic ' + framework_utils.createBuffer(user + ':' + password).toString('base64');
+	this.$headers['authorization'] = 'Basic ' + Buffer.from(user + ':' + password).toString('base64');
 	return this;
 };
 

@@ -33,7 +33,7 @@ const Http = require('http');
 const Url = require('url');
 const Zlib = require('zlib');
 const ENCODING = 'utf8';
-const WEBSOCKET_COMPRESS = U.createBuffer([0x00, 0x00, 0xFF, 0xFF]);
+const WEBSOCKET_COMPRESS = Buffer.from([0x00, 0x00, 0xFF, 0xFF]);
 const WEBSOCKET_COMPRESS_OPTIONS = { windowBits: Zlib.Z_DEFAULT_WINDOWBITS };
 const CONCAT = [null, null];
 
@@ -322,7 +322,7 @@ WebSocketClient.prototype.$ondata = function(data) {
 };
 
 function buffer_concat(buffers, length) {
-	var buffer = U.createBufferSize(length);
+	var buffer = Buffer.alloc(length);
 	var offset = 0;
 	for (var i = 0, n = buffers.length; i < n; i++) {
 		buffers[i].copy(buffer, offset);
@@ -373,13 +373,13 @@ WebSocketClient.prototype.$parse = function() {
 
 		// does frame contain mask?
 		if (current.isMask) {
-			current.mask = U.createBufferSize(4);
+			current.mask = Buffer.alloc(4);
 			current.buffer.copy(current.mask, 0, index - 4, index);
 		}
 
 		if (this.inflate) {
 
-			var buf = U.createBufferSize(length);
+			var buf = Buffer.alloc(length);
 			current.buffer.copy(buf, 0, index, mlength);
 
 			// does frame contain mask?
@@ -392,7 +392,7 @@ WebSocketClient.prototype.$parse = function() {
 			buf.$continue = current.final === false;
 			this.inflatepending.push(buf);
 		} else {
-			current.data = U.createBufferSize(length);
+			current.data = Buffer.alloc(length);
 			current.buffer.copy(current.data, 0, index, mlength);
 		}
 	}
@@ -408,7 +408,7 @@ WebSocketClient.prototype.$readbody = function() {
 
 	if (current.type === 1) {
 
-		buf = U.createBufferSize(length);
+		buf = Buffer.alloc(length);
 		for (var i = 0; i < length; i++)  {
 			if (current.isMask)
 				buf[i] = current.data[i] ^ current.mask[i % 4];
@@ -420,7 +420,7 @@ WebSocketClient.prototype.$readbody = function() {
 
 	} else {
 
-		buf = U.createBufferSize(length);
+		buf = Buffer.alloc(length);
 		for (var i = 0; i < length; i++) {
 			// does frame contain mask?
 			if (current.isMask)
@@ -471,7 +471,7 @@ WebSocketClient.prototype.parseInflate = function() {
 		self.inflatechunkslength = 0;
 		self.inflatelock = true;
 		self.inflate.write(buf);
-		!buf.$continue && self.inflate.write(U.createBuffer(WEBSOCKET_COMPRESS));
+		!buf.$continue && self.inflate.write(Buffer.from(WEBSOCKET_COMPRESS));
 		self.inflate.flush(function() {
 
 			if (!self.inflatechunks)
@@ -545,13 +545,13 @@ WebSocketClient.prototype.send = function(message, raw, replacer) {
 		if (this.options.encodedecode && data)
 			data = encodeURIComponent(data);
 		if (this.deflate) {
-			this.deflatepending.push(U.createBuffer(data));
+			this.deflatepending.push(Buffer.from(data));
 			this.sendDeflate();
 		} else
 			this.socket.write(U.getWebSocketFrame(0, data, 0x01));
 	} else if (message) {
 		if (this.deflate) {
-			this.deflatepending.push(U.createBuffer(message));
+			this.deflatepending.push(Buffer.from(message));
 			this.sendDeflate();
 		} else
 			this.socket.write(U.getWebSocketFrame(0, new Int8Array(message), 0x02));

@@ -21,7 +21,7 @@
 
 /**
  * @module NoSQL Stream
- * @version 1.0.0
+ * @version 1.0.1
  */
 
 require('./index');
@@ -29,7 +29,7 @@ require('./index');
 const Fs = require('fs');
 const BUFFERSIZE = 1024 * 32;
 const BUFFERDOCS = 15;
-const NEWLINEBUFFER = framework_utils.createBuffer('\n', 'utf8');
+const NEWLINEBUFFER = Buffer.from('\n', 'utf8');
 const DEFSTATS = { size: 0 };
 
 function NoSQLStream(filename) {
@@ -665,7 +665,7 @@ NoSQLStream.prototype.write = function(doc, position) {
 
 NoSQLStream.prototype.write2 = function(doc) {
 	var self = this;
-	self.bufferstacknew.push(U.createBuffer(doc));
+	self.bufferstacknew.push(Buffer.from(doc));
 	!self.writing && self.$write();
 	return self;
 };
@@ -708,7 +708,7 @@ NoSQLStream.prototype.read = function() {
 
 		if (!self.canceled && self.buffer && self.buffer.length) {
 			self.cb_readbuffer(null, 1, NEWLINEBUFFER);
-			self.buffer = framework_utils.createBufferSize(0);
+			self.buffer = Buffer.alloc(0);
 			return;
 		}
 
@@ -722,7 +722,7 @@ NoSQLStream.prototype.read = function() {
 
 	} else {
 		size = size < self.buffersize ? size : self.buffersize;
-		var buffer = framework_utils.createBufferSize(size);
+		var buffer = Buffer.alloc(size);
 		Fs.read(self.fd, buffer, 0, size, self.position, self.cb_readbuffer);
 	}
 };
@@ -741,7 +741,7 @@ NoSQLStream.prototype.readreverse2 = function() {
 
 		if (!self.canceled && self.buffer && self.buffer.length) {
 			self.cb_readreversebuffer(null, 1, NEWLINEBUFFER);
-			self.buffer = framework_utils.createBufferSize(0);
+			self.buffer = Buffer.alloc(0);
 			return;
 		}
 
@@ -757,7 +757,7 @@ NoSQLStream.prototype.readreverse2 = function() {
 		var size = self.stats.size - self.bytesread;
 		size = size < self.buffersize ? size : self.buffersize;
 		self.position -= size;
-		var buffer = framework_utils.createBufferSize(size);
+		var buffer = Buffer.alloc(size);
 		Fs.read(self.fd, buffer, 0, size, self.position, self.cb_readreversebuffer);
 	}
 };
@@ -772,7 +772,7 @@ NoSQLStream.prototype.readupdate = function() {
 		if (!self.canceled && self.buffer && self.buffer.length) {
 			self.positionappend++;
 			self.cb_readwritebuffer(null, 1, NEWLINEBUFFER);
-			self.buffer = framework_utils.createBufferSize(0);
+			self.buffer = Buffer.alloc(0);
 			return;
 		}
 
@@ -785,7 +785,7 @@ NoSQLStream.prototype.readupdate = function() {
 		self.flush();
 	} else {
 		size = size < self.buffersize ? size : self.buffersize;
-		var buffer = framework_utils.createBufferSize(size);
+		var buffer = Buffer.alloc(size);
 		Fs.read(self.fd, buffer, 0, size, self.position, self.cb_readwritebuffer);
 	}
 };

@@ -7437,7 +7437,7 @@ F.$requestcontinue = function(req, res, headers) {
 
 	if (first === 'P' || first === 'D') {
 		multipart = req.headers['content-type'] || '';
-		req.buffer_data = Buffer.from();
+		req.buffer_data = Buffer.alloc(0);
 		var index = multipart.lastIndexOf(';');
 		var tmp = multipart;
 		if (index !== -1)
@@ -15192,7 +15192,7 @@ function extend_request(PROTO) {
 			return;
 
 		this.buffer_exceeded = true;
-		this.buffer_data = Buffer.from();
+		this.buffer_data = Buffer.alloc(0);
 	};
 
 	PROTO.$total_cancel = function() {

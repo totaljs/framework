@@ -47,7 +47,7 @@ var INDEXATTACHMENT = 0;
 if (!global.framework_utils)
 	global.framework_utils = require('./utils');
 
-const BUF_CRLF = framework_utils.createBuffer(CRLF);
+const BUF_CRLF = Buffer.from(CRLF);
 const CONCAT = [null, null];
 
 /**
@@ -732,14 +732,14 @@ Mailer.prototype.$writemessage = function(obj, buffer) {
 	message.push('Content-Type: text/' + msg.type + '; charset="utf-8"');
 	message.push('Content-Transfer-Encoding: base64');
 	message.push('');
-	message.push(prepareBASE64(framework_utils.createBuffer(msg.body.replace(REG_WINLINE, '\n').replace(REG_NEWLINE, CRLF)).toString('base64')));
+	message.push(prepareBASE64(Buffer.from(msg.body.replace(REG_WINLINE, '\n').replace(REG_NEWLINE, CRLF)).toString('base64')));
 
 	// if (msg.type === 'html' && msg.$preview) {
 	// 	message.push('--' + obj.boundary);
 	// 	message.push('Content-Type: text/plain; charset="utf-8"; format="fixed"');
 	// 	message.push('Content-Transfer-Encoding: base64');
 	// 	message.push('');
-	// 	message.push(prepareBASE64(framework_utils.createBuffer(msg.$preview.replace(REG_WINLINE, '\n').replace(REG_NEWLINE, CRLF)).toString('base64')));
+	// 	message.push(prepareBASE64(Buffer.from(msg.$preview.replace(REG_WINLINE, '\n').replace(REG_NEWLINE, CRLF)).toString('base64')));
 	// }
 
 	obj.message = message.join(CRLF);
@@ -829,10 +829,10 @@ Mailer.prototype.$send = function(obj, options, autosend) {
 					auth.push('AUTH XOAUTH2 ' + options.xoauth2);
 				else if (line.lastIndexOf('XOAUTH') === -1) {
 					auth.push('AUTH LOGIN');
-					auth.push(framework_utils.createBuffer(options.user).toString('base64'));
-					auth.push(framework_utils.createBuffer(options.password).toString('base64'));
+					auth.push(Buffer.from(options.user).toString('base64'));
+					auth.push(Buffer.from(options.password).toString('base64'));
 				} else
-					auth.push('AUTH PLAIN ' + framework_utils.createBuffer('\0'+ options.user + '\0' + options.password).toString('base64'));
+					auth.push('AUTH PLAIN ' + Buffer.from('\0'+ options.user + '\0' + options.password).toString('base64'));
 			}
 		}
 
@@ -982,7 +982,7 @@ function prepareBASE64(value) {
 }
 
 function unicode_encode(val) {
-	return val ? '=?utf-8?B?' + framework_utils.createBuffer(val.toString()).toString('base64') + '?=' : '';
+	return val ? '=?utf-8?B?' + Buffer.from(val.toString()).toString('base64') + '?=' : '';
 }
 
 // ======================================================

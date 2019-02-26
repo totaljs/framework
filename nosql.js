@@ -21,7 +21,7 @@
 
 /**
  * @module NoSQL
- * @version 3.1.0
+ * @version 3.3.0
  */
 
 'use strict';
@@ -77,7 +77,7 @@ const COMPARER = global.Intl ? global.Intl.Collator().compare : function(a, b) {
 	return a.removeDiacritics().localeCompare(b.removeDiacritics());
 };
 
-const NEWLINEBUF = framework_utils.createBuffer('\n', 'utf8');
+const NEWLINEBUF = Buffer.from('\n', 'utf8');
 const CACHE = {};
 
 var JSONBUFFER = process.argv.findIndex(n => n.endsWith('nosqlworker.js')) === -1 ? 20 : 40;
@@ -4368,7 +4368,7 @@ Binary.prototype.insert = function(name, buffer, custom, callback) {
 	}
 
 	if (typeof(buffer) === 'string')
-		buffer = framework_utils.createBuffer(buffer, 'base64');
+		buffer = Buffer.from(buffer, 'base64');
 	else if (buffer.resume)
 		return self.insertstream(null, name, type, buffer, callback, custom);
 
@@ -4406,7 +4406,7 @@ Binary.prototype.insert = function(name, buffer, custom, callback) {
 			h.height = dimension.height;
 	}
 
-	var header = framework_utils.createBufferSize(BINARY_HEADER_LENGTH);
+	var header = Buffer.alloc(BINARY_HEADER_LENGTH);
 	header.fill(' ');
 	header.write(JSON.stringify(h));
 
@@ -4450,7 +4450,7 @@ Binary.prototype.insertstream = function(id, name, type, stream, callback, custo
 	if (custom)
 		h.custom = custom;
 
-	var header = framework_utils.createBufferSize(BINARY_HEADER_LENGTH);
+	var header = Buffer.alloc(BINARY_HEADER_LENGTH);
 
 	header.fill(' ');
 	header.write(JSON.stringify(h));
@@ -4532,7 +4532,7 @@ Binary.prototype.insertstream = function(id, name, type, stream, callback, custo
 
 		Fs.open(filepath, 'r+', function(err, fd) {
 			if (!err) {
-				var header = framework_utils.createBufferSize(BINARY_HEADER_LENGTH);
+				var header = Buffer.alloc(BINARY_HEADER_LENGTH);
 				header.fill(' ');
 				header.write(JSON.stringify(h));
 				Fs.write(fd, header, 0, header.length, 0, () => Fs.close(fd, NOOP));
@@ -4582,7 +4582,7 @@ Binary.prototype.update = function(id, name, buffer, custom, callback) {
 	}
 
 	if (typeof(buffer) === 'string')
-		buffer = framework_utils.createBuffer(buffer, 'base64');
+		buffer = Buffer.from(buffer, 'base64');
 
 	if (buffer.resume)
 		return self.insertstream(id, name, type, buffer, callback, custom);
@@ -4643,7 +4643,7 @@ Binary.prototype.update = function(id, name, buffer, custom, callback) {
 			h.height = dimension.height;
 	}
 
-	var header = framework_utils.createBufferSize(BINARY_HEADER_LENGTH);
+	var header = Buffer.alloc(BINARY_HEADER_LENGTH);
 
 	header.fill(' ');
 	header.write(JSON.stringify(h));
@@ -4972,7 +4972,7 @@ Binary.prototype.browse = function(directory, callback) {
 					var stream = Fs.createReadStream(target + '/' + item, BINARYREADMETA);
 
 					stream.on('data', function(buffer) {
-						var json = framework_utils.createBuffer(buffer, 'binary').toString('utf8').replace(REGCLEAN, '').parseJSON(true);
+						var json = Buffer.from(buffer, 'binary').toString('utf8').replace(REGCLEAN, '').parseJSON(true);
 						if (json) {
 							var id = item.substring(0, item.length - le);
 							json.id = 'B' + json.date + 'T' + id;
@@ -5025,7 +5025,7 @@ Binary.prototype.all = function(callback) {
 				var stream = Fs.createReadStream(target + '/' + item, BINARYREADMETA);
 
 				stream.on('data', function(buffer) {
-					var json = framework_utils.createBuffer(buffer, 'binary').toString('utf8').replace(REGCLEAN, '').parseJSON(true);
+					var json = Buffer.from(buffer, 'binary').toString('utf8').replace(REGCLEAN, '').parseJSON(true);
 					if (json) {
 						json.id = item.substring(l, item.length - le);
 						json.ctime = stat.ctime;

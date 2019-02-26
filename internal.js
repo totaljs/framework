@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkInternal
- * @version 3.2.0
+ * @version 3.3.0
  */
 
 'use strict';
@@ -136,7 +136,7 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory) {
 
 		// Temporary data
 		tmp = new HttpFile();
-		tmp.$data = framework_utils.createBufferSize();
+		tmp.$data = Buffer.alloc(0);
 		tmp.$step = 0;
 		tmp.$is = false;
 		tmp.length = 0;
@@ -1357,10 +1357,10 @@ MultipartParser.stateToString = function(stateNumber) {
 
 MultipartParser.prototype.initWithBoundary = function(str) {
 	var self = this;
-	self.boundary = framework_utils.createBufferSize(str.length + 4);
+	self.boundary = Buffer.alloc(str.length + 4);
 	self.boundary.write('\r\n--', 0, 'ascii');
 	self.boundary.write(str, 4, 'ascii');
-	self.lookbehind = framework_utils.createBufferSize(self.boundary.length + 8);
+	self.lookbehind = Buffer.alloc(self.boundary.length + 8);
 	self.state = S.START;
 	self.boundaryChars = {};
 	for (var i = 0; i < self.boundary.length; i++)
