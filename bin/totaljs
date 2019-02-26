@@ -304,31 +304,20 @@ function clean_resource(content) {
 }
 
 function parse_csv(content) {
+
 	var output = {};
 	var max = 0;
+	var csv = content.parseCSV(';');
 
-	content.split('\n').forEach(function(line, index) {
-
-		if (!index)
-			return;
-
-		line = line.trim();
-
-		if (!line)
-			return;
-
-		var arr = line.split(';');
-		if (arr.length <= 1)
-			return;
-
-		var key = arr[0].trim().replace(/(^")|("$)/g, '');
-		var value = arr[2].trim().replace(/(^")|("$)/g, '');
-		if (!key || !value)
-			return;
-
-		max = Math.max(key.length, max);
-		output[key] = value;
-	});
+	for (var i = 1; i < csv.length; i++) {
+		var line = csv[i];
+		var key = line.a || '';
+		var val = line.b || '';
+		if (key) {
+			max = Math.max(key.length, max);
+			output[key] = val;
+		}
+	}
 
 	var builder = [];
 	max += 10;
