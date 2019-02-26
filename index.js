@@ -7390,7 +7390,7 @@ F.$requestcontinue = function(req, res, headers) {
 		for (var i = 0; i < req.uri.pathname.length; i++) {
 			var c = req.uri.pathname[i];
 			var n = req.uri.pathname[i + 1];
-			if ((c === '.' && n === '/') || (c === '%' && n === '2' && req.uri.pathname[i + 2] === 'e')) {
+			if ((c === '.' && (n === '/' || n === '%')) || (c === '%' && n === '2' && req.uri.pathname[i + 2] === 'e')) {
 				req.$total_status(404);
 				return;
 			}
