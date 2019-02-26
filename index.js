@@ -999,13 +999,6 @@ Framework.prototype = {
 		CLUSTER_CACHE_CLEAR.id = value;
 		F.$id = value;
 		return F.$id;
-	},
-	get onLocate() {
-		return this.onLocale;
-	},
-	set onLocate(value) {
-		OBSOLETE('F.onLocate', 'Rename "F.onLocate" method for "F.onLocale".');
-		this.onLocale = value;
 	}
 };
 
@@ -4801,11 +4794,6 @@ global.INSTALL = F.install = function(type, name, declaration, options, callback
 	return F;
 };
 
-F.restart = function() {
-	OBSOLETE('F.restart()', 'This function is not supported');
-	return F;
-};
-
 F.install_prepare = function(noRecursive) {
 
 	var keys = Object.keys(F.temporary.dependencies);
@@ -6551,34 +6539,6 @@ F.touch = function(url) {
 		F.temporary.path = {};
 		F.temporary.notfound = {};
 	}
-	return F;
-};
-
-// OBSOLETE
-F.responseImage = function(req, res, filename, make, headers, done) {
-	OBSOLETE('F.responseImage()', 'This method is obsolete, use res.img()');
-
-	if (typeof(filename) === 'object')
-		res.options.stream = filename;
-	else
-		res.options.filename = filename;
-
-	res.options.headers = headers;
-	res.options.callback = done;
-	res.options.make = make;
-	res.$image();
-	return F;
-};
-
-// OBSOLETE
-F.responseFile = function(req, res, filename, downloadName, headers, done, key) {
-	OBSOLETE('F.responseFile()', 'This method is obsolete, use res.file()');
-	res.$key = key;
-	res.options.filename = filename;
-	res.options.download = downloadName;
-	res.options.headers = headers;
-	res.options.callback = done;
-	res.$file();
 	return F;
 };
 
