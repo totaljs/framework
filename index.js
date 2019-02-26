@@ -579,7 +579,7 @@ function random3string() {
 	return _randomstring[(Math.random() * _randomstring.length) >> 0] + _randomstring[(Math.random() * _randomstring.length) >> 0] + _randomstring[(Math.random() * _randomstring.length) >> 0];
 }
 
-const WEBSOCKET_COMPRESS = U.createBuffer([0x00, 0x00, 0xFF, 0xFF]);
+const WEBSOCKET_COMPRESS = Buffer.from([0x00, 0x00, 0xFF, 0xFF]);
 const WEBSOCKET_COMPRESS_OPTIONS = { windowBits: Zlib.Z_DEFAULT_WINDOWBITS };
 const UIDGENERATOR = { types: {}  };
 
@@ -600,7 +600,7 @@ function UIDGENERATOR_REFRESH() {
 
 UIDGENERATOR_REFRESH();
 
-const EMPTYBUFFER = U.createBufferSize(0);
+const EMPTYBUFFER = Buffer.alloc(0);
 global.EMPTYBUFFER = EMPTYBUFFER;
 
 const controller_error_status = function(controller, status, problem) {
@@ -685,7 +685,7 @@ function Framework() {
 		static_accepts: { flac: true, jpg: true, jpeg: true, png: true, gif: true, ico: true, js: true, css: true, txt: true, xml: true, woff: true, woff2: true, otf: true, ttf: true, eot: true, svg: true, zip: true, rar: true, pdf: true, docx: true, xlsx: true, doc: true, xls: true, html: true, htm: true, appcache: true, manifest: true, map: true, ogv: true, ogg: true, mp4: true, mp3: true, webp: true, webm: true, swf: true, package: true, json: true, md: true, m4v: true, jsx: true, heif: true, heic: true, ics: true },
 
 		// 'static-accepts-custom': [],
-
+		default_crypto_iv: Buffer.from(self.syshash).slice(0, 16),
 		default_xpoweredby: '',
 		default_layout: 'layout',
 		default_theme: '',
@@ -874,6 +874,7 @@ function Framework() {
 		versions: {},
 		dependencies: {}, // temporary for module dependencies
 		other: {},
+		keys: {}, // for crypto keys
 		internal: {}, // controllers/modules names for the routing
 		owners: {},
 		ready: {},
@@ -1029,6 +1030,7 @@ F.refresh = function() {
 	F.temporary.range = {};
 	F.temporary.views = {};
 	F.temporary.other = {};
+	F.temporary.keys = {};
 	global.$VIEWCACHE && global.$VIEWCACHE.length && (global.$VIEWCACHE = []);
 
 	// Clears command cache
@@ -3459,7 +3461,7 @@ global.LOCALIZE = F.localize = function(url, flags, minify) {
 					content = framework_internal.compile_html(content, filename);
 
 				if (RELEASE) {
-					F.temporary.other[key] = U.createBuffer(content);
+					F.temporary.other[key] = Buffer.from(content);
 					F.temporary.other[key].$mtime = mtime;
 					if (F.$notModified(req, res, mtime))
 						return;
@@ -6178,9 +6180,9 @@ function compile_content(extension, content, filename) {
 
 F.restore = function(filename, target, callback, filter) {
 
-	var buffer_key = U.createBuffer(':');
-	var buffer_new = U.createBuffer('\n');
-	var buffer_dir = U.createBuffer('#');
+	var buffer_key = Buffer.from(':');
+	var buffer_new = Buffer.from('\n');
+	var buffer_dir = Buffer.from('#');
 	var cache = {};
 	var data = null;
 	var type = 0;
@@ -6302,15 +6304,15 @@ F.restore = function(filename, target, callback, filter) {
 		if (type) {
 			var remaining = data.length % 4;
 			if (remaining) {
-				open[item].zlib.write(U.createBuffer(data.slice(0, data.length - remaining).toString('ascii'), 'base64'));
+				open[item].zlib.write(Buffer.from(data.slice(0, data.length - remaining).toString('ascii'), 'base64'));
 				data = data.slice(data.length - remaining);
 				skip = true;
 			} else {
-				open[item].zlib.write(U.createBuffer(data.toString('ascii'), 'base64'));
+				open[item].zlib.write(Buffer.from(data.toString('ascii'), 'base64'));
 				data = null;
 			}
 		} else {
-			open[item].zlib.end(U.createBuffer(data.slice(0, index).toString('ascii'), 'base64'));
+			open[item].zlib.end(Buffer.from(data.slice(0, index).toString('ascii'), 'base64'));
 			data = data.slice(index + 1);
 		}
 
@@ -6438,7 +6440,7 @@ F.backup = function(filename, filelist, callback, filter) {
 					return;
 				}
 
-				var data = U.createBufferSize(0);
+				var data = Buffer.alloc(0);
 				writer.write(item.padRight(padding) + ':');
 				Fs.createReadStream(file).pipe(Zlib.createGzip(GZIPFILE)).on('data', function(chunk) {
 
@@ -6796,14 +6798,14 @@ F.initialize = function(http, debug, options) {
 
 				if (typeof(meta.key) === 'string') {
 					if (meta.key.indexOf('.') === -1)
-						meta.key = U.createBuffer(meta.key, 'base64');
+						meta.key = Buffer.from(meta.key, 'base64');
 					else
 						meta.key = Fs.readFileSync(meta.key);
 				}
 
 				if (typeof(meta.cert) === 'string') {
 					if (meta.cert.indexOf('.') === -1)
-						meta.cert = U.createBuffer(meta.cert, 'base64');
+						meta.cert = Buffer.from(meta.cert, 'base64');
 					else
 						meta.cert = Fs.readFileSync(meta.cert);
 				}
@@ -7435,7 +7437,7 @@ F.$requestcontinue = function(req, res, headers) {
 
 	if (first === 'P' || first === 'D') {
 		multipart = req.headers['content-type'] || '';
-		req.buffer_data = U.createBuffer();
+		req.buffer_data = Buffer.from();
 		var index = multipart.lastIndexOf(';');
 		var tmp = multipart;
 		if (index !== -1)
@@ -8145,7 +8147,7 @@ F.rmdir = F.path.rmdir = function(arr, callback) {
  * @param {Boolean} isUnique Optional, default true.
  * @return {String}
  */
-F.encrypt = function(value, key, isUnique) {
+global.ENCRYPT = F.encrypt = function(value, key, isUnique) {
 
 	if (value === undefined)
 		return '';
@@ -8165,6 +8167,24 @@ F.encrypt = function(value, key, isUnique) {
 	else if (type === 'object')
 		value = JSON.stringify(value);
 
+	if (CONF.default_crypto) {
+		key = (key || '') + CONF.secret;
+
+		if (key.length < 32)
+			key += ''.padLeft(32 - key.length, '0');
+
+		if (key.length > 32)
+			key = key.substring(0, 32);
+
+		if (!F.temporary.keys[key])
+			F.temporary.keys[key] = Buffer.from(key);
+
+		var cipher = Crypto.createCipheriv(CONF.default_crypto, F.temporary.keys[key], CONF.default_crypto_iv);
+		CONCAT[0] = cipher.update(value);
+		CONCAT[1] = cipher.final();
+		return Buffer.concat(CONCAT).toString('hex');
+	}
+
 	return value.encrypt(CONF.secret + '=' + key, isUnique);
 };
 
@@ -8175,7 +8195,7 @@ F.encrypt = function(value, key, isUnique) {
  * @param {Boolean} jsonConvert Optional, default true.
  * @return {Object or String}
  */
-F.decrypt = function(value, key, jsonConvert) {
+global.DECRYPT = F.decrypt = function(value, key, jsonConvert) {
 
 	if (typeof(key) === 'boolean') {
 		var tmp = jsonConvert;
@@ -8186,7 +8206,32 @@ F.decrypt = function(value, key, jsonConvert) {
 	if (typeof(jsonConvert) !== 'boolean')
 		jsonConvert = true;
 
-	var response = (value || '').decrypt(CONF.secret + '=' + key);
+	var response;
+
+	if (CONF.default_crypto) {
+
+		key = (key || '') + CONF.secret;
+
+		if (key.length < 32)
+			key += ''.padLeft(32 - key.length, '0');
+
+		if (key.length > 32)
+			key = key.substring(0, 32);
+
+		if (!F.temporary.keys[key])
+			F.temporary.keys[key] = Buffer.from(key);
+
+		var decipher = Crypto.createDecipheriv(CONF.default_crypto, F.temporary.keys[key], CONF.default_crypto_iv);
+		try {
+			CONCAT[0] = decipher.update(Buffer.from(value || '', 'hex'));
+			CONCAT[1] = decipher.final();
+			response = Buffer.concat(CONCAT).toString('utf8');
+		} catch (e) {
+			response = null;
+		}
+	} else
+		response = (value || '').decrypt(CONF.secret + '=' + key);
+
 	return response ? (jsonConvert ? (response.isJSON() ? response.parseJSON(true) : null) : response) : null;
 };
 
@@ -8909,9 +8954,9 @@ F.$configure_configs = function(arr, rewrite) {
 		index = name.indexOf('(');
 
 		if (value.substring(0, 7) === 'base64 ' && value.length > 8)
-			value = U.createBuffer(value.substring(7).trim(), 'base64').toString('utf8');
+			value = Buffer.from(value.substring(7).trim(), 'base64').toString('utf8');
 		else if (value.substring(0, 4) === 'hex ' && value.length > 6)
-			value = U.createBuffer(value.substring(4).trim(), 'hex').toString('utf8');
+			value = Buffer.from(value.substring(4).trim(), 'hex').toString('utf8');
 
 		if (index !== -1) {
 			subtype = name.substring(index + 1, name.indexOf(')')).trim().toLowerCase();
@@ -9112,6 +9157,10 @@ F.$configure_configs = function(arr, rewrite) {
 
 			case 'security.txt':
 				obj[name] = value ? value.split(',').trim().join('\n') : '';
+				break;
+
+			case 'default_crypto_iv':
+				obj[name] = typeof(value) === 'string' ? Buffer.from(value, 'hex') : value;
 				break;
 
 			// backward compatibility
@@ -9599,7 +9648,7 @@ global.WORKER2 = F.worker2 = function(name, args, callback, timeout) {
 	if (fork.__worker2)
 		return fork;
 
-	var output = U.createBufferSize(0);
+	var output = Buffer.alloc(0);
 
 	fork.__worker2 = true;
 	fork.on('error', function(e) {
@@ -13499,7 +13548,7 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
 	fnFrom && fnFrom.call(self);
 
 	if (self.layoutName) {
-		self.output = U.createBuffer(output.content);
+		self.output = Buffer.from(output.content);
 		self.isLayout = true;
 		self.view(self.layoutName, null);
 	} else {
@@ -14171,7 +14220,7 @@ WebSocketClient.prototype.$close = function(code, message) {
 	}
 
 	var header = SOCKET_RESPONSE.format(self.$websocket_key(self.req));
-	self.socket.write(U.createBuffer(header, 'binary'));
+	self.socket.write(Buffer.from(header, 'binary'));
 	self.ready = true;
 	self.close(message, code);
 
@@ -14222,7 +14271,7 @@ WebSocketClient.prototype.prepare = function(flags, protocols, allow, length) {
 	var compress = (CONF.allow_websocket_compression && self.req.headers['sec-websocket-extensions'] || '').indexOf('permessage-deflate') !== -1;
 	var header = protocols.length ? (compress ? SOCKET_RESPONSE_PROTOCOL_COMPRESS : SOCKET_RESPONSE_PROTOCOL).format(self.$websocket_key(self.req), protocols.join(', ')) : (compress ? SOCKET_RESPONSE_COMPRESS : SOCKET_RESPONSE).format(self.$websocket_key(self.req));
 
-	self.socket.write(U.createBuffer(header, 'binary'));
+	self.socket.write(Buffer.from(header, 'binary'));
 	self.ready = true;
 
 	if (compress) {
@@ -14394,7 +14443,7 @@ WebSocketClient.prototype.$ondata = function(data) {
 };
 
 function buffer_concat(buffers, length) {
-	var buffer = U.createBufferSize(length);
+	var buffer = Buffer.alloc(length);
 	var offset = 0;
 	for (var i = 0, n = buffers.length; i < n; i++) {
 		buffers[i].copy(buffer, offset);
@@ -14450,13 +14499,13 @@ WebSocketClient.prototype.$parse = function() {
 
 		// does frame contain mask?
 		if (current.isMask) {
-			current.mask = U.createBufferSize(4);
+			current.mask = Buffer.alloc(4);
 			current.buffer.copy(current.mask, 0, index - 4, index);
 		}
 
 		if (this.inflate) {
 
-			var buf = U.createBufferSize(length);
+			var buf = Buffer.alloc(length);
 			current.buffer.copy(buf, 0, index, mlength);
 
 			// does frame contain mask?
@@ -14469,7 +14518,7 @@ WebSocketClient.prototype.$parse = function() {
 			buf.$continue = current.final === false;
 			this.inflatepending.push(buf);
 		} else {
-			current.data = U.createBufferSize(length);
+			current.data = Buffer.alloc(length);
 			current.buffer.copy(current.data, 0, index, mlength);
 		}
 	}
@@ -14485,7 +14534,7 @@ WebSocketClient.prototype.$readbody = function() {
 
 	if (current.type === 1) {
 
-		buf = U.createBufferSize(length);
+		buf = Buffer.alloc(length);
 		for (var i = 0; i < length; i++)  {
 			if (current.isMask)
 				buf[i] = current.data[i] ^ current.mask[i % 4];
@@ -14497,7 +14546,7 @@ WebSocketClient.prototype.$readbody = function() {
 
 	} else {
 
-		buf = U.createBufferSize(length);
+		buf = Buffer.alloc(length);
 		for (var i = 0; i < length; i++) {
 			// does frame contain mask?
 			if (current.isMask)
@@ -14551,7 +14600,7 @@ WebSocketClient.prototype.parseInflate = function() {
 		self.inflatechunkslength = 0;
 		self.inflatelock = true;
 		self.inflate.write(buf);
-		!buf.$continue && self.inflate.write(U.createBuffer(WEBSOCKET_COMPRESS));
+		!buf.$continue && self.inflate.write(Buffer.from(WEBSOCKET_COMPRESS));
 		self.inflate.flush(function() {
 
 			if (!self.inflatechunks)
@@ -14636,13 +14685,13 @@ WebSocketClient.prototype.send = function(message, raw, replacer) {
 		if (CONF.default_websocket_encodedecode === true && data)
 			data = encodeURIComponent(data);
 		if (self.deflate) {
-			self.deflatepending.push(U.createBuffer(data));
+			self.deflatepending.push(Buffer.from(data));
 			self.sendDeflate();
 		} else
 			self.socket.write(U.getWebSocketFrame(0, data, 0x01));
 	} else if (message) {
 		if (self.deflate) {
-			self.deflatepending.push(U.createBuffer(message));
+			self.deflatepending.push(Buffer.from(message));
 			self.sendDeflate();
 		} else
 			self.socket.write(U.getWebSocketFrame(0, new Int8Array(message), 0x02));
@@ -14878,7 +14927,7 @@ function extend_request(PROTO) {
 		var result = { user: '', password: '', empty: true };
 
 		try {
-			var arr = U.createBuffer(authorization.replace('Basic ', '').trim(), 'base64').toString(ENCODING).split(':');
+			var arr = Buffer.from(authorization.replace('Basic ', '').trim(), 'base64').toString(ENCODING).split(':');
 			result.user = arr[0] || '';
 			result.password = arr[1] || '';
 			result.empty = !result.user || !result.password;
@@ -15143,7 +15192,7 @@ function extend_request(PROTO) {
 			return;
 
 		this.buffer_exceeded = true;
-		this.buffer_data = U.createBuffer();
+		this.buffer_data = Buffer.from();
 	};
 
 	PROTO.$total_cancel = function() {
@@ -15600,7 +15649,7 @@ function extend_response(PROTO) {
 			return res;
 		}
 
-		var buffer = U.createBuffer(body);
+		var buffer = Buffer.from(body);
 		Zlib.gzip(buffer, function(err, data) {
 
 			if (err) {
@@ -16430,7 +16479,7 @@ function extend_response(PROTO) {
 		} else {
 			if (gzip) {
 				res.writeHead(options.code || 200, headers);
-				Zlib.gzip(options.body instanceof Buffer ? options.body : U.createBuffer(options.body), (err, data) => res.end(data, res.options.encoding || ENCODING));
+				Zlib.gzip(options.body instanceof Buffer ? options.body : Buffer.from(options.body), (err, data) => res.end(data, res.options.encoding || ENCODING));
 			} else {
 				res.writeHead(options.code || 200, headers);
 				res.end(options.body, res.options.encoding || ENCODING);
