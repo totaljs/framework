@@ -2944,7 +2944,7 @@ function viewengine_read(path, controller) {
 	}
 
 	if (existsSync(filename))
-		return view_parse(view_parse_localization(modificators(Fs.readFileSync(filename).toString('utf8'), filename), controller.language), config.allow_compile_html, filename, controller);
+		return view_parse(view_parse_localization(modificators(Fs.readFileSync(filename).toString('utf8'), filename, 'view', controller), controller.language), config.allow_compile_html, filename, controller);
 
 	var index;
 
@@ -2955,7 +2955,7 @@ function viewengine_read(path, controller) {
 			if (index !== -1) {
 				filename = filename.substring(0, filename.lastIndexOf('/', index - 1)) + filename.substring(index);
 				if (existsSync(filename))
-					return view_parse(view_parse_localization(modificators(Fs.readFileSync(filename).toString('utf8'), filename), controller.language), config.allow_compile_html, filename, controller);
+					return view_parse(view_parse_localization(modificators(Fs.readFileSync(filename).toString('utf8'), filename, 'view', controller), controller.language), config.allow_compile_html, filename, controller);
 			}
 		}
 
@@ -2975,7 +2975,7 @@ function viewengine_read(path, controller) {
 	filename = F.path.views(path.substring(index + 1));
 
 	if (existsSync(filename))
-		return view_parse(view_parse_localization(modificators(Fs.readFileSync(filename).toString('utf8'), filename), controller.language), config.allow_compile_html, filename, controller);
+		return view_parse(view_parse_localization(modificators(Fs.readFileSync(filename).toString('utf8'), filename, 'view', controller), controller.language), config.allow_compile_html, filename, controller);
 
 	if (RELEASE)
 		F.temporary.other[key] = null;
@@ -2983,13 +2983,13 @@ function viewengine_read(path, controller) {
 	return null;
 }
 
-function modificators(value, filename, type) {
+function modificators(value, filename, type, controller) {
 
 	if (!F.modificators)
 		return value;
 
 	for (var i = 0, length = F.modificators.length; i < length; i++) {
-		var output = F.modificators[i](type || 'view', filename, value);
+		var output = F.modificators[i](type || 'view', filename, value, controller);
 		if (output)
 			value = output;
 	}
@@ -3025,7 +3025,7 @@ function viewengine_dynamic(content, language, controller, cachekey) {
 	if (generator)
 		return generator;
 
-	generator = view_parse(view_parse_localization(modificators(content, ''), language), CONF.allow_compile_html, null, controller);
+	generator = view_parse(view_parse_localization(modificators(content, '', 'view', controller), language), CONF.allow_compile_html, null, controller);
 
 	if (cachekey && !F.isDebug)
 		F.temporary.views[cachekey] = generator;
