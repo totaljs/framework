@@ -1,6 +1,6 @@
 ![Total.js logo](https://www.totaljs.com/img/logo-totaljs.png)
 
-[![Professional Support](https://www.totaljs.com/img/badge-support.svg)](https://www.totaljs.com/support/) [![Chat with contributors](https://www.totaljs.com/img/badge-chat.svg)](https://messenger.totaljs.com) [![NPM version][npm-version-image]][npm-url] [![NPM quality][npm-quality]](http://packagequality.com/#?package=total.js) [![NPM downloads][npm-downloads-image]][npm-url] [![MIT License][license-image]][license-url] [![Build Status][travis-image]][travis-url] [![Gitter chat](https://badges.gitter.im/totaljs/framework.png)](https://messenger.totaljs.com) [![Known Vulnerabilities](https://snyk.io/test/npm/total.js/badge.svg)](https://snyk.io/test/npm/total.js) [![Known Vulnerabilities](https://snyk.io/test/github/totaljs/framework/badge.svg)](https://snyk.io/test/github/totaljs/framework)
+[![Professional Support](https://www.totaljs.com/img/badge-support.svg)](https://www.totaljs.com/support/) [![Chat with contributors](https://www.totaljs.com/img/badge-chat.svg)](https://messenger.totaljs.com) [![NPM version][npm-version-image]][npm-url] [![NPM quality][npm-quality]](http://packagequality.com/#?package=total.js) [![NPM downloads][npm-downloads-image]][npm-url] [![MIT License][license-image]][license-url] [![Build Status][travis-image]][travis-url] [![Gitter chat](https://badges.gitter.im/totaljs/framework.png)](https://messenger.totaljs.com) [![Known Vulnerabilities](https://snyk.io/test/npm/total.js/badge.svg)](https://snyk.io/test/npm/total.js)
 
 Node.js framework
 =================
