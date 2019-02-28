@@ -738,10 +738,6 @@ exports.middleware = function(type, fn) {
 	middlewares[type] = fn;
 };
 
-exports.restart = function() {
-	middlewares = {};
-};
-
 // Clears cache with commands
 exports.clear = function() {
 	CACHE = {};
