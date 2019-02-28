@@ -973,6 +973,7 @@ function Framework() {
 	self.isWindows = Os.platform().substring(0, 3).toLowerCase() === 'win';
 
 	self.$events = {};
+	self.commands = {};
 }
 
 // ======================================================
@@ -1004,6 +1005,15 @@ Framework.prototype = {
 
 var framework = new Framework();
 global.framework = global.F = module.exports = framework;
+
+global.CMD = function(key, a, b, c, d) {
+	var self = this;
+	if (self.commands[key]) {
+		for (var i = 0; i < self.commands[key].length; i++)
+			self.commands[key][i](a, b, c, d);
+	}
+	return self;
+};
 
 F.callback_redirect = function(url) {
 	this.url = url;
@@ -4027,6 +4037,16 @@ global.INSTALL = F.install = function(type, name, declaration, options, callback
 		options = undefined;
 	}
 
+	if (type === 'command') {
+		if (typeof(declaration) === 'function') {
+			if (F.commands[name])
+				F.commands[name].push(declaration);
+			else
+				F.commands[name] = [declaration];
+		}
+		return F;
+	}
+
 	// Check if declaration is a valid URL address
 	if (type !== 'eval' && typeof(declaration) === 'string') {
 
@@ -5729,6 +5749,7 @@ F.usage = function(detailed) {
 	var staticNotfound = Object.keys(F.temporary.notfound);
 	var staticRange = Object.keys(F.temporary.range);
 	var redirects = Object.keys(F.routes.redirects);
+	var commands = Object.keys(F.commands);
 	var output = {};
 	var nosqlcleaner = Object.keys(F.databasescleaner);
 
@@ -5777,7 +5798,8 @@ F.usage = function(detailed) {
 		modificator:  F.modificators ? F.modificators.length : 0,
 		viewphrases: $VIEWCACHE.length,
 		uptodates: F.uptodates ? F.uptodates.length : 0,
-		nosqlcleaner: nosqlcleaner.length
+		nosqlcleaner: nosqlcleaner.length,
+		commands: commands.length,
 	};
 
 	output.routing = {
@@ -5831,6 +5853,7 @@ F.usage = function(detailed) {
 	output.other = Object.keys(F.temporary.other);
 	output.problems = F.problems;
 	output.resources = resources;
+	output.commands = commands;
 	output.streaming = staticRange;
 	output.traces = F.traces;
 	output.uptodates = F.uptodates;
@@ -9559,7 +9582,7 @@ global.WORKER = F.worker = function(name, id, timeout, args) {
 	var filename = name[0] === '@' ? F.path.package(name.substring(1)) : U.combine(CONF.directory_workers, name);
 
 	if (!args)
-		args = [];
+		args = EMPTYARRAY;
 
 	fork = Child.fork(filename[filename.length - 3] === '.' ? filename : filename + '.js', args, HEADERS.workers);
 
@@ -9604,7 +9627,7 @@ global.WORKER2 = F.worker2 = function(name, args, callback, timeout) {
 	if (args && !(args instanceof Array))
 		args = [args];
 
-	var fork = F.worker(name, 'worker' + (WORKERID++), timeout, args);
+	var fork = F.worker(name, null, timeout, args);
 	if (fork.__worker2)
 		return fork;
 

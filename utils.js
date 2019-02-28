@@ -54,6 +54,7 @@ const regexpSTRINGFORMAT = /\{\d+\}/g;
 const regexpPATH = /\\/g;
 const regexpTags = /<\/?[^>]+(>|$)/g;
 const regexpDiacritics = /[^\u0000-\u007e]/g;
+const regexpUA = /[a-z]+/gi;
 const regexpXML = /\w+=".*?"/g;
 const regexpDECODE = /&#?[a-z0-9]+;/g;
 const regexpPARAM = /\{{2}[^}\n]*\}{2}/g;
@@ -343,8 +344,16 @@ exports.$$resolve = function(url) {
  * Clears DNS cache
  */
 exports.clearDNS = function() {
-	dnscache = {};
+	OBSOLETE('U.clearDNS()', 'Use CMD(\'clear_dnscache\')');
+	CMD('clear_dnscache');
 };
+
+if (global.F) {
+	F.install('command', 'clear_dnscache', function() {
+		dnscache = {};
+	});
+}
+
 
 exports.keywords = function(content, forSearch, alternative, max_count, max_length, min_length) {
 
@@ -4057,6 +4066,119 @@ SP.decrypt = function(key, secret) {
 	return counter !== (val.length + key.length) ? null : val;
 };
 
+exports.encryptVAL = function(req, val, key, strict) {
+	var obj = {};
+	obj.ua = exports.parseUA(req.headers['user-agent']);
+	if (strict)
+		obj.ip = req.ip;
+	obj.data = val;
+	return F.encrypt(obj, key);
+};
+
+exports.decryptVAL = function(req, val, key) {
+	var obj = F.decrypt(val, key || '', true);
+	if (!obj || (obj.ip && obj.ip !== req.ip) || (obj.ua !== exports.parseUA(req.headers['user-agent'])))
+		return;
+	return obj.data;
+};
+
+exports.parseUA = function(ua) {
+
+	if (!ua)
+		return '';
+
+	var arr = ua.match(regexpUA);
+	var uid = '';
+	if (arr) {
+		var data = {};
+		for (var i = 0; i < arr.length; i++) {
+
+			if (arr[i] === 'like' && arr[i + 1] === 'Gecko') {
+				i += 1;
+				continue;
+			}
+
+			var key = arr[i].toLowerCase();
+			if (key === 'like')
+				break;
+
+			switch (key) {
+				case 'linux':
+				case 'windows':
+				case 'mac':
+				case 'iemobile':
+				case 'android':
+				case 'symbian':
+				case 'symbos':
+				case 'media':
+				case 'center':
+				case 'mobile':
+				case 'electron':
+				case 'tv':
+				case 'smarttv':
+				case 'smart':
+				case 'tizen':
+					data[arr[i]] = 1;
+					break;
+				case 'ipad':
+				case 'iphone':
+					data.iOS = 1;
+					data[arr[i]] = 1;
+					break;
+				case 'phone':
+					data.Mobile = 1;
+					data.Phone = 1;
+					break;
+				case 'mobi':
+					data.Mobile = 1;
+					break;
+				case 'blackberry':
+				case 'tizenbrowser':
+				case 'samsungbrowser':
+				case 'chrome':
+				case 'firefox':
+				case 'mini':
+				case 'msie':
+				case 'opera':
+				case 'outlook':
+				case 'safari':
+					data[arr[i]] = 1;
+					break;
+				case 'trident':
+					data.MSIE = 1;
+					break;
+				case 'opr':
+					data.Opera = 1;
+					break;
+			}
+		}
+
+		if (data.IEMobile) {
+			if (data.Android)
+				delete data.Android;
+			if (data.Safari)
+				delete data.Safari;
+			if (data.Chrome)
+				delete data.Chrome;
+		} else if (data.MSIE) {
+			if (data.Chrome)
+				delete data.Chrome;
+			if (data.Safari)
+				delete data.Safari;
+		} else if (data.Chrome) {
+			if (data.Safari)
+				delete data.Safari;
+		} else if (data.SamsungBrowser) {
+			if (data.Safari)
+				delete data.Safari;
+		}
+
+		uid = Object.keys(data).join(' ');
+	}
+
+	return uid;
+};
+
 exports.encryptUID = function(val, key) {
 
 	var num = typeof(val) === 'number';
@@ -5931,11 +6053,6 @@ exports.minifyScript = function(value) {
 
 exports.minifyHTML = function(value) {
 	return require('./internal').compile_html(value);
-};
-
-exports.restart = function() {
-	exports.queuecache = {};
-	dnscache = {};
 };
 
 exports.parseTheme = function(value) {
