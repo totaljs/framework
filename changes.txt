@@ -20,6 +20,8 @@
 - updated: Mail `unsubscribe` appends new header which enables `unsubscribe` in e.g. iOS
 - updated: `F.modify`, handler contains a new argument `controller`
 
+- fixed: CSS variables
+
 - __removed: backward compatibility__ with older version of Node.js < 10
 
 - improved Schemas and error handling
