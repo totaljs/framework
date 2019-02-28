@@ -38,6 +38,7 @@ const Crypto = require('crypto');
 const Zlib = require('zlib');
 const Tls = require('tls');
 
+const COMPRESS = { gzip: 1, deflate: 1 };
 const CONCAT = [null, null];
 const COMPARER = global.Intl ? global.Intl.Collator().compare : function(a, b) {
 	return a.removeDiacritics().localeCompare(b.removeDiacritics());
@@ -503,7 +504,6 @@ global.REQUEST = exports.request = function(url, flags, data, callback, cookies,
 	var def;
 	var proxy;
 
-
 	if (headers) {
 		headers = exports.extend({}, headers);
 		def = headers[CT];
@@ -763,7 +763,6 @@ function createSecureSocket(options, callback) {
 		PROXYTLS.headers = self.options.uri.headers;
 		PROXYTLS.socket = socket;
 		var tls = Tls.connect(0, PROXYTLS);
-		//tls.on('data', console.log);
 		callback(tls);
 	});
 }
@@ -794,21 +793,21 @@ function request_call(uri, options) {
 	}
 
 	req.on('error', function(err) {
-		if (!options.callback)
-			return;
-		options.callback(err, '', 0, undefined, uri.host);
-		options.callback = null;
-		options.evt.removeAllListeners();
-		options.evt = null;
+		if (options.callback) {
+			options.callback(err, '', 0, undefined, uri.host);
+			options.callback = null;
+			options.evt.removeAllListeners();
+			options.evt = null;
+		}
 	});
 
 	req.setTimeout(options.timeout, function() {
-		if (!options.callback)
-			return;
-		options.callback(new Error(exports.httpStatus(408)), '', 0, undefined, uri.host);
-		options.callback = null;
-		options.evt.removeAllListeners();
-		options.evt = null;
+		if (options.callback) {
+			options.callback(new Error(exports.httpStatus(408)), '', 0, undefined, uri.host);
+			options.callback = null;
+			options.evt.removeAllListeners();
+			options.evt = null;
+		}
 	});
 
 	req.on('response', (response) => response.req = req);
@@ -970,7 +969,7 @@ function request_response(res, uri, options) {
 		}
 	}
 
-	res.on('data', function(chunk) {
+	var ondata = function(chunk) {
 		var self = this;
 		if (options.max && self._bufferlength > options.max)
 			return;
@@ -982,9 +981,9 @@ function request_response(res, uri, options) {
 			self._buffer = chunk;
 		self._bufferlength += chunk.length;
 		options.evt && options.evt.$events.data && options.evt.emit('data', chunk, options.length ? (self._bufferlength / options.length) * 100 : 0);
-	});
+	};
 
-	res.on('end', function() {
+	var onend = function() {
 
 		if (options.socket) {
 			options.uri.agent.destroy();
@@ -995,7 +994,7 @@ function request_response(res, uri, options) {
 		var data;
 
 		if (!self.headers['content-type'] || REG_TEXTAPPLICATION.test(self.headers['content-type']))
-			data = self._buffer ? self._buffer.toString(options.encoding) : '';
+			data = self._buffer ? (options.encoding === 'binary' ? self._buffer : self._buffer.toString(options.encoding)) : '';
 		else
 			data = self._buffer;
 
@@ -1014,7 +1013,24 @@ function request_response(res, uri, options) {
 
 		res.req && res.req.removeAllListeners();
 		res.removeAllListeners();
-	});
+	};
+
+	var encoding = res.headers['content-encoding'] || '';
+	if (encoding)
+		encoding = encoding.split(',')[0];
+
+	if (COMPRESS[encoding]) {
+		var zlib = encoding === 'gzip' ? Zlib.createGunzip() : Zlib.createInflate();
+		zlib._buffer = res.buffer;
+		zlib.headers = res.headers;
+		zlib.statusCode = res.statusCode;
+		zlib.on('data', ondata);
+		zlib.on('end', onend);
+		res.pipe(zlib);
+	} else {
+		res.on('data', ondata);
+		res.on('end', onend);
+	}
 
 	res.resume();
 }

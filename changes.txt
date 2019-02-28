@@ -19,8 +19,10 @@
 - updated: `$.invalid()` without arguments can return a function `function(err)`
 - updated: Mail `unsubscribe` appends new header which enables `unsubscribe` in e.g. iOS
 - updated: `F.modify`, handler contains a new argument `controller`
+- updated: `headers` argument in `controller.proxy` supports `flags: []` for REQEUST method
 
 - fixed: CSS variables
+- fixed: `controller.proxy()` with Gzip/Deflate compression
 
 - __removed: backward compatibility__ with older version of Node.js < 10
 

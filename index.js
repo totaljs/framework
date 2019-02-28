@@ -13092,9 +13092,20 @@ Controller.prototype.proxy = Controller.prototype.proxy2 = function(url, callbac
 	}
 
 	if (headers) {
+
+		if (headers.flags) {
+			if (typeof(headers.flags) === 'string')
+				headers.flags = headers.flags.split(',');
+			for (var i = 0; i < headers.flags.length; i++)
+				flags.push(headers.flags[i]);
+			headers.flags = undefined;
+		}
+
 		keys = Object.keys(headers);
-		for (var i = 0, length = keys.length; i < length; i++)
-			h[keys[i]] = headers[keys[i]];
+		for (var i = 0, length = keys.length; i < length; i++) {
+			if (headers[keys[i]])
+				h[keys[i]] = headers[keys[i]];
+		}
 	}
 
 	return U.request(url, flags, self.body, function(err, data, code, headers) {
@@ -16436,6 +16447,7 @@ function extend_response(PROTO) {
 
 		if (res.headersSent)
 			return res;
+
 
 		var accept = req.headers['accept-encoding'] || '';
 		!accept && isGZIP(req) && (accept = 'gzip');
