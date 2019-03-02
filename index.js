@@ -10813,6 +10813,11 @@ Controller.prototype.middleware = function(names, options, callback) {
 	return self;
 };
 
+Controller.prototype.nocache = function() {
+	this.req.nocache();
+	return this;
+};
+
 /**
  * Creates a pipe between the current request and target URL
  * @param {String} url
@@ -14875,7 +14880,7 @@ function extend_request(PROTO) {
 	 * Disable HTTP cache for current request
 	 * @return {Request}
 	 */
-	PROTO.noCache = function() {
+	PROTO.noCache = PROTO.nocache = function() {
 		this.res && this.res.noCache();
 		return this;
 	};
@@ -15526,7 +15531,7 @@ function extend_response(PROTO) {
 	 * Disable HTTP cache for current response
 	 * @return {Response}
 	 */
-	PROTO.noCache = function() {
+	PROTO.noCache = PROTO.nocache = function() {
 		var self = this;
 
 		if (self.$nocache)

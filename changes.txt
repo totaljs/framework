@@ -15,6 +15,7 @@
 - added: a new command `clear_dnscache` for clearing DNS cache
 - added: `U.encryptVAL()` for encrypt value
 - added: `U.decryptVAL()` for decrypt value
+- added: `controller.nocache()`
 
 - updated: `$.invalid()` without arguments can return a function `function(err)`
 - updated: Mail `unsubscribe` appends new header which enables `unsubscribe` in e.g. iOS
