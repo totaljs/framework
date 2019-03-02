@@ -1007,12 +1007,10 @@ var framework = new Framework();
 global.framework = global.F = module.exports = framework;
 
 global.CMD = function(key, a, b, c, d) {
-	var self = this;
-	if (self.commands[key]) {
-		for (var i = 0; i < self.commands[key].length; i++)
-			self.commands[key][i](a, b, c, d);
+	if (F.commands[key]) {
+		for (var i = 0; i < F.commands[key].length; i++)
+			F.commands[key][i](a, b, c, d);
 	}
-	return self;
 };
 
 F.callback_redirect = function(url) {
@@ -1051,7 +1049,7 @@ F.refresh = function() {
 	CONF.allow_debug && F.consoledebug('clear resources');
 
 	F.$events.clear && EMIT('clear', 'dns');
-	U.clearDNS();
+	CMD('clear_dnscache');
 	CONF.allow_debug && F.consoledebug('clear DNS cache');
 
 	return F;
