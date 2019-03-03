@@ -15218,10 +15218,7 @@ function extend_request(PROTO) {
 
 		F.onSchema(self, self.$total_route, function(err, body) {
 			if (err) {
-				if (self.$total_route.isDYNAMICSCHEMA)
-					self.$total_404(err);
-				else
-					self.$total_400(err);
+				self.$total_400(err);
 				next = null;
 			} else {
 				F.stats.request.schema++;
