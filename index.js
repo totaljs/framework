@@ -7161,7 +7161,7 @@ F.service = function(count) {
 
 	if (count % CONF.default_interval_clear_dnscache === 0) {
 		F.$events.clear && EMIT('clear', 'dns');
-		U.clearDNS();
+		CMD('clear_dnscache');
 		CONF.allow_debug && F.consoledebug('clear DNS cache');
 	}
 
