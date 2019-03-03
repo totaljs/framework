@@ -4736,12 +4736,12 @@ Binary.prototype.res = function(res, options, notmodified) {
 				res.options.stream = Fs.createReadStream(filename, BINARYREADDATA);
 				res.options.lastmodified = true;
 
-				if (!options.download) {
-					if (!options.headers)
-						options.headers = {};
+				if (options.download) {
+					res.options.download = options.download === true ? obj.name : options.download;
+				} else {
+					!options.headers && (options.headers = {});
 					options.headers['Last-Modified'] = utc;
-				} else
-					res.options.download = options.download;
+				}
 
 				res.options.headers = options.headers;
 				res.options.done = options.done;
