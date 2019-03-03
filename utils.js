@@ -5791,7 +5791,7 @@ FLP.stat = function(path) {
 };
 
 FLP.clean = function(path) {
-	return path[path.length - 1] === '/' ? path : path + '/';
+	return path[path.length - 1] === Path.sep ? path : path + Path.sep;
 };
 
 FLP.next = function() {
