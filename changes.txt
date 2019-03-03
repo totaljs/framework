@@ -22,6 +22,7 @@
 - updated: `F.modify`, handler contains a new argument `controller`
 - updated: `headers` argument in `controller.proxy` supports `flags: []` for REQEUST method
 
+- fixed: error handling in dynamic schemas
 - fixed: CSS variables
 - fixed: `controller.proxy()` with Gzip/Deflate compression
 
