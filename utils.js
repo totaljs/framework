@@ -793,7 +793,7 @@ function request_call(uri, options) {
 	}
 
 	req.on('error', function(err) {
-		if (options.callback) {
+		if (options.callback && !options.done) {
 			options.callback(err, '', 0, undefined, uri.host);
 			options.callback = null;
 			options.evt.removeAllListeners();
@@ -856,6 +856,7 @@ function request_writefile(req, options, file, next) {
 }
 
 function request_response(res, uri, options) {
+
 
 	res._buffer = null;
 	res._bufferlength = 0;
@@ -969,26 +970,10 @@ function request_response(res, uri, options) {
 		}
 	}
 
-	var ondata = function(chunk) {
-		var self = this;
-		if (options.max && self._bufferlength > options.max)
-			return;
-		if (self._buffer) {
-			CONCAT[0] = self._buffer;
-			CONCAT[1] = chunk;
-			self._buffer = Buffer.concat(CONCAT);
-		} else
-			self._buffer = chunk;
-		self._bufferlength += chunk.length;
-		options.evt && options.evt.$events.data && options.evt.emit('data', chunk, options.length ? (self._bufferlength / options.length) * 100 : 0);
-	};
-
 	var onend = function() {
 
-		if (options.socket) {
+		if (options.socket)
 			options.uri.agent.destroy();
-			//options.socket.destroy();
-		}
 
 		var self = this;
 		var data;
@@ -1011,8 +996,30 @@ function request_response(res, uri, options) {
 			options.callback = null;
 		}
 
-		res.req && res.req.removeAllListeners();
-		res.removeAllListeners();
+		if (res.statusCode !== 204) {
+			res.req && res.req.removeAllListeners();
+			res.removeAllListeners();
+		}
+	};
+
+	if (res.statusCode === 204) {
+		options.done = true;
+		onend.call(res);
+		return;
+	}
+
+	var ondata = function(chunk) {
+		var self = this;
+		if (options.max && self._bufferlength > options.max)
+			return;
+		if (self._buffer) {
+			CONCAT[0] = self._buffer;
+			CONCAT[1] = chunk;
+			self._buffer = Buffer.concat(CONCAT);
+		} else
+			self._buffer = chunk;
+		self._bufferlength += chunk.length;
+		options.evt && options.evt.$events.data && options.evt.emit('data', chunk, options.length ? (self._bufferlength / options.length) * 100 : 0);
 	};
 
 	var encoding = res.headers['content-encoding'] || '';
