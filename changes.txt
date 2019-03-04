@@ -16,6 +16,7 @@
 - added: `U.encryptVAL()` for encrypt value
 - added: `U.decryptVAL()` for decrypt value
 - added: `controller.nocache()`
+- added: `controller.nocontent()`
 
 - updated: `$.invalid()` without arguments can return a function `function(err)`
 - updated: Mail `unsubscribe` appends new header which enables `unsubscribe` in e.g. iOS
@@ -26,6 +27,7 @@
 - fixed: error handling in dynamic schemas
 - fixed: CSS variables
 - fixed: `controller.proxy()` with Gzip/Deflate compression
+- fixed: HTTP status code with `204` in `REQUEST()`
 
 - __removed: backward compatibility__ with older version of Node.js < 10
 

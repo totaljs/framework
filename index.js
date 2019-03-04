@@ -12701,6 +12701,21 @@ Controller.prototype.empty = function(headers) {
 };
 
 /**
+ * Creates an empty response with 204
+ * @param {Object/Number} headers A custom headers or a custom HTTP status.
+ * @return {Controller}
+ */
+Controller.prototype.nocontent = function(headers) {
+	var self = this;
+	var res = self.res;
+	res.writeHead(204, headers);
+	res.end();
+	F.stats.response.empty++;
+	response_end(res);
+	return self;
+};
+
+/**
  * Destroys a request (closes it)
  * @param {String} problem Optional.
  * @return {Controller}
