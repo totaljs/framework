@@ -86,7 +86,7 @@ WebSocketClient.prototype.connect = function(url, protocol, origin) {
 	if (keys.length) {
 		var tmp = [];
 		for (var i = 0, length = keys.length; i < length; i++)
-			tmp.push(keys[i] + '=' + self.headers[keys[i]]);
+			tmp.push(keys[i] + '=' + self.cookies[keys[i]]);
 		options.headers['Cookie'] = tmp.join(', ');
 	}
 

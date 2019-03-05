@@ -28,6 +28,7 @@
 - fixed: CSS variables
 - fixed: `controller.proxy()` with Gzip/Deflate compression
 - fixed: HTTP status code with `204` in `REQUEST()`
+- fixed: `cookies` in `WEBSOCKETCLIENT`
 
 - __removed: backward compatibility__ with older version of Node.js < 10
 
