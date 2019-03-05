@@ -74,7 +74,7 @@ const REG_CSS_7 = /\s\}/g;
 const REG_CSS_8 = /\s\{/g;
 const REG_CSS_9 = /;\}/g;
 const REG_CSS_10 = /\$[a-z0-9-_]+(\s)*:.*?;/gi;
-const REG_CSS_11 = /\$.*?(;|\})/gi;
+const REG_CSS_11 = /\$.*?(;|\}|!)/gi;
 const REG_CSS_12 = /(margin|padding):.*?(;|})/g;
 const AUTOVENDOR = ['filter', 'appearance', 'column-count', 'column-gap', 'column-rule', 'display', 'transform', 'transform-style', 'transform-origin', 'transition', 'user-select', 'animation', 'perspective', 'animation-name', 'animation-duration', 'animation-timing-function', 'animation-delay', 'animation-iteration-count', 'animation-direction', 'animation-play-state', 'opacity', 'background', 'background-image', 'font-smoothing', 'text-size-adjust', 'backface-visibility', 'box-sizing', 'overflow-scrolling'];
 const WRITESTREAM = { flags: 'w' };
@@ -2596,7 +2596,7 @@ function variablesCSS(content) {
 		var last = text[text.length - 1];
 		var len = text.length;
 
-		if (last === ';' || last === '}')
+		if (last === ';' || last === '}' || last === '!')
 			len = len - 1;
 		else
 			last = '';

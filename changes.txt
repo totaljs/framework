@@ -26,6 +26,7 @@
 
 - fixed: error handling in dynamic schemas
 - fixed: CSS variables
+- fixed: CSS variables with additional `!important` clause
 - fixed: `controller.proxy()` with Gzip/Deflate compression
 - fixed: HTTP status code with `204` in `REQUEST()`
 
