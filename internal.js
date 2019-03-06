@@ -2072,6 +2072,7 @@ function view_prepare(command, dynamicCommand, functions, controller, components
 		case 'user':
 		case 'config':
 		case 'CONF':
+		case 'REPO':
 		case 'controller':
 			return view_is_assign(command) ? ('self.$set(' + command + ')') : ('$STRING(' + command + ').encode()');
 
@@ -2091,6 +2092,7 @@ function view_prepare(command, dynamicCommand, functions, controller, components
 		case 'isomorphic':
 		case 'settings':
 		case 'CONFIG':
+		case 'FUNC':
 		case 'function':
 		case 'MODEL':
 		case 'SCHEMA':
