@@ -17322,8 +17322,13 @@ function controller_json_workflow(id) {
 		else {
 			if (w.type)
 				self[w.type](self.callback(w.view));
-			else
-				self.throw500('Operation @' + w.id + ' not found.');
+			else {
+				var err = 'Operation @' + w.id + ' not found in the schema "{0}".'.format(schema.name);
+				if (self.route.isDYNAMICSCHEMA)
+					self.throw404(err);
+				else
+					self.throw500(err);
+			}
 		}
 
 		if (self.route.isDYNAMICSCHEMA)
