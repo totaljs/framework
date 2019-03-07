@@ -4949,10 +4949,12 @@ Binary.prototype.browse = function(directory, callback) {
 	if (typeof(directory) === 'function') {
 		Fs.readdir(self.directory, function(err, files) {
 			var dirs = [];
-			for (var i = 0; i < files.length; i++) {
-				var p = files[i];
-				if (p[3] === '-' && p[7] === '-')
-					dirs.push(p);
+			if (files && files.length) {
+				for (var i = 0; i < files.length; i++) {
+					var p = files[i];
+					if (p[3] === '-' && p[7] === '-')
+						dirs.push(p);
+				}
 			}
 			directory(null, dirs);
 		});
