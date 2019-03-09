@@ -686,7 +686,7 @@ function Framework() {
 
 		// 'static-accepts-custom': [],
 		default_crypto_iv: Buffer.from(self.syshash).slice(0, 16),
-		default_xpoweredby: '',
+		default_xpoweredby: 'Total.js',
 		default_layout: 'layout',
 		default_theme: '',
 		default_proxy: '',
