@@ -3227,7 +3227,9 @@ SP.parseQuery = function() {
 	return exports.parseQuery(this);
 };
 
-SP.parseUA = function(ua) {
+SP.parseUA = function() {
+
+	var ua = this;
 
 	if (!ua)
 		return '';
