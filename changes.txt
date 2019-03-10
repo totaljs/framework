@@ -8,7 +8,7 @@
 - added: `mail.type = 'html'` can be `html` (default) or `plain`
 - added: `$.headers` into the `SchemaOptions`, `OperationOptions` and `TaskBuilder`
 - added: `String.parseCSV([delimiter])` returns `Object Array`
-- added: `String.parseUA()` a simple user-agent parser
+- added: `String.parseUA([structured])` a simple user-agent parser
 - added: a new config key `default_crypto` it can rewrite Total.js crypto mechanism (default: `undefined`)
 - added: a new config key `default_crypto_iv` it's an initialization vector (default: generated from `secret`) or it can contain a custom `hex` value
 - added: commands `INSTALL('command', 'command_name', function)` for registering commands and `CMD(name, [a], [b], [c], [d])` for executing commands

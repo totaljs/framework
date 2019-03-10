@@ -3227,7 +3227,7 @@ SP.parseQuery = function() {
 	return exports.parseQuery(this);
 };
 
-SP.parseUA = function() {
+SP.parseUA = function(structured) {
 
 	var ua = this;
 
@@ -3236,8 +3236,11 @@ SP.parseUA = function() {
 
 	var arr = ua.match(regexpUA);
 	var uid = '';
+
 	if (arr) {
+
 		var data = {};
+
 		for (var i = 0; i < arr.length; i++) {
 
 			if (arr[i] === 'like' && arr[i + 1] === 'Gecko') {
@@ -3253,42 +3256,57 @@ SP.parseUA = function() {
 				case 'linux':
 				case 'windows':
 				case 'mac':
-				case 'iemobile':
-				case 'android':
 				case 'symbian':
 				case 'symbos':
+				case 'tizen':
+				case 'android':
+					data[arr[i]] = 2;
+					if (key === 'tizen' || key === 'android')
+						data.Mobile = 1;
+					break;
+				case 'webos':
+					data.WebOS = 2;
+					break;
 				case 'media':
 				case 'center':
-				case 'mobile':
-				case 'electron':
 				case 'tv':
 				case 'smarttv':
 				case 'smart':
-				case 'tizen':
+					data[arr[i]] = 5;
+					break;
+				case 'iemobile':
+				case 'mobile':
 					data[arr[i]] = 1;
+					data.Mobile = 3;
 					break;
 				case 'ipad':
+				case 'ipod':
 				case 'iphone':
-					data.iOS = 1;
+					data.iOS = 2;
+					data.Mobile = 3;
 					data[arr[i]] = 1;
+					if (key === 'ipad')
+						data.Tablet = 4;
 					break;
 				case 'phone':
-					data.Mobile = 1;
-					data.Phone = 1;
+					data.Mobile = 3;
 					break;
-				case 'mobi':
-					data.Mobile = 1;
-					break;
-				case 'blackberry':
 				case 'tizenbrowser':
+				case 'blackberry':
+				case 'mini':
+					data.Mobile = 3;
+					data[arr[i]] = 1;
+					break;
 				case 'samsungbrowser':
 				case 'chrome':
 				case 'firefox':
-				case 'mini':
 				case 'msie':
 				case 'opera':
 				case 'outlook':
 				case 'safari':
+				case 'mail':
+				case 'edge':
+				case 'electron':
 					data[arr[i]] = 1;
 					break;
 				case 'trident':
@@ -3297,8 +3315,19 @@ SP.parseUA = function() {
 				case 'opr':
 					data.Opera = 1;
 					break;
+				case 'tablet':
+					data.Tablet = 4;
+					break;
 			}
 		}
+
+		if (data.MSIE) {
+			data.IE = 1;
+			delete data.MSIE;
+		}
+
+		if (data.WebOS)
+			delete data.Linux;
 
 		if (data.IEMobile) {
 			if (data.Android)
@@ -3312,12 +3341,48 @@ SP.parseUA = function() {
 				delete data.Chrome;
 			if (data.Safari)
 				delete data.Safari;
+		} else if (data.Edge) {
+			if (data.Chrome)
+				delete data.Chrome;
+			if (data.Safari)
+				delete data.Safari;
+		} else if (data.Opera) {
+			if (data.Chrome)
+				delete data.Chrome;
+			if (data.Safari)
+				delete data.Safari;
 		} else if (data.Chrome) {
 			if (data.Safari)
 				delete data.Safari;
 		} else if (data.SamsungBrowser) {
 			if (data.Safari)
 				delete data.Safari;
+		}
+
+		if (structured) {
+			var keys = Object.keys(data);
+			var output = { os: '', browser: '', device: 'desktop' };
+
+			if (data.Tablet)
+				output.device = 'tablet';
+			else if (data.Mobile)
+				output.device = 'mobile';
+
+			for (var i = 0; i < keys.length; i++) {
+				var val = data[keys[i]];
+				switch (val) {
+					case 1:
+						output.browser += (output.browser ? ' ' : '') + keys[i];
+						break;
+					case 2:
+						output.os += (output.os ? ' ' : '') + keys[i];
+						break;
+					case 5:
+						output.device = 'tv';
+						break;
+				}
+			}
+			return output;
 		}
 
 		uid = Object.keys(data).join(' ');
