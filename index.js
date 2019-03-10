@@ -14898,6 +14898,10 @@ function extend_request(PROTO) {
 		return this;
 	};
 
+	PROTO.useragent = function(structured) {
+		return (this.headers['user-agent'] || '').parseUA(structured);
+	};
+
 	/**
 	 * Read a cookie from current request
 	 * @param {String} name Cookie name.
