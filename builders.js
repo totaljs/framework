@@ -52,7 +52,7 @@ function SchemaOptions(error, model, options, callback, controller) {
 	this.value = this.model = model;
 	this.options = options || EMPTYOBJECT;
 	this.callback = this.next = callback;
-	this.controller = controller;
+	this.controller = controller instanceof SchemaOptions ? controller.controller : controller;
 }
 
 function TaskBuilder($) {
@@ -4913,6 +4913,9 @@ global.OPERATION = function(name, value, callback, param, controller) {
 		controller = param;
 		param = undefined;
 	}
+
+	if (controller && controller instanceof OperationOptions)
+		controller = controller.controller;
 
 	var fn = operations[name];
 	var error = new ErrorBuilder();
