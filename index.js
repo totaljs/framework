@@ -8267,6 +8267,24 @@ global.DECRYPT = F.decrypt = function(value, key, jsonConvert) {
 	return response ? (jsonConvert ? (response.isJSON() ? response.parseJSON(true) : null) : response) : null;
 };
 
+global.ENCRYPTREQ = function(req, val, key, strict) {
+	var obj = {};
+	obj.ua = (req.headers['user-agent'] || '').parseUA();
+	if (strict)
+		obj.ip = req.ip;
+	obj.data = val;
+	return F.encrypt(obj, key);
+};
+
+global.DECRYPTREQ = function(req, val, key) {
+	if (!val)
+		return;
+	var obj = F.decrypt(val, key || '', true);
+	if (!obj || (obj.ip && obj.ip !== req.ip) || (obj.ua !== (req.headers['user-agent'] || '').parseUA()))
+		return;
+	return obj.data;
+};
+
 /**
  * Create hash
  * @param {String} type Type (md5, sha1, sha256, etc.)

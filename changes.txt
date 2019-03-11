@@ -14,8 +14,8 @@
 - added: a new config key `default_crypto_iv` it's an initialization vector (default: generated from `secret`) or it can contain a custom `hex` value
 - added: commands `INSTALL('command', 'command_name', function)` for registering commands and `CMD(name, [a], [b], [c], [d])` for executing commands
 - added: a new command `clear_dnscache` for clearing DNS cache
-- added: `U.encryptVAL()` for encrypt value
-- added: `U.decryptVAL()` for decrypt value
+- added: `ENCRYPTREQ(req, val, [key], [strict])` to encrypt value according to the request meta data
+- added: `DECRYPTREQ(req, val, [key])` to decrypt value according to the request meta data
 - added: `controller.nocache()`
 - added: `controller.nocontent()`
 - added: `REPO` as a global variable

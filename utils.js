@@ -4253,24 +4253,6 @@ SP.decrypt = function(key, secret) {
 	return counter !== (val.length + key.length) ? null : val;
 };
 
-exports.encryptVAL = function(req, val, key, strict) {
-	var obj = {};
-	obj.ua = (req.headers['user-agent'] || '').parseUA();
-	if (strict)
-		obj.ip = req.ip;
-	obj.data = val;
-	return F.encrypt(obj, key);
-};
-
-exports.decryptVAL = function(req, val, key) {
-	if (!val)
-		return;
-	var obj = F.decrypt(val, key || '', true);
-	if (!obj || (obj.ip && obj.ip !== req.ip) || (obj.ua !== (req.headers['user-agent'] || '').parseUA()))
-		return;
-	return obj.data;
-};
-
 exports.encryptUID = function(val, key) {
 
 	var num = typeof(val) === 'number';
