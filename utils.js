@@ -4263,7 +4263,9 @@ exports.encryptVAL = function(req, val, key, strict) {
 };
 
 exports.decryptVAL = function(req, val, key) {
-	var obj = F.decrypt(val || '', key || '', true);
+	if (!val)
+		return;
+	var obj = F.decrypt(val, key || '', true);
 	if (!obj || (obj.ip && obj.ip !== req.ip) || (obj.ua !== (req.headers['user-agent'] || '').parseUA()))
 		return;
 	return obj.data;
