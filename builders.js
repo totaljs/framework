@@ -34,6 +34,7 @@ const REGEXP_CLEAN_PHONE = /\s|\.|-|\(|\)/g;
 const REGEXP_NEWOPERATION = /^(async\s)?function(\s)?\([a-zA-Z$\s]+\)|^function anonymous\(\$|^\([a-zA-Z$\s]+\)/;
 const hasOwnProperty = Object.prototype.hasOwnProperty;
 const Qs = require('querystring');
+const MSG_OBSOLETE_NEW = 'You used older declaration of this delegate and you must rewrite it. Read more in docs.';
 
 var schemas = {};
 var schemasall = {};
@@ -978,6 +979,7 @@ SchemaBuilderEntity.prototype.setSave = function(fn, description) {
 	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	this.onSave = fn;
 	this.meta.save = description || null;
+	!fn.$newversion && OBSOLETE('Schema("{0}").setSave()'.format(this.name), MSG_OBSOLETE_NEW);
 	return this;
 };
 
@@ -990,6 +992,7 @@ SchemaBuilderEntity.prototype.setInsert = function(fn, description) {
 	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	this.onInsert = fn;
 	this.meta.insert = description || null;
+	!fn.$newversion && OBSOLETE('Schema("{0}").setInsert()'.format(this.name), MSG_OBSOLETE_NEW);
 	return this;
 };
 
@@ -1002,6 +1005,7 @@ SchemaBuilderEntity.prototype.setUpdate = function(fn, description) {
 	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	this.onUpdate = fn;
 	this.meta.update = description || null;
+	!fn.$newversion && OBSOLETE('Schema("{0}").setUpdate()'.format(this.name), MSG_OBSOLETE_NEW);
 	return this;
 };
 
@@ -1024,6 +1028,7 @@ SchemaBuilderEntity.prototype.setGet = SchemaBuilderEntity.prototype.setRead = f
 	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	this.onGet = fn;
 	this.meta.get = this.meta.read = description || null;
+	!fn.$newversion && OBSOLETE('Schema("{0}").setGet()'.format(this.name), MSG_OBSOLETE_NEW);
 	return this;
 };
 
@@ -1037,6 +1042,7 @@ SchemaBuilderEntity.prototype.setQuery = function(fn, description) {
 	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	this.onQuery = fn;
 	this.meta.query = description || null;
+	!fn.$newversion && OBSOLETE('Schema("{0}").setQuery()'.format(this.name), MSG_OBSOLETE_NEW);
 	return this;
 };
 
@@ -1050,6 +1056,7 @@ SchemaBuilderEntity.prototype.setRemove = function(fn, description) {
 	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	this.onRemove = fn;
 	this.meta.remove = description || null;
+	!fn.$newversion && OBSOLETE('Schema("{0}").setRemove()'.format(this.name), MSG_OBSOLETE_NEW);
 	return this;
 };
 
@@ -1089,6 +1096,7 @@ SchemaBuilderEntity.prototype.addTransform = function(name, fn, description) {
 	!this.transforms && (this.transforms = {});
 	this.transforms[name] = fn;
 	this.meta['transform#' + name] = description || null;
+	!fn.$newversion && OBSOLETE('Schema("{0}").addTransform("{1}")'.format(this.name, name), MSG_OBSOLETE_NEW);
 	return this;
 };
 
@@ -1110,6 +1118,7 @@ SchemaBuilderEntity.prototype.addOperation = function(name, fn, description) {
 	!this.operations && (this.operations = {});
 	this.operations[name] = fn;
 	this.meta['operation#' + name] = description || null;
+	!fn.$newversion && OBSOLETE('Schema("{0}").addOperation("{1}")'.format(this.name, name), MSG_OBSOLETE_NEW);
 	return this;
 };
 
@@ -1131,6 +1140,7 @@ SchemaBuilderEntity.prototype.addWorkflow = function(name, fn, description) {
 	!this.workflows && (this.workflows = {});
 	this.workflows[name] = fn;
 	this.meta['workflow#' + name] = description || null;
+	!fn.$newversion && OBSOLETE('Schema("{0}").addWorkflow("{1}")'.format(this.name, name), MSG_OBSOLETE_NEW);
 	return this;
 };
 
@@ -1143,6 +1153,7 @@ SchemaBuilderEntity.prototype.addHook = function(name, fn, description) {
 	!this.hooks[name] && (this.hooks[name] = []);
 	this.hooks[name].push({ owner: F.$owner(), fn: fn });
 	this.meta['hook#' + name] = description || null;
+	!fn.$newversion && OBSOLETE('Schema("{0}").addHook("{1}")'.format(this.name, name), MSG_OBSOLETE_NEW);
 	return this;
 };
 
@@ -4879,6 +4890,9 @@ global.NEWOPERATION = function(name, fn, repeat, stop, binderror) {
 		operations[name].$repeat = repeat;
 		operations[name].$stop = stop !== false;
 		operations[name].$binderror = binderror === true;
+
+		if (!operations[name].$newversion)
+			OBSOLETE('NEWOPERATION("{0}")'.format(name), MSG_OBSOLETE_NEW);
 	}
 };
 

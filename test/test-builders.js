@@ -169,29 +169,29 @@ function test_Schema() {
 		});
 	});
 
-	GETSCHEMA('2').addTransform('xml', function(err, model, helper, next) {
-		next('<xml>OK</xml>');
+	GETSCHEMA('2').addTransform('xml', function($) {
+		$.next('<xml>OK</xml>');
 	}).addWorkflow('send', function($) {
 		countW++;
 		$.callback('workflow');
-	}).addOperation('test', function(err, model, helper, next) {
-		assert.ok(!model, 'schema - operation 1');
-		assert.ok(helper === true, 'schema - operation 2');
-		next(false);
-	}).setGet(function(error, model, helper, next) {
-		assert.ok(error.hasError() === false, 'schema - setGet');
-		model.age = 99;
-		next();
-	}).setSave(function(error, model, helper, next) {
+	}).addOperation('test', function($) {
+		assert.ok(!$.model, 'schema - operation 1');
+		assert.ok($.options === true, 'schema - operation 2');
+		$.next(false);
+	}).setGet(function($) {
+		assert.ok($.error.hasError() === false, 'schema - setGet');
+		$.model.age = 99;
+		$.next();
+	}).setSave(function($) {
 		countS++;
-		assert.ok(error.hasError() === false, 'schema - setSave');
-		next(true);
-	}).setRemove(function(error, helper, next) {
-		assert.ok(error.hasError() === false, 'schema - setRemove');
-		next(true);
-	}).setQuery(function(error, helper, next) {
-		assert.ok(error.hasError() === false, 'schema - setQuery');
-		next([]);
+		assert.ok($.error.hasError() === false, 'schema - setSave');
+		$.next(true);
+	}).setRemove(function($) {
+		assert.ok($.error.hasError() === false, 'schema - setRemove');
+		$.next(true);
+	}).setQuery(function($) {
+		assert.ok($.error.hasError() === false, 'schema - setQuery');
+		$.next([]);
 	});
 
 	//console.log(builders.defaults('1', { name: 'Peter', age: 30, join: { name: 20 }}));
@@ -227,10 +227,10 @@ function test_Schema() {
 		assert.ok(!result, 'schema - operation - result');
 	});
 
-	GETSCHEMA('default', '2').addOperation('test2', function(error, model, helper, next) {
-		assert.ok(model === 1 || model == null, 'schema - operation problem with model');
-		assert.ok(helper === 2 || helper == null, 'schema - operation problem with helper');
-		next(3);
+	GETSCHEMA('default', '2').addOperation('test2', function($) {
+		assert.ok($.model === 1 || $.model == null, 'schema - operation problem with model');
+		assert.ok($.options != null, 'schema - operation problem with options');
+		$.next(3);
 	}).operation('test2', 1, 2, function(err, value) {
 		assert.ok(value === 3, 'schema - operation advanced 1');
 	}).operation('test2', 2, function(err, value) {
@@ -409,24 +409,24 @@ function test_Schema() {
 
 	NEWSCHEMA('Hooks').make(function(schema) {
 
-		schema.addHook('1', function(error, model, options, callback) {
-			model.counter = 1;
-			callback();
+		schema.addHook('1', function($) {
+			$.model.counter = 1;
+			$.callback();
 		});
 
-		schema.addHook('1', function(error, model, options, callback) {
-			model.counter++;
-			callback();
+		schema.addHook('1', function($) {
+			$.model.counter++;
+			$.callback();
 		});
 
-		schema.addHook('1', function(error, model, options, callback) {
-			model.counter++;
-			callback();
+		schema.addHook('1', function($) {
+			$.model.counter++;
+			$.callback();
 		});
 
-		schema.addHook('1', function(error, model, options, callback) {
-			model.counter++;
-			callback();
+		schema.addHook('1', function($) {
+			$.model.counter++;
+			$.callback();
 		});
 
 		schema.hook('1', null, null, function(err, response) {
@@ -514,42 +514,42 @@ function test_ErrorBuilder() {
 
 		schema.define('name', String);
 
-		schema.addWorkflow('1', function(error, model, options, callback) {
+		schema.addWorkflow('1', function($) {
 			arr.push('workflow1');
-			model.$next('workflow', '2');
-			callback();
+			$.model.$next('workflow', '2');
+			$.callback();
 		});
 
-		schema.addWorkflow('2', function(error, model, options, callback) {
+		schema.addWorkflow('2', function($) {
 			arr.push('workflow2');
-			callback();
+			$.callback();
 		});
 
-		schema.addWorkflow('3', function(error, model, options, callback) {
+		schema.addWorkflow('3', function($) {
 			arr.push('workflow3');
-			callback();
+			$.callback();
 		});
 
-		schema.addTransform('1', function(error, model, options, callback) {
+		schema.addTransform('1', function($) {
 			arr.push('transform1');
-			model.$next('transform', '2');
-			model.$push('transform', '4');
-			callback();
+			$.model.$next('transform', '2');
+			$.model.$push('transform', '4');
+			$.callback();
 		});
 
-		schema.addTransform('2', function(error, model, options, callback) {
+		schema.addTransform('2', function($) {
 			arr.push('transform2');
-			callback();
+			$.callback();
 		});
 
-		schema.addTransform('3', function(error, model, options, callback) {
+		schema.addTransform('3', function($) {
 			arr.push('transform3');
-			callback();
+			$.callback();
 		});
 
-		schema.addTransform('4', function(error, model, options, callback) {
+		schema.addTransform('4', function($) {
 			arr.push('transform4');
-			callback();
+			$.callback();
 		});
 
 		var model = schema.create();
@@ -569,13 +569,13 @@ function test_ErrorBuilder() {
 
 	NEWSCHEMA('Repository').make(function(schema) {
 
-		schema.addWorkflow('1', function(error, model, options, callback) {
-			model.$repository('valid', true);
-			callback();
+		schema.addWorkflow('1', function($) {
+			$.model.$repository('valid', true);
+			$.callback();
 		});
 
-		schema.addWorkflow('2', function(error, model, options, callback) {
-			callback();
+		schema.addWorkflow('2', function($) {
+			$.callback();
 		});
 
 		var model = schema.create();
@@ -588,17 +588,17 @@ function test_ErrorBuilder() {
 
 	NEWSCHEMA('Output').make(function(schema) {
 
-		schema.addWorkflow('1', function(error, model, options, callback) {
-			callback(1);
+		schema.addWorkflow('1', function($) {
+			$.callback(1);
 		});
 
-		schema.addWorkflow('2', function(error, model, options, callback) {
-			model.$output();
-			callback(2);
+		schema.addWorkflow('2', function($) {
+			$.model.$output();
+			$.callback(2);
 		});
 
-		schema.addWorkflow('3', function(error, model, options, callback) {
-			callback(3);
+		schema.addWorkflow('3', function($) {
+			$.callback(3);
 		});
 
 		var model = schema.create();
@@ -617,13 +617,13 @@ function test_Convertors() {
 
 function test_Operations() {
 
-	NEWOPERATION('testA', function(error, value, callback) {
-		callback(SUCCESS(true, value));
+	NEWOPERATION('testA', function($) {
+		$.callback(SUCCESS(true, $.value));
 	});
 
-	NEWOPERATION('testB', function(error, value, callback) {
-		error.push('bug');
-		callback();
+	NEWOPERATION('testB', function($) {
+		$.error.push('bug');
+		$.callback();
 	});
 
 	OPERATION('testA', 123456, function(err, response) {

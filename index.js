@@ -4169,6 +4169,8 @@ global.INSTALL = F.install = function(type, name, declaration, options, callback
 
 		if (REG_NEWIMPL.test(F.routes.middleware[name].toString()))
 			F.routes.middleware[name].$newversion = true;
+		else
+			OBSOLETE('MIDDLEWARE("{0}")'.format(name), 'You used older declaration of this delegate and you must rewrite it. Read more in docs.');
 
 		next && next();
 		callback && callback(null, name);
@@ -8268,6 +8270,10 @@ global.DECRYPT = F.decrypt = function(value, key, jsonConvert) {
 };
 
 global.ENCRYPTREQ = function(req, val, key, strict) {
+
+	if (req instanceof Controller)
+		req = req.req;
+
 	var obj = {};
 	obj.ua = (req.headers['user-agent'] || '').parseUA();
 	if (strict)
@@ -8279,6 +8285,10 @@ global.ENCRYPTREQ = function(req, val, key, strict) {
 global.DECRYPTREQ = function(req, val, key) {
 	if (!val)
 		return;
+
+	if (req instanceof Controller)
+		req = req.req;
+
 	var obj = F.decrypt(val, key || '', true);
 	if (!obj || (obj.ip && obj.ip !== req.ip) || (obj.ua !== (req.headers['user-agent'] || '').parseUA()))
 		return;
