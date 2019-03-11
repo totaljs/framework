@@ -102,6 +102,7 @@ function runwatching() {
 	function app() {
 
 		global.OBSOLETE = NOOP;
+		F.config.allow_ssc_validation = true;
 		F.$configure_configs();
 		F.directory = directory;
 
