@@ -95,6 +95,7 @@ const GZIPFILE = { memLevel: 9 };
 const GZIPSTREAM = { memLevel: 1 };
 const MODELERROR = {};
 const IMAGES = { jpg: 1, png: 1, gif: 1, apng: 1, jpeg: 1, heif: 1, heic: 1, webp: 1 };
+const PREFFILE = 'preferences.json';
 
 var PATHMODULES = require.resolve('./index');
 PATHMODULES = PATHMODULES.substring(0, PATHMODULES.length - 8);
@@ -266,6 +267,23 @@ global.NOCOUNTER = global.NOSQLCOUNTER = (name) => F.nosql(name).counter;
 global.NOMEM = global.NOSQLMEMORY = (name, view) => global.framework_nosql.inmemory(name, view);
 global.CONFIG = function(name, val) {
 	return arguments.length === 1 ? CONF[name] : (CONF[name] = val);
+};
+
+var prefid;
+
+global.PREF = function(name, value) {
+
+	if (value === undefined)
+		return F.pref[name];
+
+	if (value === null) {
+		delete F.pref[name];
+		delete global.PREF[name];
+	} else
+		F.pref[name] = global.PREF[name] = value;
+
+	prefid && clearTimeout(prefid);
+	prefid = setTimeout(F.onPrefSave, 1000, F.pref);
 };
 
 global.CACHE = function(name, value, expire, persistent) {
@@ -631,6 +649,8 @@ function Framework() {
 	self.version_header = '3.3.0';
 	self.version_node = process.version.toString();
 	self.syshash = (__dirname + '-' + Os.hostname() + '-' + Os.platform() + '-' + Os.arch() + '-' + Os.release() + '-' + Os.tmpdir() + JSON.stringify(process.versions)).md5();
+
+	self.pref = {};
 
 	global.CONF = self.config = {
 
@@ -3908,6 +3928,24 @@ F.$load = function(types, targetdirectory, callback, packageName) {
 		});
 	}
 
+	if (!types || types.indexOf('preferences') !== -1) {
+		operations.push(function(resume) {
+			if (F.onPrefLoad) {
+				F.onPrefLoad(function(value) {
+					if (value) {
+						var keys = Object.keys(value);
+						for (var i = 0; i < keys.length; i++) {
+							var key = keys[i];
+							F.pref[key] = global.PREF[key] = value[key];
+						}
+					}
+					resume();
+				});
+			} else
+				resume();
+		});
+	}
+
 	operations.async(function() {
 		var count = dependencies.length;
 		F.consoledebug('load dependencies ' + count + 'x');
@@ -5857,6 +5895,19 @@ F.usage = function(detailed) {
 	output.uptodates = F.uptodates;
 
 	return output;
+};
+
+F.onPrefSave = function(val) {
+	Fs.writeFile(F.path.databases(PREFFILE), JSON.stringify(val), ERROR('F.onPrefSave'));
+};
+
+F.onPrefLoad = function(next) {
+	Fs.readFile(F.path.databases(PREFFILE), function(err, data) {
+		if (data)
+			next(data.toString('utf8').parseJSON(true));
+		else
+			next();
+	});
 };
 
 /**
@@ -10013,8 +10064,10 @@ FrameworkCache.prototype.loadpersistent = function(callback) {
 				for (var i = 0, length = keys.length; i < length; i++) {
 					var key = keys[i];
 					var item = data[key];
-					if (item.expire >= NOW)
+					if (item.expire >= NOW) {
 						self.items[key] = item;
+						CACHE[key] = item.value;
+					}
 				}
 			} catch (e) {}
 		}
@@ -10092,6 +10145,7 @@ FrameworkCache.prototype.set = FrameworkCache.prototype.add = function(name, val
 		this.savePersist();
 	}
 
+	CACHE[name] = value;
 	this.items[name] = obj;
 	F.$events['cache-set'] && EMIT('cache-set', name, value, expire, sync !== false);
 	return value;
@@ -10142,6 +10196,7 @@ FrameworkCache.prototype.remove = function(name, sync) {
 	if (value) {
 		this.items[name].persist && this.savePersist();
 		this.items[name] = undefined;
+		delete CACHE[name];
 	}
 
 	if (F.isCluster && sync !== false && CONF.allow_cache_cluster) {
