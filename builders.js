@@ -52,7 +52,7 @@ function SchemaOptions(error, model, options, callback, controller) {
 	this.value = this.model = model;
 	this.options = options || EMPTYOBJECT;
 	this.callback = this.next = callback;
-	this.controller = controller instanceof SchemaOptions ? controller.controller : controller;
+	this.controller = (controller instanceof SchemaOptions || controller instanceof OperationOptions) ? controller.controller : controller;
 }
 
 function TaskBuilder($) {
@@ -1284,7 +1284,7 @@ SchemaBuilderEntity.prototype.execute = function(TYPE, model, options, callback,
 			return;
 		}
 
-		if (controller instanceof SchemaOptions)
+		if (controller instanceof SchemaOptions || controller instanceof OperationOptions)
 			controller = controller.controller;
 
 		if (model && !controller && model.$$controller)
@@ -1384,7 +1384,7 @@ SchemaBuilderEntity.prototype.get = SchemaBuilderEntity.prototype.read = functio
 	self.resourceName && builder.setResource(self.resourceName);
 	self.resourcePrefix && builder.setPrefix(self.resourcePrefix);
 
-	if (controller instanceof SchemaOptions)
+	if (controller instanceof SchemaOptions || controller instanceof OperationOptions)
 		controller = controller.controller;
 
 	if (CONF.logger)
@@ -1469,7 +1469,7 @@ SchemaBuilderEntity.prototype.remove = function(options, callback, controller) {
 	if (!self.onRemove)
 		return callback(new Error('Operation "{0}/{1}" not found'.format(self.name, $type)));
 
-	if (controller instanceof SchemaOptions)
+	if (controller instanceof SchemaOptions || controller instanceof OperationOptions)
 		controller = controller.controller;
 
 	if (CONF.logger)
@@ -1546,7 +1546,7 @@ SchemaBuilderEntity.prototype.query = function(options, callback, controller) {
 		options = undefined;
 	}
 
-	if (controller instanceof SchemaOptions)
+	if (controller instanceof SchemaOptions || controller instanceof OperationOptions)
 		controller = controller.controller;
 
 	var self = this;
@@ -2327,7 +2327,7 @@ SchemaBuilderEntity.prototype.hook = function(name, model, options, callback, sk
 		return self;
 	}
 
-	if (controller instanceof SchemaOptions)
+	if (controller instanceof SchemaOptions || controller instanceof OperationOptions)
 		controller = controller.controller;
 
 	if (model && !controller && model.$$controller)
@@ -2486,7 +2486,7 @@ SchemaBuilderEntity.prototype.$execute = function(type, name, model, options, ca
 	if (CONF.logger)
 		$now = Date.now();
 
-	if (controller instanceof SchemaOptions)
+	if (controller instanceof SchemaOptions || controller instanceof OperationOptions)
 		controller = controller.controller;
 
 	if (model && !controller && model.$$controller)
@@ -2639,7 +2639,7 @@ SchemaBuilderEntity.prototype.operation = function(name, model, options, callbac
 	self.resourceName && builder.setResource(self.resourceName);
 	self.resourcePrefix && builder.setPrefix(self.resourcePrefix);
 
-	if (controller instanceof SchemaOptions)
+	if (controller instanceof SchemaOptions || controller instanceof OperationOptions)
 		controller = controller.controller;
 
 	if (model && !controller && model.$$controller)
@@ -4909,12 +4909,12 @@ global.OPERATION = function(name, value, callback, param, controller) {
 		value = EMPTYOBJECT;
 	}
 
-	if (param instanceof Controller) {
+	if (param instanceof Controller || param instanceof SchemaOptions || param instanceof OperationOptions) {
 		controller = param;
 		param = undefined;
 	}
 
-	if (controller && controller instanceof OperationOptions)
+	if (controller && controller.controller)
 		controller = controller.controller;
 
 	var fn = operations[name];
