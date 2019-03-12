@@ -19,7 +19,7 @@
 - added: `controller.nocache()`
 - added: `controller.nocontent()`
 - added: `REPO` as a global variable
-- added: `PREF(name, [value])` (read+write) or `PREF.propname` (only read) for reading/writing a persistent preferences
+- added: `PREF.set(name, [value])` (read+write) or `PREF.propname` (only read) for reading/writing a persistent preferences
 - added: `F.onPrefSave = function(obj)` to write preferences
 - added: `F.onPrefLoad = function(next(obj))` to read preferences
 - added: __obsolete__ message to older declaration of middleware, schemas and operations
@@ -29,7 +29,6 @@
 - updated: `F.modify`, handler contains a new argument `controller`
 - updated: `headers` argument in `controller.proxy` supports `flags: []` for REQEUST method
 - updated: `.filefs()` and `.filenosql()` supports `download` with `true` (`filename` will be read from NoSQL binary file)
-- updated: `CACHE.propname` for reading only values from cache
 
 - fixed: error handling in dynamic schemas
 - fixed: CSS variables

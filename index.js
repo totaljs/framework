@@ -271,14 +271,14 @@ global.CONFIG = function(name, val) {
 
 var prefid;
 
-global.PREF = function(name, value) {
+global.PREF = {};
+global.PREF.set = function(name, value) {
 
 	if (value === undefined)
 		return F.pref[name];
 
 	if (value === null) {
 		delete F.pref[name];
-		delete global.PREF[name];
 	} else
 		F.pref[name] = global.PREF[name] = value;
 
@@ -649,9 +649,7 @@ function Framework() {
 	self.version_header = '3.3.0';
 	self.version_node = process.version.toString();
 	self.syshash = (__dirname + '-' + Os.hostname() + '-' + Os.platform() + '-' + Os.arch() + '-' + Os.release() + '-' + Os.tmpdir() + JSON.stringify(process.versions)).md5();
-
-	self.pref = {};
-
+	self.pref = global.PREF;
 	global.CONF = self.config = {
 
 		debug: true,
@@ -10092,10 +10090,8 @@ FrameworkCache.prototype.loadpersistent = function(callback) {
 				for (var i = 0, length = keys.length; i < length; i++) {
 					var key = keys[i];
 					var item = data[key];
-					if (item.expire >= NOW) {
+					if (item.expire >= NOW)
 						self.items[key] = item;
-						CACHE[key] = item.value;
-					}
 				}
 			} catch (e) {}
 		}
@@ -10173,7 +10169,6 @@ FrameworkCache.prototype.set = FrameworkCache.prototype.add = function(name, val
 		this.savePersist();
 	}
 
-	CACHE[name] = value;
 	this.items[name] = obj;
 	F.$events['cache-set'] && EMIT('cache-set', name, value, expire, sync !== false);
 	return value;
@@ -10224,7 +10219,6 @@ FrameworkCache.prototype.remove = function(name, sync) {
 	if (value) {
 		this.items[name].persist && this.savePersist();
 		this.items[name] = undefined;
-		delete CACHE[name];
 	}
 
 	if (F.isCluster && sync !== false && CONF.allow_cache_cluster) {
