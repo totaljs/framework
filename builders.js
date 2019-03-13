@@ -5168,7 +5168,7 @@ OperationOptions.prototype.done = function(arg) {
 			self.callback();
 		} else {
 			if (arg)
-				self.callback(SUCCESS(err == null, response));
+				self.callback(SUCCESS(err == null, arg === true ? response : arg));
 			else
 				self.callback(SUCCESS(err == null));
 		}
