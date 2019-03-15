@@ -4363,8 +4363,12 @@ function RESTBuilder(url) {
 
 RESTBuilder.make = function(fn) {
 	var instance = new RESTBuilder();
-	fn(instance);
+	fn && fn(instance);
 	return instance;
+};
+
+RESTBuilder.url = function(url) {
+	return new RESTBuilder(url);
 };
 
 /**
