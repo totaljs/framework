@@ -406,7 +406,7 @@ function main() {
 				F.route('/proxy/', function() {
 					var self = this;
 					var method = self.req.method;
-					U.request(self.query.url, [self.req.method], method === 'POST' || method === 'PUT' || method === 'DELETE' ? self.body : null, (err, response, status, headers) => self.content(response, headers['content-type']));
+					U.request(self.query.url, [self.req.method], method === 'POST' || method === 'PUT' || method === 'DELETE' ? self.body : null, (err, response, status, headers) => self.content(response, headers ? headers['content-type'] : 'text/plain'));
 				}, ['get', 'post', 'put', 'delete'], 5120);
 
 				return;
