@@ -38,6 +38,7 @@
 - fixed: `controller.proxy()` with Gzip/Deflate compression
 - fixed: HTTP status code with `204` in `REQUEST()`
 - fixed: `cookies` in `WEBSOCKETCLIENT`
+- fixed: `REQUEST()` with `json` flag and with `null` and `''` value
 
 - __removed: backward compatibility__ with older version of Node.js < 10
 

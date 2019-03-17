@@ -625,7 +625,8 @@ global.REQUEST = exports.request = function(url, flags, data, callback, cookies,
 			data = '';
 		}
 
-		if (type === 1 && !data && (data === EMPTYOBJECT || data === '' || data === undefined) && options.post)
+		// "null" or "empty string" is valid JSON value too
+		if (type === 1 && (data === EMPTYOBJECT || data === undefined) && options.post)
 			data = BUFEMPTYJSON;
 	}
 
