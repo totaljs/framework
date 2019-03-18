@@ -4871,10 +4871,14 @@ global.NEWTASK = function(name, fn) {
 	}
 };
 
+function taskrunner(obj, name, callback) {
+	obj.exec(name, callback);
+}
+
 global.TASK = function(taskname, name, callback, options) {
 	var obj = new TaskBuilder(options);
 	obj.taskname = taskname;
-	name && obj.exec(name, callback);
+	name && setImmediate(taskrunner, obj, name, callback);
 	return obj;
 };
 
