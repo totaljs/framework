@@ -3877,12 +3877,14 @@ SP.urlDecode = function() {
 	return decodeURIComponent(this);
 };
 
-SP.arg = function(obj) {
+SP.arg = function(obj, encode, def) {
+	if (typeof(encode) === 'string')
+		def = encode;
 	return this.replace(regexpARG, function(text) {
 		// Is double?
 		var l = text[1] === '{' ? 2 : 1;
 		var val = obj[text.substring(l, text.length - l).trim()];
-		return val == null ? text : val;
+		return val == null ? (def == null ? text : def) : (encode ? encodeURIComponent(val) : val);
 	});
 };
 
