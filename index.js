@@ -14395,13 +14395,19 @@ WebSocketClient.prototype.prepare = function(flags, protocols, allow, length) {
 };
 
 function websocket_inflate(data) {
-	this.$websocket.inflatechunks.push(data);
-	this.$websocket.inflatechunkslength += data.length;
+	var ws = this.$websocket;
+	if (ws && ws.inflatechunks) {
+		ws.inflatechunks.push(data);
+		ws.inflatechunkslength += data.length;
+	}
 }
 
 function websocket_deflate(data) {
-	this.$websocket.deflatechunks.push(data);
-	this.$websocket.deflatechunkslength += data.length;
+	var ws = this.$websocket;
+	if (ws && ws.deflatechunks) {
+		ws.deflatechunks.push(data);
+		ws.deflatechunkslength += data.length;
+	}
 }
 
 /**
