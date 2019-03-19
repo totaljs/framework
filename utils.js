@@ -3884,7 +3884,7 @@ SP.arg = function(obj, encode, def) {
 		// Is double?
 		var l = text[1] === '{' ? 2 : 1;
 		var val = obj[text.substring(l, text.length - l).trim()];
-		return val == null ? (def == null ? text : def) : (encode ? encodeURIComponent(val) : val);
+		return val == null ? (def == null ? text : def) : (encode ? encodeURIComponent(val + '') : val);
 	});
 };
 
