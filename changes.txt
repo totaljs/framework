@@ -24,6 +24,7 @@
 - added: `F.onPrefLoad = function(next(obj))` to read preferences
 - added: __obsolete__ message to older declaration of middleware, schemas and operations
 - added: `RESTBuilder.url(url)` which returns a new instance of `RESTBuilder` for chaining
+- added: `SESSION()` management, more in docs
 
 - updated: `$.invalid()` without arguments can return a function `function(err)`
 - updated: Mail `unsubscribe` appends new header which enables `unsubscribe` in e.g. iOS
