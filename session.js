@@ -111,6 +111,29 @@ Session.prototype.setcookie = function(res, opt, callback) {
 	});
 };
 
+Session.prototype.set2 = function(id, data, expire, callback) {
+
+	if (typeof(expire) === 'function') {
+		callback = expire;
+		expire = '';
+	}
+
+	var self = this;
+	var updated = 0;
+
+	for (var m of self.items.values()) {
+		if (m && m.id === id) {
+			m.data = data;
+			if (expire)
+				m.expire = NOW.add(expire);
+			updated++;
+		}
+	}
+
+	callback && callback(null, updated);
+	updated && self.$save();
+};
+
 Session.prototype.set = function(uid, id, data, expire, callback) {
 
 	if (typeof(id) === 'object') {
@@ -170,11 +193,27 @@ Session.prototype.count = function(callback) {
 	callback(null, self.items.length);
 };
 
+Session.prototype.rem2 = function(id, callback) {
+	var self = this;
+	for (var m of self.items.values()) {
+		if (m && m.id === id) {
+			callback && callback(null, m);
+			self.onremove && self.onremove(m);
+			self.items.delete(m.uid);
+		}
+	}
+	self.$save();
+};
+
 Session.prototype.rem = function(uid, callback) {
 	var self = this;
-	self.$save();
 	var item = self.items.get(uid);
-	item && self.items.delete(uid);
+
+	if (item) {
+		self.items.delete(uid);
+		self.$save();
+	}
+
 	callback && callback(null, item);
 	self.onremove && self.onremove(item);
 };
