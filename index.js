@@ -255,6 +255,7 @@ var _prefix;
 !global.framework_mail && (global.framework_mail = require('./mail'));
 !global.framework_image && (global.framework_image = require('./image'));
 !global.framework_nosql && (global.framework_nosql = require('./nosql'));
+!global.framework_session && (global.framework_session = require('./session'));
 
 global.Builders = framework_builders;
 var U = global.Utils = global.utils = global.U = global.framework_utils;
@@ -3371,7 +3372,7 @@ global.FILE = F.file = function(fnValidation, fnExecute, flags) {
 	F.routes.files.push(r);
 	F.routes.files.sort((a, b) => !a.url ? -1 : !b.url ? 1 : a.url.length > b.url.length ? -1 : 1);
 	EMIT('route', 'file', r);
-	F._length_files++;
+	F._length_files = F.routes.files.length;
 	return F;
 };
 
@@ -5033,6 +5034,7 @@ global.UNINSTALL = F.uninstall = function(type, name, options, skipEmit, package
 		k = typeof(name) === 'string' ? name.substring(0, 3) === 'id:' ? 'id' : 'urlraw' : 'execute';
 		v = k === 'execute' ? name : k === 'id' ? name.substring(3).trim() : name;
 		F.routes.files = F.routes.files.remove(k, v);
+		F._length_files = F.routes.files.length;
 		F.consoledebug('uninstall', type + '#' + name);
 		return F;
 	}
@@ -10063,7 +10065,7 @@ FrameworkCache.prototype.load = function(callback) {
 	return self;
 };
 
-FrameworkCache.prototype.savePersist = function() {
+FrameworkCache.prototype.savepersistent = function() {
 	setTimeout2('framework_cachepersist', function(self) {
 		var keys = Object.keys(self.items);
 		var obj = {};
@@ -10108,14 +10110,14 @@ FrameworkCache.prototype.stop = function() {
 FrameworkCache.prototype.clear = function(sync) {
 	this.items = {};
 	F.isCluster && sync !== false && CONF.allow_cache_cluster && process.send(CLUSTER_CACHE_CLEAR);
-	this.savePersist();
+	this.savepersistent();
 	return this;
 };
 
 FrameworkCache.prototype.recycle = function() {
 
 	var items = this.items;
-	var isPersist = false;
+	var persistent = false;
 
 	NOW = new Date();
 
@@ -10127,13 +10129,13 @@ FrameworkCache.prototype.recycle = function() {
 			delete items[o];
 		else if (value.expire < NOW) {
 			if (value.persist)
-				isPersist = true;
+				persistent = true;
 			EMIT('cache-expire', o, value.value);
 			delete items[o];
 		}
 	}
 
-	isPersist && this.savePersist();
+	persistent && this.savepersistent();
 	CONF.allow_cache_snapshot && this.save();
 	F.service(this.count);
 	return this;
@@ -10166,7 +10168,7 @@ FrameworkCache.prototype.set = FrameworkCache.prototype.add = function(name, val
 
 	if (persist) {
 		obj.persist = true;
-		this.savePersist();
+		this.savepersistent();
 	}
 
 	this.items[name] = obj;
@@ -10217,7 +10219,7 @@ FrameworkCache.prototype.remove = function(name, sync) {
 	var value = this.items[name];
 
 	if (value) {
-		this.items[name].persist && this.savePersist();
+		this.items[name].persist && this.savepersistent();
 		this.items[name] = undefined;
 	}
 
@@ -15442,7 +15444,7 @@ function extend_request(PROTO) {
 		if (!F._length_files)
 			return res.continue();
 
-		for (var i = 0; i < F._length_files; i++) {
+		for (var i = 0; i < F.routes.files.length; i++) {
 
 			var file = F.routes.files[i];
 			// try {
