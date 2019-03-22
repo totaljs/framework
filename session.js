@@ -68,6 +68,16 @@ Session.prototype.has = function(sessionid, callback) {
 	callback(null, this.items.has(sessionid));
 };
 
+Session.prototype.has2 = function(id, callback) {
+	for (var m of this.items.values()) {
+		if (m && m.expire >= NOW && m.id === id) {
+			callback(null, true);
+			return;
+		}
+	}
+	callback(null, false);
+};
+
 Session.prototype.getcookie = function(req, opt, callback) {
 
 	// opt.name {String} A cookie name
@@ -110,10 +120,19 @@ Session.prototype.getcookie = function(req, opt, callback) {
 };
 
 Session.prototype.refresh = function(sessionid, expire, callback) {
+
 	if (typeof(expire) === 'function') {
 		callback = expire;
 		expire = null;
 	}
+
+	// refreshes all
+	if (sessionid == null) {
+		for (var m of self.items.values())
+			m.data = null;
+		return;
+	}
+
 	var self = this;
 	var item = self.items.get(sessionid);
 	if (item)
@@ -250,25 +269,25 @@ Session.prototype.get = function(sessionid, expire, callback) {
 			self.items.delete(sessionid);
 			item = null;
 			self.$save();
-		} else if (expire) {
-			item.used = NOW;
+		} else if (expire)
 			item.expire = NOW.add(expire);
-			self.items.set(sessionid, item);
-		}
 	}
 
 	// we need to load data
-	if (item && item.data == null) {
-		if (self.ondata) {
+	if (item) {
+
+		if (item.data == null && self.ondata) {
 			self.ondata(item, function(err, data) {
 				item.data = data;
 				callback(err, data, item);
+				item.used = NOW;
 			});
 			return;
 		}
 	}
 
 	callback(null, item ? item.data : null, item);
+	item.used = NOW;
 };
 
 Session.prototype.count = function(filter, callback) {
