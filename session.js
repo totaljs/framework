@@ -74,6 +74,7 @@ Session.prototype.getcookie = function(req, opt, callback) {
 	// opt.expire {String} Expiration
 	// opt.key {String} Encrypt key
 	// opt.extendcookie {Boolean} Extends cookie expiration (default: true)
+	// opt.removecookie {Boolean} Removes cookie if isn't valid (default: true)
 
 	if (req.req)
 		req = req.req;
@@ -81,6 +82,11 @@ Session.prototype.getcookie = function(req, opt, callback) {
 
 	var token = req.cookie(opt.name);
 	if (!token || token.length < 20) {
+
+		// remove cookies
+		if (opt.removecookie !== false)
+			req.res.cookie(opt.name, '', '-1 day');
+
 		callback();
 		return;
 	}
@@ -90,9 +96,17 @@ Session.prototype.getcookie = function(req, opt, callback) {
 		value = value.split(';');
 		if (req.res && opt.expire && opt.extendcookie !== false)
 			req.res.cookie(opt.name, token, opt.expire, COOKIEOPTIONS);
-		this.get(value[0], opt.expire, callback);
-	} else
+		this.get(value[0], opt.expire, function(err, data, meta) {
+			if ((err || !data) && opt.removecookie !== false)
+				req.res.cookie(opt.name, '', '-1 day');
+			callback(err, data, meta);
+		});
+	} else {
+		// remove cookies
+		if (opt.removecookie !== false)
+			req.res.cookie(opt.name, '', '-1 day');
 		callback();
+	}
 };
 
 Session.prototype.refresh = function(sessionid, expire, callback) {
