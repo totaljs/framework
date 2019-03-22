@@ -37,23 +37,31 @@ function Session(name) {
 }
 
 Session.prototype.find = function(filter, callback) {
+
 	var self = this;
 	var keys = Object.keys(filter);
+	var arr = [];
+	var is = false;
+
 	for (var m of self.items.values()) {
 		if (m && m.data && m.expire >= NOW) {
+			is = true;
 			for (var j = 0; j < keys.length; j++) {
 				var key = keys[j];
-				if (m.data[key] === filter[key])
-					callback(m);
-				else
+				if (m.data[key] !== filter[key]) {
+					is = false;
 					break;
+				}
 			}
+			is && arr.push(m);
 		} else {
 			self.onremove && self.onremove(m);
 			self.items.delete(m.uid);
 			self.$save();
 		}
 	}
+
+	callback(null, arr);
 };
 
 Session.prototype.has = function(uid, callback) {
@@ -84,6 +92,47 @@ Session.prototype.getcookie = function(req, opt, callback) {
 		this.get(value[0], opt.expire, callback);
 	} else
 		callback();
+};
+
+Session.prototype.refresh = function(uid, expire, callback) {
+	if (typeof(expire) === 'function') {
+		callback = expire;
+		expire = null;
+	}
+	var self = this;
+	var item = self.items.get(uid);
+	if (item)
+		item.data = null;
+	if (callback) {
+		if (item)
+			self.get(uid, expire, callback);
+		else
+			callback();
+	}
+};
+
+Session.prototype.refresh2 = function(id, expire, callback) {
+
+	if (typeof(expire) === 'function') {
+		callback = expire;
+		expire = null;
+	}
+
+	var self = this;
+	var count = 0;
+
+	if (expire)
+		expire = NOW.add(expire);
+
+	for (var m of self.items.values()) {
+		if (m && m.id === id) {
+			m.data = null;
+			count++;
+			if (expire)
+				m.expire = expire;
+		}
+	}
+	callback && callback(null, count);
 };
 
 Session.prototype.setcookie = function(res, opt, callback) {
@@ -189,11 +238,22 @@ Session.prototype.get = function(uid, expire, callback) {
 	callback(null, item ? item.data : null, item);
 };
 
-Session.prototype.count = function(callback) {
-	callback(null, self.items.length);
+Session.prototype.count = function(filter, callback) {
+
+	if (!callback) {
+		callback = filter;
+		filter = null;
+	}
+
+	if (filter) {
+		this.find(filter, function(err, items) {
+			callback(null, items.length);
+		});
+	} else
+		callback(null, this.items.length);
 };
 
-Session.prototype.rem2 = function(id, callback) {
+Session.prototype.remove2 = function(id, callback) {
 	var self = this;
 	for (var m of self.items.values()) {
 		if (m && m.id === id) {
@@ -205,7 +265,7 @@ Session.prototype.rem2 = function(id, callback) {
 	self.$save();
 };
 
-Session.prototype.rem = function(uid, callback) {
+Session.prototype.remove = function(uid, callback) {
 	var self = this;
 	var item = self.items.get(uid);
 
