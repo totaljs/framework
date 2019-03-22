@@ -14,6 +14,7 @@ function Session(name) {
 	t.$savecallback = ERROR('session.save');
 
 	// t.onremove = function(item)
+	// t.onfree = function(item
 	// t.ondata = function(item, next(err, data))
 
 	t.$save = function() {
@@ -119,7 +120,7 @@ Session.prototype.getcookie = function(req, opt, callback) {
 	}
 };
 
-Session.prototype.refresh = function(sessionid, expire, callback) {
+Session.prototype.free = function(sessionid, expire, callback) {
 
 	if (typeof(expire) === 'function') {
 		callback = expire;
@@ -145,7 +146,7 @@ Session.prototype.refresh = function(sessionid, expire, callback) {
 	}
 };
 
-Session.prototype.refresh2 = function(id, expire, callback) {
+Session.prototype.free2 = function(id, expire, callback) {
 
 	if (typeof(expire) === 'function') {
 		callback = expire;
@@ -166,6 +167,23 @@ Session.prototype.refresh2 = function(id, expire, callback) {
 				m.expire = expire;
 		}
 	}
+	callback && callback(null, count);
+};
+
+Session.prototype.freeunused = function(lastusage, callback) {
+
+	var self = this;
+	var count = 0;
+
+	lastusage = NOW.add(lastusage[0] === '-' ? lastusage : ('-' + lastusage));
+	for (var m of self.items.values()) {
+		if (!m.used || m.used <= lastusage) {
+			self.onfree && self.onfree(m);
+			m.data = null;
+			count++;
+		}
+	}
+
 	callback && callback(null, count);
 };
 
