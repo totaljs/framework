@@ -162,7 +162,6 @@ SchemaOptions.prototype = {
 	get headers() {
 		return this.controller && this.controller.req ? this.controller.req.headers : null;
 	}
-
 };
 
 SchemaOptions.prototype.cancel = function() {
@@ -5210,6 +5209,88 @@ OperationOptions.prototype.invalid = function(name, error, path, index) {
 	};
 };
 
+function AuthOptions(req, res, flags, callback) {
+	this.req = req;
+	this.res = res;
+	this.flags = flags || [];
+	this.processed = false;
+	this.callback = callback;
+}
+
+AuthOptions.prototype = {
+
+	get language() {
+		return this.req.language || '';
+	},
+
+	get ip() {
+		return this.req.ip;
+	},
+
+	get id() {
+		return this.req.id;
+	},
+
+	get params() {
+		return this.req.params;
+	},
+
+	get files() {
+		return this.req.files;
+	},
+
+	get body() {
+		return this.req.body;
+	},
+
+	get query() {
+		return this.req.query;
+	},
+
+	get headers() {
+		return this.req.headers;
+	}
+};
+
+AuthOptions.prototype.invalid = function() {
+	this.next(false);
+};
+
+AuthOptions.prototype.next = function(is, user) {
+
+	if (this.processed)
+		return;
+
+	// @is "null" for callbacks(err, user)
+	// @is "true"
+	// @is "object" is as user but "user" must be "undefined"
+
+	if (is instanceof Error || is instanceof ErrorBuilder) {
+		// Error handling
+		is = false;
+	} else if (is == null && user) {
+		// A callback error handling
+		is = true;
+	} else if (user == null && is && is !== true) {
+		user = is;
+		is = true;
+	}
+
+	this.processed = true;
+	this.callback(is, user, this);
+};
+
+AuthOptions.wrap = function(fn) {
+	if (REGEXP_NEWOPERATION.test(fn.toString())) {
+		var fnnew = function(req, res, flags, next) {
+			fn(new AuthOptions(req, res, flags, next));
+		};
+		fnnew.$newversion = true;
+		return fnnew;
+	}
+	return fn;
+};
+
 global.CONVERT = function(value, schema) {
 	var key = schema;
 	if (key.length > 50)
@@ -5405,6 +5486,7 @@ exports.UrlBuilder = UrlBuilder;
 exports.SchemaOptions = SchemaOptions;
 exports.OperationOptions = OperationOptions;
 exports.RESTBuilderResponse = RESTBuilderResponse;
+exports.AuthOptions = AuthOptions;
 global.RESTBuilder = RESTBuilder;
 global.RESTBuilderResponse = RESTBuilderResponse;
 global.ErrorBuilder = ErrorBuilder;

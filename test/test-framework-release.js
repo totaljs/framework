@@ -26,11 +26,11 @@ framework.on('ready', function() {
 	assert.ok(CONF.testbase === 123456, 'config: base encode');
 });
 
-framework.onAuthorize = function(req, res, flags, cb) {
-	req.user = { alias: 'Peter Širka' };
-	req.session = { ready: true };
-	cb(req.url !== '/unauthorize/');
-};
+AUTH(function($) {
+	$.req.user = { alias: 'Peter Širka' };
+	$.req.session = { ready: true };
+	$.next($.req.url !== '/unauthorize/');
+});
 
 framework.onError = function(error, name, uri) {
 

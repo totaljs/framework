@@ -325,7 +325,7 @@ global.ERROR = function(name) {
 };
 
 global.AUTH = function(fn) {
-	F.onAuthorize = fn;
+	F.onAuthorize = framework_builders.AuthOptions.wrap(fn);
 };
 
 global.WEBSOCKETCLIENT = function(callback) {
@@ -1102,6 +1102,7 @@ F.prototypes = function(fn) {
 	proto.UrlBuilder = framework_builders.UrlBuilder.prototype;
 	proto.WebSocket = WebSocket.prototype;
 	proto.WebSocketClient = WebSocketClient.prototype;
+	proto.AuthOptions = framework_builders.AuthOptions.prototype;
 	fn.call(proto, proto);
 	return F;
 };
@@ -7796,33 +7797,71 @@ function websocketcontinue_middleware(req) {
 	F.$websocketcontinue(req, req.$wspath, req.headers);
 }
 
+function websocketcontinue_authnew(isAuthorized, user, $) {
+
+	// @isAuthorized "null" for callbacks(err, user)
+	// @isAuthorized "true"
+	// @isAuthorized "object" is as user but "user" must be "undefined"
+
+	if (isAuthorized instanceof Error || isAuthorized instanceof ErrorBuilder) {
+		// Error handling
+		isAuthorized = false;
+	} else if (isAuthorized == null && user) {
+		// A callback error handling
+		isAuthorized = true;
+	} else if (user == null && isAuthorized && isAuthorized !== true) {
+		user = isAuthorized;
+		isAuthorized = true;
+	}
+
+	var req = $.req;
+	if (user)
+		req.user = user;
+	var route = F.lookup_websocket(req, req.websocket.uri.pathname, isAuthorized ? 1 : 2);
+	if (route) {
+		F.$websocketcontinue_process(route, req, req.websocketpath);
+	} else
+		req.websocket.$close(4001, '401: unauthorized');
+}
+
 F.$websocketcontinue = function(req, path) {
+	req.websocketpath = path;
 	if (F.onAuthorize) {
-		F.onAuthorize.call(F, req, req.websocket, req.flags, function(isAuthorized, user) {
+		if (F.onAuthorize.$newversion) {
+			F.onAuthorize(req, req.websocket, req.flags, websocketcontinue_authnew);
+		} else {
+			// @TODO: remove in v4
+			F.onAuthorize.call(F, req, req.websocket, req.flags, function(isAuthorized, user) {
 
-			// @isAuthorized "null" for callbacks(err, user)
-			// @isAuthorized "true"
-			// @isAuthorized "object" is as user but "user" must be "undefined"
+				if (!F.onAuthorize.isobsolete) {
+					F.onAuthorize.isobsolete = 1;
+					OBSOLETE('F.onAuthorize', 'You need to use a new authorization declaration: "AUTH(function($) {})"');
+				}
 
-			if (isAuthorized instanceof Error || isAuthorized instanceof ErrorBuilder) {
-				// Error handling
-				isAuthorized = false;
-			} else if (isAuthorized == null && user) {
-				// A callback error handling
-				isAuthorized = true;
-			} else if (user == null && isAuthorized && isAuthorized !== true) {
-				user = isAuthorized;
-				isAuthorized = true;
-			}
+				// @isAuthorized "null" for callbacks(err, user)
+				// @isAuthorized "true"
+				// @isAuthorized "object" is as user but "user" must be "undefined"
 
-			if (user)
-				req.user = user;
-			var route = F.lookup_websocket(req, req.websocket.uri.pathname, isAuthorized ? 1 : 2);
-			if (route) {
-				F.$websocketcontinue_process(route, req, path);
-			} else
-				req.websocket.$close(4001, '401: unauthorized');
-		});
+				if (isAuthorized instanceof Error || isAuthorized instanceof ErrorBuilder) {
+					// Error handling
+					isAuthorized = false;
+				} else if (isAuthorized == null && user) {
+					// A callback error handling
+					isAuthorized = true;
+				} else if (user == null && isAuthorized && isAuthorized !== true) {
+					user = isAuthorized;
+					isAuthorized = true;
+				}
+
+				if (user)
+					req.user = user;
+				var route = F.lookup_websocket(req, req.websocket.uri.pathname, isAuthorized ? 1 : 2);
+				if (route) {
+					F.$websocketcontinue_process(route, req, path);
+				} else
+					req.websocket.$close(4001, '401: unauthorized');
+			});
+		}
 	} else {
 		var route = F.lookup_websocket(req, req.websocket.uri.pathname, 0);
 		if (route) {
@@ -14889,6 +14928,59 @@ WebSocketClient.prototype.$websocket_key = function(req) {
 // =================================================================================
 // *********************************************************************************
 
+function req_authorizecallback(isAuthorized, user, $) {
+
+	// @isAuthorized "null" for callbacks(err, user)
+	// @isAuthorized "true"
+	// @isAuthorized "object" is as user but "user" must be "undefined"
+
+	if (isAuthorized instanceof Error || isAuthorized instanceof ErrorBuilder) {
+		// Error handling
+		isAuthorized = false;
+	} else if (isAuthorized == null && user) {
+		// A callback error handling
+		isAuthorized = true;
+	} else if (user == null && isAuthorized && isAuthorized !== true) {
+		user = isAuthorized;
+		isAuthorized = true;
+	}
+
+	$.req.isAuthorized = isAuthorized;
+	$.req.authorizecallback(null, user, isAuthorized);
+	$.req.authorizecallback = null;
+}
+
+function req_authorizetotal(isAuthorized, user, $) {
+
+	// @isAuthorized "null" for callbacks(err, user)
+	// @isAuthorized "true"
+	// @isAuthorized "object" is as user but "user" must be "undefined"
+
+	var req = $.req;
+	var roles = req.flagslength !== req.flags.length;
+
+	if (roles) {
+		req.$flags += req.flags.slice(req.flagslength).join('');
+		req.$roles = true;
+	}
+
+	req.flagslength = undefined;
+
+	if (isAuthorized instanceof Error || isAuthorized instanceof ErrorBuilder) {
+		// Error handling
+		isAuthorized = false;
+	} else if (isAuthorized == null && user) {
+		// A callback error handling
+		isAuthorized = true;
+	} else if (user == null && isAuthorized && isAuthorized !== true) {
+		user = isAuthorized;
+		isAuthorized = true;
+	}
+
+	req.isAuthorized = isAuthorized;
+	req.$total_authorize(isAuthorized, user, roles);
+}
+
 function extend_request(PROTO) {
 
 	PROTOREQ = PROTO;
@@ -15068,9 +15160,20 @@ function extend_request(PROTO) {
 			return this;
 		}
 
+		if (F.onAuthorize.$newversion) {
+			req.authorizecallback = callback;
+			F.onAuthorize(req, req.res, req.flags, req_authorizecallback);
+			return this;
+		}
+
 		var req = this;
 
 		F.onAuthorize(req, req.res, req.flags || [], function(isAuthorized, user) {
+
+			if (!F.onAuthorize.isobsolete) {
+				F.onAuthorize.isobsolete = 1;
+				OBSOLETE('F.onAuthorize', 'You need to use a new authorization declaration: "AUTH(function($) {})"');
+			}
 
 			// @isAuthorized "null" for callbacks(err, user)
 			// @isAuthorized "true"
@@ -15539,7 +15642,19 @@ function extend_request(PROTO) {
 		var req = this;
 		var length = req.flags.length;
 		if (F.onAuthorize) {
+
+			if (F.onAuthorize.$newversion) {
+				req.flagslength = length;
+				F.onAuthorize(req, req.res, req.flags, req_authorizetotal);
+				return;
+			}
+
 			F.onAuthorize(req, req.res, req.flags, function(isAuthorized, user) {
+
+				if (!F.onAuthorize.isobsolete) {
+					F.onAuthorize.isobsolete = 1;
+					OBSOLETE('F.onAuthorize', 'You need to use a new authorization declaration: "AUTH(function($) {})"');
+				}
 
 				// @isAuthorized "null" for callbacks(err, user)
 				// @isAuthorized "true"

@@ -26,6 +26,8 @@
 - added: `RESTBuilder.url(url)` which returns a new instance of `RESTBuilder` for chaining
 - added: `SESSION()` management, more in docs
 - added: `controller.sessionid` with ID of `SESSION()`
+- added: `AUTH()` supports a new auth declaration with `$` as `AuthOptions` like `SchemaOptions` or `OperationOptions`
+- added: `AuthOptions` to prototypes
 
 - updated: `$.invalid()` without arguments can return a function `function(err)`
 - updated: Mail `unsubscribe` appends new header which enables `unsubscribe` in e.g. iOS
