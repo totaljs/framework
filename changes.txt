@@ -33,6 +33,7 @@
 - updated: `.filefs()` and `.filenosql()` supports `download` with `true` (`filename` will be read from NoSQL binary file)
 - updated: `$.done(arg)` argument `@arg` can be `boolean` (response will be as a value) or object/primitive value (`arg` will be as a value)
 - updated: `String.arg(obj, [encode], [def])` added `encode` and `def` arguments
+- updated: `AUTH(req, res, flags, next)` and `next` function can handle `callback(err, user)`
 
 - fixed: error handling in dynamic schemas
 - fixed: CSS variables
