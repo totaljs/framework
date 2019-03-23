@@ -437,6 +437,10 @@ Session.prototype.load = function(callback) {
 };
 
 global.SESSION = function(name) {
+
+	if (!name)
+		name = 'default';
+
 	if (F.sessions[name])
 		return F.sessions[name];
 	var session = new Session(name);
