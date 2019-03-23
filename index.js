@@ -10489,6 +10489,10 @@ Controller.prototype = {
 		return this.req.robot;
 	},
 
+	get sessionid() {
+		return this.req.sessionid;
+	},
+
 	get viewname() {
 		var name = this.req.path[this.req.path.length - 1];
 		return !name || name === '/' ? 'index' : name;
