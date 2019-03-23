@@ -5227,10 +5227,6 @@ AuthOptions.prototype = {
 		return this.req.ip;
 	},
 
-	get id() {
-		return this.req.id;
-	},
-
 	get params() {
 		return this.req.params;
 	},
@@ -5250,6 +5246,16 @@ AuthOptions.prototype = {
 	get headers() {
 		return this.req.headers;
 	}
+};
+
+AuthOptions.prototype.cookie = function(name, value, expire, options) {
+	var self = this;
+	if (value === undefined)
+		return self.req.cookie(name);
+	if (value === null)
+		expire = '-1 day';
+	self.res.cookie(name, value, expire, options);
+	return self;
 };
 
 AuthOptions.prototype.invalid = function() {
