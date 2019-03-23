@@ -199,6 +199,7 @@ Session.prototype.setcookie = function(res, opt, callback) {
 	// opt.key {String} Encrypt key
 	// opt.data {Object} A session data
 	// opt.note {String} A simple note for this session
+	// opt.options {String} A cookie options (default: undefined)
 
 	if (res.res)
 		res = res.res;
@@ -206,13 +207,14 @@ Session.prototype.setcookie = function(res, opt, callback) {
 	if (!opt.sessionid)
 		opt.sessionid = UID();
 
+
 	this.set(opt.sessionid, opt.id, opt.data, opt.expire, function(err, item, meta) {
 		if (err) {
 			callback && callback(err);
 		} else {
 			var data = opt.sessionid + ';' + (opt.id || '');
 			var token = ENCRYPTREQ(res.req, data, opt.key, opt.strict);
-			res.cookie(opt.name, token, opt.expire, COOKIEOPTIONS);
+			res.cookie(opt.name, token, opt.expire, opt.options || COOKIEOPTIONS);
 			res.req.sessionid = opt.sessionid;
 			callback && callback(null, item, meta);
 		}
