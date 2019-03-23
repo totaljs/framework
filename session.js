@@ -31,7 +31,7 @@ function Session(name) {
 				t.items.delete(m.sessionid);
 			}
 		}
-		Fs.writeFile(PATH.databases(filename.format((t.name ? ('_' + t.name) : ''))), storage.join('\n'), t.$savecallback);
+		Fs.writeFile(PATH.databases(filename.format((t.name && t.name !== 'default' ? ('_' + t.name) : ''))), storage.join('\n'), t.$savecallback);
 		timeoutsave = null;
 	};
 }
@@ -414,7 +414,7 @@ Session.prototype.load = function(callback) {
 	var data = [];
 
 	try {
-		data = Fs.readFileSync(PATH.databases(filename.format((self.name ? ('_' + self.name) : '')))).toString('utf8').split('\n');
+		data = Fs.readFileSync(PATH.databases(filename.format((self.name && self.name !== 'default' ? ('_' + self.name) : '')))).toString('utf8').split('\n');
 	} catch (e) {}
 
 	for (var i = 0; i < data.length; i++) {
