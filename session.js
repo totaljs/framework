@@ -307,7 +307,7 @@ Session.prototype.get = function(sessionid, expire, callback) {
 		if (item.data == null && self.ondata) {
 			self.ondata(item, function(err, data) {
 				item.data = data;
-				callback(err, data, item);
+				callback(err, data, item, true);
 				item.used = NOW;
 			});
 			return;
