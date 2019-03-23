@@ -126,6 +126,9 @@ Session.prototype.getcookie = function(req, opt, callback) {
 
 Session.prototype.free = function(sessionid, expire, callback) {
 
+	if (sessionid && sessionid.sessionid)
+		sessionid = sessionid.sessionid;
+
 	if (typeof(expire) === 'function') {
 		callback = expire;
 		expire = null;
@@ -346,6 +349,10 @@ Session.prototype.remove2 = function(id, callback) {
 };
 
 Session.prototype.remove = function(sessionid, callback) {
+
+	if (sessionid && sessionid.sessionid)
+		sessionid = sessionid.sessionid;
+
 	var self = this;
 	var item = self.items.get(sessionid);
 
