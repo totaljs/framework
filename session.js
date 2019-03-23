@@ -344,10 +344,21 @@ Session.prototype.count = function(filter, callback) {
 
 	if (filter) {
 		this.find(filter, function(err, items) {
-			callback(null, items.length);
+			callback(null, { count: items.length });
 		});
-	} else
-		callback(null, this.items.length);
+	} else {
+		var o = {};
+		o.used = 0;
+		o.free = 0;
+		for (var m of this.items.values()) {
+			if (m.data)
+				o.used++;
+			else
+				o.free++;
+		}
+		o.count = o.used + o.free;
+		callback(null, o);
+	}
 };
 
 Session.prototype.remove2 = function(id, callback) {
