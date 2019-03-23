@@ -1,7 +1,6 @@
 require('./index');
 
 const COOKIEOPTIONS = { httponly: true, security: 'lax' };
-const sessions = {};
 const Fs = require('fs');
 const filename = 'sessions{0}.txt';
 
@@ -122,6 +121,20 @@ Session.prototype.getcookie = function(req, opt, callback) {
 			req.res.cookie(opt.name, '', '-1 day');
 		callback();
 	}
+};
+
+Session.prototype.usage = function() {
+	var o = {};
+	o.used = 0;
+	o.free = 0;
+	for (var m of this.items.values()) {
+		if (m.data)
+			o.used++;
+		else
+			o.free++;
+	}
+	o.count = o.used + o.free;
+	return o;
 };
 
 Session.prototype.free = function(sessionid, expire, callback) {
@@ -424,9 +437,9 @@ Session.prototype.load = function(callback) {
 };
 
 global.SESSION = function(name) {
-	if (sessions[name])
-		return sessions[name];
+	if (F.sessions[name])
+		return F.sessions[name];
 	var session = new Session(name);
 	session.load();
-	return sessions[name] = session;
+	return F.sessions[name] = session;
 };

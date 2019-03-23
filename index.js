@@ -863,6 +863,7 @@ function Framework() {
 	};
 
 	self.workers = {};
+	self.sessions = {};
 	self.databases = {};
 	self.databasescleaner = {};
 	self.directory = HEADERS.workers.cwd = directory;
@@ -5791,6 +5792,7 @@ F.usage = function(detailed) {
 	var commands = Object.keys(F.commands);
 	var output = {};
 	var nosqlcleaner = Object.keys(F.databasescleaner);
+	var sessions = Object.keys(F.sessions);
 
 	output.framework = {
 		id: F.id,
@@ -5839,6 +5841,7 @@ F.usage = function(detailed) {
 		uptodates: F.uptodates ? F.uptodates.length : 0,
 		nosqlcleaner: nosqlcleaner.length,
 		commands: commands.length,
+		sessions: sessions.length
 	};
 
 	output.routing = {
@@ -5881,6 +5884,14 @@ F.usage = function(detailed) {
 		var key = models[i];
 		var item = F.models[key];
 		output.models.push({ name: key, usage: item.usage ? item.usage() : null });
+	}
+
+	output.sessions = [];
+
+	for (var i = 0, length = sessions.length; i < length; i++) {
+		var key = sessions[i];
+		var item = F.sessions[key];
+		output.sessions.push({ name: key, usage: item.usage() });
 	}
 
 	output.cache = cache;
