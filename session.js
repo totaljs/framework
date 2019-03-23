@@ -201,7 +201,7 @@ Session.prototype.setcookie = function(res, opt, callback) {
 	if (res.res)
 		res = res.res;
 
-	this.set(opt.sessionid, opt.id, opt.data, opt.expire, function(err, item, meta) {
+	this.set(opt.sessionid || UID(), opt.id, opt.data, opt.expire, function(err, item, meta) {
 		if (err) {
 			callback && callback(err);
 		} else {
