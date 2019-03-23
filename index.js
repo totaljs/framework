@@ -7214,6 +7214,13 @@ F.service = function(count) {
 		for (var i = 0; i < keys.length; i++)
 			if (!F.temporary.internal[keys[i]])
 				delete F.temporary.internal[keys[i]];
+
+		// Clears released sessions
+		keys = Object.keys(F.sessions);
+		for (var i = 0; i < keys.length; i++) {
+			var key = keys[i];
+			F.sessions[key] && F.sessions[key].release();
+		}
 	}
 
 	// every 61 minutes (default) services precompile all (installed) views

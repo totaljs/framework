@@ -319,7 +319,6 @@ Session.prototype.get = function(sessionid, expire, callback) {
 
 	// we need to load data
 	if (item) {
-
 		if (item.data == null && self.ondata) {
 			self.ondata(item, function(err, data) {
 				item.data = data;
@@ -331,7 +330,9 @@ Session.prototype.get = function(sessionid, expire, callback) {
 	}
 
 	callback(null, item ? item.data : null, item);
-	item.used = NOW;
+
+	if (item)
+		item.used = NOW;
 };
 
 Session.prototype.count = function(filter, callback) {
@@ -405,6 +406,19 @@ Session.prototype.clear = function(lastusage, callback) {
 
 	callback && callback(null, count);
 	self.$save();
+};
+
+Session.prototype.release = function() {
+	var self = this;
+	var is = false;
+	for (var m of self.items.values()) {
+		if (m.expire < NOW) {
+			self.onremove && self.onremove(m);
+			self.items.delete(m.sessionid);
+			is = true;
+		}
+	}
+	is && self.$save();
 };
 
 Session.prototype.load = function(callback) {
