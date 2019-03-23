@@ -7797,12 +7797,27 @@ function websocketcontinue_middleware(req) {
 }
 
 F.$websocketcontinue = function(req, path) {
-	var auth = F.onAuthorize;
-	if (auth) {
-		auth.call(F, req, req.websocket, req.flags, function(isLogged, user) {
+	if (F.onAuthorize) {
+		F.onAuthorize.call(F, req, req.websocket, req.flags, function(isAuthorized, user) {
+
+			// @isAuthorized "null" for callbacks(err, user)
+			// @isAuthorized "true"
+			// @isAuthorized "object" is as user but "user" must be "undefined"
+
+			if (isAuthorized instanceof Error || isAuthorized instanceof ErrorBuilder) {
+				// Error handling
+				isAuthorized = false;
+			} else if (isAuthorized == null && user) {
+				// A callback error handling
+				isAuthorized = true;
+			} else if (user == null && isAuthorized && isAuthorized !== true) {
+				user = isAuthorized;
+				isAuthorized = true;
+			}
+
 			if (user)
 				req.user = user;
-			var route = F.lookup_websocket(req, req.websocket.uri.pathname, isLogged ? 1 : 2);
+			var route = F.lookup_websocket(req, req.websocket.uri.pathname, isAuthorized ? 1 : 2);
 			if (route) {
 				F.$websocketcontinue_process(route, req, path);
 			} else
@@ -15044,20 +15059,30 @@ function extend_request(PROTO) {
 	 */
 	PROTO.authorize = function(callback) {
 
-		var auth = F.onAuthorize;
-
-		if (!auth) {
+		if (!F.onAuthorize) {
 			callback(null, null, false);
 			return this;
 		}
 
 		var req = this;
 
-		auth(req, req.res, req.flags || [], function(isAuthorized, user) {
-			if (typeof(isAuthorized) !== 'boolean') {
+		F.onAuthorize(req, req.res, req.flags || [], function(isAuthorized, user) {
+
+			// @isAuthorized "null" for callbacks(err, user)
+			// @isAuthorized "true"
+			// @isAuthorized "object" is as user but "user" must be "undefined"
+
+			if (isAuthorized instanceof Error || isAuthorized instanceof ErrorBuilder) {
+				// Error handling
+				isAuthorized = false;
+			} else if (isAuthorized == null && user) {
+				// A callback error handling
+				isAuthorized = true;
+			} else if (user == null && isAuthorized && isAuthorized !== true) {
 				user = isAuthorized;
-				isAuthorized = !user;
+				isAuthorized = true;
 			}
+
 			req.isAuthorized = isAuthorized;
 			callback(null, user, isAuthorized);
 		});
@@ -15511,20 +15536,33 @@ function extend_request(PROTO) {
 		var length = req.flags.length;
 		if (F.onAuthorize) {
 			F.onAuthorize(req, req.res, req.flags, function(isAuthorized, user) {
-				var hasRoles = length !== req.flags.length;
 
-				if (hasRoles) {
+				// @isAuthorized "null" for callbacks(err, user)
+				// @isAuthorized "true"
+				// @isAuthorized "object" is as user but "user" must be "undefined"
+
+				var roles = length !== req.flags.length;
+
+				if (roles) {
 					req.$flags += req.flags.slice(length).join('');
 					req.$roles = true;
 				}
 
-				if (typeof(isAuthorized) !== 'boolean') {
+				if (isAuthorized instanceof Error || isAuthorized instanceof ErrorBuilder) {
+					// Error handling
+					isAuthorized = false;
+				} else if (isAuthorized == null && user) {
+					// A callback error handling
+					isAuthorized = true;
+				} else if (user == null && isAuthorized && isAuthorized !== true) {
 					user = isAuthorized;
-					isAuthorized = !user;
+					isAuthorized = true;
 				}
+
 				req.isAuthorized = isAuthorized;
-				req.$total_authorize(isAuthorized, user, hasRoles);
+				req.$total_authorize(isAuthorized, user, roles);
 			});
+
 		} else {
 			if (!req.$total_route)
 				req.$total_route = F.lookup(req, req.buffer_exceeded ? '#431' : req.uri.pathname, req.flags, 0);
