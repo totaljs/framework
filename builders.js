@@ -5256,6 +5256,17 @@ AuthOptions.prototype.invalid = function() {
 	this.next(false);
 };
 
+AuthOptions.prototype.done = function() {
+	var self = this;
+	return function(is, user) {
+		self.next(is, user);
+	};
+};
+
+AuthOptions.prototype.success = function(user) {
+	this.next(true, user);
+};
+
 AuthOptions.prototype.next = function(is, user) {
 
 	if (this.processed)
