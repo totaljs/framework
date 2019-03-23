@@ -110,6 +110,8 @@ Session.prototype.getcookie = function(req, opt, callback) {
 		this.get(value[0], opt.expire, function(err, data, meta) {
 			if ((err || !data) && opt.removecookie !== false)
 				req.res.cookie(opt.name, '', '-1 day');
+			else
+				req.sessionid = meta.sessionid;
 			callback(err, data, meta);
 		});
 	} else {
@@ -211,6 +213,7 @@ Session.prototype.setcookie = function(res, opt, callback) {
 			var data = opt.sessionid + ';' + (opt.id || '');
 			var token = ENCRYPTREQ(res.req, data, opt.key, opt.strict);
 			res.cookie(opt.name, token, opt.expire, COOKIEOPTIONS);
+			res.req.sessionid = opt.sessionid;
 			callback && callback(null, item, meta);
 		}
 	}, opt.note);
