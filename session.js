@@ -90,7 +90,6 @@ Session.prototype.getcookie = function(req, opt, callback) {
 	if (req.req)
 		req = req.req;
 
-
 	var token = req.cookie(opt.name);
 	if (!token || token.length < 20) {
 
@@ -102,21 +101,24 @@ Session.prototype.getcookie = function(req, opt, callback) {
 		return;
 	}
 
+	// IMPORTANT: "req.res" can be null cause of WebSocket
+
 	var value = DECRYPTREQ(req, token, opt.key);
 	if (value) {
 		value = value.split(';');
 		if (req.res && opt.expire && opt.extendcookie !== false)
 			req.res.cookie(opt.name, token, opt.expire, COOKIEOPTIONS);
 		this.get(value[0], opt.expire, function(err, data, meta) {
-			if ((err || !data) && opt.removecookie !== false)
-				req.res.cookie(opt.name, '', '-1 day');
-			else
+			if ((err || !data)) {
+				if (req.res && opt.removecookie !== false)
+					req.res.cookie(opt.name, '', '-1 day');
+			} else
 				req.sessionid = meta.sessionid;
 			callback(err, data, meta);
 		});
 	} else {
 		// remove cookies
-		if (opt.removecookie !== false)
+		if (req.res && opt.removecookie !== false)
 			req.res.cookie(opt.name, '', '-1 day');
 		callback();
 	}
