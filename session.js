@@ -103,7 +103,7 @@ Session.prototype.getcookie = function(req, opt, callback) {
 	// IMPORTANT: "req.res" can be null cause of WebSocket
 
 	var value = DECRYPTREQ(req, token, opt.key);
-	if (value) {
+	if (value && typeof(value) === 'string') {
 		value = value.split(';');
 		if (req.res && opt.expire && opt.extendcookie !== false)
 			req.res.cookie(opt.name, token, opt.expire, COOKIEOPTIONS);
