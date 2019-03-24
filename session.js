@@ -13,7 +13,7 @@ function Session(name) {
 	t.$savecallback = ERROR('session.save');
 
 	// t.onremove = function(item)
-	// t.onfree = function(item
+	// t.onrelease = function(item)
 	// t.ondata = function(item, next(err, data))
 
 	t.$save = function() {
@@ -137,7 +137,7 @@ Session.prototype.usage = function() {
 	return o;
 };
 
-Session.prototype.free = function(sessionid, expire, callback) {
+Session.prototype.release = function(sessionid, expire, callback) {
 
 	if (sessionid && sessionid.sessionid)
 		sessionid = sessionid.sessionid;
@@ -149,15 +149,20 @@ Session.prototype.free = function(sessionid, expire, callback) {
 
 	// refreshes all
 	if (sessionid == null) {
-		for (var m of self.items.values())
+		for (var m of self.items.values()) {
+			self.onrelease && self.onrelease(m);
 			m.data = null;
+		}
 		return;
 	}
 
 	var self = this;
 	var item = self.items.get(sessionid);
-	if (item)
+	if (item) {
+		self.onrelease && self.onrelease(item);
 		item.data = null;
+	}
+
 	if (callback) {
 		if (item)
 			self.get(sessionid, expire, callback);
@@ -166,7 +171,7 @@ Session.prototype.free = function(sessionid, expire, callback) {
 	}
 };
 
-Session.prototype.free2 = function(id, expire, callback) {
+Session.prototype.release2 = function(id, expire, callback) {
 
 	if (typeof(expire) === 'function') {
 		callback = expire;
@@ -181,6 +186,7 @@ Session.prototype.free2 = function(id, expire, callback) {
 
 	for (var m of self.items.values()) {
 		if (m && m.id === id) {
+			self.onrelease && self.onrelease(m);
 			m.data = null;
 			count++;
 			if (expire)
@@ -190,7 +196,7 @@ Session.prototype.free2 = function(id, expire, callback) {
 	callback && callback(null, count);
 };
 
-Session.prototype.freeunused = function(lastusage, callback) {
+Session.prototype.releaseunused = function(lastusage, callback) {
 
 	var self = this;
 	var count = 0;
@@ -198,7 +204,7 @@ Session.prototype.freeunused = function(lastusage, callback) {
 	lastusage = NOW.add(lastusage[0] === '-' ? lastusage : ('-' + lastusage));
 	for (var m of self.items.values()) {
 		if (!m.used || m.used <= lastusage) {
-			self.onfree && self.onfree(m);
+			self.onrelease && self.onrelease(m);
 			m.data = null;
 			count++;
 		}
@@ -405,6 +411,7 @@ Session.prototype.clear = function(lastusage, callback) {
 
 		for (var m of self.items.values()) {
 			if (!m.used || m.used <= lastusage) {
+				self.onremove && self.onremove(m);
 				self.items.delete(m.sessionid);
 				count++;
 			}
@@ -412,6 +419,12 @@ Session.prototype.clear = function(lastusage, callback) {
 
 	} else {
 		count = self.items.length;
+
+		if (self.onremove) {
+			for (var m of self.items.values())
+				self.onremove(m);
+		}
+
 		self.items.clear();
 	}
 
