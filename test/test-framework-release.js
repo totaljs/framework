@@ -60,7 +60,7 @@ function end() {
 }
 
 function test_controller_functions(next) {
-	utils.request(url, ['get'], function(error, data, code, headers) {
+	utils.request(url, ['get', 'keepalive'], function(error, data, code, headers) {
 		error && assert.ok(false, 'test_controller_functions: ' + error.toString());
 		assert.ok(code === 404, 'controller: statusCode ' + code);
 		next();

@@ -24,6 +24,7 @@
 - added: `F.onPrefLoad = function(next(obj))` to read preferences
 - added: __obsolete__ message to older declaration of middleware, schemas and operations
 - added: `RESTBuilder.url(url)` which returns a new instance of `RESTBuilder` for chaining
+- added: `restbuilder.keepalive()` enables a keepalive for `RESTBuilder` instance
 - added: `SESSION()` management, more in docs
 - added: `controller.sessionid` with ID of `SESSION()`
 - added: `AUTH()` supports a new auth declaration with `$` as `AuthOptions` like `SchemaOptions` or `OperationOptions`
@@ -35,8 +36,9 @@
 - updated: `headers` argument in `controller.proxy` supports `flags: []` for REQEUST method
 - updated: `.filefs()` and `.filenosql()` supports `download` with `true` (`filename` will be read from NoSQL binary file)
 - updated: `$.done(arg)` argument `@arg` can be `boolean` (response will be as a value) or object/primitive value (`arg` will be as a value)
-- updated: `String.arg(obj, [encode], [def])` added `encode` and `def` arguments
+- updated: `String.arg(obj, [encode], [def])` added `encode` (`true` or `json`) and `def` arguments
 - updated: `AUTH(req, res, flags, next)` and `next` function can handle `callback(err, user)`
+- updated: `REQUEST()` supports `keepalive` flag
 
 - fixed: error handling in dynamic schemas
 - fixed: CSS variables
