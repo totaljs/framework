@@ -391,13 +391,15 @@ Session.prototype.count = function(filter, callback) {
 
 Session.prototype.remove2 = function(id, callback) {
 	var self = this;
+	var count = 0;
 	for (var m of self.items.values()) {
 		if (m && m.id === id) {
-			callback && callback(null, m);
 			self.onremove && self.onremove(m);
 			self.items.delete(m.sessionid);
+			count++;
 		}
 	}
+	callback && callback(null, count);
 	self.$save();
 };
 
