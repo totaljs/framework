@@ -5545,7 +5545,7 @@ TaskBuilder.prototype.invalid = function(error) {
 	var self = this;
 	if (!self.$done) {
 		!self.error && (self.error = new ErrorBuilder());
-		self.error.push(self.current, error);
+		self.error.push(error);
 		self.done();
 	}
 	return self;
