@@ -80,6 +80,10 @@ TaskBuilder.prototype = {
 		return this.controller ? this.controller.session : null;
 	},
 
+	get sessionid() {
+		return this.controller && this.controller ? this.controller.req.sessionid : null;
+	},
+
 	get language() {
 		return (this.controller ? this.controller.language : '') || '';
 	},
@@ -129,6 +133,10 @@ SchemaOptions.prototype = {
 
 	get session() {
 		return this.controller ? this.controller.session : null;
+	},
+
+	get sessionid() {
+		return this.controller && this.controller ? this.controller.req.sessionid : null;
 	},
 
 	get language() {
