@@ -25,7 +25,7 @@ function Session(name) {
 		var storage = [];
 		for (var m of t.items.values()) {
 			if (m.expire > NOW)
-				storage.push(m.sessionid + ';' + (m.id || '') + ';' + m.expire.getTime() + ';' + (m.used ? m.used.getTime() : '') + ';' + (m.created ? m.created.getTime() : '') + ';' + (m.note || ''));
+				storage.push(encodeURIComponent(m.sessionid) + ';' + encodeURIComponent(m.id || '') + ';' + m.expire.getTime() + ';' + (m.used ? m.used.getTime() : '') + ';' + (m.created ? m.created.getTime() : '') + ';' + encodeURIComponent(m.note || ''));
 			else {
 				self.onremove && self.onremove(m);
 				t.items.delete(m.sessionid);
@@ -480,12 +480,12 @@ Session.prototype.load = function(callback) {
 	for (var i = 0; i < data.length; i++) {
 		var item = data[i].split(';');
 		var obj = {};
-		obj.sessionid = item[0];
-		obj.id = item[1];
+		obj.sessionid = decodeURIComponent(item[0]);
+		obj.id = decodeURIComponent(item[1]);
 		obj.expire = new Date(+item[2]);
 		obj.used = item[3] ? new Date(+item[3]) : null;
 		obj.created = item[4] ? new Date(+item[4]) : null;
-		obj.note = item[5];
+		obj.note = decodeURIComponent(item[5] || '');
 		obj.data = null;
 		if (obj.expire > NOW)
 			self.items.set(obj.sessionid, obj);
