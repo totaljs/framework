@@ -25,7 +25,7 @@ function Session(name) {
 		var storage = [];
 		for (var m of t.items.values()) {
 			if (m.expire > NOW)
-				storage.push(m.sessionid + ';' + (m.id || '') + ';' + m.expire.getTime() + ';' + (m.used ? m.used.getTime() : '') + ';' + (m.note || ''));
+				storage.push(m.sessionid + ';' + (m.id || '') + ';' + m.expire.getTime() + ';' + (m.used ? m.used.getTime() : '') + ';' + (m.created ? m.created.getTime() : '') + ';' + (m.note || ''));
 			else {
 				self.onremove && self.onremove(m);
 				t.items.delete(m.sessionid);
@@ -263,7 +263,7 @@ Session.prototype.setcookie = function(res, opt, callback) {
 			res.req.sessionid = opt.sessionid;
 			callback && callback(null, item, meta);
 		}
-	}, opt.note);
+	}, opt.note, opt.ip);
 };
 
 Session.prototype.set2 = function(id, data, expire, callback, note) {
@@ -308,6 +308,7 @@ Session.prototype.set = function(sessionid, id, data, expire, callback, note) {
 	obj.expire = NOW.add(expire);
 	obj.data = data;
 	obj.note = note;
+	obj.created = NOW;
 	self.items.set(sessionid, obj);
 	callback && callback(null, data, obj);
 	self.$save();
@@ -483,7 +484,8 @@ Session.prototype.load = function(callback) {
 		obj.id = item[1];
 		obj.expire = new Date(+item[2]);
 		obj.used = item[3] ? new Date(+item[3]) : null;
-		obj.note = item[4];
+		obj.created = item[4] ? new Date(+item[4]) : null;
+		obj.note = item[5];
 		obj.data = null;
 		if (obj.expire > NOW)
 			self.items.set(obj.sessionid, obj);
