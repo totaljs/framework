@@ -363,6 +363,63 @@ Session.prototype.get = function(sessionid, expire, callback) {
 		item.used = NOW;
 };
 
+Session.prototype.update2 = function(id, data, expire, callback) {
+
+	if (typeof(expire) === 'function') {
+		callback = expire;
+		expire = null;
+	}
+
+	var self = this;
+	var updated = 0;
+
+	if (expire)
+		expire = NOW.add(expire);
+
+	for (var m of self.items.values()) {
+		if (m && m.id === id) {
+			if (m.data)
+				m.data = data;
+			if (expire)
+				m.expire = expire;
+			if (m.data || expire)
+				updated++;
+		}
+	}
+
+	callback && callback(null, updated);
+	updated && self.$save();
+};
+
+Session.prototype.update = function(sessionid, data, expire, callback) {
+
+	if (typeof(expire) === 'function') {
+		callback = expire;
+		expire = null;
+	}
+
+	var self = this;
+	var item = self.items.get(sessionid);
+	if (item) {
+
+		if (item.data)
+			item.data = data;
+
+		if (expire)
+			item.expire = NOW.add(expire);
+
+		if (item.data)
+			callback && callback(null, data, item);
+		else
+			callback && callback();
+
+		if (item.data || expire)
+			self.$save();
+	}
+
+	callback && callback();
+};
+
 Session.prototype.count = function(filter, callback) {
 
 	if (!callback) {
