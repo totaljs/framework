@@ -4717,8 +4717,7 @@ RESTP.stream = function(callback) {
 
 RESTP.keepalive = function() {
 	var self = this;
-	!self.$flags && (self.$flags = []);
-	self.$flags.push('keepalive');
+	self.$keepalive = true;
 	return self;
 };
 
@@ -4750,6 +4749,7 @@ RESTP.exec = function(callback) {
 		self.$length && flags.push('<' + self.$length);
 		self.$redirect === false && flags.push('noredirect');
 		self.$proxy && flags.push('proxy ' + self.$proxy);
+		self.$keepalive && flags.push('keepalive');
 
 		if (self.$files) {
 			flags.push('upload');
