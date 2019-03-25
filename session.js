@@ -44,16 +44,37 @@ Session.prototype.find = function(filter, callback) {
 	var is = false;
 
 	for (var m of self.items.values()) {
-		if (m && m.data && m.expire >= NOW) {
-			is = true;
-			for (var j = 0; j < keys.length; j++) {
-				var key = keys[j];
-				if (m.data[key] !== filter[key]) {
-					is = false;
-					break;
+		if (m && m.expire >= NOW) {
+			if (m.data) {
+				is = true;
+				for (var j = 0; j < keys.length; j++) {
+					var key = keys[j];
+					if (m.data[key] !== filter[key]) {
+						is = false;
+						break;
+					}
 				}
+				is && arr.push(m);
 			}
-			is && arr.push(m);
+		} else {
+			self.onremove && self.onremove(m);
+			self.items.delete(m.sessionid);
+			self.$save();
+		}
+	}
+
+	callback(null, arr);
+};
+
+Session.prototype.list = function(id, callback) {
+
+	var self = this;
+	var arr = [];
+
+	for (var m of self.items.values()) {
+		if (m && m.expire >= NOW) {
+			if (m.id === id)
+				arr.push(m);
 		} else {
 			self.onremove && self.onremove(m);
 			self.items.delete(m.sessionid);
