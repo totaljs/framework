@@ -4715,6 +4715,20 @@ RESTP.stream = function(callback) {
 	return U.download(self.$url, flags, self.$data, callback, self.$cookies, self.$headers, undefined, self.$timeout);
 };
 
+RESTP.keepalive = function() {
+	var self = this;
+	self.$keepalive = true;
+	return self;
+};
+
+RESTP.flags = function() {
+	var self = this;
+	!self.$flags && (self.$flags = []);
+	for (var i = 0; i < arguments.length; i++)
+		self.$flags(arguments[i]);
+	return self;
+};
+
 RESTP.exec = function(callback) {
 
 	if (!callback)
@@ -4735,6 +4749,7 @@ RESTP.exec = function(callback) {
 		self.$length && flags.push('<' + self.$length);
 		self.$redirect === false && flags.push('noredirect');
 		self.$proxy && flags.push('proxy ' + self.$proxy);
+		self.$keepalive && flags.push('keepalive');
 
 		if (self.$files) {
 			flags.push('upload');
