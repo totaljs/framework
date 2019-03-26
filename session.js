@@ -128,13 +128,13 @@ Session.prototype.getcookie = function(req, opt, callback) {
 		value = value.split(';');
 		if (req.res && opt.expire && opt.extendcookie !== false)
 			req.res.cookie(opt.name, token, opt.expire, COOKIEOPTIONS);
-		this.get(value[0], opt.expire, function(err, data, meta) {
+		this.get(value[0], opt.expire, function(err, data, meta, init) {
 			if ((err || !data)) {
 				if (req.res && opt.removecookie !== false)
 					req.res.cookie(opt.name, '', '-1 day');
 			} else
 				req.sessionid = meta.sessionid;
-			callback(err, data, meta);
+			callback(err, data, meta, init);
 		});
 	} else {
 		// remove cookies
