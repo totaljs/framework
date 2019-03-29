@@ -3536,6 +3536,10 @@ ErrorBuilder.prototype = {
 
 	get is() {
 		return this.items.length > 0;
+	},
+
+	get length() {
+		return this.items.length;
 	}
 };
 
