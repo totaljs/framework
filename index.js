@@ -5916,7 +5916,7 @@ F.onPrefSave = function(val) {
 };
 
 F.onPrefLoad = function(next) {
-	Fs.readFile(F.path.databases(PREFFILE), function(err, data) {
+	Fs.readFile(U.combine(CONF.directory_databases, PREFFILE), function(err, data) {
 		if (data)
 			next(data.toString('utf8').parseJSON(true));
 		else
