@@ -420,30 +420,28 @@ Session.prototype.update = function(sessionid, data, expire, callback) {
 	callback && callback();
 };
 
-Session.prototype.count = function(filter, callback) {
+Session.prototype.count = function(id, callback) {
 
 	if (!callback) {
-		callback = filter;
-		filter = null;
+		callback = id;
+		id = null;
 	}
 
-	if (filter) {
-		this.find(filter, function(err, items) {
-			callback(null, { count: items.length });
-		});
-	} else {
-		var o = {};
-		o.used = 0;
-		o.free = 0;
-		for (var m of this.items.values()) {
-			if (m.data)
-				o.used++;
-			else
-				o.free++;
-		}
-		o.count = o.used + o.free;
-		callback(null, o);
+	var o = {};
+	o.used = 0;
+	o.free = 0;
+
+	for (var m of this.items.values()) {
+		if (id && m.id !== id)
+			continue;
+		if (m.data)
+			o.used++;
+		else
+			o.free++;
 	}
+
+	o.count = o.used + o.free;
+	callback(null, o);
 };
 
 Session.prototype.remove2 = function(id, callback) {
