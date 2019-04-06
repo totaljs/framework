@@ -4382,6 +4382,51 @@ RESTBuilder.url = function(url) {
 	return new RESTBuilder(url);
 };
 
+RESTBuilder.GET = function(url, data) {
+	var builder = new RESTBuilder(url);
+	data && builder.raw(data);
+	return builder;
+};
+
+RESTBuilder.POST = function(url, data) {
+	var builder = new RESTBuilder(url);
+	builder.$method = 'post';
+	builder.$type = 1;
+	data && builder.raw(data);
+	return builder;
+};
+
+RESTBuilder.PUT = function(url, data) {
+	var builder = new RESTBuilder(url);
+	builder.$method = 'put';
+	builder.$type = 1;
+	data && builder.raw(data);
+	builder.put(data);
+	return builder;
+};
+
+RESTBuilder.DELETE = function(url, data) {
+	var builder = new RESTBuilder(url);
+	builder.$method = 'delete';
+	builder.$type = 1;
+	data && builder.raw(data);
+	return builder;
+};
+
+RESTBuilder.PATCH = function(url, data) {
+	var builder = new RESTBuilder(url);
+	builder.$method = 'patch';
+	builder.$type = 1;
+	data && builder.raw(data);
+	return builder;
+};
+
+RESTBuilder.HEAD = function(url) {
+	var builder = new RESTBuilder(url);
+	builder.$method = 'head';
+	return builder;
+};
+
 /**
  * STATIC: Creates a transformation
  * @param {String} name
@@ -4568,7 +4613,6 @@ RESTP.head = RESTP.HEAD = function() {
 	if (this.$method !== 'head') {
 		this.$flags = null;
 		this.$method = 'head';
-		this.$type = 1;
 	}
 	return this;
 };
