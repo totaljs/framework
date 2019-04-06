@@ -4564,6 +4564,15 @@ RESTP.post = RESTP.POST = function(data) {
 	return this;
 };
 
+RESTP.head = RESTP.HEAD = function() {
+	if (this.$method !== 'head') {
+		this.$flags = null;
+		this.$method = 'head';
+		this.$type = 1;
+	}
+	return this;
+};
+
 RESTP.patch = RESTP.PATCH = function(data) {
 	if (this.$method !== 'patch') {
 		this.$flags = null;
@@ -4793,23 +4802,30 @@ RESTP.exec = function(callback) {
 				type = type.substring(0, index).trim();
 		}
 
-		if (self.$plain) {
+		var ishead = response === headers;
+
+		if (ishead)
+			response = '';
+
+		if (ishead) {
+			output.value = status < 400;
+		} else if (self.$plain) {
 			output.value = response;
 		} else {
 			switch (type.toLowerCase()) {
 				case 'text/xml':
 				case 'application/xml':
-					output.value = response.parseXML();
+					output.value = response ? response.parseXML() : {};
 					break;
 				case 'application/x-www-form-urlencoded':
-					output.value = F.onParseQuery(response);
+					output.value = response ? F.onParseQuery(response) : {};
 					break;
 				case 'application/json':
 				case 'text/json':
-					output.value = response.parseJSON(true);
+					output.value = response ? response.parseJSON(true) : null;
 					break;
 				default:
-					output.value = response.isJSON() ? response.parseJSON(true) : null;
+					output.value = response && response.isJSON() ? response.parseJSON(true) : null;
 					break;
 			}
 		}
