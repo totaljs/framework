@@ -30,6 +30,7 @@
 - added: `AUTH()` supports a new auth declaration with `$` as `AuthOptions` like `SchemaOptions` or `OperationOptions`
 - added: `AuthOptions` to prototypes
 - added: `ErrorBuilder.length` property (alias for `instance.items.length)
+- added: `RESTBuilder.HEAD()`
 
 - updated: `$.invalid()` without arguments can return a function `function(err)`
 - updated: Mail `unsubscribe` appends new header which enables `unsubscribe` in e.g. iOS

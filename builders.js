@@ -4493,7 +4493,7 @@ RESTP.xhr = function() {
 };
 
 RESTP.method = function(method, data) {
-	this.$method = method.toLowerCase();
+	this.$method = method.charCodeAt(0) < 97 ? method.toLowerCase() : method;
 	this.$flags = null;
 	data && this.raw(data);
 	return this;
