@@ -36,6 +36,7 @@
 - added: `RESTBuilder.PUT(url, [data])`
 - added: `RESTBuilder.DELETE(url, [data])`
 - added: `RESTBuilder.PATCH(url, [data])`
+- added: a new config item: `nowarnings  : true` can disable obsolete warnings
 
 - updated: `$.invalid()` without arguments can return a function `function(err)`
 - updated: Mail `unsubscribe` appends new header which enables `unsubscribe` in e.g. iOS

@@ -577,6 +577,10 @@ global.TRY = function(fn, err) {
 };
 
 global.OBSOLETE = function(name, message) {
+
+	if (F.config.nowarnings)
+		return;
+
 	console.log(NOW.format('yyyy-MM-dd HH:mm:ss') + ' :: OBSOLETE / IMPORTANT ---> "' + name + '"', message);
 	if (global.F)
 		F.stats.other.obsolete++;
