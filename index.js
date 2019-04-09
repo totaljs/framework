@@ -11606,7 +11606,6 @@ Controller.prototype.$view = function(name, model, expire, key) {
 	}
 
 	var value = self.view(name, model, null, true, true, cache);
-
 	if (!value)
 		return '';
 
@@ -11991,6 +11990,8 @@ Controller.prototype.head = function() {
 				if (com)
 					plus += com.links;
 			}
+			// Cleans cache
+			self.repository[REPOSITORY_COMPONENTS] = null;
 		}
 		return (author ? '<meta name="author" content="' + author + '" />' : '') + (self.repository[REPOSITORY_HEAD] || '') + plus;
 	}
@@ -13616,6 +13617,20 @@ Controller.prototype.$viewrender = function(filename, generator, model, headers,
 
 		if (!self.isConnected)
 			return self;
+
+		var components = self.repository[REPOSITORY_COMPONENTS];
+		if (components) {
+			var keys = Object.keys(components);
+			var plus = '';
+			for (var i = 0; i < keys.length; i++) {
+				var com = F.components.groups[keys[i]];
+				if (com)
+					plus += com.links;
+			}
+			// Cleans cache
+			self.repository[REPOSITORY_COMPONENTS] = null;
+			value = value.replace('</head>', plus + '</head>');
+		}
 
 		var res = self.res;
 		res.options.body = value;
