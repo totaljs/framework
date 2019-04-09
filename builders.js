@@ -4382,6 +4382,51 @@ RESTBuilder.url = function(url) {
 	return new RESTBuilder(url);
 };
 
+RESTBuilder.GET = function(url, data) {
+	var builder = new RESTBuilder(url);
+	data && builder.raw(data);
+	return builder;
+};
+
+RESTBuilder.POST = function(url, data) {
+	var builder = new RESTBuilder(url);
+	builder.$method = 'post';
+	builder.$type = 1;
+	data && builder.raw(data);
+	return builder;
+};
+
+RESTBuilder.PUT = function(url, data) {
+	var builder = new RESTBuilder(url);
+	builder.$method = 'put';
+	builder.$type = 1;
+	data && builder.raw(data);
+	builder.put(data);
+	return builder;
+};
+
+RESTBuilder.DELETE = function(url, data) {
+	var builder = new RESTBuilder(url);
+	builder.$method = 'delete';
+	builder.$type = 1;
+	data && builder.raw(data);
+	return builder;
+};
+
+RESTBuilder.PATCH = function(url, data) {
+	var builder = new RESTBuilder(url);
+	builder.$method = 'patch';
+	builder.$type = 1;
+	data && builder.raw(data);
+	return builder;
+};
+
+RESTBuilder.HEAD = function(url) {
+	var builder = new RESTBuilder(url);
+	builder.$method = 'head';
+	return builder;
+};
+
 /**
  * STATIC: Creates a transformation
  * @param {String} name
@@ -4493,7 +4538,7 @@ RESTP.xhr = function() {
 };
 
 RESTP.method = function(method, data) {
-	this.$method = method.toLowerCase();
+	this.$method = method.charCodeAt(0) < 97 ? method.toLowerCase() : method;
 	this.$flags = null;
 	data && this.raw(data);
 	return this;
@@ -4561,6 +4606,14 @@ RESTP.post = RESTP.POST = function(data) {
 		this.$type = 1;
 	}
 	data && this.raw(data);
+	return this;
+};
+
+RESTP.head = RESTP.HEAD = function() {
+	if (this.$method !== 'head') {
+		this.$flags = null;
+		this.$method = 'head';
+	}
 	return this;
 };
 
@@ -4793,23 +4846,30 @@ RESTP.exec = function(callback) {
 				type = type.substring(0, index).trim();
 		}
 
-		if (self.$plain) {
+		var ishead = response === headers;
+
+		if (ishead)
+			response = '';
+
+		if (ishead) {
+			output.value = status < 400;
+		} else if (self.$plain) {
 			output.value = response;
 		} else {
 			switch (type.toLowerCase()) {
 				case 'text/xml':
 				case 'application/xml':
-					output.value = response.parseXML();
+					output.value = response ? response.parseXML() : {};
 					break;
 				case 'application/x-www-form-urlencoded':
-					output.value = F.onParseQuery(response);
+					output.value = response ? F.onParseQuery(response) : {};
 					break;
 				case 'application/json':
 				case 'text/json':
-					output.value = response.parseJSON(true);
+					output.value = response ? response.parseJSON(true) : null;
 					break;
 				default:
-					output.value = response.isJSON() ? response.parseJSON(true) : null;
+					output.value = response && response.isJSON() ? response.parseJSON(true) : null;
 					break;
 			}
 		}
