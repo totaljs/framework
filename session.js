@@ -25,7 +25,7 @@ function Session(name) {
 		var storage = [];
 		for (var m of t.items.values()) {
 			if (m.expire > NOW)
-				storage.push(encodeURIComponent(m.sessionid) + ';' + encodeURIComponent(m.id || '') + ';' + m.expire.getTime() + ';' + (m.used ? m.used.getTime() : '') + ';' + (m.created ? m.created.getTime() : '') + ';' + encodeURIComponent(m.note || ''));
+				storage.push(encodeURIComponent(m.sessionid) + ';' + (m.id ? encodeURIComponent(m.id) : '') + ';' + m.expire.getTime() + ';' + (m.used ? m.used.getTime() : '') + ';' + (m.created ? m.created.getTime() : '') + ';' + (m.note ? encodeURIComponent(m.note) : '') + ';' + (m.settings ? encodeURIComponent(m.settings) : ''));
 			else {
 				self.onremove && self.onremove(m);
 				t.items.delete(m.sessionid);
@@ -244,6 +244,7 @@ Session.prototype.setcookie = function(res, opt, callback) {
 	// opt.key {String} Encrypt key
 	// opt.data {Object} A session data
 	// opt.note {String} A simple note for this session
+	// opt.settings {String} Settings data for the session
 	// opt.options {String} A cookie options (default: undefined)
 
 	if (res.res)
@@ -252,8 +253,7 @@ Session.prototype.setcookie = function(res, opt, callback) {
 	if (!opt.sessionid)
 		opt.sessionid = UID();
 
-
-	this.set(opt.sessionid, opt.id, opt.data, opt.expire, function(err, item, meta) {
+	this.set(opt.sessionid, opt.id, opt.data, opt.expire, opt.note, opt.settings, function(err, item, meta) {
 		if (err) {
 			callback && callback(err);
 		} else {
@@ -263,14 +263,20 @@ Session.prototype.setcookie = function(res, opt, callback) {
 			res.req.sessionid = opt.sessionid;
 			callback && callback(null, item, meta);
 		}
-	}, opt.note, opt.ip);
+	});
 };
 
-Session.prototype.set2 = function(id, data, expire, callback, note) {
+Session.prototype.set2 = function(id, data, expire, note, settings, callback) {
 
 	if (typeof(expire) === 'function') {
 		callback = expire;
 		expire = '';
+	} else if (typeof(note) === 'function') {
+		callback = note;
+		note = null;
+	} else if (typeof(settings) === 'function') {
+		callback = settings;
+		settings = null;
 	}
 
 	var self = this;
@@ -281,8 +287,10 @@ Session.prototype.set2 = function(id, data, expire, callback, note) {
 			m.data = data;
 			if (expire)
 				m.expire = NOW.add(expire);
-			if (note)
+			if (note != null)
 				m.note = note;
+			if (settings != null)
+				m.settings = settings;
 			updated++;
 		}
 	}
@@ -291,14 +299,23 @@ Session.prototype.set2 = function(id, data, expire, callback, note) {
 	updated && self.$save();
 };
 
-Session.prototype.set = function(sessionid, id, data, expire, callback, note) {
+Session.prototype.set = function(sessionid, id, data, expire, note, settings, callback) {
 
 	if (typeof(id) === 'object') {
-		note = callback;
-		callback = expire;
+		callback = settings;
+		settings = note;
+		note = expire;
 		expire = data;
 		data = id;
 		id = '';
+	}
+
+	if (typeof(note) === 'function') {
+		callback = note;
+		note = null;
+	} else if (typeof(settings) === 'function') {
+		callback = settings;
+		settings = null;
 	}
 
 	var self = this;
@@ -307,8 +324,9 @@ Session.prototype.set = function(sessionid, id, data, expire, callback, note) {
 	obj.id = id == null ? '' : (id + '');
 	obj.expire = NOW.add(expire);
 	obj.data = data;
-	obj.note = note;
+	obj.note = note || '';
 	obj.created = NOW;
+	obj.settings = settings || '';
 	self.items.set(sessionid, obj);
 	callback && callback(null, data, obj);
 	self.$save();
@@ -363,11 +381,17 @@ Session.prototype.get = function(sessionid, expire, callback) {
 		item.used = NOW;
 };
 
-Session.prototype.update2 = function(id, data, expire, callback) {
+Session.prototype.update2 = function(id, data, expire, note, settings, callback) {
 
 	if (typeof(expire) === 'function') {
 		callback = expire;
 		expire = null;
+	} else if (typeof(note) === 'function') {
+		callback = note;
+		note = null;
+	} else if (typeof(settings) === 'function') {
+		callback = settings;
+		settings = null;
 	}
 
 	var self = this;
@@ -380,6 +404,10 @@ Session.prototype.update2 = function(id, data, expire, callback) {
 		if (m && m.id === id) {
 			if (m.data)
 				m.data = data;
+			if (note != null)
+				m.note = note;
+			if (settings != null)
+				m.settings = settings;
 			if (expire)
 				m.expire = expire;
 			if (m.data || expire)
@@ -391,11 +419,17 @@ Session.prototype.update2 = function(id, data, expire, callback) {
 	updated && self.$save();
 };
 
-Session.prototype.update = function(sessionid, data, expire, callback) {
+Session.prototype.update = function(sessionid, data, expire, note, settings, callback) {
 
 	if (typeof(expire) === 'function') {
 		callback = expire;
 		expire = null;
+	} else if (typeof(note) === 'function') {
+		callback = note;
+		note = null;
+	} else if (typeof(settings) === 'function') {
+		callback = settings;
+		settings = null;
 	}
 
 	var self = this;
@@ -404,6 +438,12 @@ Session.prototype.update = function(sessionid, data, expire, callback) {
 
 		if (item.data)
 			item.data = data;
+
+		if (note != null)
+			item.note = note;
+
+		if (settings != null)
+			item.settings = settings;
 
 		if (expire)
 			item.expire = NOW.add(expire);
@@ -538,11 +578,12 @@ Session.prototype.load = function(callback) {
 		var item = data[i].split(';');
 		var obj = {};
 		obj.sessionid = decodeURIComponent(item[0]);
-		obj.id = decodeURIComponent(item[1]);
+		obj.id = item[1] ? decodeURIComponent(item[1]) : '';
 		obj.expire = new Date(+item[2]);
 		obj.used = item[3] ? new Date(+item[3]) : null;
 		obj.created = item[4] ? new Date(+item[4]) : null;
-		obj.note = decodeURIComponent(item[5] || '');
+		obj.note = item[5] ? decodeURIComponent(item[5]) : '';
+		obj.settings = item[6] ? decodeURIComponent(item[6]) : '';
 		obj.data = null;
 		if (obj.expire > NOW)
 			self.items.set(obj.sessionid, obj);
