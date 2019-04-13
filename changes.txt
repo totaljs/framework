@@ -30,13 +30,6 @@
 - added: `AUTH()` supports a new auth declaration with `$` as `AuthOptions` like `SchemaOptions` or `OperationOptions`
 - added: `AuthOptions` to prototypes
 - added: `ErrorBuilder.length` property (alias for `instance.items.length)
-- added: `RESTBuilder.HEAD(url)`
-- added: `RESTBuilder.GET(url, [data])`
-- added: `RESTBuilder.POST(url, [data])`
-- added: `RESTBuilder.PUT(url, [data])`
-- added: `RESTBuilder.DELETE(url, [data])`
-- added: `RESTBuilder.PATCH(url, [data])`
-- added: a new config item: `nowarnings  : true` can disable obsolete warnings
 
 - updated: `$.invalid()` without arguments can return a function `function(err)`
 - updated: Mail `unsubscribe` appends new header which enables `unsubscribe` in e.g. iOS
@@ -55,7 +48,7 @@
 - fixed: HTTP status code with `204` in `REQUEST()`
 - fixed: `cookies` in `WEBSOCKETCLIENT`
 - fixed: `REQUEST()` with `json` flag and with `null` and `''` value
-- fixed: `RESTBuilder` with `head` method
+- fixed: rendering components in `layout`
 
 - __removed: backward compatibility__ with older version of Node.js < 10
 
