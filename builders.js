@@ -3588,7 +3588,7 @@ ErrorBuilder.prototype._resource = function() {
 
 ErrorBuilder.prototype._resource_handler = function(name) {
 	var self = this;
-	return typeof(F) !== 'undefined' ? F.resource(self.resourceName || 'default', name) : '';
+	return global.F ? F.resource(self.resourceName || 'default', name) : '';
 };
 
 ErrorBuilder.prototype.exception = function(message) {
