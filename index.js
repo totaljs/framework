@@ -8397,6 +8397,9 @@ F.hash = function(type, value, salt) {
  * @param {String} key Resource key.
  * @return {String} String
  */
+
+const DEFNAME = 'default';
+
 global.RESOURCE = F.resource = function(name, key) {
 
 	if (!key) {
@@ -8405,11 +8408,14 @@ global.RESOURCE = F.resource = function(name, key) {
 	}
 
 	if (!name)
-		name = 'default';
+		name = DEFNAME;
 
 	var res = F.resources[name];
-	if (res)
+	if (res) {
+		if (res.$empty && res[key] == null && name !== DEFNAME)
+			return res[key] = F.resource(DEFNAME, key); // tries to load a value from "default.resource"
 		return res[key] == null ? '' : res[key];
+	}
 
 	var routes = F.routes.resources[name];
 	var body = '';
@@ -8432,7 +8438,7 @@ global.RESOURCE = F.resource = function(name, key) {
 	var obj = body.parseConfig();
 	F.resources[name] = obj;
 	obj.$empty = empty;
-	return obj[key] == null ? '' : obj[key];
+	return obj[key] == null ? name == DEFNAME ? '' : obj[key] = F.resource(DEFNAME, key) : obj[key];
 };
 
 /**
