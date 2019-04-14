@@ -5349,8 +5349,8 @@ AuthOptions.prototype.cookie = function(name, value, expire, options) {
 	return self;
 };
 
-AuthOptions.prototype.invalid = function() {
-	this.next(false);
+AuthOptions.prototype.invalid = function(user) {
+	this.next(false, user);
 };
 
 AuthOptions.prototype.done = function() {
@@ -5364,7 +5364,7 @@ AuthOptions.prototype.success = function(user) {
 	this.next(true, user);
 };
 
-AuthOptions.prototype.next = function(is, user) {
+AuthOptions.prototype.next = AuthOptions.prototype.callback = function(is, user) {
 
 	if (this.processed)
 		return;
