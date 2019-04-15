@@ -6522,7 +6522,15 @@ exports.Callback = function(count, callback) {
 	return new Callback(count, callback);
 };
 
-function Reader() {}
+function Reader() {
+	var t = this;
+	t.$add = function(builder) {
+		if (t.reader)
+			t.reader.add(builder);
+		else
+			t.reader = new framework_nosql.NoSQLReader(builder);
+	};
+}
 const RP = Reader.prototype;
 
 RP.done = function() {
@@ -6548,12 +6556,7 @@ RP.push = function(data) {
 RP.find = function() {
 	var self = this;
 	var builder = new framework_nosql.DatabaseBuilder();
-
-	if (self.reader)
-		self.reader.add(builder);
-	else
-		self.reader = new framework_nosql.NoSQLReader(builder);
-
+	setImmediate(self.$add, builder);
 	return builder;
 };
 
