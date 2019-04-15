@@ -2961,7 +2961,7 @@ DatabaseBuilder.prototype.compile = function(noTrimmer) {
 	var code = 'var R=repository=$F.repository,options=$F.options,arg=$F.arg,fn=$F.fn,$is=false,$tmp;' + raw + (self.$code.length && raw.substring(raw.length - 7) !== 'return;' ? 'if(!$is)return;' : '') + (noTrimmer ? 'return doc' : 'if(options.fields){var $doc={};for(var $i=0;$i<options.fields.length;$i++){var prop=options.fields[$i];$doc[prop]=doc[prop]}if(options.sort)$doc[options.sort.name]=doc[options.sort.name];return $doc}else if(options.fields2){var $doc={};var $keys=Object.keys(doc);for(var $i=0;$i<$keys.length;$i++){var prop=$keys[$i];!options.fields2[prop]&&($doc[prop]=doc[prop])}return $doc}else{return doc}');
 
 	if (!key) {
-		key = self.db.name + '_' + raw.hash();
+		key = (self.db ? self.db.name : 'unknown') + '_' + raw.hash();
 		cache = CACHE[key];
 		if (cache) {
 			self.$mappers = cache.mitems;
