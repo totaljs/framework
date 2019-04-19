@@ -30,6 +30,7 @@
 - added: `AUTH()` supports a new auth declaration with `$` as `AuthOptions` like `SchemaOptions` or `OperationOptions`
 - added: `AuthOptions` to prototypes
 - added: `ErrorBuilder.length` property (alias for `instance.items.length)
+- added: Schemas `prepare` supports `req` argument
 
 - updated: `$.invalid()` without arguments can return a function `function(err)`
 - updated: Mail `unsubscribe` appends new header which enables `unsubscribe` in e.g. iOS
@@ -41,6 +42,7 @@
 - updated: `AUTH(req, res, flags, next)` and `next` function can handle `callback(err, user)`
 - updated: `REQUEST()` supports `keepalive` flag
 
+- fixed: schemas validation
 - fixed: error handling in dynamic schemas
 - fixed: CSS variables
 - fixed: CSS variables with additional `!important` clause

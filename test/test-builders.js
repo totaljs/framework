@@ -237,9 +237,7 @@ function test_Schema() {
 		assert.ok(value === 3, 'schema - operation advanced 2');
 	}).operation('test2', null, function(err, value) {
 		assert.ok(value === 3, 'schema - operation advanced 3');
-	}).constant('test', true);
-
-	assert.ok(GETSCHEMA('2').constant('test') === true, 'schema - constant');
+	});
 
 	NEWSCHEMA('validator').make(function(schema) {
 		schema.define('name', String, true);
@@ -299,7 +297,7 @@ function test_Schema() {
 	});
 
 	x.setValidate(function(name, value, path, model) {
-		if (!path.startsWith('x.'))
+		if (!path.startsWith('x.') && path.indexOf('ref.') === -1)
 			assert.ok((name === 'age' && value > 22) || (name === 'note' && value.length > 3), 'SchemaBuilderEntity.validation() 2');
 	});
 

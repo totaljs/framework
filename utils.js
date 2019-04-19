@@ -2359,6 +2359,7 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 	for (var i = 0; i < properties.length; i++) {
 
 		var name = properties[i];
+
 		if (fields && fields.indexOf(name) === -1)
 			continue;
 
@@ -2377,11 +2378,13 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 			value = model[name]();
 
 		if (TYPE.isArray) {
-
 			if (TYPE.type === 7 && value instanceof Array && value.length) {
 				for (var j = 0, jl = value.length; j < jl; j++)
 					exports.validate_builder(value[j], error, TYPE.raw, collection, current + name + '[' + j + ']', j, undefined, pluspath);
 			} else {
+
+				if (!TYPE.required)
+					continue;
 
 				result = TYPE.validate ? TYPE.validate(value, model) : prepare(name, value, current + name, model, schema, TYPE);
 				if (result == null) {
@@ -2405,8 +2408,13 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 		}
 
 		if (TYPE.type === 7) {
+
+			if (!value && !TYPE.required)
+				continue;
+
 			// Another schema
 			result = TYPE.validate ? TYPE.validate(value, model) : null;
+
 			if (result == null)
 				exports.validate_builder(value, error, TYPE.raw, collection, current + name, undefined, undefined, pluspath);
 			else {

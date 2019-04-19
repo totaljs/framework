@@ -35,6 +35,7 @@ const REGEXP_NEWOPERATION = /^(async\s)?function(\s)?\([a-zA-Z$\s]+\)|^function 
 const hasOwnProperty = Object.prototype.hasOwnProperty;
 const Qs = require('querystring');
 const MSG_OBSOLETE_NEW = 'You used older declaration of this delegate and you must rewrite it. Read more in docs.';
+const BOOL = { 'true': true, 'on': true, '1': true };
 
 var schemas = {};
 var schemasall = {};
@@ -390,11 +391,16 @@ SchemaBuilderEntity.prototype.allow = function() {
 	if (!self.fields_allow)
 		self.fields_allow = [];
 
-	for (var i = 0, length = arguments.length; i < length; i++) {
-		if (arguments[i] instanceof Array)
-			arguments[i].forEach(item => self.fields_allow.push(item));
+	var arr = arguments;
+
+	if (arr.length === 1)
+		arr = arr[0].split(',').trim();
+
+	for (var i = 0, length = arr.length; i < length; i++) {
+		if (arr[i] instanceof Array)
+			arr[i].forEach(item => self.fields_allow.push(item));
 		else
-			self.fields_allow.push(arguments[i]);
+			self.fields_allow.push(arr[i]);
 	}
 	return self;
 };
@@ -510,6 +516,9 @@ SchemaBuilderEntity.prototype.define = function(name, type, required, custom) {
 	}
 
 	this.fields = Object.keys(this.schema);
+
+	if (a.type === 7)
+		required = true;
 
 	if (required)
 		this.properties.indexOf(name) === -1 && this.properties.push(name);
@@ -1076,6 +1085,8 @@ SchemaBuilderEntity.prototype.setRemove = function(fn, description) {
  */
 SchemaBuilderEntity.prototype.constant = function(name, value, description) {
 
+	OBSOLETE('Constants will be removed from schemas.');
+
 	if (value === undefined)
 		return this.constants ? this.constants[name] : undefined;
 
@@ -1358,7 +1369,7 @@ SchemaBuilderEntity.prototype.execute = function(TYPE, model, options, callback,
 			async.call(self, self[TYPE])(onError, new SchemaOptions(builder, model, options, onCallback, controller));
 		else
 			async.call(self, self[TYPE])(onError, builder, model, options, onCallback, controller, skip !== true);
-	});
+	}, controller ? controller.req : null);
 
 	return self;
 };
@@ -1781,7 +1792,7 @@ SchemaBuilderEntity.prototype.default = function() {
  * @param [callback]
  * @returns {SchemaInstance}
  */
-SchemaBuilderEntity.prototype.make = function(model, filter, callback, argument, novalidate, workflow) {
+SchemaBuilderEntity.prototype.make = function(model, filter, callback, argument, novalidate, workflow, req) {
 
 	if (typeof(model) === 'function') {
 		model.call(this, this);
@@ -1794,7 +1805,7 @@ SchemaBuilderEntity.prototype.make = function(model, filter, callback, argument,
 		filter = tmp;
 	}
 
-	var output = this.prepare(model);
+	var output = this.prepare(model, null, req);
 
 	if (workflow)
 		output.$$workflow = workflow;
@@ -1821,23 +1832,23 @@ function autotrim(context, value) {
 	return context.trim ? value.trim() : value;
 }
 
-SchemaBuilderEntity.prototype.$onprepare = function(name, value, index, model) {
+SchemaBuilderEntity.prototype.$onprepare = function(name, value, index, model, req) {
 
 	var val = value;
 
 	if (this.$onPrepare) {
 		for (var i = 0, length = this.$onPrepare.length; i < length; i++) {
-			var tmp = this.$onPrepare[i](name, val, index, model);
+			var tmp = this.$onPrepare[i](name, val, index, model, req);
 			if (tmp !== undefined)
 				val = tmp;
 		}
 	}
 
 	if (this.onPrepare)
-		val = this.onPrepare(name, val, index, model);
+		val = this.onPrepare(name, val, index, model, req);
 
 	if (this.preparation && this.preparation[name])
-		val = this.preparation[name](val, model, index);
+		val = this.preparation[name](val, model, index, req);
 
 	return val === undefined ? value : val;
 };
@@ -1867,7 +1878,7 @@ SchemaBuilderEntity.prototype.$ondefault = function(property, create, entity) {
  * @param {String|Array} [dependencies] INTERNAL.
  * @return {SchemaInstance}
  */
-SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
+SchemaBuilderEntity.prototype.prepare = function(model, dependencies, req) {
 
 	var self = this;
 	var obj = self.schema;
@@ -1917,11 +1928,11 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 					break;
 				// number: integer
 				case 1:
-					item[property] = self.$onprepare(property, framework_utils.parseInt(val, (def ? type.def() : type.def) || 0), undefined, model);
+					item[property] = self.$onprepare(property, framework_utils.parseInt(val, (def ? type.def() : type.def) || 0), undefined, model, req);
 					break;
 				// number: float
 				case 2:
-					item[property] = self.$onprepare(property, framework_utils.parseFloat(val, (def ? type.def() : type.def) || 0), undefined, model);
+					item[property] = self.$onprepare(property, framework_utils.parseFloat(val, (def ? type.def() : type.def) || 0), undefined, model, req);
 					break;
 
 				// string
@@ -1984,7 +1995,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 					if (type.def && !tmp)
 						tmp = def ? type.def() : type.def;
 
-					item[property] = self.$onprepare(property, tmp, undefined, model);
+					item[property] = self.$onprepare(property, tmp, undefined, model, req);
 					break;
 
 				// boolean
@@ -1994,7 +2005,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 					if (type.def && (tmp == null || tmp === ''))
 						tmp = def ? type.def() : type.def;
 
-					item[property] = self.$onprepare(property, tmp === 'true' || tmp === '1' || tmp === 'on', undefined, model);
+					item[property] = self.$onprepare(property, BOOL[tmp], undefined, model, req);
 					break;
 
 				// date
@@ -2011,7 +2022,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 						tmp = val;
 
 					if (framework_utils.isDate(tmp))
-						tmp = self.$onprepare(property, tmp, undefined, model);
+						tmp = self.$onprepare(property, tmp, undefined, model, req);
 					else {
 						if (type.def !== undefined)
 							tmp = def ? type.def() : type.def;
@@ -2025,7 +2036,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 				// object
 				case 6:
 
-					item[property] = self.$onprepare(property, model[property], undefined, model);
+					item[property] = self.$onprepare(property, model[property], undefined, model, req);
 
 					if (item[property] === undefined)
 						item[property] = null;
@@ -2034,7 +2045,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 
 				// enum
 				case 8:
-					tmp = self.$onprepare(property, model[property], undefined, model);
+					tmp = self.$onprepare(property, model[property], undefined, model, req);
 					if (type.subtype === 'number' && typeof(tmp) === 'string')
 						tmp = tmp.parseFloat(null);
 					item[property] = tmp != null && type.raw.indexOf(tmp) !== -1 ? tmp : undefined;
@@ -2042,7 +2053,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 
 				// keyvalue
 				case 9:
-					tmp = self.$onprepare(property, model[property], undefined, model);
+					tmp = self.$onprepare(property, model[property], undefined, model, req);
 					item[property] = tmp != null ? type.raw[tmp] : undefined;
 					break;
 
@@ -2069,7 +2080,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 					if (entity) {
 						item[property] = entity.prepare(val, undefined);
 						item[property].$$parent = item;
-						dependencies && dependencies.push({ name: type.raw, value: self.$onprepare(property, item[property], undefined, model) });
+						dependencies && dependencies.push({ name: type.raw, value: self.$onprepare(property, item[property], undefined, model, req) });
 					} else
 						item[property] = null;
 
@@ -2100,15 +2111,15 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 
 			switch (type.type) {
 				case 0:
-					tmp = self.$onprepare(property, tmp, j, model);
+					tmp = self.$onprepare(property, tmp, j, model, req);
 					break;
 
 				case 1:
-					tmp = self.$onprepare(property, framework_utils.parseInt(tmp), j, model);
+					tmp = self.$onprepare(property, framework_utils.parseInt(tmp), j, model, req);
 					break;
 
 				case 2:
-					tmp = self.$onprepare(property, framework_utils.parseFloat(tmp), j, model);
+					tmp = self.$onprepare(property, framework_utils.parseFloat(tmp), j, model, req);
 					break;
 
 				case 3:
@@ -2154,13 +2165,13 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 							break;
 					}
 
-					tmp = self.$onprepare(property, tmp, j, model);
+					tmp = self.$onprepare(property, tmp, j, model, req);
 					break;
 
 				case 4:
 					if (tmp)
 						tmp = tmp.toString().toLowerCase();
-					tmp = self.$onprepare(property, tmp === 'true' || tmp === '1' || tmp === 'on', j, model);
+					tmp = self.$onprepare(property, BOOL[tmp], j, model, req);
 					break;
 
 				case 5:
@@ -2172,14 +2183,14 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 						tmp = new Date(tmp);
 
 					if (framework_utils.isDate(tmp))
-						tmp = self.$onprepare(property, tmp, j, model);
+						tmp = self.$onprepare(property, tmp, j, model, req);
 					else
 						tmp = undefined;
 
 					break;
 
 				case 6:
-					tmp = self.$onprepare(property, tmp, j, model);
+					tmp = self.$onprepare(property, tmp, j, model, req);
 					break;
 
 				case 7:
@@ -2188,11 +2199,11 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 						tmp = entity.prepare(tmp, dependencies);
 						tmp.$$parent = item;
 						if (dependencies)
-							dependencies.push({ name: type.raw, value: self.$onprepare(property, tmp, j, model) });
+							dependencies.push({ name: type.raw, value: self.$onprepare(property, tmp, j, model, req) });
 					} else
 						tmp = null;
 
-					tmp = self.$onprepare(property, tmp, j, model);
+					tmp = self.$onprepare(property, tmp, j, model, req);
 					break;
 			}
 
@@ -2410,7 +2421,7 @@ SchemaBuilderEntity.prototype.hook = function(name, model, options, callback, sk
 
 			callback.success = false;
 
-			if (item.fn.$newversion)
+			if (item.fn.$newversion) {
 				async.call(self, item.fn)(function(err) {
 					if (!err)
 						return;
@@ -2424,7 +2435,7 @@ SchemaBuilderEntity.prototype.hook = function(name, model, options, callback, sk
 					output.push(res == undefined ? model : res);
 					next();
 				}, controller));
-			else
+			} else {
 				async.call(self, item.fn)(function(err) {
 					if (!err)
 						return;
@@ -2438,9 +2449,10 @@ SchemaBuilderEntity.prototype.hook = function(name, model, options, callback, sk
 					output.push(res == undefined ? model : res);
 					next();
 				}, controller, skip !== true);
+			}
 
 		}, () => self.$process_hook(model, $type, name, builder, output, callback), 0);
-	});
+	}, controller ? controller.req : null);
 
 	return self;
 };
@@ -2580,7 +2592,7 @@ SchemaBuilderEntity.prototype.$execute = function(type, name, model, options, ca
 			async.call(self, item)(onError, new SchemaOptions(builder, model, options, onCallback, controller));
 		else
 			async.call(self, item)(onError, builder, model, options, onCallback, controller);
-	});
+	}, controller ? controller.req : null);
 
 	return self;
 };

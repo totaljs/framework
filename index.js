@@ -463,7 +463,7 @@ function performschema(type, schema, model, options, callback, controller) {
 			model.$$controller = controller;
 			model[type](options, callback);
 		}
-	}, null, false, workflow);
+	}, null, false, workflow, controller ? controller.req : null);
 
 	return !!o;
 }
