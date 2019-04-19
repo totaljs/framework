@@ -1591,7 +1591,7 @@ exports.upload = function(files, url, callback, cookies, headers, method, timeou
 
 	var header = NEWLINE + NEWLINE + '--' + BOUNDARY + NEWLINE + 'Content-Disposition: form-data; name="{0}"; filename="{1}"' + NEWLINE + 'Content-Type: {2}' + NEWLINE + NEWLINE;
 
-	files.waitFor(function(item, next) {
+	files.wait(function(item, next) {
 
 		// item.name;
 		// item.filename;
