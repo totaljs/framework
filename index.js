@@ -7127,6 +7127,7 @@ F.console = function() {
 	console.log('Date          : ' + NOW.format('yyyy-MM-dd HH:mm:ss'));
 	console.log('Mode          : ' + (DEBUG ? 'debug' : 'release'));
 	console.log('====================================================');
+	CONF.default_root && console.log('Root          : ' + F.config.default_root);
 	console.log('Directory     : ' + process.cwd());
 	console.log('node_modules  : ' + PATHMODULES);
 	console.log('====================================================\n');
