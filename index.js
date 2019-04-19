@@ -5624,7 +5624,7 @@ F.onSchema = function(req, route, callback) {
 		schema = GETSCHEMA(route.schema[0], route.schema[1]);
 
 	if (schema)
-		schema.make(req.body, route.schema[2], onSchema_callback, callback, route.novalidate, route.workflow ? route.workflow.meta : null);
+		schema.make(req.body, route.schema[2], onSchema_callback, callback, route.novalidate, route.workflow ? route.workflow.meta : null, req);
 	else
 		callback('Schema "' + (route.isDYNAMICSCHEMA ? req.$schemaname : (route.schema[0] + '/' + route.schema[1])) + '" not found.');
 };
