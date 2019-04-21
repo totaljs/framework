@@ -289,7 +289,7 @@ exports.worker = function() {
 		PRINTLN('ERROR --> NoSQL events are not supported in fork mode.');
 	};
 
-	TP.listing = DP.listing = function(builder) {
+	TP.listing = TP.list = DP.listing = DP.list = function(builder) {
 		if (builder instanceof DatabaseBuilder)
 			builder.db = this;
 		else
@@ -1124,7 +1124,7 @@ DP.remove = function() {
 	return builder;
 };
 
-DP.listing = function(builder) {
+DP.listing = DP.list = function(builder) {
 	var self = this;
 	if (builder)
 		builder.db = self;
@@ -5590,7 +5590,7 @@ TP.remove = function() {
 	return builder;
 };
 
-TP.listing = function(builder) {
+TP.listing = TP.list = function(builder) {
 	var self = this;
 	self.readonly && self.throwReadonly();
 	if (builder)
