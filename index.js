@@ -1,4 +1,4 @@
-// Copyright 2012-2018 (c) Peter Širka <petersirka@gmail.com>
+// Copyright 2012-2019 (c) Peter Širka <petersirka@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the
@@ -16645,6 +16645,7 @@ function extend_response(PROTO) {
 		if (req.method === 'HEAD') {
 			res.writeHead(options.code || 200, headers);
 			res.end();
+			options.stream && framework_internal.onFinished(res, () => framework_internal.destroyStream(options.stream));
 			response_end(res);
 			return res;
 		}
@@ -16655,13 +16656,13 @@ function extend_response(PROTO) {
 			options.stream.pipe(Zlib.createGzip(GZIPSTREAM)).pipe(res);
 			framework_internal.onFinished(res, () => framework_internal.destroyStream(options.stream));
 			response_end(res);
-			return res;
+		} else {
+			res.writeHead(options.code || 200, headers);
+			framework_internal.onFinished(res, () => framework_internal.destroyStream(options.stream));
+			options.stream.pipe(res);
+			response_end(res);
 		}
 
-		res.writeHead(options.code || 200, headers);
-		framework_internal.onFinished(res, () => framework_internal.destroyStream(options.stream));
-		options.stream.pipe(res);
-		response_end(res);
 		return res;
 	};
 
@@ -17022,6 +17023,7 @@ function $image_stream(exists, size, isFile, stats, res) {
 		delete F.temporary.processing[req.$key];
 		F.temporary.path[req.$key] = [options.name, stats.size, stats.mtime.toUTCString()];
 		res.options.filename = options.name;
+		res.options.stream && DESTROY(options.stream);
 		res.options.stream = null;
 		res.$file();
 		DEBUG && (F.temporary.path[req.$key] = undefined);
@@ -17044,6 +17046,9 @@ function $image_stream(exists, size, isFile, stats, res) {
 
 	F.stats.response.image++;
 	image.save(options.name, function(err) {
+
+		options.stream && DESTROY(options.stream);
+
 		delete F.temporary.processing[req.$key];
 		if (err) {
 			F.temporary.notfound[req.$key] = true;
