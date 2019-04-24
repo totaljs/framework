@@ -17641,7 +17641,6 @@ function controller_json_workflow_multiple(id) {
 	var w = self.route.workflow;
 
 	self.id = self.route.paramidindex === -1 ? id : self.req.split[self.route.paramidindex];
-
 	CONF.logger && (self.req.$logger = []);
 
 	if (w instanceof Object) {
@@ -17649,7 +17648,7 @@ function controller_json_workflow_multiple(id) {
 
 			// IS IT AN OPERATION?
 			if (!self.route.schema.length) {
-				RUN(w.id, EMPTYOBJECT, w.view ? self.callback(w.view) : self.callback(), null, self, w.index ? w.id[w.index] : null);
+				RUN(w.id, self.body, w.view ? self.callback(w.view) : self.callback(), null, self, w.index ? w.id[w.index] : null);
 				return;
 			}
 
