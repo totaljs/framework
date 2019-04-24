@@ -847,6 +847,7 @@ function Framework() {
 	self.controllers = {};
 	self.dependencies = {};
 	self.isomorphic = {};
+	self.currencies = {};
 	self.components = { has: false, css: false, js: false, views: {}, instances: {}, version: null, links: '', groups: {}, files: {} };
 	self.convertors = [];
 	self.convertors2 = null;

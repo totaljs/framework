@@ -4522,6 +4522,11 @@ NP.round = function(precision) {
 	return Math.round(this * m) / m;
 };
 
+NP.currency = function(currency) {
+	var curr = F.currencies[currency];
+	return curr ? curr(this) : this.format(2);
+};
+
 /**
  * Async decrements
  * @param {Function(index, next)} fn

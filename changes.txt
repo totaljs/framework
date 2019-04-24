@@ -31,6 +31,8 @@
 - added: `AuthOptions` to prototypes
 - added: `ErrorBuilder.length` property (alias for `instance.items.length)
 - added: Schemas `prepare` supports `req` argument
+- added: `F.currencies.eur = function(val) {}` registers a currency formatter
+- added: usage of currency formatter `Number.currency(currency)`
 
 - updated: `$.invalid()` without arguments can return a function `function(err)`
 - updated: Mail `unsubscribe` appends new header which enables `unsubscribe` in e.g. iOS
