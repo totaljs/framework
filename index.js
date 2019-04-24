@@ -17582,7 +17582,7 @@ function controller_json_workflow(id) {
 
 			// IS IT AN OPERATION?
 			if (!self.route.schema.length) {
-				OPERATION(w.id, self.body, w.view ? self.callback(w.view) : self.callback(), self);
+				OPERATION(w.id, EMPTYOBJECT, w.view ? self.callback(w.view) : self.callback(), self);
 				return;
 			}
 
