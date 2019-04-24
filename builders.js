@@ -730,14 +730,18 @@ SchemaBuilderEntity.prototype.$parse = function(name, value, required, custom) {
 	result.isArray = false;
 	result.custom = custom || '';
 
-	// 0 = undefined
-	// 1 = integer
-	// 2 = float
-	// 3 = string
-	// 4 = boolean
-	// 5 = date
-	// 6 = object
-	// 7 = custom object
+	//  0 = undefined
+	//  1 = integer
+	//  2 = float
+	//  3 = string
+	//  4 = boolean
+	//  5 = date
+	//  6 = object
+	//  7 = custom object
+	//  8 = enum
+	//  9 = keyvalue
+	// 10 = custom object type
+	// 11 = number2
 
 	if (value === null)
 		return result;
@@ -887,6 +891,11 @@ SchemaBuilderEntity.prototype.$parse = function(name, value, required, custom) {
 		result.length = 20;
 		result.raw = 'string';
 		result.subtype = 'phone';
+		return result;
+	}
+
+	if (lower === 'number2') {
+		result.type = 11;
 		return result;
 	}
 
@@ -1747,6 +1756,10 @@ SchemaBuilderEntity.prototype.default = function() {
 			case 2:
 				item[property] = type.isArray ? [] : 0;
 				break;
+			// numbers: default "null"
+			case 10:
+				item[property] = type.isArray ? [] : null;
+				break;
 			// string
 			case 3:
 				item[property] = type.isArray ? [] : type.subtype === 'email' ? '@' : '';
@@ -2092,6 +2105,12 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies, req) {
 					if (item[property] === undefined)
 						item[property] = null;
 					break;
+
+				// number: nullable
+				case 11:
+					item[property] = self.$onprepare(property, typeval === 'number' ? val : typeval === 'string' ? parseNumber(val) : null, undefined, model, req);
+					break;
+
 			}
 			continue;
 		}
@@ -2205,12 +2224,16 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies, req) {
 
 					tmp = self.$onprepare(property, tmp, j, model, req);
 					break;
+
+				case 11:
+					tmp = self.$onprepare(property, typeval === 'number' ? tmp : typeval === 'string' ? parseNumber(tmp) : null, j, model, req);
+					if (tmp == null)
+						continue;
+					break;
 			}
 
-			if (tmp === undefined)
-				continue;
-
-			item[property].push(tmp);
+			if (tmp !== undefined)
+				item[property].push(tmp);
 		}
 	}
 
@@ -2225,6 +2248,15 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies, req) {
 
 	return item;
 };
+
+function parseNumber(str) {
+	if (!str)
+		return null;
+	if (str.indexOf(',') !== -1)
+		str = str.replace(',', '.');
+	var num = +str;
+	return isNaN(num) ? null : num;
+}
 
 /**
  * Transform an object
@@ -5450,6 +5482,9 @@ function convertorcompile(schema, data, key) {
 			case 'number':
 				obj.fn = $convertnumber;
 				break;
+			case 'number2':
+				obj.fn = $convertnumber2;
+				break;
 			case 'boolean':
 				obj.fn = $convertboolean;
 				break;
@@ -5566,6 +5601,15 @@ function $convertnumber(value) {
 		return value;
 	var num = +value.toString().replace(',', '.');
 	return isNaN(num) ? 0 : num;
+}
+
+function $convertnumber2(value) {
+	if (value == null)
+		return null;
+	if (typeof(value) === 'number')
+		return value;
+	var num = +value.toString().replace(',', '.');
+	return isNaN(num) ? null : num;
 }
 
 function $convertboolean(value) {

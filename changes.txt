@@ -33,6 +33,7 @@
 - added: Schemas `prepare` supports `req` argument
 - added: `F.currencies.eur = function(val) {}` registers a currency formatter
 - added: usage of currency formatter `Number.currency(currency)`
+- added: new schema type `Number2` with default value is `null`, not zero `0`
 
 - updated: `$.invalid()` without arguments can return a function `function(err)`
 - updated: Mail `unsubscribe` appends new header which enables `unsubscribe` in e.g. iOS

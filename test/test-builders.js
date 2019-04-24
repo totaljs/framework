@@ -432,20 +432,27 @@ function test_Schema() {
 		});
 	});
 
-	NEWSCHEMA('EnumKeyValue').make(function(schema) {
+	NEWSCHEMA('Special').make(function(schema) {
+
 		schema.define('enum_int', [1, 2, 0.3, 4], true);
 		schema.define('enum_string', ['Peter', 'Širka'], true);
 		schema.define('keyvalue', { 'peter': 1, 'lucia': 2 }, true);
+		schema.define('number', 'Number2');
 
 		schema.make({ enum_int: '0.3', 'keyvalue': 'lucia', enum_string: 'Širka' }, function(err, response) {
-			assert.ok(response.enum_int === 0.3, 'Schema enums (int)');
-			assert.ok(response.enum_string === 'Širka', 'Schema enums (int)');
+			assert.ok(response.number === null, 'Special schema nullable (number2)');
+			assert.ok(response.enum_int === 0.3, 'Special schema (int)');
+			assert.ok(response.enum_string === 'Širka', 'Special schema (int)');
 			assert.ok(response.keyvalue === 2, 'Schema keyvalue');
 		});
 
-		schema.make({ enum_int: '5', 'keyvalue': 'luciaa', enum_string: 'Širkaa' }, function(err) {
-			assert.ok(err.items[0].path === 'enum_int', 'Schema enums (int) 2');
-			assert.ok(err.items[1].path === 'enum_string', 'Schema enums (string) 2');
+		schema.make({ enum_int: '0.3', 'keyvalue': 'lucia', enum_string: 'Širka', number: '10' }, function(err, response) {
+			assert.ok(response.number === 10, 'Special schema with number (number2)');
+		});
+
+		schema.make({ enum_int: '5', 'keyvalue': 'luciaa', enum_string: 'Širkaa', number: '10' }, function(err) {
+			assert.ok(err.items[0].path === 'enum_int', 'Special schema (int) 2');
+			assert.ok(err.items[1].path === 'enum_string', 'Special schema (string) 2');
 			assert.ok(err.items[2].path === 'keyvalue', 'Schema keyvalue 2');
 		});
 
