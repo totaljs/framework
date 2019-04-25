@@ -4522,9 +4522,9 @@ NP.round = function(precision) {
 	return Math.round(this * m) / m;
 };
 
-NP.currency = function(currency) {
+NP.currency = function(currency, a, b, c) {
 	var curr = F.currencies[currency];
-	return curr ? curr(this) : this.format(2);
+	return curr ? curr(this, a, b, c) : this.format(2);
 };
 
 /**
