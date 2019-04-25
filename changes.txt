@@ -56,6 +56,7 @@
 - fixed: rendering components in `layout`
 - fixed: resources, there was a bug with reading of value from `default.resource`
 - fixed: too much open files in `res.image()`
+- fixed: Schema `Boolean` parser
 
 - __removed: backward compatibility__ with older version of Node.js < 10
 
