@@ -2022,11 +2022,9 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies, req) {
 				// boolean
 				case 4:
 					tmp = val ? val.toString().toLowerCase() : null;
-
 					if (type.def && (tmp == null || tmp === ''))
 						tmp = def ? type.def() : type.def;
-
-					item[property] = self.$onprepare(property, BOOL[tmp], undefined, model, req);
+					item[property] = self.$onprepare(property, typeof(tmp) === 'string' ? !!BOOL[tmp] : tmp == null ? false : tmp, undefined, model, req);
 					break;
 
 				// date
