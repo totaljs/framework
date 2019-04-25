@@ -753,6 +753,14 @@ SchemaBuilderEntity.prototype.$parse = function(name, value, required, custom) {
 
 	if (type === 'function') {
 
+		if (value === UID) {
+			result.type = 3;
+			result.length = 20;
+			result.raw = 'string';
+			result.subtype = 'uid';
+			return result;
+		}
+
 		if (value === Number) {
 			result.type = 2;
 			return result;
