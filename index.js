@@ -802,6 +802,8 @@ function Framework() {
 	};
 
 	global.REPO = global.G = self.global = {};
+	global.MAIN = {};
+
 	self.$bundling = true;
 	self.resources = {};
 	self.connections = {};

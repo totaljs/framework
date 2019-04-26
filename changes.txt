@@ -19,6 +19,7 @@
 - added: `controller.nocache()`
 - added: `controller.nocontent()`
 - added: `REPO` as a global variable
+- added: `MAIN` as a global variable
 - added: `PREF.set(name, [value])` (read+write) or `PREF.propname` (only read) for reading/writing a persistent preferences
 - added: `F.onPrefSave = function(obj)` to write preferences
 - added: `F.onPrefLoad = function(next(obj))` to read preferences
