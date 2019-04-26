@@ -4,13 +4,20 @@ const COOKIEOPTIONS = { httponly: true, security: 'lax' };
 const Fs = require('fs');
 const filename = 'sessions{0}.txt';
 
-function Session(name) {
+function Session(name, ondata) {
+
+	if (typeof(name) === 'function') {
+		ondata = name;
+		name = null;
+	}
+
 	var t = this;
 	var timeoutsave = null;
 
 	t.name = name || '';
 	t.items = new Map();
 	t.$savecallback = ERROR('session.save');
+	t.ondata = ondata;
 
 	// t.onremove = function(item)
 	// t.onrelease = function(item)
@@ -168,6 +175,12 @@ Session.prototype.release = function(sessionid, expire, callback) {
 		expire = null;
 	}
 
+	var self = this;
+
+	// We can't release data when the session doesn't have ".ondata" delegate implemented
+	if (!self.ondata)
+		return;
+
 	// refreshes all
 	if (sessionid == null) {
 		for (var m of self.items.values()) {
@@ -177,7 +190,6 @@ Session.prototype.release = function(sessionid, expire, callback) {
 		return;
 	}
 
-	var self = this;
 	var item = self.items.get(sessionid);
 	if (item) {
 		self.onrelease && self.onrelease(item);
@@ -200,6 +212,11 @@ Session.prototype.release2 = function(id, expire, callback) {
 	}
 
 	var self = this;
+
+	// We can't release data when the session doesn't have ".ondata" delegate implemented
+	if (!self.ondata)
+		return;
+
 	var count = 0;
 
 	if (expire)
@@ -448,10 +465,12 @@ Session.prototype.update = function(sessionid, data, expire, note, settings, cal
 		if (expire)
 			item.expire = NOW.add(expire);
 
-		if (item.data)
-			callback && callback(null, data, item);
-		else
-			callback && callback();
+		if (callback) {
+			if (item.data)
+				callback(null, data, item);
+			else
+				callback();
+		}
 
 		if (item.data || expire)
 			self.$save();
@@ -596,10 +615,8 @@ Session.prototype.load = function(callback) {
 };
 
 global.SESSION = function(name) {
-
 	if (!name)
 		name = 'default';
-
 	if (F.sessions[name])
 		return F.sessions[name];
 	var session = new Session(name);
