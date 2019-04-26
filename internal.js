@@ -2251,6 +2251,7 @@ function view_prepare(command, dynamicCommand, functions, controller, components
 		case 'translate':
 			return 'self.' + command;
 		case 'json':
+		case 'json2':
 		case 'sitemap_change':
 		case 'sitemap_replace':
 		case 'sitemap_add':

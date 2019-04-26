@@ -561,7 +561,7 @@ global.SUCCESS = function(success, value) {
 		success = true;
 
 	SUCCESSHELPER.success = !!success;
-	SUCCESSHELPER.value = value == null ? undefined : (framework_builders.isSchema(value) ? value.$clean() : value);
+	SUCCESSHELPER.value = value == null ? undefined : (value && value.$$schema ? value.$clean() : value);
 	SUCCESSHELPER.error = err ? err : undefined;
 	return SUCCESSHELPER;
 };
@@ -10627,7 +10627,7 @@ Controller.prototype.$save = function(helper, callback) {
 	}
 
 	var self = this;
-	if (framework_builders.isSchema(self.body)) {
+	if (self.body && self.body.$$schema) {
 		self.body.$$controller = self;
 		self.body.$save(helper, callback);
 	} else {
@@ -10646,7 +10646,7 @@ Controller.prototype.$insert = function(helper, callback) {
 	}
 
 	var self = this;
-	if (framework_builders.isSchema(self.body)) {
+	if (self.body && self.body.$$schema) {
 		self.body.$$controller = self;
 		self.body.$insert(helper, callback);
 	} else {
@@ -10665,7 +10665,7 @@ Controller.prototype.$update = function(helper, callback) {
 	}
 
 	var self = this;
-	if (framework_builders.isSchema(self.body)) {
+	if (self.body && self.body.$$schema) {
 		self.body.$$controller = self;
 		self.body.$update(helper, callback);
 	} else {
@@ -10696,7 +10696,7 @@ Controller.prototype.$workflow = function(name, helper, callback) {
 		helper = null;
 	}
 
-	if (framework_builders.isSchema(self.body)) {
+	if (self.body && self.body.$$schema) {
 		self.body.$$controller = self;
 		self.body.$workflow(name, helper, callback);
 	} else
@@ -10724,7 +10724,7 @@ Controller.prototype.$hook = function(name, helper, callback) {
 		helper = EMPTYOBJECT;
 	}
 
-	if (framework_builders.isSchema(self.body)) {
+	if (self.body && self.body.$$schema) {
 		self.body.$$controller = self;
 		self.body.$hook(name, helper, callback);
 	} else
@@ -10753,7 +10753,7 @@ Controller.prototype.$transform = function(name, helper, callback) {
 	}
 
 	var self = this;
-	if (framework_builders.isSchema(self.body)) {
+	if (self.body && self.body.$$schema) {
 		self.body.$$controller = self;
 		self.body.$transform(name, helper, callback);
 	} else
@@ -10781,7 +10781,7 @@ Controller.prototype.$operation = function(name, helper, callback) {
 	}
 
 	var self = this;
-	if (framework_builders.isSchema(self.body)) {
+	if (self.body && self.body.$$schema) {
 		self.body.$$controller = self;
 		self.body.$operation(name, helper, callback);
 	} else
@@ -10823,7 +10823,7 @@ Controller.prototype.$exec = function(name, helper, callback) {
 	if (callback == null)
 		callback = self.callback();
 
-	if (framework_builders.isSchema(self.body)) {
+	if (self.body && self.body.$$schema) {
 		self.body.$$controller = self;
 		self.body.$exec(name, helper, callback);
 		return self;
@@ -10838,7 +10838,7 @@ Controller.prototype.$exec = function(name, helper, callback) {
 Controller.prototype.$async = function(callback, index) {
 	var self = this;
 
-	if (framework_builders.isSchema(self.body)) {
+	if (self.body && self.body.$$schema) {
 		self.body.$$controller = self;
 		return self.body.$async(callback, index);
 	}
@@ -12395,11 +12395,34 @@ Controller.prototype.$json = function(obj, id, beautify, replacer) {
 		beautify = false;
 	}
 
-	if (framework_builders.isSchema(obj))
+	if (obj && obj.$$schema)
 		obj = obj.$clean();
 
 	var value = beautify ? JSON.stringify(obj, replacer, 4) : JSON.stringify(obj, replacer);
 	return id ? ('<script type="application/json" id="' + id + '">' + value + '</script>') : value;
+};
+
+/**
+ * Serialize object into the JSON
+ * @private
+ * @param {Object} obj
+ * @param {String} id Optional.
+ * @param {Boolean} beautify Optional.
+ * @return {String}
+ */
+Controller.prototype.$json2 = function(obj, id) {
+
+	if (obj && obj.$$schema)
+		obj = obj.$clean();
+
+	var data = {};
+
+	for (var i = 2; i < arguments.length; i++) {
+		var key = arguments[i];
+		data[key] = obj[key];
+	}
+
+	return '<script type="application/json" id="' + id + '">' + JSON.stringify(data) + '</script>';
 };
 
 /**
@@ -12620,7 +12643,7 @@ Controller.prototype.json = function(obj, headers, beautify, replacer) {
 		F.stats.response.errorBuilder++;
 	} else {
 
-		if (framework_builders.isSchema(obj))
+		if (obj && obj.$$schema)
 			obj = obj.$clean();
 
 		if (beautify)
@@ -12681,7 +12704,7 @@ Controller.prototype.jsonp = function(name, obj, headers, beautify, replacer) {
 		F.stats.response.errorBuilder++;
 	} else {
 
-		if (framework_builders.isSchema(obj))
+		if (obj && obj.$$schema)
 			obj = obj.$clean();
 
 		if (beautify)
@@ -12832,7 +12855,7 @@ Controller.prototype.plain = function(body, headers) {
 	if (body == null)
 		body = '';
 	else if (type === 'object') {
-		if (framework_builders.isSchema(body))
+		if (body && body.$$schema)
 			body = body.$clean();
 		body = body ? JSON.stringify(body, null, 4) : '';
 	} else
@@ -16231,7 +16254,7 @@ function extend_response(PROTO) {
 	PROTO.json = function(obj) {
 		var res = this;
 		F.stats.response.json++;
-		if (framework_builders.isSchema(obj))
+		if (obj && obj.$$schema)
 			obj = obj.$clean();
 		res.options.body = JSON.stringify(obj);
 		res.options.type = CT_JSON;

@@ -332,7 +332,7 @@ exports.worker = function() {
 		var self = this;
 		var builder;
 
-		if (framework_builders.isSchema(doc))
+		if (doc.$$schema)
 			doc = doc.$clean();
 
 		if (unique) {
@@ -371,14 +371,14 @@ exports.worker = function() {
 	};
 
 	TP.update = DP.update = function(doc, insert) {
-		var val = framework_builders.isSchema(doc) ? doc.$clean() : doc;
+		var val = doc.$$schema ? doc.$clean() : doc;
 		if (typeof(val) === 'function')
 			val = val.toString();
 		return send(this, 'update', val, insert).builder = new DatabaseBuilder(this);
 	};
 
 	TP.modify = DP.modify = function(doc, insert) {
-		var val = framework_builders.isSchema(doc) ? doc.$clean() : doc;
+		var val = doc.$$schema ? doc.$clean() : doc;
 		if (typeof(val) === 'function')
 			val = val.toString();
 		return send(this, 'modify', val, insert).builder = new DatabaseBuilder(this);
@@ -483,7 +483,7 @@ exports.worker = function() {
 	};
 
 	SP.insert = function(doc) {
-		notify(this.db, 'storage.insert', framework_builders.isSchema(doc) ? doc.$clean() : doc);
+		notify(this.db, 'storage.insert', doc.$$schema ? doc.$clean() : doc);
 		return this;
 	};
 
@@ -862,7 +862,7 @@ DP.insert = function(doc, unique) {
 	}
 
 	builder = new DatabaseBuilder2(self);
-	var json = framework_builders.isSchema(doc) ? doc.$clean() : doc;
+	var json = doc.$$schema ? doc.$clean() : doc;
 	self.pending_append.push({ doc: JSON.stringify(json).replace(REGBOOL, JSONBOOL), raw: doc, builder: builder });
 	setImmediate(next_operation, self, 1);
 	self.$events.insert && self.emit('insert', json);
@@ -877,7 +877,7 @@ DP.update = function(doc, insert) {
 	var self = this;
 	self.readonly && self.throwReadonly();
 	var builder = new DatabaseBuilder(self);
-	var data = framework_builders.isSchema(doc) ? doc.$clean() : doc;
+	var data = doc.$$schema ? doc.$clean() : doc;
 	builder.$options.readertype = 1;
 	if (typeof(data) === 'string')
 		data = new Function('doc', 'repository', 'arg', data.indexOf('return ') === -1 ? ('return (' + data + ')') : data);
@@ -890,7 +890,7 @@ DP.modify = function(doc, insert) {
 	var self = this;
 	self.readonly && self.throwReadonly();
 	var builder = new DatabaseBuilder(self);
-	var data = framework_builders.isSchema(doc) ? doc.$clean() : doc;
+	var data = doc.$$schema ? doc.$clean() : doc;
 	var keys = Object.keys(data);
 	var inc = null;
 
