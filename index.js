@@ -17621,7 +17621,7 @@ function controller_json_workflow(id) {
 			if (w.type)
 				self[w.type](self.callback(w.view));
 			else {
-				var err = 'Operation @' + w.id + ' not found in the schema "{0}".'.format(schema.name);
+				var err = 'Schema "{0}" does not contain "{1}" operation.'.format(schema.name, w.id);
 				if (self.route.isDYNAMICSCHEMA)
 					self.throw404(err);
 				else
@@ -17673,9 +17673,14 @@ function controller_json_workflow_multiple(id) {
 					op.push({ name: '$operation', id: id });
 				} else if (schema.meta['hook#' + id] !== undefined) {
 					op.push({ name: '$hook', id: id });
+				} else {
+					// not found
+					self.throw500('Schema "{0}" does not contain "{1}" operation.'.format(schema.name, id));
+					return;
 				}
 			}
 			w.async = op;
+			console.log(w.async);
 		}
 
 		var async = self.$async(self.callback(w.view), w.index);
