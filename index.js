@@ -17703,7 +17703,6 @@ function controller_json_workflow_multiple(id) {
 				}
 			}
 			w.async = op;
-			console.log(w.async);
 		}
 
 		var async = self.$async(self.callback(w.view), w.index);
