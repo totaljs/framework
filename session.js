@@ -113,6 +113,7 @@ Session.prototype.getcookie = function(req, opt, callback) {
 	// opt.key {String} Encrypt key
 	// opt.extendcookie {Boolean} Extends cookie expiration (default: true)
 	// opt.removecookie {Boolean} Removes cookie if isn't valid (default: true)
+	// opt.options {Object} A cookie options (default: undefined)
 
 	if (req.req)
 		req = req.req;
@@ -134,7 +135,7 @@ Session.prototype.getcookie = function(req, opt, callback) {
 	if (value && typeof(value) === 'string') {
 		value = value.split(';');
 		if (req.res && opt.expire && opt.extendcookie !== false)
-			req.res.cookie(opt.name, token, opt.expire, COOKIEOPTIONS);
+			req.res.cookie(opt.name, token, opt.expire, opt.options || COOKIEOPTIONS);
 		this.get(value[0], opt.expire, function(err, data, meta, init) {
 			if ((err || !data)) {
 				if (req.res && opt.removecookie !== false)
@@ -262,7 +263,7 @@ Session.prototype.setcookie = function(res, opt, callback) {
 	// opt.data {Object} A session data
 	// opt.note {String} A simple note for this session
 	// opt.settings {String} Settings data for the session
-	// opt.options {String} A cookie options (default: undefined)
+	// opt.options {Object} A cookie options (default: undefined)
 
 	if (res.res)
 		res = res.res;
