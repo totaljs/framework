@@ -17049,8 +17049,13 @@ function $image_stream(exists, size, isFile, stats, res) {
 		delete F.temporary.processing[req.$key];
 		F.temporary.path[req.$key] = [options.name, stats.size, stats.mtime.toUTCString()];
 		res.options.filename = options.name;
-		res.options.stream && DESTROY(options.stream);
-		res.options.stream = null;
+
+		if (options.stream) {
+			options.stream.once('error', NOOP); // sometimes is throwed: Bad description
+			DESTROY(options.stream);
+			options.stream = null;
+		}
+
 		res.$file();
 		DEBUG && (F.temporary.path[req.$key] = undefined);
 		return;
@@ -17073,7 +17078,11 @@ function $image_stream(exists, size, isFile, stats, res) {
 	F.stats.response.image++;
 	image.save(options.name, function(err) {
 
-		options.stream && DESTROY(options.stream);
+		if (options.stream) {
+			options.stream.once('error', NOOP); // sometimes is throwed: Bad description
+			DESTROY(options.stream);
+			options.stream = null;
+		}
 
 		delete F.temporary.processing[req.$key];
 		if (err) {
