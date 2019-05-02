@@ -28,14 +28,14 @@
 
 const REQUIRED = 'The field "@" is invalid.';
 const DEFAULT_SCHEMA = 'default';
-const SKIP = { $$schema: true, $$async: true, $$repository: true, $$controller: true, $$workflow: true, $$parent: true };
+const SKIP = { $$schema: 1, $$async: 1, $$repository: 1, $$controller: 1, $$workflow: 1, $$parent: 1, $$keys: 1 };
 const REGEXP_CLEAN_EMAIL = /\s/g;
 const REGEXP_CLEAN_PHONE = /\s|\.|-|\(|\)/g;
 const REGEXP_NEWOPERATION = /^(async\s)?function(\s)?\([a-zA-Z$\s]+\)|^function anonymous\(\$|^\([a-zA-Z$\s]+\)/;
 const hasOwnProperty = Object.prototype.hasOwnProperty;
 const Qs = require('querystring');
 const MSG_OBSOLETE_NEW = 'You used older declaration of this delegate and you must rewrite it. Read more in docs.';
-const BOOL = { 'true': true, 'on': true, '1': true };
+const BOOL = { true: 1, on: 1, '1': 1 };
 
 var schemas = {};
 var schemasall = {};
@@ -136,6 +136,10 @@ SchemaOptions.prototype = {
 		return this.controller ? this.controller.session : null;
 	},
 
+	get keys() {
+		return this.model.$$keys;
+	},
+
 	get sessionid() {
 		return this.controller && this.controller ? this.controller.req.sessionid : null;
 	},
@@ -222,6 +226,10 @@ SchemaOptions.prototype.$insert = function(helper, callback, async) {
 
 SchemaOptions.prototype.$update = function(helper, callback, async) {
 	return this.model.$update(helper, callback, async);
+};
+
+SchemaOptions.prototype.$patch = function(helper, callback, async) {
+	return this.model.$patch(helper, callback, async);
 };
 
 SchemaOptions.prototype.$query = function(helper, callback, async) {
@@ -1043,6 +1051,19 @@ SchemaBuilderEntity.prototype.setUpdate = function(fn, description) {
 };
 
 /**
+ * Set patch handler
+ * @param {Function(error, model, helper, next(value), controller)} fn
+ * @return {SchemaBuilderEntity}
+ */
+SchemaBuilderEntity.prototype.setPatch = function(fn, description) {
+	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
+	this.onPatch = fn;
+	this.meta.patch = description || null;
+	!fn.$newversion && OBSOLETE('Schema("{0}").setPatch()'.format(this.name), MSG_OBSOLETE_NEW);
+	return this;
+};
+
+/**
  * Set error handler
  * @param {Function(error)} fn
  * @return {SchemaBuilderEntity}
@@ -1274,6 +1295,10 @@ SchemaBuilderEntity.prototype.update = function(model, options, callback, contro
 	return this.execute('onUpdate', model, options, callback, controller, skip);
 };
 
+SchemaBuilderEntity.prototype.patch = function(model, options, callback, controller, skip) {
+	return this.execute('onPatch', model, options, callback, controller, skip);
+};
+
 SchemaBuilderEntity.prototype.execute = function(TYPE, model, options, callback, controller, skip) {
 
 	if (typeof(callback) === 'boolean') {
@@ -1303,6 +1328,9 @@ SchemaBuilderEntity.prototype.execute = function(TYPE, model, options, callback,
 			break;
 		case 'onUpdate':
 			$type = 'update';
+			break;
+		case 'onPatch':
+			$type = 'patch';
 			break;
 		default:
 			$type = 'save';
@@ -1914,11 +1942,19 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies, req) {
 	var entity;
 	var item = new self.CurrentSchemaInstance();
 	var defaults = self.onDefault || self.$onDefault ? true : false;
+	var keys = req && req.$patch ? [] : null;
 
 	for (var property in obj) {
 
 		var val = model[property];
+
+		if (req && req.$patch && val === undefined) {
+			delete item[property];
+			continue;
+		}
+
 		var type = obj[property];
+		keys && keys.push(property);
 
 		// IS PROTOTYPE? The problem was in e.g. "search" property, because search is in String prototypes.
 		if (!hasOwnProperty.call(model, property))
@@ -2223,8 +2259,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies, req) {
 					if (entity) {
 						tmp = entity.prepare(tmp, dependencies);
 						tmp.$$parent = item;
-						if (dependencies)
-							dependencies.push({ name: type.raw, value: self.$onprepare(property, tmp, j, model, req) });
+						dependencies && dependencies.push({ name: type.raw, value: self.$onprepare(property, tmp, j, model, req) });
 					} else
 						tmp = null;
 
@@ -2247,10 +2282,15 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies, req) {
 		for (var i = 0, length = self.fields_allow.length; i < length; i++) {
 			var name = self.fields_allow[i];
 			var val = model[name];
-			if (val !== undefined)
+			if (val !== undefined) {
 				item[name] = val;
+				keys && keys.push(name);
+			}
 		}
 	}
+
+	if (keys)
+		item.$$keys = keys;
 
 	return item;
 };
@@ -2979,12 +3019,15 @@ SchemaInstance.prototype.$stop = function() {
 	return this;
 };
 
+const PUSHTYPE1 = { save: 1, insert: 1, update: 1, patch: 1 };
+const PUSHTYPE2 = { query: 1, get: 1, read: 1, remove: 1 };
+
 SchemaInstance.prototype.$push = function(type, name, helper, first, async, callback) {
 
 	var self = this;
 	var fn;
 
-	if (type === 'save' || type === 'insert' || type === 'update') {
+	if (PUSHTYPE1[type]) {
 		fn = function(next, indexer) {
 			self.$$schema[type](self, helper, function(err, result) {
 				var a = self.$$async;
@@ -2999,7 +3042,7 @@ SchemaInstance.prototype.$push = function(type, name, helper, first, async, call
 			}, self.$$controller);
 		};
 
-	} else if (type === 'query' || type === 'get' || type === 'read' || type === 'remove') {
+	} else if (PUSHTYPE2[type]) {
 		fn = function(next, indexer) {
 			self.$$schema[type](helper, function(err, result) {
 				var a = self.$$async;
@@ -3111,9 +3154,7 @@ SchemaInstance.prototype.$insert = function(helper, callback, async) {
 };
 
 SchemaInstance.prototype.$update = function(helper, callback, async) {
-
 	if (this.$$async && !this.$$async.running) {
-
 		if (typeof(helper) === 'function') {
 			async = callback;
 			callback = helper;
@@ -3123,11 +3164,26 @@ SchemaInstance.prototype.$update = function(helper, callback, async) {
 			async = true;
 			callback = a;
 		}
-
 		this.$push('update', null, helper, null, async, callback);
-
 	} else
 		this.$$schema.update(this, helper, callback, this.$$controller);
+	return this;
+};
+
+SchemaInstance.prototype.$patch = function(helper, callback, async) {
+	if (this.$$async && !this.$$async.running) {
+		if (typeof(helper) === 'function') {
+			async = callback;
+			callback = helper;
+			helper = null;
+		} else if (callback === true) {
+			var a = async;
+			async = true;
+			callback = a;
+		}
+		this.$push('patch', null, helper, null, async, callback);
+	} else
+		this.$$schema.patch(this, helper, callback, this.$$controller);
 	return this;
 };
 

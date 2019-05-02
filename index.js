@@ -5626,6 +5626,9 @@ F.onSchema = function(req, route, callback) {
 	} else
 		schema = GETSCHEMA(route.schema[0], route.schema[1]);
 
+	if (req.method === 'PATCH')
+		req.$patch = true;
+
 	if (schema)
 		schema.make(req.body, route.schema[2], onSchema_callback, callback, route.novalidate, route.workflow ? route.workflow.meta : null, req);
 	else
@@ -10672,6 +10675,25 @@ Controller.prototype.$update = function(helper, callback) {
 		var model = self.getSchema().default();
 		model.$$controller = self;
 		model.$update(helper, callback);
+	}
+	return self;
+};
+
+Controller.prototype.$patch = function(helper, callback) {
+
+	if (callback == null && typeof(helper) === 'function') {
+		callback = helper;
+		helper = null;
+	}
+
+	var self = this;
+	if (self.body && self.body.$$schema) {
+		self.body.$$controller = self;
+		self.body.$patch(helper, callback);
+	} else {
+		var model = self.getSchema().default();
+		model.$$controller = self;
+		model.$patch(helper, callback);
 	}
 	return self;
 };
@@ -17650,6 +17672,7 @@ function controller_json_workflow(id) {
 		if (w.name)
 			self[w.type](w.name, self.callback());
 		else {
+
 			if (w.type)
 				self[w.type](self.callback(w.view));
 			else {

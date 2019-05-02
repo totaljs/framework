@@ -2347,7 +2347,7 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 	var entity = collection[schema];
 	var prepare = entity.onValidate || F.onValidate || NOOP;
 	var current = path ? path + '.' : '';
-	var properties = entity.properties;
+	var properties = model && model.$$keys ? model.$$keys : entity.properties;
 	var result;
 
 	if (!pluspath)
