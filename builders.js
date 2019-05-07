@@ -2903,6 +2903,84 @@ SchemaBuilderEntity.prototype.instancePrototype = function() {
 	return this.CurrentSchemaInstance.prototype;
 };
 
+SchemaBuilderEntity.prototype.cl = function(name) {
+	var o = this.schema[name];
+	if (o && (o.type === 8 || o.type === 9))
+		return o.raw;
+};
+
+SchemaBuilderEntity.prototype.props = function() {
+
+	var self = this;
+	var keys = Object.keys(self.schema);
+	var prop = {};
+
+	for (var i = 0; i < keys.length; i++) {
+		var key = keys[i];
+		var meta = self.schema[key];
+		var obj = {};
+
+		if (obj.required)
+			obj.required = meta.required;
+
+		if (meta.length)
+			obj.length = meta.length;
+
+		if (meta.isArray)
+			meta.array = true;
+
+		switch (meta.type) {
+			case 1:
+			case 2:
+			case 11:
+				obj.type = 'number';
+				break;
+			case 3:
+				obj.type = 'string';
+				switch (meta.subtype) {
+					case 'uid':
+						obj.type = 'uid';
+						delete obj.length;
+						break;
+					default:
+						obj.subtype = meta.subtype;
+						break;
+				}
+				break;
+
+			case 4:
+				obj.type = 'boolean';
+				break;
+			case 5:
+				obj.type = 'date';
+				break;
+			case 7:
+				obj.type = 'schema';
+				obj.name = meta.raw;
+				break;
+			case 8:
+				obj.type = 'enum';
+				obj.items = meta.raw;
+				break;
+			case 9:
+				// obj.type = 'keyvalue';
+				obj.type = 'enum'; // because it returns keys only
+				obj.items = Object.keys(meta.raw);
+				break;
+			// case 6:
+			// case 0:
+			// case 10:
+			default:
+				obj.type = 'object';
+				break;
+		}
+
+		prop[key] = obj;
+	}
+
+	return prop;
+};
+
 /**
  * SchemaInstance
  * @constructor

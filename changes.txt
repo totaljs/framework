@@ -37,6 +37,8 @@
 - added: new schema type `Number2` with default value is `null`, not zero `0`
 - added: `@{json2(model, elementID, key1, key2, key3)}` can serialize data with keys defined into the `<script type="application/json">`
 - added: schemas supports `PATCH` and `.setPatch()`, only specified field are processed
+- added: `schema.cl(name)` ("cl" means codelist) returns `{Array}` a list of values from defined enum/keyvalue
+- added: `schema.props()` returns `{Object}` meta info about all defined properties
 
 - updated: `$.invalid()` without arguments can return a function `function(err)`
 - updated: Mail `unsubscribe` appends new header which enables `unsubscribe` in e.g. iOS
