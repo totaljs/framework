@@ -2104,8 +2104,8 @@ exports.isStaticFile = function(url) {
  * @return {Number}
  */
 exports.parseInt = function(obj, def) {
-	if (obj == null)
-		return def || 0;
+	if (obj == null || obj === '')
+		return def === undefined ? 0 : def;
 	var type = typeof(obj);
 	return type === 'number' ? obj : (type !== 'string' ? obj.toString() : obj).parseInt(def);
 };
@@ -2124,8 +2124,8 @@ exports.parseBool = exports.parseBoolean = function(obj, def) {
  * @return {Number}
  */
 exports.parseFloat = function(obj, def) {
-	if (obj == null)
-		return def || 0;
+	if (obj == null || obj === '')
+		return def === undefined ? 0 : def;
 	var type = typeof(obj);
 	return type === 'number' ? obj : (type !== 'string' ? obj.toString() : obj).parseFloat(def);
 };
@@ -4087,17 +4087,17 @@ SP.parseUID = function() {
 SP.parseInt = function(def) {
 	var str = this.trim();
 	var num = +str;
-	return isNaN(num) ? (def || 0) : num;
+	return isNaN(num) ? (def === undefined ? 0 : def) : num;
 };
 
 SP.parseInt2 = function(def) {
 	var num = this.match(regexpINTEGER);
-	return num ? +num[0] : def || 0;
+	return num ? +num[0] : (def === undefined ? 0 : def);
 };
 
 SP.parseFloat2 = function(def) {
 	var num = this.match(regexpFLOAT);
-	return num ? +num[0].toString().replace(/,/g, '.') : def || 0;
+	return num ? +num[0].toString().replace(/,/g, '.') : (def === undefined ? 0 : def);
 };
 
 SP.parseBool = SP.parseBoolean = function() {
@@ -4110,7 +4110,7 @@ SP.parseFloat = function(def) {
 	if (str.indexOf(',') !== -1)
 		str = str.replace(',', '.');
 	var num = +str;
-	return isNaN(num) ? (def || 0) : num;
+	return isNaN(num) ? (def === undefined ? 0 : def) : num;
 };
 
 SP.capitalize = function(first) {

@@ -1960,7 +1960,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies, req) {
 		if (!hasOwnProperty.call(model, property))
 			val = undefined;
 
-		var def = type.def != undefined ? typeof(type.def) === 'function' ? true : false : undefined;
+		var def = type.def && typeof(type.def) === 'function';
 
 		if (val === undefined) {
 			if (type.def !== undefined)
@@ -1985,11 +1985,11 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies, req) {
 					break;
 				// number: integer
 				case 1:
-					item[property] = self.$onprepare(property, framework_utils.parseInt(val, (def ? type.def() : type.def) || 0), undefined, model, req);
+					item[property] = self.$onprepare(property, framework_utils.parseInt(val, def ? type.def() : type.def), undefined, model, req);
 					break;
 				// number: float
 				case 2:
-					item[property] = self.$onprepare(property, framework_utils.parseFloat(val, (def ? type.def() : type.def) || 0), undefined, model, req);
+					item[property] = self.$onprepare(property, framework_utils.parseFloat(val, def ? type.def() : type.def), undefined, model, req);
 					break;
 
 				// string
@@ -2049,7 +2049,8 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies, req) {
 							break;
 					}
 
-					if (type.def && !tmp)
+
+					if (!tmp && type.def !== undefined)
 						tmp = def ? type.def() : type.def;
 
 					item[property] = self.$onprepare(property, tmp, undefined, model, req);
