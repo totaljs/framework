@@ -571,7 +571,7 @@ Session.prototype.clear = function(lastusage, callback) {
 	self.$save();
 };
 
-Session.prototype.release = function() {
+Session.prototype.clean = function() {
 	var self = this;
 	var is = false;
 	for (var m of self.items.values()) {

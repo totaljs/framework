@@ -7230,7 +7230,7 @@ F.service = function(count) {
 		keys = Object.keys(F.sessions);
 		for (var i = 0; i < keys.length; i++) {
 			var key = keys[i];
-			F.sessions[key] && F.sessions[key].release();
+			F.sessions[key] && F.sessions[key].clean();
 		}
 	}
 
