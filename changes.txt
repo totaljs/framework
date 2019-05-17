@@ -50,6 +50,7 @@
 - updated: `String.arg(obj, [encode], [def])` added `encode` (`true` or `json`) and `def` arguments
 - updated: `AUTH(req, res, flags, next)` and `next` function can handle `callback(err, user)`
 - updated: `REQUEST()` supports `keepalive` flag
+- updated: `bundles` mechanism supports merging files `--filename` between `bundles` files
 
 - fixed: schemas validation
 - fixed: error handling in dynamic schemas
