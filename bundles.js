@@ -74,6 +74,13 @@ exports.make = function(callback) {
 						if (dirname && dirname !== '/')
 							dirs[dirname] = true;
 
+						// handle files in bundle to merge
+						var mergeme = false;
+						if(REGAPPEND.test(p)){
+							mergeme = true;
+							p = p.replace(/\/--/g, '/');
+						}
+
 						var exists = false;
 						try {
 							exists = Fs.statSync(Path.join(target, p)) != null;
@@ -83,9 +90,9 @@ exports.make = function(callback) {
 						if (exists && p.startsWith(dbpath))
 							return false;
 
-						if (INTERNAL[p] || U.getExtension(p) === 'resource') {
+						if (INTERNAL[p] || U.getExtension(p) === 'resource' || mergeme) {
 							var hash = Math.random().toString(16).substring(5);
-							Merge.push({ name: p, filename: Path.join(target, p + hash) });
+							Merge.push({ name: p, filename: Path.join(target, p + hash), type: mergeme ? 3 : undefined });
 							META.files.push(p + hash);
 							return p + hash;
 						}
