@@ -6,6 +6,7 @@ const CONSOLE = process.argv.indexOf('restart') === -1;
 const INTERNAL = { '/sitemap': 1, '/versions': 1, '/workflows': 1, '/dependencies': 1, '/config': 1, '/config-release': 1, '/config-debug': 1 };
 const isWindows = require('os').platform().substring(0, 3).toLowerCase() === 'win';
 const REGAPPEND = /\/--[a-z0-9]+/i;
+const REGAPPENDREPLACE = /\/--/g;
 const META = {};
 
 META.version = 1;
@@ -75,10 +76,11 @@ exports.make = function(callback) {
 							dirs[dirname] = true;
 
 						// handle files in bundle to merge
-						var mergeme = false;
-						if(REGAPPEND.test(p)){
-							mergeme = true;
-							p = p.replace(/\/--/g, '/');
+						var mergeme = 0;
+
+						if (REGAPPEND.test(p)) {
+							mergeme = 3;
+							p = p.replace(REGAPPENDREPLACE, '/');
 						}
 
 						var exists = false;
@@ -92,7 +94,7 @@ exports.make = function(callback) {
 
 						if (INTERNAL[p] || U.getExtension(p) === 'resource' || mergeme) {
 							var hash = Math.random().toString(16).substring(5);
-							Merge.push({ name: p, filename: Path.join(target, p + hash), type: mergeme ? 3 : undefined });
+							Merge.push({ name: p, filename: Path.join(target, p + hash), type: mergeme });
 							META.files.push(p + hash);
 							return p + hash;
 						}
@@ -140,7 +142,7 @@ exports.make = function(callback) {
 				else if (file.startsWith(CONF.directory_public))
 					type = 2;
 				else if (REGAPPEND.test(file)) {
-					file = file.replace(/\/--/g, '/');
+					file = file.replace(REGAPPENDREPLACE, '/');
 					type = 3;
 				}
 
