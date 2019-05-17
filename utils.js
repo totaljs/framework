@@ -2432,6 +2432,9 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 			continue;
 		}
 
+		if (!TYPE.required)
+			continue;
+
 		result = TYPE.validate ? TYPE.validate(value, model) : prepare(name, value, current + name, model, schema, TYPE);
 		if (result == null) {
 			result = validate_builder_default(name, value, TYPE);
