@@ -3840,6 +3840,9 @@ SP.parseConfig = function(def, onerr) {
 			case 'datetime':
 				obj[name] = value.parseDate();
 				break;
+			case 'random':
+				obj[name] = GUID((value || '0').parseInt() || 10);
+				break;
 			default:
 				obj[name] = value;
 				break;

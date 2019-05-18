@@ -41,6 +41,7 @@
 - added: `schema.cl(name)` ("cl" means codelist) returns `{Array}` a list of values from defined enum/keyvalue
 - added: `schema.props()` returns `{Object}` meta info about all defined properties
 - added: `SchemaOptions`, `OperationOptions` and `TaskOptions` supports `$.req` and `$.res` properties
+- added: new config subtype called `random`, example: `secret_key    (random)  : 10` and `10` means a length of value
 
 - updated: `$.invalid()` without arguments can return a function `function(err)`
 - updated: Mail `unsubscribe` appends new header which enables `unsubscribe` in e.g. iOS
