@@ -8266,7 +8266,7 @@ F.rmdir = F.path.rmdir = function(arr, callback) {
  */
 global.ENCRYPT = F.encrypt = function(value, key, isUnique) {
 
-	if (value === undefined)
+	if (value == null)
 		return '';
 
 	var type = typeof(value);
