@@ -40,6 +40,7 @@
 - added: `SchemaOptions` supports `$.keys` for `PATCH` method
 - added: `schema.cl(name)` ("cl" means codelist) returns `{Array}` a list of values from defined enum/keyvalue
 - added: `schema.props()` returns `{Object}` meta info about all defined properties
+- added: `SchemaOptions`, `OperationOptions` and `TaskOptions` supports `$.req` and `$.res` properties
 
 - updated: `$.invalid()` without arguments can return a function `function(err)`
 - updated: Mail `unsubscribe` appends new header which enables `unsubscribe` in e.g. iOS

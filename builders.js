@@ -97,6 +97,14 @@ TaskBuilder.prototype = {
 		return this.controller ? this.controller.id : null;
 	},
 
+	get req() {
+		return this.controller ? this.controller.req : null;
+	},
+
+	get res() {
+		return this.controller ? this.controller.res : null;
+	},
+
 	get params() {
 		return this.controller ? this.controller.params : null;
 	},
@@ -154,6 +162,14 @@ SchemaOptions.prototype = {
 
 	get id() {
 		return this.controller ? this.controller.id : null;
+	},
+
+	get req() {
+		return this.controller ? this.controller.req : null;
+	},
+
+	get res() {
+		return this.controller ? this.controller.res : null;
 	},
 
 	get params() {
@@ -5395,6 +5411,14 @@ OperationOptions.prototype = {
 
 	get id() {
 		return this.controller ? this.controller.id : null;
+	},
+
+	get req() {
+		return this.controller ? this.controller.req : null;
+	},
+
+	get res() {
+		return this.controller ? this.controller.res : null;
 	},
 
 	get params() {
