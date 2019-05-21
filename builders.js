@@ -1243,33 +1243,33 @@ SchemaBuilderEntity.prototype.find = function(name) {
  */
 SchemaBuilderEntity.prototype.destroy = function() {
 	delete this.parent.collection[this.name];
-	this.properties = undefined;
-	this.schema = undefined;
-	this.onDefault = undefined;
-	this.$onDefault = undefined;
-	this.onValidate = undefined;
-	this.onSave = undefined;
-	this.onInsert = undefined;
-	this.onUpdate = undefined;
-	this.onRead = undefined;
-	this.onGet = undefined;
-	this.onRemove = undefined;
-	this.onQuery = undefined;
-	this.workflows = undefined;
-	this.operations = undefined;
-	this.transforms = undefined;
-	this.meta = undefined;
-	this.newversion = undefined;
-	this.properties = undefined;
-	this.hooks = undefined;
-	this.constants = undefined;
-	this.onPrepare = undefined;
-	this.$onPrepare = undefined;
-	this.onError = undefined;
-	this.gcache = undefined;
-	this.dependencies = undefined;
-	this.fields = undefined;
-	this.fields_allow = undefined;
+	delete this.properties;
+	delete this.schema;
+	delete this.onDefault;
+	delete this.$onDefault;
+	delete this.onValidate;
+	delete this.onSave;
+	delete this.onInsert;
+	delete this.onUpdate;
+	delete this.onRead;
+	delete this.onGet;
+	delete this.onRemove;
+	delete this.onQuery;
+	delete this.workflows;
+	delete this.operations;
+	delete this.transforms;
+	delete this.meta;
+	delete this.newversion;
+	delete this.properties;
+	delete this.hooks;
+	delete this.constants;
+	delete this.onPrepare;
+	delete this.$onPrepare;
+	delete this.onError;
+	delete this.gcache;
+	delete this.dependencies;
+	delete this.fields;
+	delete this.fields_allow;
 };
 
 /**
@@ -1559,7 +1559,7 @@ SchemaBuilderEntity.prototype.remove = function(options, callback, controller) {
 
 	if (!isGenerator(self, $type, self.onRemove)) {
 		if (self.onRemove.$newversion)
-			self.onRemove(new SchemaOptions(builder, undefined, options, function(res) {
+			self.onRemove(new SchemaOptions(builder, controller ? controller.body : undefined, options, function(res) {
 				CONF.logger && F.ilogger(self.getLoggerName($type, name), controller, $now);
 				self.$process(arguments, undefined, $type, undefined, builder, res, callback, controller);
 			}, controller));
