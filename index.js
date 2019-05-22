@@ -10588,8 +10588,8 @@ Controller.prototype = {
 			this.$params = obj;
 			return obj;
 		} else {
-			this.$params = EMPTYOBJECT;
-			return EMPTYOBJECT;
+			// Because in some cases are overwritten
+			return this.$params = {};
 		}
 	}
 };
