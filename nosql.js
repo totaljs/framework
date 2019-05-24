@@ -4703,6 +4703,7 @@ Binary.prototype.res = function(res, options, notmodified) {
 	var self = this;
 	var isnew = false;
 	var id = options.id || '';
+	var req = res.req;
 
 	if (id > 0)
 		isnew = true;
@@ -4711,6 +4712,11 @@ Binary.prototype.res = function(res, options, notmodified) {
 		isnew = true;
 	} else if (id.indexOf('#') === -1)
 		id = self.db.name + '#' + id;
+
+	if (RELEASE && req.$key && F.temporary.notfound[req.$key] !== undefined) {
+		res.throw404();
+		return res;
+	}
 
 	var filename;
 
@@ -4721,17 +4727,27 @@ Binary.prototype.res = function(res, options, notmodified) {
 
 	var stream = Fs.createReadStream(filename, BINARYREADMETA);
 
-	stream.on('error', () => res.throw404());
+	stream.on('error', function() {
+		if (RELEASE)
+			F.temporary.notfound[framework_nosql.createTemporaryKey(req)] = true;
+		res.throw404();
+	});
+
 	stream.on('data', function(buffer) {
 		var json = buffer.toString('utf8').replace(REGCLEAN, '');
 		if (json) {
 			var obj = JSON.parse(json, jsonparser);
 			var utc = obj.date ? new Date(+obj.date.substring(0, 4), +obj.date.substring(4, 6), +obj.date.substring(6, 8)).toUTCString() : '';
 
-			if (!options.download && res.req.headers['if-modified-since'] === utc) {
+			if (!options.download && req.headers['if-modified-since'] === utc) {
 				res.extention = U.getExtension(obj.name);
 				notmodified(res, utc);
 			} else {
+
+				if (RELEASE && req.$key && F.temporary.path[req.$key]) {
+					res.$file();
+					return res;
+				}
 
 				res.options.type = obj.type;
 				res.options.stream = Fs.createReadStream(filename, BINARYREADDATA);
@@ -4756,8 +4772,11 @@ Binary.prototype.res = function(res, options, notmodified) {
 					res.$stream();
 				}
 			}
-		} else
+		} else {
+			if (RELEASE)
+				F.temporary.notfound[framework_nosql.createTemporaryKey(req)] = true;
 			res.throw404();
+		}
 	});
 };
 

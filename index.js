@@ -934,7 +934,7 @@ function Framework() {
 			head: 0,
 			post: 0,
 			put: 0,
-			path: 0,
+			patch: 0,
 			upload: 0,
 			schema: 0,
 			operation: 0,
@@ -7617,7 +7617,7 @@ F.$requestcontinue = function(req, res, headers) {
 					if (method === 'PUT')
 						F.stats.request.put++;
 					else if (method === 'PATCH')
-						F.stats.request.path++;
+						F.stats.request.patch++;
 					else
 						F.stats.request.post++;
 					if (isCORS)
@@ -16532,6 +16532,7 @@ function extend_response(PROTO) {
 			delete headers[HEADER_LENGTH];
 
 		F.stats.response.file++;
+		options.stream && DESTROY(options.stream);
 
 		if (req.method === 'HEAD') {
 			res.writeHead(res.options.code || 200, headers);
@@ -16961,6 +16962,7 @@ function $file_notmodified(res, name) {
 }
 
 function $file_nocompress(stream, next, res) {
+
 	stream.pipe(res);
 
 	framework_internal.onFinished(res, function() {
@@ -17271,6 +17273,8 @@ function fsStreamRead(filename, options, callback, res) {
 function createTemporaryKey(req) {
 	return (req.uri ? req.uri.pathname : req).replace(REG_TEMPORARY, '-').substring(1);
 }
+
+framework_nosql.createTemporaryKey = createTemporaryKey;
 
 function MiddlewareOptions() {}
 

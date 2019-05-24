@@ -64,12 +64,15 @@
 - fixed: `REQUEST()` with `json` flag and with `null` and `''` value
 - fixed: rendering components in `layout`
 - fixed: resources, there was a bug with reading of value from `default.resource`
-- fixed: too much open files in `res.image()`
+- fixed: too many open files in `res.image()`
+- fixed: too many open files in `res.filefs()`
 - fixed: Schema `Boolean` parser
+- fixed: renamed `F.stats.request.path` to `F.stats.request.patch`
 
 - __removed: backward compatibility__ with older version of Node.js < 10
 
 - improved Schemas and error handling
+- improved `res.filefs()` method for nonexistent files
 
 ======= 3.2.0
 
