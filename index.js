@@ -5718,6 +5718,40 @@ F.onMeta = function() {
 	return builder;
 };
 
+global.AUDIT = function(name, $, type, message) {
+
+	if (message == null) {
+		message = type;
+		type = null;
+	}
+
+	var data = {};
+
+	if ($.user) {
+		data.userid = $.user.id;
+		data.username = $.user.name || $.user.nick || $.user.alias;
+	}
+
+	if ($.req) {
+		if ($.req.sessionid)
+			data.sessionid = $.req.sessionid;
+		data.ua = $.req.useragent();
+		data.ip = $.ip;
+	}
+
+	if (type)
+		data.type = type;
+
+	data.created = NOW = new Date();
+
+	if (message)
+		data.message = message;
+
+	F.path.verify('logs');
+	U.queue('F.logger', 5, (next) => Fs.appendFile(U.combine(CONF.directory_logs, name + '.log'), JSON.stringify(data) + '\n', next));
+
+};
+
 // @arguments {Object params}
 global.LOG = F.log = function() {
 
@@ -15187,7 +15221,8 @@ function extend_request(PROTO) {
 	};
 
 	PROTO.useragent = function(structured) {
-		return (this.headers['user-agent'] || '').parseUA(structured);
+		var key = structured ? '$ua2' : '$ua';
+		return this[key] ? this[key] : this[key] = (this.headers['user-agent'] || '').parseUA(structured);
 	};
 
 	/**

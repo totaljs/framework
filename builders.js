@@ -5204,7 +5204,7 @@ global.OPERATION = function(name, value, callback, param, controller) {
 		value = EMPTYOBJECT;
 	}
 
-	if (param instanceof Controller || param instanceof SchemaOptions || param instanceof OperationOptions) {
+	if (param instanceof Controller || param instanceof OperationOptions || param instanceof SchemaOptions || param instanceof TaskBuilder || param instanceof AuthOptions) {
 		controller = param;
 		param = undefined;
 	}
@@ -5277,7 +5277,7 @@ global.RUN = function(name, value, callback, param, controller, result) {
 		result = controller;
 		controller = param;
 		param = EMPTYOBJECT;
-	} else if (param instanceof OperationOptions) {
+	} else if (param instanceof OperationOptions || param instanceof SchemaOptions || param instanceof TaskBuilder || param instanceof AuthOptions) {
 		result = controller;
 		controller = param.controller;
 	}
