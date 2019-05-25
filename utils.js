@@ -1182,7 +1182,7 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 				case 'get':
 				case 'head':
 				case 'options':
-					method = flags[i].toUpperCase();
+					method = flags[i].charCodeAt(0) > 96 ? flags[i].toUpperCase() : flags[i];
 					break;
 
 				case 'upload':
@@ -1193,7 +1193,7 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 				case 'patch':
 				case 'delete':
 				case 'put':
-					method = flags[i].toUpperCase();
+					method = flags[i].charCodeAt(0) > 96 ? flags[i].toUpperCase() : flags[i];
 					if (!headers['Content-Type'])
 						headers['Content-Type'] = 'application/x-www-form-urlencoded';
 					break;
@@ -1204,11 +1204,18 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 				case 'keepalive':
 					options.keepalive = true;
 					break;
+				default:
+
+					// Fallback for methods (e.g. CalDAV)
+					if (!method)
+						method = flags[i].charCodeAt(0) > 96 ? flags[i].toUpperCase() : flags[i];
+
+					break;
 			}
 		}
 	}
 
-	options.post = method === 'POST' || method === 'PUT' || method === 'DELETE' || method === 'PATCH';
+	options.post = !NOBODY[method];
 
 	if (typeof(data) !== 'string')
 		data = type === 1 ? JSON.stringify(data) : Qs.stringify(data);
