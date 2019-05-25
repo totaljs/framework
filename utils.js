@@ -484,6 +484,9 @@ function parseProxy(p) {
  * @param  {Number} timeout Request timeout.
  * return {Boolean}
  */
+
+const NOBODY = { GET: 1, OPTIONS: 1, HEAD: 1 };
+
 global.REQUEST = exports.request = function(url, flags, data, callback, cookies, headers, encoding, timeout, files) {
 
 	// No data (data is optional argument)
@@ -571,7 +574,7 @@ global.REQUEST = exports.request = function(url, flags, data, callback, cookies,
 				case 'get':
 				case 'options':
 				case 'head':
-					method = flags[i].toUpperCase();
+					method = flags[i].charCodeAt(0) > 96 ? flags[i].toUpperCase() : flags[i];
 					break;
 
 				case 'noredirect':
@@ -605,12 +608,19 @@ global.REQUEST = exports.request = function(url, flags, data, callback, cookies,
 				case 'cookies':
 					isCookies = true;
 					break;
+				default:
+
+					// Fallback for methods (e.g. CalDAV)
+					if (!method)
+						method = flags[i].charCodeAt(0) > 96 ? flags[i].toUpperCase() : flags[i];
+
+					break;
 			}
 		}
 	}
 
 	if (method)
-		options.post = method === 'POST' || method === 'PUT' || method === 'DELETE' || method === 'PATCH';
+		options.post = !NOBODY[method];
 	else
 		method = 'GET';
 
