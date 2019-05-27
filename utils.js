@@ -1207,13 +1207,15 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 				default:
 
 					// Fallback for methods (e.g. CalDAV)
-					if (!method)
-						method = flags[i].charCodeAt(0) > 96 ? flags[i].toUpperCase() : flags[i];
+					method = flags[i].charCodeAt(0) > 96 ? flags[i].toUpperCase() : flags[i];
 
 					break;
 			}
 		}
 	}
+
+	if (!method)
+		method = 'GET';
 
 	options.post = !NOBODY[method];
 
