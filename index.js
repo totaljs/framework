@@ -8126,7 +8126,7 @@ global.VIEW = F.view = function(name, model, layout, repository, language) {
  * @param {String} language Optional.
  * @return {String}
  */
-F.viewCompile = function(body, model, layout, repository, language) {
+global.VIEWCOMPILE = F.viewCompile = function(body, model, layout, repository, language) {
 
 	var controller = EMPTYCONTROLLER;
 

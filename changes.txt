@@ -4,6 +4,7 @@
 - added: `TASK(name, taskname, callback, [controller/SchemaOptions/OperationOptions/ErrorBuilder])` for executing preddefined `TaskBuilder`
 - added: a new config key `directory_tasks` for `TaskBuilder`
 - added: a global alias `MODIFY()` for `F.modify()`
+- added: a global alias `VIEWCOMPILE()` for `F.viewCompile()`
 - added: `mailmessage.preview('plain text')`
 - added: `mail.type = 'html'` can be `html` (default) or `plain`
 - added: `$.headers` into the `SchemaOptions`, `OperationOptions` and `TaskBuilder`
