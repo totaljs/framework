@@ -6675,7 +6675,7 @@ F.touch = function(url) {
 F.response503 = function(req, res) {
 	res.options.code = 503;
 	res.options.headers = HEADERS.response503;
-	res.options.body = F.view('.' + PATHMODULES + '503', F.waits);
+	res.options.body = VIEW('.' + PATHMODULES + '503', F.waits);
 	res.$text();
 	return F;
 };
@@ -8091,7 +8091,7 @@ global.MAIL = F.mail = function(address, subject, view, model, callback, languag
  * @param {String} language Optional.
  * @return {String}
  */
-global.VIEW = F.view = function(name, model, layout, repository, language) {
+global.VIEW = function(name, model, layout, repository, language) {
 
 	var controller = EMPTYCONTROLLER;
 
@@ -8115,6 +8115,11 @@ global.VIEW = F.view = function(name, model, layout, repository, language) {
 		controller.themeName = undefined;
 
 	return controller.view(name, model, true);
+};
+
+F.view = function(name, model, layout, repository, language) {
+	OBSOLETE('F.view()', 'Instead of F.view() use VIEW()');
+	return VIEW(name, model, layout, repository, language);
 };
 
 /**
@@ -8142,6 +8147,11 @@ global.VIEWCOMPILE = F.viewCompile = function(body, model, layout, repository, l
 	controller.repository = typeof(repository) === 'object' && repository ? repository : EMPTYOBJECT;
 
 	return controller.viewCompile(body, model, true);
+};
+
+F.viewCompile = function(body, model, layout, repository, language) {
+	OBSOLETE('F.viewCompile()', 'Instead of F.viewCompile() use VIEWCOMPILE()');
+	return VIEWCOMPILE(body, model, layout, repository, language);
 };
 
 /**
@@ -15459,7 +15469,7 @@ function extend_request(PROTO) {
 				MODELERROR.status = U.httpStatus(status, false);
 				MODELERROR.error = this.$total_exception ? prepare_error(this.$total_exception) : null;
 
-				res.options.body = F.view('.' + PATHMODULES + 'error', MODELERROR);
+				res.options.body = VIEW('.' + PATHMODULES + 'error', MODELERROR);
 				res.options.type = CT_HTML;
 				res.options.code = status || 404;
 				res.$text();
@@ -17863,7 +17873,7 @@ F.ilogger = function(name, req, ts) {
 };
 
 // Because of controller prototypes
-// It's used in F.view() and F.viewCompile()
+// It's used in VIEW() and VIEWCOMPILE()
 const EMPTYCONTROLLER = new Controller('', null, null, '');
 EMPTYCONTROLLER.isConnected = false;
 EMPTYCONTROLLER.req = {};
