@@ -70,6 +70,7 @@
 - fixed: too many open files in `res.filefs()`
 - fixed: Schema `Boolean` parser
 - fixed: renamed `F.stats.request.path` to `F.stats.request.patch`
+- fixed: SMTP sender (a problem with auth mechanism with some mail servers)
 
 - __removed: backward compatibility__ with older version of Node.js < 10
 

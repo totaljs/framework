@@ -35,7 +35,7 @@ const REG_ESMTP = /\besmtp\b/i;
 const REG_STATE = /\d+/;
 const REG_WINLINE = /\r\n/g;
 const REG_NEWLINE = /\n/g;
-const REG_AUTH = /(AUTH LOGIN|AUTH PLAIN)/i;
+const REG_AUTH = /(AUTH LOGIN|AUTH PLAIN|PLAIN LOGIN)/i;
 const REG_TLS = /TLS/;
 const REG_STARTTLS = /STARTTLS/;
 const REG_PREVIEW = /<body>/i;
@@ -823,6 +823,7 @@ Mailer.prototype.$send = function(obj, options, autosend) {
 		var code = +line.match(REG_STATE)[0];
 
 		if (code === 250 && !isAuthorization) {
+			console.log('SOM TU');
 			if (REG_AUTH.test(line) && ((options.user && options.password) || options.xoauth2)) {
 				isAuthorization = true;
 				if (options.xoauth2 && line.indexOf('XOAUTH2') !== -1)
