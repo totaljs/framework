@@ -4754,7 +4754,7 @@ Binary.prototype.res = function(res, options, notmodified) {
 				res.options.lastmodified = true;
 
 				if (options.download) {
-					res.options.download = options.download === true ? obj.name : options.download;
+					res.options.download = options.download === true ? obj.name : typeof(options.download) === 'function' ? options.download(obj.name, obj.type) : options.download;
 				} else {
 					!options.headers && (options.headers = {});
 					options.headers['Last-Modified'] = utc;
