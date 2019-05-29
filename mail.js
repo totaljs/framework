@@ -823,7 +823,6 @@ Mailer.prototype.$send = function(obj, options, autosend) {
 		var code = +line.match(REG_STATE)[0];
 
 		if (code === 250 && !isAuthorization) {
-			console.log('SOM TU');
 			if (REG_AUTH.test(line) && ((options.user && options.password) || options.xoauth2)) {
 				isAuthorization = true;
 				if (options.xoauth2 && line.indexOf('XOAUTH2') !== -1)
