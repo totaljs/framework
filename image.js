@@ -36,6 +36,8 @@ const REGEXP_PATH = /\//g;
 const REGEXP_ESCAPE = /'/g;
 const SPAWN_OPT = { shell: true };
 const D = require('os').platform().substring(0, 3).toLowerCase() === 'win' ? '"' : '\'';
+const CMD_CONVERT = { gm: 'gm', im: 'convert', magick: 'magick' };
+const CMD_CONVERT2 = { gm: 'gm convert', im: 'convert', magick: 'magick' };
 
 var CACHE = {};
 var middlewares = {};
@@ -135,16 +137,16 @@ exports.measure = function(type, buffer) {
 	}
 };
 
-function Image(filename, useImageMagick, width, height) {
+function Image(filename, cmd, width, height) {
 	var type = typeof(filename);
 	this.width = width;
 	this.height = height;
 	this.builder = [];
 	this.filename = type === 'string' ? filename : null;
 	this.currentStream = type === 'object' ? filename : null;
-	this.isIM = useImageMagick == null ? CONF.default_image_converter === 'im' : useImageMagick;
 	this.outputType = type === 'string' ? framework_utils.getExtension(filename) : 'jpg';
 	this.islimit = false;
+	this.cmdarg = cmd || CONF.default_image_converter;
 }
 
 Image.prototype.clear = function() {
@@ -281,7 +283,7 @@ Image.prototype.pipe = function(stream, type, options) {
 	!self.builder.length && self.minify();
 	!type && (type = self.outputType);
 
-	var cmd = spawn(self.isIM ? 'convert' : 'gm', self.arg(self.filename ? wrap(self.filename) : '-', (type ? type + ':' : '') + '-'), SPAWN_OPT);
+	var cmd = spawn(CMD_CONVERT[self.cmdarg], self.arg(self.filename ? wrap(self.filename) : '-', (type ? type + ':' : '') + '-'), SPAWN_OPT);
 	cmd.stderr.on('data', stream.emit.bind(stream, 'error'));
 	cmd.stdout.on('data', stream.emit.bind(stream, 'data'));
 	cmd.stdout.on('end', stream.emit.bind(stream, 'end'));
@@ -318,7 +320,7 @@ Image.prototype.stream = function(type, writer) {
 	if (!type)
 		type = self.outputType;
 
-	var cmd = spawn(self.isIM ? 'convert' : 'gm', self.arg(self.filename ? wrap(self.filename) : '-', (type ? type + ':' : '') + '-'), SPAWN_OPT);
+	var cmd = spawn(CMD_CONVERT[self.cmdarg], self.arg(self.filename ? wrap(self.filename) : '-', (type ? type + ':' : '') + '-'), SPAWN_OPT);
 	if (self.currentStream) {
 		if (self.currentStream instanceof Buffer)
 			cmd.stdin.end(self.currentStream);
@@ -348,7 +350,7 @@ Image.prototype.cmd = function(filenameFrom, filenameTo) {
 	for (var i = 0; i < length; i++)
 		cmd += (cmd ? ' ' : '') + self.builder[i].cmd;
 
-	return (self.isIM ? 'convert' : 'gm -convert') + wrap(filenameFrom, true) + ' ' + cmd + wrap(filenameTo, true);
+	return CMD_CONVERT2[self.cmdarg] + wrap(filenameFrom, true) + ' ' + cmd + wrap(filenameTo, true);
 };
 
 function sort(a, b) {
@@ -360,7 +362,9 @@ Image.prototype.arg = function(first, last) {
 	var self = this;
 	var arr = [];
 
-	!self.isIM && arr.push('-convert');
+	if (self.cmdarg === 'gm')
+		arr.push('convert');
+
 	first && arr.push(first);
 
 	if (!self.islimit) {
@@ -390,8 +394,7 @@ Image.prototype.arg = function(first, last) {
 
 Image.prototype.identify = function(callback) {
 	var self = this;
-
-	exec((self.isIM ? 'identify' : 'gm identify') + wrap(self.filename, true), function(err, stdout) {
+	exec((self.cmdarg === 'gm' ? 'gm ' : '') + 'identify' + wrap(self.filename, true), function(err, stdout) {
 
 		if (err) {
 			callback(err, null);
@@ -724,12 +727,12 @@ function wrap(command, empty) {
 exports.Image = Image;
 exports.Picture = Image;
 
-exports.init = function(filename, imageMagick, width, height) {
-	return new Image(filename, imageMagick, width, height);
+exports.init = function(filename, cmd, width, height) {
+	return new Image(filename, cmd, width, height);
 };
 
-exports.load = function(filename, imageMagick, width, height) {
-	return new Image(filename, imageMagick, width, height);
+exports.load = function(filename, cmd, width, height) {
+	return new Image(filename, cmd, width, height);
 };
 
 exports.middleware = function(type, fn) {

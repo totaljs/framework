@@ -242,7 +242,6 @@ HEADERS.response503[HEADER_TYPE] = CT_HTML;
 
 Object.freeze(HEADERS.authorization);
 
-var IMAGEMAGICK = false;
 var _controller = '';
 var _owner = '';
 var _flags;
@@ -738,8 +737,8 @@ function Framework() {
 		default_restbuilder_timeout: 10000,
 
 		// otherwise is used ImageMagick (Heroku supports ImageMagick)
-		// gm = graphicsmagick or im = imagemagick
-		default_image_converter: 'gm',
+		// gm = graphicsmagick or im = imagemagick or magick (new version of ImageMagick)
+		default_image_converter: 'gm', // command-line name
 		default_image_quality: 93,
 		default_image_consumption: 30,
 
@@ -9462,7 +9461,6 @@ F.$configure_configs = function(arr, rewrite) {
 		});
 	});
 
-	IMAGEMAGICK = CONF.default_image_converter === 'im';
 	done();
 	EMIT('configure', CONF);
 	return F;
@@ -17078,7 +17076,7 @@ function $image_nocache(res) {
 
 	// STREAM
 	if (options.stream) {
-		var image = framework_image.load(options.stream, IMAGEMAGICK);
+		var image = framework_image.load(options.stream);
 		options.make.call(image, image, res);
 		options.type = U.getContentType(image.outputType);
 		options.stream = image;
@@ -17092,7 +17090,7 @@ function $image_nocache(res) {
 
 		if (e) {
 			F.path.verify('temp');
-			var image = framework_image.load(options.filename, IMAGEMAGICK);
+			var image = framework_image.load(options.filename);
 			options.make.call(image, image, res);
 			F.stats.response.image++;
 			options.type = U.getContentType(image.outputType);
@@ -17132,7 +17130,7 @@ function $image_stream(exists, size, isFile, stats, res) {
 
 	F.path.verify('temp');
 
-	var image = framework_image.load(options.stream, IMAGEMAGICK);
+	var image = framework_image.load(options.stream);
 	options.make.call(image, image, res);
 	req.extension = U.getExtension(options.name);
 
@@ -17182,7 +17180,7 @@ function $image_filename(exists, size, isFile, stats, res) {
 
 	F.path.verify('temp');
 
-	var image = framework_image.load(options.filename, IMAGEMAGICK);
+	var image = framework_image.load(options.filename);
 	options.make.call(image, image, res);
 	req.extension = U.getExtension(options.name);
 

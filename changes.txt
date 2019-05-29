@@ -55,6 +55,7 @@
 - updated: `AUTH(req, res, flags, next)` and `next` function can handle `callback(err, user)`
 - updated: `REQUEST()` supports `keepalive` flag
 - updated: `bundles` mechanism supports merging files `--filename` between `bundles` files
+- updated: `default_image_converter` supports `magick` for new version of ImageMagick
 
 - fixed: schemas validation
 - fixed: error handling in dynamic schemas
