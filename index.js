@@ -6022,7 +6022,7 @@ function compile_file(res) {
 	});
 }
 
-function compile_merge(res) {
+function compile_merge(res, repeated) {
 
 	var req = res.req;
 	var uri = req.uri;
@@ -6043,10 +6043,27 @@ function compile_merge(res) {
 
 	var writer = Fs.createWriteStream(filename);
 
-	writer.on('finish', function() {
-		var stats = Fs.statSync(filename);
+	CLEANUP(writer, function() {
+
+		var stats;
+
+		try {
+			stats = Fs.statSync(filename);
+		} catch (e) {
+
+			e && F.error(e, 'compile_merge', req.url);
+
+			// Try it again
+			if (repeated) {
+				delete F.temporary.processing[req.$key];
+				res.throw404();
+			} else
+				compile_merge(res, true);
+
+			return;
+		}
+
 		var tmp = [filename, stats.size, stats.mtime.toUTCString()];
-		this.destroy && this.destroy();
 		compile_gzip(tmp, function(tmp) {
 			F.temporary.path[req.$key] = tmp;
 			delete F.temporary.processing[req.$key];
