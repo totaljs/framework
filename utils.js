@@ -3225,7 +3225,8 @@ SP.hash = function(type, salt) {
 		case 'crc32unsigned':
 			return str.crc32(true);
 		default:
-			return string_hash(str);
+			var val = string_hash(str);
+			return type === true ? val >>> 0 : val;
 	}
 };
 

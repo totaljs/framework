@@ -56,6 +56,7 @@
 - updated: `REQUEST()` supports `keepalive` flag
 - updated: `bundles` mechanism supports merging files `--filename` between `bundles` files
 - updated: `default_image_converter` supports `magick` for new version of ImageMagick
+- updated: `String.hash(true)` returns unsigned int
 
 - fixed: schemas validation
 - fixed: error handling in dynamic schemas
