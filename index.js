@@ -9375,7 +9375,7 @@ F.$configure_configs = function(arr, rewrite) {
 				obj[name] = typeof(value) === 'string' ? Buffer.from(value, 'hex') : value;
 				break;
 			case 'allow_workers_silent':
-				HEADERS.workers.silent = value;
+				obj[name] = HEADERS.workers.silent = value;
 				break;
 
 			// backward compatibility
