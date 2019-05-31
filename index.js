@@ -233,6 +233,7 @@ HEADERS.authorization = { user: '', password: '', empty: true };
 HEADERS.fsStreamRead = { flags: 'r', mode: '0666', autoClose: true };
 HEADERS.fsStreamReadRange = { flags: 'r', mode: '0666', autoClose: true, start: 0, end: 0 };
 HEADERS.workers = { cwd: '', silent: true };
+HEADERS.workers2 = { cwd: '', silent: true };
 HEADERS.responseLocalize = {};
 HEADERS.responseNotModified = {};
 HEADERS.responseNotModified[HEADER_CACHE] = 'public, max-age=11111111';
@@ -759,6 +760,8 @@ function Framework() {
 		allow_filter_errors: true,
 		allow_clear_temp: true,
 		allow_ssc_validation: false,
+		allow_workers_silent: true,
+
 		nosql_worker: false,
 		nosql_inmemory: null, // String Array
 		nosql_cleaner: 1440,
@@ -769,7 +772,7 @@ function Framework() {
 		// All values are in minutes
 		default_interval_clear_resources: 20,
 		default_interval_clear_cache: 10,
-		default_interval_clear_dnscache: 120,
+		default_interval_clear_dnscache: 30,
 		default_interval_precompile_views: 61,
 		default_interval_websocket_ping: 3,
 		default_interval_uptodate: 5,
@@ -9371,6 +9374,9 @@ F.$configure_configs = function(arr, rewrite) {
 			case 'default_crypto_iv':
 				obj[name] = typeof(value) === 'string' ? Buffer.from(value, 'hex') : value;
 				break;
+			case 'allow_workers_silent':
+				HEADERS.workers.silent = !value;
+				break;
 
 			// backward compatibility
 			case 'mail-smtp': // old
@@ -9776,7 +9782,7 @@ var WORKERID = 0;
  * @param {Array} args Additional arguments, optional.
  * @return {ChildProcess}
  */
-global.WORKER = F.worker = function(name, id, timeout, args) {
+global.WORKER = F.worker = function(name, id, timeout, args, special) {
 
 	var fork = null;
 	var type = typeof(id);
@@ -9809,7 +9815,7 @@ global.WORKER = F.worker = function(name, id, timeout, args) {
 	if (!args)
 		args = EMPTYARRAY;
 
-	fork = Child.fork(filename[filename.length - 3] === '.' ? filename : filename + '.js', args, HEADERS.workers);
+	fork = Child.fork(filename[filename.length - 3] === '.' ? filename : filename + '.js', args, special ? HEADERS.workers2 : HEADERS.workers);
 
 	if (!id)
 		id = name + '_' + (WORKERID++);
@@ -9852,7 +9858,7 @@ global.WORKER2 = F.worker2 = function(name, args, callback, timeout) {
 	if (args && !(args instanceof Array))
 		args = [args];
 
-	var fork = F.worker(name, null, timeout, args);
+	var fork = F.worker(name, null, timeout, args, true);
 	if (fork.__worker2)
 		return fork;
 
