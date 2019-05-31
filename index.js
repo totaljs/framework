@@ -232,7 +232,7 @@ HEADERS.binary[HEADER_CACHE] = 'public';
 HEADERS.authorization = { user: '', password: '', empty: true };
 HEADERS.fsStreamRead = { flags: 'r', mode: '0666', autoClose: true };
 HEADERS.fsStreamReadRange = { flags: 'r', mode: '0666', autoClose: true, start: 0, end: 0 };
-HEADERS.workers = { cwd: '', silent: true };
+HEADERS.workers = { cwd: '', silent: false };
 HEADERS.workers2 = { cwd: '', silent: true };
 HEADERS.responseLocalize = {};
 HEADERS.responseNotModified = {};
@@ -760,7 +760,7 @@ function Framework() {
 		allow_filter_errors: true,
 		allow_clear_temp: true,
 		allow_ssc_validation: false,
-		allow_workers_silent: true,
+		allow_workers_silent: false,
 
 		nosql_worker: false,
 		nosql_inmemory: null, // String Array
@@ -9375,7 +9375,7 @@ F.$configure_configs = function(arr, rewrite) {
 				obj[name] = typeof(value) === 'string' ? Buffer.from(value, 'hex') : value;
 				break;
 			case 'allow_workers_silent':
-				HEADERS.workers.silent = !value;
+				HEADERS.workers.silent = value;
 				break;
 
 			// backward compatibility
