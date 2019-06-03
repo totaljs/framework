@@ -2937,7 +2937,7 @@ SchemaBuilderEntity.prototype.props = function() {
 		var meta = self.schema[key];
 		var obj = {};
 
-		if (obj.required)
+		if (meta.required)
 			obj.required = meta.required;
 
 		if (meta.length)
