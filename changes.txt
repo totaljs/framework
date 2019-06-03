@@ -2,48 +2,48 @@
 
 - added: `NEWTASK(name, declaration)` for creating preddefined `TaskBuilder`
 - added: `TASK(name, taskname, callback, [controller/SchemaOptions/OperationOptions/ErrorBuilder])` for executing preddefined `TaskBuilder`
-- added: a new config key `directory_tasks` for `TaskBuilder`
+x added: a new config key `directory_tasks` for `TaskBuilder`
 - added: a global alias `MODIFY()` for `F.modify()`
 - added: a global alias `VIEWCOMPILE()` for `F.viewCompile()`
-- added: `mail.type = 'html'` can be `html` (default) or `plain`
+x added: `mail.type = 'html'` can be `html` (default) or `plain`
 - added: `$.headers` into the `SchemaOptions`, `OperationOptions` and `TaskBuilder`
-- added: `String.parseCSV([delimiter])` returns `Object Array`
-- added: `String.parseUA([structured])` a simple user-agent parser
-- added: `req.useragent([structured])` returns parsed User-Agent
-- added: a new config key `default_crypto` it can rewrite Total.js crypto mechanism (default: `undefined`)
-- added: a new config key `default_crypto_iv` it's an initialization vector (default: generated from `secret`) or it can contain a custom `hex` value
+x added: `String.parseCSV([delimiter])` returns `Object Array`
+x added: `String.parseUA([structured])` a simple user-agent parser
+x added: `req.useragent([structured])` returns parsed User-Agent
+x added: a new config key `default_crypto` it can rewrite Total.js crypto mechanism (default: `undefined`)
+x added: a new config key `default_crypto_iv` it's an initialization vector (default: generated from `secret`) or it can contain a custom `hex` value
+x added: a new config key `allow_workers_silent` can enable/disable silent workers (default: `false`)
+- added: a new config sub-type called `random`, example: `secret_key    (random)  : 10` and `10` means a length of value
 - added: a new command `clear_dnscache` for clearing DNS cache
 - added: commands `INSTALL('command', 'command_name', function)` for registering commands and `CMD(name, [a], [b], [c], [d])` for executing commands
 - added: `ENCRYPTREQ(req, val, [key], [strict])` to encrypt value according to the request meta data
 - added: `DECRYPTREQ(req, val, [key])` to decrypt value according to the request meta data
-- added: `controller.nocache()`
-- added: `controller.nocontent()`
-- added: `REPO` as a global variable
-- added: `MAIN` as a global variable
+x added: `controller.nocache()`
+x added: `controller.nocontent()`
+x added: `REPO` as a global variable
+x added: `MAIN` as a global variable
 - added: `PREF.set(name, [value])` (read+write) or `PREF.propname` (only read) for reading/writing a persistent preferences
 - added: `F.onPrefSave = function(obj)` to write preferences
 - added: `F.onPrefLoad = function(next(obj))` to read preferences
 - added: `RESTBuilder.url(url)` which returns a new instance of `RESTBuilder` for chaining
-- added: `restbuilder.keepalive()` enables a keepalive for `RESTBuilder` instance
+x added: `restbuilder.keepalive()` enables a keepalive for `RESTBuilder` instance
 - added: `SESSION()` management, more in docs
-- added: `controller.sessionid` with ID of `SESSION()`
+x added: `controller.sessionid` with ID of `SESSION()`
 - added: `AUTH()` supports a new auth declaration with `$` as `AuthOptions` like `SchemaOptions` or `OperationOptions`
 - added: `AuthOptions` to prototypes
-- added: `ErrorBuilder.length` property (alias for `instance.items.length)
-- added: Schemas `prepare` supports `req` argument
+x added: `ErrorBuilder.length` property (alias for `instance.items.length)
+x added: Schemas `prepare` supports `req` argument
 - added: `F.currencies.eur = function(val) {}` registers a currency formatter
 - added: usage of currency formatter `Number.currency(currency)`
-- added: new schema type `Number2` with default value is `null`, not zero `0`
+x added: new schema type `Number2` with default value is `null`, not zero `0`
 - added: `@{json2(model, elementID, key1, key2, key3)}` can serialize data with keys defined into the `<script type="application/json">`
-- added: schemas supports `PATCH` and `.setPatch()`, only specified field are processed
-- added: `SchemaOptions` supports `$.keys` for `PATCH` method
-- added: `schema.cl(name)` ("cl" means codelist) returns `{Array}` a list of values from defined enum/keyvalue
-- added: `schema.props()` returns `{Object}` meta info about all defined properties
-- added: `SchemaOptions`, `OperationOptions` and `TaskOptions` supports `$.req` and `$.res` properties
-- added: new config subtype called `random`, example: `secret_key    (random)  : 10` and `10` means a length of value
+x added: schemas supports `PATCH` and `.setPatch()`, only specified field are processed
+x added: `SchemaOptions` supports `$.keys` for `PATCH` method
+x added: `schema.cl(name)` ("cl" means codelist) returns `{Array}` a list of values from defined enum/keyvalue
+x added: `schema.props()` returns `{Object}` meta info about all defined properties
+x added: `SchemaOptions`, `OperationOptions` and `TaskOptions` supports `$.req` and `$.res` properties
 - added: `AUDIT(name, $, [type], message)` a method for audit logs
 - added: __obsolete__ message to older declaration of middleware, schemas and operations
-- added: `allow_workers_silent` can enable/disable silent workers (default: `false`)
 
 - updated: `$.invalid()` without arguments can return a function `function(err)`
 - updated: Mail `unsubscribe` appends new header which enables `unsubscribe` in e.g. iOS
