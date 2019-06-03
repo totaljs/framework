@@ -5,7 +5,6 @@
 - added: a new config key `directory_tasks` for `TaskBuilder`
 - added: a global alias `MODIFY()` for `F.modify()`
 - added: a global alias `VIEWCOMPILE()` for `F.viewCompile()`
-- added: `mailmessage.preview('plain text')`
 - added: `mail.type = 'html'` can be `html` (default) or `plain`
 - added: `$.headers` into the `SchemaOptions`, `OperationOptions` and `TaskBuilder`
 - added: `String.parseCSV([delimiter])` returns `Object Array`
@@ -24,7 +23,6 @@
 - added: `PREF.set(name, [value])` (read+write) or `PREF.propname` (only read) for reading/writing a persistent preferences
 - added: `F.onPrefSave = function(obj)` to write preferences
 - added: `F.onPrefLoad = function(next(obj))` to read preferences
-- added: __obsolete__ message to older declaration of middleware, schemas and operations
 - added: `RESTBuilder.url(url)` which returns a new instance of `RESTBuilder` for chaining
 - added: `restbuilder.keepalive()` enables a keepalive for `RESTBuilder` instance
 - added: `SESSION()` management, more in docs
@@ -44,6 +42,7 @@
 - added: `SchemaOptions`, `OperationOptions` and `TaskOptions` supports `$.req` and `$.res` properties
 - added: new config subtype called `random`, example: `secret_key    (random)  : 10` and `10` means a length of value
 - added: `AUDIT(name, $, [type], message)` a method for audit logs
+- added: __obsolete__ message to older declaration of middleware, schemas and operations
 - added: `allow_workers_silent` can enable/disable silent workers (default: `false`)
 
 - updated: `$.invalid()` without arguments can return a function `function(err)`
