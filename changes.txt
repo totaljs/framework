@@ -3,17 +3,17 @@
 - added: `NEWTASK(name, declaration)` for creating preddefined `TaskBuilder`
 - added: `TASK(name, taskname, callback, [controller/SchemaOptions/OperationOptions/ErrorBuilder])` for executing preddefined `TaskBuilder`
 x added: a new config key `directory_tasks` for `TaskBuilder`
-- added: a global alias `MODIFY()` for `F.modify()`
-- added: a global alias `VIEWCOMPILE()` for `F.viewCompile()`
+x added: a global alias `MODIFY()` for `F.modify()`
+x added: a global alias `VIEWCOMPILE()` for `F.viewCompile()`
 x added: `mail.type = 'html'` can be `html` (default) or `plain`
-- added: `$.headers` into the `SchemaOptions`, `OperationOptions` and `TaskBuilder`
+x added: `$.headers` into the `SchemaOptions`, `OperationOptions` and `TaskBuilder`
 x added: `String.parseCSV([delimiter])` returns `Object Array`
 x added: `String.parseUA([structured])` a simple user-agent parser
 x added: `req.useragent([structured])` returns parsed User-Agent
 x added: a new config key `default_crypto` it can rewrite Total.js crypto mechanism (default: `undefined`)
 x added: a new config key `default_crypto_iv` it's an initialization vector (default: generated from `secret`) or it can contain a custom `hex` value
 x added: a new config key `allow_workers_silent` can enable/disable silent workers (default: `false`)
-- added: a new config sub-type called `random`, example: `secret_key    (random)  : 10` and `10` means a length of value
+x added: a new config sub-type called `random`, example: `secret_key    (random)  : 10` and `10` means a length of value
 - added: a new command `clear_dnscache` for clearing DNS cache
 - added: commands `INSTALL('command', 'command_name', function)` for registering commands and `CMD(name, [a], [b], [c], [d])` for executing commands
 - added: `ENCRYPTREQ(req, val, [key], [strict])` to encrypt value according to the request meta data
@@ -25,7 +25,7 @@ x added: `MAIN` as a global variable
 - added: `PREF.set(name, [value])` (read+write) or `PREF.propname` (only read) for reading/writing a persistent preferences
 - added: `F.onPrefSave = function(obj)` to write preferences
 - added: `F.onPrefLoad = function(next(obj))` to read preferences
-- added: `RESTBuilder.url(url)` which returns a new instance of `RESTBuilder` for chaining
+x added: `RESTBuilder.url(url)` which returns a new instance of `RESTBuilder` for chaining
 x added: `restbuilder.keepalive()` enables a keepalive for `RESTBuilder` instance
 - added: `SESSION()` management, more in docs
 x added: `controller.sessionid` with ID of `SESSION()`
@@ -36,27 +36,27 @@ x added: Schemas `prepare` supports `req` argument
 - added: `F.currencies.eur = function(val) {}` registers a currency formatter
 - added: usage of currency formatter `Number.currency(currency)`
 x added: new schema type `Number2` with default value is `null`, not zero `0`
-- added: `@{json2(model, elementID, key1, key2, key3)}` can serialize data with keys defined into the `<script type="application/json">`
+x added: `@{json2(model, elementID, key1, key2, key3)}` can serialize data with keys defined into the `<script type="application/json">`
 x added: schemas supports `PATCH` and `.setPatch()`, only specified field are processed
 x added: `SchemaOptions` supports `$.keys` for `PATCH` method
 x added: `schema.cl(name)` ("cl" means codelist) returns `{Array}` a list of values from defined enum/keyvalue
 x added: `schema.props()` returns `{Object}` meta info about all defined properties
 x added: `SchemaOptions`, `OperationOptions` and `TaskOptions` supports `$.req` and `$.res` properties
-- added: `AUDIT(name, $, [type], message)` a method for audit logs
-- added: __obsolete__ message to older declaration of middleware, schemas and operations
+x added: `AUDIT(name, $, [type], message)` a method for audit logs
+x added: __obsolete__ message to older declaration of middleware, schemas and operations
 
-- updated: `$.invalid()` without arguments can return a function `function(err)`
-- updated: Mail `unsubscribe` appends new header which enables `unsubscribe` in e.g. iOS
-- updated: `F.modify`, handler contains a new argument `controller`
-- updated: `headers` argument in `controller.proxy` supports `flags: []` for REQEUST method
-- updated: `.filefs()` and `.filenosql()` supports `download` with `true` or with `(name, type) => 'new_name'` (`filename` will be read from NoSQL binary file)
-- updated: `$.done(arg)` argument `@arg` can be `boolean` (response will be as a value) or object/primitive value (`arg` will be as a value)
-- updated: `String.arg(obj, [encode], [def])` added `encode` (`true` or `json`) and `def` arguments
+x updated: `$.invalid()` without arguments can return a function `function(err)`
+x updated: Mail `unsubscribe` appends new header which enables `unsubscribe` in e.g. iOS
+x updated: `MODIFY`, handler contains a new argument `controller`
+x updated: `headers` argument in `controller.proxy` supports `flags: []` for REQEUST method
+x updated: `.filefs()` and `.filenosql()` supports `download` with `true` or with `(name, type) => 'new_name'` (`filename` will be read from NoSQL binary file)
+x updated: `$.done(arg)` argument `@arg` can be `boolean` (response will be as a value) or object/primitive value (`arg` will be as a value)
+x updated: `String.arg(obj, [encode], [def])` added `encode` (`true` or `json`) and `def` arguments
 - updated: `AUTH(req, res, flags, next)` and `next` function can handle `callback(err, user)`
-- updated: `REQUEST()` supports `keepalive` flag
-- updated: `bundles` mechanism supports merging files `--filename` between `bundles` files
-- updated: `default_image_converter` supports `magick` for new version of ImageMagick
-- updated: `String.hash(true)` returns unsigned int
+x updated: `REQUEST()` supports `keepalive` flag
+x updated: `bundles` mechanism supports merging files `--filename` between `bundles` files
+x updated: `default_image_converter` supports `magick` for new version of ImageMagick
+x updated: `String.hash(true)` returns unsigned int
 
 - fixed: schemas validation
 - fixed: error handling in dynamic schemas
@@ -75,6 +75,8 @@ x added: `SchemaOptions`, `OperationOptions` and `TaskOptions` supports `$.req` 
 - fixed: SMTP sender (a problem with auth mechanism with some mail servers)
 
 - __removed: backward compatibility__ with older version of Node.js < 10
+- removed: `F.hash()`, alternative `String.prototype.hash()`
+- removed: `contorller.hash()`, alternative `String.prototype.hash()`
 
 - improved Schemas and error handling
 - improved `res.filefs()` method for nonexistent files

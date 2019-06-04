@@ -8449,6 +8449,9 @@ global.DECRYPTREQ = function(req, val, key) {
  * @return {String}
  */
 F.hash = function(type, value, salt) {
+
+	OBSOLETE('F.hash()', 'Use String.prototype.hash()');
+
 	var hash = Crypto.createHash(type);
 	var plus = '';
 
@@ -11097,7 +11100,7 @@ Controller.prototype.decrypt = function() {
  * @return {Controller}
  */
 Controller.prototype.hash = function() {
-	OBSOLETE('controller.hash()', 'Use `F.hash()`');
+	OBSOLETE('controller.hash()', 'Use String.prototype.hash()');
 	return F.hash.apply(framework, arguments);
 };
 
