@@ -232,8 +232,6 @@ HEADERS.binary[HEADER_CACHE] = 'public';
 HEADERS.authorization = { user: '', password: '', empty: true };
 HEADERS.fsStreamRead = { flags: 'r', mode: '0666', autoClose: true };
 HEADERS.fsStreamReadRange = { flags: 'r', mode: '0666', autoClose: true, start: 0, end: 0 };
-HEADERS.workers = { cwd: '', silent: false };
-HEADERS.workers2 = { cwd: '', silent: true };
 HEADERS.responseLocalize = {};
 HEADERS.responseNotModified = {};
 HEADERS.responseNotModified[HEADER_CACHE] = 'public, max-age=11111111';
@@ -256,6 +254,12 @@ var _prefix;
 !global.framework_image && (global.framework_image = require('./image'));
 !global.framework_nosql && (global.framework_nosql = require('./nosql'));
 !global.framework_session && (global.framework_session = require('./session'));
+
+var TMPENV = framework_utils.copy(process.env);
+TMPENV.istotaljsworker = true;
+
+HEADERS.workers = { cwd: '', silent: false, env: TMPENV };
+HEADERS.workers2 = { cwd: '', silent: true, env: TMPENV };
 
 global.Builders = framework_builders;
 var U = global.Utils = global.utils = global.U = global.framework_utils;
@@ -875,7 +879,7 @@ function Framework() {
 	self.sessions = {};
 	self.databases = {};
 	self.databasescleaner = {};
-	self.directory = HEADERS.workers.cwd = directory;
+	self.directory = HEADERS.workers2.cwd = HEADERS.workers.cwd = directory;
 	self.isLE = Os.endianness ? Os.endianness() === 'LE' : true;
 	self.isHTTPS = false;
 
@@ -6705,6 +6709,8 @@ global.LOAD = F.load = function(debug, types, pwd) {
 		F.directory = directory = U.$normalize(Path.normalize(directory + '/..'));
 	else if (pwd)
 		F.directory = directory = U.$normalize(pwd);
+	else if (process.env.istotaljsworker)
+		F.directory = process.cwd();
 
 	if (typeof(debug) === 'string') {
 		switch (debug.toLowerCase().replace(/\.|\s/g, '-')) {
