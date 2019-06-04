@@ -11097,6 +11097,7 @@ Controller.prototype.decrypt = function() {
  * @return {Controller}
  */
 Controller.prototype.hash = function() {
+	OBSOLETE('controller.hash()', 'Use `F.hash()`');
 	return F.hash.apply(framework, arguments);
 };
 
@@ -17360,6 +17361,14 @@ MiddlewareOptions.prototype = {
 
 	get ip() {
 		return this.req.ip;
+	},
+
+	get headers() {
+		return this.req.headers;
+	},
+
+	get sessionid() {
+		return this.req.sessionid;
 	},
 
 	get id() {
