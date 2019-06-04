@@ -5548,6 +5548,12 @@ AuthOptions.prototype = {
 	}
 };
 
+AuthOptions.prototype.roles = function() {
+	for (var i = 0; i < arguments.length; i++)
+		this.flags.push('@' + arguments[i]);
+	return this;
+};
+
 AuthOptions.prototype.cookie = function(name, value, expire, options) {
 	var self = this;
 	if (value === undefined)
