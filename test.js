@@ -150,19 +150,19 @@ global.TESTUSER = function(user, flags) {
 	T.flags = flags;
 
 	if (user) {
-		F.onAuthorize = function(req, res, flags, next) {
+		AUTH(function($) {
 
 			if (T.flags && T.flags.length) {
 				for (var i = 0; i < T.flags.length; i++) {
 					var f = T.flags[i];
 					if (f[0] !== '@')
 						f = '@' + f;
-					flags.push(f);
+					$.flags.push(f);
 				}
 			}
 
-			next(true, F.tests.user);
-		};
+			$.success(F.tests.user);
+		});
 	} else
 		F.onAuthorize = T.auth;
 };
