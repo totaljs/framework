@@ -12829,7 +12829,7 @@ Controller.prototype.callback = function(view) {
 		var is = err instanceof framework_builders.ErrorBuilder;
 
 		// NoSQL embedded database
-		if (data === undefined && (err && err.stack) && !is) {
+		if (data === undefined && (err && !err.stack) && !is) {
 			data = err;
 			err = null;
 		}
