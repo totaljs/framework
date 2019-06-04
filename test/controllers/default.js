@@ -461,15 +461,12 @@ function viewIndex() {
 	assert.ok(CONF.isDefinition === true, 'definitions()');
 
 	assert.ok(!self.xhr, name + 'xhr');
-	assert.ok(self.flags.indexOf('get') !== -1, name + 'flags')
+	assert.ok(self.flags.indexOf('get') !== -1, name + 'flags');
 
 	assert.ok(self.resource('name') === 'default' && self.resource('default', 'name') === 'default', name + 'resource(default)');
 	assert.ok(self.resource('test', 'name') === 'test', name + 'resource(test.resource)');
 
 	self.log('test');
-
-	assert.ok(self.hash('sha1', '123456', false) === '7c4a8d09ca3762af61e59520943dc26494f8941b', 'controller.hash()');
-
 	var date = new Date();
 	date.setFullYear(1984);
 
