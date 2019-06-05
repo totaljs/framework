@@ -22,6 +22,7 @@ x added: `controller.nocache()`
 x added: `controller.nocontent()`
 x added: `REPO` as a global variable
 x added: `MAIN` as a global variable
+x added: `DEF` as a global variable for defining of behaviour for some operations (alternative to `F`)
 - added: `PREF.set(name, [value])` (read+write) or `PREF.propname` (only read) for reading/writing a persistent preferences
 - added: `F.onPrefSave = function(obj)` to write preferences
 - added: `F.onPrefLoad = function(next(obj))` to read preferences
@@ -33,8 +34,10 @@ x added: `AUTH()` supports a new auth declaration with `$` as `AuthOptions` like
 x added: `AuthOptions` to prototypes
 x added: `ErrorBuilder.length` property (alias for `instance.items.length)
 x added: Schemas `prepare` supports `req` argument
-- added: `F.currencies.eur = function(val) {}` registers a currency formatter
-- added: usage of currency formatter `Number.currency(currency)`
+x added: `DEF.currencies.eur = function(val) {}` registers a currency formatter
+x added: `DEF.helpers` registers a new view engine helper (`F.helpers` is alias for for this object)
+x added: `DEF.validators` is alias for for `F.validators`
+x added: usage of currency formatter `Number.currency(currency)`
 x added: new schema type `Number2` with default value is `null`, not zero `0`
 x added: `@{json2(model, elementID, key1, key2, key3)}` can serialize data with keys defined into the `<script type="application/json">`
 x added: schemas supports `PATCH` and `.setPatch()`, only specified field are processed

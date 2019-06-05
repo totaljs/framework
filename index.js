@@ -107,6 +107,9 @@ Object.freeze(EMPTYREQUEST);
 global.EMPTYOBJECT = EMPTYOBJECT;
 global.EMPTYARRAY = EMPTYARRAY;
 global.NOW = new Date();
+var DEF = global.DEF = {};
+
+DEF.currencies = {};
 
 var PROTORES, PROTOREQ;
 
@@ -848,14 +851,13 @@ function Framework() {
 
 	self.owners = [];
 	self.modificators = null;
-	self.helpers = {};
+	DEF.helpers = self.helpers = {};
 	self.modules = {};
 	self.models = {};
 	self.sources = {};
 	self.controllers = {};
 	self.dependencies = {};
 	self.isomorphic = {};
-	self.currencies = {};
 	self.components = { has: false, css: false, js: false, views: {}, instances: {}, version: null, links: '', groups: {}, files: {} };
 	self.convertors = [];
 	self.convertors2 = null;
@@ -867,7 +869,7 @@ function Framework() {
 	self.port = 0;
 	self.ip = '';
 
-	self.validators = {
+	DEF.validators = self.validators = {
 		email: new RegExp('^[a-zA-Z0-9-_.+]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$'),
 		url: /^(https?:\/\/(?:www\.|(?!www))[^\s.#!:?+=&@!$'~*,;/()[\]]+\.[^\s#!?+=&@!$'~*,;()[\]\\]{2,}\/?|www\.[^\s#!:.?+=&@!$'~*,;/()[\]]+\.[^\s#!?+=&@!$'~*,;()[\]\\]{2,}\/?)/i,
 		phone: /^[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}$/im,
