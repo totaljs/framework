@@ -3809,11 +3809,11 @@ F.$load = function(types, targetdirectory, callback, packageName) {
 	}
 
 	if (!types || types.indexOf('isomorphic') !== -1) {
-		OBSOLETE('isomorphic', 'Isomorphic scripts will be removed in v4.');
 		operations.push(function(resume) {
 			dir = U.combine(targetdirectory, isPackage ? '/isomorphic/' : CONF.directory_isomorphic);
 			arr = [];
 			listing(dir, 0, arr, '.js');
+			arr.length && OBSOLETE('isomorphic', 'Isomorphic scripts will be removed in v4.');
 			arr.forEach((item) => dependencies.push(next => F.install('isomorphic', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next, packageName)));
 			resume();
 		});
