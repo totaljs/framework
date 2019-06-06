@@ -3565,6 +3565,9 @@ F.errorcallback = function(err) {
  * @return {Framework}
  */
 F.problem = F.wtf = function(message, name, uri, ip) {
+
+	OBSOLETE('F.problem()', 'This method will be removed in v4');
+
 	F.$events.problem && EMIT('problem', message, name, uri, ip);
 
 	if (message instanceof framework_builders.ErrorBuilder)
@@ -3596,6 +3599,9 @@ global.PRINTLN = function(msg) {
  * @return {Framework}
  */
 F.change = function(message, name, uri, ip) {
+
+	OBSOLETE('F.change()', 'This method will be removed in v4.');
+
 	F.$events.change && EMIT('change', message, name, uri, ip);
 
 	if (message instanceof framework_builders.ErrorBuilder)
@@ -3623,6 +3629,8 @@ F.change = function(message, name, uri, ip) {
  * @return {Framework}
  */
 global.TRACE = F.trace = function(message, name, uri, ip) {
+
+	OBSOLETE('TRACE()', 'This method will be removed in v4.');
 
 	if (!CONF.trace)
 		return F;
@@ -3801,6 +3809,7 @@ F.$load = function(types, targetdirectory, callback, packageName) {
 	}
 
 	if (!types || types.indexOf('isomorphic') !== -1) {
+		OBSOLETE('isomorphic', 'Isomorphic scripts will be removed in v4.');
 		operations.push(function(resume) {
 			dir = U.combine(targetdirectory, isPackage ? '/isomorphic/' : CONF.directory_isomorphic);
 			arr = [];
