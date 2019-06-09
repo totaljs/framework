@@ -3813,7 +3813,6 @@ F.$load = function(types, targetdirectory, callback, packageName) {
 			dir = U.combine(targetdirectory, isPackage ? '/isomorphic/' : CONF.directory_isomorphic);
 			arr = [];
 			listing(dir, 0, arr, '.js');
-			arr.length && OBSOLETE('isomorphic', 'Isomorphic scripts will be removed in v4.');
 			arr.forEach((item) => dependencies.push(next => F.install('isomorphic', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next, packageName)));
 			resume();
 		});
@@ -4563,6 +4562,8 @@ global.INSTALL = F.install = function(type, name, declaration, options, callback
 
 		content = '';
 		err = null;
+
+		OBSOLETE('isomorphic', 'Isomorphic scripts will be removed in v4.');
 
 		try {
 
