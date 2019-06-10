@@ -47,6 +47,7 @@ x added: `schema.props()` returns `{Object}` meta info about all defined propert
 x added: `SchemaOptions`, `OperationOptions` and `TaskOptions` supports `$.req` and `$.res` properties
 x added: `AUDIT(name, $, [type], message)` a method for audit logs
 x added: __obsolete__ message to older declaration of middleware, schemas and operations
+- added: `U.diff(prop, arr_A, arr_B)` for comparing two arrays
 
 x updated: `$.invalid()` without arguments can return a function `function(err)`
 x updated: Mail `unsubscribe` appends new header which enables `unsubscribe` in e.g. iOS
