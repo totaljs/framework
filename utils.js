@@ -4592,7 +4592,7 @@ NP.round = function(precision) {
 };
 
 NP.currency = function(currency, a, b, c) {
-	var curr = F.currencies[currency];
+	var curr = DEF.currencies[currency];
 	return curr ? curr(this, a, b, c) : this.format(2);
 };
 

@@ -107,6 +107,9 @@ Object.freeze(EMPTYREQUEST);
 global.EMPTYOBJECT = EMPTYOBJECT;
 global.EMPTYARRAY = EMPTYARRAY;
 global.NOW = new Date();
+var DEF = global.DEF = {};
+
+DEF.currencies = {};
 
 var PROTORES, PROTOREQ;
 
@@ -232,8 +235,6 @@ HEADERS.binary[HEADER_CACHE] = 'public';
 HEADERS.authorization = { user: '', password: '', empty: true };
 HEADERS.fsStreamRead = { flags: 'r', mode: '0666', autoClose: true };
 HEADERS.fsStreamReadRange = { flags: 'r', mode: '0666', autoClose: true, start: 0, end: 0 };
-HEADERS.workers = { cwd: '', silent: false };
-HEADERS.workers2 = { cwd: '', silent: true };
 HEADERS.responseLocalize = {};
 HEADERS.responseNotModified = {};
 HEADERS.responseNotModified[HEADER_CACHE] = 'public, max-age=11111111';
@@ -256,6 +257,12 @@ var _prefix;
 !global.framework_image && (global.framework_image = require('./image'));
 !global.framework_nosql && (global.framework_nosql = require('./nosql'));
 !global.framework_session && (global.framework_session = require('./session'));
+
+var TMPENV = framework_utils.copy(process.env);
+TMPENV.istotaljsworker = true;
+
+HEADERS.workers = { cwd: '', silent: false, env: TMPENV };
+HEADERS.workers2 = { cwd: '', silent: true, env: TMPENV };
 
 global.Builders = framework_builders;
 var U = global.Utils = global.utils = global.U = global.framework_utils;
@@ -844,14 +851,13 @@ function Framework() {
 
 	self.owners = [];
 	self.modificators = null;
-	self.helpers = {};
+	DEF.helpers = self.helpers = {};
 	self.modules = {};
 	self.models = {};
 	self.sources = {};
 	self.controllers = {};
 	self.dependencies = {};
 	self.isomorphic = {};
-	self.currencies = {};
 	self.components = { has: false, css: false, js: false, views: {}, instances: {}, version: null, links: '', groups: {}, files: {} };
 	self.convertors = [];
 	self.convertors2 = null;
@@ -863,7 +869,7 @@ function Framework() {
 	self.port = 0;
 	self.ip = '';
 
-	self.validators = {
+	DEF.validators = self.validators = {
 		email: new RegExp('^[a-zA-Z0-9-_.+]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$'),
 		url: /^(https?:\/\/(?:www\.|(?!www))[^\s.#!:?+=&@!$'~*,;/()[\]]+\.[^\s#!?+=&@!$'~*,;()[\]\\]{2,}\/?|www\.[^\s#!:.?+=&@!$'~*,;/()[\]]+\.[^\s#!?+=&@!$'~*,;()[\]\\]{2,}\/?)/i,
 		phone: /^[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}$/im,
@@ -875,7 +881,7 @@ function Framework() {
 	self.sessions = {};
 	self.databases = {};
 	self.databasescleaner = {};
-	self.directory = HEADERS.workers.cwd = directory;
+	self.directory = HEADERS.workers2.cwd = HEADERS.workers.cwd = directory;
 	self.isLE = Os.endianness ? Os.endianness() === 'LE' : true;
 	self.isHTTPS = false;
 
@@ -3559,6 +3565,9 @@ F.errorcallback = function(err) {
  * @return {Framework}
  */
 F.problem = F.wtf = function(message, name, uri, ip) {
+
+	OBSOLETE('F.problem()', 'This method will be removed in v4');
+
 	F.$events.problem && EMIT('problem', message, name, uri, ip);
 
 	if (message instanceof framework_builders.ErrorBuilder)
@@ -3590,6 +3599,9 @@ global.PRINTLN = function(msg) {
  * @return {Framework}
  */
 F.change = function(message, name, uri, ip) {
+
+	OBSOLETE('F.change()', 'This method will be removed in v4.');
+
 	F.$events.change && EMIT('change', message, name, uri, ip);
 
 	if (message instanceof framework_builders.ErrorBuilder)
@@ -3617,6 +3629,8 @@ F.change = function(message, name, uri, ip) {
  * @return {Framework}
  */
 global.TRACE = F.trace = function(message, name, uri, ip) {
+
+	OBSOLETE('TRACE()', 'This method will be removed in v4.');
 
 	if (!CONF.trace)
 		return F;
@@ -4548,6 +4562,8 @@ global.INSTALL = F.install = function(type, name, declaration, options, callback
 
 		content = '';
 		err = null;
+
+		OBSOLETE('isomorphic', 'Isomorphic scripts will be removed in v4.');
 
 		try {
 
@@ -6705,6 +6721,8 @@ global.LOAD = F.load = function(debug, types, pwd) {
 		F.directory = directory = U.$normalize(Path.normalize(directory + '/..'));
 	else if (pwd)
 		F.directory = directory = U.$normalize(pwd);
+	else if (process.env.istotaljsworker)
+		F.directory = process.cwd();
 
 	if (typeof(debug) === 'string') {
 		switch (debug.toLowerCase().replace(/\.|\s/g, '-')) {
@@ -12829,7 +12847,7 @@ Controller.prototype.callback = function(view) {
 		var is = err instanceof framework_builders.ErrorBuilder;
 
 		// NoSQL embedded database
-		if (data === undefined && (err && err.stack) && !is) {
+		if (data === undefined && (err && !err.stack) && !is) {
 			data = err;
 			err = null;
 		}

@@ -16,12 +16,13 @@ x added: a new config key `allow_workers_silent` can enable/disable silent worke
 x added: a new config sub-type called `random`, example: `secret_key    (random)  : 10` and `10` means a length of value
 - added: a new command `clear_dnscache` for clearing DNS cache
 - added: commands `INSTALL('command', 'command_name', function)` for registering commands and `CMD(name, [a], [b], [c], [d])` for executing commands
-- added: `ENCRYPTREQ(req, val, [key], [strict])` to encrypt value according to the request meta data
-- added: `DECRYPTREQ(req, val, [key])` to decrypt value according to the request meta data
+x added: `ENCRYPTREQ(req, val, [key], [strict])` to encrypt value according to the request meta data
+x added: `DECRYPTREQ(req, val, [key])` to decrypt value according to the request meta data
 x added: `controller.nocache()`
 x added: `controller.nocontent()`
 x added: `REPO` as a global variable
 x added: `MAIN` as a global variable
+x added: `DEF` as a global variable for defining of behaviour for some operations (alternative to `F`)
 - added: `PREF.set(name, [value])` (read+write) or `PREF.propname` (only read) for reading/writing a persistent preferences
 - added: `F.onPrefSave = function(obj)` to write preferences
 - added: `F.onPrefLoad = function(next(obj))` to read preferences
@@ -29,12 +30,14 @@ x added: `RESTBuilder.url(url)` which returns a new instance of `RESTBuilder` fo
 x added: `restbuilder.keepalive()` enables a keepalive for `RESTBuilder` instance
 - added: `SESSION()` management, more in docs
 x added: `controller.sessionid` with ID of `SESSION()`
-- added: `AUTH()` supports a new auth declaration with `$` as `AuthOptions` like `SchemaOptions` or `OperationOptions`
-- added: `AuthOptions` to prototypes
+x added: `AUTH()` supports a new auth declaration with `$` as `AuthOptions` like `SchemaOptions` or `OperationOptions`
+x added: `AuthOptions` to prototypes
 x added: `ErrorBuilder.length` property (alias for `instance.items.length)
 x added: Schemas `prepare` supports `req` argument
-- added: `F.currencies.eur = function(val) {}` registers a currency formatter
-- added: usage of currency formatter `Number.currency(currency)`
+x added: `DEF.currencies.eur = function(val) {}` registers a currency formatter
+x added: `DEF.helpers` registers a new view engine helper (`F.helpers` is alias for for this object)
+x added: `DEF.validators` is alias for for `F.validators`
+x added: usage of currency formatter `Number.currency(currency)`
 x added: new schema type `Number2` with default value is `null`, not zero `0`
 x added: `@{json2(model, elementID, key1, key2, key3)}` can serialize data with keys defined into the `<script type="application/json">`
 x added: schemas supports `PATCH` and `.setPatch()`, only specified field are processed
@@ -52,7 +55,7 @@ x updated: `headers` argument in `controller.proxy` supports `flags: []` for REQ
 x updated: `.filefs()` and `.filenosql()` supports `download` with `true` or with `(name, type) => 'new_name'` (`filename` will be read from NoSQL binary file)
 x updated: `$.done(arg)` argument `@arg` can be `boolean` (response will be as a value) or object/primitive value (`arg` will be as a value)
 x updated: `String.arg(obj, [encode], [def])` added `encode` (`true` or `json`) and `def` arguments
-- updated: `AUTH(req, res, flags, next)` and `next` function can handle `callback(err, user)`
+x updated: `AUTH(req, res, flags, next)` and `next` function can handle `callback(err, user)`
 x updated: `REQUEST()` supports `keepalive` flag
 x updated: `bundles` mechanism supports merging files `--filename` between `bundles` files
 x updated: `default_image_converter` supports `magick` for new version of ImageMagick
