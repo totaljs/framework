@@ -340,17 +340,10 @@ function prototypeArray() {
 		next();
 	});
 
-	var arr1 = [{ id: 1, name: 'Peter', age: 25 }, { id: 2, name: 'Lucia', age: 19 }, { id: 3, name: 'Jozef', age: 33 }, { id: 10, name: 'New', age: 39 }];
-	var arr2 = [{ id: 2, age: 5, name: 'Lucka' }, { id: 3, name: 'Peter', age: 50 }, { id: 1, name: 'Peter', age: 25 }, { id: 5, name: 'New', age: 33 }];
-
-	arr1.compare('id', arr2, function(a, b, ai, bi) {
-
-		if (!b)
-			assert.ok(a.age === 39, 'array.compare(0)');
-
-		if (!a)
-			assert.ok(b.age === 33, 'array.compare(1)');
-	});
+	var a = [{ id: '1' }, { id: '3' }];
+	var b = [{ id: '5' }, { id: '3' }];
+	var r = U.diff('id', a, b);
+	assert.ok(r.add.length === 1 || r.upd.length === 2 || r.rem.length === 1, 'U.diff(a, b)');
 
 	arr = [1, 2, 3, 1, 3, 2, 4];
 

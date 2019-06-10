@@ -201,6 +201,49 @@ var dnscache = {};
 var datetimeformat = {};
 const hasOwnProperty = Object.prototype.hasOwnProperty;
 
+exports.diff = function(prop, a, b) {
+
+	var an = [];
+	var au = [];
+	var ar = [];
+	var is, oa, ob;
+
+	for (var i = 0; i < a.length; i++) {
+		oa = a[i];
+		is = false;
+		for (var j = 0; j < b.length; j++) {
+			ob = b[j];
+			if (oa[prop] == ob[prop]) {
+				au.push({ a: oa, b: ob });
+				is = true;
+				break;
+			}
+		}
+		if (!is)
+			ar.push(oa);
+	}
+
+	for (var i = 0; i < b.length; i++) {
+		ob = b[i];
+		is = false;
+		for (var j = 0; j < b.length; j++) {
+			oa = a[j];
+			if (ob[prop] == oa[prop]) {
+				is = true;
+				continue;
+			}
+		}
+		if (!is)
+			an.push(ob);
+	}
+
+	var obj = {};
+	obj.add = an;
+	obj.upd = au;
+	obj.rem = ar;
+	return obj;
+};
+
 /**
  * Checks if is object empty
  * @param {Object} obj
@@ -5068,6 +5111,8 @@ AP.compare = function(id, b, executor) {
 				executor(a[index], bv, index, i);
 		}
 	}
+
+	OBSOLETE('Array.compare()', 'Use U.diff() insteadof Array.compare()');
 };
 
 /**
@@ -5114,6 +5159,7 @@ AP.pair = function(property, arr, fn, remove) {
 		this.splice(index, 1);
 	}
 
+	OBSOLETE('Array.pair()', 'The method will be removed in Total.js v4');
 	return this;
 };
 
