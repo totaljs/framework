@@ -201,20 +201,20 @@ var dnscache = {};
 var datetimeformat = {};
 const hasOwnProperty = Object.prototype.hasOwnProperty;
 
-exports.diff = function(prop, a, b) {
+global.DIFF = exports.diff = function(prop, db, form) {
 
 	var an = [];
 	var au = [];
 	var ar = [];
 	var is, oa, ob;
 
-	for (var i = 0; i < a.length; i++) {
-		oa = a[i];
+	for (var i = 0; i < db.length; i++) {
+		oa = db[i];
 		is = false;
-		for (var j = 0; j < b.length; j++) {
-			ob = b[j];
+		for (var j = 0; j < form.length; j++) {
+			ob = form[j];
 			if (oa[prop] == ob[prop]) {
-				au.push({ a: oa, b: ob });
+				au.push({ db: oa, form: ob });
 				is = true;
 				break;
 			}
@@ -223,14 +223,14 @@ exports.diff = function(prop, a, b) {
 			ar.push(oa);
 	}
 
-	for (var i = 0; i < b.length; i++) {
-		ob = b[i];
+	for (var i = 0; i < form.length; i++) {
+		ob = form[i];
 		is = false;
-		for (var j = 0; j < b.length; j++) {
-			oa = a[j];
+		for (var j = 0; j < db.length; j++) {
+			oa = db[j];
 			if (ob[prop] == oa[prop]) {
 				is = true;
-				continue;
+				break;
 			}
 		}
 		if (!is)
