@@ -201,7 +201,7 @@ var dnscache = {};
 var datetimeformat = {};
 const hasOwnProperty = Object.prototype.hasOwnProperty;
 
-global.DIFF = exports.diff = function(prop, db, form) {
+global.DIFFARR = exports.diffarr = function(prop, db, form) {
 
 	var an = [];
 	var au = [];
@@ -220,7 +220,7 @@ global.DIFF = exports.diff = function(prop, db, form) {
 			}
 		}
 		if (!is)
-			ar.push(oa);
+			ar.push(oa[prop]);
 	}
 
 	for (var i = 0; i < form.length; i++) {
