@@ -6061,35 +6061,6 @@ function compile_merge(res, repeated) {
 	}
 
 	var writer = Fs.createWriteStream(filename);
-
-	CLEANUP(writer, function() {
-
-		var stats;
-
-		try {
-			stats = Fs.statSync(filename);
-		} catch (e) {
-
-			e && F.error(e, 'compile_merge', req.url);
-
-			// Try it again
-			if (repeated) {
-				delete F.temporary.processing[req.$key];
-				res.throw404();
-			} else
-				compile_merge(res, true);
-
-			return;
-		}
-
-		var tmp = [filename, stats.size, stats.mtime.toUTCString()];
-		compile_gzip(tmp, function(tmp) {
-			F.temporary.path[req.$key] = tmp;
-			delete F.temporary.processing[req.$key];
-			res.$file();
-		});
-	});
-
 	var index = 0;
 	var remove = null;
 
@@ -6173,6 +6144,34 @@ function compile_merge(res, repeated) {
 		});
 
 	}, function() {
+
+		CLEANUP(writer, function() {
+
+			var stats;
+
+			try {
+				stats = Fs.statSync(filename);
+			} catch (e) {
+
+				e && F.error(e, 'compile_merge' + (repeated ? ' - repeated' : ''), req.url);
+
+				// Try it again
+				if (repeated) {
+					delete F.temporary.processing[req.$key];
+					res.throw404();
+				} else
+					compile_merge(res, true);
+
+				return;
+			}
+
+			var tmp = [filename, stats.size, stats.mtime.toUTCString()];
+			compile_gzip(tmp, function(tmp) {
+				F.temporary.path[req.$key] = tmp;
+				delete F.temporary.processing[req.$key];
+				res.$file();
+			});
+		});
 
 		writer.end();
 
