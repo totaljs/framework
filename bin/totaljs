@@ -6,7 +6,7 @@ var path = require('path');
 var os = require('os');
 var Utils = require('total.js/utils');
 var Internal = require('total.js/internal');
-var $type = 1;
+var $type = 0;
 var isDirectory = false;
 
 function display_help() {
@@ -413,25 +413,25 @@ function main() {
 			}
 		}
 
-		if (cmd === '-v' || cmd === '-version')
+		if (!$type && (cmd === '-v' || cmd === '-version'))
 			return;
 
-		if (cmd === '-t' || cmd === '-translate') {
+		if (!$type && (cmd === '-t' || cmd === '-translate')) {
 			$type = 4;
 			continue;
 		}
 
-		if (cmd === '-merge') {
+		if (!$type && cmd === '-merge') {
 			merge(process.argv[i + 1] || '', process.argv[i + 2] || '');
 			return;
 		}
 
-		if (cmd === '-translate-csv' || cmd === '-translatecsv' || cmd === '-c') {
+		if (!$type && (cmd === '-translate-csv' || cmd === '-translatecsv' || cmd === '-c')) {
 			$type = 6;
-			continue;
+			continue
 		}
 
-		if (cmd === '-csv') {
+		if (!$type && cmd === '-csv') {
 			var tmp = process.argv[i + 1] || '';
 			var tt = path.join(path.dirname(tmp), path.basename(tmp, '.csv') + '.resource');
 			fs.writeFileSync(tt, '// Total.js resource file\n// Created: ' + new Date().format('yyyy-MM-dd HH:mm') + '\n' + parse_csv(fs.readFileSync(tmp).toString('utf8')));
@@ -441,10 +441,10 @@ function main() {
 			console.log('');
 			console.log('output   : ' + tt);
 			console.log('');
-			return;
+			continue;
 		}
 
-		if (cmd === '-i' || cmd === '-install') {
+		if (!$type && (cmd === '-i' || cmd === '-install')) {
 
 			var libs = ['jc', 'jc.min', 'jcta', 'jcta.min', 'jctajr', 'jctajr.min', 'ta', 'jr', 'jr.jc', 'spa', 'spa.min'];
 			var tmp = process.argv[i + 1] || '';
@@ -506,10 +506,10 @@ function main() {
 
 		if (cmd === '-minify' || cmd === '-compress' || cmd === '-compile') {
 			$type = 5;
-			continue;
+			break;
 		}
 
-		if (cmd === '-clean') {
+		if (!$type && (cmd === '-clean')) {
 			var tmp = process.argv[i + 1] || '';
 			var tt = path.join(path.dirname(tmp), path.basename(tmp, '.resource') + '-cleaned.txt');
 			fs.writeFileSync(tt, '// Total.js cleaned file\n// Created: ' + new Date().format('yyyy-MM-dd HH:mm') + '\n' + clean_resource(fs.readFileSync(tmp).toString('utf8')));
@@ -522,67 +522,67 @@ function main() {
 			return;
 		}
 
-		if (cmd === '-cms' || cmd === 'cms') {
+		if (!$type && (cmd === '-cms' || cmd === 'cms')) {
 			git(dir, 'cms');
 			return;
 		}
 
-		if (cmd === '-eshop' || cmd === 'eshop') {
+		if (!$type && (cmd === '-eshop' || cmd === 'eshop')) {
 			git(dir, 'eshop');
 			return;
 		}
 
-		if (cmd === '-superadmin' || cmd === 'superadmin') {
+		if (!$type && (cmd === '-superadmin' || cmd === 'superadmin')) {
 			git(dir, 'superadmin');
 			return;
 		}
 
-		if (cmd === '-messenger' || cmd === 'messenger') {
+		if (!$type && (cmd === '-messenger' || cmd === 'messenger')) {
 			git(dir, 'messenger');
 			return;
 		}
 
-		if (cmd === '-helpdesk' || cmd === 'helpdesk') {
+		if (!$type && (cmd === '-helpdesk' || cmd === 'helpdesk')) {
 			git(dir, 'helpdesk');
 			return;
 		}
 
-		if (cmd === '-openplatform' || cmd === 'openplatform') {
+		if (!$type && (cmd === '-openplatform' || cmd === 'openplatform')) {
 			git(dir, 'openplatform');
 			return;
 		}
 
-		if (cmd === '-flow' || cmd === 'flow') {
+		if (!$type && (cmd === '-flow' || cmd === 'flow')) {
 			git(dir, 'emptyproject-flow');
 			return;
 		}
 
-		if (cmd === '-dashboard' || cmd === 'dashboard') {
+		if (!$type && (cmd === '-dashboard' || cmd === 'dashboard')) {
 			git(dir, 'emptyproject-dashboard');
 			return;
 		}
 
-		if (cmd === '-flowboard' || cmd === 'flowboard') {
+		if (!$type && (cmd === '-flowboard' || cmd === 'flowboard')) {
 			git(dir, 'emptyproject-flowboard');
 			return;
 		}
 
-		if (cmd === '-pwa' || cmd === 'pwa') {
+		if (!$type && (cmd === '-pwa' || cmd === 'pwa')) {
 			git(dir, 'emptyproject-pwa');
 			return;
 		}
 
-		if (cmd === '-spa' || cmd === 'spa') {
+		if (!$type && (cmd === '-spa' || cmd === 'spa')) {
 			git(dir, 'emptyproject-jcomponent');
 			return;
 		}
 
-		if (cmd === '-rest' || cmd === 'rest') {
+		if (!$type && (cmd === '-rest' || cmd === 'rest')) {
 			git(dir, 'emptyproject-restservice');
 			return;
 		}
 
-		if (cmd === '-diff') {
+		if (!$type && cmd === '-diff') {
 			diff(process.argv[i + 1] || '', process.argv[i + 2] || '');
 			return;
 		}
@@ -592,25 +592,27 @@ function main() {
 			continue;
 		}
 
-		if (cmd === '-m' || cmd === '-minimal' || cmd === '-minimum' || cmd === 'minimum') {
+		if (!$type && (cmd === '-m' || cmd === '-minimal' || cmd === '-minimum' || cmd === 'minimum')) {
 			$type = 2;
 			continue;
 		}
 
-		if (cmd === '-n' || cmd === '-normal' || cmd === 'normal') {
+		if (!$type && (cmd === '-n' || cmd === '-normal' || cmd === 'normal')) {
 			$type = 1;
 			continue;
 		}
 
-		if (cmd === '-h' || cmd === '-help' || cmd === '--help' || cmd === 'help') {
+		if (!$type && (cmd === '-h' || cmd === '-help' || cmd === '--help' || cmd === 'help')) {
 			display_help();
 			return;
 		}
 
 		dir = arg;
 		isDirectory = true;
-		break;
 	}
+
+	if (!$type)
+		$type = 1;
 
 	if (dir === '.')
 		dir = process.cwd();
