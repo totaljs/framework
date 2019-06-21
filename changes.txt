@@ -1,7 +1,7 @@
 ======= 3.3.0
 
-- added: `NEWTASK(name, declaration)` for creating preddefined `TaskBuilder`
-- added: `TASK(name, taskname, callback, [controller/SchemaOptions/OperationOptions/ErrorBuilder])` for executing preddefined `TaskBuilder`
+x added: `NEWTASK(name, declaration)` for creating preddefined `TaskBuilder`
+x added: `TASK(name, taskname, callback, [controller/SchemaOptions/OperationOptions/ErrorBuilder])` for executing preddefined `TaskBuilder`
 x added: a new config key `directory_tasks` for `TaskBuilder`
 x added: a global alias `MODIFY()` for `F.modify()`
 x added: a global alias `VIEWCOMPILE()` for `F.viewCompile()`
@@ -23,9 +23,9 @@ x added: `controller.nocontent()`
 x added: `REPO` as a global variable
 x added: `MAIN` as a global variable
 x added: `DEF` as a global variable for defining of behaviour for some operations (alternative to `F`)
-- added: `PREF.set(name, [value])` (read+write) or `PREF.propname` (only read) for reading/writing a persistent preferences
-- added: `F.onPrefSave = function(obj)` to write preferences
-- added: `F.onPrefLoad = function(next(obj))` to read preferences
+x added: `PREF.set(name, [value])` (read+write) or `PREF.propname` (only read) for reading/writing a persistent preferences
+x added: `F.onPrefSave = function(obj)` to write preferences
+x added: `F.onPrefLoad = function(next(obj))` to read preferences
 x added: `RESTBuilder.url(url)` which returns a new instance of `RESTBuilder` for chaining
 x added: `restbuilder.keepalive()` enables a keepalive for `RESTBuilder` instance
 - added: `SESSION()` management, more in docs
@@ -47,8 +47,8 @@ x added: `schema.props()` returns `{Object}` meta info about all defined propert
 x added: `SchemaOptions`, `OperationOptions` and `TaskOptions` supports `$.req` and `$.res` properties
 x added: `AUDIT(name, $, [type], message)` a method for audit logs
 x added: __obsolete__ message to older declaration of middleware, schemas and operations
-- added: `U.diffarr(prop, arr_A, arr_B)` for comparing of two arrays
-- added: `DIFFARR(prop, arr_A, arr_B)` is a global alias for `U.diffarr()`
+x added: `U.diffarr(prop, arr_A, arr_B)` for comparing of two arrays
+x added: `DIFFARR(prop, arr_A, arr_B)` is a global alias for `U.diffarr()`
 
 x updated: `$.invalid()` without arguments can return a function `function(err)`
 x updated: Mail `unsubscribe` appends new header which enables `unsubscribe` in e.g. iOS
@@ -79,9 +79,9 @@ x updated: `String.hash(true)` returns unsigned int
 - fixed: renamed `F.stats.request.path` to `F.stats.request.patch`
 - fixed: SMTP sender (a problem with auth mechanism with some mail servers)
 
-- __removed: backward compatibility__ with older version of Node.js < 10
-- removed: `F.hash()`, alternative `String.prototype.hash()`
-- removed: `contorller.hash()`, alternative `String.prototype.hash()`
+x __removed: backward compatibility__ with older version of Node.js < 10
+x removed: `F.hash()`, alternative `String.prototype.hash()`
+x removed: `controller.hash()`, alternative `String.prototype.hash()`
 
 - improved Schemas and error handling
 - improved `res.filefs()` method for nonexistent files
