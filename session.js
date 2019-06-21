@@ -43,6 +43,7 @@ function Session(name, ondata) {
 	};
 }
 
+/*
 Session.prototype.find = function(filter, callback) {
 
 	var self = this;
@@ -71,7 +72,7 @@ Session.prototype.find = function(filter, callback) {
 	}
 
 	callback(null, arr);
-};
+};*/
 
 Session.prototype.list = function(id, callback) {
 
@@ -184,10 +185,15 @@ Session.prototype.release = function(sessionid, expire, callback) {
 
 	// refreshes all
 	if (sessionid == null) {
+		var count = 0;
 		for (var m of self.items.values()) {
-			self.onrelease && self.onrelease(m);
-			m.data = null;
+			if (m.data) {
+				self.onrelease && self.onrelease(m);
+				m.data = null;
+				count++;
+			}
 		}
+		callback && callback(null, count);
 		return;
 	}
 
@@ -198,10 +204,11 @@ Session.prototype.release = function(sessionid, expire, callback) {
 	}
 
 	if (callback) {
-		if (item)
-			self.get(sessionid, expire, callback);
-		else
-			callback();
+		// @TODO: WTF? Why get when it's released???
+		// if (item)
+		// 	self.get(sessionid, expire, callback);
+		// else
+		callback(null, item ? 1 : 0);
 	}
 };
 
@@ -224,7 +231,7 @@ Session.prototype.release2 = function(id, expire, callback) {
 		expire = NOW.add(expire);
 
 	for (var m of self.items.values()) {
-		if (m && m.id === id) {
+		if (m && m.id === id && m.data) {
 			self.onrelease && self.onrelease(m);
 			m.data = null;
 			count++;
@@ -242,7 +249,7 @@ Session.prototype.releaseunused = function(lastusage, callback) {
 
 	lastusage = NOW.add(lastusage[0] === '-' ? lastusage : ('-' + lastusage));
 	for (var m of self.items.values()) {
-		if (!m.used || m.used <= lastusage) {
+		if (m.data && (!m.used || m.used <= lastusage)) {
 			self.onrelease && self.onrelease(m);
 			m.data = null;
 			count++;
@@ -475,9 +482,8 @@ Session.prototype.update = function(sessionid, data, expire, note, settings, cal
 
 		if (item.data || expire)
 			self.$save();
-	}
-
-	callback && callback();
+	} else if (callback)
+		callback();
 };
 
 Session.prototype.count = function(id, callback) {
