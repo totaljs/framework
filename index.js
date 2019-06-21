@@ -574,6 +574,7 @@ global.SUCCESS = function(success, value) {
 };
 
 global.TRY = function(fn, err) {
+	OBSOLETE('TRY()', 'This method will be removed in Total.js v4');
 	try {
 		fn();
 		return true;
@@ -3566,7 +3567,7 @@ F.errorcallback = function(err) {
  */
 F.problem = F.wtf = function(message, name, uri, ip) {
 
-	OBSOLETE('F.problem()', 'This method will be removed in v4');
+	// OBSOLETE('F.problem()', 'This method will be removed in v4');
 
 	F.$events.problem && EMIT('problem', message, name, uri, ip);
 

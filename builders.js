@@ -5847,11 +5847,11 @@ exports.uninstall = function(owner) {
 	});
 };
 
-TaskBuilder.prototype.invalid = function(error) {
+TaskBuilder.prototype.invalid = function(err, msg) {
 	var self = this;
 	if (!self.$done) {
 		!self.error && (self.error = new ErrorBuilder());
-		self.error.push(error);
+		self.error.push(err, msg);
 		self.done();
 	}
 	return self;
