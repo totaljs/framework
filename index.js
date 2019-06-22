@@ -1568,7 +1568,7 @@ F.clearSchedule = function(id) {
  * @param {String Array} flags Optional, can contains extensions `.jpg`, `.gif' or watching path `/img/gallery/`
  * @return {Framework}
  */
-F.resize = function(url, fn, flags) {
+global.RESIZE = F.resize = function(url, fn, flags) {
 
 	var extensions = {};
 	var cache = true;
@@ -1644,6 +1644,8 @@ F.resize = function(url, fn, flags) {
  */
 F.restful = function(url, flags, onQuery, onGet, onSave, onDelete) {
 
+	OBSOLETE('F.restful()', 'This method will be removed in v4.');
+
 	var tmp;
 	var index = flags ? flags.indexOf('cors') : -1;
 	var cors = {};
@@ -1693,6 +1695,8 @@ F.restful = function(url, flags, onQuery, onGet, onSave, onDelete) {
 
 // This version of RESTful doesn't create advanced routing for insert/update/delete and all URL address of all operations are without "{id}" param because they expect some identificator in request body
 F.restful2 = function(url, flags, onQuery, onGet, onSave, onDelete) {
+
+	OBSOLETE('F.restful2()', 'This method will be removed in v4.');
 
 	var tmp;
 	var index = flags ? flags.indexOf('cors') : -1;

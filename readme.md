@@ -59,8 +59,6 @@ $ npm install -g total.js
 | Clean directory structure |
 | Fully asynchronous |
 | Full web server with serving of static files |
-| Supports generators |
-| Isomorphic code |
 | Supports IP restrictions |
 | Supports redirections |
 | Supports reusable components |
