@@ -574,7 +574,6 @@ global.SUCCESS = function(success, value) {
 };
 
 global.TRY = function(fn, err) {
-	OBSOLETE('TRY()', 'This method will be removed in Total.js v4');
 	try {
 		fn();
 		return true;
@@ -10432,20 +10431,20 @@ FrameworkCache.prototype.removeAll = function(search, sync) {
 	return count;
 };
 
-FrameworkCache.prototype.fn = function(name, fnCache, fnCallback) {
+FrameworkCache.prototype.fn = function(name, fnCache, fnCallback, options) {
 
 	var self = this;
 	var value = self.read2(name);
 
 	if (value) {
-		fnCallback && fnCallback(value, true);
+		fnCallback && fnCallback(value, true, options);
 		return self;
 	}
 
 	fnCache(function(value, expire) {
 		self.add(name, value, expire);
-		fnCallback && fnCallback(value, false);
-	});
+		fnCallback && fnCallback(value, false, options);
+	}, options);
 
 	return self;
 };

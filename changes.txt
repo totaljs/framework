@@ -28,7 +28,7 @@ x added: `F.onPrefSave = function(obj)` to write preferences
 x added: `F.onPrefLoad = function(next(obj))` to read preferences
 x added: `RESTBuilder.url(url)` which returns a new instance of `RESTBuilder` for chaining
 x added: `restbuilder.keepalive()` enables a keepalive for `RESTBuilder` instance
-- added: `SESSION()` management, more in docs
+x added: `SESSION()` management, more in docs
 x added: `controller.sessionid` with ID of `SESSION()`
 x added: `AUTH()` supports a new auth declaration with `$` as `AuthOptions` like `SchemaOptions` or `OperationOptions`
 x added: `AuthOptions` to prototypes

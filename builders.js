@@ -5554,7 +5554,7 @@ AuthOptions.prototype.roles = function() {
 	return this;
 };
 
-AuthOptions.prototype.cookie = function(name, value, expire, options) {
+SchemaOptions.prototype.cookie = OperationOptions.prototype.cookie = TaskBuilder.prototype.cookie = AuthOptions.prototype.cookie = function(name, value, expire, options) {
 	var self = this;
 	if (value === undefined)
 		return self.req.cookie(name);

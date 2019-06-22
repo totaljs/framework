@@ -204,7 +204,7 @@ Session.prototype.release = function(sessionid, expire, callback) {
 	}
 
 	if (callback) {
-		// @TODO: WTF? Why get when it's released???
+		// @TODO: WTF? Why is "get" used when the item is released???
 		// if (item)
 		// 	self.get(sessionid, expire, callback);
 		// else
