@@ -855,8 +855,28 @@ function request_call(uri, options) {
 		return;
 	}
 
+	var timeout = function() {
+		if (options.callback) {
+			if (options.timeoutid) {
+				clearTimeout(options.timeoutid);
+				options.timeoutid = null;
+			}
+			req.abort();
+			options.canceled = true;
+			options.callback(new Error(exports.httpStatus(408)), '', 0, undefined, uri.host);
+			options.callback = null;
+			options.evt.removeAllListeners();
+			options.evt = null;
+		}
+	};
+
 	req.on('error', function(err) {
 		if (options.callback && !options.done) {
+			if (options.timeoutid) {
+				clearTimeout(options.timeoutid);
+				options.timeoutid = null;
+			}
+			options.canceled = true;
 			options.callback(err, '', 0, undefined, uri.host);
 			options.callback = null;
 			options.evt.removeAllListeners();
@@ -864,14 +884,9 @@ function request_call(uri, options) {
 		}
 	});
 
-	req.setTimeout(options.timeout, function() {
-		if (options.callback) {
-			options.callback(new Error(exports.httpStatus(408)), '', 0, undefined, uri.host);
-			options.callback = null;
-			options.evt.removeAllListeners();
-			options.evt = null;
-		}
-	});
+	options.timeoutid && clearTimeout(options.timeoutid);
+	options.timeoutid = setTimeout(timeout, options.timeout);
+	req.setTimeout(options.timeout, timeout);
 
 	req.on('response', (response) => response.req = req);
 
@@ -928,6 +943,9 @@ function request_response(res, uri, options) {
 
 		if (options.noredirect) {
 
+			options.timeoutid && clearTimeout(options.timeoutid);
+			options.canceled = true;
+
 			if (options.callback) {
 				options.callback(null, '', res.statusCode, res.headers, uri.host, EMPTYOBJECT);
 				options.callback = null;
@@ -939,13 +957,16 @@ function request_response(res, uri, options) {
 			}
 
 			res.req.removeAllListeners();
-			res.req = null;
 			res.removeAllListeners();
+			res.req = null;
 			res = null;
 			return;
 		}
 
 		if (options.redirect > 3) {
+
+			options.timeoutid && clearTimeout(options.timeoutid);
+			options.canceled = true;
 
 			if (options.callback) {
 				options.callback(new Error('Too many redirects.'), '', 0, undefined, uri.host, EMPTYOBJECT);
@@ -958,8 +979,8 @@ function request_response(res, uri, options) {
 			}
 
 			res.req.removeAllListeners();
-			res.req = null;
 			res.removeAllListeners();
+			res.req = null;
 			res = null;
 			return;
 		}
@@ -1034,16 +1055,23 @@ function request_response(res, uri, options) {
 
 	var onend = function() {
 
-		if (options.socket)
-			options.uri.agent.destroy();
-
 		var self = this;
 		var data;
 
-		if (!self.headers['content-type'] || REG_TEXTAPPLICATION.test(self.headers['content-type']))
+		options.socket && options.uri.agent.destroy();
+		options.timeoutid && clearTimeout(options.timeoutid);
+
+		if (options.canceled)
+			return;
+
+		var ct = self.headers['content-type'];
+
+		if (!ct || REG_TEXTAPPLICATION.test(ct))
 			data = self._buffer ? (options.encoding === 'binary' ? self._buffer : self._buffer.toString(options.encoding)) : '';
 		else
 			data = self._buffer;
+
+		options.canceled = true;
 
 		self._buffer = undefined;
 
@@ -1072,7 +1100,7 @@ function request_response(res, uri, options) {
 
 	var ondata = function(chunk) {
 		var self = this;
-		if (options.max && self._bufferlength > options.max)
+		if (options.canceled || (options.max && self._bufferlength > options.max))
 			return;
 		if (self._buffer) {
 			CONCAT[0] = self._buffer;
@@ -1349,23 +1377,31 @@ function download_call(uri, options) {
 		return;
 	}
 
-	req.on('error', function(err) {
-		if (options.callback) {
-			options.callback(err);
-			options.callback = null;
-			options.evt.removeAllListeners();
-			options.evt = null;
-		}
-	});
-
-	req.setTimeout(options.timeout, function() {
+	var timeout = function() {
 		if (options.callback) {
 			options.callback(new Error(exports.httpStatus(408)));
 			options.callback = null;
 			options.evt.removeAllListeners();
 			options.evt = null;
+			options.canceled = true;
+		}
+	};
+
+	req.on('error', function(err) {
+		if (options.callback) {
+			options.timeoutid && clearTimeout(options.timeoutid);
+			options.timeoutid = null;
+			options.callback(err);
+			options.callback = null;
+			options.evt.removeAllListeners();
+			options.evt = null;
+			options.canceled = true;
 		}
 	});
+
+	options.timeoutid && clearTimeout(options.timeoutid);
+	options.timeoutid = setTimeout(timeout, options.timeout);
+	req.setTimeout(options.timeout, timeout);
 
 	req.on('response', function(response) {
 		response.req = req;
@@ -1384,6 +1420,8 @@ function download_response(res, uri, options) {
 	if (res.statusCode === 301 || res.statusCode === 302) {
 
 		if (options.redirect > 3) {
+			options.canceled = true;
+			options.timeoutid && clearTimeout(options.timeoutid);
 			options.callback && options.callback(new Error('Too many redirects.'));
 			res.req.removeAllListeners();
 			res.req = null;
@@ -1432,19 +1470,24 @@ function download_response(res, uri, options) {
 	}
 
 	res.on('data', function(chunk) {
-		var self = this;
-		self._bufferlength += chunk.length;
-		options.evt && options.evt.$events.data && options.evt.emit('data', chunk, options.length ? (self._bufferlength / options.length) * 100 : 0);
+		if (!options.canceled) {
+			var self = this;
+			self._bufferlength += chunk.length;
+			options.evt && options.evt.$events.data && options.evt.emit('data', chunk, options.length ? (self._bufferlength / options.length) * 100 : 0);
+		}
 	});
 
 	res.on('end', function() {
-		var self = this;
-		var str = self._buffer ? self._buffer.toString(options.encoding) : '';
 
-		self._buffer = undefined;
+		var self = this;
+
+		if (!options.canceled) {
+			var str = self._buffer ? self._buffer.toString(options.encoding) : '';
+			self._buffer = undefined;
+			options.evt && options.evt.$events.end && options.evt.emit('end', str, self.statusCode, self.headers, uri.host);
+		}
 
 		if (options.evt) {
-			options.evt.$events.end && options.evt.emit('end', str, self.statusCode, self.headers, uri.host);
 			options.evt.removeAllListeners();
 			options.evt = null;
 		}
@@ -1454,6 +1497,7 @@ function download_response(res, uri, options) {
 	});
 
 	res.resume();
+	options.timeoutid && clearTimeout(options.timeoutid);
 	options.callback && options.callback(null, res, res.statusCode, res.headers, uri.host);
 }
 
@@ -1598,6 +1642,8 @@ exports.upload = function(files, url, callback, cookies, headers, method, timeou
 	var uri = Url.parse(url);
 	var options = { protocol: uri.protocol, auth: uri.auth, method: method || 'POST', hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };
 	var responseLength = 0;
+	var timeoutid;
+	var done = false;
 
 	var response = function(res) {
 
@@ -1605,20 +1651,26 @@ exports.upload = function(files, url, callback, cookies, headers, method, timeou
 		res._bufferlength = 0;
 
 		res.on('data', function(chunk) {
-			CONCAT[0] = res.body;
-			CONCAT[1] = chunk;
-			res.body = Buffer.concat(CONCAT);
-			res._bufferlength += chunk.length;
-			e.$events.data && e.emit('data', chunk, responseLength ? (res._bufferlength / responseLength) * 100 : 0);
+			if (!done) {
+				CONCAT[0] = res.body;
+				CONCAT[1] = chunk;
+				res.body = Buffer.concat(CONCAT);
+				res._bufferlength += chunk.length;
+				e.$events.data && e.emit('data', chunk, responseLength ? (res._bufferlength / responseLength) * 100 : 0);
+			}
 		});
 
 		res.on('end', function() {
-			var self = this;
-			e.$events.end && e.emit('end', self.statusCode, self.headers);
-			e.removeAllListeners();
-			e = null;
-			callback && callback(null, self.body.toString('utf8'), self.statusCode, self.headers, uri.host);
-			self.body = null;
+			if (!done) {
+				var self = this;
+				e.$events.end && e.emit('end', self.statusCode, self.headers);
+				e.removeAllListeners();
+				callback && callback(null, self.body.toString('utf8'), self.statusCode, self.headers, uri.host);
+				timeoutid && clearTimeout(timeoutid);
+				self.body = null;
+				e = null;
+				done = true;
+			}
 		});
 	};
 
@@ -1630,20 +1682,31 @@ exports.upload = function(files, url, callback, cookies, headers, method, timeou
 		e.$events.begin && e.emit('begin', responseLength);
 	});
 
-	req.setTimeout(timeout || 60000, function() {
-		req.removeAllListeners();
-		req = null;
-		e.removeAllListeners();
-		e = null;
-		callback && callback(new Error(exports.httpStatus(408)), '', 408, undefined, uri.host);
-	});
+	var timeoutcallback = function() {
+		if (!done) {
+			req.removeAllListeners();
+			e.removeAllListeners();
+			callback && callback(new Error(exports.httpStatus(408)), '', 408, undefined, uri.host);
+			timeoutid && clearTimeout(timeoutid);
+			req = null;
+			e = null;
+			done = true;
+		}
+	};
+
+	if (timeout)
+		timeoutid = setTimeout(timeoutcallback, timeout);
+
+	req.setTimeout(timeout || 60000, timeoutcallback);
 
 	req.on('error', function(err) {
+		done = true;
 		req.removeAllListeners();
-		req = null;
 		e.removeAllListeners();
-		e = null;
 		callback && callback(err, '', 0, undefined, uri.host);
+		timeoutid && clearTimeout(timeoutid);
+		req = null;
+		e = null;
 	});
 
 	req.on('close', function() {
