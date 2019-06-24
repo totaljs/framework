@@ -38,7 +38,7 @@ const REG_NEWLINE = /\n/g;
 const REG_AUTH = /(AUTH LOGIN|AUTH PLAIN|PLAIN LOGIN)/i;
 const REG_TLS = /TLS/;
 const REG_STARTTLS = /STARTTLS/;
-const REG_PREVIEW = /<body>/i;
+// const REG_PREVIEW = /<body>/i;
 const EMPTYARRAY = [];
 
 var INDEXSENDER = 0;
