@@ -107,6 +107,11 @@ Object.freeze(EMPTYREQUEST);
 global.EMPTYOBJECT = EMPTYOBJECT;
 global.EMPTYARRAY = EMPTYARRAY;
 global.NOW = new Date();
+
+global.REQUIRE = function(path) {
+	return require('./' + path);
+};
+
 var DEF = global.DEF = {};
 
 DEF.currencies = {};
