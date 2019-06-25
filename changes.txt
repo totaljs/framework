@@ -80,13 +80,13 @@ x updated: `String.hash(true)` returns unsigned int
 - fixed: renamed `F.stats.request.path` to `F.stats.request.patch`
 - fixed: SMTP sender (a problem with auth mechanism with some mail servers)
 
-- renamed: `*.routeScript` to `*.public_js`
-- renamed: `*.routeStyle` to `*.public_css`
-- renamed: `*.routeFont` to `*.public_font`
-- renamed: `*.routeVideo` to `*.public_video`
-- renamed: `*.routeImage` to `*.public_image`
-- renamed: `*.routeDownload` to `*.public_download`
-- renamed: `*.routeStatic` to `*.public`
+x renamed: `*.routeScript` to `*.public_js`
+x renamed: `*.routeStyle` to `*.public_css`
+x renamed: `*.routeFont` to `*.public_font`
+x renamed: `*.routeVideo` to `*.public_video`
+x renamed: `*.routeImage` to `*.public_image`
+x renamed: `*.routeDownload` to `*.public_download`
+x renamed: `*.routeStatic` to `*.public`
 
 x __removed: backward compatibility__ with older version of Node.js < 10
 x removed: `F.hash()`, alternative `String.prototype.hash()`
