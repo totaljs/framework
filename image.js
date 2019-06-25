@@ -340,8 +340,10 @@ Image.prototype.cmd = function(filenameFrom, filenameTo) {
 
 	if (!self.islimit) {
 		var tmp = CONF.default_image_consumption;
-		self.limit('memory', (1500 / 100) * tmp);
-		self.limit('map', (3000 / 100) * tmp);
+		if (tmp) {
+			self.limit('memory', (1500 / 100) * tmp);
+			self.limit('map', (3000 / 100) * tmp);
+		}
 	}
 
 	self.builder.sort(sort);
@@ -369,8 +371,10 @@ Image.prototype.arg = function(first, last) {
 
 	if (!self.islimit) {
 		var tmp = CONF.default_image_consumption;
-		self.limit('memory', (1500 / 100) * tmp);
-		self.limit('map', (3000 / 100) * tmp);
+		if (tmp) {
+			self.limit('memory', (1500 / 100) * tmp);
+			self.limit('map', (3000 / 100) * tmp);
+		}
 	}
 
 	self.builder.sort(sort);
