@@ -470,13 +470,13 @@ function viewIndex() {
 	var date = new Date();
 	date.setFullYear(1984);
 
-	assert.ok(self.routeScript('p.js') === '/js/p.js', name + 'routeScript()');
-	assert.ok(self.routeStyle('p.css') === '/css/p.css', name + 'routeStyle()');
-	assert.ok(self.routeImage('p.jpg') === '/img/p.jpg', name + 'routeImage()');
-	assert.ok(self.routeVideo('p.avi') === '/video/p.avi', name + 'routeVideo()');
-	assert.ok(self.routeFont('p.woff') === '/fonts/p.woff', name + 'routeFont()');
-	assert.ok(self.routeDownload('p.pdf') === '/download/p.pdf', name + 'routeDownload()');
-	assert.ok(self.routeStatic('/p.zip') === '/p.zip', name + 'routeStatic()');
+	assert.ok(self.public_js('p.js') === '/js/p.js', name + 'public_js()');
+	assert.ok(self.public_css('p.css') === '/css/p.css', name + 'public_css()');
+	assert.ok(self.public_image('p.jpg') === '/img/p.jpg', name + 'public_image()');
+	assert.ok(self.public_video('p.avi') === '/video/p.avi', name + 'public_video()');
+	assert.ok(self.public_font('p.woff') === '/fonts/p.woff', name + 'public_font()');
+	assert.ok(self.public_download('p.pdf') === '/download/p.pdf', name + 'public_download()');
+	assert.ok(self.public('/p.zip') === '/p.zip', name + 'public()');
 
 	self.layout('');
 	assert.ok(self.view('test', null, true) === 'Total.js', name + 'view');

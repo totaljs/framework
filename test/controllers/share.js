@@ -1,5 +1,3 @@
-exports.dependencies = ['test'];
-
 exports.install = function() {
 	framework.route('/share/', view_share);
 	framework.route('/router/', view_router);

@@ -2239,14 +2239,22 @@ function view_prepare(command, dynamicCommand, functions, controller, components
 			return 'self.' + command;
 
 		case 'routeJS':
-		case 'routeCSS':
 		case 'routeScript':
+		case 'routeCSS':
 		case 'routeStyle':
 		case 'routeImage':
 		case 'routeFont':
 		case 'routeDownload':
-		case 'routeVideo':
 		case 'routeStatic':
+		case 'routeVideo':
+			return 'self.' + command;
+		case 'public_js':
+		case 'public_css':
+		case 'public_image':
+		case 'public_font':
+		case 'public_download':
+		case 'public_video':
+		case 'public':
 			return 'self.' + command;
 		case 'translate':
 			return 'self.' + command;

@@ -4890,9 +4890,10 @@ global.INSTALL = F.install = function(type, name, declaration, options, callback
 F.install_prepare = function(noRecursive) {
 
 	var keys = Object.keys(F.temporary.dependencies);
-
 	if (!keys.length)
 		return;
+
+	OBSOLETE('exports.dependencies()', 'Module dependencies will be removed in v4: "' + keys.join(', ') + '"');
 
 	// check dependencies
 	for (var i = 0, length = keys.length; i < length; i++) {
@@ -9532,7 +9533,8 @@ function obsolete_config(name) {
  * @return {String}
  */
 F.routeScript = function(name, theme) {
-	return F.$routeStatic(name, CONF.static_url_script, theme);
+	OBSOLETE('F.routeScript()', 'Renamed to F.public_js');
+	return F.$public(name, CONF.static_url_script, theme);
 };
 
 /**
@@ -9541,30 +9543,64 @@ F.routeScript = function(name, theme) {
  * @return {String}
  */
 F.routeStyle = function(name, theme) {
-	return F.$routeStatic(name, CONF.static_url_style, theme);
+	OBSOLETE('F.routeStyle()', 'Renamed to F.public_css');
+	return F.$public(name, CONF.static_url_style, theme);
 };
 
 F.routeImage = function(name, theme) {
-	return F.$routeStatic(name, CONF.static_url_image, theme);
+	OBSOLETE('F.routeImage()', 'Renamed to F.public_image');
+	return F.$public(name, CONF.static_url_image, theme);
 };
 
 F.routeVideo = function(name, theme) {
-	return F.$routeStatic(name, CONF.static_url_video, theme);
+	OBSOLETE('F.routeVideo()', 'Renamed to F.public_video');
+	return F.$public(name, CONF.static_url_video, theme);
 };
 
 F.routeFont = function(name, theme) {
-	return F.$routeStatic(name, CONF.static_url_font, theme);
+	OBSOLETE('F.routeFont()', 'Renamed to F.public_font');
+	return F.$public(name, CONF.static_url_font, theme);
 };
 
 F.routeDownload = function(name, theme) {
-	return F.$routeStatic(name, CONF.static_url_download, theme);
+	OBSOLETE('F.routeDownload()', 'Renamed to F.public_download');
+	return F.$public(name, CONF.static_url_download, theme);
 };
 
 F.routeStatic = function(name, theme) {
-	return F.$routeStatic(name, CONF.static_url, theme);
+	OBSOLETE('F.routeStatic()', 'Renamed to F.public');
+	return F.$public(name, CONF.static_url, theme);
 };
 
-F.$routeStatic = function(name, directory, theme) {
+F.public_js = function(name, theme) {
+	return F.$public(name, CONF.static_url_script, theme);
+};
+
+F.public_css = function(name, theme) {
+	return F.$public(name, CONF.static_url_style, theme);
+};
+
+F.public_image = function(name, theme) {
+	return F.$public(name, CONF.static_url_image, theme);
+};
+
+F.public_video = function(name, theme) {
+	return F.$public(name, CONF.static_url_video, theme);
+};
+
+F.public_font = function(name, theme) {
+	return F.$public(name, CONF.static_url_font, theme);
+};
+
+F.public_download = function(name, theme) {
+	return F.$public(name, CONF.static_url_download, theme);
+};
+
+F.public = function(name, theme) {
+	return F.$public(name, CONF.static_url, theme);
+};
+
+F.$public = function(name, directory, theme) {
 	var key = name + directory + '$' + theme;
 	var val = F.temporary.other[key];
 	if (RELEASE && val)
@@ -12148,9 +12184,9 @@ Controller.prototype.head = function() {
 		var is = (tmp[0] !== '/' && tmp[1] !== '/') && tmp !== 'http://' && tmp !== 'https:/';
 		var ext = U.getExtension(val);
 		if (ext === 'css')
-			header += '<link type="text/css" rel="stylesheet" href="' + (is ? self.routeStyle(val) : val) + '" />';
+			header += '<link type="text/css" rel="stylesheet" href="' + (is ? self.public_css(val) : val) + '" />';
 		else if (ext === 'js')
-			header += '<script src="' + (is ? self.routeScript(val) : val) + '"></script>';
+			header += '<script src="' + (is ? self.public_js(val) : val) + '"></script>';
 	}
 
 	self.repository[REPOSITORY_HEAD] = header;
@@ -12280,7 +12316,7 @@ Controller.prototype.$js = function() {
 	var self = this;
 	var builder = '';
 	for (var i = 0; i < arguments.length; i++)
-		builder += self.routeScript(arguments[i], true);
+		builder += self.public_js(arguments[i], true);
 	return builder;
 };
 
@@ -12306,13 +12342,13 @@ Controller.prototype.$absolute = function(files, base) {
 		for (var i = 0, length = files.length; i < length; i++) {
 			switch (ftype) {
 				case 'js':
-					builder += self.routeScript(files[i], true, base);
+					builder += self.public_js(files[i], true, base);
 					break;
 				case 'css':
-					builder += self.routeStyle(files[i], true, base);
+					builder += self.public_css(files[i], true, base);
 					break;
 				default:
-					builder += self.routeStatic(files[i], base);
+					builder += self.public(files[i], base);
 					break;
 			}
 		}
@@ -12324,12 +12360,12 @@ Controller.prototype.$absolute = function(files, base) {
 
 	switch (ftype) {
 		case 'js':
-			return self.routeScript(files, true, base);
+			return self.public_js(files, true, base);
 		case 'css':
-			return self.routeStyle(files, true, base);
+			return self.public_css(files, true, base);
 	}
 
-	return self.routeStatic(files, base);
+	return self.public(files, base);
 };
 
 Controller.prototype.$import = function() {
@@ -12383,10 +12419,10 @@ Controller.prototype.$import = function() {
 
 		switch (extension) {
 			case '.js':
-				builder += self.routeScript(filename, tag);
+				builder += self.public_js(filename, tag);
 				break;
 			case '.css':
-				builder += self.routeStyle(filename, tag);
+				builder += self.public_css(filename, tag);
 				break;
 			case '.ico':
 				builder += self.$favicon(filename);
@@ -12400,7 +12436,7 @@ Controller.prototype.$import = function() {
 			case '.webp':
 			case '.heic':
 			case '.apng':
-				builder += self.routeImage(filename);
+				builder += self.public_image(filename);
 				break;
 			case '.mp4':
 			case '.avi':
@@ -12411,10 +12447,10 @@ Controller.prototype.$import = function() {
 			case '.mpe':
 			case '.mpeg':
 			case '.m4v':
-				builder += self.routeVideo(filename);
+				builder += self.public_video(filename);
 				break;
 			default:
-				builder += self.routeStatic(filename);
+				builder += self.public(filename);
 				break;
 		}
 	}
@@ -12433,7 +12469,7 @@ Controller.prototype.$css = function() {
 	var builder = '';
 
 	for (var i = 0; i < arguments.length; i++)
-		builder += self.routeStyle(arguments[i], true);
+		builder += self.public_css(arguments[i], true);
 
 	return builder;
 };
@@ -12450,7 +12486,7 @@ Controller.prototype.$image = function(name, width, height, alt, className) {
 		width = width.width;
 	}
 
-	var builder = '<img src="' + this.routeImage(name) + ATTR_END;
+	var builder = '<img src="' + this.public_image(name) + ATTR_END;
 
 	if (width > 0)
 		builder += ' width="' + width + ATTR_END;
@@ -12480,7 +12516,7 @@ Controller.prototype.$image = function(name, width, height, alt, className) {
  * @return {String}
  */
 Controller.prototype.$download = function(filename, innerHTML, downloadName, className) {
-	var builder = '<a href="' + F.routeDownload(filename) + ATTR_END;
+	var builder = '<a href="' + F.public_download(filename) + ATTR_END;
 
 	if (downloadName)
 		builder += ' download="' + downloadName + ATTR_END;
@@ -12564,7 +12600,7 @@ Controller.prototype.$favicon = function(name) {
 	else if (name.lastIndexOf('.gif') !== -1)
 		contentType = 'image/gif';
 
-	return F.temporary.other[key] = '<link rel="icon" href="' + F.routeStatic('/' + name) + '" type="' + contentType + '" />';
+	return F.temporary.other[key] = '<link rel="icon" href="' + F.public('/' + name) + '" type="' + contentType + '" />';
 };
 
 /**
@@ -12575,18 +12611,16 @@ Controller.prototype.$favicon = function(name) {
  * @param {Function} fn
  * @return {String}
  */
-Controller.prototype._routeHelper = function(name, fn) {
+Controller.prototype.$static = function(name, fn) {
 	return fn.call(framework, prepare_staticurl(name, false), this.themeName);
 };
 
-/**
- * Create URL: JavaScript
- * @param {String} name
- * @param {Boolean} tag Optional, default "false"
- * @param {String} path Optional, default undefined
- * @return {String}
- */
 Controller.prototype.routeScript = function(name, tag, path) {
+	OBSOLETE('controller.routeScript()', 'Was renamed to "controller.public_js()"');
+	return this.public_js(name, tag, path);
+};
+
+Controller.prototype.public_js = function(name, tag, path) {
 
 	if (name === undefined)
 		name = 'default.js';
@@ -12610,7 +12644,7 @@ Controller.prototype.routeScript = function(name, tag, path) {
 			return '';
 		}
 	} else {
-		url = this._routeHelper(name, F.routeScript);
+		url = this.$static(name, F.public_js);
 		if (path && U.isRelative(url))
 			url = F.isWindows ? U.join(path, url) : U.join(path, url).substring(1);
 	}
@@ -12618,68 +12652,68 @@ Controller.prototype.routeScript = function(name, tag, path) {
 	return tag ? ('<script src="' + url + '"' + (async ? ' async' : '') + '></script>') : url;
 };
 
-/**
- * Create URL: CSS
- * @param {String} name
- * @param {Boolean} tag Append tag?
- * @return {String}
- */
 Controller.prototype.routeStyle = function(name, tag, path) {
+	OBSOLETE('controller.routeStyle()', 'Was renamed to "controller.public_css()"');
+	return this.public_css(name, tag, path);
+};
+
+Controller.prototype.public_css = function(name, tag, path) {
+
 	var self = this;
 
 	if (name === undefined)
 		name = 'default.css';
 
-	var url = self._routeHelper(name, F.routeStyle);
+	var url = self.$static(name, F.public_css);
 	if (path && U.isRelative(url))
 		url = F.isWindows ? U.join(path, url) : U.join(path, url).substring(1);
 
 	return tag ? '<link type="text/css" rel="stylesheet" href="' + url + '" />' : url;
 };
 
-/**
- * Create URL: IMG
- * @param {String} name
- * @return {String}
- */
 Controller.prototype.routeImage = function(name) {
-	return this._routeHelper(name, F.routeImage);
+	OBSOLETE('controller.routeImage()', 'Was renamed to "controller.public_image()"');
+	return this.public_image(name);
 };
 
-/**
- * Create URL: VIDEO
- * @param {String} name
- * @return {String}
- */
+Controller.prototype.public_image = function(name) {
+	return this.$static(name, F.public_image);
+};
+
 Controller.prototype.routeVideo = function(name) {
-	return this._routeHelper(name, F.routeVideo);
+	OBSOLETE('controller.routeVideo()', 'Was renamed to "controller.public_video()"');
+	return this.public_video(name);
 };
 
-/**
- * Create URL: FONT
- * @param {String} name
- * @return {String}
- */
+Controller.prototype.public_video = function(name) {
+	return this.$static(name, F.public_video);
+};
+
 Controller.prototype.routeFont = function(name) {
-	return F.routeFont(name);
+	OBSOLETE('controller.routeFont()', 'Was renamed to "controller.public_font()"');
+	return this.public_font(name);
 };
 
-/**
- * Create URL: DOWNLOAD
- * @param {String} name
- * @return {String}
- */
+Controller.prototype.public_font = function(name) {
+	return F.public_font(name);
+};
+
 Controller.prototype.routeDownload = function(name) {
-	return this._routeHelper(name, F.routeDownload);
+	OBSOLETE('controller.routeDownload()', 'Was renamed to "controller.public_download()"');
+	return this.public_download(name);
 };
 
-/**
- * Create URL: static files (by the config['static-url'])
- * @param {String} name
- * @return {String}
- */
+Controller.prototype.public_download = function(name) {
+	return this.$static(name, F.public_download);
+};
+
 Controller.prototype.routeStatic = function(name, path) {
-	var url = this._routeHelper(name, F.routeStatic);
+	OBSOLETE('controller.routeStatic()', 'Was renamed to "controller.public()"');
+	return this.public(name, path);
+};
+
+Controller.prototype.public = function(name, path) {
+	var url = this.$static(name, F.public);
 	if (path && U.isRelative(url))
 		return F.isWindows ? U.join(path, url) : U.join(path, url).substring(1);
 	return url;
@@ -12692,6 +12726,7 @@ Controller.prototype.routeStatic = function(name, path) {
  * @return {String}
  */
 Controller.prototype.template = function(name, model) {
+	OBSOLETE('controller.template()', 'This method will be removed in v4.');
 	return this.view(name, model, true);
 };
 

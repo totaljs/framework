@@ -1,6 +1,5 @@
 var assert = require('assert');
 
-exports.dependencies = ['test'];
 exports.installed = false;
 
 exports.install = function() {
