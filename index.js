@@ -8177,7 +8177,7 @@ F.view = function(name, model, layout, repository, language) {
  * @param {String} language Optional.
  * @return {String}
  */
-global.VIEWCOMPILE = F.viewCompile = function(body, model, layout, repository, language) {
+global.VIEWCOMPILE = function(body, model, layout, repository, language) {
 
 	var controller = EMPTYCONTROLLER;
 
@@ -8192,7 +8192,7 @@ global.VIEWCOMPILE = F.viewCompile = function(body, model, layout, repository, l
 	controller.themeName = undefined;
 	controller.repository = typeof(repository) === 'object' && repository ? repository : EMPTYOBJECT;
 
-	return controller.viewCompile(body, model, true);
+	return controller.view_compile(body, model, true);
 };
 
 F.viewCompile = function(body, model, layout, repository, language) {
@@ -11753,10 +11753,12 @@ Controller.prototype.mail = function(address, subject, view, model, callback) {
 };
 
 Controller.prototype.$template = function(name, model, expire, key) {
+	OBSOLETE('@{template()}', 'The method will be removed in v4');
 	return this.$viewToggle(true, name, model, expire, key);
 };
 
 Controller.prototype.$templateToggle = function(visible, name, model, expire, key) {
+	OBSOLETE('@{templateToggle()}', 'The method will be removed in v4');
 	return this.$viewToggle(visible, name, model, expire, key);
 };
 
@@ -11781,15 +11783,21 @@ Controller.prototype.$view = function(name, model, expire, key) {
 };
 
 Controller.prototype.$viewCompile = function(body, model, key) {
+	OBSOLETE('@{viewCompile()}', 'Was renamed to @{view_compile()}.');
+	return this.$view_compile(body, model, key);
+};
+
+Controller.prototype.$view_compile = function(body, model, key) {
 	var self = this;
 	var layout = self.layoutName;
 	self.layoutName = '';
-	var value = self.viewCompile(body, model, null, true, key);
+	var value = self.view_compile(body, model, null, true, key);
 	self.layoutName = layout;
 	return value || '';
 };
 
 Controller.prototype.$viewToggle = function(visible, name, model, expire, key, async) {
+	OBSOLETE('@{viewToggle()}', 'The method will be removed in v4');
 	return visible ? this.$view(name, model, expire, key, async) : '';
 };
 
@@ -13612,6 +13620,11 @@ Controller.prototype.view = function(name, model, headers, partial, noasync, cac
 };
 
 Controller.prototype.viewCompile = function(body, model, headers, partial, key) {
+	OBSOLETE('controller.viewCompile()', 'Was renamed to `controller.view_compile()`.');
+	return this.view_compile(body, model, headers, partial, key);
+};
+
+Controller.prototype.view_compile = function(body, model, headers, partial, key) {
 
 	if (headers === true) {
 		key = partial;

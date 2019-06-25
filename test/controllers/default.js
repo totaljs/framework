@@ -426,7 +426,7 @@ function viewTest() {
 }
 
 function viewDynamic() {
-	this.viewCompile('<b>@{model.name}</b>', { name: 'Peter' });
+	this.viewcompile('<b>@{model.name}</b>', { name: 'Peter' });
 }
 
 function viewTranslate() {
@@ -561,7 +561,6 @@ function viewViews() {
 	assert.ok(output.contains('#options-empty<option value="A">A</option><option value="B" selected="selected">B</option>#'), name + 'options() - without property name and value');
 	assert.ok(output.contains('#options<option value="C" selected="selected">C</option><option value="D">D</option>#'), name + 'options() - with property name and value');
 	assert.ok(output.contains('#view#bmodel##'), name + 'view() with model');
-	assert.ok(output.contains('#view-toggle#'), name + 'viewToggle()');
 	assert.ok(output.contains('#titleTITLE#'), name + 'title');
 	assert.ok(output.contains('#routejs-/js/p.js#'), name + 'route to static');
 	assert.ok(output.contains('#<a href="/download/test.pdf" download="test">content</a>#'), name + 'download');

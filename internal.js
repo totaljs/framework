@@ -2247,7 +2247,6 @@ function view_prepare(command, dynamicCommand, functions, controller, components
 		case 'routeDownload':
 		case 'routeStatic':
 		case 'routeVideo':
-			return 'self.' + command;
 		case 'public_js':
 		case 'public_css':
 		case 'public_image':
@@ -2255,7 +2254,6 @@ function view_prepare(command, dynamicCommand, functions, controller, components
 		case 'public_download':
 		case 'public_video':
 		case 'public':
-			return 'self.' + command;
 		case 'translate':
 			return 'self.' + command;
 		case 'json':
@@ -2270,6 +2268,7 @@ function view_prepare(command, dynamicCommand, functions, controller, components
 		case 'template':
 		case 'templateToggle':
 		case 'viewCompile':
+		case 'view_compile':
 		case 'viewToggle':
 		case 'download':
 		case 'selected':

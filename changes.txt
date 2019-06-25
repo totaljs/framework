@@ -87,6 +87,7 @@ x renamed: `*.routeVideo` to `*.public_video`
 x renamed: `*.routeImage` to `*.public_image`
 x renamed: `*.routeDownload` to `*.public_download`
 x renamed: `*.routeStatic` to `*.public`
+- renamed: `controller.viewCompile()` to `controller.view_compile()`
 
 x __removed: backward compatibility__ with older version of Node.js < 10
 x removed: `F.hash()`, alternative `String.prototype.hash()`
