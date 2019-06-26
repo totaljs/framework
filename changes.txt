@@ -61,8 +61,8 @@ x updated: `String.arg(obj, [encode], [def])` added `encode` (`true` or `json`) 
 x updated: `AUTH(req, res, flags, next)` and `next` function can handle `callback(err, user)`
 x updated: `REQUEST()` supports `keepalive` flag
 x updated: `bundles` mechanism supports merging files `--filename` between `bundles` files
-x updated: `default_image_converter` supports `magick` for new version of ImageMagick
 x updated: `String.hash(true)` returns unsigned int
+x updated: `CONF:default_image_converter` supports `magick` for new version of ImageMagick
 - updated: `CONF.default_image_consumption` can contain ZERO value which means disabled optimialization of CPU/memory consumption
 
 - fixed: schemas validation
