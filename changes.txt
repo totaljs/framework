@@ -4,7 +4,7 @@ x added: `NEWTASK(name, declaration)` for creating preddefined `TaskBuilder`
 x added: `TASK(name, taskname, callback, [controller/SchemaOptions/OperationOptions/ErrorBuilder])` for executing preddefined `TaskBuilder`
 x added: a new config key `directory_tasks` for `TaskBuilder`
 x added: a global alias `MODIFY()` for `F.modify()`
-x added: a global alias `VIEWCOMPILE()` for `F.viewCompile()`
+x added: a global alias `VIEWCOMPILE()` for `F.view_compile()`
 x added: `mail.type = 'html'` can be `html` (default) or `plain`
 x added: `$.headers` into the `SchemaOptions`, `OperationOptions` and `TaskBuilder`
 x added: `String.parseCSV([delimiter])` returns `Object Array`
