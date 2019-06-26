@@ -49,7 +49,7 @@ x added: `AUDIT(name, $, [type], message)` a method for audit logs
 x added: __obsolete__ message to older declaration of middleware, schemas and operations
 x added: `U.diffarr(prop, arr_A, arr_B)` for comparing of two arrays
 x added: `DIFFARR(prop, arr_A, arr_B)` is a global alias for `U.diffarr()`
-- added: `global.REQUIRE()` for local modules within app directory
+x added: `global.REQUIRE()` for local modules within app directory
 
 x updated: `$.invalid()` without arguments can return a function `function(err)`
 x updated: Mail `unsubscribe` appends new header which enables `unsubscribe` in e.g. iOS
@@ -63,8 +63,8 @@ x updated: `REQUEST()` supports `keepalive` flag
 x updated: `bundles` mechanism supports merging files `--filename` between `bundles` files
 x updated: `String.hash(true)` returns unsigned int
 x updated: `CONF:default_image_converter` supports `magick` for new version of ImageMagick
-- updated: `CONF.default_image_consumption` can contain ZERO value which means disabled optimialization of CPU/memory consumption
-- updated: `CONF.default_image_consumption` has changed a default value to `0`
+x updated: `CONF.default_image_consumption` can contain ZERO value which means disabled optimialization of CPU/memory consumption
+x updated: `CONF.default_image_consumption` has changed a default value to `0`
 
 - fixed: schemas validation
 - fixed: error handling in dynamic schemas
@@ -89,7 +89,7 @@ x renamed: `*.routeVideo` to `*.public_video`
 x renamed: `*.routeImage` to `*.public_image`
 x renamed: `*.routeDownload` to `*.public_download`
 x renamed: `*.routeStatic` to `*.public`
-- renamed: `controller.viewCompile()` to `controller.view_compile()`
+x renamed: `controller.viewCompile()` to `controller.view_compile()`
 
 x __removed: backward compatibility__ with older version of Node.js < 10
 x removed: `F.hash()`, alternative `String.prototype.hash()`
