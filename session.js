@@ -43,6 +43,8 @@ function Session(name, ondata) {
 	};
 }
 
+const SessionProto = Session.prototype;
+
 /*
 Session.prototype.find = function(filter, callback) {
 
@@ -74,7 +76,7 @@ Session.prototype.find = function(filter, callback) {
 	callback(null, arr);
 };*/
 
-Session.prototype.list = function(id, callback) {
+SessionProto.list = function(id, callback) {
 
 	var self = this;
 	var arr = [];
@@ -93,11 +95,11 @@ Session.prototype.list = function(id, callback) {
 	callback(null, arr);
 };
 
-Session.prototype.has = function(sessionid, callback) {
+SessionProto.has = function(sessionid, callback) {
 	callback(null, this.items.has(sessionid));
 };
 
-Session.prototype.has2 = function(id, callback) {
+SessionProto.has2 = function(id, callback) {
 	for (var m of this.items.values()) {
 		if (m && m.expire >= NOW && m.id === id) {
 			callback(null, true);
@@ -107,7 +109,7 @@ Session.prototype.has2 = function(id, callback) {
 	callback(null, false);
 };
 
-Session.prototype.getcookie = function(req, opt, callback) {
+SessionProto.getcookie = function(req, opt, callback) {
 
 	// opt.name {String} A cookie name
 	// opt.expire {String} Expiration
@@ -153,7 +155,7 @@ Session.prototype.getcookie = function(req, opt, callback) {
 	}
 };
 
-Session.prototype.usage = function() {
+SessionProto.usage = function() {
 	var o = {};
 	o.used = 0;
 	o.free = 0;
@@ -167,7 +169,7 @@ Session.prototype.usage = function() {
 	return o;
 };
 
-Session.prototype.release = function(sessionid, expire, callback) {
+SessionProto.release = function(sessionid, expire, callback) {
 
 	if (sessionid && sessionid.sessionid)
 		sessionid = sessionid.sessionid;
@@ -212,7 +214,7 @@ Session.prototype.release = function(sessionid, expire, callback) {
 	}
 };
 
-Session.prototype.release2 = function(id, expire, callback) {
+SessionProto.release2 = function(id, expire, callback) {
 
 	if (typeof(expire) === 'function') {
 		callback = expire;
@@ -242,7 +244,7 @@ Session.prototype.release2 = function(id, expire, callback) {
 	callback && callback(null, count);
 };
 
-Session.prototype.releaseunused = function(lastusage, callback) {
+SessionProto.releaseunused = function(lastusage, callback) {
 
 	var self = this;
 	var count = 0;
@@ -259,7 +261,7 @@ Session.prototype.releaseunused = function(lastusage, callback) {
 	callback && callback(null, count);
 };
 
-Session.prototype.setcookie = function(res, opt, callback) {
+SessionProto.setcookie = function(res, opt, callback) {
 
 	// opt.name {String} A cookie name
 	// opt.sessionid {String} A unique session ID
@@ -291,7 +293,7 @@ Session.prototype.setcookie = function(res, opt, callback) {
 	});
 };
 
-Session.prototype.set2 = function(id, data, expire, note, settings, callback) {
+SessionProto.set2 = function(id, data, expire, note, settings, callback) {
 
 	if (typeof(expire) === 'function') {
 		callback = expire;
@@ -324,7 +326,7 @@ Session.prototype.set2 = function(id, data, expire, note, settings, callback) {
 	updated && self.$save();
 };
 
-Session.prototype.set = function(sessionid, id, data, expire, note, settings, callback) {
+SessionProto.set = function(sessionid, id, data, expire, note, settings, callback) {
 
 	if (typeof(id) === 'object') {
 		callback = settings;
@@ -357,7 +359,7 @@ Session.prototype.set = function(sessionid, id, data, expire, note, settings, ca
 	self.$save();
 };
 
-Session.prototype.get2 = function(id, callback) {
+SessionProto.get2 = function(id, callback) {
 	var self = this;
 	var output = [];
 	for (var m of self.items.values()) {
@@ -369,7 +371,7 @@ Session.prototype.get2 = function(id, callback) {
 	callback && callback(null, output);
 };
 
-Session.prototype.get = function(sessionid, expire, callback) {
+SessionProto.get = function(sessionid, expire, callback) {
 
 	if (typeof(expire) === 'function') {
 		callback = expire;
@@ -406,7 +408,7 @@ Session.prototype.get = function(sessionid, expire, callback) {
 		item.used = NOW;
 };
 
-Session.prototype.update2 = function(id, data, expire, note, settings, callback) {
+SessionProto.update2 = function(id, data, expire, note, settings, callback) {
 
 	if (typeof(expire) === 'function') {
 		callback = expire;
@@ -444,7 +446,7 @@ Session.prototype.update2 = function(id, data, expire, note, settings, callback)
 	updated && self.$save();
 };
 
-Session.prototype.update = function(sessionid, data, expire, note, settings, callback) {
+SessionProto.update = function(sessionid, data, expire, note, settings, callback) {
 
 	if (typeof(expire) === 'function') {
 		callback = expire;
@@ -486,7 +488,7 @@ Session.prototype.update = function(sessionid, data, expire, note, settings, cal
 		callback();
 };
 
-Session.prototype.count = function(id, callback) {
+SessionProto.count = function(id, callback) {
 
 	if (!callback) {
 		callback = id;
@@ -510,7 +512,7 @@ Session.prototype.count = function(id, callback) {
 	callback(null, o);
 };
 
-Session.prototype.remove2 = function(id, callback) {
+SessionProto.remove2 = function(id, callback) {
 	var self = this;
 	var count = 0;
 	for (var m of self.items.values()) {
@@ -524,7 +526,7 @@ Session.prototype.remove2 = function(id, callback) {
 	self.$save();
 };
 
-Session.prototype.remove = function(sessionid, callback) {
+SessionProto.remove = function(sessionid, callback) {
 
 	if (sessionid && sessionid.sessionid)
 		sessionid = sessionid.sessionid;
@@ -541,7 +543,7 @@ Session.prototype.remove = function(sessionid, callback) {
 	self.onremove && self.onremove(item);
 };
 
-Session.prototype.clear = function(lastusage, callback) {
+SessionProto.clear = function(lastusage, callback) {
 
 	if (typeof(lastusage) === 'function') {
 		callback = lastusage;
@@ -577,7 +579,7 @@ Session.prototype.clear = function(lastusage, callback) {
 	self.$save();
 };
 
-Session.prototype.clean = function() {
+SessionProto.clean = function() {
 	var self = this;
 	var is = false;
 	for (var m of self.items.values()) {
@@ -590,7 +592,7 @@ Session.prototype.clean = function() {
 	is && self.$save();
 };
 
-Session.prototype.load = function(callback) {
+SessionProto.load = function(callback) {
 
 	var self = this;
 	var removed = 0;

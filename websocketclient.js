@@ -50,7 +50,9 @@ function WebSocketClient() {
 	this.headers = {};
 }
 
-WebSocketClient.prototype.connect = function(url, protocol, origin) {
+const WebSocketClientProto = WebSocketClient.prototype;
+
+WebSocketClientProto.connect = function(url, protocol, origin) {
 
 	var self = this;
 	var options = {};
@@ -165,7 +167,7 @@ function websocket_close() {
 	}, ws.options.reconnect, ws);
 }
 
-WebSocketClient.prototype.emit = function(name, a, b, c, d, e, f, g) {
+WebSocketClientProto.emit = function(name, a, b, c, d, e, f, g) {
 	var evt = this.$events[name];
 	if (evt) {
 		var clean = false;
@@ -185,7 +187,7 @@ WebSocketClient.prototype.emit = function(name, a, b, c, d, e, f, g) {
 	return this;
 };
 
-WebSocketClient.prototype.on = function(name, fn) {
+WebSocketClientProto.on = function(name, fn) {
 	if (this.$events[name])
 		this.$events[name].push(fn);
 	else
@@ -193,12 +195,12 @@ WebSocketClient.prototype.on = function(name, fn) {
 	return this;
 };
 
-WebSocketClient.prototype.once = function(name, fn) {
+WebSocketClientProto.once = function(name, fn) {
 	fn.$once = true;
 	return this.on(name, fn);
 };
 
-WebSocketClient.prototype.removeListener = function(name, fn) {
+WebSocketClientProto.removeListener = function(name, fn) {
 	var evt = this.$events[name];
 	if (evt) {
 		evt = evt.remove(n => n === fn);
@@ -210,7 +212,7 @@ WebSocketClient.prototype.removeListener = function(name, fn) {
 	return this;
 };
 
-WebSocketClient.prototype.removeAllListeners = function(name) {
+WebSocketClientProto.removeAllListeners = function(name) {
 	if (name === true)
 		this.$events = EMPTYOBJECT;
 	else if (name)
@@ -220,7 +222,7 @@ WebSocketClient.prototype.removeAllListeners = function(name) {
 	return this;
 };
 
-WebSocketClient.prototype.free = function() {
+WebSocketClientProto.free = function() {
 	var self = this;
 	self.socket && self.socket.destroy();
 	self.socket = null;
@@ -234,7 +236,7 @@ WebSocketClient.prototype.free = function() {
  * @param {Buffer} data
  * @return {Framework}
  */
-WebSocketClient.prototype.$ondata = function(data) {
+WebSocketClientProto.$ondata = function(data) {
 
 	if (this.isClosed)
 		return;
@@ -334,7 +336,7 @@ function buffer_concat(buffers, length) {
 // MIT
 // Written by Jozef Gula
 // Optimized by Peter Sirka
-WebSocketClient.prototype.$parse = function() {
+WebSocketClientProto.$parse = function() {
 
 	var self = this;
 	var current = self.current;
@@ -400,7 +402,7 @@ WebSocketClient.prototype.$parse = function() {
 	return true;
 };
 
-WebSocketClient.prototype.$readbody = function() {
+WebSocketClientProto.$readbody = function() {
 
 	var current = this.current;
 	var length = current.data.length;
@@ -433,7 +435,7 @@ WebSocketClient.prototype.$readbody = function() {
 
 };
 
-WebSocketClient.prototype.$decode = function() {
+WebSocketClientProto.$decode = function() {
 	var data = this.current.body;
 
 	switch (this.options.type) {
@@ -459,7 +461,7 @@ WebSocketClient.prototype.$decode = function() {
 	this.current.body = null;
 };
 
-WebSocketClient.prototype.parseInflate = function() {
+WebSocketClientProto.parseInflate = function() {
 	var self = this;
 
 	if (self.inflatelock)
@@ -495,7 +497,7 @@ WebSocketClient.prototype.parseInflate = function() {
 	}
 };
 
-WebSocketClient.prototype.$onerror = function(err) {
+WebSocketClientProto.$onerror = function(err) {
 	this.$events.error && this.emit('error', err);
 	if (!this.isClosed) {
 		this.isClosed = true;
@@ -503,7 +505,7 @@ WebSocketClient.prototype.$onerror = function(err) {
 	}
 };
 
-WebSocketClient.prototype.$onclose = function() {
+WebSocketClientProto.$onclose = function() {
 
 	if (this._isClosed)
 		return;
@@ -533,7 +535,7 @@ WebSocketClient.prototype.$onclose = function() {
  * @param {Boolean} raw The message won't be converted e.g. to JSON.
  * @return {WebSocketClient}
  */
-WebSocketClient.prototype.send = function(message, raw, replacer) {
+WebSocketClientProto.send = function(message, raw, replacer) {
 
 	if (this.isClosed)
 		return this;
@@ -560,7 +562,7 @@ WebSocketClient.prototype.send = function(message, raw, replacer) {
 	return this;
 };
 
-WebSocketClient.prototype.sendDeflate = function() {
+WebSocketClientProto.sendDeflate = function() {
 	var self = this;
 
 	if (self.deflatelock)
@@ -589,7 +591,7 @@ WebSocketClient.prototype.sendDeflate = function() {
  * Ping message
  * @return {WebSocketClient}
  */
-WebSocketClient.prototype.ping = function() {
+WebSocketClientProto.ping = function() {
 	if (!this.isClosed) {
 		this.socket.write(U.getWebSocketFrame(0, '', 0x09));
 		this.$ping = false;
@@ -613,7 +615,7 @@ function websocket_deflate(data) {
  * @param {Number} code WebSocket code.
  * @return {WebSocketClient}
  */
-WebSocketClient.prototype.close = function(message, code) {
+WebSocketClientProto.close = function(message, code) {
 
 	if (message !== true) {
 		this.options.reconnect = 0;

@@ -48,6 +48,8 @@ function SchemaBuilder(name) {
 	this.collection = {};
 }
 
+const SchemaBuilderProto = SchemaBuilder.prototype;
+
 function SchemaOptions(error, model, options, callback, controller) {
 	this.error = error;
 	this.value = this.model = model;
@@ -134,6 +136,8 @@ TaskBuilder.prototype = {
 	}
 };
 
+const TaskBuilderProto = TaskBuilder.prototype;
+
 SchemaOptions.prototype = {
 
 	get user() {
@@ -193,7 +197,9 @@ SchemaOptions.prototype = {
 	}
 };
 
-SchemaOptions.prototype.cancel = function() {
+var SchemaOptionsProto = SchemaOptions.prototype;
+
+SchemaOptionsProto.cancel = function() {
 	var self = this;
 	self.callback = self.next = null;
 	self.error = null;
@@ -203,88 +209,88 @@ SchemaOptions.prototype.cancel = function() {
 	return self;
 };
 
-SchemaOptions.prototype.redirect = function(url) {
+SchemaOptionsProto.redirect = function(url) {
 	this.callback(new F.callback_redirect(url));
 	return this;
 };
 
-SchemaOptions.prototype.clean = function() {
+SchemaOptionsProto.clean = function() {
 	return this.model.$clean();
 };
 
-SchemaOptions.prototype.$async = function(callback, index) {
+SchemaOptionsProto.$async = function(callback, index) {
 	return this.model.$async(callback, index);
 };
 
-SchemaOptions.prototype.$workflow = function(name, helper, callback, async) {
+SchemaOptionsProto.$workflow = function(name, helper, callback, async) {
 	return this.model.$workflow(name, helper, callback, async);
 };
 
-SchemaOptions.prototype.$transform = function(name, helper, callback, async) {
+SchemaOptionsProto.$transform = function(name, helper, callback, async) {
 	return this.model.$transform(name, helper, callback, async);
 };
 
-SchemaOptions.prototype.$operation = function(name, helper, callback, async) {
+SchemaOptionsProto.$operation = function(name, helper, callback, async) {
 	return this.model.$operation(name, helper, callback, async);
 };
 
-SchemaOptions.prototype.$hook = function(name, helper, callback, async) {
+SchemaOptionsProto.$hook = function(name, helper, callback, async) {
 	return this.model.$hook(name, helper, callback, async);
 };
 
-SchemaOptions.prototype.$save = function(helper, callback, async) {
+SchemaOptionsProto.$save = function(helper, callback, async) {
 	return this.model.$save(helper, callback, async);
 };
 
-SchemaOptions.prototype.$insert = function(helper, callback, async) {
+SchemaOptionsProto.$insert = function(helper, callback, async) {
 	return this.model.$insert(helper, callback, async);
 };
 
-SchemaOptions.prototype.$update = function(helper, callback, async) {
+SchemaOptionsProto.$update = function(helper, callback, async) {
 	return this.model.$update(helper, callback, async);
 };
 
-SchemaOptions.prototype.$patch = function(helper, callback, async) {
+SchemaOptionsProto.$patch = function(helper, callback, async) {
 	return this.model.$patch(helper, callback, async);
 };
 
-SchemaOptions.prototype.$query = function(helper, callback, async) {
+SchemaOptionsProto.$query = function(helper, callback, async) {
 	return this.model.$query(helper, callback, async);
 };
 
-SchemaOptions.prototype.$delete = SchemaOptions.prototype.$remove = function(helper, callback, async) {
+SchemaOptionsProto.$delete = SchemaOptionsProto.$remove = function(helper, callback, async) {
 	return this.model.$remove(helper, callback, async);
 };
 
-SchemaOptions.prototype.$get = SchemaOptions.prototype.$read = function(helper, callback, async) {
+SchemaOptionsProto.$get = SchemaOptionsProto.$read = function(helper, callback, async) {
 	return this.model.$get(helper, callback, async);
 };
 
-SchemaOptions.prototype.push = function(type, name, helper, first) {
+SchemaOptionsProto.push = function(type, name, helper, first) {
 	return this.model.$push(type, name, helper, first);
 };
 
-SchemaOptions.prototype.next = function(type, name, helper) {
+SchemaOptionsProto.next = function(type, name, helper) {
 	return this.model.$next(type, name, helper);
 };
 
-SchemaOptions.prototype.output = function() {
+SchemaOptionsProto.output = function() {
 	return this.model.$output();
 };
 
-SchemaOptions.prototype.stop = function() {
+SchemaOptionsProto.stop = function() {
 	return this.model.$stop();
 };
 
-SchemaOptions.prototype.response = function(index) {
+SchemaOptionsProto.response = function(index) {
 	return this.model.$response(index);
 };
 
-SchemaOptions.prototype.DB = function() {
+SchemaOptionsProto.DB = function() {
 	return F.database(this.error);
 };
 
-SchemaOptions.prototype.success = function(a, b) {
+SchemaOptionsProto.success = function(a, b) {
 
 	if (a && b === undefined && typeof(a) !== 'boolean') {
 		b = a;
@@ -295,7 +301,7 @@ SchemaOptions.prototype.success = function(a, b) {
 	return this;
 };
 
-SchemaOptions.prototype.done = function(arg) {
+SchemaOptionsProto.done = function(arg) {
 	var self = this;
 	return function(err, response) {
 		if (err) {
@@ -311,7 +317,7 @@ SchemaOptions.prototype.done = function(arg) {
 	};
 };
 
-SchemaOptions.prototype.invalid = function(name, error, path, index) {
+SchemaOptionsProto.invalid = function(name, error, path, index) {
 	var self = this;
 
 	if (arguments.length) {
@@ -326,7 +332,7 @@ SchemaOptions.prototype.invalid = function(name, error, path, index) {
 	};
 };
 
-SchemaOptions.prototype.repository = function(name, value) {
+SchemaOptionsProto.repository = function(name, value) {
 	return this.model && this.model.$repository ? this.model.$repository(name, value) : value;
 };
 
@@ -336,7 +342,7 @@ SchemaOptions.prototype.repository = function(name, value) {
  * @param {String} name
  * @return {Object}
  */
-SchemaBuilder.prototype.get = function(name) {
+SchemaBuilderProto.get = function(name) {
 	return this.collection[name];
 };
 
@@ -345,7 +351,7 @@ SchemaBuilder.prototype.get = function(name) {
  * @alias
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilder.prototype.create = function(name) {
+SchemaBuilderProto.create = function(name) {
 	this.collection[name] = new SchemaBuilderEntity(this, name);
 	return this.collection[name];
 };
@@ -355,7 +361,7 @@ SchemaBuilder.prototype.create = function(name) {
  * @param {String} name Schema name, optional.
  * @return {SchemaBuilder}
  */
-SchemaBuilder.prototype.remove = function(name) {
+SchemaBuilderProto.remove = function(name) {
 	if (name) {
 		var schema = this.collection[name];
 		schema && schema.destroy();
@@ -368,7 +374,7 @@ SchemaBuilder.prototype.remove = function(name) {
 	}
 };
 
-SchemaBuilder.prototype.destroy = function(name) {
+SchemaBuilderProto.destroy = function(name) {
 	return this.remove(name);
 };
 
@@ -409,7 +415,9 @@ function SchemaBuilderEntity(parent, name) {
 	this.CurrentSchemaInstance.prototype.$$schema = this;
 }
 
-SchemaBuilderEntity.prototype.allow = function() {
+const SchemaBuilderEntityProto = SchemaBuilderEntity.prototype;
+
+SchemaBuilderEntityProto.allow = function() {
 	var self = this;
 
 	if (!self.fields_allow)
@@ -429,7 +437,7 @@ SchemaBuilderEntity.prototype.allow = function() {
 	return self;
 };
 
-SchemaBuilderEntity.prototype.before = function(name, fn) {
+SchemaBuilderEntityProto.before = function(name, fn) {
 	var self = this;
 	if (!self.preparation)
 		self.preparation = {};
@@ -437,7 +445,7 @@ SchemaBuilderEntity.prototype.before = function(name, fn) {
 	return self;
 };
 
-SchemaBuilderEntity.prototype.required = function(name, fn) {
+SchemaBuilderEntityProto.required = function(name, fn) {
 
 	var self = this;
 
@@ -473,7 +481,7 @@ SchemaBuilderEntity.prototype.required = function(name, fn) {
 	return self;
 };
 
-SchemaBuilderEntity.prototype.clear = function() {
+SchemaBuilderEntityProto.clear = function() {
 	var self = this;
 
 	self.schema = {};
@@ -500,7 +508,7 @@ SchemaBuilderEntity.prototype.clear = function() {
  * @param {Number|String} [custom] Custom tag for search.
  * @return {SchemaBuilder}
  */
-SchemaBuilderEntity.prototype.define = function(name, type, required, custom) {
+SchemaBuilderEntityProto.define = function(name, type, required, custom) {
 
 	if (name instanceof Array) {
 		for (var i = 0, length = name.length; i < length; i++)
@@ -555,7 +563,7 @@ SchemaBuilderEntity.prototype.define = function(name, type, required, custom) {
 	};
 };
 
-SchemaBuilderEntity.prototype.inherit = function(group, name) {
+SchemaBuilderEntityProto.inherit = function(group, name) {
 
 	if (!name) {
 		name = group;
@@ -659,7 +667,7 @@ function copy_inherit(schema, field, value) {
  * Set primary key
  * @param {String} name
  */
-SchemaBuilderEntity.prototype.setPrimary = function(name) {
+SchemaBuilderEntityProto.setPrimary = function(name) {
 	this.primary = name;
 	return this;
 };
@@ -671,7 +679,7 @@ SchemaBuilderEntity.prototype.setPrimary = function(name) {
  * @param {Boolean} reverse Reverse results.
  * @return {Array|Object} Returns Array (with property names) if the model is undefined otherwise returns Object Name/Value.
  */
-SchemaBuilderEntity.prototype.filter = function(custom, model, reverse) {
+SchemaBuilderEntityProto.filter = function(custom, model, reverse) {
 
 	if (typeof(model) === 'boolean') {
 		var tmp = reverse;
@@ -740,7 +748,7 @@ function parseLength(lower, result) {
 	return result;
 }
 
-SchemaBuilderEntity.prototype.$parse = function(name, value, required, custom) {
+SchemaBuilderEntityProto.$parse = function(name, value, required, custom) {
 
 	var type = typeof(value);
 	var result = {};
@@ -955,7 +963,7 @@ SchemaBuilderEntity.prototype.$parse = function(name, value, required, custom) {
 	return result;
 };
 
-SchemaBuilderEntity.prototype.getDependencies = function() {
+SchemaBuilderEntityProto.getDependencies = function() {
 	var dependencies = [];
 
 	for (var name in this.schema) {
@@ -981,7 +989,7 @@ SchemaBuilderEntity.prototype.getDependencies = function() {
  * @param {Function(propertyName, value, path, entityName, model)} fn A validation function.
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.setValidate = function(properties, fn) {
+SchemaBuilderEntityProto.setValidate = function(properties, fn) {
 
 	if (fn === undefined && properties instanceof Array) {
 		this.properties = properties;
@@ -997,12 +1005,12 @@ SchemaBuilderEntity.prototype.setValidate = function(properties, fn) {
 	return this;
 };
 
-SchemaBuilderEntity.prototype.setPrefix = function(prefix) {
+SchemaBuilderEntityProto.setPrefix = function(prefix) {
 	this.resourcePrefix = prefix;
 	return this;
 };
 
-SchemaBuilderEntity.prototype.setResource = function(name) {
+SchemaBuilderEntityProto.setResource = function(name) {
 	this.resourceName = name;
 	return this;
 };
@@ -1012,7 +1020,7 @@ SchemaBuilderEntity.prototype.setResource = function(name) {
  * @param {Function(propertyName, isntPreparing, entityName)} fn
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.setDefault = function(fn) {
+SchemaBuilderEntityProto.setDefault = function(fn) {
 	this.onDefault = fn;
 	return this;
 };
@@ -1022,7 +1030,7 @@ SchemaBuilderEntity.prototype.setDefault = function(fn) {
  * @param {Function(name, value)} fn Must return a new value.
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.setPrepare = function(fn) {
+SchemaBuilderEntityProto.setPrepare = function(fn) {
 	this.onPrepare = fn;
 	return this;
 };
@@ -1032,7 +1040,7 @@ SchemaBuilderEntity.prototype.setPrepare = function(fn) {
  * @param {Function(error, model, helper, next(value), controller)} fn
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.setSave = function(fn, description) {
+SchemaBuilderEntityProto.setSave = function(fn, description) {
 	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	this.onSave = fn;
 	this.meta.save = description || null;
@@ -1045,7 +1053,7 @@ SchemaBuilderEntity.prototype.setSave = function(fn, description) {
  * @param {Function(error, model, helper, next(value), controller)} fn
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.setInsert = function(fn, description) {
+SchemaBuilderEntityProto.setInsert = function(fn, description) {
 	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	this.onInsert = fn;
 	this.meta.insert = description || null;
@@ -1058,7 +1066,7 @@ SchemaBuilderEntity.prototype.setInsert = function(fn, description) {
  * @param {Function(error, model, helper, next(value), controller)} fn
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.setUpdate = function(fn, description) {
+SchemaBuilderEntityProto.setUpdate = function(fn, description) {
 	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	this.onUpdate = fn;
 	this.meta.update = description || null;
@@ -1071,7 +1079,7 @@ SchemaBuilderEntity.prototype.setUpdate = function(fn, description) {
  * @param {Function(error, model, helper, next(value), controller)} fn
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.setPatch = function(fn, description) {
+SchemaBuilderEntityProto.setPatch = function(fn, description) {
 	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	this.onPatch = fn;
 	this.meta.patch = description || null;
@@ -1084,7 +1092,7 @@ SchemaBuilderEntity.prototype.setPatch = function(fn, description) {
  * @param {Function(error)} fn
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.setError = function(fn) {
+SchemaBuilderEntityProto.setError = function(fn) {
 	this.onError = fn;
 	return this;
 };
@@ -1094,7 +1102,7 @@ SchemaBuilderEntity.prototype.setError = function(fn) {
  * @param {Function(error, model, helper, next(value), controller)} fn
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.setGet = SchemaBuilderEntity.prototype.setRead = function(fn, description) {
+SchemaBuilderEntityProto.setGet = SchemaBuilderEntityProto.setRead = function(fn, description) {
 	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	this.onGet = fn;
 	this.meta.get = this.meta.read = description || null;
@@ -1108,7 +1116,7 @@ SchemaBuilderEntity.prototype.setGet = SchemaBuilderEntity.prototype.setRead = f
  * @param {String} description Optional.
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.setQuery = function(fn, description) {
+SchemaBuilderEntityProto.setQuery = function(fn, description) {
 	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	this.onQuery = fn;
 	this.meta.query = description || null;
@@ -1122,7 +1130,7 @@ SchemaBuilderEntity.prototype.setQuery = function(fn, description) {
  * @param {String} description Optional.
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.setRemove = function(fn, description) {
+SchemaBuilderEntityProto.setRemove = function(fn, description) {
 	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	this.onRemove = fn;
 	this.meta.remove = description || null;
@@ -1137,7 +1145,7 @@ SchemaBuilderEntity.prototype.setRemove = function(fn, description) {
  * @param {String} description Optional.
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.constant = function(name, value, description) {
+SchemaBuilderEntityProto.constant = function(name, value, description) {
 
 	OBSOLETE('Constants will be removed from schemas.');
 
@@ -1157,7 +1165,7 @@ SchemaBuilderEntity.prototype.constant = function(name, value, description) {
  * @param {String} description Optional.
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.addTransform = function(name, fn, description) {
+SchemaBuilderEntityProto.addTransform = function(name, fn, description) {
 
 	if (typeof(name) === 'function') {
 		fn = name;
@@ -1179,7 +1187,7 @@ SchemaBuilderEntity.prototype.addTransform = function(name, fn, description) {
  * @param {String} description Optional.
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.addOperation = function(name, fn, description) {
+SchemaBuilderEntityProto.addOperation = function(name, fn, description) {
 
 	if (typeof(name) === 'function') {
 		fn = name;
@@ -1201,7 +1209,7 @@ SchemaBuilderEntity.prototype.addOperation = function(name, fn, description) {
  * @param {String} description Optional.
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.addWorkflow = function(name, fn, description) {
+SchemaBuilderEntityProto.addWorkflow = function(name, fn, description) {
 
 	if (typeof(name) === 'function') {
 		fn = name;
@@ -1216,7 +1224,7 @@ SchemaBuilderEntity.prototype.addWorkflow = function(name, fn, description) {
 	return this;
 };
 
-SchemaBuilderEntity.prototype.addHook = function(name, fn, description) {
+SchemaBuilderEntityProto.addHook = function(name, fn, description) {
 
 	if (!this.hooks)
 		this.hooks = {};
@@ -1234,14 +1242,14 @@ SchemaBuilderEntity.prototype.addHook = function(name, fn, description) {
  * @param {String} name
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.find = function(name) {
+SchemaBuilderEntityProto.find = function(name) {
 	return this.parent.get(name);
 };
 
 /**
  * Destroys current entity
  */
-SchemaBuilderEntity.prototype.destroy = function() {
+SchemaBuilderEntityProto.destroy = function() {
 	delete this.parent.collection[this.name];
 	delete this.properties;
 	delete this.schema;
@@ -1281,7 +1289,7 @@ SchemaBuilderEntity.prototype.destroy = function() {
  * @param {Boolean} skip Skips preparing and validation, optional
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.save = function(model, options, callback, controller, skip) {
+SchemaBuilderEntityProto.save = function(model, options, callback, controller, skip) {
 	return this.execute('onSave', model, options, callback, controller, skip);
 };
 
@@ -1294,7 +1302,7 @@ SchemaBuilderEntity.prototype.save = function(model, options, callback, controll
  * @param {Boolean} skip Skips preparing and validation, optional
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.insert = function(model, options, callback, controller, skip) {
+SchemaBuilderEntityProto.insert = function(model, options, callback, controller, skip) {
 	return this.execute('onInsert', model, options, callback, controller, skip);
 };
 
@@ -1307,15 +1315,15 @@ SchemaBuilderEntity.prototype.insert = function(model, options, callback, contro
  * @param {Boolean} skip Skips preparing and validation, optional
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.update = function(model, options, callback, controller, skip) {
+SchemaBuilderEntityProto.update = function(model, options, callback, controller, skip) {
 	return this.execute('onUpdate', model, options, callback, controller, skip);
 };
 
-SchemaBuilderEntity.prototype.patch = function(model, options, callback, controller, skip) {
+SchemaBuilderEntityProto.patch = function(model, options, callback, controller, skip) {
 	return this.execute('onPatch', model, options, callback, controller, skip);
 };
 
-SchemaBuilderEntity.prototype.execute = function(TYPE, model, options, callback, controller, skip) {
+SchemaBuilderEntityProto.execute = function(TYPE, model, options, callback, controller, skip) {
 
 	if (typeof(callback) === 'boolean') {
 		skip = callback;
@@ -1446,7 +1454,7 @@ function isGenerator(obj, name, fn) {
  * @param {Function(err, result)} callback
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.get = SchemaBuilderEntity.prototype.read = function(options, callback, controller) {
+SchemaBuilderEntityProto.get = SchemaBuilderEntityProto.read = function(options, callback, controller) {
 
 	if (typeof(options) === 'function') {
 		callback = options;
@@ -1533,7 +1541,7 @@ SchemaBuilderEntity.prototype.get = SchemaBuilderEntity.prototype.read = functio
  * @param {Function(err, result)} callback
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.remove = function(options, callback, controller) {
+SchemaBuilderEntityProto.remove = function(options, callback, controller) {
 
 	if (typeof(options) === 'function') {
 		callback = options;
@@ -1618,7 +1626,7 @@ SchemaBuilderEntity.prototype.remove = function(options, callback, controller) {
  * @param {Function(err, result)} callback
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.query = function(options, callback, controller) {
+SchemaBuilderEntityProto.query = function(options, callback, controller) {
 
 	if (typeof(options) === 'function') {
 		callback = options;
@@ -1702,7 +1710,7 @@ SchemaBuilderEntity.prototype.query = function(options, callback, controller) {
  * @param {ErrorBuilder} builder ErrorBuilder, INTERNAL.
  * @return {ErrorBuilder}
  */
-SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourceName, builder, filter, path, index) {
+SchemaBuilderEntityProto.validate = function(model, resourcePrefix, resourceName, builder, filter, path, index) {
 
 	var self = this;
 
@@ -1741,11 +1749,11 @@ SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourc
  * @alias SchemaBuilderEntity.default()
  * @return {Object}
  */
-SchemaBuilderEntity.prototype.create = function() {
+SchemaBuilderEntityProto.create = function() {
 	return this.default();
 };
 
-SchemaBuilderEntity.prototype.Create = function() {
+SchemaBuilderEntityProto.Create = function() {
 	return this.default();
 };
 
@@ -1754,11 +1762,11 @@ SchemaBuilderEntity.prototype.Create = function() {
  * @param {Object} obj
  * @return {Object}
  */
-SchemaBuilderEntity.prototype.$make = function(obj) {
+SchemaBuilderEntityProto.$make = function(obj) {
 	return obj;
 };
 
-SchemaBuilderEntity.prototype.$prepare = function(obj, callback) {
+SchemaBuilderEntityProto.$prepare = function(obj, callback) {
 	if (obj && typeof(obj.$save) === 'function')
 		callback(null, obj);
 	else
@@ -1770,7 +1778,7 @@ SchemaBuilderEntity.prototype.$prepare = function(obj, callback) {
  * Create a default object according the schema
  * @return {SchemaInstance}
  */
-SchemaBuilderEntity.prototype.default = function() {
+SchemaBuilderEntityProto.default = function() {
 
 	var obj = this.schema;
 	if (obj === null)
@@ -1857,7 +1865,7 @@ SchemaBuilderEntity.prototype.default = function() {
  * @param [callback]
  * @returns {SchemaInstance}
  */
-SchemaBuilderEntity.prototype.make = function(model, filter, callback, argument, novalidate, workflow, req) {
+SchemaBuilderEntityProto.make = function(model, filter, callback, argument, novalidate, workflow, req) {
 
 	if (typeof(model) === 'function') {
 		model.call(this, this);
@@ -1891,13 +1899,13 @@ SchemaBuilderEntity.prototype.make = function(model, filter, callback, argument,
 	return output;
 };
 
-SchemaBuilderEntity.prototype.load = SchemaBuilderEntity.prototype.make; // Because JSDoc doesn't work with double asserting
+SchemaBuilderEntityProto.load = SchemaBuilderEntityProto.make; // Because JSDoc doesn't work with double asserting
 
 function autotrim(context, value) {
 	return context.trim ? value.trim() : value;
 }
 
-SchemaBuilderEntity.prototype.$onprepare = function(name, value, index, model, req) {
+SchemaBuilderEntityProto.$onprepare = function(name, value, index, model, req) {
 
 	var val = value;
 
@@ -1918,7 +1926,7 @@ SchemaBuilderEntity.prototype.$onprepare = function(name, value, index, model, r
 	return val === undefined ? value : val;
 };
 
-SchemaBuilderEntity.prototype.$ondefault = function(property, create, entity) {
+SchemaBuilderEntityProto.$ondefault = function(property, create, entity) {
 
 	var val;
 
@@ -1943,7 +1951,7 @@ SchemaBuilderEntity.prototype.$ondefault = function(property, create, entity) {
  * @param {String|Array} [dependencies] INTERNAL.
  * @return {SchemaInstance}
  */
-SchemaBuilderEntity.prototype.prepare = function(model, dependencies, req) {
+SchemaBuilderEntityProto.prepare = function(model, dependencies, req) {
 
 	var self = this;
 	var obj = self.schema;
@@ -2331,11 +2339,11 @@ function parseNumber(str) {
  * @param {Object} controller Optional
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.transform = function(name, model, options, callback, skip, controller) {
+SchemaBuilderEntityProto.transform = function(name, model, options, callback, skip, controller) {
 	return this.$execute('transform', name, model, options, callback, skip, controller);
 };
 
-SchemaBuilderEntity.prototype.transform2 = function(name, options, callback, controller) {
+SchemaBuilderEntityProto.transform2 = function(name, options, callback, controller) {
 
 	if (typeof(options) === 'function') {
 		controller = callback;
@@ -2347,7 +2355,7 @@ SchemaBuilderEntity.prototype.transform2 = function(name, options, callback, con
 	return this.transform(name, this.create(), options, callback, true, controller);
 };
 
-SchemaBuilderEntity.prototype.$process = function(arg, model, type, name, builder, response, callback, controller) {
+SchemaBuilderEntityProto.$process = function(arg, model, type, name, builder, response, callback, controller) {
 
 	var self = this;
 
@@ -2367,7 +2375,7 @@ SchemaBuilderEntity.prototype.$process = function(arg, model, type, name, builde
 	return self;
 };
 
-SchemaBuilderEntity.prototype.$process_hook = function(model, type, name, builder, result, callback) {
+SchemaBuilderEntityProto.$process_hook = function(model, type, name, builder, result, callback) {
 	var self = this;
 	var has = builder.is;
 	has && self.onError && self.onError(builder, model, type, name);
@@ -2385,11 +2393,11 @@ SchemaBuilderEntity.prototype.$process_hook = function(model, type, name, builde
  * @param {Object} controller Optional
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.workflow = function(name, model, options, callback, skip, controller) {
+SchemaBuilderEntityProto.workflow = function(name, model, options, callback, skip, controller) {
 	return this.$execute('workflow', name, model, options, callback, skip, controller);
 };
 
-SchemaBuilderEntity.prototype.workflow2 = function(name, options, callback, controller) {
+SchemaBuilderEntityProto.workflow2 = function(name, options, callback, controller) {
 
 	if (typeof(options) === 'function') {
 		controller = callback;
@@ -2410,7 +2418,7 @@ SchemaBuilderEntity.prototype.workflow2 = function(name, options, callback, cont
  * @param {Boolean} skip Skips preparing and validation, optional.
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.hook = function(name, model, options, callback, skip, controller) {
+SchemaBuilderEntityProto.hook = function(name, model, options, callback, skip, controller) {
 
 	var self = this;
 
@@ -2552,7 +2560,7 @@ SchemaBuilderEntity.prototype.hook = function(name, model, options, callback, sk
 	return self;
 };
 
-SchemaBuilderEntity.prototype.hook2 = function(name, options, callback, controller) {
+SchemaBuilderEntityProto.hook2 = function(name, options, callback, controller) {
 
 	if (typeof(options) === 'function') {
 		controller = callback;
@@ -2566,7 +2574,7 @@ SchemaBuilderEntity.prototype.hook2 = function(name, options, callback, controll
 	return this.hook(name, this.create(), options, callback, true, controller);
 };
 
-SchemaBuilderEntity.prototype.$execute = function(type, name, model, options, callback, skip, controller) {
+SchemaBuilderEntityProto.$execute = function(type, name, model, options, callback, skip, controller) {
 	var self = this;
 
 	if (typeof(name) !== 'string') {
@@ -2692,7 +2700,7 @@ SchemaBuilderEntity.prototype.$execute = function(type, name, model, options, ca
 	return self;
 };
 
-SchemaBuilderEntity.prototype.getLoggerName = function(type, name) {
+SchemaBuilderEntityProto.getLoggerName = function(type, name) {
 	return this.name + '.' + type + (name ? ('(\'' + name + '\')') : '()');
 };
 
@@ -2706,7 +2714,7 @@ SchemaBuilderEntity.prototype.getLoggerName = function(type, name) {
  * @param {Object} controller Optional
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.operation = function(name, model, options, callback, skip, controller) {
+SchemaBuilderEntityProto.operation = function(name, model, options, callback, skip, controller) {
 
 	var self = this;
 
@@ -2815,7 +2823,7 @@ SchemaBuilderEntity.prototype.operation = function(name, model, options, callbac
 	return self;
 };
 
-SchemaBuilderEntity.prototype.operation2 = function(name, options, callback, controller) {
+SchemaBuilderEntityProto.operation2 = function(name, options, callback, controller) {
 
 	if (typeof(options) === 'function') {
 		controller = callback;
@@ -2833,7 +2841,7 @@ SchemaBuilderEntity.prototype.operation2 = function(name, options, callback, con
  * @param {Boolean} isCopied Internal argument.
  * @return {Object}
  */
-SchemaBuilderEntity.prototype.clean = function(m) {
+SchemaBuilderEntityProto.clean = function(m) {
 	return clone(m);
 };
 
@@ -2916,17 +2924,17 @@ function clone(obj) {
  * Returns prototype of instances
  * @returns {Object}
  */
-SchemaBuilderEntity.prototype.instancePrototype = function() {
+SchemaBuilderEntityProto.instancePrototype = function() {
 	return this.CurrentSchemaInstance.prototype;
 };
 
-SchemaBuilderEntity.prototype.cl = function(name) {
+SchemaBuilderEntityProto.cl = function(name) {
 	var o = this.schema[name];
 	if (o && (o.type === 8 || o.type === 9))
 		return o.raw;
 };
 
-SchemaBuilderEntity.prototype.props = function() {
+SchemaBuilderEntityProto.props = function() {
 
 	var self = this;
 	var keys = Object.keys(self.schema);
@@ -5443,11 +5451,13 @@ OperationOptions.prototype = {
 
 };
 
-SchemaOptions.prototype.tasks = OperationOptions.prototype.tasks = function(taskname, name, callback, options) {
+const OperationOptionsProto = OperationOptions.prototype;
+
+SchemaOptionsProto.tasks = OperationOptionsProto.tasks = function(taskname, name, callback, options) {
 	return taskname ? TASK(taskname, name, callback, options || this) : new TaskBuilder(this);
 };
 
-OperationOptions.prototype.cancel = function() {
+OperationOptionsProto.cancel = function() {
 	var self = this;
 	self.callback = null;
 	self.error = null;
@@ -5457,16 +5467,16 @@ OperationOptions.prototype.cancel = function() {
 	return self;
 };
 
-OperationOptions.prototype.redirect = function(url) {
+OperationOptionsProto.redirect = function(url) {
 	this.callback(new F.callback_redirect(url));
 	return this;
 };
 
-OperationOptions.prototype.DB = function() {
+OperationOptionsProto.DB = function() {
 	return F.database(this.error);
 };
 
-OperationOptions.prototype.done = function(arg) {
+OperationOptionsProto.done = function(arg) {
 	var self = this;
 	return function(err, response) {
 
@@ -5482,7 +5492,7 @@ OperationOptions.prototype.done = function(arg) {
 	};
 };
 
-OperationOptions.prototype.success = function(a, b) {
+OperationOptionsProto.success = function(a, b) {
 
 	if (a && b === undefined && typeof(a) !== 'boolean') {
 		b = a;
@@ -5493,7 +5503,7 @@ OperationOptions.prototype.success = function(a, b) {
 	return this;
 };
 
-OperationOptions.prototype.invalid = function(name, error, path, index) {
+OperationOptionsProto.invalid = function(name, error, path, index) {
 
 	var self = this;
 
@@ -5548,13 +5558,15 @@ AuthOptions.prototype = {
 	}
 };
 
-AuthOptions.prototype.roles = function() {
+const AuthOptionsProto = AuthOptions.prototype;
+
+AuthOptionsProto.roles = function() {
 	for (var i = 0; i < arguments.length; i++)
 		this.flags.push('@' + arguments[i]);
 	return this;
 };
 
-SchemaOptions.prototype.cookie = OperationOptions.prototype.cookie = TaskBuilder.prototype.cookie = AuthOptions.prototype.cookie = function(name, value, expire, options) {
+SchemaOptionsProto.cookie = OperationOptionsProto.cookie = TaskBuilderProto.cookie = AuthOptionsProto.cookie = function(name, value, expire, options) {
 	var self = this;
 	if (value === undefined)
 		return self.req.cookie(name);
@@ -5564,22 +5576,22 @@ SchemaOptions.prototype.cookie = OperationOptions.prototype.cookie = TaskBuilder
 	return self;
 };
 
-AuthOptions.prototype.invalid = function(user) {
+AuthOptionsProto.invalid = function(user) {
 	this.next(false, user);
 };
 
-AuthOptions.prototype.done = function() {
+AuthOptionsProto.done = function() {
 	var self = this;
 	return function(is, user) {
 		self.next(is, user);
 	};
 };
 
-AuthOptions.prototype.success = function(user) {
+AuthOptionsProto.success = function(user) {
 	this.next(true, user);
 };
 
-AuthOptions.prototype.next = AuthOptions.prototype.callback = function(is, user) {
+AuthOptionsProto.next = AuthOptionsProto.callback = function(is, user) {
 
 	if (this.processed)
 		return;
@@ -5847,7 +5859,7 @@ exports.uninstall = function(owner) {
 	});
 };
 
-TaskBuilder.prototype.invalid = function(err, msg) {
+TaskBuilderProto.invalid = function(err, msg) {
 	var self = this;
 	if (!self.$done) {
 		!self.error && (self.error = new ErrorBuilder());
@@ -5857,13 +5869,13 @@ TaskBuilder.prototype.invalid = function(err, msg) {
 	return self;
 };
 
-TaskBuilder.prototype.push = function(name, fn) {
+TaskBuilderProto.push = function(name, fn) {
 	var self = this;
 	self.tasks[name] = fn;
 	return self;
 };
 
-TaskBuilder.prototype.next = function() {
+TaskBuilderProto.next = function() {
 	var self = this;
 	if (!self.$done) {
 		self.current && self.controller && CONF.logger && F.ilogger((self.name || 'tasks') + '.' + self.current, self.controller, self.$now);
@@ -5883,7 +5895,7 @@ TaskBuilder.prototype.next = function() {
 	return self;
 };
 
-TaskBuilder.prototype.next2 = function(name) {
+TaskBuilderProto.next2 = function(name) {
 	var self = this;
 	return function(err) {
 		if (err)
@@ -5897,14 +5909,14 @@ TaskBuilder.prototype.next2 = function(name) {
 	};
 };
 
-TaskBuilder.prototype.done = function(data) {
+TaskBuilderProto.done = function(data) {
 	var self = this;
 	self.$callback && self.$callback(self.error && self.error.is ? self.error : null, data || self.value);
 	self.$done = true;
 	return self;
 };
 
-TaskBuilder.prototype.done2 = function(send_value) {
+TaskBuilderProto.done2 = function(send_value) {
 	var self = this;
 	return function(err, data) {
 		if (err)
@@ -5914,11 +5926,11 @@ TaskBuilder.prototype.done2 = function(send_value) {
 	};
 };
 
-TaskBuilder.prototype.success = function(data) {
+TaskBuilderProto.success = function(data) {
 	return this.done(SUCCESS(true, data));
 };
 
-TaskBuilder.prototype.success2 = function(send_value) {
+TaskBuilderProto.success2 = function(send_value) {
 	var self = this;
 	return function(err, data) {
 		if (err)
@@ -5928,13 +5940,13 @@ TaskBuilder.prototype.success2 = function(send_value) {
 	};
 };
 
-TaskBuilder.prototype.callback = function(fn) {
+TaskBuilderProto.callback = function(fn) {
 	var self = this;
 	self.$callback = fn;
 	return self;
 };
 
-TaskBuilder.prototype.exec = function(name, callback) {
+TaskBuilderProto.exec = function(name, callback) {
 	var self = this;
 
 	if (callback)

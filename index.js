@@ -753,7 +753,7 @@ function Framework() {
 		// gm = graphicsmagick or im = imagemagick or magick (new version of ImageMagick)
 		default_image_converter: 'gm', // command-line name
 		default_image_quality: 93,
-		default_image_consumption: 30,
+		default_image_consumption: 0, // disabled because e.g. GM v1.3.32 throws some error about the memory
 
 		allow_static_files: true,
 		allow_gzip: true,
@@ -1112,7 +1112,7 @@ F.prototypes = function(fn) {
 	proto.HttpResponse = PROTORES;
 	proto.Image = framework_image.Image.prototype;
 	proto.Message = Mail.Message.prototype;
-	proto.MiddlewareOptions = MiddlewareOptions;
+	proto.MiddlewareOptions = MiddlewareOptions.prototype;
 	proto.OperationOptions = framework_builders.OperationOptions.prototype;
 	proto.Page = framework_builders.Page.prototype;
 	proto.Pagination = framework_builders.Pagination.prototype;
@@ -10027,32 +10027,34 @@ FrameworkRoute.prototype = {
 	}
 };
 
-FrameworkRoute.prototype.make = function(fn) {
+const FrameworkRouteProto = FrameworkRoute.prototype;
+
+FrameworkRouteProto.make = function(fn) {
 	fn && fn.call(this, this);
 	return this;
 };
 
-FrameworkRoute.prototype.setId = function(value) {
+FrameworkRouteProto.setId = function(value) {
 	this.route.id = value;
 	return this;
 };
 
-FrameworkRoute.prototype.setDecription = function(value) {
+FrameworkRouteProto.setDecription = function(value) {
 	this.route.description = value;
 	return this;
 };
 
-FrameworkRoute.prototype.setTimeout = function(value) {
+FrameworkRouteProto.setTimeout = function(value) {
 	this.route.timeout = value;
 	return this;
 };
 
-FrameworkRoute.prototype.setMaxLength = function(value) {
+FrameworkRouteProto.setMaxLength = function(value) {
 	this.route.length = value;
 	return this;
 };
 
-FrameworkRoute.prototype.setOptions = function(value) {
+FrameworkRouteProto.setOptions = function(value) {
 	this.route.options = value;
 	return this;
 };
@@ -10062,8 +10064,9 @@ FrameworkRoute.prototype.setOptions = function(value) {
 // =================================================================================
 
 function FrameworkPath() {}
+const FrameworkPathProto = FrameworkPath.prototype;
 
-FrameworkPath.prototype.verify = function(name) {
+FrameworkPathProto.verify = function(name) {
 	var prop = '$directory-' + name;
 	if (F.temporary.path[prop])
 		return F;
@@ -10074,7 +10077,7 @@ FrameworkPath.prototype.verify = function(name) {
 	return F;
 };
 
-FrameworkPath.prototype.mkdir = function(p, cache) {
+FrameworkPathProto.mkdir = function(p, cache) {
 
 	var key = '$directory-' + p;
 
@@ -10126,110 +10129,110 @@ FrameworkPath.prototype.mkdir = function(p, cache) {
 	return F;
 };
 
-FrameworkPath.prototype.exists = function(path, callback) {
+FrameworkPathProto.exists = function(path, callback) {
 	Fs.lstat(path, (err, stats) => callback(err ? false : true, stats ? stats.size : 0, stats ? stats.isFile() : false));
 	return F;
 };
 
-FrameworkPath.prototype.public = function(filename) {
+FrameworkPathProto.public = function(filename) {
 	return U.combine(CONF.directory_public, filename);
 };
 
-FrameworkPath.prototype.public_cache = function(filename) {
+FrameworkPathProto.public_cache = function(filename) {
 	var key = 'public_' + filename;
 	var item = F.temporary.other[key];
 	return item ? item : F.temporary.other[key] = U.combine(CONF.directory_public, filename);
 };
 
-FrameworkPath.prototype.private = function(filename) {
+FrameworkPathProto.private = function(filename) {
 	return U.combine(CONF.directory_private, filename);
 };
 
-FrameworkPath.prototype.isomorphic = function(filename) {
+FrameworkPathProto.isomorphic = function(filename) {
 	return U.combine(CONF.directory_isomorphic, filename);
 };
 
-FrameworkPath.prototype.configs = function(filename) {
+FrameworkPathProto.configs = function(filename) {
 	return U.combine(CONF.directory_configs, filename);
 };
 
-FrameworkPath.prototype.virtual = function(filename) {
+FrameworkPathProto.virtual = function(filename) {
 	return U.combine(CONF.directory_public_virtual, filename);
 };
 
-FrameworkPath.prototype.logs = function(filename) {
+FrameworkPathProto.logs = function(filename) {
 	this.verify('logs');
 	return U.combine(CONF.directory_logs, filename);
 };
 
-FrameworkPath.prototype.models = function(filename) {
+FrameworkPathProto.models = function(filename) {
 	return U.combine(CONF.directory_models, filename);
 };
 
-FrameworkPath.prototype.temp = function(filename) {
+FrameworkPathProto.temp = function(filename) {
 	this.verify('temp');
 	return U.combine(CONF.directory_temp, filename);
 };
 
-FrameworkPath.prototype.temporary = function(filename) {
+FrameworkPathProto.temporary = function(filename) {
 	return this.temp(filename);
 };
 
-FrameworkPath.prototype.views = function(filename) {
+FrameworkPathProto.views = function(filename) {
 	return U.combine(CONF.directory_views, filename);
 };
 
-FrameworkPath.prototype.workers = function(filename) {
+FrameworkPathProto.workers = function(filename) {
 	return U.combine(CONF.directory_workers, filename);
 };
 
-FrameworkPath.prototype.databases = function(filename) {
+FrameworkPathProto.databases = function(filename) {
 	this.verify('databases');
 	return U.combine(CONF.directory_databases, filename);
 };
 
-FrameworkPath.prototype.modules = function(filename) {
+FrameworkPathProto.modules = function(filename) {
 	return U.combine(CONF.directory_modules, filename);
 };
 
-FrameworkPath.prototype.controllers = function(filename) {
+FrameworkPathProto.controllers = function(filename) {
 	return U.combine(CONF.directory_controllers, filename);
 };
 
-FrameworkPath.prototype.definitions = function(filename) {
+FrameworkPathProto.definitions = function(filename) {
 	return U.combine(CONF.directory_definitions, filename);
 };
 
-FrameworkPath.prototype.tests = function(filename) {
+FrameworkPathProto.tests = function(filename) {
 	return U.combine(CONF.directory_tests, filename);
 };
 
-FrameworkPath.prototype.resources = function(filename) {
+FrameworkPathProto.resources = function(filename) {
 	return U.combine(CONF.directory_resources, filename);
 };
 
-FrameworkPath.prototype.services = function(filename) {
+FrameworkPathProto.services = function(filename) {
 	return U.combine(CONF.directory_services, filename);
 };
 
-FrameworkPath.prototype.packages = function(filename) {
+FrameworkPathProto.packages = function(filename) {
 	return U.combine(CONF.directory_packages, filename);
 };
 
-FrameworkPath.prototype.themes = function(filename) {
+FrameworkPathProto.themes = function(filename) {
 	return U.combine(CONF.directory_themes, filename);
 };
 
-FrameworkPath.prototype.components = function(filename) {
+FrameworkPathProto.components = function(filename) {
 	return U.combine(CONF.directory_components, filename);
 };
 
-FrameworkPath.prototype.root = function(filename) {
+FrameworkPathProto.root = function(filename) {
 	var p = Path.join(directory, filename || '');
 	return F.isWindows ? p.replace(/\\/g, '/') : p;
 };
 
-FrameworkPath.prototype.package = function(name, filename) {
+FrameworkPathProto.package = function(name, filename) {
 
 	if (filename === undefined) {
 		var index = name.indexOf('/');
@@ -10254,7 +10257,9 @@ function FrameworkCache() {
 	this.interval;
 }
 
-FrameworkCache.prototype.init = function() {
+const FrameworkCacheProto = FrameworkCache.prototype;
+
+FrameworkCacheProto.init = function() {
 	var self = this;
 	clearInterval(self.interval);
 	self.interval = setInterval(() => F.cache.recycle(), 1000 * 60);
@@ -10265,12 +10270,12 @@ FrameworkCache.prototype.init = function() {
 	return self;
 };
 
-FrameworkCache.prototype.save = function() {
+FrameworkCacheProto.save = function() {
 	Fs.writeFile(F.path.temp((F.id ? 'i-' + F.id + '_' : '') + 'framework_cachesnapshot.jsoncache'), JSON.stringify(this.items), NOOP);
 	return this;
 };
 
-FrameworkCache.prototype.load = function(callback) {
+FrameworkCacheProto.load = function(callback) {
 	var self = this;
 	Fs.readFile(F.path.temp((F.id ? 'i-' + F.id + '_' : '') + 'framework_cachesnapshot.jsoncache'), function(err, data) {
 		if (!err) {
@@ -10284,7 +10289,7 @@ FrameworkCache.prototype.load = function(callback) {
 	return self;
 };
 
-FrameworkCache.prototype.savepersistent = function() {
+FrameworkCacheProto.savepersistent = function() {
 	setTimeout2('framework_cachepersist', function(self) {
 		var keys = Object.keys(self.items);
 		var obj = {};
@@ -10301,7 +10306,7 @@ FrameworkCache.prototype.savepersistent = function() {
 	return this;
 };
 
-FrameworkCache.prototype.loadpersistent = function(callback) {
+FrameworkCacheProto.loadpersistent = function(callback) {
 	var self = this;
 	Fs.readFile(F.path.temp((F.id ? 'i-' + F.id + '_' : '') + 'framework_cachepersist.jsoncache'), function(err, data) {
 		if (!err) {
@@ -10321,19 +10326,19 @@ FrameworkCache.prototype.loadpersistent = function(callback) {
 	return self;
 };
 
-FrameworkCache.prototype.stop = function() {
+FrameworkCacheProto.stop = function() {
 	clearInterval(this.interval);
 	return this;
 };
 
-FrameworkCache.prototype.clear = function(sync) {
+FrameworkCacheProto.clear = function(sync) {
 	this.items = {};
 	F.isCluster && sync !== false && CONF.allow_cache_cluster && process.send(CLUSTER_CACHE_CLEAR);
 	this.savepersistent();
 	return this;
 };
 
-FrameworkCache.prototype.recycle = function() {
+FrameworkCacheProto.recycle = function() {
 
 	var items = this.items;
 	var persistent = false;
@@ -10360,11 +10365,11 @@ FrameworkCache.prototype.recycle = function() {
 	return this;
 };
 
-FrameworkCache.prototype.set2 = function(name, value, expire, sync) {
+FrameworkCacheProto.set2 = function(name, value, expire, sync) {
 	return this.set(name, value, expire, sync, true);
 };
 
-FrameworkCache.prototype.set = FrameworkCache.prototype.add = function(name, value, expire, sync, persist) {
+FrameworkCacheProto.set = FrameworkCacheProto.add = function(name, value, expire, sync, persist) {
 	var type = typeof(expire);
 
 	if (F.isCluster && sync !== false && CONF.allow_cache_cluster) {
@@ -10395,7 +10400,7 @@ FrameworkCache.prototype.set = FrameworkCache.prototype.add = function(name, val
 	return value;
 };
 
-FrameworkCache.prototype.read = FrameworkCache.prototype.get = function(key, def) {
+FrameworkCacheProto.read = FrameworkCacheProto.get = function(key, def) {
 
 	var value = this.items[key];
 	if (!value)
@@ -10412,7 +10417,7 @@ FrameworkCache.prototype.read = FrameworkCache.prototype.get = function(key, def
 	return value.value;
 };
 
-FrameworkCache.prototype.read2 = FrameworkCache.prototype.get2 = function(key, def) {
+FrameworkCacheProto.read2 = FrameworkCacheProto.get2 = function(key, def) {
 	var value = this.items[key];
 
 	if (!value)
@@ -10427,14 +10432,14 @@ FrameworkCache.prototype.read2 = FrameworkCache.prototype.get2 = function(key, d
 	return value.value;
 };
 
-FrameworkCache.prototype.setExpire = function(name, expire) {
+FrameworkCacheProto.setExpire = function(name, expire) {
 	var obj = this.items[name];
 	if (obj)
 		obj.expire = typeof(expire) === 'string' ? expire.parseDateExpiration() : expire;
 	return this;
 };
 
-FrameworkCache.prototype.remove = function(name, sync) {
+FrameworkCacheProto.remove = function(name, sync) {
 	var value = this.items[name];
 
 	if (value) {
@@ -10450,7 +10455,7 @@ FrameworkCache.prototype.remove = function(name, sync) {
 	return value;
 };
 
-FrameworkCache.prototype.removeAll = function(search, sync) {
+FrameworkCacheProto.removeAll = function(search, sync) {
 	var count = 0;
 	var isReg = U.isRegExp(search);
 
@@ -10476,7 +10481,7 @@ FrameworkCache.prototype.removeAll = function(search, sync) {
 	return count;
 };
 
-FrameworkCache.prototype.fn = function(name, fnCache, fnCallback, options) {
+FrameworkCacheProto.fn = function(name, fnCache, fnCallback, options) {
 
 	var self = this;
 	var value = self.read2(name);
@@ -10653,6 +10658,7 @@ Controller.prototype = {
 	},
 
 	get isTest() {
+		OBSOLETE('controller.isTest', 'Use: controller.isTest');
 		return this.req.headers['x-assertion-testing'] === '1';
 	},
 
@@ -10728,9 +10734,9 @@ Controller.prototype = {
 // PROTOTYPES
 // ======================================================
 
-// Schema operations
+const ControllerProto = Controller.prototype;
 
-Controller.prototype.$get = Controller.prototype.$read = function(helper, callback) {
+ControllerProto.$get = ControllerProto.$read = function(helper, callback) {
 
 	if (callback == null && typeof(helper) === 'function') {
 		callback = helper;
@@ -10741,7 +10747,7 @@ Controller.prototype.$get = Controller.prototype.$read = function(helper, callba
 	return this;
 };
 
-Controller.prototype.$query = function(helper, callback) {
+ControllerProto.$query = function(helper, callback) {
 
 	if (callback == null && typeof(helper) === 'function') {
 		callback = helper;
@@ -10752,7 +10758,7 @@ Controller.prototype.$query = function(helper, callback) {
 	return this;
 };
 
-Controller.prototype.$save = function(helper, callback) {
+ControllerProto.$save = function(helper, callback) {
 
 	if (callback == null && typeof(helper) === 'function') {
 		callback = helper;
@@ -10771,7 +10777,7 @@ Controller.prototype.$save = function(helper, callback) {
 	return self;
 };
 
-Controller.prototype.$insert = function(helper, callback) {
+ControllerProto.$insert = function(helper, callback) {
 
 	if (callback == null && typeof(helper) === 'function') {
 		callback = helper;
@@ -10790,7 +10796,7 @@ Controller.prototype.$insert = function(helper, callback) {
 	return self;
 };
 
-Controller.prototype.$update = function(helper, callback) {
+ControllerProto.$update = function(helper, callback) {
 
 	if (callback == null && typeof(helper) === 'function') {
 		callback = helper;
@@ -10809,7 +10815,7 @@ Controller.prototype.$update = function(helper, callback) {
 	return self;
 };
 
-Controller.prototype.$patch = function(helper, callback) {
+ControllerProto.$patch = function(helper, callback) {
 
 	if (callback == null && typeof(helper) === 'function') {
 		callback = helper;
@@ -10828,7 +10834,7 @@ Controller.prototype.$patch = function(helper, callback) {
 	return self;
 };
 
-Controller.prototype.$remove = function(helper, callback) {
+ControllerProto.$remove = function(helper, callback) {
 
 	if (callback == null && typeof(helper) === 'function') {
 		callback = helper;
@@ -10840,7 +10846,7 @@ Controller.prototype.$remove = function(helper, callback) {
 	return this;
 };
 
-Controller.prototype.$workflow = function(name, helper, callback) {
+ControllerProto.$workflow = function(name, helper, callback) {
 	var self = this;
 
 	if (callback == null && typeof(helper) === 'function') {
@@ -10856,7 +10862,7 @@ Controller.prototype.$workflow = function(name, helper, callback) {
 	return self;
 };
 
-Controller.prototype.$workflow2 = function(name, helper, callback) {
+ControllerProto.$workflow2 = function(name, helper, callback) {
 
 	if (callback == null && typeof(helper) === 'function') {
 		callback = helper;
@@ -10868,7 +10874,7 @@ Controller.prototype.$workflow2 = function(name, helper, callback) {
 	return self;
 };
 
-Controller.prototype.$hook = function(name, helper, callback) {
+ControllerProto.$hook = function(name, helper, callback) {
 	var self = this;
 
 	if (callback == null && typeof(helper) === 'function') {
@@ -10885,7 +10891,7 @@ Controller.prototype.$hook = function(name, helper, callback) {
 	return self;
 };
 
-Controller.prototype.$hook2 = function(name, helper, callback) {
+ControllerProto.$hook2 = function(name, helper, callback) {
 
 	if (callback == null && typeof(helper) === 'function') {
 		callback = helper;
@@ -10897,7 +10903,7 @@ Controller.prototype.$hook2 = function(name, helper, callback) {
 	return self;
 };
 
-Controller.prototype.$transform = function(name, helper, callback) {
+ControllerProto.$transform = function(name, helper, callback) {
 
 	if (callback == null && typeof(helper) === 'function') {
 		callback = helper;
@@ -10913,7 +10919,7 @@ Controller.prototype.$transform = function(name, helper, callback) {
 	return self;
 };
 
-Controller.prototype.$transform2 = function(name, helper, callback) {
+ControllerProto.$transform2 = function(name, helper, callback) {
 
 	if (callback == null && typeof(helper) === 'function') {
 		callback = helper;
@@ -10925,7 +10931,7 @@ Controller.prototype.$transform2 = function(name, helper, callback) {
 	return self;
 };
 
-Controller.prototype.$operation = function(name, helper, callback) {
+ControllerProto.$operation = function(name, helper, callback) {
 
 	if (callback == null && typeof(helper) === 'function') {
 		callback = helper;
@@ -10941,18 +10947,18 @@ Controller.prototype.$operation = function(name, helper, callback) {
 	return self;
 };
 
-Controller.prototype.operation = function(name, value, callback, options) {
+ControllerProto.operation = function(name, value, callback, options) {
 	OPERATION(name, value, callback, options, this);
 	return this;
 };
 
-Controller.prototype.tasks = function() {
+ControllerProto.tasks = function() {
 	var tb = new TaskBuilder(this);
 	// tb.callback(this.callback());
 	return tb;
 };
 
-Controller.prototype.$operation2 = function(name, helper, callback) {
+ControllerProto.$operation2 = function(name, helper, callback) {
 
 	if (callback == null && typeof(helper) === 'function') {
 		callback = helper;
@@ -10964,7 +10970,7 @@ Controller.prototype.$operation2 = function(name, helper, callback) {
 	return self;
 };
 
-Controller.prototype.$exec = function(name, helper, callback) {
+ControllerProto.$exec = function(name, helper, callback) {
 	var self = this;
 
 	if (callback == null && typeof(helper) === 'function') {
@@ -10987,7 +10993,7 @@ Controller.prototype.$exec = function(name, helper, callback) {
 	return self;
 };
 
-Controller.prototype.$async = function(callback, index) {
+ControllerProto.$async = function(callback, index) {
 	var self = this;
 
 	if (self.body && self.body.$$schema) {
@@ -11000,7 +11006,7 @@ Controller.prototype.$async = function(callback, index) {
 	return model.$async(callback, index);
 };
 
-Controller.prototype.getSchema = function() {
+ControllerProto.getSchema = function() {
 	var route = this.route;
 	if (!route.schema || !route.schema[1])
 		throw new Error('The controller\'s route does not define any schema.');
@@ -11017,7 +11023,7 @@ Controller.prototype.getSchema = function() {
  * @model {Object} settings Optional, model for the component.
  * @return {String}
  */
-Controller.prototype.component = function(name, settings, model) {
+ControllerProto.component = function(name, settings, model) {
 	var filename = F.components.views[name];
 	if (filename) {
 		var self = this;
@@ -11035,7 +11041,7 @@ Controller.prototype.component = function(name, settings, model) {
 	return '';
 };
 
-Controller.prototype.$components = function(group, settings) {
+ControllerProto.$components = function(group, settings) {
 
 	if (group) {
 		var keys = Object.keys(F.components.instances);
@@ -11069,7 +11075,7 @@ Controller.prototype.$components = function(group, settings) {
  * @param {Object} options
  * @return {String/Controller}
  */
-Controller.prototype.cookie = function(name, value, expires, options) {
+ControllerProto.cookie = function(name, value, expires, options) {
 	var self = this;
 	if (value === undefined)
 		return self.req.cookie(name);
@@ -11081,7 +11087,7 @@ Controller.prototype.cookie = function(name, value, expires, options) {
  * Clears uploaded files
  * @return {Controller}
  */
-Controller.prototype.clear = function() {
+ControllerProto.clear = function() {
 	var self = this;
 	self.req.clear();
 	return self;
@@ -11092,7 +11098,7 @@ Controller.prototype.clear = function() {
  * @param {String} text
  * @return {String}
  */
-Controller.prototype.translate = function(language, text) {
+ControllerProto.translate = function(language, text) {
 
 	if (!text) {
 		text = language;
@@ -11109,7 +11115,7 @@ Controller.prototype.translate = function(language, text) {
  * @param {Function} callback
  * @return {Controller}
  */
-Controller.prototype.middleware = function(names, options, callback) {
+ControllerProto.middleware = function(names, options, callback) {
 
 	if (typeof(names) === 'string')
 		names = [names];
@@ -11132,7 +11138,7 @@ Controller.prototype.middleware = function(names, options, callback) {
 	return self;
 };
 
-Controller.prototype.nocache = function() {
+ControllerProto.nocache = function() {
 	this.req.nocache();
 	return this;
 };
@@ -11144,16 +11150,16 @@ Controller.prototype.nocache = function() {
  * @param {Function(err)} callback Optional.
  * @return {Controller}
  */
-Controller.prototype.pipe = function(url, headers, callback) {
+ControllerProto.pipe = function(url, headers, callback) {
 	this.res.proxy(url, headers, null, callback);
 	return this;
 };
 
-Controller.prototype.encrypt = function() {
+ControllerProto.encrypt = function() {
 	return F.encrypt.apply(framework, arguments);
 };
 
-Controller.prototype.decrypt = function() {
+ControllerProto.decrypt = function() {
 	return F.decrypt.apply(framework, arguments);
 };
 
@@ -11161,7 +11167,7 @@ Controller.prototype.decrypt = function() {
  * Creates a hash (alias for F.hash())
  * @return {Controller}
  */
-Controller.prototype.hash = function() {
+ControllerProto.hash = function() {
 	OBSOLETE('controller.hash()', 'Use String.prototype.hash()');
 	return F.hash.apply(framework, arguments);
 };
@@ -11172,7 +11178,7 @@ Controller.prototype.hash = function() {
  * @param {String} value
  * @return {Controller}
  */
-Controller.prototype.header = function(name, value) {
+ControllerProto.header = function(name, value) {
 	this.res.setHeader(name, value);
 	return this;
 };
@@ -11182,15 +11188,15 @@ Controller.prototype.header = function(name, value) {
  * @param {String} path
  * @return {Controller}
  */
-Controller.prototype.host = function(path) {
+ControllerProto.host = function(path) {
 	return this.req.hostname(path);
 };
 
-Controller.prototype.hostname = function(path) {
+ControllerProto.hostname = function(path) {
 	return this.req.hostname(path);
 };
 
-Controller.prototype.resource = function(name, key) {
+ControllerProto.resource = function(name, key) {
 	return F.resource(name, key);
 };
 
@@ -11199,7 +11205,7 @@ Controller.prototype.resource = function(name, key) {
  * @param {Error/String} err
  * @return {Controller/Function}
  */
-Controller.prototype.error = function(err) {
+ControllerProto.error = function(err) {
 	var self = this;
 
 	// Custom errors
@@ -11217,7 +11223,7 @@ Controller.prototype.error = function(err) {
 	return self;
 };
 
-Controller.prototype.invalid = function(status) {
+ControllerProto.invalid = function(status) {
 
 	var self = this;
 
@@ -11249,7 +11255,7 @@ function next_controller_invalid(self, builder) {
  * @param {String} message
  * @return {Controller}
  */
-Controller.prototype.wtf = Controller.prototype.problem = function(message) {
+ControllerProto.wtf = ControllerProto.problem = function(message) {
 	F.problem(message, this.name, this.uri, this.ip);
 	return this;
 };
@@ -11259,7 +11265,7 @@ Controller.prototype.wtf = Controller.prototype.problem = function(message) {
  * @param {String} message
  * @return {Controller}
  */
-Controller.prototype.change = function(message) {
+ControllerProto.change = function(message) {
 	F.change(message, this.name, this.uri, this.ip);
 	return this;
 };
@@ -11269,7 +11275,7 @@ Controller.prototype.change = function(message) {
  * @param {String} message
  * @return {Controller}
  */
-Controller.prototype.trace = function(message) {
+ControllerProto.trace = function(message) {
 	F.trace(message, this.name, this.uri, this.ip);
 	return this;
 };
@@ -11280,7 +11286,7 @@ Controller.prototype.trace = function(message) {
  * @param {String Array} flags Route flags (optional).
  * @return {Boolean}
  */
-Controller.prototype.transfer = function(url, flags) {
+ControllerProto.transfer = function(url, flags) {
 
 	var self = this;
 	var length = F.routes.web.length;
@@ -11339,22 +11345,22 @@ Controller.prototype.transfer = function(url, flags) {
 	return true;
 };
 
-Controller.prototype.cancel = function() {
+ControllerProto.cancel = function() {
 	this.isCanceled = true;
 	return this;
 };
 
-Controller.prototype.log = function() {
+ControllerProto.log = function() {
 	F.log.apply(F, arguments);
 	return this;
 };
 
-Controller.prototype.logger = function() {
+ControllerProto.logger = function() {
 	F.logger.apply(F, arguments);
 	return this;
 };
 
-Controller.prototype.meta = function() {
+ControllerProto.meta = function() {
 	var self = this;
 
 	if (arguments[0])
@@ -11372,7 +11378,7 @@ Controller.prototype.meta = function() {
 	return self;
 };
 
-Controller.prototype.$dns = function() {
+ControllerProto.$dns = function() {
 
 	var builder = '';
 	var length = arguments.length;
@@ -11384,7 +11390,7 @@ Controller.prototype.$dns = function() {
 	return '';
 };
 
-Controller.prototype.$prefetch = function() {
+ControllerProto.$prefetch = function() {
 
 	var builder = '';
 	var length = arguments.length;
@@ -11396,7 +11402,7 @@ Controller.prototype.$prefetch = function() {
 	return '';
 };
 
-Controller.prototype.$prerender = function() {
+ControllerProto.$prerender = function() {
 
 	var builder = '';
 	var length = arguments.length;
@@ -11408,22 +11414,22 @@ Controller.prototype.$prerender = function() {
 	return '';
 };
 
-Controller.prototype.$next = function(value) {
+ControllerProto.$next = function(value) {
 	this.head('<link rel="next" href="' + this._preparehostname(value) + '" />');
 	return '';
 };
 
-Controller.prototype.$prev = function(value) {
+ControllerProto.$prev = function(value) {
 	this.head('<link rel="prev" href="' + this._preparehostname(value) + '" />');
 	return '';
 };
 
-Controller.prototype.$canonical = function(value) {
+ControllerProto.$canonical = function(value) {
 	this.head('<link rel="canonical" href="' + this._preparehostname(value) + '" />');
 	return '';
 };
 
-Controller.prototype.$meta = function() {
+ControllerProto.$meta = function() {
 	var self = this;
 
 	if (arguments.length) {
@@ -11436,82 +11442,82 @@ Controller.prototype.$meta = function() {
 	return F.onMeta.call(self, repository[REPOSITORY_META_TITLE], repository[REPOSITORY_META_DESCRIPTION], repository[REPOSITORY_META_KEYWORDS], repository[REPOSITORY_META_IMAGE]);
 };
 
-Controller.prototype.title = function(value) {
+ControllerProto.title = function(value) {
 	this.$title(value);
 	return this;
 };
 
-Controller.prototype.description = function(value) {
+ControllerProto.description = function(value) {
 	this.$description(value);
 	return this;
 };
 
-Controller.prototype.keywords = function(value) {
+ControllerProto.keywords = function(value) {
 	this.$keywords(value);
 	return this;
 };
 
-Controller.prototype.author = function(value) {
+ControllerProto.author = function(value) {
 	this.$author(value);
 	return this;
 };
 
-Controller.prototype.$title = function(value) {
+ControllerProto.$title = function(value) {
 	if (value)
 		this.repository[REPOSITORY_META_TITLE] = value;
 	return '';
 };
 
-Controller.prototype.$title2 = function(value) {
+ControllerProto.$title2 = function(value) {
 	var current = this.repository[REPOSITORY_META_TITLE];
 	if (value)
 		this.repository[REPOSITORY_META_TITLE] = (current ? current : '') + value;
 	return '';
 };
 
-Controller.prototype.$description = function(value) {
+ControllerProto.$description = function(value) {
 	if (value)
 		this.repository[REPOSITORY_META_DESCRIPTION] = value;
 	return '';
 };
 
-Controller.prototype.$keywords = function(value) {
+ControllerProto.$keywords = function(value) {
 	if (value && value.length)
 		this.repository[REPOSITORY_META_KEYWORDS] = value instanceof Array ? value.join(', ') : value;
 	return '';
 };
 
-Controller.prototype.$author = function(value) {
+ControllerProto.$author = function(value) {
 	if (value)
 		this.repository[REPOSITORY_META_AUTHOR] = value;
 	return '';
 };
 
-Controller.prototype.sitemap_navigation = function(name, language) {
+ControllerProto.sitemap_navigation = function(name, language) {
 	return F.sitemap_navigation(name || this.sitemapid, language || this.language);
 };
 
-Controller.prototype.sitemap_url = function(name, a, b, c, d, e, f) {
+ControllerProto.sitemap_url = function(name, a, b, c, d, e, f) {
 	var item = F.sitemap(name || this.sitemapid, true, this.language);
 	return item ? item.url.format(a, b, c, d, e, f) : '';
 };
 
-Controller.prototype.sitemap_name = function(name, a, b, c, d, e, f) {
+ControllerProto.sitemap_name = function(name, a, b, c, d, e, f) {
 	var item = F.sitemap(name || this.sitemapid, true, this.language);
 	return item ? item.name.format(a, b, c, d, e, f) : '';
 };
 
-Controller.prototype.sitemap_url2 = function(language, name, a, b, c, d, e, f) {
+ControllerProto.sitemap_url2 = function(language, name, a, b, c, d, e, f) {
 	var item = F.sitemap(name || this.sitemapid, true, language);
 	return item ? item.url.format(a, b, c, d, e, f) : '';
 };
 
-Controller.prototype.sitemap_name2 = function(language, name, a, b, c, d, e, f) {
+ControllerProto.sitemap_name2 = function(language, name, a, b, c, d, e, f) {
 	var item = F.sitemap(name || this.sitemapid, true, language);
 	return item ? item.name.format(a, b, c, d, e, f) : '';
 };
 
-Controller.prototype.sitemap_add = function(parent, name, url) {
+ControllerProto.sitemap_add = function(parent, name, url) {
 
 	var self = this;
 	var sitemap = self.repository[REPOSITORY_SITEMAP];
@@ -11539,7 +11545,7 @@ Controller.prototype.sitemap_add = function(parent, name, url) {
 	return sitemap;
 };
 
-Controller.prototype.sitemap_change = function(name, type, a, b, c, d, e, f) {
+ControllerProto.sitemap_change = function(name, type, a, b, c, d, e, f) {
 
 	var self = this;
 	var sitemap = self.repository[REPOSITORY_SITEMAP];
@@ -11584,7 +11590,7 @@ Controller.prototype.sitemap_change = function(name, type, a, b, c, d, e, f) {
 	return sitemap;
 };
 
-Controller.prototype.sitemap_replace = function(name, title, url) {
+ControllerProto.sitemap_replace = function(name, title, url) {
 
 	var self = this;
 	var sitemap = self.repository[REPOSITORY_SITEMAP];
@@ -11624,24 +11630,24 @@ Controller.prototype.sitemap_replace = function(name, title, url) {
 };
 
 // Arguments: parent, name, url
-Controller.prototype.$sitemap_add = function(parent, name, url) {
+ControllerProto.$sitemap_add = function(parent, name, url) {
 	this.sitemap_add(parent, name, url);
 	return '';
 };
 
 // Arguments: name, type, value, format
-Controller.prototype.$sitemap_change = function(a, b, c, d, e, f, g, h) {
+ControllerProto.$sitemap_change = function(a, b, c, d, e, f, g, h) {
 	this.sitemap_change(a, b, c, d, e, f, g, h);
 	return '';
 };
 
 // Arguments: name, title, url
-Controller.prototype.$sitemap_replace =function(a, b, c) {
+ControllerProto.$sitemap_replace =function(a, b, c) {
 	this.sitemap_replace(a, b, c);
 	return '';
 };
 
-Controller.prototype.sitemap = function(name) {
+ControllerProto.sitemap = function(name) {
 	var self = this;
 	var sitemap;
 
@@ -11673,23 +11679,23 @@ Controller.prototype.sitemap = function(name) {
 };
 
 // Arguments: name
-Controller.prototype.$sitemap = function(name) {
+ControllerProto.$sitemap = function(name) {
 	var self = this;
 	self.sitemap(name);
 	return '';
 };
 
-Controller.prototype.module = function(name) {
+ControllerProto.module = function(name) {
 	return F.module(name);
 };
 
-Controller.prototype.layout = function(name) {
+ControllerProto.layout = function(name) {
 	var self = this;
 	self.layoutName = name;
 	return self;
 };
 
-Controller.prototype.theme = function(name) {
+ControllerProto.theme = function(name) {
 	var self = this;
 	self.themeName = name;
 	return self;
@@ -11700,13 +11706,13 @@ Controller.prototype.theme = function(name) {
  * @param {String} name Layout name
  * @return {String}
  */
-Controller.prototype.$layout = function(name) {
+ControllerProto.$layout = function(name) {
 	var self = this;
 	self.layoutName = name;
 	return '';
 };
 
-Controller.prototype.model = function(name) {
+ControllerProto.model = function(name) {
 	return F.model(name);
 };
 
@@ -11719,7 +11725,7 @@ Controller.prototype.model = function(name) {
  * @param {Function(err)} callback Optional.
  * @return {MailMessage}
  */
-Controller.prototype.mail = function(address, subject, view, model, callback) {
+ControllerProto.mail = function(address, subject, view, model, callback) {
 
 	if (typeof(model) === 'function') {
 		callback = model;
@@ -11752,17 +11758,17 @@ Controller.prototype.mail = function(address, subject, view, model, callback) {
 	return message;
 };
 
-Controller.prototype.$template = function(name, model, expire, key) {
+ControllerProto.$template = function(name, model, expire, key) {
 	OBSOLETE('@{template()}', 'The method will be removed in v4');
 	return this.$viewToggle(true, name, model, expire, key);
 };
 
-Controller.prototype.$templateToggle = function(visible, name, model, expire, key) {
+ControllerProto.$templateToggle = function(visible, name, model, expire, key) {
 	OBSOLETE('@{templateToggle()}', 'The method will be removed in v4');
 	return this.$viewToggle(visible, name, model, expire, key);
 };
 
-Controller.prototype.$view = function(name, model, expire, key) {
+ControllerProto.$view = function(name, model, expire, key) {
 
 	var self = this;
 	var cache;
@@ -11782,12 +11788,12 @@ Controller.prototype.$view = function(name, model, expire, key) {
 	return value;
 };
 
-Controller.prototype.$viewCompile = function(body, model, key) {
+ControllerProto.$viewCompile = function(body, model, key) {
 	OBSOLETE('@{viewCompile()}', 'Was renamed to @{view_compile()}.');
 	return this.$view_compile(body, model, key);
 };
 
-Controller.prototype.$view_compile = function(body, model, key) {
+ControllerProto.$view_compile = function(body, model, key) {
 	var self = this;
 	var layout = self.layoutName;
 	self.layoutName = '';
@@ -11796,7 +11802,7 @@ Controller.prototype.$view_compile = function(body, model, key) {
 	return value || '';
 };
 
-Controller.prototype.$viewToggle = function(visible, name, model, expire, key, async) {
+ControllerProto.$viewToggle = function(visible, name, model, expire, key, async) {
 	OBSOLETE('@{viewToggle()}', 'The method will be removed in v4');
 	return visible ? this.$view(name, model, expire, key, async) : '';
 };
@@ -11809,7 +11815,7 @@ Controller.prototype.$viewToggle = function(visible, name, model, expire, key, a
  * @param {String} argN A content 2, optional
  * @return {String/Controller} String is returned when the method contains only `name` argument
  */
-Controller.prototype.place = function(name) {
+ControllerProto.place = function(name) {
 
 	var key = REPOSITORY_PLACE + '_' + name;
 	var length = arguments.length;
@@ -11849,7 +11855,7 @@ Controller.prototype.place = function(name) {
  * @param {Boolean} replace Optional, default `false` otherwise concats contents.
  * @return {String/Controller} String is returned when the method contains only `name` argument
  */
-Controller.prototype.section = function(name, value, replace) {
+ControllerProto.section = function(name, value, replace) {
 
 	var key = '$section_' + name;
 
@@ -11869,7 +11875,7 @@ Controller.prototype.section = function(name, value, replace) {
 	return this;
 };
 
-Controller.prototype.$place = function() {
+ControllerProto.$place = function() {
 	var self = this;
 	if (arguments.length === 1)
 		return self.place.apply(self, arguments);
@@ -11877,12 +11883,12 @@ Controller.prototype.$place = function() {
 	return '';
 };
 
-Controller.prototype.$url = function(host) {
+ControllerProto.$url = function(host) {
 	return host ? this.req.hostname(this.url) : this.url;
 };
 
 // Argument: name
-Controller.prototype.$helper = function() {
+ControllerProto.$helper = function() {
 	return this.helper.apply(this, arguments);
 };
 
@@ -11900,7 +11906,7 @@ function querystring_encode(value, def, key) {
 
 // @{href({ key1: 1, key2: 2 })}
 // @{href('key', 'value')}
-Controller.prototype.href = function(key, value) {
+ControllerProto.href = function(key, value) {
 	var self = this;
 
 	if (!arguments.length) {
@@ -11968,15 +11974,15 @@ Controller.prototype.href = function(key, value) {
 	return self.url + (obj ? '?' + obj : '');
 };
 
-Controller.prototype.$checked = function(bool, charBeg, charEnd) {
+ControllerProto.$checked = function(bool, charBeg, charEnd) {
 	return this.$isValue(bool, charBeg, charEnd, 'checked="checked"');
 };
 
-Controller.prototype.$disabled = function(bool, charBeg, charEnd) {
+ControllerProto.$disabled = function(bool, charBeg, charEnd) {
 	return this.$isValue(bool, charBeg, charEnd, 'disabled="disabled"');
 };
 
-Controller.prototype.$selected = function(bool, charBeg, charEnd) {
+ControllerProto.$selected = function(bool, charBeg, charEnd) {
 	return this.$isValue(bool, charBeg, charEnd, 'selected="selected"');
 };
 
@@ -11987,32 +11993,32 @@ Controller.prototype.$selected = function(bool, charBeg, charEnd) {
  * return {String} Returns empty string.
  */
 // Argument: value
-Controller.prototype.$set = function() {
+ControllerProto.$set = function() {
 	return '';
 };
 
-Controller.prototype.$readonly = function(bool, charBeg, charEnd) {
+ControllerProto.$readonly = function(bool, charBeg, charEnd) {
 	return this.$isValue(bool, charBeg, charEnd, 'readonly="readonly"');
 };
 
-Controller.prototype.$header = function(name, value) {
+ControllerProto.$header = function(name, value) {
 	this.header(name, value);
 	return '';
 };
 
-Controller.prototype.$text = function(model, name, attr) {
+ControllerProto.$text = function(model, name, attr) {
 	return this.$input(model, 'text', name, attr);
 };
 
-Controller.prototype.$password = function(model, name, attr) {
+ControllerProto.$password = function(model, name, attr) {
 	return this.$input(model, 'password', name, attr);
 };
 
-Controller.prototype.$hidden = function(model, name, attr) {
+ControllerProto.$hidden = function(model, name, attr) {
 	return this.$input(model, 'hidden', name, attr);
 };
 
-Controller.prototype.$radio = function(model, name, value, attr) {
+ControllerProto.$radio = function(model, name, value, attr) {
 
 	if (typeof(attr) === 'string') {
 		var label = attr;
@@ -12024,7 +12030,7 @@ Controller.prototype.$radio = function(model, name, value, attr) {
 	return this.$input(model, 'radio', name, attr);
 };
 
-Controller.prototype.$checkbox = function(model, name, attr) {
+ControllerProto.$checkbox = function(model, name, attr) {
 
 	if (typeof(attr) === 'string') {
 		var label = attr;
@@ -12035,7 +12041,7 @@ Controller.prototype.$checkbox = function(model, name, attr) {
 	return this.$input(model, 'checkbox', name, attr);
 };
 
-Controller.prototype.$textarea = function(model, name, attr) {
+ControllerProto.$textarea = function(model, name, attr) {
 
 	var builder = '<textarea';
 
@@ -12067,7 +12073,7 @@ Controller.prototype.$textarea = function(model, name, attr) {
 	return builder + '>' + ((model[name] || attr.value) || '') + '</textarea>';
 };
 
-Controller.prototype.$input = function(model, type, name, attr) {
+ControllerProto.$input = function(model, type, name, attr) {
 
 	var builder = ['<input'];
 
@@ -12143,14 +12149,14 @@ Controller.prototype.$input = function(model, type, name, attr) {
 	return attr.label ? ('<label>' + builder + ' <span>' + attr.label + '</span></label>') : builder;
 };
 
-Controller.prototype._preparehostname = function(value) {
+ControllerProto._preparehostname = function(value) {
 	if (!value)
 		return value;
 	var tmp = value.substring(0, 5);
 	return tmp !== 'http:' && tmp !== 'https' && (tmp[0] !== '/' || tmp[1] !== '/') ? this.host(value) : value;
 };
 
-Controller.prototype.head = function() {
+ControllerProto.head = function() {
 
 	var self = this;
 
@@ -12201,12 +12207,12 @@ Controller.prototype.head = function() {
 	return self;
 };
 
-Controller.prototype.$head = function() {
+ControllerProto.$head = function() {
 	this.head.apply(this, arguments);
 	return '';
 };
 
-Controller.prototype.$isValue = function(bool, charBeg, charEnd, value) {
+ControllerProto.$isValue = function(bool, charBeg, charEnd, value) {
 	if (!bool)
 		return '';
 	charBeg = charBeg || ' ';
@@ -12214,7 +12220,7 @@ Controller.prototype.$isValue = function(bool, charBeg, charEnd, value) {
 	return charBeg + value + charEnd;
 };
 
-Controller.prototype.$options = function(arr, selected, name, value, disabled) {
+ControllerProto.$options = function(arr, selected, name, value, disabled) {
 
 	var type = typeof(arr);
 	if (!arr)
@@ -12311,7 +12317,7 @@ Controller.prototype.$options = function(arr, selected, name, value, disabled) {
  * @private
  * @return {String}
  */
-Controller.prototype.$script = function() {
+ControllerProto.$script = function() {
 	return arguments.length === 1 ? this.$js(arguments[0]) : this.$js.apply(this, arguments);
 };
 
@@ -12320,7 +12326,7 @@ Controller.prototype.$script = function() {
  * @private
  * @return {String}
  */
-Controller.prototype.$js = function() {
+ControllerProto.$js = function() {
 	var self = this;
 	var builder = '';
 	for (var i = 0; i < arguments.length; i++)
@@ -12333,7 +12339,7 @@ Controller.prototype.$js = function() {
  * @private
  * @return {String}
  */
-Controller.prototype.$absolute = function(files, base) {
+ControllerProto.$absolute = function(files, base) {
 
 	var self = this;
 	var builder;
@@ -12376,7 +12382,7 @@ Controller.prototype.$absolute = function(files, base) {
 	return self.public(files, base);
 };
 
-Controller.prototype.$import = function() {
+ControllerProto.$import = function() {
 
 	var self = this;
 	var builder = '';
@@ -12471,7 +12477,7 @@ Controller.prototype.$import = function() {
  * @private
  * @return {String}
  */
-Controller.prototype.$css = function() {
+ControllerProto.$css = function() {
 
 	var self = this;
 	var builder = '';
@@ -12482,7 +12488,7 @@ Controller.prototype.$css = function() {
 	return builder;
 };
 
-Controller.prototype.$image = function(name, width, height, alt, className) {
+ControllerProto.$image = function(name, width, height, alt, className) {
 
 	var style = '';
 
@@ -12523,7 +12529,7 @@ Controller.prototype.$image = function(name, width, height, alt, className) {
  * @param {String} className Optional.
  * @return {String}
  */
-Controller.prototype.$download = function(filename, innerHTML, downloadName, className) {
+ControllerProto.$download = function(filename, innerHTML, downloadName, className) {
 	var builder = '<a href="' + F.public_download(filename) + ATTR_END;
 
 	if (downloadName)
@@ -12543,7 +12549,7 @@ Controller.prototype.$download = function(filename, innerHTML, downloadName, cla
  * @param {Boolean} beautify Optional.
  * @return {String}
  */
-Controller.prototype.$json = function(obj, id, beautify, replacer) {
+ControllerProto.$json = function(obj, id, beautify, replacer) {
 
 	if (typeof(id) === 'boolean') {
 		replacer = beautify;
@@ -12571,7 +12577,7 @@ Controller.prototype.$json = function(obj, id, beautify, replacer) {
  * @param {Boolean} beautify Optional.
  * @return {String}
  */
-Controller.prototype.$json2 = function(obj, id) {
+ControllerProto.$json2 = function(obj, id) {
 
 	if (obj && obj.$$schema)
 		obj = obj.$clean();
@@ -12592,7 +12598,7 @@ Controller.prototype.$json2 = function(obj, id) {
  * @param {String} name
  * @return {String}
  */
-Controller.prototype.$favicon = function(name) {
+ControllerProto.$favicon = function(name) {
 
 	var contentType = 'image/x-icon';
 
@@ -12619,16 +12625,16 @@ Controller.prototype.$favicon = function(name) {
  * @param {Function} fn
  * @return {String}
  */
-Controller.prototype.$static = function(name, fn) {
+ControllerProto.$static = function(name, fn) {
 	return fn.call(framework, prepare_staticurl(name, false), this.themeName);
 };
 
-Controller.prototype.routeScript = function(name, tag, path) {
+ControllerProto.routeScript = function(name, tag, path) {
 	OBSOLETE('controller.routeScript()', 'Was renamed to "controller.public_js()"');
 	return this.public_js(name, tag, path);
 };
 
-Controller.prototype.public_js = function(name, tag, path) {
+ControllerProto.public_js = function(name, tag, path) {
 
 	if (name === undefined)
 		name = 'default.js';
@@ -12660,12 +12666,12 @@ Controller.prototype.public_js = function(name, tag, path) {
 	return tag ? ('<script src="' + url + '"' + (async ? ' async' : '') + '></script>') : url;
 };
 
-Controller.prototype.routeStyle = function(name, tag, path) {
+ControllerProto.routeStyle = function(name, tag, path) {
 	OBSOLETE('controller.routeStyle()', 'Was renamed to "controller.public_css()"');
 	return this.public_css(name, tag, path);
 };
 
-Controller.prototype.public_css = function(name, tag, path) {
+ControllerProto.public_css = function(name, tag, path) {
 
 	var self = this;
 
@@ -12679,48 +12685,48 @@ Controller.prototype.public_css = function(name, tag, path) {
 	return tag ? '<link type="text/css" rel="stylesheet" href="' + url + '" />' : url;
 };
 
-Controller.prototype.routeImage = function(name) {
+ControllerProto.routeImage = function(name) {
 	OBSOLETE('controller.routeImage()', 'Was renamed to "controller.public_image()"');
 	return this.public_image(name);
 };
 
-Controller.prototype.public_image = function(name) {
+ControllerProto.public_image = function(name) {
 	return this.$static(name, F.public_image);
 };
 
-Controller.prototype.routeVideo = function(name) {
+ControllerProto.routeVideo = function(name) {
 	OBSOLETE('controller.routeVideo()', 'Was renamed to "controller.public_video()"');
 	return this.public_video(name);
 };
 
-Controller.prototype.public_video = function(name) {
+ControllerProto.public_video = function(name) {
 	return this.$static(name, F.public_video);
 };
 
-Controller.prototype.routeFont = function(name) {
+ControllerProto.routeFont = function(name) {
 	OBSOLETE('controller.routeFont()', 'Was renamed to "controller.public_font()"');
 	return this.public_font(name);
 };
 
-Controller.prototype.public_font = function(name) {
+ControllerProto.public_font = function(name) {
 	return F.public_font(name);
 };
 
-Controller.prototype.routeDownload = function(name) {
+ControllerProto.routeDownload = function(name) {
 	OBSOLETE('controller.routeDownload()', 'Was renamed to "controller.public_download()"');
 	return this.public_download(name);
 };
 
-Controller.prototype.public_download = function(name) {
+ControllerProto.public_download = function(name) {
 	return this.$static(name, F.public_download);
 };
 
-Controller.prototype.routeStatic = function(name, path) {
+ControllerProto.routeStatic = function(name, path) {
 	OBSOLETE('controller.routeStatic()', 'Was renamed to "controller.public()"');
 	return this.public(name, path);
 };
 
-Controller.prototype.public = function(name, path) {
+ControllerProto.public = function(name, path) {
 	var url = this.$static(name, F.public);
 	if (path && U.isRelative(url))
 		return F.isWindows ? U.join(path, url) : U.join(path, url).substring(1);
@@ -12733,7 +12739,7 @@ Controller.prototype.public = function(name, path) {
  * @param {Object} model A model, optional.
  * @return {String}
  */
-Controller.prototype.template = function(name, model) {
+ControllerProto.template = function(name, model) {
 	OBSOLETE('controller.template()', 'This method will be removed in v4.');
 	return this.view(name, model, true);
 };
@@ -12743,7 +12749,7 @@ Controller.prototype.template = function(name, model) {
  * @param {String} name A helper name.
  * @return {String}
  */
-Controller.prototype.helper = function(name) {
+ControllerProto.helper = function(name) {
 	var helper = F.helpers[name];
 	if (!helper)
 		return '';
@@ -12763,7 +12769,7 @@ Controller.prototype.helper = function(name) {
  * @param {Function(key, value)} replacer JSON replacer.
  * @return {Controller}
  */
-Controller.prototype.json = function(obj, headers, beautify, replacer) {
+ControllerProto.json = function(obj, headers, beautify, replacer) {
 
 	var self = this;
 	var res = self.res;
@@ -12819,7 +12825,7 @@ Controller.prototype.json = function(obj, headers, beautify, replacer) {
 	return self;
 };
 
-Controller.prototype.success = function(is, value) {
+ControllerProto.success = function(is, value) {
 	return this.json(SUCCESS(is === undefined ? true : is, value));
 };
 
@@ -12832,7 +12838,7 @@ Controller.prototype.success = function(is, value) {
  * @param {Function} replacer Optional, the JSON replacer.
  * @return {Controller}
  */
-Controller.prototype.jsonp = function(name, obj, headers, beautify, replacer) {
+ControllerProto.jsonp = function(name, obj, headers, beautify, replacer) {
 
 	var self = this;
 	var res = self.res;
@@ -12886,7 +12892,7 @@ Controller.prototype.jsonp = function(name, obj, headers, beautify, replacer) {
  * @param {String} view Optional, undefined or null returns JSON.
  * @return {Function}
  */
-Controller.prototype.callback = function(view) {
+ControllerProto.callback = function(view) {
 	var self = this;
 	return function(err, data) {
 
@@ -12922,7 +12928,7 @@ Controller.prototype.callback = function(view) {
 	};
 };
 
-Controller.prototype.custom = function() {
+ControllerProto.custom = function() {
 	if (this.res.success)
 		return false;
 	this.res.$custom();
@@ -12934,22 +12940,22 @@ Controller.prototype.custom = function() {
  * @param {Boolean} enable Optional, default `true`.
  * @return {Controller}
  */
-Controller.prototype.noClear = function(enable) {
+ControllerProto.noClear = function(enable) {
 	OBSOLETE('controller.noClear()', 'You need to use controller.autoclear(false)');
 	this.req._manual = enable === undefined ? true : enable;
 	return this;
 };
 
-Controller.prototype.autoclear = function(enable) {
+ControllerProto.autoclear = function(enable) {
 	this.req._manual = enable === false;
 	return this;
 };
 
-Controller.prototype.html = function(body, headers) {
+ControllerProto.html = function(body, headers) {
 	return this.content(body, 'text/html', headers);
 };
 
-Controller.prototype.content = function(body, type, headers) {
+ControllerProto.content = function(body, type, headers) {
 
 	var self = this;
 	var res = self.res;
@@ -12993,7 +12999,7 @@ Controller.prototype.content = function(body, type, headers) {
  * @param {Boolean} headers A custom headers.
  * @return {Controller}
  */
-Controller.prototype.plain = function(body, headers) {
+ControllerProto.plain = function(body, headers) {
 
 	var self = this;
 	var res = self.res;
@@ -13033,7 +13039,7 @@ Controller.prototype.plain = function(body, headers) {
  * @param {Object/Number} headers A custom headers or a custom HTTP status.
  * @return {Controller}
  */
-Controller.prototype.empty = function(headers) {
+ControllerProto.empty = function(headers) {
 
 	var self = this;
 	var res = self.res;
@@ -13058,7 +13064,7 @@ Controller.prototype.empty = function(headers) {
  * @param {Object/Number} headers A custom headers or a custom HTTP status.
  * @return {Controller}
  */
-Controller.prototype.nocontent = function(headers) {
+ControllerProto.nocontent = function(headers) {
 	var self = this;
 	var res = self.res;
 	res.writeHead(204, headers);
@@ -13073,7 +13079,7 @@ Controller.prototype.nocontent = function(headers) {
  * @param {String} problem Optional.
  * @return {Controller}
  */
-Controller.prototype.destroy = function(problem) {
+ControllerProto.destroy = function(problem) {
 	var self = this;
 
 	problem && self.problem(problem);
@@ -13094,7 +13100,7 @@ Controller.prototype.destroy = function(problem) {
  * @param {Function} done Optinoal, callback.
  * @return {Controller}
  */
-Controller.prototype.file = function(filename, download, headers, done) {
+ControllerProto.file = function(filename, download, headers, done) {
 
 	if (filename[0] === '~')
 		filename = filename.substring(1);
@@ -13118,7 +13124,7 @@ Controller.prototype.file = function(filename, download, headers, done) {
  * @param {Function} done Optional, callback.
  * @return {Controller}
  */
-Controller.prototype.image = function(filename, make, headers, done) {
+ControllerProto.image = function(filename, make, headers, done) {
 
 	var res = this.res;
 
@@ -13148,7 +13154,7 @@ Controller.prototype.image = function(filename, make, headers, done) {
  * @param {Function} done Optinoal, callback.
  * @return {Controller}
  */
-Controller.prototype.stream = function(type, stream, download, headers, done, nocompress) {
+ControllerProto.stream = function(type, stream, download, headers, done, nocompress) {
 	var res = this.res;
 	res.options.type = type;
 	res.options.stream = stream;
@@ -13165,7 +13171,7 @@ Controller.prototype.stream = function(type, stream, download, headers, done, no
  * @param  {String} problem Description of problem (optional)
  * @return {Controller}
  */
-Controller.prototype.throw400 = Controller.prototype.view400 = function(problem) {
+ControllerProto.throw400 = ControllerProto.view400 = function(problem) {
 	return controller_error_status(this, 400, problem);
 };
 
@@ -13174,7 +13180,7 @@ Controller.prototype.throw400 = Controller.prototype.view400 = function(problem)
  * @param  {String} problem Description of problem (optional)
  * @return {Controller}
  */
-Controller.prototype.throw401 = Controller.prototype.view401 = function(problem) {
+ControllerProto.throw401 = ControllerProto.view401 = function(problem) {
 	return controller_error_status(this, 401, problem);
 };
 
@@ -13183,7 +13189,7 @@ Controller.prototype.throw401 = Controller.prototype.view401 = function(problem)
  * @param  {String} problem Description of problem (optional)
  * @return {Controller}
  */
-Controller.prototype.throw403 = Controller.prototype.view403 = function(problem) {
+ControllerProto.throw403 = ControllerProto.view403 = function(problem) {
 	return controller_error_status(this, 403, problem);
 };
 
@@ -13192,7 +13198,7 @@ Controller.prototype.throw403 = Controller.prototype.view403 = function(problem)
  * @param  {String} problem Description of problem (optional)
  * @return {Controller}
  */
-Controller.prototype.throw404 = Controller.prototype.view404 = function(problem) {
+ControllerProto.throw404 = ControllerProto.view404 = function(problem) {
 	return controller_error_status(this, 404, problem);
 };
 
@@ -13201,7 +13207,7 @@ Controller.prototype.throw404 = Controller.prototype.view404 = function(problem)
  * @param  {String} problem Description of problem (optional)
  * @return {Controller}
  */
-Controller.prototype.throw409 = Controller.prototype.view409 = function(problem) {
+ControllerProto.throw409 = ControllerProto.view409 = function(problem) {
 	return controller_error_status(this, 409, problem);
 };
 
@@ -13210,7 +13216,7 @@ Controller.prototype.throw409 = Controller.prototype.view409 = function(problem)
  * @param {Error} error
  * @return {Controller}
  */
-Controller.prototype.throw500 = Controller.prototype.view500 = function(error) {
+ControllerProto.throw500 = ControllerProto.view500 = function(error) {
 	var self = this;
 	F.error(error instanceof Error ? error : new Error((error || '').toString()), self.name, self.req.uri);
 	return controller_error_status(self, 500, error);
@@ -13221,7 +13227,7 @@ Controller.prototype.throw500 = Controller.prototype.view500 = function(error) {
  * @param  {String} problem Description of the problem (optional)
  * @return {Controller}
  */
-Controller.prototype.throw501 = Controller.prototype.view501 = function(problem) {
+ControllerProto.throw501 = ControllerProto.view501 = function(problem) {
 	return controller_error_status(this, 501, problem);
 };
 
@@ -13230,7 +13236,7 @@ Controller.prototype.throw501 = Controller.prototype.view501 = function(problem)
  * @param  {String} problem Description of the problem (optional)
  * @return {Controller}
  */
-Controller.prototype.throw503 = Controller.prototype.view503 = function(problem) {
+ControllerProto.throw503 = ControllerProto.view503 = function(problem) {
 	return controller_error_status(this, 503, problem);
 };
 
@@ -13240,7 +13246,7 @@ Controller.prototype.throw503 = Controller.prototype.view503 = function(problem)
  * @param {Boolean} permanent Is permanent? Default: `false`
  * @return {Controller}
  */
-Controller.prototype.redirect = function(url, permanent) {
+ControllerProto.redirect = function(url, permanent) {
 	this.precache && this.precache(null, null, null);
 	var res = this.res;
 	res.options.url = url;
@@ -13258,7 +13264,7 @@ Controller.prototype.redirect = function(url, permanent) {
  * @param {Object} headers Optional, additional headers.
  * @return {Controller}
  */
-Controller.prototype.binary = function(buffer, type, encoding, download, headers) {
+ControllerProto.binary = function(buffer, type, encoding, download, headers) {
 
 	var res = this.res;
 
@@ -13288,7 +13294,7 @@ Controller.prototype.binary = function(buffer, type, encoding, download, headers
  * @param {String} label
  * @return {Object}
  */
-Controller.prototype.baa = function(label) {
+ControllerProto.baa = function(label) {
 
 	var self = this;
 	self.precache && self.precache(null, null, null);
@@ -13319,7 +13325,7 @@ Controller.prototype.baa = function(label) {
  * @param {Number} retry A reconnection timeout in milliseconds when is an unexpected problem.
  * @return {Controller}
  */
-Controller.prototype.sse = function(data, eventname, id, retry) {
+ControllerProto.sse = function(data, eventname, id, retry) {
 
 	var self = this;
 	var res = self.res;
@@ -13376,7 +13382,7 @@ Controller.prototype.sse = function(data, eventname, id, retry) {
  * @param {Boolean} end
  * @return {Controller}
  */
-Controller.prototype.close = function(end) {
+ControllerProto.close = function(end) {
 	var self = this;
 
 	if (end === undefined)
@@ -13417,7 +13423,7 @@ Controller.prototype.close = function(end) {
  * @param {Number} timeout Optional, timeout (default: 10000)
  * @return {EventEmitter}
  */
-Controller.prototype.proxy = Controller.prototype.proxy2 = function(url, callback, headers, timeout) {
+ControllerProto.proxy = ControllerProto.proxy2 = function(url, callback, headers, timeout) {
 
 	if (typeof(callback) === 'object') {
 		timeout = headers;
@@ -13505,7 +13511,7 @@ Controller.prototype.proxy = Controller.prototype.proxy2 = function(url, callbac
  * @param {Boolean} isPartial When is `true` the method returns rendered HTML as `String`
  * @return {Controller/String}
  */
-Controller.prototype.view = function(name, model, headers, partial, noasync, cachekey) {
+ControllerProto.view = function(name, model, headers, partial, noasync, cachekey) {
 
 	var self = this;
 
@@ -13619,12 +13625,12 @@ Controller.prototype.view = function(name, model, headers, partial, noasync, cac
 	return self.$viewrender(filename, framework_internal.viewEngine(name, filename, self), model, headers, partial, isLayout, noasync, cachekey);
 };
 
-Controller.prototype.viewCompile = function(body, model, headers, partial, key) {
+ControllerProto.viewCompile = function(body, model, headers, partial, key) {
 	OBSOLETE('controller.viewCompile()', 'Was renamed to `controller.view_compile()`.');
 	return this.view_compile(body, model, headers, partial, key);
 };
 
-Controller.prototype.view_compile = function(body, model, headers, partial, key) {
+ControllerProto.view_compile = function(body, model, headers, partial, key) {
 
 	if (headers === true) {
 		key = partial;
@@ -13641,7 +13647,7 @@ Controller.prototype.view_compile = function(body, model, headers, partial, key)
 	return this.$viewrender('[dynamic view]', framework_internal.viewEngineCompile(body, this.language, this, key), model, headers, partial);
 };
 
-Controller.prototype.$viewrender = function(filename, generator, model, headers, partial, isLayout, noasync, cachekey) {
+ControllerProto.$viewrender = function(filename, generator, model, headers, partial, isLayout, noasync, cachekey) {
 
 	var self = this;
 	var err;
@@ -13873,7 +13879,7 @@ Controller.prototype.$viewrender = function(filename, generator, model, headers,
  * @param {Function()} fnFrom This method is executed when the content is readed from the cache.
  * @return {Controller}
  */
-Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
+ControllerProto.memorize = function(key, expires, disabled, fnTo, fnFrom) {
 
 	var self = this;
 
@@ -13943,7 +13949,7 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
 	return self;
 };
 
-Controller.prototype.$memorize_prepare = function(key, expires, disabled, fnTo, fnFrom) {
+ControllerProto.$memorize_prepare = function(key, expires, disabled, fnTo, fnFrom) {
 
 	var self = this;
 	var pk = '$memorize' + key;
@@ -14081,12 +14087,15 @@ WebSocket.prototype = {
 	}
 };
 
-WebSocket.prototype.operation = function(name, value, callback, options) {
+
+const WebSocketProto = WebSocket.prototype;
+
+WebSocketProto.operation = function(name, value, callback, options) {
 	OPERATION(name, value, callback, options, this);
 	return this;
 };
 
-WebSocket.prototype.emit = function(name, a, b, c, d, e, f, g) {
+WebSocketProto.emit = function(name, a, b, c, d, e, f, g) {
 	var evt = this.$events[name];
 	if (evt) {
 		var clean = false;
@@ -14106,7 +14115,7 @@ WebSocket.prototype.emit = function(name, a, b, c, d, e, f, g) {
 	return this;
 };
 
-WebSocket.prototype.on = function(name, fn) {
+WebSocketProto.on = function(name, fn) {
 	if (this.$events[name])
 		this.$events[name].push(fn);
 	else
@@ -14114,12 +14123,12 @@ WebSocket.prototype.on = function(name, fn) {
 	return this;
 };
 
-WebSocket.prototype.once = function(name, fn) {
+WebSocketProto.once = function(name, fn) {
 	fn.$once = true;
 	return this.on(name, fn);
 };
 
-WebSocket.prototype.removeListener = function(name, fn) {
+WebSocketProto.removeListener = function(name, fn) {
 	var evt = this.$events[name];
 	if (evt) {
 		evt = evt.remove(n => n === fn);
@@ -14131,7 +14140,7 @@ WebSocket.prototype.removeListener = function(name, fn) {
 	return this;
 };
 
-WebSocket.prototype.removeAllListeners = function(name) {
+WebSocketProto.removeAllListeners = function(name) {
 	if (name === true)
 		this.$events = EMPTYOBJECT;
 	else if (name)
@@ -14149,7 +14158,7 @@ WebSocket.prototype.removeAllListeners = function(name) {
  * @param {Function(key, value)} replacer for JSON (optional)
  * @return {WebSocket}
  */
-WebSocket.prototype.send = function(message, id, blacklist, replacer) {
+WebSocketProto.send = function(message, id, blacklist, replacer) {
 
 	var self = this;
 	var keys = self._keys;
@@ -14201,7 +14210,7 @@ WebSocket.prototype.send = function(message, id, blacklist, replacer) {
 	return self;
 };
 
-WebSocket.prototype.send2 = function(message, comparer, replacer) {
+WebSocketProto.send2 = function(message, comparer, replacer) {
 
 	var self = this;
 	var keys = self._keys;
@@ -14245,7 +14254,7 @@ function websocket_valid_fn(id, client, fn, msg) {
  * Sends a ping message
  * @return {WebSocket}
  */
-WebSocket.prototype.ping = function() {
+WebSocketProto.ping = function() {
 
 	var keys = this._keys;
 	if (!keys)
@@ -14269,7 +14278,7 @@ WebSocket.prototype.ping = function() {
  * @param {Number} code Optional default 1000.
  * @return {Websocket}
  */
-WebSocket.prototype.close = function(id, message, code) {
+WebSocketProto.close = function(id, message, code) {
 
 	var keys = this._keys;
 
@@ -14322,7 +14331,7 @@ WebSocket.prototype.close = function(id, message, code) {
  * @param {Error/String} err
  * @return {WebSocket/Function}
  */
-WebSocket.prototype.error = function(err) {
+WebSocketProto.error = function(err) {
 	var result = F.error(typeof(err) === 'string' ? new Error(err) : err, this.name, this.path);
 	return err ? this : result;
 };
@@ -14332,7 +14341,7 @@ WebSocket.prototype.error = function(err) {
  * @param {String} message
  * @return {WebSocket}
  */
-WebSocket.prototype.wtf = WebSocket.prototype.problem = function(message) {
+WebSocketProto.wtf = WebSocketProto.problem = function(message) {
 	F.problem(message, this.name, this.uri);
 	return this;
 };
@@ -14342,7 +14351,7 @@ WebSocket.prototype.wtf = WebSocket.prototype.problem = function(message) {
  * @param {String} message
  * @return {WebSocket}
  */
-WebSocket.prototype.change = function(message) {
+WebSocketProto.change = function(message) {
 	F.change(message, this.name, this.uri, this.ip);
 	return this;
 };
@@ -14352,7 +14361,7 @@ WebSocket.prototype.change = function(message) {
  * @param {Function(connection, index)} fn
  * @return {WebSocket}
  */
-WebSocket.prototype.all = function(fn) {
+WebSocketProto.all = function(fn) {
 	var arr = fn == null || fn == true ? [] : null;
 	var self = this;
 	if (self._keys) {
@@ -14371,7 +14380,7 @@ WebSocket.prototype.all = function(fn) {
  * @param {String} id
  * @return {WebSocketClient}
  */
-WebSocket.prototype.find = function(id) {
+WebSocketProto.find = function(id) {
 	var self = this;
 
 	if (!self._keys)
@@ -14396,7 +14405,7 @@ WebSocket.prototype.find = function(id) {
  * @param {String} problem Optional.
  * @return {WebSocket}
  */
-WebSocket.prototype.destroy = function(problem) {
+WebSocketProto.destroy = function(problem) {
 	var self = this;
 
 	problem && self.problem(problem);
@@ -14432,7 +14441,7 @@ WebSocket.prototype.destroy = function(problem) {
  * @param {Function} callback
  * @return {WebSocket]
  */
-WebSocket.prototype.autodestroy = function(callback) {
+WebSocketProto.autodestroy = function(callback) {
 	var self = this;
 	var key = 'websocket:' + self.id;
 	self.on('open', () => clearTimeout2(key));
@@ -14449,7 +14458,7 @@ WebSocket.prototype.autodestroy = function(callback) {
  * Internal function
  * @return {WebSocket}
  */
-WebSocket.prototype.$refresh = function() {
+WebSocketProto.$refresh = function() {
 	if (this.connections) {
 		this._keys = Object.keys(this.connections);
 		this.online = this._keys.length;
@@ -14463,7 +14472,7 @@ WebSocket.prototype.$refresh = function() {
  * @param {String} id
  * @return {WebSocket}
  */
-WebSocket.prototype.$remove = function(id) {
+WebSocketProto.$remove = function(id) {
 	if (this.connections)
 		delete this.connections[id];
 	return this;
@@ -14474,7 +14483,7 @@ WebSocket.prototype.$remove = function(id) {
  * @param {WebSocketClient} client
  * @return {WebSocket}
  */
-WebSocket.prototype.$add = function(client) {
+WebSocketProto.$add = function(client) {
 	this.connections[client._id] = client;
 	return this;
 };
@@ -14485,21 +14494,21 @@ WebSocket.prototype.$add = function(client) {
  * @param {String} key A resource key.
  * @return {String}
  */
-WebSocket.prototype.resource = function(name, key) {
+WebSocketProto.resource = function(name, key) {
 	return F.resource(name, key);
 };
 
-WebSocket.prototype.log = function() {
+WebSocketProto.log = function() {
 	F.log.apply(framework, arguments);
 	return this;
 };
 
-WebSocket.prototype.logger = function() {
+WebSocketProto.logger = function() {
 	F.logger.apply(framework, arguments);
 	return this;
 };
 
-WebSocket.prototype.check = function() {
+WebSocketProto.check = function() {
 	this.$ping && this.all(websocketcheck_ping);
 	return this;
 };
@@ -14560,11 +14569,17 @@ WebSocketClient.prototype = {
 	},
 
 	get config() {
+		OBSOLETE('controller.config', 'Use: CONF');
 		return this.container.config;
 	},
 
 	get global() {
+		OBSOLETE('controller.global', 'Use: G');
 		return this.container.global;
+	},
+
+	get sessionid() {
+		return this.req.sessionid;
 	},
 
 	get session() {
@@ -14588,13 +14603,15 @@ WebSocketClient.prototype = {
 	}
 };
 
-WebSocketClient.prototype.isWebSocket = true;
+const WebSocketClientProto = WebSocketClient.prototype;
 
-WebSocketClient.prototype.cookie = function(name) {
+WebSocketClientProto.isWebSocket = true;
+
+WebSocketClientProto.cookie = function(name) {
 	return this.req.cookie(name);
 };
 
-WebSocketClient.prototype.$close = function(code, message) {
+WebSocketClientProto.$close = function(code, message) {
 
 	var self = this;
 
@@ -14616,7 +14633,7 @@ WebSocketClient.prototype.$close = function(code, message) {
 	return self;
 };
 
-WebSocketClient.prototype.prepare = function(flags, protocols, allow, length) {
+WebSocketClientProto.prepare = function(flags, protocols, allow, length) {
 
 	flags = flags || EMPTYARRAY;
 	protocols = protocols || EMPTYARRAY;
@@ -14710,7 +14727,7 @@ function websocket_deflate(data) {
  * @param {WebSocket} container
  * @return {WebSocketClient}
  */
-WebSocketClient.prototype.upgrade = function(container) {
+WebSocketClientProto.upgrade = function(container) {
 	var self = this;
 	self.req.on('error', websocket_onerror);
 	self.container = container;
@@ -14740,7 +14757,7 @@ function websocket_close() {
 	this.$websocket.$onclose();
 }
 
-WebSocketClient.prototype.$ondata = function(data) {
+WebSocketClientProto.$ondata = function(data) {
 
 	if (this.isClosed)
 		return;
@@ -14845,7 +14862,7 @@ function buffer_concat(buffers, length) {
 // MIT
 // Written by Jozef Gula
 // Optimized by Peter Sirka
-WebSocketClient.prototype.$parse = function() {
+WebSocketClientProto.$parse = function() {
 
 	var self = this;
 	var current = self.current;
@@ -14916,7 +14933,7 @@ WebSocketClient.prototype.$parse = function() {
 	return true;
 };
 
-WebSocketClient.prototype.$readbody = function() {
+WebSocketClientProto.$readbody = function() {
 
 	var current = this.current;
 	var length = current.data.length;
@@ -14948,7 +14965,7 @@ WebSocketClient.prototype.$readbody = function() {
 	}
 };
 
-WebSocketClient.prototype.$decode = function() {
+WebSocketClientProto.$decode = function() {
 	var data = this.current.body;
 
 	switch (this.type) {
@@ -14978,7 +14995,7 @@ WebSocketClient.prototype.$decode = function() {
 	this.current.body = null;
 };
 
-WebSocketClient.prototype.parseInflate = function() {
+WebSocketClientProto.parseInflate = function() {
 	var self = this;
 
 	if (self.inflatelock)
@@ -15019,7 +15036,7 @@ WebSocketClient.prototype.parseInflate = function() {
 	}
 };
 
-WebSocketClient.prototype.$onerror = function(err) {
+WebSocketClientProto.$onerror = function(err) {
 
 	if (this.isClosed)
 		return;
@@ -15031,7 +15048,7 @@ WebSocketClient.prototype.$onerror = function(err) {
 		this.container.$events.error && this.container.emit('error', err, this);
 };
 
-WebSocketClient.prototype.$onclose = function() {
+WebSocketClientProto.$onclose = function() {
 	if (this._isClosed)
 		return;
 
@@ -15063,7 +15080,7 @@ WebSocketClient.prototype.$onclose = function() {
  * @param {Boolean} raw The message won't be converted e.g. to JSON.
  * @return {WebSocketClient}
  */
-WebSocketClient.prototype.send = function(message, raw, replacer) {
+WebSocketClientProto.send = function(message, raw, replacer) {
 
 	var self = this;
 
@@ -15090,7 +15107,7 @@ WebSocketClient.prototype.send = function(message, raw, replacer) {
 	return self;
 };
 
-WebSocketClient.prototype.sendDeflate = function() {
+WebSocketClientProto.sendDeflate = function() {
 	var self = this;
 
 	if (self.deflatelock)
@@ -15119,7 +15136,7 @@ WebSocketClient.prototype.sendDeflate = function() {
  * Ping message
  * @return {WebSocketClient}
  */
-WebSocketClient.prototype.ping = function() {
+WebSocketClientProto.ping = function() {
 	if (!this.isClosed) {
 		this.socket.write(U.getWebSocketFrame(0, 'PING', 0x09));
 		this.$ping = false;
@@ -15133,7 +15150,7 @@ WebSocketClient.prototype.ping = function() {
  * @param {Number} code WebSocket code.
  * @return {WebSocketClient}
  */
-WebSocketClient.prototype.close = function(message, code) {
+WebSocketClientProto.close = function(message, code) {
 	var self = this;
 	if (!self.isClosed) {
 		self.isClosed = true;
@@ -15151,7 +15168,7 @@ WebSocketClient.prototype.close = function(message, code) {
  * @param {Request} req
  * @return {String}
  */
-WebSocketClient.prototype.$websocket_key = function(req) {
+WebSocketClientProto.$websocket_key = function(req) {
 	var sha1 = Crypto.createHash('sha1');
 	sha1.update((req.headers['sec-websocket-key'] || '') + SOCKET_HASH);
 	return sha1.digest('base64');
@@ -17469,12 +17486,14 @@ MiddlewareOptions.prototype = {
 	}
 };
 
-MiddlewareOptions.prototype.callback = function() {
+const MiddlewareOptionsProto = MiddlewareOptions.prototype;
+
+MiddlewareOptionsProto.callback = function() {
 	this.next();
 	return this;
 };
 
-MiddlewareOptions.prototype.cancel = function() {
+MiddlewareOptionsProto.cancel = function() {
 	this.next(false);
 	return this;
 };

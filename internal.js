@@ -1347,6 +1347,7 @@ function MultipartParser() {
 }
 
 exports.MultipartParser = MultipartParser;
+const MultipartParserProto = MultipartParser.prototype;
 
 MultipartParser.stateToString = function(stateNumber) {
 	for (var state in S) {
@@ -1355,7 +1356,7 @@ MultipartParser.stateToString = function(stateNumber) {
 	}
 };
 
-MultipartParser.prototype.initWithBoundary = function(str) {
+MultipartParserProto.initWithBoundary = function(str) {
 	var self = this;
 	self.boundary = Buffer.alloc(str.length + 4);
 	self.boundary.write('\r\n--', 0, 'ascii');
@@ -1367,7 +1368,7 @@ MultipartParser.prototype.initWithBoundary = function(str) {
 		self.boundaryChars[self.boundary[i]] = true;
 };
 
-MultipartParser.prototype.write = function(buffer) {
+MultipartParserProto.write = function(buffer) {
 	var self = this,
 		i = 0,
 		len = buffer.length,
@@ -1596,7 +1597,7 @@ MultipartParser.prototype.write = function(buffer) {
 	return len;
 };
 
-MultipartParser.prototype.end = function() {
+MultipartParserProto.end = function() {
 	if ((this.state === S.HEADER_FIELD_START && this.index === 0) || (this.state === S.PART_DATA && this.index == this.boundary.length)) {
 		this.onPartEnd && this.onPartEnd();
 		this.onEnd && this.onEnd();
@@ -1607,7 +1608,7 @@ MultipartParser.prototype.end = function() {
 	}
 };
 
-MultipartParser.prototype.explain = function() {
+MultipartParserProto.explain = function() {
 	return 'state = ' + MultipartParser.stateToString(this.state);
 };
 

@@ -149,13 +149,15 @@ function Image(filename, cmd, width, height) {
 	this.cmdarg = cmd || CONF.default_image_converter;
 }
 
-Image.prototype.clear = function() {
+var ImageProto = Image.prototype;
+
+ImageProto.clear = function() {
 	var self = this;
 	self.builder = [];
 	return self;
 };
 
-Image.prototype.measure = function(callback) {
+ImageProto.measure = function(callback) {
 
 	var self = this;
 	var index = self.filename.lastIndexOf('.');
@@ -194,7 +196,7 @@ Image.prototype.measure = function(callback) {
 	return self;
 };
 
-Image.prototype.$$measure = function() {
+ImageProto.$$measure = function() {
 	var self = this;
 	return function(callback) {
 		self.measure(callback);
@@ -208,7 +210,7 @@ Image.prototype.$$measure = function() {
  * @param {Function(stream)} writer A custom stream writer, optional.
  * @return {Image}
  */
-Image.prototype.save = function(filename, callback, writer) {
+ImageProto.save = function(filename, callback, writer) {
 
 	var self = this;
 
@@ -264,14 +266,14 @@ Image.prototype.save = function(filename, callback, writer) {
 	return self;
 };
 
-Image.prototype.$$save = function(filename, writer) {
+ImageProto.$$save = function(filename, writer) {
 	var self = this;
 	return function(callback) {
 		self.save(filename, callback, writer);
 	};
 };
 
-Image.prototype.pipe = function(stream, type, options) {
+ImageProto.pipe = function(stream, type, options) {
 
 	var self = this;
 
@@ -311,7 +313,7 @@ Image.prototype.pipe = function(stream, type, options) {
  * @param {Function(stream)} writer A custom stream writer.
  * @return {ReadStream}
  */
-Image.prototype.stream = function(type, writer) {
+ImageProto.stream = function(type, writer) {
 
 	var self = this;
 
@@ -333,7 +335,7 @@ Image.prototype.stream = function(type, writer) {
 	return middleware ? cmd.stdout.pipe(middleware()) : cmd.stdout;
 };
 
-Image.prototype.cmd = function(filenameFrom, filenameTo) {
+ImageProto.cmd = function(filenameFrom, filenameTo) {
 
 	var self = this;
 	var cmd = '';
@@ -359,7 +361,7 @@ function sort(a, b) {
 	return a.priority > b.priority ? 1 : -1;
 }
 
-Image.prototype.arg = function(first, last) {
+ImageProto.arg = function(first, last) {
 
 	var self = this;
 	var arr = [];
@@ -396,7 +398,7 @@ Image.prototype.arg = function(first, last) {
 	return arr;
 };
 
-Image.prototype.identify = function(callback) {
+ImageProto.identify = function(callback) {
 	var self = this;
 	exec((self.cmdarg === 'gm' ? 'gm ' : '') + 'identify' + wrap(self.filename, true), function(err, stdout) {
 
@@ -414,14 +416,14 @@ Image.prototype.identify = function(callback) {
 	return self;
 };
 
-Image.prototype.$$identify = function() {
+ImageProto.$$identify = function() {
 	var self = this;
 	return function(callback) {
 		self.identify(callback);
 	};
 };
 
-Image.prototype.push = function(key, value, priority, encode) {
+ImageProto.push = function(key, value, priority, encode) {
 	var self = this;
 	var cmd = key;
 
@@ -444,7 +446,7 @@ Image.prototype.push = function(key, value, priority, encode) {
 	return self;
 };
 
-Image.prototype.output = function(type) {
+ImageProto.output = function(type) {
 	var self = this;
 	if (type[0] === '.')
 		type = type.substring(1);
@@ -452,7 +454,7 @@ Image.prototype.output = function(type) {
 	return self;
 };
 
-Image.prototype.resize = function(w, h, options) {
+ImageProto.resize = function(w, h, options) {
 	options = options || '';
 
 	var self = this;
@@ -468,7 +470,7 @@ Image.prototype.resize = function(w, h, options) {
 	return self.push('-resize', size + options, 1, true);
 };
 
-Image.prototype.thumbnail = function(w, h, options) {
+ImageProto.thumbnail = function(w, h, options) {
 	options = options || '';
 
 	var self = this;
@@ -484,7 +486,7 @@ Image.prototype.thumbnail = function(w, h, options) {
 	return self.push('-thumbnail', size + options, 1, true);
 };
 
-Image.prototype.geometry = function(w, h, options) {
+ImageProto.geometry = function(w, h, options) {
 	options = options || '';
 
 	var self = this;
@@ -501,20 +503,20 @@ Image.prototype.geometry = function(w, h, options) {
 };
 
 
-Image.prototype.filter = function(type) {
+ImageProto.filter = function(type) {
 	return this.push('-filter', type, 1, true);
 };
 
-Image.prototype.trim = function() {
+ImageProto.trim = function() {
 	return this.push('-trim +repage', 1);
 };
 
-Image.prototype.limit = function(type, value) {
+ImageProto.limit = function(type, value) {
 	this.islimit = true;
 	return this.push('-limit', type + ' ' + value, 1);
 };
 
-Image.prototype.extent = function(w, h, x, y) {
+ImageProto.extent = function(w, h, x, y) {
 
 	var self = this;
 	var size = '';
@@ -543,7 +545,7 @@ Image.prototype.extent = function(w, h, x, y) {
  * @param {String} filter Optional, resize filter (default: Box)
  * @return {Image}
  */
-Image.prototype.miniature = function(w, h, color, filter) {
+ImageProto.miniature = function(w, h, color, filter) {
 	return this.filter(filter || 'Hamming').thumbnail(w, h).background(color ? color : 'white').align('center').extent(w, h);
 };
 
@@ -554,7 +556,7 @@ Image.prototype.miniature = function(w, h, color, filter) {
  * @param {String} color Optional, background color.
  * @return {Image}
  */
-Image.prototype.resizeCenter = function(w, h, color) {
+ImageProto.resizeCenter = function(w, h, color) {
 	return this.resize(w, h, '^').background(color ? color : 'white').align('center').crop(w, h);
 };
 
@@ -566,11 +568,11 @@ Image.prototype.resizeCenter = function(w, h, color) {
  * @param {String} color Optional, background color.
  * @return {Image}
  */
-Image.prototype.resizeAlign = function(w, h, align, color) {
+ImageProto.resizeAlign = function(w, h, align, color) {
 	return this.resize(w, h, '^').background(color ? color : 'white').align(align || 'center').crop(w, h);
 };
 
-Image.prototype.scale = function(w, h, options) {
+ImageProto.scale = function(w, h, options) {
 	options = options || '';
 
 	var self = this;
@@ -586,15 +588,15 @@ Image.prototype.scale = function(w, h, options) {
 	return self.push('-scale', size + options, 1, true);
 };
 
-Image.prototype.crop = function(w, h, x, y) {
+ImageProto.crop = function(w, h, x, y) {
 	return this.push('-crop', w + 'x' + h + '+' + (x || 0) + '+' + (y || 0), 4, true);
 };
 
-Image.prototype.quality = function(percentage) {
+ImageProto.quality = function(percentage) {
 	return this.push('-quality', percentage || 80, 5, true);
 };
 
-Image.prototype.align = function(type) {
+ImageProto.align = function(type) {
 
 	var output;
 
@@ -649,72 +651,72 @@ Image.prototype.align = function(type) {
 	return this;
 };
 
-Image.prototype.gravity = function(type) {
+ImageProto.gravity = function(type) {
 	return this.align(type);
 };
 
-Image.prototype.blur = function(radius) {
+ImageProto.blur = function(radius) {
 	return this.push('-blur', radius, 10, true);
 };
 
-Image.prototype.normalize = function() {
+ImageProto.normalize = function() {
 	return this.push('-normalize', null, 10);
 };
 
-Image.prototype.rotate = function(deg) {
+ImageProto.rotate = function(deg) {
 	return this.push('-rotate', deg || 0, 8, true);
 };
 
-Image.prototype.flip = function() {
+ImageProto.flip = function() {
 	return this.push('-flip', null, 10);
 };
 
-Image.prototype.flop = function() {
+ImageProto.flop = function() {
 	return this.push('-flop', null, 10);
 };
 
-Image.prototype.define = function(value) {
+ImageProto.define = function(value) {
 	return this.push('-define', value, 10, true);
 };
 
-Image.prototype.minify = function() {
+ImageProto.minify = function() {
 	return this.push('+profile', '*', null, 10, true);
 };
 
-Image.prototype.grayscale = function() {
+ImageProto.grayscale = function() {
 	return this.push('-colorspace', 'Gray', 10, true);
 };
 
-Image.prototype.bitdepth = function(value) {
+ImageProto.bitdepth = function(value) {
 	return this.push('-depth', value, 10, true);
 };
 
-Image.prototype.colors = function(value) {
+ImageProto.colors = function(value) {
 	return this.push('-colors', value, 10, true);
 };
 
-Image.prototype.background = function(color) {
+ImageProto.background = function(color) {
 	return this.push('-background', color, 2, true).push('-extent 0x0', null, 2);
 };
 
-Image.prototype.fill = function(color) {
+ImageProto.fill = function(color) {
 	return this.push('-fill', color, 2, true);
 };
 
-Image.prototype.sepia = function() {
+ImageProto.sepia = function() {
 	return this.push('-modulate', '115,0,100', 4).push('-colorize', '7,21,50', 5);
 };
 
-Image.prototype.watermark = function(filename, x, y, w, h) {
+ImageProto.watermark = function(filename, x, y, w, h) {
 	return this.push('-draw', 'image over {1},{2} {3},{4} {5}{0}{5}'.format(filename, x || 0, y || 0, w || 0, h || 0, D), 6, true);
 };
 
-Image.prototype.make = function(fn) {
+ImageProto.make = function(fn) {
 	fn.call(this, this);
 	return this;
 };
 
-Image.prototype.command = function(key, value, priority, esc) {
+ImageProto.command = function(key, value, priority, esc) {
 
 	if (priority === true) {
 		priority = 0;
