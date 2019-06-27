@@ -346,7 +346,7 @@ SessionProto.settoken = function(res, opt, callback) {
 			var data = opt.sessionid + ';' + (opt.id || '');
 			var token = ENCRYPTREQ(res.req, data, opt.key, opt.strict);
 			res.req.sessionid = opt.sessionid;
-			callback && callback(null, item, meta, token);
+			callback && callback(null, token, item, meta);
 		}
 	});
 };
