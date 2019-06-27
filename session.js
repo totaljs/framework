@@ -155,6 +155,34 @@ SessionProto.getcookie = function(req, opt, callback) {
 	}
 };
 
+SessionProto.gettoken = function(req, opt, callback) {
+
+	// opt.token {String} a token
+	// opt.expire {String} Expiration
+	// opt.key {String} Encrypt key
+
+	if (req.req)
+		req = req.req;
+
+	var token = opt.token;
+	if (!token || token.length < 20) {
+		callback();
+		return;
+	}
+
+	// IMPORTANT: "req.res" can be null cause of WebSocket
+	var value = DECRYPTREQ(req, token, opt.key);
+	if (value && typeof(value) === 'string') {
+		value = value.split(';');
+		this.get(value[0], opt.expire, function(err, data, meta, init) {
+			if (!err && data)
+				req.sessionid = meta.sessionid;
+			callback(err, data, meta, init);
+		});
+	} else
+		callback();
+};
+
 SessionProto.usage = function() {
 	var o = {};
 	o.used = 0;
@@ -289,6 +317,36 @@ SessionProto.setcookie = function(res, opt, callback) {
 			res.cookie(opt.name, token, opt.expire, opt.options || COOKIEOPTIONS);
 			res.req.sessionid = opt.sessionid;
 			callback && callback(null, item, meta);
+		}
+	});
+};
+
+SessionProto.settoken = function(res, opt, callback) {
+
+	// opt.name {String} A cookie name
+	// opt.sessionid {String} A unique session ID
+	// opt.id {String} Optional, custom ID
+	// opt.expire {String} Expiration
+	// opt.strict {Boolean} Strict comparing of cookie according to IP (default: false)
+	// opt.key {String} Encrypt key
+	// opt.data {Object} A session data
+	// opt.note {String} A simple note for this session
+	// opt.settings {String} Settings data for the session
+
+	if (res.res)
+		res = res.res;
+
+	if (!opt.sessionid)
+		opt.sessionid = UID();
+
+	this.set(opt.sessionid, opt.id, opt.data, opt.expire, opt.note, opt.settings, function(err, item, meta) {
+		if (err) {
+			callback && callback(err);
+		} else {
+			var data = opt.sessionid + ';' + (opt.id || '');
+			var token = ENCRYPTREQ(res.req, data, opt.key, opt.strict);
+			res.req.sessionid = opt.sessionid;
+			callback && callback(null, item, meta, token);
 		}
 	});
 };
