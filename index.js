@@ -1255,7 +1255,7 @@ F.convert = function(value, convertor) {
 					convertor = U.parseInt2;
 					break;
 				default:
-					return console.log('F.convert unknown convertor type:', convertor);
+					return console.log('Unknown convertor type:', convertor);
 			}
 		}
 
@@ -1264,9 +1264,11 @@ F.convert = function(value, convertor) {
 		return true;
 	}
 
-	for (var i = 0, length = F.convertors.length; i < length; i++) {
-		if (value[F.convertors[i].name] != null)
-			value[F.convertors[i].name] = F.convertors[i].convertor(value[F.convertors[i].name]);
+	if (value) {
+		for (var i = 0, length = F.convertors.length; i < length; i++) {
+			if (value[F.convertors[i].name] != null)
+				value[F.convertors[i].name] = F.convertors[i].convertor(value[F.convertors[i].name]);
+		}
 	}
 
 	return value;
@@ -5569,8 +5571,8 @@ F.onValidate = null;
  * @param {String} value
  * @return {Object}
  */
-F.onParseXML = function(value) {
-	var val = U.parseXML(value);
+F.onParseXML = function(value, replace) {
+	var val = U.parseXML(value, replace);
 	F._length_convertors && F.convert(val);
 	return val;
 };

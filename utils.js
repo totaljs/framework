@@ -2620,7 +2620,7 @@ exports.removeDiacritics = function(str) {
  * @param {String} xml
  * @return {Object}
  */
-exports.parseXML = function(xml) {
+exports.parseXML = function(xml, replace) {
 
 	var beg = -1;
 	var end = 0;
@@ -2663,6 +2663,9 @@ exports.parseXML = function(xml) {
 
 			var path = (current.length ? current.join('.') + '.' : '') + o;
 			var value = xml.substring(from, beg).decode();
+
+			if (replace)
+				path = path.replace(/\.|_/g, '_');
 
 			if (obj[path] === undefined)
 				obj[path] = value;
@@ -3367,8 +3370,8 @@ SP.count = function(text) {
 	return count;
 };
 
-SP.parseXML = function() {
-	return F.onParseXML(this);
+SP.parseXML = function(replace) {
+	return F.onParseXML(this, replace);
 };
 
 SP.parseJSON = function(date) {
