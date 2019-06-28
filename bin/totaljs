@@ -40,6 +40,8 @@ function display_help() {
 	console.log('-merge source target   : merges first resource into the second "-merge source target"');
 	console.log('-clean source          : cleans a resource file "-clean source"');
 	console.log('-minify filename       : minifies .js, .css or .html file into filename.min.[extension]');
+	console.log('-bundle filename       : makes a bundle from the current directory');
+	console.log('-package filename      : makes a package from the current directory');
 	console.log('-install               : run "totaljs -install help" to see what can be installed');
 	console.log('8000                   : starts a server');
 	console.log('');
@@ -567,6 +569,16 @@ function main() {
 			return;
 		}
 
+		if (!$type && (cmd === '-bundle' || cmd === 'bundle')) {
+			makebundle(dir, process.argv[i + 1] || '');
+			return;
+		}
+
+		if (!$type && (cmd === '-package' || cmd === 'package')) {
+			makepackage(dir, process.argv[i + 1] || '');
+			return;
+		}
+
 		if (!$type && (cmd === '-pwa' || cmd === 'pwa')) {
 			git(dir, 'emptyproject-pwa');
 			return;
@@ -821,6 +833,92 @@ function git(dir, type) {
 			});
 		});
 	});
+}
+
+function makebundle(dir, filename) {
+
+	if (!filename)
+		filename = 'app.bundle';
+
+	var blacklist = {};
+	blacklist['/bundle.json'] = 1;
+	blacklist['/debug.js'] = 1;
+	blacklist['/release.js'] = 1;
+	blacklist['/debug.pid'] = 1;
+	blacklist['/package.json'] = 1;
+	blacklist['/readme.md'] = 1;
+	blacklist['/license.txt'] = 1;
+	blacklist['/bundles/'] = 1;
+	blacklist['/tmp/'] = 1;
+
+	if (filename[0] !== '/')
+		blacklist['/' + filename] = 1;
+	else
+		blacklist[filename] = 1;
+
+	blacklist['/.git/'] = 1;
+
+	if (filename.toLowerCase().lastIndexOf('.bundle') === -1)
+		filename += '.bundle';
+
+	console.log('');
+	console.log('--- CREATE BUNDLE PACKAGE --');
+	console.log('');
+	console.log('Directory    :', dir);
+	console.log('Filename     :', filename);
+
+	F.backup(filename, dir, function(err, path) {
+
+		if (err)
+			throw err;
+
+		console.log('Success      :', path.files.pluralize('# files', '# file', '# files', '# files') + ' (' + path.size.filesize() + ')');
+		console.log('');
+
+	}, path => blacklist[path] == null);
+}
+
+function makepackage(dir, filename) {
+
+	if (!filename)
+		filename = 'noname.package';
+
+	var blacklist = {};
+	blacklist['/bundle.json'] = 1;
+	blacklist['/debug.js'] = 1;
+	blacklist['/release.js'] = 1;
+	blacklist['/debug.pid'] = 1;
+	blacklist['/package.json'] = 1;
+	blacklist['/readme.md'] = 1;
+	blacklist['/license.txt'] = 1;
+	blacklist['/bundles/'] = 1;
+	blacklist['/tmp/'] = 1;
+
+	if (filename[0] !== '/')
+		blacklist['/' + filename] = 1;
+	else
+		blacklist[filename] = 1;
+
+	blacklist['/.git/'] = 1;
+
+	if (filename.toLowerCase().lastIndexOf('.package') === -1)
+		filename += '.package';
+
+	console.log('');
+	console.log('--- CREATE PACKAGE --');
+	console.log('');
+	console.log('Directory    :', dir);
+	console.log('Filename     :', filename);
+
+	F.backup(filename, dir, function(err, path) {
+
+		if (err)
+			throw err;
+
+		console.log('Success      :', path.files.pluralize('# files', '# file', '# files', '# files') + ' (' + path.size.filesize() + ')');
+		console.log('');
+
+	}, path => blacklist[path] == null);
 }
 
 main();
