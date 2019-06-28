@@ -8797,7 +8797,7 @@ F.$configure_dependencies = function(arr, callback) {
 			arr = null;
 	}
 
-	if (!arr)
+	if (!arr || !arr.length)
 		return F;
 
 	OBSOLETE('/dependencies', 'File "/dependencies" are deprecated and they will be removed in v4.');
@@ -8933,13 +8933,13 @@ F.$configure_workflows = function(arr, clean) {
 			arr = null;
 	}
 
-	OBSOLETE('/workflows', 'File "/workflows" are deprecated and they will be removed in v4.');
-
 	if (clean)
 		F.workflows = {};
 
 	if (!arr || !arr.length)
 		return F;
+
+	OBSOLETE('/workflows', 'File "/workflows" are deprecated and they will be removed in v4.');
 
 	arr.forEach(function(line) {
 		line = line.trim();

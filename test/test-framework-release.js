@@ -416,15 +416,6 @@ function test_routing(next) {
 		});
 	});
 
-	async.await('precompile', function(complete) {
-		utils.request(url + 'precompile/', ['get'], function(error, data, code, headers) {
-			if (error)
-				throw error;
-			assert.ok(data.indexOf('precompile') === -1, 'framework.precompile() problem');
-			complete();
-		});
-	});
-
 	async.await('subshare', function(complete) {
 		utils.request(url + 'sub/share/', ['get'], function(error, data, code, headers) {
 			if (error)
@@ -924,7 +915,7 @@ function run() {
 		UNINSTALL('source', { uninstall: true });
 		UNINSTALL('view', 'precompile._layout');
 
-		framework.uninstall('precompile', 'precompile.homepage');
+		//framework.uninstall('precompile', 'precompile.homepage');
 		framework.clear();
 
 		setTimeout(function() {
