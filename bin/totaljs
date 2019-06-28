@@ -335,7 +335,7 @@ function main() {
 
 	console.log('');
 	console.log('|==================================================|');
-	console.log('| Total.js - Web framework for Node.js             |');
+	console.log('| Total.js - www.totaljs.com                       |');
 	console.log('| Version: v' + require('total.js').version_header.padRight(39) + '|');
 	console.log('|==================================================|');
 	console.log('');
