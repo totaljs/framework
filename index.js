@@ -6587,12 +6587,21 @@ F.backup = function(filename, filelist, callback, filter) {
 				}
 
 				if (stats.isDirectory()) {
-					var dir = item.replace(/\\/g, '/') + '/';
+					var dir = item.replace(/\\/g, '/');
+
+					if (dir[dir.length - 1] !== '/')
+						dir += '/';
+
 					if (filter && !filter(dir, true))
 						return next();
+
 					U.ls(file, function(f, d) {
 						var length = path.length;
 						d.wait(function(item, next) {
+
+							if (filter && !filter(item.substring(length), true))
+								return next();
+
 							writer.write(item.substring(length).padRight(padding) + ':#\n', 'utf8');
 							next();
 						}, function() {
@@ -6603,6 +6612,9 @@ F.backup = function(filename, filelist, callback, filter) {
 					});
 					return;
 				}
+
+				if (filter && !filter(file.substring(path.length), true))
+					return next();
 
 				var data = Buffer.alloc(0);
 				writer.write(item.padRight(padding) + ':');
