@@ -556,7 +556,7 @@ ImageProto.miniature = function(w, h, color, filter) {
  * @param {String} color Optional, background color.
  * @return {Image}
  */
-ImageProto.resizeCenter = function(w, h, color) {
+ImageProto.resizeCenter = ImageProto.resize_center = function(w, h, color) {
 	return this.resize(w, h, '^').background(color ? color : 'white').align('center').crop(w, h);
 };
 
@@ -568,7 +568,7 @@ ImageProto.resizeCenter = function(w, h, color) {
  * @param {String} color Optional, background color.
  * @return {Image}
  */
-ImageProto.resizeAlign = function(w, h, align, color) {
+ImageProto.resizeAlign = ImageProto.resize_align = function(w, h, align, color) {
 	return this.resize(w, h, '^').background(color ? color : 'white').align(align || 'center').crop(w, h);
 };
 
