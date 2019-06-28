@@ -4881,7 +4881,7 @@ RESTP.accept = function(ext) {
 	return this;
 };
 
-RESTP.xml = function(data) {
+RESTP.xml = function(data, replace) {
 
 	if (this.$type !== 3)
 		this.$flags = null;
@@ -4890,6 +4890,10 @@ RESTP.xml = function(data) {
 		this.$method = 'post';
 
 	this.$type = 3;
+
+	if (replace)
+		this.$replace = true;
+
 	data && this.raw(data);
 	return this;
 };
@@ -5068,7 +5072,7 @@ RESTP.exec = function(callback) {
 			switch (type.toLowerCase()) {
 				case 'text/xml':
 				case 'application/xml':
-					output.value = response ? response.parseXML() : {};
+					output.value = response ? response.parseXML(self.$replace ? true : false) : {};
 					break;
 				case 'application/x-www-form-urlencoded':
 					output.value = response ? F.onParseQuery(response) : {};

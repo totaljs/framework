@@ -96,6 +96,7 @@ const REG_URLEXT = /(https|http|wss|ws|file):\/\/|\/\/[a-z0-9]|[a-z]:/i;
 const REG_TEXTAPPLICATION = /text|application/i;
 const REG_DATE = /\.|-|\/|\\|:|\s/g;
 const REG_TIME = /am|pm/i;
+const REG_XMLKEY = /\[|\]|:|\.|_/g;
 
 exports.MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 exports.DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -2665,7 +2666,7 @@ exports.parseXML = function(xml, replace) {
 			var value = xml.substring(from, beg).decode();
 
 			if (replace)
-				path = path.replace(/\.|_/g, '_');
+				path = path.replace(REG_XMLKEY, '_');
 
 			if (obj[path] === undefined)
 				obj[path] = value;
@@ -2709,7 +2710,10 @@ exports.parseXML = function(xml, replace) {
 			attr[match[i].substring(0, index - 1)] = match[i].substring(index + 1, match[i].length - 1).decode();
 		}
 
-		obj[current.join('.') + (isSingle ? '.' + name : '') + '[]'] = attr;
+		var k = current.join('.') + (isSingle ? '.' + name : '') + '[]';
+		if (replace)
+			k = k.replace(REG_XMLKEY, '_');
+		obj[k] = attr;
 	}
 
 	return obj;
