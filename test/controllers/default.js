@@ -47,7 +47,6 @@ exports.install = function() {
 	F.route('/sync/', synchronize);
 	F.route('/schema-filter/', ['post', '*filter#update']);
 	F.route('/package/', '@testpackage/test');
-	F.route('/precompile/', view_precomile);
 	F.route('/homepage/', view_homepage);
 	F.route('/usage/', view_usage);
 	F.route('/sse/', viewSSE_html);
@@ -162,12 +161,6 @@ function *synchronize() {
 
 function plain_rest() {
 	this.plain(this.req.method);
-}
-
-function view_precomile() {
-	var self = this;
-	self.layout('precompile._layout');
-	self.view('precompile.homepage');
 }
 
 function plain_multiple() {

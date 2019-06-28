@@ -1,8 +1,0 @@
-// User
-user-query           : query (response)
-user-read            : read (response)
-user-delete          : delete (response)
-user-save            : workflow:'check' { hidden: true }   -->        save (response)
-user-create          : workflow:'check'                    -->        save (response)      -->      workflow:'confirmation'
-
-save (User)          : save (response)

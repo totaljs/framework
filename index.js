@@ -8800,6 +8800,8 @@ F.$configure_dependencies = function(arr, callback) {
 	if (!arr)
 		return F;
 
+	OBSOLETE('/dependencies', 'File "/dependencies" are deprecated and they will be removed in v4.');
+
 	var type;
 	var options;
 	var interval;
@@ -8930,6 +8932,8 @@ F.$configure_workflows = function(arr, clean) {
 		else
 			arr = null;
 	}
+
+	OBSOLETE('/workflows', 'File "/workflows" are deprecated and they will be removed in v4.');
 
 	if (clean)
 		F.workflows = {};
