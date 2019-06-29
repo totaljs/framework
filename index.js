@@ -3811,8 +3811,26 @@ F.$load = function(types, targetdirectory, callback, packageName) {
 	var dependencies = [];
 	var operations = [];
 	var isPackage = targetdirectory.indexOf('.package') !== -1;
+	var isNo = true;
 
-	if (!types || types.indexOf('modules') !== -1) {
+	if (types) {
+		for (var i = 0; i < types.length; i++) {
+			if (types[i].substring(0, 2) !== 'no') {
+				isNo = false;
+				break;
+			}
+		}
+	}
+
+	var can = function(type) {
+		if (!types)
+			return true;
+		if (types.indexOf('no' + type) !== -1)
+			return false;
+		return isNo ? true : types.indexOf(type) !== -1;
+	};
+
+	if (can('modules')) {
 		operations.push(function(resume) {
 			dir = U.combine(targetdirectory, isPackage ? '/modules/' : CONF.directory_modules);
 			arr = [];
@@ -3822,7 +3840,7 @@ F.$load = function(types, targetdirectory, callback, packageName) {
 		});
 	}
 
-	if (!types || types.indexOf('isomorphic') !== -1) {
+	if (can('isomorphic')) {
 		operations.push(function(resume) {
 			dir = U.combine(targetdirectory, isPackage ? '/isomorphic/' : CONF.directory_isomorphic);
 			arr = [];
@@ -3832,7 +3850,8 @@ F.$load = function(types, targetdirectory, callback, packageName) {
 		});
 	}
 
-	if (!types || types.indexOf('packages') !== -1) {
+
+	if (can('packages')) {
 		operations.push(function(resume) {
 			dir = U.combine(targetdirectory, isPackage ? '/packages/' : CONF.directory_packages);
 			arr = [];
@@ -3879,7 +3898,7 @@ F.$load = function(types, targetdirectory, callback, packageName) {
 		});
 	}
 
-	if (!types || types.indexOf('models') !== -1) {
+	if (can('models')) {
 		operations.push(function(resume) {
 			dir = U.combine(targetdirectory, isPackage ? '/models/' : CONF.directory_models);
 			arr = [];
@@ -3889,7 +3908,7 @@ F.$load = function(types, targetdirectory, callback, packageName) {
 		});
 	}
 
-	if (!types || types.indexOf('schemas') !== -1) {
+	if (can('schemas')) {
 		operations.push(function(resume) {
 			dir = U.combine(targetdirectory, isPackage ? '/schemas/' : CONF.directory_schemas);
 			arr = [];
@@ -3899,7 +3918,7 @@ F.$load = function(types, targetdirectory, callback, packageName) {
 		});
 	}
 
-	if (!types || types.indexOf('tasks') !== -1) {
+	if (can('tasks')) {
 		operations.push(function(resume) {
 			dir = U.combine(targetdirectory, isPackage ? '/tasks/' : CONF.directory_tasks);
 			arr = [];
@@ -3909,7 +3928,7 @@ F.$load = function(types, targetdirectory, callback, packageName) {
 		});
 	}
 
-	if (!types || types.indexOf('operations') !== -1) {
+	if (can('operations')) {
 		operations.push(function(resume) {
 			dir = U.combine(targetdirectory, isPackage ? '/operations/' : CONF.directory_operations);
 			arr = [];
@@ -3919,7 +3938,7 @@ F.$load = function(types, targetdirectory, callback, packageName) {
 		});
 	}
 
-	if (!types || types.indexOf('themes') !== -1) {
+	if (can('themes')) {
 		operations.push(function(resume) {
 			arr = [];
 			dir = U.combine(targetdirectory, isPackage ? '/themes/' : CONF.directory_themes);
@@ -3936,7 +3955,7 @@ F.$load = function(types, targetdirectory, callback, packageName) {
 		});
 	}
 
-	if (!types || types.indexOf('definitions') !== -1) {
+	if (can('definitions')) {
 		operations.push(function(resume) {
 			dir = U.combine(targetdirectory, isPackage ? '/definitions/' : CONF.directory_definitions);
 			arr = [];
@@ -3946,7 +3965,7 @@ F.$load = function(types, targetdirectory, callback, packageName) {
 		});
 	}
 
-	if (!types || types.indexOf('controllers') !== -1) {
+	if (can('controllers')) {
 		operations.push(function(resume) {
 			arr = [];
 			dir = U.combine(targetdirectory, isPackage ? '/controllers/' : CONF.directory_controllers);
@@ -3956,7 +3975,7 @@ F.$load = function(types, targetdirectory, callback, packageName) {
 		});
 	}
 
-	if (!types || types.indexOf('components') !== -1) {
+	if (can('components')) {
 		operations.push(function(resume) {
 			arr = [];
 			dir = U.combine(targetdirectory, isPackage ? '/components/' : CONF.directory_components);
@@ -3966,7 +3985,7 @@ F.$load = function(types, targetdirectory, callback, packageName) {
 		});
 	}
 
-	if (!types || types.indexOf('preferences') !== -1) {
+	if (can('preferences')) {
 		operations.push(function(resume) {
 			if (F.onPrefLoad) {
 				F.onPrefLoad(function(value) {
@@ -4036,6 +4055,8 @@ global.UPTODATE = F.uptodate = function(type, url, options, interval, callback, 
 		interval = options;
 		options = null;
 	}
+
+	OBSOLETE('UPTODATE()', 'This method is deprecated and it will be removed in v4.');
 
 	var obj = { type: type, name: '', url: url, interval: interval, options: options, count: 0, updated: NOW, errors: [], callback: callback };
 
@@ -6753,12 +6774,17 @@ global.LOAD = F.load = function(debug, types, pwd, ready) {
 		pwd = null;
 	}
 
+	if (!types)
+		types = ['nobundles', 'nopackages', 'nocomponents', 'nothemes'];
+
 	if (pwd && pwd[0] === '.' && pwd.length < 4)
 		F.directory = directory = U.$normalize(Path.normalize(directory + '/..'));
 	else if (pwd)
 		F.directory = directory = U.$normalize(pwd);
 	else if (process.env.istotaljsworker)
 		F.directory = process.cwd();
+	else if ((/\/scripts\/.*?.js/).test(process.argv[1]))
+		F.directory = directory = U.$normalize(Path.normalize(directory + '/..'));
 
 	if (typeof(debug) === 'string') {
 		switch (debug.toLowerCase().replace(/\.|\s/g, '-')) {
@@ -6801,6 +6827,25 @@ global.LOAD = F.load = function(debug, types, pwd, ready) {
 	global.RELEASE = !debug;
 	global.I = global.isomorphic = F.isomorphic;
 
+	var isNo = true;
+
+	if (types) {
+		for (var i = 0; i < types.length; i++) {
+			if (types[i].substring(0, 2) !== 'no') {
+				isNo = false;
+				break;
+			}
+		}
+	}
+
+	var can = function(type) {
+		if (!types)
+			return true;
+		if (types.indexOf('no' + type) !== -1)
+			return false;
+		return isNo ? true : types.indexOf(type) !== -1;
+	};
+
 	F.$bundle(function() {
 		F.consoledebug('startup');
 		F.$startup(function() {
@@ -6808,13 +6853,13 @@ global.LOAD = F.load = function(debug, types, pwd, ready) {
 			F.consoledebug('startup (done)');
 			F.$configure_configs();
 
-			if (!types || types.indexOf('versions') !== -1)
+			if (can('versions'))
 				F.$configure_versions();
 
-			if (!types || types.indexOf('workflows') !== -1)
+			if (can('workflows'))
 				F.$configure_workflows();
 
-			if (!types || types.indexOf('sitemap') !== -1)
+			if (can('sitemap'))
 				F.$configure_sitemap();
 
 			F.consoledebug('init');
@@ -6860,7 +6905,7 @@ global.LOAD = F.load = function(debug, types, pwd, ready) {
 				}
 			});
 		});
-	}, !types || types.indexOf('bundles') !== -1);
+	}, can('bundles'));
 
 	return F;
 };
