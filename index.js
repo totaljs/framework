@@ -107,7 +107,7 @@ Object.freeze(EMPTYREQUEST);
 global.EMPTYOBJECT = EMPTYOBJECT;
 global.EMPTYARRAY = EMPTYARRAY;
 global.NOW = new Date();
-
+global.isWORKER = false;
 global.REQUIRE = function(path) {
 	return require('./' + path);
 };
@@ -1159,6 +1159,9 @@ global.ON = F.on = function(name, fn) {
 				break;
 		}
 	}
+
+	if (isWORKER && name === 'service' && !F.cache.interval)
+		F.cache.init_timer();
 
 	if (F.$events[name])
 		F.$events[name].push(fn);
@@ -6783,6 +6786,7 @@ global.LOAD = F.load = function(debug, types, pwd) {
 	F.isWorker = true;
 	F.isDebug = debug;
 
+	global.isWORKER = true;
 	global.DEBUG = debug;
 	global.RELEASE = !debug;
 	global.I = global.isomorphic = F.isomorphic;
@@ -6804,7 +6808,7 @@ global.LOAD = F.load = function(debug, types, pwd) {
 				F.$configure_sitemap();
 
 			F.consoledebug('init');
-			F.cache.init();
+			F.cache.init(true);
 			EMIT('init');
 
 			F.$load(types, directory, function() {
@@ -6830,10 +6834,11 @@ global.LOAD = F.load = function(debug, types, pwd) {
 						return F;
 					}
 
-					setTimeout(function() {
-						if (!F.isTest)
-							delete F.test;
-					}, 5000);
+					// Because this is worker
+					// setTimeout(function() {
+					// 	if (!F.isTest)
+					// 		delete F.test;
+					// }, 5000);
 
 				}, 500);
 
@@ -10277,14 +10282,24 @@ function FrameworkCache() {
 
 const FrameworkCacheProto = FrameworkCache.prototype;
 
-FrameworkCacheProto.init = function() {
+FrameworkCacheProto.init = function(notimer) {
 	var self = this;
-	clearInterval(self.interval);
-	self.interval = setInterval(() => F.cache.recycle(), 1000 * 60);
+
+	if (!notimer)
+		self.init_timer();
+
 	if (CONF.allow_cache_snapshot)
 		self.load(() => self.loadpersistent());
 	else
 		self.loadpersistent();
+
+	return self;
+};
+
+FrameworkCacheProto.init_timer = function() {
+	var self = this;
+	self.interval && clearInterval(self.interval);
+	self.interval = setInterval(() => F.cache.recycle(), 1000 * 60);
 	return self;
 };
 
