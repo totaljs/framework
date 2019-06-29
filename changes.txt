@@ -67,6 +67,7 @@ x updated: `CONF:default_image_converter` supports `magick` for new version of I
 x updated: `CONF.default_image_consumption` can contain ZERO value which means disabled optimialization of CPU/memory consumption
 x updated: `CONF.default_image_consumption` has changed a default value to `0`
 x updated: `U.parseXML(str, [replace])` and `String.parseXML([replace])` contains a new argument called `replace`
+x updated: `LOAD()` added a callback function
 
 - fixed: schemas validation
 - fixed: error handling in dynamic schemas

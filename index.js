@@ -6741,7 +6741,17 @@ F.response503 = function(req, res) {
 	return F;
 };
 
-global.LOAD = F.load = function(debug, types, pwd) {
+global.LOAD = F.load = function(debug, types, pwd, ready) {
+
+	if (typeof(types) === 'function') {
+		ready = types;
+		types = null;
+	}
+
+	if (typeof(pwd) === 'function') {
+		ready = pwd;
+		pwd = null;
+	}
 
 	if (pwd && pwd[0] === '.' && pwd.length < 4)
 		F.directory = directory = U.$normalize(Path.normalize(directory + '/..'));
@@ -6819,11 +6829,13 @@ global.LOAD = F.load = function(debug, types, pwd) {
 				setTimeout(function() {
 
 					try {
-						EMIT('load', F);
-						EMIT('ready', F);
+						EMIT('load');
+						EMIT('ready');
 					} catch (err) {
-						F.error(err, 'F.on("load/ready")');
+						F.error(err, 'ON("load/ready")');
 					}
+
+					ready && ready();
 
 					F.removeAllListeners('load');
 					F.removeAllListeners('ready');
@@ -7006,10 +7018,10 @@ F.initialize = function(http, debug, options) {
 				setTimeout(function() {
 
 					try {
-						EMIT('load', F);
-						EMIT('ready', F);
+						EMIT('load');
+						EMIT('ready');
 					} catch (err) {
-						F.error(err, 'F.on("load/ready")');
+						F.error(err, 'ON("load/ready")');
 					}
 
 					F.removeAllListeners('load');
