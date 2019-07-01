@@ -32,7 +32,7 @@ exports.install = function() {
 		});
 	});
 
-	GROUP('prefix2', ['get'], function() {
+	GROUP('/prefix2/', ['get'], function() {
 		ROUTE('/test/', function() {
 			this.plain('PREFIX2TEST');
 		});
