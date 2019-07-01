@@ -1920,9 +1920,14 @@ global.GROUP = F.group = function() {
 
 		switch (typeof(o)) {
 			case 'string':
-				if (o.endsWith('/'))
-					o = o.substring(0, o.length - 1);
-				_prefix = o;
+				if (o.indexOf('/') === -1) {
+					// flags
+					_flags = o.split(',').trim();
+				} else {
+					if (o.endsWith('/'))
+						o = o.substring(0, o.length - 1);
+					_prefix = o;
+				}
 				break;
 			case 'function':
 				fn = o;
