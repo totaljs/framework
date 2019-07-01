@@ -861,7 +861,6 @@ function makebundle(dir, filename) {
 	if (filename.toLowerCase().lastIndexOf('.bundle') === -1)
 		filename += '.bundle';
 
-	console.log('');
 	console.log('--- CREATE BUNDLE PACKAGE --');
 	console.log('');
 	console.log('Directory    :', dir);
@@ -904,7 +903,6 @@ function makepackage(dir, filename) {
 	if (filename.toLowerCase().lastIndexOf('.package') === -1)
 		filename += '.package';
 
-	console.log('');
 	console.log('--- CREATE PACKAGE --');
 	console.log('');
 	console.log('Directory    :', dir);
