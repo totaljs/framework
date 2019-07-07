@@ -51,6 +51,7 @@ x added: `U.diffarr(prop, arr_A, arr_B)` for comparing of two arrays
 x added: `DIFFARR(prop, arr_A, arr_B)` is a global alias for `U.diffarr()`
 x added: `global.REQUIRE()` for local modules within app directory
 x added: `global.isWORKER` variable which contains `true` (when the process is executed as a worker) or `false`
+- added: `ACTION(url, [data], callback)` can evaluate a route without request creation
 
 x updated: `$.invalid()` without arguments can return a function `function(err)`
 x updated: Mail `unsubscribe` appends new header which enables `unsubscribe` in e.g. iOS

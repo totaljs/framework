@@ -9845,6 +9845,55 @@ F.lookup = function(req, url, flags, membertype) {
 	return null;
 };
 
+F.lookupaction = function(req, url, authorized) {
+
+	var isSystem = url[0] === '#';
+	if (isSystem)
+		return F.routes.system[url];
+
+	var length = F.routes.web.length;
+	for (var i = 0; i < length; i++) {
+
+		var route = F.routes.web[i];
+		if (route.method !== req.method)
+			continue;
+
+		if (route.CUSTOM) {
+			if (!route.CUSTOM(url, req))
+				continue;
+		} else {
+			if (route.isWILDCARD) {
+				if (!framework_internal.routeCompare(req.path, route.url, isSystem, true))
+					continue;
+			} else {
+				if (!framework_internal.routeCompare(req.path, route.url, isSystem))
+					continue;
+			}
+		}
+
+		if (isSystem) {
+			if (route.isSYSTEM)
+				return route;
+			continue;
+		}
+
+		if (route.isPARAM && route.regexp) {
+			var skip = false;
+			for (var j = 0, l = route.regexpIndexer.length; j < l; j++) {
+				var p = req.path[route.regexpIndexer[j]];
+				if (p === undefined || !route.regexp[route.regexpIndexer[j]].test(p)) {
+					skip = true;
+					break;
+				}
+			}
+			if (skip)
+				continue;
+		}
+		return route;
+	}
+};
+
+
 F.lookup_websocket = function(req, url, membertype) {
 
 	var subdomain = F._length_subdomain_websocket && req.subdomain ? req.subdomain.join('.') : null;
@@ -10706,8 +10755,16 @@ Controller.prototype = {
 		return this.req.query;
 	},
 
+	set query(val) {
+		this.req.query = val;
+	},
+
 	get body() {
 		return this.req.body;
+	},
+
+	set body(val) {
+		this.req.body = val;
 	},
 
 	get files() {
@@ -10724,6 +10781,10 @@ Controller.prototype = {
 
 	get xhr() {
 		return this.req.xhr;
+	},
+
+	set xhr(val) {
+		this.req.xhr = val;
 	},
 
 	get url() {
@@ -10749,6 +10810,7 @@ Controller.prototype = {
 	},
 
 	get controllers() {
+		OBSOLETE('controller.controllers', 'This property will be removed in v4.');
 		return F.controllers;
 	},
 
@@ -10790,12 +10852,20 @@ Controller.prototype = {
 		return this.req.mobile;
 	},
 
+	set mobile(val) {
+		this.req.mobile = val;
+	},
+
 	get robot() {
 		return this.req.robot;
 	},
 
 	get sessionid() {
 		return this.req.sessionid;
+	},
+
+	set sessionid(val) {
+		this.req.sessionid = val;
 	},
 
 	get viewname() {
@@ -12887,6 +12957,12 @@ ControllerProto.json = function(obj, headers, beautify, replacer) {
 		return self;
 	}
 
+	if (self.$evalroutecallback) {
+		var err = obj instanceof framework_builders.ErrorBuilder ? obj : null;
+		self.$evalroutecallback(err, err ? null : obj);
+		return self;
+	}
+
 	if (obj instanceof framework_builders.ErrorBuilder) {
 		self.req.$language && !obj.isResourceCustom && obj.setResource(self.req.$language);
 
@@ -13057,6 +13133,12 @@ ControllerProto.content = function(body, type, headers) {
 
 	res.options.headers = headers;
 	res.options.code = self.status || 200;
+
+	if (self.$evalroutecallback) {
+		var err = body instanceof ErrorBuilder ? body : null;
+		self.$evalroutecallback(err, err ? null : body);
+		return self;
+	}
 
 	if (body instanceof ErrorBuilder) {
 
@@ -17059,6 +17141,11 @@ function extend_response(PROTO) {
 		if (res.headersSent)
 			return res;
 
+		if (self.$evalroutecallback) {
+			res.headersSent = true;
+			self.$evalroutecallback(null, options.body, res.options.encoding || ENCODING);
+			return self;
+		}
 
 		var accept = req.headers['accept-encoding'] || '';
 		!accept && isGZIP(req) && (accept = 'gzip');
@@ -18091,6 +18178,89 @@ F.ilogger = function(name, req, ts) {
 		else
 			ilogger(msg + '\n' + divider + '\n');
 	}
+};
+
+function evalroutehandleraction(controller) {
+	if (controller.route.isPARAM)
+		controller.route.execute.apply(controller, framework_internal.routeParam(controller.req.split, controller.route));
+	else
+		controller.route.execute.call(controller);
+}
+
+function evalroutehandler(controller) {
+	if (!controller.route.schema || !controller.route.schema[1] || controller.req.method === 'DELETE' || controller.req.method === 'GET')
+		return evalroutehandleraction(controller);
+
+	F.onSchema(controller.req, controller.route, function(err, body) {
+		if (err) {
+			controller.$evalroutecallback(err, body);
+		} else {
+			controller.body = body;
+			evalroutehandleraction(controller);
+		}
+	});
+}
+
+global.ACTION = function(url, data, callback) {
+
+	if (typeof(data) === 'function') {
+		callback = data;
+		data = null;
+	}
+
+	var index = url.indexOf(' ');
+	var method = url.substring(0, index);
+	var params = '';
+	var route;
+
+	url = url.substring(index + 1);
+	index = url.indexOf('?');
+
+	if (index !== -1) {
+		params = url.substring(index + 1);
+		url = url.substring(0, index);
+	}
+
+	url = url.trim();
+	var routeurl = url;
+
+	if (routeurl.endsWith('/'))
+		routeurl = routeurl.substring(0, routeurl.length - 1);
+
+	var req = {};
+	var res = {};
+
+	req.res = res;
+	req.$protocol = 'http';
+	req.url = url;
+	req.ip = F.ip || '127.0.0.1';
+	req.host = req.ip + ':' + (F.port || 8000);
+	req.headers = { 'user-agent': 'Total.js/v' + F.version_header };
+	req.uri = framework_internal.parseURI(req);
+	req.path = framework_internal.routeSplit(req.uri.pathname);
+	req.body = data || {};
+	req.query = params ? F.onParseQuery(params) : {};
+	req.files = EMPTYARRAY;
+	req.method = method;
+	res.options = req.options = {};
+
+	var route = F.lookupaction(req, url);
+	if (!route)
+		return;
+
+	if (route.isPARAM)
+		req.split = framework_internal.routeSplit(req.uri.pathname, true);
+	else
+		req.split = EMPTYARRAY;
+
+	var controller = new Controller(route.controller, null, null, route.currentViewDirectory);
+	controller.route = route;
+	controller.req = req;
+	controller.res = res;
+
+	controller.$evalroutecallback = callback || NOOP;
+	setImmediate(evalroutehandler, controller);
+	return controller;
 };
 
 // Because of controller prototypes
