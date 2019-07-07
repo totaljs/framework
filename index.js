@@ -17141,10 +17141,10 @@ function extend_response(PROTO) {
 		if (res.headersSent)
 			return res;
 
-		if (self.$evalroutecallback) {
+		if (res.$evalroutecallback) {
 			res.headersSent = true;
-			self.$evalroutecallback(null, options.body, res.options.encoding || ENCODING);
-			return self;
+			res.$evalroutecallback(null, options.body, res.options.encoding || ENCODING);
+			return res;
 		}
 
 		var accept = req.headers['accept-encoding'] || '';
@@ -18258,7 +18258,7 @@ global.ACTION = function(url, data, callback) {
 	controller.req = req;
 	controller.res = res;
 
-	controller.$evalroutecallback = callback || NOOP;
+	res.$evalroutecallback = controller.$evalroutecallback = callback || NOOP;
 	setImmediate(evalroutehandler, controller);
 	return controller;
 };
