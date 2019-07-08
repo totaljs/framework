@@ -109,7 +109,7 @@ global.EMPTYARRAY = EMPTYARRAY;
 global.NOW = new Date();
 global.isWORKER = false;
 global.REQUIRE = function(path) {
-	return require('./' + path);
+	return require(F.directory + '/' + path);
 };
 
 var DEF = global.DEF = {};
