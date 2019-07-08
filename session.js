@@ -34,7 +34,7 @@ function Session(name, ondata) {
 			if (m.expire > NOW)
 				storage.push(encodeURIComponent(m.sessionid) + ';' + (m.id ? encodeURIComponent(m.id) : '') + ';' + m.expire.getTime() + ';' + (m.used ? m.used.getTime() : '') + ';' + (m.created ? m.created.getTime() : '') + ';' + (m.note ? encodeURIComponent(m.note) : '') + ';' + (m.settings ? encodeURIComponent(m.settings) : ''));
 			else {
-				self.onremove && self.onremove(m);
+				t.onremove && t.onremove(m);
 				t.items.delete(m.sessionid);
 			}
 		}
