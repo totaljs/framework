@@ -6623,7 +6623,11 @@ F.backup = function(filename, filelist, callback, filter) {
 						return next();
 
 					U.ls(file, function(f, d) {
+
 						var length = path.length;
+						if (path[path.length - 1] === '/')
+							length--;
+
 						d.wait(function(item, next) {
 
 							if (filter && !filter(item.substring(length), true))
