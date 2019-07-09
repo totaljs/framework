@@ -1941,16 +1941,6 @@ global.GROUP = F.group = function() {
 	return F;
 };
 
-/**
- * Add a route
- * @param {String} url
- * @param {Function} funcExecute Action.
- * @param {String Array} flags
- * @param {Number} length Maximum length of request data.
- * @param {String Array} middleware Loads custom middleware.
- * @param {Number} timeout Response timeout.
- * @return {Framework}
- */
 global.ROUTE = F.web = F.route = function(url, funcExecute, flags, length, language) {
 
 	var name;
@@ -1985,6 +1975,14 @@ global.ROUTE = F.web = F.route = function(url, funcExecute, flags, length, langu
 	if (url) {
 
 		url = url.replace(/\t/g, ' ');
+
+		var first = url.substring(0, 1);
+		if (first === '+' || first === '-') {
+			// auth/unauth
+			url = url.replace(/^(\+|-)+/g, '').trim();
+			!flags && (flags = []);
+			flags.push(first === '+' ? 'authorized' : 'unauthorized');
+		}
 
 		url = url.replace(/(^|\s?)\*([{}a-z0-9}]|\s).*?$/i, function(text) {
 			!flags && (flags = []);
