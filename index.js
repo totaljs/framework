@@ -1977,11 +1977,11 @@ global.ROUTE = F.web = F.route = function(url, funcExecute, flags, length, langu
 		url = url.replace(/\t/g, ' ');
 
 		var first = url.substring(0, 1);
-		if (first === '+' || first === '-') {
+		if (first === '+' || first === '-' || url.substring(0, 2) === '🔒') {
 			// auth/unauth
-			url = url.replace(/^(\+|-)+/g, '').trim();
+			url = url.replace(/^(\+|-|🔒)+/g, '').trim();
 			!flags && (flags = []);
-			flags.push(first === '+' ? 'authorized' : 'unauthorized');
+			flags.push(first === '-' ? 'unauthorized' : 'authorized');
 		}
 
 		url = url.replace(/(^|\s?)\*([{}a-z0-9}]|\s).*?$/i, function(text) {
