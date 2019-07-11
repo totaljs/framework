@@ -5359,11 +5359,6 @@ global.OPERATION = function(name, value, callback, param, controller) {
 
 	var fn = operations[name];
 
-	if (fn.$filter && controller) {
-		controller.$filterschema = fn.$filter;
-		controller.$filter = null;
-	}
-
 	var error = new ErrorBuilder();
 	var $now;
 
@@ -5371,6 +5366,12 @@ global.OPERATION = function(name, value, callback, param, controller) {
 		$now = Date.now();
 
 	if (fn) {
+
+		if (fn.$filter && controller) {
+			controller.$filterschema = fn.$filter;
+			controller.$filter = null;
+		}
+
 		if (fn.$newversion) {
 			var self = new OperationOptions(error, value, param, controller);
 			self.$repeat = fn.$repeat;
