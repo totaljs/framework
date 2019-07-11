@@ -36,6 +36,7 @@ const hasOwnProperty = Object.prototype.hasOwnProperty;
 const Qs = require('querystring');
 const MSG_OBSOLETE_NEW = 'You used older declaration of this delegate and you must rewrite it. Read more in docs.';
 const BOOL = { true: 1, on: 1, '1': 1 };
+const REGEXP_FILTER = /[a-z0-9-_]+:(\s)?(\[)?(String|Number|Boolean|Date)(\])?/i;
 
 var schemas = {};
 var schemasall = {};
@@ -1055,6 +1056,12 @@ SchemaBuilderEntityProto.setPrepare = function(fn) {
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntityProto.setSave = function(fn, description, filter) {
+
+	if (typeof(description) === 'string' && REGEXP_FILTER.test(description)) {
+		filter = description;
+		description = null;
+	}
+
 	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	this.onSave = fn;
 	this.meta.save = description || null;
@@ -1069,6 +1076,12 @@ SchemaBuilderEntityProto.setSave = function(fn, description, filter) {
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntityProto.setInsert = function(fn, description, filter) {
+
+	if (typeof(description) === 'string' && REGEXP_FILTER.test(description)) {
+		filter = description;
+		description = null;
+	}
+
 	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	this.onInsert = fn;
 	this.meta.insert = description || null;
@@ -1083,6 +1096,12 @@ SchemaBuilderEntityProto.setInsert = function(fn, description, filter) {
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntityProto.setUpdate = function(fn, description, filter) {
+
+	if (typeof(description) === 'string' && REGEXP_FILTER.test(description)) {
+		filter = description;
+		description = null;
+	}
+
 	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	this.onUpdate = fn;
 	this.meta.update = description || null;
@@ -1097,6 +1116,11 @@ SchemaBuilderEntityProto.setUpdate = function(fn, description, filter) {
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntityProto.setPatch = function(fn, description, filter) {
+
+	if (typeof(description) === 'string' && REGEXP_FILTER.test(description)) {
+		filter = description;
+		description = null;
+	}
 	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	this.onPatch = fn;
 	this.meta.patch = description || null;
@@ -1121,6 +1145,12 @@ SchemaBuilderEntityProto.setError = function(fn) {
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntityProto.setGet = SchemaBuilderEntityProto.setRead = function(fn, description, filter) {
+
+	if (typeof(description) === 'string' && REGEXP_FILTER.test(description)) {
+		filter = description;
+		description = null;
+	}
+
 	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	this.onGet = fn;
 	this.meta.get = this.meta.read = description || null;
@@ -1136,10 +1166,17 @@ SchemaBuilderEntityProto.setGet = SchemaBuilderEntityProto.setRead = function(fn
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntityProto.setQuery = function(fn, description, filter) {
+
+	if (typeof(description) === 'string' && REGEXP_FILTER.test(description)) {
+		filter = description;
+		description = null;
+	}
+
 	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	this.onQuery = fn;
 	this.meta.query = description || null;
 	this.meta.queryfilter = filter;
+
 	!fn.$newversion && OBSOLETE('Schema("{0}").setQuery()'.format(this.name), MSG_OBSOLETE_NEW);
 	return this;
 };
@@ -1151,6 +1188,12 @@ SchemaBuilderEntityProto.setQuery = function(fn, description, filter) {
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntityProto.setRemove = function(fn, description, filter) {
+
+	if (typeof(description) === 'string' && REGEXP_FILTER.test(description)) {
+		filter = description;
+		description = null;
+	}
+
 	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	this.onRemove = fn;
 	this.meta.remove = description || null;
@@ -1193,6 +1236,11 @@ SchemaBuilderEntityProto.addTransform = function(name, fn, description, filter) 
 		name = 'default';
 	}
 
+	if (typeof(description) === 'string' && REGEXP_FILTER.test(description)) {
+		filter = description;
+		description = null;
+	}
+
 	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	!this.transforms && (this.transforms = {});
 	this.transforms[name] = fn;
@@ -1214,6 +1262,11 @@ SchemaBuilderEntityProto.addOperation = function(name, fn, description, filter) 
 	if (typeof(name) === 'function') {
 		fn = name;
 		name = 'default';
+	}
+
+	if (typeof(description) === 'string' && REGEXP_FILTER.test(description)) {
+		filter = description;
+		description = null;
 	}
 
 	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
@@ -1239,6 +1292,11 @@ SchemaBuilderEntityProto.addWorkflow = function(name, fn, description, filter) {
 		name = 'default';
 	}
 
+	if (typeof(description) === 'string' && REGEXP_FILTER.test(description)) {
+		filter = description;
+		description = null;
+	}
+
 	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	!this.workflows && (this.workflows = {});
 	this.workflows[name] = fn;
@@ -1252,6 +1310,11 @@ SchemaBuilderEntityProto.addHook = function(name, fn, description, filter) {
 
 	if (!this.hooks)
 		this.hooks = {};
+
+	if (typeof(description) === 'string' && REGEXP_FILTER.test(description)) {
+		filter = description;
+		description = null;
+	}
 
 	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	!this.hooks[name] && (this.hooks[name] = []);
@@ -5203,12 +5266,13 @@ function $decodeURIComponent(value) {
 	}
 }
 
-global.NEWTASK = function(name, fn) {
+global.NEWTASK = function(name, fn, filter) {
 	if (fn == null) {
 		delete tasks[name];
 	} else {
 		tasks[name] = {};
 		tasks[name].$owner = F.$owner();
+		tasks[name].$filter = filter;
 		var append = function(key, fn) {
 			tasks[name][key] = fn;
 		};
@@ -5223,6 +5287,12 @@ function taskrunner(obj, name, callback) {
 global.TASK = function(taskname, name, callback, options) {
 	var obj = new TaskBuilder(options);
 	obj.taskname = taskname;
+
+	if (obj.controller) {
+		obj.controller.$filterschema = null;
+		obj.controller.$filter = null;
+	}
+
 	name && setImmediate(taskrunner, obj, name, callback);
 	return obj;
 };
