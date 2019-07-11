@@ -52,9 +52,11 @@ x added: `DIFFARR(prop, arr_A, arr_B)` is a global alias for `U.diffarr()`
 x added: `global.REQUIRE()` for local modules within app directory
 x added: `global.isWORKER` variable which contains `true` (when the process is executed as a worker) or `false`
 x added: `ACTION(url, [data], callback)` can evaluate a route without request creation
-- added: `ROUTE('🔒 METHOD URL')`, it means that 🔒 adds `authorized` flag
-- added: `ROUTE('++ METHOD URL')`, it means that `++` or `+` adds `authorized` flag
-- added: `ROUTE('-- METHOD URL')`, it means that `--` or `-` adds `authorized` flag
+x added: `ROUTE('🔒 METHOD URL')`, it means that 🔒 adds `authorized` flag
+x added: `ROUTE('++ METHOD URL')`, it means that `++` or `+` adds `authorized` flag
+x added: `ROUTE('-- METHOD URL')`, it means that `--` or `-` adds `authorized` flag
+x added: `SchemaOptions`, `OperationOptions`, `TaskOptions` supports filtered query arguments via `$.filter`
+- added: `controller.done([value])`
 
 x updated: `$.invalid()` without arguments can return a function `function(err)`
 x updated: Mail `unsubscribe` appends new header which enables `unsubscribe` in e.g. iOS
@@ -90,6 +92,7 @@ x updated: `LOAD()` added a callback function
 - fixed: SMTP sender (a problem with auth mechanism with some mail servers)
 - fixed: filter in `F.backup()`
 - fixed: paths for stored directories in `F.backup()`
+- fixed: uploading files
 
 x renamed: `*.routeScript` to `*.public_js`
 x renamed: `*.routeStyle` to `*.public_css`

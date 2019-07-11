@@ -91,14 +91,25 @@ global.$VIEWASYNC = 0;
 
 exports.parseMULTIPART = function(req, contentType, route, tmpDirectory) {
 
-	var boundary = contentType.split(';')[1];
-	if (!boundary) {
+	var beg = contentType.indexOf('boundary=');
+	if (beg === -1) {
 		F.reqstats(false, false);
 		F.stats.request.error400++;
 		req.res.writeHead(400);
 		req.res.end();
 		return;
 	}
+
+	var end = contentType.length;
+
+	for (var i = (beg + 10); i < end; i++) {
+		if (contentType[i] === ';' || contentType[i] === ' ') {
+			end = i;
+			break;
+		}
+	}
+
+	var boundary = contentType.substring(beg + 9, end);
 
 	// For unexpected closing
 	req.once('close', () => !req.$upload && req.clear());
@@ -120,13 +131,9 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory) {
 
 	var path = framework_utils.combine(tmpDirectory, (F.id ? 'i-' + F.id + '_' : '') + 'uploadedfile-');
 
-	// Why indexOf(.., 2)? Because performance
-	boundary = boundary.substring(boundary.indexOf('=', 2) + 1);
-
 	req.buffer_exceeded = false;
 	req.buffer_has = true;
 	req.buffer_parser = parser;
-
 	parser.initWithBoundary(boundary);
 
 	parser.onPartBegin = function() {
@@ -270,6 +277,9 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory) {
 		}
 
 		if (req.buffer_exceeded)
+			return;
+
+		if (tmp == null)
 			return;
 
 		if (tmp.$is) {

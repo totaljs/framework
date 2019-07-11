@@ -7665,10 +7665,11 @@ F.$requestcontinue = function(req, res, headers) {
 	if (first === 'P' || first === 'D') {
 		multipart = req.headers['content-type'] || '';
 		req.buffer_data = Buffer.alloc(0);
-		var index = multipart.lastIndexOf(';');
+		var index = multipart.indexOf(';', 6);
 		var tmp = multipart;
 		if (index !== -1)
 			tmp = tmp.substring(0, index);
+
 		switch (tmp.substring(tmp.length - 4)) {
 			case 'json':
 				req.$flags += 'b';
@@ -13000,6 +13001,18 @@ ControllerProto.json = function(obj, headers, beautify, replacer) {
 
 ControllerProto.success = function(is, value) {
 	return this.json(SUCCESS(is === undefined ? true : is, value));
+};
+
+ControllerProto.done = function(arg) {
+	var self = this;
+	return function(err, response) {
+		if (err) {
+			self.invalid(err);
+		} else if (arg)
+			self.json(SUCCESS(err == null, arg === true ? response : arg));
+		else
+			self.json(SUCCESS(err == null));
+	};
 };
 
 /**

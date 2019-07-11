@@ -36,6 +36,7 @@ const hasOwnProperty = Object.prototype.hasOwnProperty;
 const Qs = require('querystring');
 const MSG_OBSOLETE_NEW = 'You used older declaration of this delegate and you must rewrite it. Read more in docs.';
 const BOOL = { true: 1, on: 1, '1': 1 };
+const REGEXP_FILTER = /[a-z0-9-_]+:(\s)?(\[)?(String|Number|Boolean|Date)(\])?/i;
 
 var schemas = {};
 var schemasall = {};
@@ -133,6 +134,13 @@ TaskBuilder.prototype = {
 
 	get headers() {
 		return this.controller && this.controller.req ? this.controller.req.headers : null;
+	},
+
+	get filter() {
+		var ctrl = this.controller;
+		if (ctrl && !ctrl.$filter)
+			ctrl.$filter = ctrl.$filterschema ? CONVERT(ctrl.query, ctrl.$filterschema) : ctrl.query;
+		return ctrl ? ctrl.$filter : EMPTYOBJECT;
 	}
 };
 
@@ -194,6 +202,13 @@ SchemaOptions.prototype = {
 
 	get headers() {
 		return this.controller && this.controller.req ? this.controller.req.headers : null;
+	},
+
+	get filter() {
+		var ctrl = this.controller;
+		if (ctrl && !ctrl.$filter)
+			ctrl.$filter = ctrl.$filterschema ? CONVERT(ctrl.query, ctrl.$filterschema) : ctrl.query;
+		return ctrl ? ctrl.$filter : EMPTYOBJECT;
 	}
 };
 
@@ -1040,10 +1055,17 @@ SchemaBuilderEntityProto.setPrepare = function(fn) {
  * @param {Function(error, model, helper, next(value), controller)} fn
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntityProto.setSave = function(fn, description) {
+SchemaBuilderEntityProto.setSave = function(fn, description, filter) {
+
+	if (typeof(description) === 'string' && REGEXP_FILTER.test(description)) {
+		filter = description;
+		description = null;
+	}
+
 	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	this.onSave = fn;
 	this.meta.save = description || null;
+	this.meta.savefilter = filter;
 	!fn.$newversion && OBSOLETE('Schema("{0}").setSave()'.format(this.name), MSG_OBSOLETE_NEW);
 	return this;
 };
@@ -1053,10 +1075,17 @@ SchemaBuilderEntityProto.setSave = function(fn, description) {
  * @param {Function(error, model, helper, next(value), controller)} fn
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntityProto.setInsert = function(fn, description) {
+SchemaBuilderEntityProto.setInsert = function(fn, description, filter) {
+
+	if (typeof(description) === 'string' && REGEXP_FILTER.test(description)) {
+		filter = description;
+		description = null;
+	}
+
 	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	this.onInsert = fn;
 	this.meta.insert = description || null;
+	this.meta.insertfilter = filter;
 	!fn.$newversion && OBSOLETE('Schema("{0}").setInsert()'.format(this.name), MSG_OBSOLETE_NEW);
 	return this;
 };
@@ -1066,10 +1095,17 @@ SchemaBuilderEntityProto.setInsert = function(fn, description) {
  * @param {Function(error, model, helper, next(value), controller)} fn
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntityProto.setUpdate = function(fn, description) {
+SchemaBuilderEntityProto.setUpdate = function(fn, description, filter) {
+
+	if (typeof(description) === 'string' && REGEXP_FILTER.test(description)) {
+		filter = description;
+		description = null;
+	}
+
 	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	this.onUpdate = fn;
 	this.meta.update = description || null;
+	this.meta.updatefilter = filter;
 	!fn.$newversion && OBSOLETE('Schema("{0}").setUpdate()'.format(this.name), MSG_OBSOLETE_NEW);
 	return this;
 };
@@ -1079,10 +1115,16 @@ SchemaBuilderEntityProto.setUpdate = function(fn, description) {
  * @param {Function(error, model, helper, next(value), controller)} fn
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntityProto.setPatch = function(fn, description) {
+SchemaBuilderEntityProto.setPatch = function(fn, description, filter) {
+
+	if (typeof(description) === 'string' && REGEXP_FILTER.test(description)) {
+		filter = description;
+		description = null;
+	}
 	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	this.onPatch = fn;
 	this.meta.patch = description || null;
+	this.meta.patchfilter = filter;
 	!fn.$newversion && OBSOLETE('Schema("{0}").setPatch()'.format(this.name), MSG_OBSOLETE_NEW);
 	return this;
 };
@@ -1102,10 +1144,17 @@ SchemaBuilderEntityProto.setError = function(fn) {
  * @param {Function(error, model, helper, next(value), controller)} fn
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntityProto.setGet = SchemaBuilderEntityProto.setRead = function(fn, description) {
+SchemaBuilderEntityProto.setGet = SchemaBuilderEntityProto.setRead = function(fn, description, filter) {
+
+	if (typeof(description) === 'string' && REGEXP_FILTER.test(description)) {
+		filter = description;
+		description = null;
+	}
+
 	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	this.onGet = fn;
 	this.meta.get = this.meta.read = description || null;
+	this.meta.getfilter = this.meta.readfilter = filter;
 	!fn.$newversion && OBSOLETE('Schema("{0}").setGet()'.format(this.name), MSG_OBSOLETE_NEW);
 	return this;
 };
@@ -1116,10 +1165,18 @@ SchemaBuilderEntityProto.setGet = SchemaBuilderEntityProto.setRead = function(fn
  * @param {String} description Optional.
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntityProto.setQuery = function(fn, description) {
+SchemaBuilderEntityProto.setQuery = function(fn, description, filter) {
+
+	if (typeof(description) === 'string' && REGEXP_FILTER.test(description)) {
+		filter = description;
+		description = null;
+	}
+
 	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	this.onQuery = fn;
 	this.meta.query = description || null;
+	this.meta.queryfilter = filter;
+
 	!fn.$newversion && OBSOLETE('Schema("{0}").setQuery()'.format(this.name), MSG_OBSOLETE_NEW);
 	return this;
 };
@@ -1130,10 +1187,17 @@ SchemaBuilderEntityProto.setQuery = function(fn, description) {
  * @param {String} description Optional.
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntityProto.setRemove = function(fn, description) {
+SchemaBuilderEntityProto.setRemove = function(fn, description, filter) {
+
+	if (typeof(description) === 'string' && REGEXP_FILTER.test(description)) {
+		filter = description;
+		description = null;
+	}
+
 	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	this.onRemove = fn;
 	this.meta.remove = description || null;
+	this.meta.removefilter = filter;
 	!fn.$newversion && OBSOLETE('Schema("{0}").setRemove()'.format(this.name), MSG_OBSOLETE_NEW);
 	return this;
 };
@@ -1165,17 +1229,23 @@ SchemaBuilderEntityProto.constant = function(name, value, description) {
  * @param {String} description Optional.
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntityProto.addTransform = function(name, fn, description) {
+SchemaBuilderEntityProto.addTransform = function(name, fn, description, filter) {
 
 	if (typeof(name) === 'function') {
 		fn = name;
 		name = 'default';
 	}
 
+	if (typeof(description) === 'string' && REGEXP_FILTER.test(description)) {
+		filter = description;
+		description = null;
+	}
+
 	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	!this.transforms && (this.transforms = {});
 	this.transforms[name] = fn;
 	this.meta['transform#' + name] = description || null;
+	this.meta['transformfilter#' + name] = filter;
 	!fn.$newversion && OBSOLETE('Schema("{0}").addTransform("{1}")'.format(this.name, name), MSG_OBSOLETE_NEW);
 	return this;
 };
@@ -1187,17 +1257,23 @@ SchemaBuilderEntityProto.addTransform = function(name, fn, description) {
  * @param {String} description Optional.
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntityProto.addOperation = function(name, fn, description) {
+SchemaBuilderEntityProto.addOperation = function(name, fn, description, filter) {
 
 	if (typeof(name) === 'function') {
 		fn = name;
 		name = 'default';
 	}
 
+	if (typeof(description) === 'string' && REGEXP_FILTER.test(description)) {
+		filter = description;
+		description = null;
+	}
+
 	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	!this.operations && (this.operations = {});
 	this.operations[name] = fn;
 	this.meta['operation#' + name] = description || null;
+	this.meta['operationfilter#' + name] = filter;
 	!fn.$newversion && OBSOLETE('Schema("{0}").addOperation("{1}")'.format(this.name, name), MSG_OBSOLETE_NEW);
 	return this;
 };
@@ -1209,30 +1285,42 @@ SchemaBuilderEntityProto.addOperation = function(name, fn, description) {
  * @param {String} description Optional.
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntityProto.addWorkflow = function(name, fn, description) {
+SchemaBuilderEntityProto.addWorkflow = function(name, fn, description, filter) {
 
 	if (typeof(name) === 'function') {
 		fn = name;
 		name = 'default';
 	}
 
+	if (typeof(description) === 'string' && REGEXP_FILTER.test(description)) {
+		filter = description;
+		description = null;
+	}
+
 	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	!this.workflows && (this.workflows = {});
 	this.workflows[name] = fn;
 	this.meta['workflow#' + name] = description || null;
+	this.meta['workflowfilter#' + name] = filter;
 	!fn.$newversion && OBSOLETE('Schema("{0}").addWorkflow("{1}")'.format(this.name, name), MSG_OBSOLETE_NEW);
 	return this;
 };
 
-SchemaBuilderEntityProto.addHook = function(name, fn, description) {
+SchemaBuilderEntityProto.addHook = function(name, fn, description, filter) {
 
 	if (!this.hooks)
 		this.hooks = {};
+
+	if (typeof(description) === 'string' && REGEXP_FILTER.test(description)) {
+		filter = description;
+		description = null;
+	}
 
 	fn.$newversion = REGEXP_NEWOPERATION.test(fn.toString());
 	!this.hooks[name] && (this.hooks[name] = []);
 	this.hooks[name].push({ owner: F.$owner(), fn: fn });
 	this.meta['hook#' + name] = description || null;
+	this.meta['hookfilter#' + name] = filter;
 	!fn.$newversion && OBSOLETE('Schema("{0}").addHook("{1}")'.format(this.name, name), MSG_OBSOLETE_NEW);
 	return this;
 };
@@ -1474,6 +1562,11 @@ SchemaBuilderEntityProto.get = SchemaBuilderEntityProto.read = function(options,
 	if (controller instanceof SchemaOptions || controller instanceof OperationOptions)
 		controller = controller.controller;
 
+	if (self.meta.getfilter && controller) {
+		controller.$filterschema = self.meta.getfilter;
+		controller.$filter = null;
+	}
+
 	if (CONF.logger)
 		$now = Date.now();
 
@@ -1559,6 +1652,11 @@ SchemaBuilderEntityProto.remove = function(options, callback, controller) {
 	if (controller instanceof SchemaOptions || controller instanceof OperationOptions)
 		controller = controller.controller;
 
+	if (self.meta.removefilter && controller) {
+		controller.$filterschema = self.meta.removefilter;
+		controller.$filter = null;
+	}
+
 	if (CONF.logger)
 		$now = Date.now();
 
@@ -1640,6 +1738,11 @@ SchemaBuilderEntityProto.query = function(options, callback, controller) {
 	var builder = new ErrorBuilder();
 	var $type = 'query';
 	var $now;
+
+	if (self.meta.queryfilter && controller) {
+		controller.$filterschema = self.meta.queryfilter;
+		controller.$filter = null;
+	}
 
 	self.resourceName && builder.setResource(self.resourceName);
 	self.resourcePrefix && builder.setPrefix(self.resourcePrefix);
@@ -2613,6 +2716,12 @@ SchemaBuilderEntityProto.$execute = function(type, name, model, options, callbac
 
 	if (model && !controller && model.$$controller)
 		controller = model.$$controller;
+
+	var opfilter = [type + 'filter#' + name];
+	if (opfilter && controller) {
+		controller.$filterschema = opfilter;
+		controller.$filter = null;
+	}
 
 	if (skip === true || model instanceof SchemaInstance) {
 		var builder = new ErrorBuilder();
@@ -5157,12 +5266,13 @@ function $decodeURIComponent(value) {
 	}
 }
 
-global.NEWTASK = function(name, fn) {
+global.NEWTASK = function(name, fn, filter) {
 	if (fn == null) {
 		delete tasks[name];
 	} else {
 		tasks[name] = {};
 		tasks[name].$owner = F.$owner();
+		tasks[name].$filter = filter;
 		var append = function(key, fn) {
 			tasks[name][key] = fn;
 		};
@@ -5177,15 +5287,37 @@ function taskrunner(obj, name, callback) {
 global.TASK = function(taskname, name, callback, options) {
 	var obj = new TaskBuilder(options);
 	obj.taskname = taskname;
+
+	if (obj.controller) {
+		obj.controller.$filterschema = null;
+		obj.controller.$filter = null;
+	}
+
 	name && setImmediate(taskrunner, obj, name, callback);
 	return obj;
 };
 
-global.NEWOPERATION = function(name, fn, repeat, stop, binderror) {
+global.NEWOPERATION = function(name, fn, repeat, stop, binderror, filter) {
+
+	if (typeof(repeat) === 'string') {
+		filter = repeat;
+		repeat = null;
+	}
+
+	if (typeof(stop) === 'string') {
+		filter = stop;
+		stop = null;
+	}
+
+	if (typeof(binderror) === 'string') {
+		filter = binderror;
+		binderror = null;
+	}
 
 	// @repeat {Number} How many times will be the operation repeated after error?
 	// @stop {Boolean} Stop when the error is thrown
 	// @binderror {Boolean} Binds error when chaining of operations
+	// @filter {Object}
 
 	// Remove operation
 	if (fn == null) {
@@ -5197,6 +5329,7 @@ global.NEWOPERATION = function(name, fn, repeat, stop, binderror) {
 		operations[name].$repeat = repeat;
 		operations[name].$stop = stop !== false;
 		operations[name].$binderror = binderror === true;
+		operations[name].$filter = filter;
 
 		if (!operations[name].$newversion)
 			OBSOLETE('NEWOPERATION("{0}")'.format(name), MSG_OBSOLETE_NEW);
@@ -5225,6 +5358,12 @@ global.OPERATION = function(name, value, callback, param, controller) {
 		controller = controller.controller;
 
 	var fn = operations[name];
+
+	if (fn.$filter && controller) {
+		controller.$filterschema = fn.$filter;
+		controller.$filter = null;
+	}
+
 	var error = new ErrorBuilder();
 	var $now;
 
@@ -5451,6 +5590,13 @@ OperationOptions.prototype = {
 
 	get headers() {
 		return this.controller && this.controller.req ? this.controller.req.headers : null;
+	},
+
+	get filter() {
+		var ctrl = this.controller;
+		if (ctrl && !ctrl.$filter)
+			ctrl.$filter = ctrl.$filterschema ? CONVERT(ctrl.query, ctrl.$filterschema) : ctrl.query;
+		return ctrl ? ctrl.$filter : EMPTYOBJECT;
 	}
 
 };
