@@ -5299,6 +5299,21 @@ global.TASK = function(taskname, name, callback, options) {
 
 global.NEWOPERATION = function(name, fn, repeat, stop, binderror, filter) {
 
+	if (typeof(repeat) === 'string') {
+		filter = repeat;
+		repeat = null;
+	}
+
+	if (typeof(stop) === 'string') {
+		filter = stop;
+		stop = null;
+	}
+
+	if (typeof(binderror) === 'string') {
+		filter = binderror;
+		binderror = null;
+	}
+
 	// @repeat {Number} How many times will be the operation repeated after error?
 	// @stop {Boolean} Stop when the error is thrown
 	// @binderror {Boolean} Binds error when chaining of operations
