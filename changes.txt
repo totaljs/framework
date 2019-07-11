@@ -91,6 +91,7 @@ x updated: `LOAD()` added a callback function
 - fixed: renamed `F.stats.request.path` to `F.stats.request.patch`
 - fixed: SMTP sender (a problem with auth mechanism with some mail servers)
 - fixed: filter in `F.backup()`
+- fixed: uploading files
 
 x renamed: `*.routeScript` to `*.public_js`
 x renamed: `*.routeStyle` to `*.public_css`
