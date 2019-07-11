@@ -12998,6 +12998,18 @@ ControllerProto.success = function(is, value) {
 	return this.json(SUCCESS(is === undefined ? true : is, value));
 };
 
+ControllerProto.done = function(arg) {
+	var self = this;
+	return function(err, response) {
+		if (err) {
+			self.invalid(err);
+		} else if (arg)
+			self.json(SUCCESS(err == null, arg === true ? response : arg));
+		else
+			self.json(SUCCESS(err == null));
+	};
+};
+
 /**
  * Responds with JSONP
  * @param {String} name A method name.
