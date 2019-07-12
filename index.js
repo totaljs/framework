@@ -8715,7 +8715,7 @@ F.$configure_sitemap = function(arr, clean) {
 	return F;
 };
 
-F.sitemap = function(name, me, language) {
+global.SITEMAP = F.sitemap = function(name, me, language) {
 
 	if (!F.routes.sitemap)
 		return me ? null : EMPTYARRAY;
