@@ -17695,9 +17695,13 @@ MiddlewareOptionsProto.cancel = function() {
 	return this;
 };
 
-process.on('SIGTERM', () => F.stop());
-process.on('SIGINT', () => F.stop());
-process.on('exit', () => F.stop());
+function forcestop() {
+	F.stop();
+}
+
+process.on('SIGTERM', forcestop);
+process.on('SIGINT', forcestop);
+process.on('exit', forcestop);
 
 process.on('message', function(msg, h) {
 	if (msg === 'total:debug') {

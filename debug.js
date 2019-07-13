@@ -402,10 +402,10 @@ function runwatching() {
 
 		function end() {
 
-			if (arguments.callee.isEnd)
+			if (process.isending)
 				return;
 
-			arguments.callee.isEnd = true;
+			process.isending = true;
 			Fs.unlink(pid, noop);
 
 			if (app === null) {
