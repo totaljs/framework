@@ -57,6 +57,7 @@ x added: `ROUTE('++ METHOD URL')`, it means that `++` or `+` adds `authorized` f
 x added: `ROUTE('-- METHOD URL')`, it means that `--` or `-` adds `authorized` flag
 x added: `SchemaOptions`, `OperationOptions`, `TaskOptions` supports filtered query arguments via `$.filter`
 - added: `controller.done([value])`
+- added: `SITEMAP()` as alias to `F.sitemap()`
 
 x updated: `$.invalid()` without arguments can return a function `function(err)`
 x updated: Mail `unsubscribe` appends new header which enables `unsubscribe` in e.g. iOS
