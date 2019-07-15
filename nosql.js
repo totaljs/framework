@@ -3235,15 +3235,14 @@ CP.min = function(id, count) {
 
 	var key = 'mma' + NOW.getFullYear() + '' + id;
 
-	if (!self.cache || !self.cache[key])
-		self.empty(key, count);
-	else {
+	if (self.cache && self.cache[key]) {
 		var arr = self.cache[key];
 		if (arr[0] > count) // min
 			arr[0] = count;
 		if (arr[1] < count) // max
 			arr[1] = count;
-	}
+	} else
+		self.empty(key, count);
 
 	self.save();
 	this.$events.min && self.emit('min', id, count || 1);
@@ -3261,15 +3260,15 @@ CP.max = function(id, count) {
 	}
 
 	var key = 'mma' + NOW.getFullYear() + '' + id;
-	if (!self.cache || !self.cache[key])
-		self.empty(key, count);
-	else {
+	if (self.cache && self.cache[key]) {
 		var arr = self.cache[key];
 		if (arr[0] > count) // min
 			arr[0] = count;
 		if (arr[1] < count) // max
 			arr[1] = count;
-	}
+	} else
+		self.empty(key, count);
+
 
 	self.save();
 	self.$events.max && self.emit('max', id, count || 1);
@@ -3287,10 +3286,10 @@ CP.inc = CP.hit = function(id, count) {
 	}
 
 	var key = 'sum' + NOW.getFullYear() + '' + id;
-	if (!self.cache || !self.cache[key])
-		self.empty(key, count || 1);
-	else
+	if (self.cache && self.cache[key])
 		self.cache[key] += count || 1;
+	else
+		self.empty(key, count || 1);
 
 	self.save();
 	this.$events.sum && self.emit('sum', id, count || 1);
