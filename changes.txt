@@ -94,6 +94,7 @@ x updated: `LOAD()` added a callback function
 - fixed: filter in `F.backup()`
 - fixed: paths for stored directories in `F.backup()`
 - fixed: uploading files
+- fixed: `U.getExtension()` by @molda
 
 x renamed: `*.routeScript` to `*.public_js`
 x renamed: `*.routeStyle` to `*.public_css`

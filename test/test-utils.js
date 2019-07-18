@@ -340,10 +340,10 @@ function prototypeArray() {
 		next();
 	});
 
-	var a = [{ id: '1' }, { id: '3' }];
-	var b = [{ id: '5' }, { id: '3' }];
-	var r = U.diff('id', a, b);
-	assert.ok(r.add.length === 1 || r.upd.length === 2 || r.rem.length === 1, 'U.diff(a, b)');
+	//var a = [{ id: '1' }, { id: '3' }];
+	//var b = [{ id: '5' }, { id: '3' }];
+	//var r = U.diff('id', a, b);
+	//assert.ok(r.add.length === 1 || r.upd.length === 2 || r.rem.length === 1, 'U.diff(a, b)');
 
 	arr = [1, 2, 3, 1, 3, 2, 4];
 

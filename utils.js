@@ -2323,7 +2323,7 @@ exports.getContentType = function(ext) {
  */
 exports.getExtension = function(filename, raw) {
 	var end = filename.length;
-	for (var i = filename.length; i > 1; i--) {
+	for (var i = filename.length - 1; i > 0; i--) {
 		var c = filename[i];
 		if (c === ' ' || c === '?')
 			end = i;
