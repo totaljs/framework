@@ -17939,9 +17939,8 @@ function parseComponent(body, filename) {
 		var tmp = base64.indexOf('>');
 		var name = base64.substring(base64.lastIndexOf('name="', tmp), tmp);
 		name = name.substring(6, name.length - 1);
-		var ext = U.getExtension(name);
 		base64 = base64.substring(tmp + 1);
-		F.$bundling && Fs.writeFile(U.join(p, name), base64, IMAGES[ext] ? 'base64' : 'utf8', NOOP);
+		F.$bundling && Fs.writeFile(U.join(p, name), base64, 'base64', NOOP);
 		response.files[name] = 1;
 	}
 
