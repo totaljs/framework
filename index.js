@@ -17918,7 +17918,7 @@ function parseComponent(body, filename) {
 
 	// Files
 	while (true) {
-		beg = body.indexOf('<file name="');
+		beg = body.indexOf('<file ');
 		if (beg === -1)
 			break;
 
@@ -17926,8 +17926,7 @@ function parseComponent(body, filename) {
 		if (end === -1)
 			break;
 
-		var base64 = body.substring(beg, end);
-
+		var data = body.substring(beg, end);
 		body = body.substring(0, beg) + body.substring(end + 7);
 
 		// Creates directory
@@ -17936,11 +17935,17 @@ function parseComponent(body, filename) {
 			Fs.mkdirSync(p);
 		} catch (e) {}
 
-		var tmp = base64.indexOf('>');
-		var name = base64.substring(base64.lastIndexOf('name="', tmp), tmp);
-		name = name.substring(6, name.length - 1);
-		base64 = base64.substring(tmp + 1);
-		F.$bundling && Fs.writeFile(U.join(p, name), base64, 'base64', NOOP);
+		var tmp = data.indexOf('>');
+		beg = data.lastIndexOf('name="', tmp);
+		var name = data.substring(beg + 6, data.indexOf('"', beg + 7));
+		var encoding;
+
+		beg = data.lastIndexOf('encoding="', tmp);
+		if (beg !== -1)
+			encoding = data.substring(beg + 10, data.indexOf('"', beg + 11));
+
+		data = data.substring(tmp + 1);
+		F.$bundling && Fs.writeFile(U.join(p, name), data.trim(), encoding || 'base64', NOOP);
 		response.files[name] = 1;
 	}
 
