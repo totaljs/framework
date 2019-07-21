@@ -58,6 +58,7 @@ x added: `ROUTE('-- METHOD URL')`, it means that `--` or `-` adds `authorized` f
 x added: `SchemaOptions`, `OperationOptions`, `TaskOptions` supports filtered query arguments via `$.filter`
 - added: `controller.done([value])`
 - added: `SITEMAP()` as alias to `F.sitemap()`
+- added: config key `allow_localize` enables a localization for all `HTML` files
 
 x updated: `$.invalid()` without arguments can return a function `function(err)`
 x updated: Mail `unsubscribe` appends new header which enables `unsubscribe` in e.g. iOS

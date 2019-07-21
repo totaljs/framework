@@ -96,6 +96,7 @@ const GZIPSTREAM = { memLevel: 1 };
 const MODELERROR = {};
 const IMAGES = { jpg: 1, png: 1, gif: 1, apng: 1, jpeg: 1, heif: 1, heic: 1, webp: 1 };
 const PREFFILE = 'preferences.json';
+const KEYSLOCALIZE = { html: 1, htm: 1 };
 
 var PATHMODULES = require.resolve('./index');
 PATHMODULES = PATHMODULES.substring(0, PATHMODULES.length - 8);
@@ -763,6 +764,7 @@ function Framework() {
 		allow_compile_script: true,
 		allow_compile_style: true,
 		allow_compile_html: true,
+		allow_localize: true,
 		allow_performance: false,
 		allow_custom_titles: false,
 		allow_cache_snapshot: false,
@@ -3480,56 +3482,60 @@ global.LOCALIZE = F.localize = function(url, flags, minify) {
 
 	url = framework_internal.preparePath(url.replace('.*', ''));
 
-	F.file(url, function(req, res) {
+	if (minify)
+		F.file(url, F.$filelocalize, flags);
+	else
+		F.file(url, (req, res) => F.$filelocalize(req, res, false), flags);
+};
 
-		F.onLocale && (req.$language = F.onLocale(req, res, req.isStaticFile));
+F.$filelocalize = function(req, res, minify) {
 
-		var key = 'locate_' + (req.$language ? req.$language : 'default') + '_' + req.url;
-		var output = F.temporary.other[key];
+	F.onLocale && (req.$language = F.onLocale(req, res, req.isStaticFile));
 
-		if (output) {
-			if (!F.$notModified(req, res, output.$mtime)) {
-				HEADERS.responseLocalize['Last-Modified'] = output.$mtime;
-				res.options.body = output;
-				res.options.type = U.getContentType(req.extension);
-				res.$text();
-			}
-			return;
+	var key = 'locate_' + (req.$language ? req.$language : 'default') + '_' + req.url;
+	var output = F.temporary.other[key];
+
+	if (output) {
+		if (!F.$notModified(req, res, output.$mtime)) {
+			HEADERS.responseLocalize['Last-Modified'] = output.$mtime;
+			res.options.body = output;
+			res.options.type = U.getContentType(req.extension);
+			res.$text();
 		}
+		return;
+	}
 
-		var name = req.uri.pathname;
-		var filename = F.onMapping(name, name, true, true);
+	var name = req.uri.pathname;
+	var filename = F.onMapping(name, name, true, true);
 
-		Fs.readFile(filename, function(err, content) {
+	Fs.readFile(filename, function(err, content) {
 
-			if (err)
-				return res.throw404();
+		if (err)
+			return res.throw404();
 
-			content = framework_internal.markup(F.translator(req.$language, framework_internal.modificators(content.toString(ENCODING), filename, 'static')));
+		content = framework_internal.markup(F.translator(req.$language, framework_internal.modificators(content.toString(ENCODING), filename, 'static')));
 
-			Fs.lstat(filename, function(err, stats) {
+		Fs.lstat(filename, function(err, stats) {
 
-				var mtime = stats.mtime.toUTCString();
+			var mtime = stats.mtime.toUTCString();
 
-				if (minify && (req.extension === 'html' || req.extension === 'htm'))
-					content = framework_internal.compile_html(content, filename);
+			if (minify !== false && (req.extension === 'html' || req.extension === 'htm'))
+				content = framework_internal.compile_html(content, filename);
 
-				if (RELEASE) {
-					F.temporary.other[key] = Buffer.from(content);
-					F.temporary.other[key].$mtime = mtime;
-					if (F.$notModified(req, res, mtime))
-						return;
-				}
+			if (RELEASE) {
+				F.temporary.other[key] = Buffer.from(content);
+				F.temporary.other[key].$mtime = mtime;
+				if (F.$notModified(req, res, mtime))
+					return;
+			}
 
-				HEADERS.responseLocalize['Last-Modified'] = mtime;
-				res.options.body = content;
-				res.options.type = U.getContentType(req.extension);
-				res.options.headers = HEADERS.responseLocalize;
-				res.$text();
-			});
+			HEADERS.responseLocalize['Last-Modified'] = mtime;
+			res.options.body = content;
+			res.options.type = U.getContentType(req.extension);
+			res.options.headers = HEADERS.responseLocalize;
+			res.$text();
 		});
-
-	}, flags);
+	});
 };
 
 F.$notModified = function(req, res, date) {
@@ -16057,7 +16063,10 @@ function extend_request(PROTO) {
 			return;
 		}
 
-		res.continue();
+		if (CONF.allow_localize && KEYSLOCALIZE[req.extension])
+			F.$filelocalize(req, res);
+		else
+			res.continue();
 	};
 
 	PROTO.$total_endfilemiddleware = function(file) {
