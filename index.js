@@ -3485,14 +3485,18 @@ global.LOCALIZE = F.localize = function(url, flags, minify) {
 	if (minify)
 		F.file(url, F.$filelocalize, flags);
 	else
-		F.file(url, (req, res) => F.$filelocalize(req, res, false), flags);
+		F.file(url, filelocalize_nominify, flags);
 };
 
-F.$filelocalize = function(req, res, minify) {
+function filelocalize_nominify(req, res) {
+	F.$filelocalize(req, res, true);
+}
+
+F.$filelocalize = function(req, res, nominify) {
 
 	F.onLocale && (req.$language = F.onLocale(req, res, req.isStaticFile));
 
-	var key = 'locate_' + (req.$language ? req.$language : 'default') + '_' + req.url;
+	var key = 'locate_' + (req.$language ? req.$language : 'default') + '_' + (req.$key || req.url);
 	var output = F.temporary.other[key];
 
 	if (output) {
@@ -3519,7 +3523,7 @@ F.$filelocalize = function(req, res, minify) {
 
 			var mtime = stats.mtime.toUTCString();
 
-			if (minify !== false && (req.extension === 'html' || req.extension === 'htm'))
+			if (!nominify && (req.extension === 'html' || req.extension === 'htm'))
 				content = framework_internal.compile_html(content, filename);
 
 			if (RELEASE) {
@@ -16063,10 +16067,7 @@ function extend_request(PROTO) {
 			return;
 		}
 
-		if (CONF.allow_localize && KEYSLOCALIZE[req.extension])
-			F.$filelocalize(req, res);
-		else
-			res.continue();
+		res.continue();
 	};
 
 	PROTO.$total_endfilemiddleware = function(file) {
@@ -16696,6 +16697,11 @@ function extend_response(PROTO) {
 
 		if (!filename) {
 			res.throw404();
+			return;
+		}
+
+		if (CONF.allow_localize && KEYSLOCALIZE[req.extension]) {
+			F.$filelocalize(req, res);
 			return;
 		}
 
