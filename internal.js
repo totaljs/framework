@@ -3323,6 +3323,8 @@ function markup(body) {
 	var G = F.global;
 	var config = CONF;
 	var resource = F.resource;
+	var M = model = EMPTYOBJECT;
+	var R = repository = EMPTYOBJECT;
 	var r = [];
 
 	while (command) {
