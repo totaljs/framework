@@ -56,9 +56,9 @@ x added: `ROUTE('🔒 METHOD URL')`, it means that 🔒 adds `authorized` flag
 x added: `ROUTE('++ METHOD URL')`, it means that `++` or `+` adds `authorized` flag
 x added: `ROUTE('-- METHOD URL')`, it means that `--` or `-` adds `authorized` flag
 x added: `SchemaOptions`, `OperationOptions`, `TaskOptions` supports filtered query arguments via `$.filter`
-- added: `controller.done([value])`
-- added: `SITEMAP()` as alias to `F.sitemap()`
-- added: config key `allow_localize` enables a localization for all `HTML` files
+x added: `controller.done([value])`
+x added: `SITEMAP()` as alias to `F.sitemap()`
+x added: config key `allow_localize` enables a localization for all `HTML` files
 
 x updated: `$.invalid()` without arguments can return a function `function(err)`
 x updated: Mail `unsubscribe` appends new header which enables `unsubscribe` in e.g. iOS
@@ -76,7 +76,7 @@ x updated: `CONF.default_image_consumption` can contain ZERO value which means d
 x updated: `CONF.default_image_consumption` has changed a default value to `0`
 x updated: `U.parseXML(str, [replace])` and `String.parseXML([replace])` contains a new argument called `replace`
 x updated: `LOAD()` added a callback function
-- updated: components support `encoding="utf8"` attribute for `<file` tag (default: `base64`)
+x updated: components support `encoding="utf8"` attribute for `<file` tag (default: `base64`)
 
 - fixed: schemas validation
 - fixed: error handling in dynamic schemas
