@@ -10724,6 +10724,10 @@ function Controller(name, req, res, currentView) {
 
 Controller.prototype = {
 
+	get breadcrumb() {
+		return this.repository[REPOSITORY_SITEMAP];
+	},
+
 	get repository() {
 		if (this.$repository)
 			return this.$repository;
