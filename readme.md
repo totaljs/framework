@@ -89,6 +89,10 @@ $ npm install -g total.js
 | Possibility to rewrite existing functionality |
 | NoSQL embedded database (__NEW: joins, scalar operations and in-memory mode__) |
 
+## Useful modules
+
+- [Node Database Management System (ORM)](https://github.com/totaljs/dbms)
+
 ## Contributors
 
 | Contributor | Type | E-mail |
@@ -115,11 +119,6 @@ $ npm install -g total.js
 | [Jeroen van Hilst](https://github.com/frunjik) | contributor | <frunjik@gmail.com> |
 | [Pedro Maia Costa](https://github.com/pnmcosta) | contributor | <pedro@pmcdigital.pt> |
 | [Sarp Aykent](https://github.com/HACKHERS) | contributor | <shackhers@gmail.com> |
-
-## Useful modules
-
-- [SQL Agent: A missing ORM for Node.js and Total.js](https://github.com/petersirka/node-sqlagent)
-- [PayPal Express Checkout](https://github.com/petersirka/node-paypal-express-checkout)
 
 ## Social networks
 
