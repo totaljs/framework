@@ -59,8 +59,8 @@ x added: `SchemaOptions`, `OperationOptions`, `TaskOptions` supports filtered qu
 x added: `controller.done([value])`
 x added: `SITEMAP()` as alias to `F.sitemap()`
 x added: config key `allow_localize` enables a localization for all `HTML` files
-- added: `controller.breadcrumb` returns all sitemap items
-- added: `PAUSESERVER(name, pause)` pauses web server (alias for `F.wait()`)
+x added: `controller.breadcrumb` returns all sitemap items
+x added: `PAUSESERVER(name, pause)` pauses web server (alias for `F.wait()`)
 
 x updated: `$.invalid()` without arguments can return a function `function(err)`
 x updated: Mail `unsubscribe` appends new header which enables `unsubscribe` in e.g. iOS
