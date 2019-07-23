@@ -116,7 +116,7 @@ exports.make = function(callback) {
 	async.push(function(next) {
 		if (Merge.length) {
 			copyFiles(Merge, function() {
-				for (var i = 0, length = Merge.length; i < length; i++) {
+				for (var i = 0; i < Merge.length; i++) {
 					try {
 						Fs.unlinkSync(Merge[i].filename);
 					} catch(e) {}
