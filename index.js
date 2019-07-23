@@ -11852,7 +11852,7 @@ ControllerProto.sitemap = function(name) {
 	self.repository[REPOSITORY_SITEMAP] = sitemap;
 
 	if (!self.repository[REPOSITORY_META_TITLE]) {
-		sitemap = sitemap.last();
+		sitemap = sitemap[sitemap.length - 1];
 		if (sitemap)
 			self.repository[REPOSITORY_META_TITLE] = sitemap.name;
 	}
