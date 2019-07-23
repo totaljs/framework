@@ -10102,7 +10102,7 @@ global.WORKER2 = F.worker2 = function(name, args, callback, timeout) {
  * @param {Boolean} enable Enable waiting (optional, default: by the current state).
  * @return {Boolean}
  */
-F.wait = function(name, enable) {
+global.PAUSESERVER = F.wait = function(name, enable) {
 
 	if (!F.waits)
 		F.waits = {};
