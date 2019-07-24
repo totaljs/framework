@@ -97,6 +97,8 @@ const MODELERROR = {};
 const IMAGES = { jpg: 1, png: 1, gif: 1, apng: 1, jpeg: 1, heif: 1, heic: 1, webp: 1 };
 const PREFFILE = 'preferences.json';
 const KEYSLOCALIZE = { html: 1, htm: 1 };
+const PROXYOPTIONS = { end: true };
+const PROXYKEEPALIVE = new http.Agent({ keepAlive: true, timeout: 60000 });
 
 var PATHMODULES = require.resolve('./index');
 PATHMODULES = PATHMODULES.substring(0, PATHMODULES.length - 8);
@@ -853,6 +855,7 @@ function Framework() {
 		mapping: {},
 		packages: {},
 		blocks: {},
+		proxies: [],
 		resources: {}
 	};
 
@@ -975,6 +978,7 @@ function Framework() {
 			empty: 0,
 			redirect: 0,
 			forward: 0,
+			proxy: 0,
 			notModified: 0,
 			sse: 0,
 			errorBuilder: 0,
@@ -1000,6 +1004,7 @@ function Framework() {
 	self._request_check_POST = false;
 	self._request_check_robot = false;
 	self._request_check_mobile = false;
+	self._request_check_proxy = false;
 	self._length_middleware = 0;
 	self._length_request_middleware = 0;
 	self._length_files = 0;
@@ -1477,6 +1482,12 @@ F.stop = F.kill = function(signal) {
 	var extenddelay = F.grapdbinstance && require('./graphdb').getImportantOperations() > 0;
 	setTimeout(() => process.exit(signal), global.TEST || extenddelay ? 2000 : 300);
 	return F;
+};
+
+
+global.PROXY = F.proxy = function(url, target, before, after) {
+	F.routes.proxies.push({ url: url, uri: require('url').parse(target), before: before, after: after });
+	F._request_check_proxy = true;
 };
 
 global.REDIRECT = F.redirect = function(host, newHost, withPath, permanent) {
@@ -7562,6 +7573,17 @@ F.listener = function(req, res) {
 	else if (!req.host) // HTTP 1.0 without host
 		return res.throw400();
 
+	if (F._request_check_proxy) {
+		for (var i = 0; i < F.routes.proxies.length; i++) {
+			var proxy = F.routes.proxies[i];
+			if (req.url.substring(0, proxy.url.length) === proxy.url) {
+				F.stats.response.proxy++;
+				makeproxy(proxy, req, res);
+				return;
+			}
+		}
+	}
+
 	var headers = req.headers;
 	req.$protocol = ((req.connection && req.connection.encrypted) || ((headers['x-forwarded-proto'] || ['x-forwarded-protocol']) === 'https')) ? 'https' : 'http';
 
@@ -7605,6 +7627,34 @@ function requestcontinue_middleware(req, res)  {
 	if (req.$total_middleware)
 		req.$total_middleware = null;
 	F.$requestcontinue(req, res, req.headers);
+}
+
+function makeproxy(proxy, req, res) {
+	var uri = proxy.uri;
+	uri.headers = req.headers;
+	uri.method = req.method;
+	uri.path = req.url;
+	uri.agent = PROXYKEEPALIVE;
+	proxy.before && proxy.before(uri, req, res);
+	var request = http.request(uri, makeproxycallback);
+	request.on('error', makeproxyerror);
+	request.$res = res;
+	request.$proxy = proxy;
+	req.pipe(request, PROXYOPTIONS);
+}
+
+function makeproxyerror(err) {
+	MODELERROR.code = 503;
+	MODELERROR.status = U.httpStatus(503, false);
+	MODELERROR.error = err.toString();
+	this.$res.writeHead(503, HEADERS.response503);
+	this.$res.end(VIEW('.' + PATHMODULES + 'error', MODELERROR));
+}
+
+function makeproxycallback(response) {
+	this.$proxy.after && this.proxy.after(response);
+	this.$res.writeHead(response.statusCode, response.headers);
+	response.pipe(this.$res, PROXYOPTIONS);
 }
 
 /**
