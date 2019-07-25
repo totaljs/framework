@@ -2219,7 +2219,8 @@ SchemaBuilderEntityProto.prepare = function(model, dependencies, req) {
 				// object
 				case 6:
 
-					item[property] = self.$onprepare(property, model[property], undefined, model, req);
+					// item[property] = self.$onprepare(property, model[property], undefined, model, req);
+					item[property] = self.$onprepare(property, val, undefined, model, req);
 
 					if (item[property] === undefined)
 						item[property] = null;
@@ -2228,16 +2229,22 @@ SchemaBuilderEntityProto.prepare = function(model, dependencies, req) {
 
 				// enum
 				case 8:
-					tmp = self.$onprepare(property, model[property], undefined, model, req);
+					// tmp = self.$onprepare(property, model[property], undefined, model, req);
+					tmp = self.$onprepare(property, val, undefined, model, req);
 					if (type.subtype === 'number' && typeof(tmp) === 'string')
 						tmp = tmp.parseFloat(null);
 					item[property] = tmp != null && type.raw.indexOf(tmp) !== -1 ? tmp : undefined;
+					if (item[property] == null && type.def)
+						item[property] = type.def;
 					break;
 
 				// keyvalue
 				case 9:
-					tmp = self.$onprepare(property, model[property], undefined, model, req);
+					// tmp = self.$onprepare(property, model[property], undefined, model, req);
+					tmp = self.$onprepare(property, val, undefined, model, req);
 					item[property] = tmp != null ? type.raw[tmp] : undefined;
+					if (item[property] == null && type.def)
+						item[property] = type.def;
 					break;
 
 				// schema
