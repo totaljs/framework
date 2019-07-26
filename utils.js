@@ -6427,7 +6427,8 @@ function EventEmitter2(obj) {
 	if (obj) {
 		!obj.emit && EventEmitter2.extend(obj);
 		return obj;
-	}
+	} else
+		this.$events = {};
 }
 
 const EE2P = EventEmitter2.prototype;
