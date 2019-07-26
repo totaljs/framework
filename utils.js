@@ -6423,13 +6423,20 @@ function shellsort(arr, fn) {
 	return arr;
 }
 
-function EventEmitter2() {
-	this.$events = {};
+function EventEmitter2(obj) {
+	if (obj) {
+		!obj.emit && EventEmitter2.extend(obj);
+		return obj;
+	}
 }
 
 const EE2P = EventEmitter2.prototype;
 
 EE2P.emit = function(name, a, b, c, d, e, f, g) {
+
+	if (!this.$events)
+		return this;
+
 	var evt = this.$events[name];
 	if (evt) {
 		var clean = false;
@@ -6450,6 +6457,8 @@ EE2P.emit = function(name, a, b, c, d, e, f, g) {
 };
 
 EE2P.on = function(name, fn) {
+	if (!this.$events)
+		this.$events = {};
 	if (this.$events[name])
 		this.$events[name].push(fn);
 	else
@@ -6463,25 +6472,37 @@ EE2P.once = function(name, fn) {
 };
 
 EE2P.removeListener = function(name, fn) {
-	var evt = this.$events[name];
-	if (evt) {
-		evt = evt.remove(n => n === fn);
-		if (evt.length)
-			this.$events[name] = evt;
-		else
-			this.$events[name] = undefined;
+	if (this.$events) {
+		var evt = this.$events[name];
+		if (evt) {
+			evt = evt.remove(n => n === fn);
+			if (evt.length)
+				this.$events[name] = evt;
+			else
+				this.$events[name] = undefined;
+		}
 	}
 	return this;
 };
 
 EE2P.removeAllListeners = function(name) {
-	if (name === true)
-		this.$events = EMPTYOBJECT;
-	else if (name)
-		this.$events[name] = undefined;
-	else
-		this.$events = {};
+	if (this.$events) {
+		if (name === true)
+			this.$events = EMPTYOBJECT;
+		else if (name)
+			this.$events[name] = undefined;
+		else
+			this.$events = {};
+	}
 	return this;
+};
+
+EventEmitter2.extend = function(obj) {
+	obj.emit = EE2P.emit;
+	obj.on = EE2P.on;
+	obj.once = EE2P.once;
+	obj.removeListener = EE2P.removeListener;
+	obj.removeAllListeners = EE2P.removeAllListeners;
 };
 
 exports.EventEmitter2 = EventEmitter2;
