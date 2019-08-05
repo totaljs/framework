@@ -18,6 +18,7 @@ function Session(name, ondata) {
 	t.items = new Map();
 	t.$savecallback = ERROR('session.save');
 	t.ondata = ondata;
+	t.pending = {};
 
 	// t.onremove = function(item)
 	// t.onrelease = function(item)
@@ -451,11 +452,23 @@ SessionProto.get = function(sessionid, expire, callback) {
 	// we need to load data
 	if (item) {
 		if (item.data == null && self.ondata) {
+
+			if (self.pending[item.id]) {
+				self.pending[item.id].push(callback);
+				return;
+			}
+
+			self.pending[item.id] = [];
 			self.ondata(item, function(err, data) {
 				item.data = data;
 				callback(err, data, item, true);
 				item.used = NOW;
+				var pending = self.pending[item.id];
+				for (var i = 0; i < pending.length; i++)
+					pending[i](err, data, item);
+				delete self.pending[item.id];
 			});
+
 			return;
 		}
 	}
