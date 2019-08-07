@@ -333,6 +333,23 @@ global.UID = function(type) {
 	return UIDGENERATOR.date + index.padLeft(4, '0') + UIDGENERATOR.instance + (index % 2 ? 1 : 0);
 };
 
+global.UIDF = function(type) {
+
+	var index;
+
+	if (type) {
+		if (UIDGENERATOR.types[type])
+			index = UIDGENERATOR.types[type] = UIDGENERATOR.types[type] + 1;
+		else {
+			UIDGENERATOR.multiple = true;
+			index = UIDGENERATOR.types[type] = 1;
+		}
+	} else
+		index = UIDGENERATOR.index++;
+
+	return (UIDGENERATOR.datenumber + (index / 10000));
+};
+
 global.ERROR = function(name) {
 	return name == null ? F.errorcallback : function(err) {
 		err && F.error(err, name);
@@ -624,6 +641,7 @@ const UIDGENERATOR = { types: {}  };
 function UIDGENERATOR_REFRESH() {
 
 	UIDGENERATOR.date = NOW.format('yyMMddHHmm');
+	UIDGENERATOR.datenumber = ((NOW.getTime() - 1548975600000) / 1000 / 60) >> 0; // 1548975600000 means 1.1.2019
 	UIDGENERATOR.index = 1;
 	UIDGENERATOR.instance = random3string();
 
