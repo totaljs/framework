@@ -736,7 +736,7 @@ global.REQUEST = exports.request = function(url, flags, data, callback, cookies,
 		uri.agent.defaultPort = 443;
 	}
 
-	if (options.keepalive && !options.proxy)
+	if (options.keepalive && !options.proxy && uri.protocol !== 'https:')
 		uri.agent = KeepAlive;
 
 	if (proxy)
@@ -1337,7 +1337,7 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 		uri.agent.defaultPort = 443;
 	}
 
-	if (options.keepalive && !options.proxy)
+	if (options.keepalive && !options.proxy && uri.protocol !== 'https:')
 		uri.agent = KeepAlive;
 
 	if (proxy)

@@ -9926,7 +9926,7 @@ F.lookup = function(req, url, flags, membertype) {
 	return null;
 };
 
-F.lookupaction = function(req, url, authorized) {
+F.lookupaction = function(req, url) {
 
 	var isSystem = url[0] === '#';
 	if (isSystem)
