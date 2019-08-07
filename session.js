@@ -110,6 +110,25 @@ SessionProto.has2 = function(id, callback) {
 	callback(null, false);
 };
 
+SessionProto.contains = function(sessionid, callback) {
+	var self = this;
+	var item = self.items.get(sessionid);
+	if (item && item.expire >= NOW && item.data)
+		callback(null, item.data, item);
+	else
+		callback();
+};
+
+SessionProto.contains2 = function(id, callback) {
+	for (var m of this.items.values()) {
+		if (m && m.expire >= NOW && m.id === id && m.data) {
+			callback(null, m.data, m);
+			return;
+		}
+	}
+	callback(null);
+};
+
 SessionProto.getcookie = function(req, opt, callback) {
 
 	// opt.name {String} A cookie name
