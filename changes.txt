@@ -2136,7 +2136,7 @@ Framework loads modules, packages, models, definitions, controllers
 - fixed: utils.decode()
 - fixed: utils.request()
 
-- renamed: String.prototype.link([max]) to -> String.prototpye.linker([max])
+- renamed: String.prototype.link([max]) to -> String.prototype.linker([max])
 
 - EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/font-awesome
 - EXAMPLE (UPD): https://github.com/totaljs/examples/tree/master/websocket
