@@ -63,6 +63,7 @@ x added: `controller.breadcrumb` returns all sitemap items
 x added: `PAUSESERVER(name, pause)` pauses web server (alias for `F.wait()`)
 - added: `PROXY(endpoint, hostname, [before_fn(uri,req,res)], [after_fn(res)])` makes a direct proxy from webserver
 - added: `schema.middleware(function($, next))` for creating simple middlewares for Schema operations
+- added: `FILE404(fn(req, res))` performs a simple fallback for non-existing files
 
 x updated: `$.invalid()` without arguments can return a function `function(err)`
 x updated: Mail `unsubscribe` appends new header which enables `unsubscribe` in e.g. iOS

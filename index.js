@@ -861,6 +861,7 @@ function Framework() {
 		web: [],
 		system: {},
 		files: [],
+		filesfallback: null,
 		cors: [],
 		corsall: false,
 		websockets: [],
@@ -3441,6 +3442,10 @@ global.FILE = F.file = function(fnValidation, fnExecute, flags) {
 	return F;
 };
 
+global.FILE404 = function(fn) {
+	F.routes.filesfallback = fn;
+};
+
 function sitemapurl(url) {
 
 	var index = url.indexOf('/');
@@ -3543,8 +3548,11 @@ F.$filelocalize = function(req, res, nominify) {
 
 	Fs.readFile(filename, function(err, content) {
 
-		if (err)
-			return res.throw404();
+		if (err) {
+			if (!F.routes.filesfallback || !F.routes.filesfallback(req, res))
+				res.throw404();
+			return;
+		}
 
 		content = framework_internal.markup(F.translator(req.$language, framework_internal.modificators(content.toString(ENCODING), filename, 'static')));
 
@@ -6236,7 +6244,8 @@ function compile_merge(res, repeated) {
 				// Try it again
 				if (repeated) {
 					delete F.temporary.processing[req.$key];
-					res.throw404();
+					if (!F.routes.filesfallback || !F.routes.filesfallback(req, res))
+						res.throw404();
 				} else
 					compile_merge(res, true);
 
@@ -6803,7 +6812,7 @@ F.touch = function(url) {
 F.response503 = function(req, res) {
 	res.options.code = 503;
 	res.options.headers = HEADERS.response503;
-	res.options.body = VIEW('.' + PATHMODULES + '503', F.waits);
+	res.options.body = VIEW('.' + PATHMODULES + res.options.code, F.waits);
 	res.$text();
 	return F;
 };
@@ -16731,7 +16740,8 @@ function extend_response(PROTO) {
 			return res;
 
 		if (!CONF.static_accepts[req.extension]) {
-			res.throw404();
+			if (!F.routes.filesfallback || !F.routes.filesfallback(req, res))
+				res.throw404();
 			return res;
 		}
 
@@ -16743,7 +16753,8 @@ function extend_response(PROTO) {
 		req.$key = createTemporaryKey(req);
 
 		if (F.temporary.notfound[req.$key]) {
-			res.throw404();
+			if (!F.routes.filesfallback || !F.routes.filesfallback(req, res))
+				res.throw404();
 			return res;
 		}
 
@@ -16768,7 +16779,8 @@ function extend_response(PROTO) {
 			filename = F.onMapping(name, name, true, true);
 
 		if (!filename) {
-			res.throw404();
+			if (!F.routes.filesfallback || !F.routes.filesfallback(req, res))
+				res.throw404();
 			return;
 		}
 
@@ -16826,7 +16838,8 @@ function extend_response(PROTO) {
 				var contentType = response.headers['content-type'];
 
 				if (response.statusCode !== 200 || !contentType || !contentType.startsWith('image/')) {
-					res.throw404();
+					if (!F.routes.filesfallback || !F.routes.filesfallback(req, res))
+						res.throw404();
 					return;
 				}
 
@@ -16860,7 +16873,8 @@ function extend_response(PROTO) {
 
 		if (F.temporary.notfound[req.$key]) {
 			DEBUG && (F.temporary.notfound[req.$key] = undefined);
-			res.throw404();
+			if (!F.routes.filesfallback || !F.routes.filesfallback(req, res))
+				res.throw404();
 			return res;
 		}
 
@@ -17177,13 +17191,15 @@ function extend_response(PROTO) {
 
 		if (F.temporary.notfound[req.$key]) {
 			DEBUG && (F.temporary.notfound[req.$key] = undefined);
-			res.throw404();
+			if (!F.routes.filesfallback || !F.routes.filesfallback(req, res))
+				res.throw404();
 			return res;
 		}
 
 		var key = req.$key || createTemporaryKey(req);
 		if (F.temporary.notfound[key]) {
-			res.throw404();
+			if (!F.routes.filesfallback || !F.routes.filesfallback(req, res))
+				res.throw404();
 			return res;
 		}
 
@@ -17500,7 +17516,8 @@ function $image_nocache(res) {
 			res.$stream();
 		} else {
 			options.headers = null;
-			res.throw404();
+			if (!F.routes.filesfallback || !F.routes.filesfallback(res.req, res))
+				res.throw404();
 		}
 	});
 }
@@ -17575,7 +17592,8 @@ function $image_filename(exists, size, isFile, stats, res) {
 	if (!exists) {
 		delete F.temporary.processing[req.$key];
 		F.temporary.notfound[req.$key] = true;
-		res.throw404();
+		if (!F.routes.filesfallback || !F.routes.filesfallback(req, res))
+			res.throw404();
 		DEBUG && (F.temporary.notfound[req.$key] = undefined);
 		return;
 	}
