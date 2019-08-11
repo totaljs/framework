@@ -3078,8 +3078,9 @@ DatabaseBuilder.prototype.done = function() {
 DatabaseBuilder.prototype.fields = function() {
 	var self = this;
 	var opt = self.$options;
-	for (var i = 0, length = arguments.length; i < length; i++) {
-		var name = arguments[i];
+	var arr = arguments.length === 1 ? arguments[0].split(',') : arguments;
+	for (var i = 0, length = arr.length; i < length; i++) {
+		var name = arr[i];
 		if (name[0] === '-') {
 			!opt.fields2 && (opt.fields2 = {});
 			opt.fields2[name.substring(1)] = 1;
