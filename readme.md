@@ -128,7 +128,6 @@ Please support the framework on social networks.
 - [Follow Total.js on GitHub](https://github.com/totaljs/framework)
 - [Follow Total.js on Twitter - __@totalframework__](https://twitter.com/totalframework)
 - [Follow Total.js on Facebook](https://www.facebook.com/totaljs.web.framework)
-- [Follow Total.js on Google Plus](https://plus.google.com/u/0/113175077493180148081/posts)
 - [Follow Total.js on LinkedIn](https://www.linkedin.com/groups/totaljs-8109884)
 
 ## Contact
