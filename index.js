@@ -468,6 +468,10 @@ global.$UPDATE = function(schema, model, options, callback, controller) {
 	return performschema('$update', schema, model, options, callback, controller);
 };
 
+global.$PATCH = function(schema, model, options, callback, controller) {
+	return performschema('$patch', schema, model, options, callback, controller);
+};
+
 // type, schema, model, options, callback, controller
 function performschema(type, schema, model, options, callback, controller) {
 
@@ -488,14 +492,28 @@ function performschema(type, schema, model, options, callback, controller) {
 	var workflow = {};
 	workflow[type.substring(1)] = 1;
 
+	var req = controller ? controller.req : null;
+	var keys;
+
+	if (type === '$patch') {
+		keys = Object.keys(model);
+		if (req)
+			req.$patch = true;
+		else
+			req = { $patch: true };
+	}
+
 	o.make(model, null, function(err, model) {
 		if (err) {
 			callback && callback(err);
 		} else {
+			model.$$keys = keys;
 			model.$$controller = controller;
 			model[type](options, callback);
+			if (req && req.$patch && req.method && req.method !== 'PATCH')
+				delete req.$patch;
 		}
-	}, null, false, workflow, controller ? controller.req : null);
+	}, null, false, workflow, req);
 
 	return !!o;
 }
