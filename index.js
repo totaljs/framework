@@ -15996,9 +15996,11 @@ function extend_request(PROTO) {
 			if (this.$total_route.isGENERATOR)
 				async.call(controller, this.$total_route.execute, true)(controller, framework_internal.routeParam(this.$total_route.param.length ? this.split : this.path, this.$total_route));
 			else {
-				if (this.$total_route.param.length)
-					this.$total_route.execute.apply(controller, framework_internal.routeParam(this.split, this.$total_route));
-				else
+				if (this.$total_route.param.length) {
+					var params = framework_internal.routeParam(this.split, this.$total_route);
+					controller.id = params[0];
+					this.$total_route.execute.apply(controller, params);
+				} else
 					this.$total_route.execute.call(controller);
 			}
 
