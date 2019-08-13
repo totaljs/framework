@@ -13417,6 +13417,52 @@ ControllerProto.file = function(filename, download, headers, done) {
 	return this;
 };
 
+ControllerProto.filefs = function(name, id, download, headers, callback) {
+	var self = this;
+	var options = {};
+	options.id = id;
+	options.download = download;
+	options.headers = headers;
+	options.done = callback;
+	FILESTORAGE(name).res(self.res, options, $file_notmodified);
+	return self;
+};
+
+ControllerProto.filenosql = function(name, id, download, headers, callback) {
+	var self = this;
+	var options = {};
+	options.id = id;
+	options.download = download;
+	options.headers = headers;
+	options.done = callback;
+	NOSQL(name).binary.res(self.res, options, $file_notmodified);
+	return self;
+};
+
+ControllerProto.imagefs = function(name, id, make, headers, callback) {
+	var self = this;
+	var options = {};
+	options.id = id;
+	options.image = true;
+	options.make = make;
+	options.headers = headers;
+	options.done = callback;
+	FILESTORAGE(name).res(self.res, options, $file_notmodified);
+	return self;
+};
+
+ControllerProto.imagenosql = function(name, id, make, headers, callback) {
+	var self = this;
+	var options = {};
+	options.id = id;
+	options.image = true;
+	options.make = make;
+	options.headers = headers;
+	options.done = callback;
+	NOSQL(name).binary.res(self.res, options, $file_notmodified);
+	return self;
+};
+
 /**
  * Responds with an image
  * @param {String or Stream} filename
