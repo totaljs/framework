@@ -409,7 +409,7 @@ global.$QUERY = function(schema, options, callback, controller) {
 	return !!o;
 };
 
-global.$GET = function(schema, options, callback, controller) {
+global.$GET = global.$READ = function(schema, options, callback, controller) {
 	schema = parseSchema(schema);
 	var o = framework_builders.getschema(schema[0], schema[1]);
 	if (o)
@@ -456,26 +456,27 @@ global.$REMOVE = function(schema, options, callback, controller) {
 	return !!o;
 };
 
-global.$SAVE = function(schema, model, options, callback, controller) {
-	return performschema('$save', schema, model, options, callback, controller);
+global.$SAVE = function(schema, model, options, callback, controller, novalidate) {
+	return performschema('$save', schema, model, options, callback, controller, novalidate);
 };
 
-global.$INSERT = function(schema, model, options, callback, controller) {
-	return performschema('$insert', schema, model, options, callback, controller);
+global.$INSERT = function(schema, model, options, callback, controller, novalidate) {
+	return performschema('$insert', schema, model, options, callback, controller, novalidate);
 };
 
-global.$UPDATE = function(schema, model, options, callback, controller) {
-	return performschema('$update', schema, model, options, callback, controller);
+global.$UPDATE = function(schema, model, options, callback, controller, novalidate) {
+	return performschema('$update', schema, model, options, callback, controller, novalidate);
 };
 
-global.$PATCH = function(schema, model, options, callback, controller) {
-	return performschema('$patch', schema, model, options, callback, controller);
+global.$PATCH = function(schema, model, options, callback, controller, novalidate) {
+	return performschema('$patch', schema, model, options, callback, controller, novalidate);
 };
 
 // type, schema, model, options, callback, controller
-function performschema(type, schema, model, options, callback, controller) {
+function performschema(type, schema, model, options, callback, controller, novalidate) {
 
 	if (typeof(options) === 'function') {
+		novalidate = controller;
 		controller = callback;
 		callback = options;
 		options = null;
@@ -513,7 +514,7 @@ function performschema(type, schema, model, options, callback, controller) {
 			if (req && req.$patch && req.method && req.method !== 'PATCH')
 				delete req.$patch;
 		}
-	}, null, false, workflow, req);
+	}, null, novalidate, workflow, req);
 
 	return !!o;
 }
