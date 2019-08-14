@@ -1522,8 +1522,16 @@ F.stop = F.kill = function(signal) {
 };
 
 
-global.PROXY = F.proxy = function(url, target, before, after) {
-	F.routes.proxies.push({ url: url, uri: require('url').parse(target), before: before, after: after });
+global.PROXY = F.proxy = function(url, target, copypath, before, after) {
+
+	if (typeof(copypath) == 'function') {
+		after = before;
+		before = copypath;
+		copypath = false;
+	}
+
+	var obj = { url: url, uri: require('url').parse(target), before: before, after: after, copypath: copypath };
+	F.routes.proxies.push(obj);
 	F._request_check_proxy = true;
 };
 
@@ -7675,13 +7683,35 @@ function requestcontinue_middleware(req, res)  {
 }
 
 function makeproxy(proxy, req, res) {
+
+	var secured = proxy.uri.protocol === 'https:';
 	var uri = proxy.uri;
 	uri.headers = req.headers;
 	uri.method = req.method;
-	uri.path = req.url;
-	uri.agent = PROXYKEEPALIVE;
+
+	if (proxy.copypath)
+		uri.path = req.url;
+
+	if (!secured)
+		uri.agent = PROXYKEEPALIVE;
+
 	proxy.before && proxy.before(uri, req, res);
-	var request = http.request(uri, makeproxycallback);
+	uri.headers.host = uri.host;
+
+	var request;
+	if (secured) {
+		var https = require('https');
+		if (uri.method === 'GET')
+			request = https.get(uri, makeproxycallback);
+		else
+			request = https.request(uri, makeproxycallback);
+	} else {
+		if (uri.method === 'GET')
+			request = http.get(uri, makeproxycallback);
+		else
+			request = http.request(uri, makeproxycallback);
+	}
+
 	request.on('error', makeproxyerror);
 	request.$res = res;
 	request.$proxy = proxy;
