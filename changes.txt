@@ -61,7 +61,7 @@ x added: `SITEMAP()` as alias to `F.sitemap()`
 x added: config key `allow_localize` enables a localization for all `HTML` files
 x added: `controller.breadcrumb` returns all sitemap items
 x added: `PAUSESERVER(name, pause)` pauses web server (alias for `F.wait()`)
-- added: `PROXY(endpoint, hostname, [copypath], [before_fn(uri,req,res)], [after_fn(res)])` makes a direct proxy from webserver
+x added: `PROXY(endpoint, hostname, [copypath], [before_fn(uri,req,res)], [after_fn(res)])` makes a direct proxy from webserver
 x added: `schema.middleware(function($, next))` for creating simple middlewares for Schema operations
 x added: `FILE404(fn(req, res))` performs a simple fallback for non-existing files
 x added: `$PATCH(schema, model, [options], callback, [controller])` method
