@@ -861,12 +861,14 @@ function makebundle(dir, filename) {
 	if (filename.toLowerCase().lastIndexOf('.bundle') === -1)
 		filename += '.bundle';
 
+	blacklist[filename] = 1;
+
 	console.log('--- CREATE BUNDLE PACKAGE --');
 	console.log('');
 	console.log('Directory    :', dir);
 	console.log('Filename     :', filename);
 
-	F.backup(filename, dir, function(err, path) {
+	F.backup(filename, U.path(dir), function(err, path) {
 
 		if (err)
 			throw err;
@@ -874,7 +876,9 @@ function makebundle(dir, filename) {
 		console.log('Success      :', path.files.pluralize('# files', '# file', '# files', '# files') + ' (' + path.size.filesize() + ')');
 		console.log('');
 
-	}, path => blacklist[path] == null);
+	}, function(path) {
+		return blacklist[path] == null;
+	});
 }
 
 function makepackage(dir, filename) {
@@ -903,12 +907,14 @@ function makepackage(dir, filename) {
 	if (filename.toLowerCase().lastIndexOf('.package') === -1)
 		filename += '.package';
 
+	blacklist[filename] = 1;
+
 	console.log('--- CREATE PACKAGE --');
 	console.log('');
 	console.log('Directory    :', dir);
 	console.log('Filename     :', filename);
 
-	F.backup(filename, dir, function(err, path) {
+	F.backup(filename, U.path(dir), function(err, path) {
 
 		if (err)
 			throw err;
@@ -916,7 +922,9 @@ function makepackage(dir, filename) {
 		console.log('Success      :', path.files.pluralize('# files', '# file', '# files', '# files') + ' (' + path.size.filesize() + ')');
 		console.log('');
 
-	}, path => blacklist[path] == null);
+	}, function(path) {
+		return blacklist[path] == null;
+	});
 }
 
 main();
