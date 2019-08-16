@@ -7500,6 +7500,7 @@ F.service = function(count) {
 		has && CONF.allow_debug && F.consoledebug('ping websocket connections');
 	}
 
+	// OBSOLETE, it will be deleted in v4
 	if (F.uptodates && (count % CONF.default_interval_uptodate === 0) && F.uptodates.length) {
 		var hasUpdate = false;
 		F.uptodates.wait(function(item, next) {
@@ -7552,6 +7553,18 @@ F.service = function(count) {
 		F.resources = {};
 		releasegc = true;
 		CONF.allow_debug && F.consoledebug('clear resources');
+	}
+
+	// Session DDOS cleaner
+	if (F.sessionscount && count % 15 === 0) {
+		keys = Object.keys(F.sessions);
+		for (var i = 0; i < keys.length; i++) {
+			var session = F.sessions[keys[i]];
+			if (session.ddosis) {
+				session.ddos = {};
+				session.ddosis = false;
+			}
+		}
 	}
 
 	// Update expires date

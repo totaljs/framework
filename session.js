@@ -19,6 +19,8 @@ function Session(name, ondata) {
 	t.$savecallback = ERROR('session.save');
 	t.ondata = ondata;
 	t.pending = {};
+	t.ddos = {};
+	t.ddosis = false;
 
 	// t.onremove = function(item)
 	// t.onrelease = function(item)
@@ -137,9 +139,18 @@ SessionProto.getcookie = function(req, opt, callback) {
 	// opt.extendcookie {Boolean} Extends cookie expiration (default: true)
 	// opt.removecookie {Boolean} Removes cookie if isn't valid (default: true)
 	// opt.options {Object} A cookie options (default: undefined)
+	// opt.ddos {Number} Enable DDOS attempts
 
 	if (req.req)
 		req = req.req;
+
+	var self = this;
+
+	// DDOS Protection
+	if (opt.ddos && self.ddos[req.ip] > opt.ddos) {
+		callback();
+		return;
+	}
 
 	var token = req.cookie(opt.name);
 	if (!token || token.length < 20) {
@@ -153,14 +164,23 @@ SessionProto.getcookie = function(req, opt, callback) {
 	}
 
 	// IMPORTANT: "req.res" can be null cause of WebSocket
-
 	var value = DECRYPTREQ(req, token, opt.key);
 	if (value && typeof(value) === 'string') {
 		value = value.split(';');
 		if (req.res && opt.expire && opt.extendcookie !== false)
 			req.res.cookie(opt.name, token, opt.expire, opt.options || COOKIEOPTIONS);
-		this.get(value[0], opt.expire, function(err, data, meta, init) {
+		self.get(value[0], opt.expire, function(err, data, meta, init) {
 			if ((err || !data)) {
+
+				if (opt.ddos) {
+					if (self.ddos[req.ip])
+						self.ddos[req.ip]++;
+					else {
+						self.ddos[req.ip] = 1;
+						self.ddosis = true;
+					}
+				}
+
 				if (req.res && opt.removecookie !== false)
 					req.res.cookie(opt.name, '', '-1 day');
 			} else
@@ -171,6 +191,16 @@ SessionProto.getcookie = function(req, opt, callback) {
 		// remove cookies
 		if (req.res && opt.removecookie !== false)
 			req.res.cookie(opt.name, '', '-1 day');
+
+		if (opt.ddos) {
+			if (self.ddos[req.ip])
+				self.ddos[req.ip]++;
+			else {
+				self.ddos[req.ip] = 1;
+				self.ddosis = true;
+			}
+		}
+
 		callback();
 	}
 };
@@ -180,9 +210,16 @@ SessionProto.gettoken = function(req, opt, callback) {
 	// opt.token {String} a token
 	// opt.expire {String} Expiration
 	// opt.key {String} Encrypt key
+	// opt.ddos {Number} Enable DDOS attempts
 
 	if (req.req)
 		req = req.req;
+
+	// DDOS Protection
+	if (opt.ddos && self.ddos[req.ip] > opt.ddos) {
+		callback();
+		return;
+	}
 
 	var token = opt.token;
 	if (!token || token.length < 20) {
@@ -197,10 +234,27 @@ SessionProto.gettoken = function(req, opt, callback) {
 		this.get(value[0], opt.expire, function(err, data, meta, init) {
 			if (!err && data)
 				req.sessionid = meta.sessionid;
+			else if (opt.ddos) {
+				if (self.ddos[req.ip])
+					self.ddos[req.ip]++;
+				else {
+					self.ddos[req.ip] = 1;
+					self.ddosis = true;
+				}
+			}
 			callback(err, data, meta, init);
 		});
-	} else
+	} else {
+		if (opt.ddos) {
+			if (self.ddos[req.ip])
+				self.ddos[req.ip]++;
+			else {
+				self.ddos[req.ip] = 1;
+				self.ddosis = true;
+			}
+		}
 		callback();
+	}
 };
 
 SessionProto.usage = function() {
@@ -720,5 +774,9 @@ global.SESSION = function(name) {
 		return F.sessions[name];
 	var session = new Session(name);
 	session.load();
+	if (F.sessionscount)
+		F.sessionscount++;
+	else
+		F.sessionscount = 1;
 	return F.sessions[name] = session;
 };
