@@ -5275,7 +5275,7 @@ RESTP.exec = function(callback) {
 
 		if (type) {
 			var index = type.lastIndexOf(';');
-			if (index !== 1)
+			if (index !== -1)
 				type = type.substring(0, index).trim();
 		}
 
