@@ -430,7 +430,7 @@ function main() {
 
 		if (!$type && (cmd === '-translate-csv' || cmd === '-translatecsv' || cmd === '-c')) {
 			$type = 6;
-			continue
+			continue;
 		}
 
 		if (!$type && cmd === '-csv') {
