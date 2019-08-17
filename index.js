@@ -5591,7 +5591,7 @@ F.download = F.snapshot = function(url, filename, callback) {
 		if (url[0] !== '/')
 			url = '/' + url;
 		if (F.isWorker)
-			throw new Error('Worker can\'t create a snapshot from relative URL address "{0}".'.format(url));
+			throw new Error('Worker can\'t create a snapshot from the relative URL address "{0}".'.format(url));
 		url = 'http://' + (F.ip === 'auto' ? '0.0.0.0' : F.ip) + ':' + F.port + url;
 	}
 
