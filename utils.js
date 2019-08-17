@@ -70,6 +70,7 @@ const regexpY = /y/g;
 const regexpN = /\n/g;
 const regexpCHARS = /\W|_/g;
 const regexpCHINA = /[\u3400-\u9FBF]/;
+const regexpLINES = /\n|\r|\r\n/;
 const SOUNDEX = { a: '', e: '', i: '', o: '', u: '', b: 1, f: 1, p: 1, v: 1, c: 2, g: 2, j: 2, k: 2, q: 2, s: 2, x: 2, z: 2, d: 3, t: 3, l: 4, m: 5, n: 5, r: 6 };
 const ENCODING = 'utf8';
 const NEWLINE = '\r\n';
@@ -4223,6 +4224,36 @@ SP.parseUID = function() {
 	return obj;
 };
 
+SP.parseENV = function() {
+
+	var arr = this.split(regexpLINES);
+	var obj = {};
+
+	for (var i = 0; i < arr.length; i++) {
+		var line = arr[i];
+		if (!line || line.substring(0, 2) === '//' || line[0] === '#')
+			continue;
+
+		var index = line.indexOf('=');
+		if (index === -1)
+			continue;
+
+
+		var key = line.substring(0, index);
+		var val = line.substring(index + 1).replace(/\\n/g, '\n');
+		var end = val.length - 1;
+
+		if ((val[0] === '"' && val[end] === '"') || (val[0] === '\'' && val[end] === '\''))
+			val = val.substring(1, end);
+		else
+			val = val.trim();
+
+		obj[key] = val;
+	}
+
+	return obj;
+};
+
 SP.parseInt = function(def) {
 	var str = this.trim();
 	var num = +str;
@@ -4272,7 +4303,7 @@ SP.capitalize = function(first) {
 	return builder;
 };
 
-String.prototype.toUnicode = function() {
+SP.toUnicode = function() {
 	var output = '';
 	for (var i = 0; i < this.length; i++) {
 		var c = this[i].charCodeAt(0);
@@ -4284,7 +4315,7 @@ String.prototype.toUnicode = function() {
 	return output;
 };
 
-String.prototype.fromUnicode = function() {
+SP.fromUnicode = function() {
 	var output = '';
 	for (var i = 0; i < this.length; i++) {
 		if (this[i] === '\\' && this[i + 1] === 'u') {
