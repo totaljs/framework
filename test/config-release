@@ -4,3 +4,5 @@ array     (Array)   : [1, 2, 3, 4]
 
 testbase            : base64 MTIzNDU2
 testhex             : hex 313233343536
+
+testenv   (Env)     : APP_NAME

@@ -24,6 +24,7 @@ framework.on('ready', function() {
 	assert.ok(F.config.array.length === 4, 'Problem with config sub types.');
 	assert.ok(CONF.testhex === 123456, 'config: hex encode');
 	assert.ok(CONF.testbase === 123456, 'config: base encode');
+	assert.ok(CONF.testenv === 'custom environment app', 'config: read env');
 });
 
 AUTH(function($) {

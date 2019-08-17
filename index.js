@@ -4917,14 +4917,15 @@ global.INSTALL = F.install = function(type, name, declaration, options, callback
 				F.directory = directory = tmpdir;
 				F.temporary.path = {};
 				F.temporary.notfound = {};
+				F.$configure_env();
 				F.$configure_configs();
 				F.$configure_versions();
 				F.$configure_dependencies();
 				F.$configure_sitemap();
 				F.$configure_workflows();
 			} else {
+				F.$configure_env('@' + name + '/.env');
 				F.$configure_configs('@' + name + '/config');
-
 				if (DEBUG)
 					F.$configure_configs('@' + name + '/config-debug');
 				else
@@ -6933,6 +6934,7 @@ global.LOAD = F.load = function(debug, types, pwd, ready) {
 		F.$startup(function() {
 
 			F.consoledebug('startup (done)');
+			F.$configure_env();
 			F.$configure_configs();
 
 			if (can('versions'))
@@ -7038,6 +7040,7 @@ F.initialize = function(http, debug, options) {
 
 	F.$bundle(function() {
 
+		F.$configure_env();
 		F.$configure_configs();
 		F.$configure_versions();
 		F.$configure_workflows();
@@ -9351,6 +9354,36 @@ function makehash(url, callback, count) {
 		stream.on('error', () => callback(''));
 	});
 }
+
+F.$configure_env = function(filename) {
+
+	var data;
+
+	if (filename) {
+		filename = prepare_filename(filename);
+		if (!existsSync(filename, true))
+			return F;
+		data = Fs.readFileSync(filename).toString(ENCODING);
+	}
+
+	if (!filename) {
+		filename = U.combine('/', '.env');
+		if (!existsSync(filename, true))
+			return F;
+		data = Fs.readFileSync(filename).toString(ENCODING);
+	}
+
+	data = data.parseENV();
+	var keys = Object.keys(data);
+
+	for (var i = 0; i < keys.length; i++) {
+		var key = keys[i];
+		if (!process.env.hasOwnProperty(key))
+			process.env[key] = data[key];
+	}
+
+	return F;
+};
 
 F.$configure_configs = function(arr, rewrite) {
 
