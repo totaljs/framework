@@ -65,8 +65,8 @@ x added: `PROXY(endpoint, hostname, [copypath], [before_fn(uri,req,res)], [after
 x added: `schema.middleware(function($, next))` for creating simple middlewares for Schema operations
 x added: `FILE404(fn(req, res))` performs a simple fallback for non-existing files
 x added: `$PATCH(schema, model, [options], callback, [controller])` method
-- added: `.env` parser to `process.env`
-- added: `String.parseENV()` for parsing `.env` syntax
+x added: `.env` parser to `process.env`
+x added: `String.parseENV()` for parsing `.env` syntax
 
 x updated: `$.invalid()` without arguments can return a function `function(err)`
 x updated: Mail `unsubscribe` appends new header which enables `unsubscribe` in e.g. iOS

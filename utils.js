@@ -1993,7 +1993,9 @@ exports.reduce = function(source, prop, reverse) {
 
 	var output = {};
 
-	Object.keys(source).forEach(function(o) {
+	var keys = Object.keys(source);
+	for (var i = 0; i < keys.length; i++) {
+		var o = keys[i];
 		if (reverse) {
 			if (prop.indexOf(o) === -1)
 				output[o] = source[o];
@@ -2001,7 +2003,7 @@ exports.reduce = function(source, prop, reverse) {
 			if (prop.indexOf(o) !== -1)
 				output[o] = source[o];
 		}
-	});
+	}
 
 	return output;
 };
