@@ -2015,6 +2015,7 @@ exports.reduce = function(source, prop, reverse) {
  * @param {Object or Function} fn Value or Function to update.
  * @return {Object}
  */
+// @TODO: deprecated, it will be removed in v4
 exports.assign = function(obj, path, fn) {
 
 	if (obj == null)
