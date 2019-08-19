@@ -1517,8 +1517,9 @@ F.stop = F.kill = function(signal) {
 		F.server.close();
 	}
 
-	var extenddelay = F.grapdbinstance && require('./graphdb').getImportantOperations() > 0;
-	setTimeout(() => process.exit(signal), global.TEST || extenddelay ? 2000 : 300);
+	// var extenddelay = F.grapdbinstance && require('./graphdb').getImportantOperations() > 0;
+	// setTimeout(() => process.exit(signal), global.TEST || extenddelay ? 2000 : 300);
+	setTimeout(() => process.exit(signal), global.TEST ? 2000 : 300);
 	return F;
 };
 
