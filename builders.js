@@ -352,6 +352,11 @@ SchemaOptionsProto.repository = function(name, value) {
 	return this.model && this.model.$repository ? this.model.$repository(name, value) : value;
 };
 
+SchemaOptionsProto.noop = function() {
+	this.callback(NoOp);
+	return this;
+};
+
 /**
  *
  * Get a schema
@@ -2552,10 +2557,13 @@ SchemaBuilderEntityProto.$process = function(arg, model, type, name, builder, re
 	var has = builder.is;
 	has && self.onError && self.onError(builder, model, type, name);
 
-	if (controller && response instanceof SchemaInstance && !response.$$controller)
-		response.$$controller = controller;
+	if (response !== NoOp) {
+		if (controller && response instanceof SchemaInstance && !response.$$controller)
+			response.$$controller = controller;
+		callback(has ? builder : null, response === undefined ? model : response, model);
+	} else
+		callback = null;
 
-	callback(has ? builder : null, response === undefined ? model : response, model);
 	return self;
 };
 
@@ -5441,7 +5449,6 @@ global.NEWOPERATION = function(name, fn, repeat, stop, binderror, filter) {
 		operations[name].$stop = stop !== false;
 		operations[name].$binderror = binderror === true;
 		operations[name].$filter = filter;
-
 		if (!operations[name].$newversion)
 			OBSOLETE('NEWOPERATION("{0}")'.format(name), MSG_OBSOLETE_NEW);
 	}
@@ -5449,6 +5456,9 @@ global.NEWOPERATION = function(name, fn, repeat, stop, binderror, filter) {
 
 function getLoggerNameOperation(name) {
 	return 'OPERATION(\'' + name + '\')';
+}
+
+function NoOp() {
 }
 
 global.OPERATION = function(name, value, callback, param, controller) {
@@ -5487,6 +5497,7 @@ global.OPERATION = function(name, value, callback, param, controller) {
 			var self = new OperationOptions(error, value, param, controller);
 			self.$repeat = fn.$repeat;
 			self.callback = function(value) {
+
 				CONF.logger && F.ilogger(getLoggerNameOperation(name), controller, $now);
 				if (arguments.length > 1) {
 					if (value instanceof Error || (value instanceof ErrorBuilder && value.is)) {
@@ -5503,9 +5514,14 @@ global.OPERATION = function(name, value, callback, param, controller) {
 					self.error.clear();
 					self.$repeat--;
 					fn(self);
-				} else
-					callback && callback(self.error.is ? self.error : null, value, self.options);
-
+				} else {
+					if (callback) {
+						if (value === NoOp)
+							callback = null;
+						else
+							callback(self.error.is ? self.error : null, value, self.options);
+					}
+				}
 				return self;
 			};
 			fn(self);
@@ -5517,7 +5533,8 @@ global.OPERATION = function(name, value, callback, param, controller) {
 						error.push(value);
 						value = EMPTYOBJECT;
 					}
-					callback(error.is ? error : null, value, param);
+					if (value !== NoOp)
+						callback(error.is ? error : null, value, param);
 				}
 			});
 	} else {
@@ -5729,6 +5746,11 @@ OperationOptionsProto.cancel = function() {
 	return self;
 };
 
+OperationOptionsProto.noop = function() {
+	this.callback(NoOp);
+	return this;
+};
+
 OperationOptionsProto.redirect = function(url) {
 	this.callback(new F.callback_redirect(url));
 	return this;
@@ -5741,7 +5763,6 @@ OperationOptionsProto.DB = function() {
 OperationOptionsProto.done = function(arg) {
 	var self = this;
 	return function(err, response) {
-
 		if (err) {
 			self.error.push(err);
 			self.callback();
