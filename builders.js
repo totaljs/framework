@@ -5458,8 +5458,7 @@ function getLoggerNameOperation(name) {
 	return 'OPERATION(\'' + name + '\')';
 }
 
-function NoOp() {
-}
+function NoOp() {}
 
 global.OPERATION = function(name, value, callback, param, controller) {
 
@@ -5746,9 +5745,11 @@ OperationOptionsProto.cancel = function() {
 	return self;
 };
 
-OperationOptionsProto.noop = function() {
-	this.callback(NoOp);
-	return this;
+OperationOptionsProto.noop = function(nocustomresponse) {
+	var self = this;
+	!nocustomresponse && self.controller && self.controller.custom();
+	self.callback(NoOp);
+	return self;
 };
 
 OperationOptionsProto.redirect = function(url) {
