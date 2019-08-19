@@ -67,7 +67,7 @@ x added: `FILE404(fn(req, res))` performs a simple fallback for non-existing fil
 x added: `$PATCH(schema, model, [options], callback, [controller])` method
 x added: `.env` parser to `process.env`
 x added: `String.parseENV()` for parsing `.env` syntax
-- added: `$.noop()` for custom responses
+x added: `$.noop()` for custom responses
 
 x updated: `$.invalid()` without arguments can return a function `function(err)`
 x updated: Mail `unsubscribe` appends new header which enables `unsubscribe` in e.g. iOS
