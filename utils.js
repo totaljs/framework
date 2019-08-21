@@ -4177,53 +4177,97 @@ SP.isPhone = function() {
 };
 
 SP.isUID = function() {
-	return this.length < 18 ? false : F.validators.uid.test(this);
+	var str = this;
+	if (str.length < 13)
+		return false;
+
+	var is = F.validators.uid.test(str);
+	if (is) {
+
+		var sum;
+		var beg;
+		var end;
+
+		if (str[str.length - 1] === 'a') {
+			sum = str[str.length - 2];
+			beg = 6;
+			end = str.length - 4;
+		} else {
+			sum = str[str.length - 1];
+			beg = 10;
+			end = str.length - 4;
+		}
+
+		while (beg++ < end) {
+			if (str[beg] !== '0') {
+				if (((+str.substring(beg, end)) % 2 ? '1' : '0') === sum)
+					return true;
+			}
+		}
+	}
+	return false;
 };
 
 SP.parseUID = function() {
 	var self = this;
+	var obj = {};
+	var hash;
 
-	var y = self.substring(0, 2);
-	var M = self.substring(2, 4);
-	var d = self.substring(4, 6);
-	var H = self.substring(6, 8);
-	var m = self.substring(8, 10);
+	if (self[self.length - 1] === 'a') {
 
-	var beg = 0;
-	var end = 0;
-	var index = 10;
+		var ticks = ((+self.substring(0, 6)) * 1000 * 60) + 1548975600000;
+		obj.date = new Date(ticks);
+		beg = 7;
+		end = self.length - 4;
+		hash = +self.substring(end + 2, end + 3);
+		obj.century = Math.floor((obj.date.getFullYear() - 1) / 100) + 1;
+		obj.hash = self.substring(end, end + 2);
+	} else {
 
-	while (true) {
+		var y = self.substring(0, 2);
+		var M = self.substring(2, 4);
+		var d = self.substring(4, 6);
+		var H = self.substring(6, 8);
+		var m = self.substring(8, 10);
 
-		var c = self[index];
+		obj.date = new Date(+('20' + y), (+M) - 1, +d, +H, +m, 0);
 
-		if (!c)
-			break;
+		var beg = 0;
+		var end = 0;
+		var index = 10;
 
-		if (!beg && c !== '0')
-			beg = index;
+		while (true) {
 
-		if (c.charCodeAt(0) > 96) {
-			end = index;
-			break;
+			var c = self[index];
+
+			if (!c)
+				break;
+
+			if (!beg && c !== '0')
+				beg = index;
+
+			if (c.charCodeAt(0) > 96) {
+				end = index;
+				break;
+			}
+
+			index++;
 		}
 
-		index++;
+		obj.century = self.substring(end + 4);
+
+		if (obj.century) {
+			obj.century = 20 + (+obj.century);
+			obj.date.setYear(obj.date.getFullYear() + 100);
+		} else
+			obj.century = 21;
+
+		hash = +self.substring(end + 3, end + 4);
+		obj.hash = self.substring(end, end + 3);
 	}
 
-	var obj = {};
-	obj.date = new Date(+('20' + y), (+M) - 1, +d, +H, +m, 0);
 	obj.index = +self.substring(beg, end);
-	obj.hash = self.substring(end, end + 3);
-	obj.century = self.substring(end + 4);
-
-	if (obj.century) {
-		obj.century = 20 + (+obj.century);
-		obj.date.setYear(obj.date.getFullYear() + 100);
-	} else
-		obj.century = 21;
-
-	obj.valid = (obj.index % 2 ? 1 : 0) === (+self.substring(end + 3, end + 4));
+	obj.valid = (obj.index % 2 ? 1 : 0) === hash;
 	return obj;
 };
 
@@ -4240,7 +4284,6 @@ SP.parseENV = function() {
 		var index = line.indexOf('=');
 		if (index === -1)
 			continue;
-
 
 		var key = line.substring(0, index);
 		var val = line.substring(index + 1).replace(/\\n/g, '\n');

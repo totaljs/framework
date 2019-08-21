@@ -87,6 +87,7 @@ x updated: `U.parseXML(str, [replace])` and `String.parseXML([replace])` contain
 x updated: `LOAD()` added a callback function
 x updated: components support `encoding="utf8"` attribute for `<file` tag (default: `base64`)
 x updated: `EventEmitter2` supports a new argument `obj`, example: `U.EventEmitter2(obj)` or supports `.extend` method: `U.EventEmitter2.extend(proto)`
+x updated: `UID()` generates new types of `UID` with 100% backward compatibility
 
 - fixed: schemas validation
 - fixed: error handling in dynamic schemas

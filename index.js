@@ -329,7 +329,7 @@ global.UID = function(type) {
 	} else
 		index = UIDGENERATOR.index++;
 
-	return UIDGENERATOR.date + index.padLeft(4, '0') + UIDGENERATOR.instance + (index % 2 ? 1 : 0);
+	return UIDGENERATOR.date + index.padLeft(3, '0') + UIDGENERATOR.instance + (index % 2 ? 1 : 0) + 'a'; // "a" version
 };
 
 global.UIDF = function(type) {
@@ -337,16 +337,17 @@ global.UIDF = function(type) {
 	var index;
 
 	if (type) {
-		if (UIDGENERATOR.types[type])
-			index = UIDGENERATOR.types[type] = UIDGENERATOR.types[type] + 1;
+		if (UIDGENERATOR.typesnumber[type])
+			index = UIDGENERATOR.typesnumber[type] = UIDGENERATOR.typesnumber[type] + 1;
 		else {
-			UIDGENERATOR.multiple = true;
-			index = UIDGENERATOR.types[type] = 1;
+			UIDGENERATOR.multiplenumber = true;
+			index = UIDGENERATOR.typesnumber[type] = 1;
 		}
 	} else
-		index = UIDGENERATOR.index++;
+		index = UIDGENERATOR.indexnumber++;
 
-	return (UIDGENERATOR.datenumber + (index / 10000));
+	var div = index > 1000 ? 10000 : 1000;
+	return (UIDGENERATOR.datenumber + (index / div));
 };
 
 global.ERROR = function(name) {
@@ -648,20 +649,25 @@ var directory = U.$normalize(require.main ? Path.dirname(require.main.filename) 
 var DATE_EXPIRES = new Date().add('y', 1).toUTCString();
 
 const _randomstring = 'abcdefghijklmnoprstuwxy'.split('');
-function random3string() {
-	return _randomstring[(Math.random() * _randomstring.length) >> 0] + _randomstring[(Math.random() * _randomstring.length) >> 0] + _randomstring[(Math.random() * _randomstring.length) >> 0];
+
+function random2string() {
+	return _randomstring[(Math.random() * _randomstring.length) >> 0] + _randomstring[(Math.random() * _randomstring.length) >> 0];
 }
 
 const WEBSOCKET_COMPRESS = Buffer.from([0x00, 0x00, 0xFF, 0xFF]);
 const WEBSOCKET_COMPRESS_OPTIONS = { windowBits: Zlib.Z_DEFAULT_WINDOWBITS };
-const UIDGENERATOR = { types: {}  };
+const UIDGENERATOR = { types: {}, typesnumber: {} };
 
 function UIDGENERATOR_REFRESH() {
 
-	UIDGENERATOR.date = NOW.format('yyMMddHHmm');
-	UIDGENERATOR.datenumber = ((NOW.getTime() - 1548975600000) / 1000 / 60) >> 0; // 1548975600000 means 1.1.2019
+	var ticks = NOW.getTime();
+	UIDGENERATOR.date = Math.round(((ticks - 1548975600000) / 1000 / 60)) + '';
+
+	var seconds = ((NOW.getSeconds() / 60) + '').substring(2, 4);
+	UIDGENERATOR.datenumber = +((((ticks - 1548975600000) / 1000 / 60) >> 0) + seconds); // 1548975600000 means 1.1.2019
+	UIDGENERATOR.indexnumber = 1;
 	UIDGENERATOR.index = 1;
-	UIDGENERATOR.instance = random3string();
+	UIDGENERATOR.instance = random2string();
 
 	var keys;
 
@@ -669,6 +675,12 @@ function UIDGENERATOR_REFRESH() {
 		keys = Object.keys(UIDGENERATOR.types);
 		for (var i = 0; i < keys.length; i++)
 			UIDGENERATOR.types[keys[i]] = 0;
+	}
+
+	if (UIDGENERATOR.multiplenumber) {
+		keys = Object.keys(UIDGENERATOR.typesnumber);
+		for (var i = 0; i < keys.length; i++)
+			UIDGENERATOR.typesnumber[keys[i]] = 0;
 	}
 }
 
@@ -921,7 +933,7 @@ function Framework() {
 		url: /^(https?:\/\/(?:www\.|(?!www))[^\s.#!:?+=&@!$'~*,;/()[\]]+\.[^\s#!?+=&@!$'~*,;()[\]\\]{2,}\/?|www\.[^\s#!:.?+=&@!$'~*,;/()[\]]+\.[^\s#!?+=&@!$'~*,;()[\]\\]{2,}\/?)/i,
 		phone: /^[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}$/im,
 		zip: /^\d{5}(?:[-\s]\d{4})?$/,
-		uid: /^\d{14,}[a-z]{3}[01]{1}$/
+		uid: /(^\d{14,}[a-z]{3}[01]{1}|^\d{9,14}[a-z]{2}[01]{1}a)$/
 	};
 
 	self.workers = {};
