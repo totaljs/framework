@@ -279,7 +279,18 @@ global.WTF = (message, name, uri) => F.problem(message, name, uri);
 global.NOBIN = global.NOSQLBINARY = (name) => F.nosql(name).binary;
 global.NOSQLSTORAGE = (name) => F.nosql(name).storage;
 global.NOCOUNTER = global.NOSQLCOUNTER = (name) => F.nosql(name).counter;
-global.NOMEM = global.NOSQLMEMORY = (name, view) => global.framework_nosql.inmemory(name, view);
+
+function nomemwrapper(name) {
+	return global.framework_nosql.inmemory(name);
+}
+
+global.NOMEM = global.NOSQLMEMORY = function(name) {
+	if (!global.framework_nosql)
+		global.framework_nosql = require('./nosql');
+	global.NOMEM = global.NOSQLMEMORY = global.framework_nosql.inmemory;
+	return nomemwrapper(name);
+};
+
 global.CONFIG = function(name, val) {
 	return arguments.length === 1 ? CONF[name] : (CONF[name] = val);
 };
@@ -310,9 +321,17 @@ global.SINGLETON = (name, def) => SINGLETONS[name] || (SINGLETONS[name] = (new F
 global.FUNCTION = (name) => F.functions[name] || NOOP;
 global.FINISHED = framework_internal.onFinished;
 global.DESTROY = framework_internal.destroyStream;
-global.FILESTORAGE = function(name) {
+
+function filestoragewrapper(name) {
 	var key = 'storage_' + name;
 	return F.databases[key] ? F.databases[key] : (F.databases[key] = new framework_nosql.DatabaseBinary({ name: name }, F.path.databases('fs-' + name + '/'), '.file'));
+}
+
+global.FILESTORAGE = function(name) {
+	if (!global.framework_nosql)
+		global.framework_nosql = require('./nosql');
+	global.FILESTORAGE = filestoragewrapper;
+	return filestoragewrapper(name);
 };
 
 global.UID = function(type) {
@@ -1152,16 +1171,21 @@ F.refresh = function() {
 };
 
 F.prototypes = function(fn) {
+
 	var proto = {};
 	proto.Chunker = framework_utils.Chunker.prototype;
 	proto.Controller = Controller.prototype;
-	proto.Database = framework_nosql.Database.prototype;
-	proto.DatabaseBinary = framework_nosql.DatabaseBinary.prototype;
-	proto.DatabaseBuilder = framework_nosql.DatabaseBuilder.prototype;
-	proto.DatabaseBuilder2 = framework_nosql.DatabaseBuilder2.prototype;
-	proto.DatabaseCounter = framework_nosql.DatabaseCounter.prototype;
-	proto.DatabaseStorage = framework_nosql.DatabaseStorage.prototype;
-	proto.DatabaseTable = framework_nosql.DatabaseTable.prototype;
+
+	if (global.framework_nosql) {
+		proto.Database = framework_nosql.Database.prototype;
+		proto.DatabaseBinary = framework_nosql.DatabaseBinary.prototype;
+		proto.DatabaseBuilder = framework_nosql.DatabaseBuilder.prototype;
+		proto.DatabaseBuilder2 = framework_nosql.DatabaseBuilder2.prototype;
+		proto.DatabaseCounter = framework_nosql.DatabaseCounter.prototype;
+		proto.DatabaseStorage = framework_nosql.DatabaseStorage.prototype;
+		proto.DatabaseTable = framework_nosql.DatabaseTable.prototype;
+	}
+
 	proto.ErrorBuilder = framework_builders.ErrorBuilder.prototype;
 	proto.HttpFile = framework_internal.HttpFile.prototype;
 	proto.HttpRequest = PROTOREQ;
@@ -6018,7 +6042,7 @@ F.usage = function(detailed) {
 		directory: process.cwd()
 	};
 
-	if (CONF.nosql_worker)
+	if (CONF.nosql_worker && global.framework_nosql)
 		output.framework.pidnosql = framework_nosql.pid();
 
 	var keys = Object.keys(U.queuecache);
@@ -7394,7 +7418,10 @@ F.console = function() {
 	console.log('Node.js       : ' + process.version);
 	console.log('Total.js      : v' + F.version_header);
 	console.log('OS            : ' + Os.platform() + ' ' + Os.release());
-	CONF.nosql_worker && console.log('NoSQL PID     : ' + framework_nosql.pid());
+
+	// Removed worker in v4
+	CONF.nosql_worker && global.framework_nosql && console.log('NoSQL PID     : ' + global.framework_nosql.pid());
+
 	console.log('Memory        : ' + memory.heapUsed.filesize(2) + ' / ' + memory.heapTotal.filesize(2));
 	console.log('User          : ' + Os.userInfo().username);
 	console.log('====================================================');
@@ -9791,7 +9818,7 @@ F.$configure_configs = function(arr, rewrite) {
 		process.env.TZ = CONF.default_timezone;
 
 	CONF.nosql_worker && framework_nosql.worker();
-	CONF.nosql_inmemory && CONF.nosql_inmemory.forEach(n => framework_nosql.inmemory(n));
+	CONF.nosql_inmemory && CONF.nosql_inmemory.forEach(framework_nosql.inmemory);
 	accepts && accepts.length && accepts.forEach(accept => CONF.static_accepts[accept] = true);
 
 	if (CONF.allow_performance)
