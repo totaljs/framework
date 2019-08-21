@@ -1194,7 +1194,7 @@ DP.count = function() {
 	return builder;
 };
 
-DP.one = function() {
+DP.one = DP.read = function() {
 	var self = this;
 	var builder = new DatabaseBuilder(self);
 	builder.first();
@@ -1203,7 +1203,7 @@ DP.one = function() {
 	return builder;
 };
 
-DP.one2 = function() {
+DP.one2 = DP.read2 = function() {
 	var self = this;
 	var builder = new DatabaseBuilder(self);
 	builder.first();
@@ -2490,6 +2490,13 @@ DatabaseBuilder.prototype.make = function(fn, id) {
 	return this;
 };
 
+DatabaseBuilder.prototype.rule = function(rule, params) {
+	var self = this;
+	self.$rule = rule;
+	self.$params = params;
+	return self;
+};
+
 DatabaseBuilder.prototype.filter = function(fn) {
 	var self = this;
 
@@ -2988,6 +2995,8 @@ DatabaseBuilder.prototype.compile = function(noTrimmer) {
 		self.$each = new Function('item', 'doc', 'repository', 'R', opt.each.join(''));
 
 	var cache = {};
+	cache.rule = self.$rule;
+	cache.params = self.$params;
 	cache.filter = new Function('doc', '$F', 'index', code);
 	cache.mexec = self.$mappersexec;
 	cache.mitems = self.$mappers;
@@ -5769,7 +5778,7 @@ TP.count = function() {
 	return builder;
 };
 
-TP.one = function() {
+TP.one = TP.read = function() {
 	var self = this;
 	self.readonly && self.throwReadonly();
 	var builder = new DatabaseBuilder(self);
@@ -5779,7 +5788,7 @@ TP.one = function() {
 	return builder;
 };
 
-TP.one2 = function() {
+TP.one2 = TP.read2 = function() {
 	var self = this;
 	self.readonly && self.throwReadonly();
 	var builder = new DatabaseBuilder(self);
@@ -6811,9 +6820,22 @@ NoSQLReader.prototype.add = function(builder, noTrimmer) {
 		item.count = 0;
 		item.counter = 0;
 		item.builder = builder;
-		item.compare = builder.compile(noTrimmer);
-		item.filter = builder.makefilter();
+
+		if (builder.$rule) {
+			builder.$inlinesort = !!(builder.$options.take && builder.$options.sort && builder.$options.sort !== null);
+			builder.$limit = (builder.$options.take || 0) + (builder.$options.skip || 0);
+			item.rule = builder.$rule;
+			item.params = builder.$params;
+			item.fields = builder.$options.fields;
+			item.fields2 = builder.$options.fields2;
+			item.sort = builder.$options.sort;
+		} else {
+			item.filter = builder.makefilter();
+			item.compare = builder.compile(noTrimmer);
+		}
+
 		item.first = builder.$options.first && !builder.$options.sort;
+
 		builder.$nosqlreader = self;
 		self.builders.push(item);
 	}
@@ -6826,7 +6848,6 @@ NoSQLReader.prototype.compare2 = function(docs, custom, done) {
 	for (var i = 0; i < docs.length; i++) {
 
 		var doc = docs[i];
-
 		if (doc === EMPTYOBJECT)
 			continue;
 
@@ -6841,9 +6862,29 @@ NoSQLReader.prototype.compare2 = function(docs, custom, done) {
 			if (item.canceled)
 				continue;
 
-			var output = item.compare(doc, item.filter, item.all++);
+			var output = item.compare ? item.compare(doc, item.filter, item.all++) : (item.rule(doc, item.params, item.all++) ? doc : null);
 			if (!output)
 				continue;
+
+			if (item.rule) {
+				if (item.fields) {
+
+					var clean = {};
+
+					for(var $i = 0; $i < item.fields.length; $i++) {
+						var prop = item.fields[$i];
+						clean[prop] = output[prop];
+					}
+
+					if (item.sort)
+						clean[item.sort.name] = output[item.sort.name];
+
+					output = clean;
+				} else if (item.fields2) {
+					for (var $i = 0; $i < item.fields2.length; $i++)
+						delete output[item.fields2[$i]];
+				}
+			}
 
 			// WTF?
 			// item.is = false;
@@ -6893,9 +6934,29 @@ NoSQLReader.prototype.compare = function(docs) {
 			if (item.canceled)
 				continue;
 
-			var output = item.compare(doc, item.filter, item.all++);
+			var output = item.compare ? item.compare(doc, item.filter, item.all++) : (item.rule(doc, item.params, item.all++) ? doc : null);
 			if (!output)
 				continue;
+
+			if (item.rule) {
+				if (item.fields) {
+
+					var clean = {};
+
+					for(var $i = 0; $i < item.fields.length; $i++) {
+						var prop = item.fields[$i];
+						clean[prop] = output[prop];
+					}
+
+					if (item.sort)
+						clean[item.sort.name] = output[item.sort.name];
+
+					output = clean;
+				} else if (item.fields2) {
+					for (var $i = 0; $i < item.fields2.length; $i++)
+						delete output[item.fields2[$i]];
+				}
+			}
 
 			var b = item.builder;
 			item.count++;
@@ -6913,6 +6974,7 @@ NoSQLReader.prototype.compare = function(docs) {
 
 			b.$each && b.$each(item, output);
 			b.$mappersexec && b.$mappersexec(output, item);
+
 			var val;
 
 			switch (b.$options.scalar) {
@@ -7016,7 +7078,7 @@ NoSQLReader.prototype.callback = function(item) {
 		else
 			output = item.response || [];
 
-		builder.$callback2(errorhandling(null, builder, output), opt.readertype === 1 ? item.counter : output, item.count, item.filter.repository);
+		builder.$callback2(errorhandling(null, builder, output), opt.readertype === 1 ? item.counter : output, item.count, item.filter ? item.filter.repository : item.params);
 		return self;
 	}
 
@@ -7044,7 +7106,7 @@ NoSQLReader.prototype.callback = function(item) {
 	else
 		output = item.response || [];
 
-	builder.$callback2(errorhandling(null, builder, output), opt.readertype === 1 ? item.counter : output, item.count, item.filter.repository);
+	builder.$callback2(errorhandling(null, builder, output), opt.readertype === 1 ? item.counter : output, item.count, item.filter ? item.filter.repository : item.params);
 	return self;
 };
 

@@ -263,7 +263,6 @@ var _prefix;
 !global.framework_utils && (global.framework_utils = require('./utils'));
 !global.framework_mail && (global.framework_mail = require('./mail'));
 !global.framework_image && (global.framework_image = require('./image'));
-!global.framework_nosql && (global.framework_nosql = require('./nosql'));
 !global.framework_session && (global.framework_session = require('./session'));
 
 var TMPENV = framework_utils.copy(process.env);
@@ -1461,7 +1460,7 @@ function scriptNow() {
 	return new Date();
 }
 
-F.database = global.NOSQL = F.nosql = function(name) {
+function nosqlwrapper(name) {
 	var db = F.databases[name];
 	if (db)
 		return db;
@@ -1476,9 +1475,18 @@ F.database = global.NOSQL = F.nosql = function(name) {
 
 	F.databases[name] = db;
 	return db;
+}
+
+F.database = global.NOSQL = F.nosql = function(name) {
+	if (!global.framework_nosql) {
+		global.framework_nosql = require('./nosql');
+		framework_nosql.createTemporaryKey = createTemporaryKey;
+	}
+	F.database = global.NOSQL = F.nosql = nosqlwrapper;
+	return nosqlwrapper(name);
 };
 
-global.TABLE = function(name) {
+function tablewrapper(name) {
 	var db = F.databases['$' + name];
 	if (db)
 		return db;
@@ -1486,6 +1494,15 @@ global.TABLE = function(name) {
 	db = framework_nosql.table(name, F.path.databases(name));
 	F.databases['$' + name] = db;
 	return db;
+}
+
+global.TABLE = function(name) {
+	if (!global.framework_nosql) {
+		global.framework_nosql = require('./nosql');
+		framework_nosql.createTemporaryKey = createTemporaryKey;
+	}
+	global.TABLE = tablewrapper;
+	return tablewrapper(name);
 };
 
 F.stop = F.kill = function(signal) {
@@ -1503,7 +1520,7 @@ F.stop = F.kill = function(signal) {
 		TRY(() => worker && worker.kill && worker.kill(signal));
 	}
 
-	framework_nosql.kill(signal);
+	global.framework_nosql && global.framework_nosql.kill(signal);
 
 	EMIT('exit', signal);
 
@@ -17880,8 +17897,6 @@ function fsStreamRead(filename, options, callback, res) {
 function createTemporaryKey(req) {
 	return (req.uri ? req.uri.pathname : req).replace(REG_TEMPORARY, '-').substring(1);
 }
-
-framework_nosql.createTemporaryKey = createTemporaryKey;
 
 function MiddlewareOptions() {}
 
