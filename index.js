@@ -1518,7 +1518,13 @@ F.database = global.NOSQL = F.nosql = function(name) {
 		global.framework_nosql = require('./nosql');
 		framework_nosql.createTemporaryKey = createTemporaryKey;
 	}
-	F.database = global.NOSQL = F.nosql = nosqlwrapper;
+
+	// Someone rewrites F.database
+	if (F.database !== F.nosql)
+		global.NOSQL = F.nosql = nosqlwrapper;
+	else
+		F.database = nosqlwrapper;
+
 	return nosqlwrapper(name);
 };
 
