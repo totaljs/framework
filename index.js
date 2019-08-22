@@ -3607,7 +3607,13 @@ function filelocalize_nominify(req, res) {
 	F.$filelocalize(req, res, true);
 }
 
-F.$filelocalize = function(req, res, nominify, filename) {
+F.$filelocalize = function(req, res, nominify) {
+
+	// options.filename
+	// options.code
+	// options.callback
+	// options.headers
+	// options.download
 
 	F.onLocale && (req.$language = F.onLocale(req, res, req.isStaticFile));
 
@@ -3624,10 +3630,7 @@ F.$filelocalize = function(req, res, nominify, filename) {
 		return;
 	}
 
-	var name = req.uri.pathname;
-
-	if (!filename)
-		filename = F.onMapping(name, name, true, true);
+	var filename = (res.options ? res.options.filename : null) || F.onMapping(req.uri.pathname, req.uri.pathname, true, true);
 
 	Fs.readFile(filename, function(err, content) {
 
@@ -16986,11 +16989,6 @@ function extend_response(PROTO) {
 			return;
 		}
 
-		if (CONF.allow_localize && KEYSLOCALIZE[req.extension]) {
-			F.$filelocalize(req, res);
-			return;
-		}
-
 		if (!canresize) {
 
 			if (F.components.has && F.components[req.extension] && req.uri.pathname === CONF.static_url_components + req.extension) {
@@ -17070,6 +17068,17 @@ function extend_response(PROTO) {
 			return res;
 
 		var req = this.req;
+
+		// Localization
+		if (CONF.allow_localize && KEYSLOCALIZE[req.extension]) {
+
+			// Is package?
+			if (options.filename && options.filename[0] === '@')
+				options.filename = F.path.package(options.filename.substring(1));
+
+			F.$filelocalize(req, res, false, options);
+			return;
+		}
 
 		!req.$key && (req.$key = createTemporaryKey(req));
 
