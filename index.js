@@ -3607,7 +3607,7 @@ function filelocalize_nominify(req, res) {
 	F.$filelocalize(req, res, true);
 }
 
-F.$filelocalize = function(req, res, nominify) {
+F.$filelocalize = function(req, res, nominify, filename) {
 
 	F.onLocale && (req.$language = F.onLocale(req, res, req.isStaticFile));
 
@@ -3625,7 +3625,9 @@ F.$filelocalize = function(req, res, nominify) {
 	}
 
 	var name = req.uri.pathname;
-	var filename = F.onMapping(name, name, true, true);
+
+	if (!filename)
+		filename = F.onMapping(name, name, true, true);
 
 	Fs.readFile(filename, function(err, content) {
 
