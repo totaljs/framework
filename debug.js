@@ -235,12 +235,16 @@ function runwatching() {
 			return CONF.directory_views === dir || CONF.directory_public === dir ? fn : '';
 		}
 
+		function makestamp() {
+			return '--- # --- [ ' + new Date().format('yyyy-MM-dd HH:mm:ss') + ' ] ';
+		}
+
 		function refresh() {
 			var reload = false;
 			Object.keys(files).wait(function(filename, next) {
 				Fs.stat(filename, function(err, stat) {
 
-					var stamp = '--- # --- [ ' + new Date().format('yyyy-MM-dd HH:mm:ss') + ' ] ';
+					var stamp = makestamp();
 
 					if (err) {
 						delete files[filename];
@@ -371,6 +375,10 @@ function runwatching() {
 					case 'total:eaddrinuse':
 						process.exit(1);
 						break;
+					case 'total:restart':
+						console.log(makestamp().replace('#', 'RES'));
+						restart();
+						break;
 					case 'total:ready':
 						if (status === 0) {
 							app.send('total:debug');
@@ -399,6 +407,7 @@ function runwatching() {
 		process.on('SIGTERM', end);
 		process.on('SIGINT', end);
 		process.on('exit', end);
+
 
 		function end() {
 
