@@ -494,7 +494,7 @@ global.$PATCH = function(schema, model, options, callback, controller, novalidat
 // GET Users/Neviem  --> @query @workflow
 global.$ACTION = function(schema, model, callback, controller) {
 
-	if (typeof(callback) === 'function') {
+	if (typeof(model) === 'function') {
 		controller = callback;
 		callback = model;
 	}
@@ -508,9 +508,19 @@ global.$ACTION = function(schema, model, callback, controller) {
 
 		var op = (schema.substring(index + 3).trim().trim() + ' ').split(/\s@/).trim();
 		tmp = schema.substring(0, index).split(/\s|\t/).trim();
+
+		if (tmp.length !== 2) {
+			callback('Invalid "{0}" type.'.format(schema));
+			return;
+		}
+
 		meta = {};
 		meta.method = tmp[0].toUpperCase();
 		meta.schema = tmp[1];
+
+		if (meta.schema[0] === '*')
+			meta.schema = meta.schema.substring(1);
+
 		meta.op = [];
 		meta.opcallbackindex = -1;
 
