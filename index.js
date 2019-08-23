@@ -491,6 +491,126 @@ global.$PATCH = function(schema, model, options, callback, controller, novalidat
 	return performschema('$patch', schema, model, options, callback, controller, novalidate);
 };
 
+// GET Users/Neviem  --> @query @workflow
+global.$ACTION = function(schema, model, callback, controller) {
+
+	if (!callback)
+		callback = NOOP;
+
+	var meta = F.temporary.other[schema];
+	var tmp, index;
+
+	if (!meta) {
+
+		index = schema.indexOf('-->');
+
+		var op = (schema.substring(index + 3).trim().trim() + ' ').split(/\s@/).trim();
+		tmp = schema.substring(0, index).split(/\s|\t/).trim();
+		meta = {};
+		meta.method = tmp[0].toUpperCase();
+		meta.schema = tmp[1];
+		meta.op = [];
+		meta.opcallbackindex = -1;
+
+		var o = GETSCHEMA(meta.schema);
+		if (!o) {
+			callback('Schema "{0}" not found'.format(meta.schema));
+			return;
+		}
+
+		for (var i = 0; i < op.length; i++) {
+
+			tmp = {};
+
+			var item = op[i];
+			if (item[0] === '@')
+				item = item.substring(1);
+
+			index = item.indexOf('(');
+
+			if (index !== -1) {
+				meta.opcallbackindex = i;
+				tmp.response = true;
+				item = item.substring(0, index).trim();
+			}
+
+			tmp.name = item;
+			tmp.name2 = '$' + tmp.name;
+
+			if (o.meta[item] === undefined) {
+				if (o.meta['workflow#' + item] !== undefined)
+					tmp.type = '$workflow';
+				else if (o.meta['workflow#' + item] !== undefined)
+					tmp.type = '$transform';
+				else if (o.meta['operation#' + item] !== undefined)
+					tmp.type = '$operation';
+				else if (o.meta['hook#' + item] !== undefined)
+					tmp.type = '$hook';
+				else {
+					callback('Schema "{0}" doesn\'t contain "{1}" operation.'.format(meta.schema, item));
+					return;
+				}
+			}
+
+			if (tmp.type)
+				tmp.type2 = tmp.type.substring(1);
+
+			meta.op.push(tmp);
+		}
+
+		meta.multiple = meta.op.length > 1;
+		meta.schema = o;
+		meta.validate = meta.method !== 'GET' && meta.method !== 'DELETE';
+		F.temporary.other[schema] = meta;
+	}
+
+	if (meta.validate) {
+		meta.schema.make(model, function(err, response) {
+			if (err)
+				callback(err);
+			else
+				performsschemaaction(meta, response, callback, controller);
+		});
+	} else
+		performsschemaaction(meta, null, callback, controller);
+
+};
+
+function performsschemaaction(meta, model, callback, controller) {
+
+	if (meta.multiple) {
+
+		var async = (model ? model : meta.schema.default()).$async(callback, meta.opcallbackindex === - 1 ? null : meta.opcallbackindex);
+
+		if (model)
+			model.$$controller = controller;
+
+		for (var i = 0; i < meta.op.length; i++) {
+			var op = meta.op[i];
+			if (op.type)
+				async[op.type](op.name);
+			else
+				async[op.name2]();
+		}
+
+	} else {
+
+		var op = meta.op[0];
+
+		if (model) {
+			if (op.type)
+				model[op.type](op.name, EMPTYOBJECT, callback);
+			else
+				model[op.name2](EMPTYOBJECT, callback);
+		} else {
+			if (op.type)
+				meta.schema[op.type2 + '2'](op.name, EMPTYOBJECT, callback, controller);
+			else
+				meta.schema[op.name](EMPTYOBJECT, callback, controller);
+		}
+	}
+}
+
 // type, schema, model, options, callback, controller
 function performschema(type, schema, model, options, callback, controller, novalidate) {
 
