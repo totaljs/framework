@@ -3509,7 +3509,7 @@ SP.parseUA = function(structured) {
 				delete data.Chrome;
 			if (data.Safari)
 				delete data.Safari;
-		} else if (data.Opera) {
+		} else if (data.Opera || data.Electron) {
 			if (data.Chrome)
 				delete data.Chrome;
 			if (data.Safari)
