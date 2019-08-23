@@ -11271,6 +11271,10 @@ Controller.prototype = {
 			// Because in some cases are overwritten
 			return this.$params = {};
 		}
+	},
+
+	set params(val) {
+		this.$params = val;
 	}
 };
 
