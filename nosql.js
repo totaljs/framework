@@ -1588,14 +1588,14 @@ DP.$update = function() {
 			var item = filters.builders[i];
 			var fil = filter[i];
 			if (fil.insert && !item.counter) {
-				item.builder.$insertcallback && item.builder.$insertcallback(fil.insert, item.filter.repository || EMPTYOBJECT);
+				item.builder.$insertcallback && item.builder.$insertcallback(fil.insert, item.filter ? item.filter.repository : EMPTYOBJECT);
 				var tmp = self.insert(fil.insert);
 				tmp.$callback = item.builder.$callback;
 				tmp.$options.log = item.builder.$options.log;
 				item.builder.$callback = null;
 			} else {
 				item.builder.$options.log && item.builder.log();
-				item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.counter), item.counter, item.count, item.filter.repository);
+				item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.counter), item.counter, item.count, item.filter ? item.filter.repository : EMPTYOBJECT);
 			}
 		}
 
@@ -6164,14 +6164,14 @@ TP.$update = function() {
 			var item = filters.builders[i];
 			var fil = filter[i];
 			if (fil.insert && !item.count) {
-				item.builder.$insertcallback && item.builder.$insertcallback(fil.insert, item.filter.repository);
+				item.builder.$insertcallback && item.builder.$insertcallback(fil.insert, item.filter ? item.filter.repository : EMPTYOBJECT);
 				var tmp = self.insert(fil.insert);
 				tmp.$callback = item.builder.$callback;
 				tmp.$options.log = item.builder.$options.log;
 				item.builder.$callback = null;
 			} else {
 				item.builder.$options.log && item.builder.log();
-				item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.counter), item.counter, item.count, item.filter.repository);
+				item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.counter), item.counter, item.count, item.filter ? item.filter.repository : EMPTYOBJECT);
 			}
 		}
 
