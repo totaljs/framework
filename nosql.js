@@ -29,6 +29,7 @@
 const Fs = require('fs');
 const Path = require('path');
 const NoSQLStream = require('./nosqlstream');
+const REG_FIELDS_CLEANER = /"|`|\||'|\s/g;
 
 if (!global.framework_utils)
 	global.framework_utils = require('./utils');
@@ -7116,6 +7117,184 @@ NoSQLReader.prototype.done = function() {
 		self.callback(self.builders[i]);
 	self.canceled = 0;
 	return self;
+};
+
+// Converting values
+var convert = function(value, type) {
+
+	if (type === undefined || type === String)
+		return value;
+
+	if (type === Number)
+		return value.trim().parseFloat();
+
+	if (type === Date) {
+		value = value.trim();
+		if (value.indexOf(' ') !== -1)
+			return NOW.add('-' + value);
+		if (value.length < 8) {
+			var tmp;
+			var index = value.indexOf('-');
+			if (index !== -1) {
+				tmp = value.split('-');
+				value = NOW.getFullYear() + '-' + (tmp[0].length > 1 ? '' : '0') + tmp[0] + '-' + (tmp[1].length > 1 ? '' : '0') + tmp[1];
+			} else {
+				index = value.indexOf('.');
+				if (index !== -1) {
+					tmp = value.split('.');
+					value = NOW.getFullYear() + '-' + (tmp[1].length > 1 ? '' : '0') + tmp[0] + '-' + (tmp[0].length > 1 ? '' : '0') + tmp[1];
+				} else {
+					index = value.indexOf(':');
+					if (index !== -1) {
+						// hours
+					} else if (value.length <= 4) {
+						value = +value;
+						return value || 0;
+					}
+				}
+			}
+		}
+
+		return value.trim().parseDate();
+	}
+
+	if (type === Boolean)
+		return value.trim().parseBoolean();
+
+	return value;
+};
+
+DatabaseBuilder.prototype.gridfields = function(fields, allowed) {
+
+	var self = this;
+
+	if (typeof(fields) !== 'string') {
+		if (allowed)
+			self.options.fields = allowed.slice(0);
+		return self;
+	}
+
+	fields = fields.replace(REG_FIELDS_CLEANER, '').split(',');
+
+	if (!self.options.fields)
+		self.options.fields = [];
+
+	var count = 0;
+
+	for (var i = 0; i < fields.length; i++) {
+		var field = fields[i];
+		var can = !allowed;
+		if (!can) {
+			for (var j = 0; j < allowed.length; j++) {
+				if (allowed[j] === field) {
+					can = true;
+					break;
+				}
+			}
+		}
+		if (can) {
+			self.options.fields.push(self.options.dbname === 'pg' ? ('"' + fields[i] + '"') : fields[i]);
+			count++;
+		}
+	}
+
+	if (!count)
+		self.options.fields = allowed.slice(0);
+
+	return self;
+};
+
+// Grid filtering
+DatabaseBuilder.prototype.gridfilter = function(name, obj, type, key) {
+
+	var builder = this;
+	var value = obj[name];
+	var arr, val;
+
+	if (!key)
+		key = name;
+
+	// Between
+	var index = value.indexOf(' - ');
+	if (index !== -1) {
+
+		arr = value.split(' - ');
+
+		for (var i = 0, length = arr.length; i < length; i++) {
+			var item = arr[i].trim();
+			arr[i] = convert(item, type);
+		}
+
+		if (type === Date) {
+			if (typeof(arr[0]) === 'number') {
+				arr[0] = new Date(arr[0], 1, 1, 0, 0, 0);
+				arr[1] = new Date(arr[1], 11, 31, 23, 59, 59);
+			} else
+				arr[1] = arr[1].extend('23:59:59');
+		}
+
+		return builder.between(key, arr[0], arr[1]);
+	}
+
+	// Multiple values
+	index = value.indexOf(',');
+	if (index !== -1) {
+
+		var arr = value.split(',');
+
+		if (type === undefined || type === String) {
+			console.log(arr);
+			builder.or();
+			for (var i = 0, length = arr.length; i < length; i++) {
+				var item = arr[i].trim();
+				builder.search(key, item);
+			}
+			builder.end();
+			return builder;
+		}
+
+		for (var i = 0, length = arr.length; i < length; i++)
+			arr[i] = convert(arr[i], type);
+
+		return builder.in(key, arr);
+	}
+
+	if (type === undefined || type === String)
+		return builder.search(key, value);
+
+	if (type === Date) {
+
+		if (value === 'yesterday')
+			val = NOW.add('-1 day');
+		else if (value === 'today')
+			val = NOW;
+		else
+			val = convert(value, type);
+
+		if (typeof(val) === 'number') {
+			if (val > 1000)
+				return builder.year(key, val);
+			else
+				return builder.month(key, val);
+		}
+
+		if (!(val instanceof Date) || !val.getTime())
+			val = NOW;
+
+		return builder.between(key, val.extend('00:00:00'), val.extend('23:59:59'));
+	}
+
+	return builder.where(key, convert(value, type));
+};
+
+// Grid sorting
+DatabaseBuilder.prototype.gridsort = function(sort) {
+	var builder = this;
+	var index = sort.lastIndexOf('_');
+	if (index === -1)
+		index = sort.lastIndexOf(' ');
+	builder.sort(sort.substring(0, index), sort[index + 1] === 'd');
+	return builder;
 };
 
 exports.NoSQLReader = NoSQLReader;
