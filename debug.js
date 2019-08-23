@@ -84,6 +84,7 @@ function runwatching() {
 	const REG_CONFIGS = /configs\//g;
 	const REG_FILES = /config-debug|config-release|config|versions|workflows|sitemap|dependencies|\.js$|\.resource$/i;
 	const REG_THEMES = /\/themes\//i;
+	const REG_PUBLIC = /\/public\//i;
 	const REG_COMPONENTS = /components\/.*?\.html|\.package\/.*?$/i;
 	const REG_THEMES_INDEX = /themes(\/|\\)?[a-z0-9_.-]+(\/|\\)?index\.js$/i;
 	const REG_EXTENSION = /\.(js|resource|package|bundle)$/i;
@@ -124,7 +125,8 @@ function runwatching() {
 			U.combine(CONF.directory_themes),
 			U.combine(CONF.directory_configs),
 			U.combine(CONF.directory_bundles),
-			U.combine('/startup/')
+			U.combine('/startup/'),
+			U.combine('/plugins/')
 		];
 
 		const SRC = U.combine(CONF.directory_src);
@@ -190,7 +192,7 @@ function runwatching() {
 			if (isRELOAD)
 				return isDirectory ? true : REG_RELOAD.test(path);
 			path = normalize(path);
-			return isDirectory && REG_THEMES.test(path) ? REG_THEMES_INDEX.test(path) : isDirectory ? true : REG_EXTENSION.test(path) || REG_COMPONENTS.test(path) || REG_CONFIGS.test(path);
+			return isDirectory && REG_THEMES.test(path) ? REG_THEMES_INDEX.test(path) : isDirectory ? true : !REG_PUBLIC.test(path) && (REG_EXTENSION.test(path) || REG_COMPONENTS.test(path) || REG_CONFIGS.test(path));
 		}
 
 		function onComplete(f) {
@@ -407,7 +409,6 @@ function runwatching() {
 		process.on('SIGTERM', end);
 		process.on('SIGINT', end);
 		process.on('exit', end);
-
 
 		function end() {
 
