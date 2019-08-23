@@ -767,16 +767,4 @@ SessionProto.load = function(callback) {
 	callback && callback();
 };
 
-global.SESSION = function(name) {
-	if (!name)
-		name = 'default';
-	if (F.sessions[name])
-		return F.sessions[name];
-	var session = new Session(name);
-	session.load();
-	if (F.sessionscount)
-		F.sessionscount++;
-	else
-		F.sessionscount = 1;
-	return F.sessions[name] = session;
-};
+exports.Session = Session;

@@ -265,6 +265,26 @@ var _prefix;
 !global.framework_image && (global.framework_image = require('./image'));
 !global.framework_session && (global.framework_session = require('./session'));
 
+function sessionwrapper(name) {
+	if (!name)
+		name = 'default';
+	if (F.sessions[name])
+		return F.sessions[name];
+	var session = new framework_session.Session(name);
+	session.load();
+	if (F.sessionscount)
+		F.sessionscount++;
+	else
+		F.sessionscount = 1;
+	return F.sessions[name] = session;
+}
+
+global.SESSION = function(name) {
+	global.framework_session = require('./session');
+	global.SESSION = sessionwrapper;
+	return sessionwrapper(name);
+};
+
 var TMPENV = framework_utils.copy(process.env);
 TMPENV.istotaljsworker = true;
 
