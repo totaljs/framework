@@ -3489,7 +3489,7 @@ SP.parseUA = function(structured) {
 			delete data.MSIE;
 		}
 
-		if (data.WebOS)
+		if (data.WebOS || data.Android)
 			delete data.Linux;
 
 		if (data.IEMobile) {
@@ -3588,9 +3588,6 @@ SP.parseCSV = function(delimiter) {
 				continue;
 
 			if (c === delimiter) {
-
-
-
 				var tmp = t.substring(beg, i).trim();
 				values[String.fromCharCode(index++)] = (tmp[0] === q && tmp[tmp.length - 1] === q ? tmp.substring(1, tmp.length - 1) : tmp).replace(/""/g, q);
 				beg = i + 1;
