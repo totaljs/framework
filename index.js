@@ -517,6 +517,7 @@ global.$ACTION = function(schema, model, callback, controller) {
 	if (typeof(model) === 'function') {
 		controller = callback;
 		callback = model;
+		model = null;
 	}
 
 	var meta = F.temporary.other[schema];
@@ -544,9 +545,10 @@ global.$ACTION = function(schema, model, callback, controller) {
 		meta.op = [];
 		meta.opcallbackindex = -1;
 
-		var o = GETSCHEMA(meta.schema);
+		var name = meta.schema.split('/');
+		var o = GETSCHEMA(name[0], name[1]);
 		if (!o) {
-			callback('Schema "{0}" not found'.format(meta.schema));
+			callback(new ErrorBuilder().push('', 'Schema "{0}" not found'.format(meta.schema)));
 			return;
 		}
 
@@ -579,7 +581,7 @@ global.$ACTION = function(schema, model, callback, controller) {
 				else if (o.meta['hook#' + item] !== undefined)
 					tmp.type = '$hook';
 				else {
-					callback('Schema "{0}" doesn\'t contain "{1}" operation.'.format(meta.schema, item));
+					callback(new ErrorBuilder().push('', 'Schema "{0}" doesn\'t contain "{1}" operation.'.format(meta.schema, item)));
 					return;
 				}
 			}
@@ -612,10 +614,10 @@ function performsschemaaction(meta, model, callback, controller) {
 
 	if (meta.multiple) {
 
-		var async = (model ? model : meta.schema.default()).$async(callback, meta.opcallbackindex === - 1 ? null : meta.opcallbackindex);
-
 		if (model)
 			model.$$controller = controller;
+
+		var async = (model ? model : meta.schema.default()).$async(callback, meta.opcallbackindex === - 1 ? null : meta.opcallbackindex);
 
 		for (var i = 0; i < meta.op.length; i++) {
 			var op = meta.op[i];
@@ -630,6 +632,7 @@ function performsschemaaction(meta, model, callback, controller) {
 		var op = meta.op[0];
 
 		if (model) {
+			model.$$controller = controller;
 			if (op.type)
 				model[op.type](op.name, EMPTYOBJECT, callback);
 			else

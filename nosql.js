@@ -6828,7 +6828,7 @@ NoSQLReader.prototype.add = function(builder, noTrimmer) {
 			item.rule = builder.$rule;
 			item.params = builder.$params;
 			item.fields = builder.$options.fields;
-			item.fields2 = builder.$options.fields2;
+			item.fields2 = builder.$options.fields2 ? Object.keys(builder.$options.fields2) : null;
 			item.sort = builder.$options.sort;
 		} else {
 			item.filter = builder.makefilter();
