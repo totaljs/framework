@@ -494,8 +494,10 @@ global.$PATCH = function(schema, model, options, callback, controller, novalidat
 // GET Users/Neviem  --> @query @workflow
 global.$ACTION = function(schema, model, callback, controller) {
 
-	if (!callback)
-		callback = NOOP;
+	if (typeof(callback) === 'function') {
+		controller = callback;
+		callback = model;
+	}
 
 	var meta = F.temporary.other[schema];
 	var tmp, index;
