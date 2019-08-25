@@ -70,6 +70,8 @@ x added: `String.parseENV()` for parsing `.env` syntax
 x added: `$.noop()` for custom responses
 - added: `$ACTION(schemaroute, [model], callback, [controller])` evaluates schema
 - added: `process.send('total:restart')` performs a restart of app when the app is in debug mode
+- added: `NOSQLREADER(filename)` for reading different files of NoSQL embedded databases
+- added: `TABLEREADER(filename)` for reading different files of Table embedded databases
 
 x updated: `$.invalid()` without arguments can return a function `function(err)`
 x updated: Mail `unsubscribe` appends new header which enables `unsubscribe` in e.g. iOS

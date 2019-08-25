@@ -47,7 +47,6 @@ const EXTENSION = '.nosql';
 const EXTENSION_TABLE = '.table';
 const EXTENSION_TABLE_BACKUP = '.table-backup';
 const EXTENSION_BINARY = '.nosql-binary';
-const EXTENSION_TMP = '.nosql-tmp';
 const EXTENSION_LOG = '.nosql-log';
 const EXTENSION_MAPREDUCE = '.nosql-mapreduce';
 const EXTENSION_BACKUP = '.nosql-backup';
@@ -537,12 +536,12 @@ exports.worker = function() {
 	};
 };
 
-function Table(name, filename) {
+function Table(name, filename, readonly) {
 	var t = this;
-	t.filename = filename + EXTENSION_TABLE;
-	t.filenameBackup = filename + EXTENSION_TABLE_BACKUP;
-	t.filenameCounter = filename + EXTENSION_TABLE + EXTENSION_COUNTER;
-	t.filenameMeta = filename + EXTENSION_TABLE + '-meta';
+	t.filename = readonly ? filename : filename + EXTENSION_TABLE;
+	t.filenameBackup = readonly ? '' : filename + EXTENSION_TABLE_BACKUP;
+	t.filenameCounter = readonly ? '' : filename + EXTENSION_TABLE + EXTENSION_COUNTER;
+	t.filenameMeta = readonly ? '' : filename + EXTENSION_TABLE + '-meta';
 	t.directory = Path.dirname(filename);
 	t.filenameLock = t.filename + '-lock';
 	t.name = name;
@@ -566,7 +565,7 @@ function Table(name, filename) {
 	t.$reading = false;
 	t.$allocations = true;
 
-	t.counter = new Counter(t);
+	t.counter = readonly ? null : new Counter(t);
 	t.$meta();
 
 	var schema = CONF['table_' + name] || CONF['table.' + name];
@@ -618,15 +617,15 @@ function Database(name, filename, readonly) {
 	var self = this;
 	var http = filename.substring(0, 6);
 	self.readonly = http === 'http:/' || http === 'https:';
-	self.filename = self.readonly ? filename.format('') : filename + EXTENSION;
+	self.filename = self.readonly ? filename.format('') : readonly ? filename : filename + EXTENSION;
 	self.directory = Path.dirname(filename);
 
 	if (!readonly) {
 		self.filenameLock = self.filename + '-lock';
 		self.filenameCounter = self.readonly ? filename.format('counter', '-') : filename + EXTENSION + EXTENSION_COUNTER;
-		self.filenameLog = self.readonly || readonly === true ? '' : filename + EXTENSION_LOG;
-		self.filenameBackup = self.readonly || readonly === true ? '' : filename + EXTENSION_BACKUP;
-		self.filenameStorage = self.readonly || readonly === true ? '' : filename + '-storage/{0}' + EXTENSION;
+		self.filenameLog = self.readonly || readonly ? '' : filename + EXTENSION_LOG;
+		self.filenameBackup = self.readonly || readonly ? '' : filename + EXTENSION_BACKUP;
+		self.filenameStorage = self.readonly || readonly ? '' : filename + '-storage/{0}' + EXTENSION;
 		self.filenameMeta = filename + EXTENSION_META;
 		self.filenameBackup2 = framework_utils.join(self.directory, name + '_backup' + EXTENSION);
 		self.inmemory = {};
@@ -635,7 +634,6 @@ function Database(name, filename, readonly) {
 		self.$meta();
 	}
 
-	self.filenameTemp = filename + EXTENSION_TMP;
 	self.name = name;
 	self.pending_update = [];
 	self.pending_append = [];
@@ -649,9 +647,9 @@ function Database(name, filename, readonly) {
 	self.step = 0;
 	self.pending_drops = false;
 	self.pending_reindex = false;
-	self.binary = self.readonly || readonly === true ? null : new Binary(self, self.directory + '/' + self.name + '-binary/');
-	self.storage = self.readonly || readonly === true ? null : new Storage(self, self.directory + '/' + self.name + '-storage/');
-	self.counter = readonly === true ? null : new Counter(self);
+	self.binary = self.readonly || readonly ? null : new Binary(self, self.directory + '/' + self.name + '-binary/');
+	self.storage = self.readonly || readonly ? null : new Storage(self, self.directory + '/' + self.name + '-storage/');
+	self.counter = readonly ? null : new Counter(self);
 	self.$timeoutmeta;
 	self.$events = {};
 	self.$free = true;
@@ -2138,7 +2136,7 @@ DP.$drop = function() {
 	}
 
 	self.pending_drops = false;
-	var remove = [self.filename, self.filenameTemp];
+	var remove = [self.filename];
 
 	try {
 		Fs.readdirSync(self.binary.directory).forEach(function(filename) {

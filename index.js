@@ -6101,7 +6101,18 @@ global.AUDIT = function(name, $, type, message) {
 
 	F.path.verify('logs');
 	U.queue('F.logger', 5, (next) => Fs.appendFile(U.combine(CONF.directory_logs, name + '.log'), JSON.stringify(data) + '\n', next));
+};
 
+global.NOSQLREADER = function(filename) {
+	if (!global.framework_nosql)
+		global.framework_nosql = require('./nosql');
+	return new framework_nosql.Database('readonlynosql', filename, true);
+};
+
+global.TABLEREADER = function(filename) {
+	if (!global.framework_nosql)
+		global.framework_nosql = require('./nosql');
+	return new framework_nosql.Table('readonlytable', filename, true);
 };
 
 // @arguments {Object params}
