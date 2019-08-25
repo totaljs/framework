@@ -1530,7 +1530,7 @@ F.useConfig = function(name) {
 	return F.$configure_configs(name, true);
 };
 
-F.useSMTP = function(smtp, options, callback) {
+global.SMTP = F.useSMTP = function(smtp, options, callback) {
 
 	if (typeof(options) === 'function') {
 		callback = options;
