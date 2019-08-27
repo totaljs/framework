@@ -212,6 +212,8 @@ SessionProto.gettoken = function(req, opt, callback) {
 	// opt.key {String} Encrypt key
 	// opt.ddos {Number} Enable DDOS attempts
 
+	var self = this;
+
 	if (req.req)
 		req = req.req;
 
@@ -231,7 +233,7 @@ SessionProto.gettoken = function(req, opt, callback) {
 	var value = DECRYPTREQ(req, token, opt.key);
 	if (value && typeof(value) === 'string') {
 		value = value.split(';');
-		this.get(value[0], opt.expire, function(err, data, meta, init) {
+		self.get(value[0], opt.expire, function(err, data, meta, init) {
 			if (!err && data)
 				req.sessionid = meta.sessionid;
 			else if (opt.ddos) {
