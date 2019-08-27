@@ -130,6 +130,7 @@ exports.make = function(callback) {
 	async.push(function(next) {
 		U.ls(path, function(files, dirs) {
 
+
 			for (var i = 0, length = dirs.length; i < length; i++)
 				Dirs.push(normalize(dirs[i].substring(Length)));
 
@@ -139,12 +140,11 @@ exports.make = function(callback) {
 
 				if (file.startsWith(CONF.directory_databases) || file.startsWith('/flow/') || file.startsWith('/dashboard/'))
 					type = 1;
-				else if (file.startsWith(CONF.directory_public))
-					type = 2;
 				else if (REGAPPEND.test(file)) {
 					file = file.replace(REGAPPENDREPLACE, '/');
 					type = 3;
-				}
+				} else if (file.startsWith(CONF.directory_public))
+					type = 2;
 
 				Files.push({ name: file, filename: files[i], type: type });
 			}
