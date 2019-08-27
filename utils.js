@@ -2440,8 +2440,7 @@ function validate_builder_default(name, value, entity) {
 
 	switch (entity.subtype) {
 		case 'uid':
-			var number = parseInt(value.substring(10, value.length - 4), 10);
-			return isNaN(number) ? false : value[value.length - 1] === (number % 2 ? '1' : '0');
+				return value.isUID();
 		case 'zip':
 			return value.isZIP();
 		case 'email':
