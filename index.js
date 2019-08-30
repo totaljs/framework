@@ -14236,7 +14236,7 @@ ControllerProto.view = function(name, model, headers, partial, noasync, cachekey
 			skip = 2;
 		}
 
-		if (!isTheme && !isLayout && !skip)
+		if (!isTheme && !isLayout && !skip && self._currentView)
 			filename = self._currentView + name;
 
 		if (!isTheme && (skip === 2 || skip === 3))
@@ -18541,7 +18541,7 @@ function controller_json_workflow(id) {
 		}
 
 		if (w.name)
-			self[w.type](w.name, self.callback());
+			self[w.type](w.name, self.callback(w.view));
 		else {
 
 			if (w.type)
@@ -18559,7 +18559,7 @@ function controller_json_workflow(id) {
 			w.type = '';
 
 	} else
-		self.$exec(w, null, self.callback());
+		self.$exec(w, null, self.callback(w.view));
 }
 
 // Default action for workflow routing
@@ -18617,7 +18617,7 @@ function controller_json_workflow_multiple(id) {
 				async[a.name]();
 		}
 	} else
-		self.$exec(w, null, self.callback());
+		self.$exec(w, null, self.callback(w.view));
 }
 
 // Parses schema group and schema name from string e.g. "User" or "Company/User"
