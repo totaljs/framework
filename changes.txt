@@ -80,7 +80,7 @@ x updated: `MODIFY`, handler contains a new argument `controller`
 x updated: `headers` argument in `controller.proxy` supports `flags: []` for REQEUST method
 x updated: `.filefs()` and `.filenosql()` supports `download` with `true` or with `(name, type) => 'new_name'` (`filename` will be read from NoSQL binary file)
 x updated: `$.done(arg)` argument `@arg` can be `boolean` (response will be as a value) or object/primitive value (`arg` will be as a value)
-x updated: `String.arg(obj, [encode], [def])` added `encode` (`true` or `json`) and `def` arguments
+- updated: `String.arg(obj, [encode], [def])` added `encode` (`true`, `json`, `html`) and `def` arguments
 x updated: `AUTH(req, res, flags, next)` and `next` function can handle `callback(err, user)`
 x updated: `REQUEST()` supports `keepalive` flag
 x updated: `bundles` mechanism supports merging files `--filename` between `bundles` files
