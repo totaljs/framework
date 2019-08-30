@@ -4047,7 +4047,7 @@ SP.arg = function(obj, encode, def) {
 		var val = obj[text.substring(l, text.length - l).trim()];
 		if (encode && encode === 'json')
 			return JSON.stringify(val);
-		return val == null ? (def == null ? text : def) : encode ? encodeURIComponent(val + '') : val;
+		return val == null ? (def == null ? text : def) : encode ? encode === 'html' ? (val + '').encode() : encodeURIComponent(val + '') : val;
 	});
 };
 
