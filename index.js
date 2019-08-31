@@ -6061,7 +6061,7 @@ F.onMeta = function() {
 				break;
 			case 3:
 				var tmp = arg.substring(0, 6);
-				var img = tmp === 'http:/' || tmp === 'https:' || arg.substring(0, 2) === '//' ? arg : self.hostname(self.routeImage(arg));
+				var img = tmp === 'http:/' || tmp === 'https:' || arg.substring(0, 2) === '//' ? arg : self.hostname(self.public_image(arg));
 				builder += '<meta property="og:image" content="' + img + '" /><meta name="twitter:image" content="' + img + '" />';
 				break;
 		}
