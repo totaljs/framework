@@ -131,7 +131,7 @@ SessionProto.contains2 = function(id, callback) {
 	callback(null);
 };
 
-SessionProto.getcookie = function(req, opt, callback) {
+SessionProto.getcookie = function(req, opt, callback, param) {
 
 	// opt.name {String} A cookie name
 	// opt.expire {String} Expiration
@@ -148,7 +148,7 @@ SessionProto.getcookie = function(req, opt, callback) {
 
 	// DDOS Protection
 	if (opt.ddos && self.ddos[req.ip] > opt.ddos) {
-		callback();
+		callback('ddos', null, null, null, param);
 		return;
 	}
 
@@ -156,10 +156,10 @@ SessionProto.getcookie = function(req, opt, callback) {
 	if (!token || token.length < 20) {
 
 		// remove cookies
-		if (opt.removecookie !== false)
+		if (token && opt.removecookie !== false)
 			req.res.cookie(opt.name, '', '-1 day');
 
-		callback();
+		callback('token', null, null, null, param);
 		return;
 	}
 
@@ -183,9 +183,10 @@ SessionProto.getcookie = function(req, opt, callback) {
 
 				if (req.res && opt.removecookie !== false)
 					req.res.cookie(opt.name, '', '-1 day');
+
 			} else
 				req.sessionid = meta.sessionid;
-			callback(err, data, meta, init);
+			callback(err, data, meta, init, param);
 		});
 	} else {
 		// remove cookies
@@ -201,11 +202,11 @@ SessionProto.getcookie = function(req, opt, callback) {
 			}
 		}
 
-		callback();
+		callback('token', null, null, null, param);
 	}
 };
 
-SessionProto.gettoken = function(req, opt, callback) {
+SessionProto.gettoken = function(req, opt, callback, param) {
 
 	// opt.token {String} a token
 	// opt.expire {String} Expiration
@@ -219,13 +220,13 @@ SessionProto.gettoken = function(req, opt, callback) {
 
 	// DDOS Protection
 	if (opt.ddos && self.ddos[req.ip] > opt.ddos) {
-		callback();
+		callback('ddos', null, null, null, param);
 		return;
 	}
 
 	var token = opt.token;
 	if (!token || token.length < 20) {
-		callback();
+		callback('token', null, null, null, param);
 		return;
 	}
 
@@ -244,7 +245,7 @@ SessionProto.gettoken = function(req, opt, callback) {
 					self.ddosis = true;
 				}
 			}
-			callback(err, data, meta, init);
+			callback(err, data, meta, init, param);
 		});
 	} else {
 		if (opt.ddos) {
@@ -255,7 +256,7 @@ SessionProto.gettoken = function(req, opt, callback) {
 				self.ddosis = true;
 			}
 		}
-		callback();
+		callback('token', null, null, null, param);
 	}
 };
 
