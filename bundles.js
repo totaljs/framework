@@ -28,9 +28,18 @@ exports.make = function(callback) {
 		console.time('Done');
 	}
 
+	var isignore = false;
+
 	try {
-		META.ignore = makeignore(Fs.readFileSync(Path.join(path, '.bundlesignore')).toString('utf8').split('\n'));
+		META.ignore = makeignore(Fs.readFileSync(Path.join(path, '.bundleignore')).toString('utf8').split('\n'));
+		isignore = true;
 	} catch (e) {}
+
+	if (!isignore) {
+		try {
+			META.ignore = makeignore(Fs.readFileSync(Path.join(path, '.bundlesignore')).toString('utf8').split('\n'));
+		} catch (e) {}
+	}
 
 	blacklist[CONF.directory_temp] = 1;
 	blacklist[CONF.directory_bundles] = 1;
