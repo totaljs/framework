@@ -2451,12 +2451,18 @@ global.ROUTE = F.web = F.route = function(url, funcExecute, flags, length, langu
 					if (schema.length === 1) {
 						schema[1] = schema[0];
 						schema[0] = 'default';
+					}
 
-						// Is dynamic schema?
-						if (schema[1][0] === '{') {
-							isDYNAMICSCHEMA = true;
-							schema[1] = schema[1].substring(1, schema[1].length - 1).trim();
-						}
+					// Is dynamic schema?
+					if (schema[0][0] === '{') {
+						isDYNAMICSCHEMA = true;
+						schema[0] = schema[0].substring(1).trim();
+						schema[1] = schema[1].substring(0, schema[1].length - 1).trim();
+					}
+
+					if (schema[1][0] === '{') {
+						isDYNAMICSCHEMA = true;
+						schema[1] = schema[1].substring(1, schema[1].length - 1).trim();
 					}
 
 					index = schema[1].indexOf('#');
