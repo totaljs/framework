@@ -2460,6 +2460,11 @@ global.ROUTE = F.web = F.route = function(url, funcExecute, flags, length, langu
 						schema[1] = schema[1].substring(0, schema[1].length - 1).trim();
 					}
 
+					if (schema[1][0] === '{') {
+						isDYNAMICSCHEMA = true;
+						schema[1] = schema[1].substring(1, schema[1].length - 1).trim();
+					}
+
 					index = schema[1].indexOf('#');
 					if (index !== -1) {
 						schema[2] = schema[1].substring(index + 1).trim();
