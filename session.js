@@ -148,7 +148,7 @@ SessionProto.getcookie = function(req, opt, callback, param) {
 
 	// DDOS Protection
 	if (opt.ddos && self.ddos[req.ip] > opt.ddos) {
-		callback('ddos', null, null, null, param);
+		callback(null, null, null, null, param);
 		return;
 	}
 
@@ -159,7 +159,7 @@ SessionProto.getcookie = function(req, opt, callback, param) {
 		if (token && opt.removecookie !== false)
 			req.res.cookie(opt.name, '', '-1 day');
 
-		callback('token', null, null, null, param);
+		callback(null, null, null, null, param);
 		return;
 	}
 
@@ -202,7 +202,7 @@ SessionProto.getcookie = function(req, opt, callback, param) {
 			}
 		}
 
-		callback('token', null, null, null, param);
+		callback(null, null, null, null, param);
 	}
 };
 
@@ -220,13 +220,13 @@ SessionProto.gettoken = function(req, opt, callback, param) {
 
 	// DDOS Protection
 	if (opt.ddos && self.ddos[req.ip] > opt.ddos) {
-		callback('ddos', null, null, null, param);
+		callback(null, null, null, null, param);
 		return;
 	}
 
 	var token = opt.token;
 	if (!token || token.length < 20) {
-		callback('token', null, null, null, param);
+		callback(null, null, null, null, param);
 		return;
 	}
 
@@ -256,7 +256,7 @@ SessionProto.gettoken = function(req, opt, callback, param) {
 				self.ddosis = true;
 			}
 		}
-		callback('token', null, null, null, param);
+		callback(null, null, null, null, param);
 	}
 };
 
