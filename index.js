@@ -1327,20 +1327,19 @@ F.refresh = function() {
 
 F.prototypes = function(fn) {
 
+	if (!global.framework_nosql)
+		global.framework_nosql = require('./nosql');
+
 	var proto = {};
 	proto.Chunker = framework_utils.Chunker.prototype;
 	proto.Controller = Controller.prototype;
-
-	if (global.framework_nosql) {
-		proto.Database = framework_nosql.Database.prototype;
-		proto.DatabaseBinary = framework_nosql.DatabaseBinary.prototype;
-		proto.DatabaseBuilder = framework_nosql.DatabaseBuilder.prototype;
-		proto.DatabaseBuilder2 = framework_nosql.DatabaseBuilder2.prototype;
-		proto.DatabaseCounter = framework_nosql.DatabaseCounter.prototype;
-		proto.DatabaseStorage = framework_nosql.DatabaseStorage.prototype;
-		proto.DatabaseTable = framework_nosql.DatabaseTable.prototype;
-	}
-
+	proto.Database = framework_nosql.Database.prototype;
+	proto.DatabaseBinary = framework_nosql.DatabaseBinary.prototype;
+	proto.DatabaseBuilder = framework_nosql.DatabaseBuilder.prototype;
+	proto.DatabaseBuilder2 = framework_nosql.DatabaseBuilder2.prototype;
+	proto.DatabaseCounter = framework_nosql.DatabaseCounter.prototype;
+	proto.DatabaseStorage = framework_nosql.DatabaseStorage.prototype;
+	proto.DatabaseTable = framework_nosql.DatabaseTable.prototype;
 	proto.ErrorBuilder = framework_builders.ErrorBuilder.prototype;
 	proto.HttpFile = framework_internal.HttpFile.prototype;
 	proto.HttpRequest = PROTOREQ;
