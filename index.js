@@ -244,6 +244,7 @@ HEADERS.authorization = { user: '', password: '', empty: true };
 HEADERS.fsStreamRead = { flags: 'r', mode: '0666', autoClose: true };
 HEADERS.fsStreamReadRange = { flags: 'r', mode: '0666', autoClose: true, start: 0, end: 0 };
 HEADERS.responseLocalize = {};
+HEADERS.responseLocalize['Access-Control-Allow-Origin'] = '*';
 HEADERS.responseNotModified = {};
 HEADERS.responseNotModified[HEADER_CACHE] = 'public, max-age=11111111';
 HEADERS.response503 = {};
@@ -8021,6 +8022,7 @@ F.$requestcontinue = function(req, res, headers) {
 			req.$total_file();
 		else
 			res.continue();
+
 		return;
 	}
 
