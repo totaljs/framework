@@ -1136,6 +1136,7 @@ function Framework() {
 
 	self.temporary = {
 		path: {},
+		shortcache: {},
 		notfound: {},
 		processing: {},
 		range: {},
@@ -5955,8 +5956,11 @@ F.$onParseQueryBody = function(req) {
 
 F.$onParseQueryUrl = function(req) {
 	if (F.onParseQuery.$def) {
-		req._querydata = Qs.parse(req.uri.query, null, null, QUERYPARSEROPTIONS);
-		F._length_convertors && F.convert(req._querydata);
+		if (req.uri.query) {
+			req._querydata = Qs.parse(req.uri.query, null, null, QUERYPARSEROPTIONS);
+			F._length_convertors && F.convert(req._querydata);
+		} else
+			req._querydata = {};
 	} else
 		req._querydata = F.onParseQuery(req.uri.query, req);
 };
@@ -7675,6 +7679,9 @@ F.service = function(count) {
 	F.stats.performance.request = F.stats.request.request ? F.stats.request.request / F.temporary.service.request : 0;
 	F.stats.performance.file = F.stats.request.file ? F.stats.request.file / F.temporary.service.file : 0;
 
+	// clears short cahce temporary cache
+	F.temporary.shortcache = {};
+
 	// clears temporary memory for non-exist files
 	F.temporary.notfound = {};
 
@@ -7893,6 +7900,7 @@ F.listener = function(req, res) {
 	req.$protocol = ((req.connection && req.connection.encrypted) || ((headers['x-forwarded-proto'] || ['x-forwarded-protocol']) === 'https')) ? 'https' : 'http';
 
 	req.uri = framework_internal.parseURI(req);
+
 	F.stats.request.request++;
 	F.$events.request && EMIT('request', req, res);
 
@@ -7998,18 +8006,29 @@ F.$requestcontinue = function(req, res, headers) {
 	if (!req || !res || res.headersSent || res.success)
 		return;
 
+	var tmp;
+
 	// Validates if this request is the file (static file)
 	if (req.isStaticFile) {
 
-		// Stops path travelsation outside of "public" directory
-		// A potential security issue
-		for (var i = 0; i < req.uri.pathname.length; i++) {
-			var c = req.uri.pathname[i];
-			var n = req.uri.pathname[i + 1];
-			if ((c === '.' && (n === '/' || n === '%')) || (c === '%' && n === '2' && req.uri.pathname[i + 2] === 'e')) {
-				req.$total_status(404);
-				return;
+		tmp = F.temporary.shortcache[req.uri.pathname];
+
+		if (!tmp) {
+			// Stops path travelsation outside of "public" directory
+			// A potential security issue
+			for (var i = 0; i < req.uri.pathname.length; i++) {
+				var c = req.uri.pathname[i];
+				var n = req.uri.pathname[i + 1];
+				if ((c === '.' && (n === '/' || n === '%')) || (c === '%' && n === '2' && req.uri.pathname[i + 2] === 'e')) {
+					F.temporary.shortcache[req.uri.pathname] = 2;
+					req.$total_status(404);
+					return;
+				}
 			}
+			F.temporary.shortcache[req.uri.pathname] = 1;
+		} else if (tmp === 2) {
+			req.$total_status(404);
+			return;
 		}
 
 		F.stats.request.file++;
@@ -8026,8 +8045,27 @@ F.$requestcontinue = function(req, res, headers) {
 		return;
 	}
 
-	F.stats.request.web++;
+	if (req.uri.search) {
+		tmp = F.temporary.shortcache[req.uri.search];
 
+		if (!tmp) {
+			tmp = 1;
+			for (var i = 1; i < req.uri.search.length - 2; i++) {
+				if (req.uri.search[i] === '%' && req.uri.search[i + 1] === '0' && req.uri.search[i + 2] === '0') {
+					tmp = 2;
+					break;
+				}
+			}
+			F.temporary.shortcache[req.uri.search] = tmp;
+		}
+
+		if (tmp === 2) {
+			req.$total_status(404);
+			return;
+		}
+	}
+
+	F.stats.request.web++;
 	req.body = EMPTYOBJECT;
 	req.files = EMPTYARRAY;
 	req.buffer_exceeded = false;
@@ -16479,8 +16517,18 @@ function extend_request(PROTO) {
 				this.$total_400('Invalid JSON data.');
 				return;
 			}
-		} else
+		} else {
+
+			for (var i = 0; i < this.buffer_data.length - 2; i++) {
+				if (this.buffer_data[i] === '%' && this.buffer_data[i + 1] === '0' && this.buffer_data[i + 2] === '0') {
+					this.buffer_data = null;
+					this.$total_400('Not allowed chars in the request body.');
+					return;
+				}
+			}
+
 			F.$onParseQueryBody(this);
+		}
 
 		route.schema && (this.$total_schema = true);
 		this.buffer_data = null;
