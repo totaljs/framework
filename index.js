@@ -1669,11 +1669,8 @@ function nosqlwrapper(name) {
 }
 
 F.database = global.NOSQL = F.nosql = function(name) {
-	if (!global.framework_nosql) {
+	if (!global.framework_nosql)
 		global.framework_nosql = require('./nosql');
-		framework_nosql.createTemporaryKey = createTemporaryKey;
-	}
-
 	// Someone rewrites F.database
 	if (F.database !== F.nosql)
 		global.NOSQL = F.nosql = nosqlwrapper;
@@ -1694,10 +1691,8 @@ function tablewrapper(name) {
 }
 
 global.TABLE = function(name) {
-	if (!global.framework_nosql) {
+	if (!global.framework_nosql)
 		global.framework_nosql = require('./nosql');
-		framework_nosql.createTemporaryKey = createTemporaryKey;
-	}
 	global.TABLE = tablewrapper;
 	return tablewrapper(name);
 };
@@ -18130,6 +18125,8 @@ function fsStreamRead(filename, options, callback, res) {
 function createTemporaryKey(req) {
 	return (req.uri ? req.uri.pathname : req).replace(REG_TEMPORARY, '-').substring(1);
 }
+
+F.createTemporaryKey = createTemporaryKey;
 
 function MiddlewareOptions() {}
 

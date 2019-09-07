@@ -4737,7 +4737,7 @@ Binary.prototype.res = function(res, options, notmodified) {
 
 	stream.on('error', function() {
 		if (RELEASE)
-			F.temporary.notfound[framework_nosql.createTemporaryKey(req)] = true;
+			F.temporary.notfound[F.createTemporaryKey(req)] = true;
 		res.throw404();
 	});
 
@@ -4782,7 +4782,7 @@ Binary.prototype.res = function(res, options, notmodified) {
 			}
 		} else {
 			if (RELEASE)
-				F.temporary.notfound[framework_nosql.createTemporaryKey(req)] = true;
+				F.temporary.notfound[F.createTemporaryKey(req)] = true;
 			res.throw404();
 		}
 	});
