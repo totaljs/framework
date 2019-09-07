@@ -176,6 +176,7 @@ exports.restart = function(index) {
 	} else {
 		var fork = FORKS[index];
 		if (fork) {
+			fork.$ready = false;
 			fork.removeAllListeners();
 			fork.disconnect();
 			exec(index);
@@ -246,6 +247,7 @@ function message(m) {
 
 	if (m === 'total:ready') {
 		CONTINUE = true;
+		this.$ready = true;
 		return;
 	}
 
@@ -259,7 +261,7 @@ function message(m) {
 			exports.res(m);
 		} else {
 			for (var i = 0, length = FORKS.length; i < length; i++)
-				FORKS[i] && FORKS[i].send(m);
+				FORKS[i] && FORKS[i].$ready && FORKS[i].send(m);
 		}
 	}
 }

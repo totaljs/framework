@@ -774,7 +774,7 @@ TP.meta = DP.meta = function(name, value, nosave) {
 		self.timeoutmeta = setTimeout(() => self.$meta(true), 500);
 
 	if (F.isCluster && !nosave) {
-		CLUSTERMETA.id = F.id;
+		CLUSTERMETA.ID = F.id;
 		CLUSTERMETA.TYPE = (self instanceof Table ? 'table' : 'nosql') + '-meta';
 		CLUSTERMETA.name = self.name;
 		CLUSTERMETA.key = name;

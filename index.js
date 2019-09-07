@@ -87,10 +87,10 @@ const REPOSITORY_COMPONENTS = '$components';
 const ATTR_END = '"';
 const ETAG = '858';
 const CONCAT = [null, null];
-const CLUSTER_CACHE_SET = { TYPE: 'cache-set' };
-const CLUSTER_CACHE_REMOVE = { TYPE: 'cache-remove' };
-const CLUSTER_CACHE_REMOVEALL = { TYPE: 'cache-remove-all' };
-const CLUSTER_CACHE_CLEAR = { TYPE: 'cache-clear' };
+const CLUSTER_CACHE_SET = { TYPE: 'cache', method: 'set' };
+const CLUSTER_CACHE_REMOVE = { TYPE: 'cache', method: 'remove' };
+const CLUSTER_CACHE_REMOVEALL = { TYPE: 'cache', method: 'removeAll' };
+const CLUSTER_CACHE_CLEAR = { TYPE: 'cache', method: 'clear' };
 const GZIPFILE = { memLevel: 9 };
 const GZIPSTREAM = { memLevel: 1 };
 const MODELERROR = {};
@@ -334,7 +334,7 @@ global.PREF.set = function(name, value) {
 };
 
 global.CACHE = function(name, value, expire, persistent) {
-	return arguments.length === 1 ? F.cache.get2(name) : F.cache.set(name, value, expire, null, persistent);
+	return arguments.length === 1 ? F.cache.get2(name) : F.cache.set(name, value, expire, persistent);
 };
 
 global.CREATE = (group, name) => framework_builders.getschema(group, name).default();
@@ -1266,10 +1266,10 @@ Framework.prototype = {
 		return F.$id;
 	},
 	set id(value) {
-		CLUSTER_CACHE_SET.id = value;
-		CLUSTER_CACHE_REMOVE.id = value;
-		CLUSTER_CACHE_REMOVEALL.id = value;
-		CLUSTER_CACHE_CLEAR.id = value;
+		CLUSTER_CACHE_SET.ID = value;
+		CLUSTER_CACHE_REMOVE.ID = value;
+		CLUSTER_CACHE_REMOVEALL.ID = value;
+		CLUSTER_CACHE_CLEAR.ID = value;
 		F.$id = value;
 		return F.$id;
 	}
@@ -1394,6 +1394,22 @@ global.ON = F.on = function(name, fn) {
 				F.temporary.ready[name] && fn.call(F, F.controllers[arr[1]]);
 				break;
 		}
+	}
+
+	switch (name) {
+		case 'cache-set':
+		case 'controller-render-meta':
+		case 'request-end':
+		case 'websocket-begin':
+		case 'websocket-end':
+		case 'request-begin':
+		case 'upload-begin':
+		case 'upload-end':
+			OBSOLETE(name, 'Name of event has been replaced to "{0}"'.format(name.repalce(/-/g, '_')));
+			break;
+		case 'cache-expire':
+			OBSOLETE(name, 'Name of event has been replaced to "cache_expired"');
+			break;
 	}
 
 	if (isWORKER && name === 'service' && !F.cache.interval)
@@ -7192,6 +7208,7 @@ global.LOAD = F.load = function(debug, types, pwd, ready) {
 			F.$load(types, directory, function() {
 
 				F.isLoaded = true;
+
 				process.send && process.send('total:ready');
 
 				setTimeout(function() {
@@ -8162,7 +8179,9 @@ F.$requestcontinue = function(req, res, headers) {
 	}
 
 	req.flags = flags;
+
 	F.$events['request-begin'] && EMIT('request-begin', req, res);
+	F.$events.request_begin && EMIT('request_begin', req, res);
 
 	var isCORS = (F._length_cors || F.routes.corsall) && req.headers.origin != null;
 
@@ -8353,6 +8372,7 @@ F.$cors = function(req, res, fn, arg) {
 	if (stop) {
 		fn = null;
 		F.$events['request-end'] && EMIT('request-end', req, res);
+		F.$events.request_end && EMIT('request_end', req, res);
 		F.reqstats(false, false);
 		F.stats.request.blocked++;
 		res.writeHead(404);
@@ -8365,6 +8385,7 @@ F.$cors = function(req, res, fn, arg) {
 
 	fn = null;
 	F.$events['request-end'] && EMIT('request-end', req, res);
+	F.$events.request_end && EMIT('request_end', req, res);
 	F.reqstats(false, false);
 	res.writeHead(200);
 	res.end();
@@ -10851,6 +10872,7 @@ function FrameworkCache() {
 	this.items = {};
 	this.count = 1;
 	this.interval;
+	this.$sync = true;
 }
 
 const FrameworkCacheProto = FrameworkCache.prototype;
@@ -10937,9 +10959,9 @@ FrameworkCacheProto.stop = function() {
 	return this;
 };
 
-FrameworkCacheProto.clear = function(sync) {
+FrameworkCacheProto.clear = function() {
 	this.items = {};
-	F.isCluster && sync !== false && CONF.allow_cache_cluster && process.send(CLUSTER_CACHE_CLEAR);
+	F.isCluster && CONF.allow_cache_cluster && process.send(CLUSTER_CACHE_CLEAR);
 	this.savepersistent();
 	return this;
 };
@@ -10950,7 +10972,6 @@ FrameworkCacheProto.recycle = function() {
 	var persistent = false;
 
 	NOW = new Date();
-
 	this.count++;
 
 	for (var o in items) {
@@ -10960,7 +10981,8 @@ FrameworkCacheProto.recycle = function() {
 		else if (value.expire < NOW) {
 			if (value.persist)
 				persistent = true;
-			EMIT('cache-expire', o, value.value);
+			F.$events['cache-expire'] && EMIT('cache-expire', o, value.value);
+			F.$events.cache_expired && EMIT('cache_expired', o, value.value);
 			delete items[o];
 		}
 	}
@@ -10971,21 +10993,20 @@ FrameworkCacheProto.recycle = function() {
 	return this;
 };
 
-FrameworkCacheProto.set2 = function(name, value, expire, sync) {
-	return this.set(name, value, expire, sync, true);
+FrameworkCacheProto.set2 = function(name, value, expire) {
+	return this.set(name, value, expire, true);
 };
 
-FrameworkCacheProto.set = FrameworkCacheProto.add = function(name, value, expire, sync, persist) {
-	var type = typeof(expire);
+FrameworkCacheProto.set = FrameworkCacheProto.add = function(name, value, expire, persist) {
 
-	if (F.isCluster && sync !== false && CONF.allow_cache_cluster) {
-		CLUSTER_CACHE_SET.key = name;
+	if (F.isCluster && CONF.allow_cache_cluster && this.$sync) {
+		CLUSTER_CACHE_SET.name = name;
 		CLUSTER_CACHE_SET.value = value;
 		CLUSTER_CACHE_SET.expire = expire;
 		process.send(CLUSTER_CACHE_SET);
 	}
 
-	switch (type) {
+	switch (typeof(expire)) {
 		case 'string':
 			expire = expire.parseDateExpiration();
 			break;
@@ -11002,7 +11023,8 @@ FrameworkCacheProto.set = FrameworkCacheProto.add = function(name, value, expire
 	}
 
 	this.items[name] = obj;
-	F.$events['cache-set'] && EMIT('cache-set', name, value, expire, sync !== false);
+	F.$events['cache-set'] && EMIT('cache-set', name, value, expire, this.$sync);
+	F.$events.cache_set && EMIT('cache_set', name, value, expire, this.$sync);
 	return value;
 };
 
@@ -11017,6 +11039,7 @@ FrameworkCacheProto.read = FrameworkCacheProto.get = function(key, def) {
 	if (value.expire < NOW) {
 		this.items[key] = undefined;
 		F.$events['cache-expire'] && EMIT('cache-expire', key, value.value);
+		F.$events.cache_expired && EMIT('cache_expired', key, value.value);
 		return def;
 	}
 
@@ -11032,6 +11055,7 @@ FrameworkCacheProto.read2 = FrameworkCacheProto.get2 = function(key, def) {
 	if (value.expire < NOW) {
 		this.items[key] = undefined;
 		F.$events['cache-expire'] && EMIT('cache-expire', key, value.value);
+		F.$events.cache_expired && EMIT('cache_expired', key, value.value);
 		return def;
 	}
 
@@ -11045,7 +11069,7 @@ FrameworkCacheProto.setExpire = function(name, expire) {
 	return this;
 };
 
-FrameworkCacheProto.remove = function(name, sync) {
+FrameworkCacheProto.remove = function(name) {
 	var value = this.items[name];
 
 	if (value) {
@@ -11053,17 +11077,17 @@ FrameworkCacheProto.remove = function(name, sync) {
 		this.items[name] = undefined;
 	}
 
-	if (F.isCluster && sync !== false && CONF.allow_cache_cluster) {
-		CLUSTER_CACHE_REMOVE.key = name;
+	if (F.isCluster && CONF.allow_cache_cluster && this.$sync) {
+		CLUSTER_CACHE_REMOVE.name = name;
 		process.send(CLUSTER_CACHE_REMOVE);
 	}
 
 	return value;
 };
 
-FrameworkCacheProto.removeAll = function(search, sync) {
+FrameworkCacheProto.removeAll = function(search) {
 	var count = 0;
-	var isReg = U.isRegExp(search);
+	var isReg = typeof(search) === 'object';
 
 	for (var key in this.items) {
 
@@ -11079,8 +11103,8 @@ FrameworkCacheProto.removeAll = function(search, sync) {
 		count++;
 	}
 
-	if (F.isCluster && sync !== false && CONF.allow_cache_cluster) {
-		CLUSTER_CACHE_REMOVEALL.key = search;
+	if (F.isCluster && CONF.allow_cache_cluster && this.$sync) {
+		CLUSTER_CACHE_REMOVEALL.search = search;
 		process.send(CLUSTER_CACHE_REMOVEALL);
 	}
 
@@ -12073,6 +12097,7 @@ ControllerProto.$meta = function() {
 	}
 
 	F.$events['controller-render-meta'] && EMIT('controller-render-meta', self);
+	F.$events.controller_render_meta && EMIT('controller_render_meta', self);
 	var repository = self.repository;
 	return F.onMeta.call(self, repository[REPOSITORY_META_TITLE], repository[REPOSITORY_META_DESCRIPTION], repository[REPOSITORY_META_KEYWORDS], repository[REPOSITORY_META_IMAGE]);
 };
@@ -14101,6 +14126,7 @@ ControllerProto.close = function(end) {
 		self.res.success = true;
 		F.reqstats(false, false);
 		F.$events['request-end'] && EMIT('request-end', self.req, self.res);
+		F.$events.request_end && EMIT('request_end', self.req, self.res);
 		self.type = 0;
 		end && self.res.end();
 		self.req.clear(true);
@@ -14115,6 +14141,7 @@ ControllerProto.close = function(end) {
 	self.res.success = true;
 	F.reqstats(false, false);
 	F.$events['request-end'] && EMIT('request-end', self.req, self.res);
+	F.$events.request_end && EMIT('request_end', self.req, self.res);
 	end && self.res.end();
 	self.req.clear(true);
 	return self;
@@ -15444,6 +15471,7 @@ WebSocketClientProto.upgrade = function(container) {
 	self.container.$add(self);
 	self.container.$refresh();
 	F.$events['websocket-begin'] && EMIT('websocket-begin', self.container, self);
+	F.$events.websocket_begin && EMIT('websocket_begin', self.container, self);
 	self.container.$events.open && self.container.emit('open', self);
 	return self;
 };
@@ -15777,6 +15805,7 @@ WebSocketClientProto.$onclose = function() {
 	this.container.$events.close && this.container.emit('close', this, this.closecode, this.closemessage);
 	this.socket.removeAllListeners();
 	F.$events['websocket-end'] && EMIT('websocket-end', this.container, this);
+	F.$events.websocket_end && EMIT('websocket_end', this.container, this);
 };
 
 /**
@@ -16252,6 +16281,7 @@ function extend_request(PROTO) {
 		this.res.writeHead(status);
 		this.res.end(U.httpStatus(status));
 		F.$events['request-end'] && EMIT('request-end', this, this.res);
+		F.$events.request_end && EMIT('request_end', this, this.res);
 		this.clear(true);
 	};
 
@@ -16273,7 +16303,7 @@ function extend_request(PROTO) {
 
 		if (isError || !route) {
 			F.stats.response['error' + status]++;
-			status !== 500 && F.$events['error'] && EMIT('error' + status, this, res, this.$total_exception);
+			status !== 500 && F.$events.error && EMIT('error' + status, this, res, this.$total_exception);
 		}
 
 		if (!route) {
@@ -18073,7 +18103,12 @@ function $image_filename(exists, size, isFile, stats, res) {
 function response_end(res) {
 	F.reqstats(false, res.req.isStaticFile);
 	res.success = true;
-	!res.req.isStaticFile && F.$events['request-end'] && EMIT('request-end', res.req, res);
+
+	if (!res.req.isStaticFile) {
+		F.$events['request-end'] && EMIT('request-end', res.req, res);
+		F.$events.request_end && EMIT('request_end', res.req, res);
+	}
+
 	res.req.clear(true);
 	res.controller && res.req.$total_success();
 
@@ -18251,6 +18286,7 @@ process.on('exit', forcestop);
 process.on('message', function(msg, h) {
 	if (msg === 'total:debug') {
 		U.wait(() => F.isLoaded, function() {
+
 			F.isLoaded = undefined;
 			F.console();
 		}, 10000, 500);
@@ -18260,17 +18296,87 @@ process.on('message', function(msg, h) {
 		F.cache.clear();
 	else if (msg === 'stop' || msg === 'exit' || msg === 'kill')
 		F.stop();
-	else if (msg && msg.TYPE && msg.id !== F.id) {
-		msg.TYPE === 'cache-set' && F.cache.set(msg.key, msg.value, msg.expire, false);
-		msg.TYPE === 'cache-remove' && F.cache.remove(msg.key, false);
-		msg.TYPE === 'cache-remove-all' && F.cache.removeAll(msg.key, false);
-		msg.TYPE === 'cache-clear' && F.cache.clear(false);
-		msg.TYPE === 'req' && F.cluster.req(msg);
-		msg.TYPE === 'res' && msg.target === F.id && F.cluster.res(msg);
-		msg.TYPE === 'emit' && F.$events[msg.name] && EMIT(msg.name, msg.a, msg.b, msg.c, msg.d, msg.e);
-		msg.TYPE === 'nosql-meta' && NOSQL(msg.name).meta(msg.key, msg.value, true);
-		msg.TYPE === 'table-meta' && TABLE(msg.name).meta(msg.key, msg.value, true);
+	else if (msg && msg.TYPE && msg.ID !== F.id) {
+		if (msg.TYPE === 'req')
+			F.cluster.req(msg);
+		else if (msg.TYPE === 'res')
+			msg.target === F.id && F.cluster.res(msg);
+		else if (msg.TYPE === 'emit')
+			F.$events[msg.name] && EMIT(msg.name, msg.a, msg.b, msg.c, msg.d, msg.e);
+		else if (msg.TYPE === 'nosql-meta')
+			NOSQL(msg.name).meta(msg.key, msg.value, true);
+		else if (msg.TYPE === 'table-meta')
+			TABLE(msg.name).meta(msg.key, msg.value, true);
+		else if (msg.TYPE === 'session') {
+			var session = SESSION(msg.NAME);
+			switch (msg.method) {
+				case 'remove':
+					session.$sync = false;
+					session.remove(msg.sessionid);
+					session.$sync = true;
+					break;
+				case 'remove2':
+					session.$sync = false;
+					session.remove2(msg.id);
+					session.$sync = true;
+					break;
+				case 'set2':
+					session.$sync = false;
+					session.set2(msg.id, msg.data, msg.expire, msg.note, msg.settings);
+					session.$sync = true;
+					break;
+				case 'set':
+					session.$sync = false;
+					session.set(msg.sessionid, msg.id, msg.data, msg.expire, msg.note, msg.settings);
+					session.$sync = true;
+					break;
+				case 'update2':
+					session.$sync = false;
+					session.update2(msg.id, msg.data, msg.expire, msg.note, msg.settings);
+					session.$sync = true;
+					break;
+				case 'update':
+					session.$sync = false;
+					session.update(msg.sessionid, msg.data, msg.expire, msg.note, msg.settings);
+					session.$sync = true;
+					break;
+				case 'clear':
+					session.$sync = false;
+					session.clear(msg.lastusage);
+					session.$sync = true;
+					break;
+				case 'clean':
+					session.$sync = false;
+					session.clean();
+					session.$sync = true;
+					break;
+			}
+		} else if (msg.TYPE === 'cache') {
+			switch (msg.method) {
+				case 'set':
+					F.cache.$sync = false;
+					F.cache.set(msg.name, msg.value, msg.expire);
+					F.cache.$sync = true;
+					break;
+				case 'remove':
+					F.cache.$sync = false;
+					F.cache.remove(msg.name);
+					F.cache.$sync = true;
+					break;
+				case 'clear':
+					F.cache.$sync = false;
+					F.cache.clear();
+					F.cache.$sync = true;
+					break;
+				case 'removeAll':
+					F.cache.$sync = false;
+					F.cache.removeAll(msg.search);
+					F.cache.$sync = true;
+					break;
+			}
+		}
 	}
+
 	F.$events.message && EMIT('message', msg, h);
 });
 

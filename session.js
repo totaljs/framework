@@ -16,6 +16,7 @@ function Session(name, ondata) {
 
 	t.name = name || '';
 	t.items = new Map();
+	t.$sync = true;
 	t.$savecallback = ERROR('session.save');
 	t.ondata = ondata;
 	t.pending = {};
@@ -48,37 +49,6 @@ function Session(name, ondata) {
 
 const SessionProto = Session.prototype;
 
-/*
-Session.prototype.find = function(filter, callback) {
-
-	var self = this;
-	var keys = Object.keys(filter);
-	var arr = [];
-	var is = false;
-
-	for (var m of self.items.values()) {
-		if (m && m.expire >= NOW) {
-			if (m.data) {
-				is = true;
-				for (var j = 0; j < keys.length; j++) {
-					var key = keys[j];
-					if (m.data[key] !== filter[key]) {
-						is = false;
-						break;
-					}
-				}
-				is && arr.push(m);
-			}
-		} else {
-			self.onremove && self.onremove(m);
-			self.items.delete(m.sessionid);
-			self.$save();
-		}
-	}
-
-	callback(null, arr);
-};*/
-
 SessionProto.list = function(id, callback) {
 
 	var self = this;
@@ -91,7 +61,12 @@ SessionProto.list = function(id, callback) {
 		} else {
 			self.onremove && self.onremove(m);
 			self.items.delete(m.sessionid);
-			self.$save();
+
+			if (F.isCluster && self.$sync)
+				cluster_send({ method: 'remove', NAME: self.name, sessionid: m.sessionid });
+
+			if (!F.id || F.id === '0')
+				self.$save();
 		}
 	}
 
@@ -290,6 +265,9 @@ SessionProto.release = function(sessionid, expire, callback) {
 	if (!self.ondata)
 		return;
 
+	if (F.isCluster && F.id !== '0' && self.$sync)
+		cluster_send({ NAME: self.name, type: 'release', sessionid: sessionid, expire: expire });
+
 	// refreshes all
 	if (sessionid == null) {
 		var count = 0;
@@ -333,19 +311,21 @@ SessionProto.release2 = function(id, expire, callback) {
 		return;
 
 	var count = 0;
-
-	if (expire)
-		expire = NOW.add(expire);
+	var exiration = expire ? NOW.add(expire) : null;
 
 	for (var m of self.items.values()) {
 		if (m && m.id === id && m.data) {
 			self.onrelease && self.onrelease(m);
 			m.data = null;
 			count++;
-			if (expire)
-				m.expire = expire;
+			if (exiration)
+				m.expire = exiration;
 		}
 	}
+
+	if (F.isCluster && F.id !== '0' && self.$sync)
+		cluster_send({ NAME: self.name, type: 'release2', id: id, expire: expire });
+
 	callback && callback(null, count);
 };
 
@@ -354,14 +334,17 @@ SessionProto.releaseunused = function(lastusage, callback) {
 	var self = this;
 	var count = 0;
 
-	lastusage = NOW.add(lastusage[0] === '-' ? lastusage : ('-' + lastusage));
+	var lu = NOW.add(lastusage[0] === '-' ? lastusage : ('-' + lastusage));
 	for (var m of self.items.values()) {
-		if (m.data && (!m.used || m.used <= lastusage)) {
+		if (m.data && (!m.used || m.used <= lu)) {
 			self.onrelease && self.onrelease(m);
 			m.data = null;
 			count++;
 		}
 	}
+
+	if (F.isCluster && F.id !== '0')
+		self.$sync && cluster_send({ NAME: self.name, type: 'releaseunused', lastusage: lastusage });
 
 	callback && callback(null, count);
 };
@@ -458,7 +441,12 @@ SessionProto.set2 = function(id, data, expire, note, settings, callback) {
 	}
 
 	callback && callback(null, updated);
-	updated && self.$save();
+
+	if (F.isCluster && self.$sync)
+		cluster_send({ method: 'set2', NAME: self.name, id: id, data: data, expire: expire, note: note, settings: settings });
+
+	if (updated && (!F.id || F.id === '0'))
+		self.$save();
 };
 
 SessionProto.set = function(sessionid, id, data, expire, note, settings, callback) {
@@ -490,8 +478,14 @@ SessionProto.set = function(sessionid, id, data, expire, note, settings, callbac
 	obj.created = NOW;
 	obj.settings = settings || '';
 	self.items.set(sessionid, obj);
+
+	if (F.isCluster && self.$sync)
+		cluster_send({ method: 'set', NAME: self.name, sessionid: sessionid, id: obj.id, data: data, expire: expire, note: note, settings: settings });
+
+	if (!F.id || F.id === '0')
+		self.$save();
+
 	callback && callback(null, data, obj);
-	self.$save();
 };
 
 SessionProto.get2 = function(id, callback) {
@@ -520,7 +514,13 @@ SessionProto.get = function(sessionid, expire, callback) {
 			self.onremove && self.onremove(item);
 			self.items.delete(sessionid);
 			item = null;
-			self.$save();
+
+			if (F.isCluster && self.$sync)
+				cluster_send({ method: 'remove', NAME: self.name, sessionid: sessionid });
+
+			if (!F.id || F.id === '0')
+				self.$save();
+
 		} else if (expire)
 			item.expire = NOW.add(expire);
 	}
@@ -589,8 +589,13 @@ SessionProto.update2 = function(id, data, expire, note, settings, callback) {
 		}
 	}
 
+	if (F.isCluster && self.$sync)
+		cluster_send({ method: 'update2', NAME: self.name, id: id, data: data, expire: expire, note: note, settings: settings });
+
+	if (updated && (!F.id || F.id === '0'))
+		self.$save();
+
 	callback && callback(null, updated);
-	updated && self.$save();
 };
 
 SessionProto.update = function(sessionid, data, expire, note, settings, callback) {
@@ -622,6 +627,12 @@ SessionProto.update = function(sessionid, data, expire, note, settings, callback
 		if (expire)
 			item.expire = NOW.add(expire);
 
+		if (F.isCluster && self.$sync)
+			cluster_send({ method: 'update', NAME: self.name, sessionid: sessionid, data: data, expire: expire, note: note, settings: settings });
+
+		if ((item.data || expire) && (!F.id || F.id === '0'))
+			self.$save();
+
 		if (callback) {
 			if (item.data)
 				callback(null, data, item);
@@ -629,8 +640,6 @@ SessionProto.update = function(sessionid, data, expire, note, settings, callback
 				callback();
 		}
 
-		if (item.data || expire)
-			self.$save();
 	} else if (callback)
 		callback();
 };
@@ -662,6 +671,7 @@ SessionProto.count = function(id, callback) {
 SessionProto.remove2 = function(id, callback) {
 	var self = this;
 	var count = 0;
+
 	for (var m of self.items.values()) {
 		if (m && m.id === id) {
 			self.onremove && self.onremove(m);
@@ -669,8 +679,14 @@ SessionProto.remove2 = function(id, callback) {
 			count++;
 		}
 	}
+
+	if (F.isCluster && self.$sync)
+		cluster_send({ method: 'remove2', NAME: self.name, id: id });
+
+	if (!F.id || F.id === '0')
+		self.$save();
+
 	callback && callback(null, count);
-	self.$save();
 };
 
 SessionProto.remove = function(sessionid, callback) {
@@ -683,7 +699,12 @@ SessionProto.remove = function(sessionid, callback) {
 
 	if (item) {
 		self.items.delete(sessionid);
-		self.$save();
+
+		if (F.isCluster && self.$sync)
+			cluster_send({ method: 'remove', NAME: self.name, sessionid: sessionid });
+
+		if (!F.id || F.id === '0')
+			self.$save();
 	}
 
 	callback && callback(null, item);
@@ -701,29 +722,30 @@ SessionProto.clear = function(lastusage, callback) {
 	var count = 0;
 
 	if (lastusage) {
-		lastusage = NOW.add(lastusage[0] === '-' ? lastusage : ('-' + lastusage));
-
+		var lu = NOW.add(lastusage[0] === '-' ? lastusage : ('-' + lastusage));
 		for (var m of self.items.values()) {
-			if (!m.used || m.used <= lastusage) {
+			if (!m.used || m.used <= lu) {
 				self.onremove && self.onremove(m);
 				self.items.delete(m.sessionid);
 				count++;
 			}
 		}
-
 	} else {
 		count = self.items.length;
-
 		if (self.onremove) {
 			for (var m of self.items.values())
 				self.onremove(m);
 		}
-
 		self.items.clear();
 	}
 
+	if (F.isCluster && self.$sync)
+		cluster_send({ method: 'clear', NAME: self.name, lastusage: lastusage });
+
+	if (!F.id || F.id === '0')
+		self.$save();
+
 	callback && callback(null, count);
-	self.$save();
 };
 
 SessionProto.clean = function() {
@@ -736,7 +758,14 @@ SessionProto.clean = function() {
 			is = true;
 		}
 	}
-	is && self.$save();
+
+	if (is) {
+		if (F.isCluster && self.$sync)
+			cluster_send({ method: 'clean', NAME: self.name });
+
+		if (!F.id || F.id === '0')
+			self.$save();
+	}
 };
 
 SessionProto.load = function(callback) {
@@ -766,8 +795,16 @@ SessionProto.load = function(callback) {
 			removed++;
 	}
 
-	removed && self.$save();
+	if (removed && (!F.id || F.id === '0'))
+		self.$save();
+
 	callback && callback();
 };
+
+function cluster_send(obj) {
+	obj.TYPE = 'session';
+	obj.ID = F.id;
+	process.send(obj);
+}
 
 exports.Session = Session;

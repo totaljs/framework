@@ -122,6 +122,15 @@ x renamed: `*.routeImage` to `*.public_image`
 x renamed: `*.routeDownload` to `*.public_download`
 x renamed: `*.routeStatic` to `*.public`
 x renamed: `controller.viewCompile()` to `controller.view_compile()`
+- renamed: event `cache-set` to `cache_set`:
+- renamed: event `controller-render-meta` to `controller_render_meta`
+- renamed: event `request-end` to `request_end`
+- renamed: event `websocket-begin` to `websocket_begin`
+- renamed: event `websocket-end` to `websocket_end`
+- renamed: event `request-begin` to `request_begin`
+- renamed: event `upload-begin` to `upload_begin`
+- renamed: event `upload-end` to `upload_end`
+- renamed: event `cache-expire` to `cache_expired`
 
 x __removed: backward compatibility__ with older version of Node.js < 10
 x removed: `F.hash()`, alternative `String.prototype.hash()`
