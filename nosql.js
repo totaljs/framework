@@ -4421,9 +4421,7 @@ Binary.prototype.insert = function(name, buffer, custom, callback) {
 
 	var id;
 
-	F.isCluster && self.$refresh();
-
-	if (self.meta.free.length) {
+	if (self.meta.free.length && (!F.id || F.id === '0')) {
 		id = self.meta.free.shift();
 	} else {
 		self.meta.index++;
@@ -4431,10 +4429,13 @@ Binary.prototype.insert = function(name, buffer, custom, callback) {
 	}
 
 	self.meta.count++;
+	F.isCluster && cluster_send({ TYPE: 'filestorage', NAME: self.db.name, method: 'add', index: self.meta.index, count: self.meta.count });
 
 	var path = self.$directory(id);
 	self.check(path);
-	self.$save();
+
+	if (!F.id || F.id === '0')
+		self.$save();
 
 	var filename = id.toString().padLeft(DIRECTORYLENGTH, '0');
 	var stream = Fs.createWriteStream(Path.join(path, filename + self.ext));
@@ -4446,7 +4447,6 @@ Binary.prototype.insert = function(name, buffer, custom, callback) {
 	id = 'B' + time + 'T' + filename;
 	callback && callback(null, id, h);
 	self.$events.insert && self.emit('insert', id, h);
-
 	return id;
 };
 
@@ -4476,16 +4476,17 @@ Binary.prototype.insertstream = function(id, name, type, stream, callback, custo
 			id = +id.substring(id.length - DIRECTORYLENGTH);
 		}
 	} else {
-		F.isCluster && self.$refresh();
 		isnew = true;
-		if (self.meta.free.length) {
+		if (self.meta.free.length && (!F.id || F.id === '0')) {
 			id = self.meta.free.shift();
 		} else {
 			self.meta.index++;
 			id = self.meta.index;
 		}
 		self.meta.count++;
-		self.$save();
+		F.isCluster && cluster_send({ TYPE: 'filestorage', NAME: self.db.name, method: 'add', index: self.meta.index, count: self.meta.count });
+		if (!F.id || F.id === '0')
+			self.$save();
 	}
 
 	var filepath;
@@ -4901,9 +4902,15 @@ Binary.prototype.remove = function(id, callback) {
 	Fs.unlink(filename, function(err) {
 
 		if (isnew && !err) {
+
 			self.meta.count--;
-			self.meta.free.push(id);
-			self.$save();
+
+			F.isCluster && cluster_send({ TYPE: 'filestorage', NAME: self.db.name, method: 'remove', count: self.meta.count, id: id });
+
+			if (!F.id || F.id === '0') {
+				self.meta.free.push(id);
+				self.$save();
+			}
 		}
 
 		callback && callback(null, err ? false : true);
@@ -4965,7 +4972,10 @@ Binary.prototype.clear = function(callback) {
 					files[i] = path + '/' + files[i];
 				F.unlink(files, () => Fs.unlink(path, next));
 			});
-		}, callback);
+		}, function() {
+			F.isCluster && cluster_send({ TYPE: 'filestorage', NAME: self.db.name, method: 'refresh' });
+			callback && callback();
+		});
 	});
 
 	return self;
@@ -7294,5 +7304,10 @@ DatabaseBuilder.prototype.gridsort = function(sort) {
 	builder.sort(sort.substring(0, index), sort[index + 1] === 'd');
 	return builder;
 };
+
+function cluster_send(obj) {
+	obj.ID = F.id;
+	process.send(obj);
+}
 
 exports.NoSQLReader = NoSQLReader;

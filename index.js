@@ -18374,6 +18374,28 @@ process.on('message', function(msg, h) {
 					F.cache.$sync = true;
 					break;
 			}
+		} else if (msg.TYPE === 'filestorage') {
+			var fs = F.databases['storage_' + msg.NAME];
+			if (fs) {
+				switch (msg.method) {
+					case 'add':
+						fs.meta.index = msg.index;
+						fs.meta.count = msg.count;
+						if (F.id === '0')
+							fs.$save();
+						break;
+					case 'remove':
+						fs.meta.count = msg.count;
+						if (F.id === '0' && msg.id) {
+							fs.meta.free.push(msg.id);
+							fs.$save();
+						}
+						break;
+					case 'refresh':
+						fs.$refresh();
+						break;
+				}
+			}
 		}
 	}
 
