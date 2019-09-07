@@ -6205,6 +6205,7 @@ F.usage = function(detailed) {
 	var output = {};
 	var nosqlcleaner = Object.keys(F.databasescleaner);
 	var sessions = Object.keys(F.sessions);
+	var shortcache = Object.keys(F.temporary.shortcache);
 
 	output.framework = {
 		id: F.id,
@@ -6253,7 +6254,8 @@ F.usage = function(detailed) {
 		uptodates: F.uptodates ? F.uptodates.length : 0,
 		nosqlcleaner: nosqlcleaner.length,
 		commands: commands.length,
-		sessions: sessions.length
+		sessions: sessions.length,
+		shortcache: shortcache.length
 	};
 
 	output.routing = {
@@ -6319,6 +6321,7 @@ F.usage = function(detailed) {
 	output.streaming = staticRange;
 	output.traces = F.traces;
 	output.uptodates = F.uptodates;
+	output.shortcache = shortcache;
 
 	return output;
 };
