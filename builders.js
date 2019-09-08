@@ -51,13 +51,14 @@ function SchemaBuilder(name) {
 
 const SchemaBuilderProto = SchemaBuilder.prototype;
 
-function SchemaOptions(error, model, options, callback, controller, name) {
+function SchemaOptions(error, model, options, callback, controller, name, schema) {
 	this.error = error;
 	this.value = this.model = model;
 	this.options = options || EMPTYOBJECT;
 	this.callback = this.next = callback;
 	this.controller = (controller instanceof SchemaOptions || controller instanceof OperationOptions) ? controller.controller : controller;
 	this.name = name;
+	this.schema = schema;
 }
 
 function TaskBuilder($) {
@@ -1518,7 +1519,7 @@ SchemaBuilderEntityProto.execute = function(TYPE, model, options, callback, cont
 				var opt = new SchemaOptions(builder, model, options, function(res) {
 					CONF.logger && F.ilogger(self.getLoggerName($type), controller, $now);
 					self.$process(arguments, model, $type, undefined, builder, res, callback, controller);
-				}, controller, $type);
+				}, controller, $type, self);
 
 				if (self.middlewares && self.middlewares.length)
 					runmiddleware(opt, self, self[TYPE]);
@@ -1568,7 +1569,7 @@ SchemaBuilderEntityProto.execute = function(TYPE, model, options, callback, cont
 		};
 
 		if (self[TYPE].$newversion) {
-			var opt = new SchemaOptions(builder, model, options, onCallback, controller, $type);
+			var opt = new SchemaOptions(builder, model, options, onCallback, controller, $type, self);
 			if (self.middlewares && self.middlewares.length)
 				runmiddleware(opt, self, () => async.call(self, self[TYPE])(onError, opt));
 			else
@@ -1628,7 +1629,7 @@ SchemaBuilderEntityProto.get = SchemaBuilderEntityProto.read = function(options,
 			var opt = new SchemaOptions(builder, output, options, function(res) {
 				CONF.logger && F.ilogger(self.getLoggerName($type), controller, $now);
 				self.$process(arguments, output, $type, undefined, builder, res, callback, controller);
-			}, controller, $type);
+			}, controller, $type, self);
 
 			if (self.middlewares && self.middlewares.length)
 				runmiddleware(opt, self, self.onGet);
@@ -1676,7 +1677,7 @@ SchemaBuilderEntityProto.get = SchemaBuilderEntityProto.read = function(options,
 	};
 
 	if (self.onGet.$newversion) {
-		var opt = new SchemaOptions(builder, output, options, onCallback, controller, $type);
+		var opt = new SchemaOptions(builder, output, options, onCallback, controller, $type, self);
 		if (self.middlewares && self.middlewares.length)
 			runmiddleware(opt, self, () => async.call(self, self.onGet)(onError, opt));
 		else
@@ -1728,7 +1729,7 @@ SchemaBuilderEntityProto.remove = function(options, callback, controller) {
 			var opt = new SchemaOptions(builder, controller ? controller.body : undefined, options, function(res) {
 				CONF.logger && F.ilogger(self.getLoggerName($type), controller, $now);
 				self.$process(arguments, undefined, $type, undefined, builder, res, callback, controller);
-			}, controller, $type);
+			}, controller, $type, self);
 
 			if (self.middlewares && self.middlewares.length)
 				runmiddleware(opt, self, self.onRemove);
@@ -1776,7 +1777,7 @@ SchemaBuilderEntityProto.remove = function(options, callback, controller) {
 	};
 
 	if (self.onRemove.$newversion) {
-		var opt = new SchemaOptions(builder, undefined, options, onCallback, controller, $type);
+		var opt = new SchemaOptions(builder, undefined, options, onCallback, controller, $type, self);
 		if (self.middlewares && self.middlewares.length)
 			runmiddleware(opt, self, () => async.call(self, self.onRemove)(onError, opt));
 		else
@@ -1824,7 +1825,7 @@ SchemaBuilderEntityProto.query = function(options, callback, controller) {
 			var opt = new SchemaOptions(builder, undefined, options, function(res) {
 				CONF.logger && F.ilogger(self.getLoggerName($type), controller, $now);
 				self.$process(arguments, undefined, $type, undefined, builder, res, callback, controller);
-			}, controller, $type);
+			}, controller, $type, self);
 
 			if (self.middlewares && self.middlewares.length)
 				runmiddleware(opt, self, self.onQuery);
@@ -1873,7 +1874,7 @@ SchemaBuilderEntityProto.query = function(options, callback, controller) {
 	};
 
 	if (self.onQuery.$newversion) {
-		var opt = new SchemaOptions(builder, undefined, options, onCallback, controller, $type);
+		var opt = new SchemaOptions(builder, undefined, options, onCallback, controller, $type, self);
 		if (self.middlewares && self.middlewares.length)
 			runmiddleware(opt, self, () => async.call(self, self.onQuery)(onError, opt));
 		else
@@ -2666,7 +2667,7 @@ SchemaBuilderEntityProto.hook = function(name, model, options, callback, skip, c
 				var opt = new SchemaOptions(builder, model, options, function(result) {
 					output.push(result == undefined ? model : result);
 					next();
-				}, controller, 'hook.' + name);
+				}, controller, 'hook.' + name, self);
 
 				if (self.middlewares && self.middlewares.length)
 					runmiddleware(opt, self, item.fn);
@@ -2711,7 +2712,7 @@ SchemaBuilderEntityProto.hook = function(name, model, options, callback, skip, c
 						CONF.logger && F.ilogger(self.getLoggerName($type, name), controller, $now);
 						output.push(res === undefined ? model : res);
 						next();
-					}, controller, 'hook.' + name));
+					}, controller, 'hook.' + name, self));
 				} else {
 					item.fn.call(self, builder, model, options, function(res) {
 						CONF.logger && F.ilogger(self.getLoggerName($type, name), controller, $now);
@@ -2729,7 +2730,7 @@ SchemaBuilderEntityProto.hook = function(name, model, options, callback, skip, c
 					CONF.logger && F.ilogger(self.getLoggerName($type, name), controller, $now);
 					output.push(res == undefined ? model : res);
 					next();
-				}, controller, 'hook.' + name);
+				}, controller, 'hook.' + name, self);
 
 				async.call(self, item.fn)(function(err) {
 					if (!err)
@@ -2830,7 +2831,7 @@ SchemaBuilderEntityProto.$execute = function(type, name, model, options, callbac
 			var opt = new SchemaOptions(builder, model, options, function(res) {
 				CONF.logger && F.ilogger(self.getLoggerName(type, name), controller, $now);
 				self.$process(arguments, model, type, name, builder, res, callback, controller);
-			}, controller, key);
+			}, controller, key, self);
 
 			if (self.middlewares && self.middlewares.length)
 				runmiddleware(opt, self, item);
@@ -2867,7 +2868,7 @@ SchemaBuilderEntityProto.$execute = function(type, name, model, options, callbac
 				var opt = new SchemaOptions(builder, model, options, function(res) {
 					CONF.logger && F.ilogger(self.getLoggerName(type, name), controller, $now);
 					self.$process(arguments, model, type, name, builder, res, callback, controller);
-				}, controller, key);
+				}, controller, key, self);
 
 				if (self.middlewares && self.middlewares.length)
 					runmiddleware(opt, self, item);
@@ -2914,7 +2915,7 @@ SchemaBuilderEntityProto.$execute = function(type, name, model, options, callbac
 		};
 
 		if (item.$newversion) {
-			var opt = new SchemaOptions(builder, model, options, onCallback, controller, key);
+			var opt = new SchemaOptions(builder, model, options, onCallback, controller, key, self);
 			if (self.middlewares && self.middlewares.length)
 				runmiddleware(opt, self, () => async.call(self, item)(onError, opt));
 			else
@@ -3003,7 +3004,7 @@ SchemaBuilderEntityProto.operation = function(name, model, options, callback, sk
 			operation.call(self, new SchemaOptions(builder, model, options, function(res) {
 				CONF.logger && F.ilogger(self.getLoggerName($type, name), controller, $now);
 				self.$process(arguments, model, $type, name, builder, res, callback, controller);
-			}, controller, key));
+			}, controller, key, self));
 		} else
 			operation.call(self, builder, model, options, function(res) {
 				CONF.logger && F.ilogger(self.getLoggerName($type, name), controller, $now);
@@ -3044,7 +3045,7 @@ SchemaBuilderEntityProto.operation = function(name, model, options, callback, sk
 	};
 
 	if (operation.$newversion)
-		async.call(self, operation)(onError, new SchemaOptions(builder, model, options, onCallback, controller, key));
+		async.call(self, operation)(onError, new SchemaOptions(builder, model, options, onCallback, controller, key, self));
 	else
 		async.call(self, operation)(onError, builder, model, options, onCallback, controller, skip !== true);
 
