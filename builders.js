@@ -5809,7 +5809,7 @@ function AuthOptions(req, res, flags, callback) {
 	this.res = res;
 	this.flags = flags || [];
 	this.processed = false;
-	this.callback = callback;
+	this.$callback = callback;
 }
 
 AuthOptions.prototype = {
@@ -5897,7 +5897,7 @@ AuthOptionsProto.next = AuthOptionsProto.callback = function(is, user) {
 	}
 
 	this.processed = true;
-	this.callback(is, user, this);
+	this.$callback(is, user, this);
 };
 
 AuthOptions.wrap = function(fn) {
