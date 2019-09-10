@@ -40,6 +40,7 @@ const REGEXP_FILTER = /[a-z0-9-_]+:(\s)?(\[)?(String|Number|Boolean|Date)(\])?/i
 
 var schemas = {};
 var schemasall = {};
+var schemacache = {};
 var operations = {};
 var tasks = {};
 var transforms = { pagination: {}, error: {}, restbuilder: {} };
@@ -2346,7 +2347,8 @@ SchemaBuilderEntityProto.prepare = function(model, dependencies, req) {
 						}
 					}
 
-					entity = self.parent.get(type.raw);
+
+					entity = GETSCHEMA(type.raw);
 					if (entity) {
 						item[property] = entity.prepare(val, undefined);
 						item[property].$$parent = item;
@@ -2470,7 +2472,8 @@ SchemaBuilderEntityProto.prepare = function(model, dependencies, req) {
 					break;
 
 				case 7:
-					entity = self.parent.get(type.raw);
+
+					entity = GETSCHEMA(type.raw);
 					if (entity) {
 						tmp = entity.prepare(tmp, dependencies);
 						tmp.$$parent = item;
@@ -3770,24 +3773,24 @@ global.EACHSCHEMA = exports.eachschema = function(group, fn) {
 	}
 };
 
+
 global.$$$ = global.GETSCHEMA = exports.getschema = function(group, name, fn, timeout) {
 
 	if (!name || typeof(name) === 'function') {
 		fn = name;
-		name = group;
-		group = DEFAULT_SCHEMA;
-	}
+		group = DEFAULT_SCHEMA + '/' + group;
+	} else
+		group = group + '/' + name;
 
-	if (fn) {
-		framework_utils.wait(function() {
-			var g = schemas[group];
-			return g && g.get(name) ? true : false;
-		}, err => fn(err, schemas[group].get(name)), timeout || 20000);
-		return;
-	}
+	if (schemacache[group])
+		group = schemacache[group];
+	else
+		group = schemacache[group] = group.toLowerCase();
 
-	var g = schemas[group];
-	return g ? g.get(name) : undefined;
+	if (fn)
+		framework_utils.wait(() => !!schemasall[group], err => fn(err, schemasall[group]), timeout || 20000);
+	else
+		return schemasall[group];
 };
 
 exports.findschema = function(groupname) {
