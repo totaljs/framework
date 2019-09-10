@@ -2440,7 +2440,7 @@ function validate_builder_default(name, value, entity) {
 
 	switch (entity.subtype) {
 		case 'uid':
-				return value.isUID();
+			return value.isUID();
 		case 'zip':
 			return value.isZIP();
 		case 'email':
@@ -2471,12 +2471,11 @@ function validate_builder_default(name, value, entity) {
 	return true;
 }
 
-exports.validate_builder = function(model, error, schema, collection, path, index, fields, pluspath) {
+exports.validate_builder = function(model, error, schema, path, index, fields, pluspath) {
 
-	var entity = collection[schema];
-	var prepare = entity.onValidate || F.onValidate || NOOP;
+	var prepare = schema.onValidate || F.onValidate || NOOP;
 	var current = path ? path + '.' : '';
-	var properties = model && model.$$keys ? model.$$keys : entity.properties;
+	var properties = model && model.$$keys ? model.$$keys : schema.properties;
 	var result;
 
 	if (!pluspath)
@@ -2492,13 +2491,13 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 		if (fields && fields.indexOf(name) === -1)
 			continue;
 
-		var TYPE = collection[schema].schema[name];
+		var TYPE = schema.schema[name];
 		if (TYPE.can && !TYPE.can(model, model.$$workflow || EMPTYOBJECT))
 			continue;
 
 		var value = model[name];
 		var type = typeof(value);
-		var prefix = entity.resourcePrefix ? (entity.resourcePrefix + name) : name;
+		var prefix = schema.resourcePrefix ? (schema.resourcePrefix + name) : name;
 
 		if (value === undefined) {
 			error.push(pluspath + name, '@', current + name, undefined, prefix);
@@ -2508,14 +2507,18 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 
 		if (TYPE.isArray) {
 			if (TYPE.type === 7 && value instanceof Array && value.length) {
-				for (var j = 0, jl = value.length; j < jl; j++)
-					exports.validate_builder(value[j], error, TYPE.raw, collection, current + name + '[' + j + ']', j, undefined, pluspath);
+				var nestedschema = schema.parent.collection[TYPE.raw] || GETSCHEMA(TYPE.raw);
+				if (nestedschema) {
+					for (var j = 0, jl = value.length; j < jl; j++)
+						exports.validate_builder(value[j], error, nestedschema, current + name + '[' + j + ']', j, undefined, pluspath);
+				} else
+					throw new Error('Nested schema "{0}" not found in "{1}".'.format(TYPE.raw, schema.parent.name));
 			} else {
 
 				if (!TYPE.required)
 					continue;
 
-				result = TYPE.validate ? TYPE.validate(value, model) : prepare(name, value, current + name, model, schema, TYPE);
+				result = TYPE.validate ? TYPE.validate(value, model) : prepare(name, value, current + name, model, schema.name, TYPE);
 				if (result == null) {
 					result = value instanceof Array ? value.length > 0 : false;
 					if (result == null || result === true)
@@ -2525,7 +2528,7 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 				type = typeof(result);
 				if (type === 'string') {
 					if (result[0] === '@')
-						error.push(pluspath + name, '@', current + name, index, entity.resourcePrefix + result.substring(1));
+						error.push(pluspath + name, '@', current + name, index, schema.resourcePrefix + result.substring(1));
 					else
 						error.push(pluspath + name, result, current + name, index, prefix);
 				} else if (type === 'boolean') {
@@ -2544,13 +2547,17 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 			// Another schema
 			result = TYPE.validate ? TYPE.validate(value, model) : null;
 
-			if (result == null)
-				exports.validate_builder(value, error, TYPE.raw, collection, current + name, undefined, undefined, pluspath);
-			else {
+			if (result == null) {
+				var nestedschema = schema.parent.collection[TYPE.raw] || GETSCHEMA(TYPE.raw);
+				if (nestedschema)
+					exports.validate_builder(value, error, nestedschema, current + name, undefined, undefined, pluspath);
+				else
+					throw new Error('Nested schema "{0}" not found in "{1}".'.format(TYPE.raw, schema.parent.name));
+			} else {
 				type = typeof(result);
 				if (type === 'string') {
 					if (result[0] === '@')
-						error.push(pluspath + name, '@', current + name, index, entity.resourcePrefix + result.substring(1));
+						error.push(pluspath + name, '@', current + name, index, schema.resourcePrefix + result.substring(1));
 					else
 						error.push(pluspath + name, result, current + name, index, prefix);
 				} else if (type === 'boolean') {
@@ -2564,7 +2571,7 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 		if (!TYPE.required)
 			continue;
 
-		result = TYPE.validate ? TYPE.validate(value, model) : prepare(name, value, current + name, model, schema, TYPE);
+		result = TYPE.validate ? TYPE.validate(value, model) : prepare(name, value, current + name, model, schema.name, TYPE);
 		if (result == null) {
 			result = validate_builder_default(name, value, TYPE);
 			if (result == null || result === true)
@@ -2575,7 +2582,7 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 
 		if (type === 'string') {
 			if (result[0] === '@')
-				error.push(pluspath + name, '@', current + name, index, entity.resourcePrefix + result.substring(1));
+				error.push(pluspath + name, '@', current + name, index, schema.resourcePrefix + result.substring(1));
 			else
 				error.push(pluspath + name, result, current + name, index, prefix);
 		} else if (type === 'boolean') {

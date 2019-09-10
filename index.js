@@ -407,15 +407,13 @@ global.WEBSOCKETCLIENT = function(callback) {
 };
 
 global.$CREATE = function(schema) {
-	schema = parseSchema(schema);
-	var o = framework_builders.getschema(schema[0], schema[1]);
+	var o = framework_builders.getschema(schema);
 	return o ? o.default() : null;
 };
 
 global.$MAKE = function(schema, model, filter, callback, novalidate, argument) {
-	schema = parseSchema(schema);
 
-	var o = framework_builders.getschema(schema[0], schema[1]);
+	var o = framework_builders.getschema(schema);
 	var w = null;
 
 	if (typeof(filter) === 'function') {
@@ -440,8 +438,7 @@ global.$MAKE = function(schema, model, filter, callback, novalidate, argument) {
 };
 
 global.$QUERY = function(schema, options, callback, controller) {
-	schema = parseSchema(schema);
-	var o = framework_builders.getschema(schema[0], schema[1]);
+	var o = framework_builders.getschema(schema);
 	if (o)
 		o.query(options, callback, controller);
 	else
@@ -450,8 +447,7 @@ global.$QUERY = function(schema, options, callback, controller) {
 };
 
 global.$GET = global.$READ = function(schema, options, callback, controller) {
-	schema = parseSchema(schema);
-	var o = framework_builders.getschema(schema[0], schema[1]);
+	var o = framework_builders.getschema(schema);
 	if (o)
 		o.get(options, callback, controller);
 	else
@@ -460,8 +456,7 @@ global.$GET = global.$READ = function(schema, options, callback, controller) {
 };
 
 global.$WORKFLOW = function(schema, name, options, callback, controller) {
-	schema = parseSchema(schema);
-	var o = framework_builders.getschema(schema[0], schema[1]);
+	var o = framework_builders.getschema(schema);
 	if (o)
 		o.workflow2(name, options, callback, controller);
 	else
@@ -470,8 +465,7 @@ global.$WORKFLOW = function(schema, name, options, callback, controller) {
 };
 
 global.$TRANSFORM = function(schema, name, options, callback, controller) {
-	schema = parseSchema(schema);
-	var o = framework_builders.getschema(schema[0], schema[1]);
+	var o = framework_builders.getschema(schema);
 	if (o)
 		o.transform2(name, options, callback, controller);
 	else
@@ -480,8 +474,7 @@ global.$TRANSFORM = function(schema, name, options, callback, controller) {
 };
 
 global.$REMOVE = function(schema, options, callback, controller) {
-	schema = parseSchema(schema);
-	var o = framework_builders.getschema(schema[0], schema[1]);
+	var o = framework_builders.getschema(schema);
 
 	if (typeof(options) === 'function') {
 		controller = callback;
@@ -657,8 +650,7 @@ function performschema(type, schema, model, options, callback, controller, noval
 		options = null;
 	}
 
-	schema = parseSchema(schema);
-	var o = framework_builders.getschema(schema[0], schema[1]);
+	var o = framework_builders.getschema(schema);
 
 	if (!o) {
 		callback && callback(new Error('Schema "{0}" not found.'.format(getSchemaName(schema))));
@@ -701,8 +693,7 @@ global.$ASYNC = function(schema, callback, index, controller) {
 		index = undefined;
 	}
 
-	schema = parseSchema(schema);
-	var o = framework_builders.getschema(schema[0], schema[1]).default();
+	var o = framework_builders.getschema(schema).default();
 
 	if (!o) {
 		callback && callback(new Error('Schema "{0}" not found.'.format(getSchemaName(schema))));
@@ -714,8 +705,7 @@ global.$ASYNC = function(schema, callback, index, controller) {
 };
 
 global.$OPERATION = function(schema, name, options, callback, controller) {
-	schema = parseSchema(schema);
-	var o = framework_builders.getschema(schema[0], schema[1]);
+	var o = framework_builders.getschema(schema);
 	if (o)
 		o.operation2(name, options, callback, controller);
 	else
@@ -18801,23 +18791,6 @@ function controller_json_workflow_multiple(id) {
 		}
 	} else
 		self.$exec(w, null, self.callback(w.view));
-}
-
-// Parses schema group and schema name from string e.g. "User" or "Company/User"
-function parseSchema(name) {
-	var schema = F.temporary.internal['$$$' + name];
-	if (schema)
-		return schema;
-
-	schema = name.split('/');
-
-	if (!schema[1]) {
-		schema[1] = schema[0];
-		schema[0] = 'default';
-	}
-
-	F.temporary.internal['$$$' + name] = schema;
-	return schema;
 }
 
 function ilogger(body) {

@@ -593,7 +593,6 @@ SchemaBuilderEntityProto.define = function(name, type, required, custom) {
 		type = type.name;
 
 	var a = this.schema[name] = this.$parse(name, type, required, custom);
-
 	switch (this.schema[name].type) {
 		case 7:
 			if (this.dependencies)
@@ -1924,7 +1923,7 @@ SchemaBuilderEntityProto.validate = function(model, resourcePrefix, resourceName
 	else
 		path = '';
 
-	framework_utils.validate_builder.call(self, model, builder, self.name, self.parent.collection, '', index, filter, path);
+	framework_utils.validate_builder.call(self, model, builder, self, '', index, filter, path);
 	return builder;
 };
 
@@ -2022,7 +2021,7 @@ SchemaBuilderEntityProto.default = function() {
 				if (type.isArray) {
 					item[property] = [];
 				} else {
-					var tmp = this.find(type.raw);
+					var tmp = this.parent.collection[type.raw] || GETSCHEMA(type.raw);
 					if (tmp) {
 						item[property] = tmp.default();
 					} else {
@@ -2473,13 +2472,13 @@ SchemaBuilderEntityProto.prepare = function(model, dependencies, req) {
 
 				case 7:
 
-					entity = GETSCHEMA(type.raw);
+					entity = self.parent.collection[type.raw] || GETSCHEMA(type.raw);
 					if (entity) {
 						tmp = entity.prepare(tmp, dependencies);
 						tmp.$$parent = item;
 						dependencies && dependencies.push({ name: type.raw, value: self.$onprepare(property, tmp, j, model, req) });
 					} else
-						tmp = null;
+						throw new Error('Schema "{0}" not found'.format(type.raw));
 
 					tmp = self.$onprepare(property, tmp, j, model, req);
 					break;
@@ -3773,19 +3772,21 @@ global.EACHSCHEMA = exports.eachschema = function(group, fn) {
 	}
 };
 
-
 global.$$$ = global.GETSCHEMA = exports.getschema = function(group, name, fn, timeout) {
 
 	if (!name || typeof(name) === 'function') {
+		timeout = fn;
 		fn = name;
-		group = DEFAULT_SCHEMA + '/' + group;
 	} else
 		group = group + '/' + name;
 
 	if (schemacache[group])
 		group = schemacache[group];
-	else
+	else {
+		if (group.indexOf('/') === -1)
+			group = DEFAULT_SCHEMA + '/' + group;
 		group = schemacache[group] = group.toLowerCase();
+	}
 
 	if (fn)
 		framework_utils.wait(() => !!schemasall[group], err => fn(err, schemasall[group]), timeout || 20000);
