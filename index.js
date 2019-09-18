@@ -6116,8 +6116,7 @@ global.AUDIT = function(name, $, type, message) {
 	if (message)
 		data.message = message;
 
-	F.path.verify('logs');
-	U.queue('F.logger', 5, (next) => Fs.appendFile(U.combine(CONF.directory_logs, name + '.log'), JSON.stringify(data) + '\n', next));
+	F.onAudit(name, data);
 };
 
 global.NOSQLREADER = function(filename) {
@@ -6349,6 +6348,11 @@ F.onPrefLoad = function(next) {
 		else
 			next();
 	});
+};
+
+F.onAudit = function(name, data) {
+	F.path.verify('logs');
+	U.queue('F.logger', 5, (next) => Fs.appendFile(U.combine(CONF.directory_logs, name + '.log'), JSON.stringify(data) + '\n', next));
 };
 
 /**
