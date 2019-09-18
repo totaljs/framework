@@ -6105,6 +6105,12 @@ global.AUDIT = function(name, $, type, message) {
 	if (type)
 		data.type = type;
 
+	if ($.name)
+		data.caller = ($.schema ? ($.schema.name + '/') : '') + $.name;
+
+	if (F.id)
+		data.instance = F.id;
+
 	data.created = NOW = new Date();
 
 	if (message)
