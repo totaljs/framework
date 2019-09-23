@@ -18635,12 +18635,11 @@ function parseComponent(body, filename) {
 		end = body.indexOf('@{end}', beg);
 		if (end === -1)
 			break;
-
 		var tmp = body.substring(beg, end);
-		var tmpend = tmp.indexOf('}', 5);
-
+		var tmpend = tmp.indexOf('}', 4);
 		response.parts[tmp.substring(tmp.indexOf(' '), tmpend).trim()] = body.substring(beg + tmpend + 1, end).trim();
-		body = body.substring(0, beg).trim() + body.substring(end + 9).trim();
+		body = body.substring(0, beg).trim() + body.substring(end + 8).trim();
+		end += 5;
 	}
 
 	while (true) {

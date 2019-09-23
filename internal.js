@@ -55,7 +55,7 @@ const REG_BLOCK_BEG = /@\{block.*?\}/i;
 const REG_BLOCK_END = /@\{end\}/i;
 const REG_SKIP_1 = /\('|"/;
 const REG_SKIP_2 = /,(\s)?\w+/;
-const REG_COMPONENTS_GROUP = /('|")[a-z0-9]+('|")/i;
+const REG_COMPONENTS_GROUP = /('|")[a-z0-9_]+('|")/i;
 const HTTPVERBS = { 'get': true, 'post': true, 'options': true, 'put': true, 'delete': true, 'patch': true, 'upload': true, 'head': true, 'trace': true, 'propfind': true };
 const RENDERNOW = ['self.$import(', 'self.route', 'self.$js(', 'self.$css(', 'self.$favicon(', 'self.$script(', '$STRING(self.resource(', '$STRING(RESOURCE(', 'self.translate(', 'language', 'self.sitemap_url(', 'self.sitemap_name(', '$STRING(CONFIG(', '$STRING(config.', '$STRING(config[', '$STRING(CONF.', '$STRING(CONF[', '$STRING(config('];
 const REG_NOTRANSLATE = /@\{notranslate\}/gi;
@@ -1991,6 +1991,7 @@ function view_parse(content, minify, filename, controller) {
 		builder = builder.replace(/(\+\$EMPTY\+)/g, '+').replace(/(\$output=\$EMPTY\+)/g, '$output=').replace(/(\$output\+=\$EMPTY\+)/g, '$output+=').replace(/(\}\$output\+=\$EMPTY)/g, '}').replace(/(\{\$output\+=\$EMPTY;)/g, '{').replace(/(\+\$EMPTY\+)/g, '+').replace(/(>'\+'<)/g, '><').replace(/'\+'/g, '');
 
 	var keys = Object.keys(components);
+
 	builder = builder.replace(REG_VIEW_PART, function(text) {
 		var data = [];
 		var comkeys = Object.keys(F.components.instances);
