@@ -14606,7 +14606,7 @@ ControllerProto.$viewrender = function(filename, generator, model, headers, part
  * Creates a cache for the response without caching layout
  * @param {String} key
  * @param {String} expires Expiration, e.g. `1 minute`
- * @param {Boolean} disabled Disables a caching, optinoal (e.g. for debug mode you can disable a cache), default: `false`
+ * @param {Boolean} disabled Disables a caching, optional (e.g. for debug mode you can disable a cache), default: `false`
  * @param {Function()} fnTo This method is executed when the content is prepared for the cache.
  * @param {Function()} fnFrom This method is executed when the content is readed from the cache.
  * @return {Controller}
