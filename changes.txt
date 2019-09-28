@@ -74,6 +74,7 @@ x added: `$.noop()` for custom responses
 - added: `TABLEREADER(filename)` for reading different files of Table embedded databases
 - added: `Mail.use()` an alias for `F.useSMTP()`
 - added: `F.onAudit(name, data)` delegate for handling audit logs
+- added: Components support a new features called `Parts`, more in docs
 
 x updated: `$.invalid()` without arguments can return a function `function(err)`
 x updated: Mail `unsubscribe` appends new header which enables `unsubscribe` in e.g. iOS

@@ -55,7 +55,7 @@ const REG_BLOCK_BEG = /@\{block.*?\}/i;
 const REG_BLOCK_END = /@\{end\}/i;
 const REG_SKIP_1 = /\('|"/;
 const REG_SKIP_2 = /,(\s)?\w+/;
-const REG_COMPONENTS_GROUP = /('|")[a-z0-9]+('|")/i;
+const REG_COMPONENTS_GROUP = /('|")[a-z0-9_]+('|")/i;
 const HTTPVERBS = { 'get': true, 'post': true, 'options': true, 'put': true, 'delete': true, 'patch': true, 'upload': true, 'head': true, 'trace': true, 'propfind': true };
 const RENDERNOW = ['self.$import(', 'self.route', 'self.$js(', 'self.$css(', 'self.$favicon(', 'self.$script(', '$STRING(self.resource(', '$STRING(RESOURCE(', 'self.translate(', 'language', 'self.sitemap_url(', 'self.sitemap_name(', '$STRING(CONFIG(', '$STRING(config.', '$STRING(config[', '$STRING(CONF.', '$STRING(CONF[', '$STRING(config('];
 const REG_NOTRANSLATE = /@\{notranslate\}/gi;
@@ -76,6 +76,7 @@ const REG_CSS_9 = /;\}/g;
 const REG_CSS_10 = /\$[a-z0-9-_]+(\s)*:.*?;/gi;
 const REG_CSS_11 = /\$.*?(;|\}|!)/gi;
 const REG_CSS_12 = /(margin|padding):.*?(;|})/g;
+const REG_VIEW_PART = /\/\*PART.*?\*\//g;
 const AUTOVENDOR = ['filter', 'appearance', 'column-count', 'column-gap', 'column-rule', 'display', 'transform', 'transform-style', 'transform-origin', 'transition', 'user-select', 'animation', 'perspective', 'animation-name', 'animation-duration', 'animation-timing-function', 'animation-delay', 'animation-iteration-count', 'animation-direction', 'animation-play-state', 'opacity', 'background', 'background-image', 'font-smoothing', 'text-size-adjust', 'backface-visibility', 'box-sizing', 'overflow-scrolling'];
 const WRITESTREAM = { flags: 'w' };
 const ALLOWEDMARKUP = { G: 1, M: 1, R: 1, repository: 1, model: 1, CONF: 1, config: 1, global: 1, resource: 1, RESOURCE: 1, CONFIG: 1, author: 1, root: 1, functions: 1, NOW: 1, F: 1 };
@@ -1860,7 +1861,6 @@ function view_parse(content, minify, filename, controller) {
 			sectionName = cmd.substring(8);
 			isSECTION = true;
 			isFN = true;
-
 		} else if (cmd7 === 'helper ') {
 
 			builderTMP = builder;
@@ -1990,11 +1990,32 @@ function view_parse(content, minify, filename, controller) {
 	if (RELEASE)
 		builder = builder.replace(/(\+\$EMPTY\+)/g, '+').replace(/(\$output=\$EMPTY\+)/g, '$output=').replace(/(\$output\+=\$EMPTY\+)/g, '$output+=').replace(/(\}\$output\+=\$EMPTY)/g, '}').replace(/(\{\$output\+=\$EMPTY;)/g, '{').replace(/(\+\$EMPTY\+)/g, '+').replace(/(>'\+'<)/g, '><').replace(/'\+'/g, '');
 
-	var fn = ('(function(self,repository,model,session,query,body,url,global,helpers,user,config,functions,index,output,files,mobile,settings){var G=F.global;var R=this.repository;var M=model;var theme=this.themeName;var language=this.language;var sitemap=this.repository.$sitemap;' + (isCookie ? 'var cookie=function(name){return self.req.cookie(name)};' : '') + (functions.length ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})');
+	var keys = Object.keys(components);
 
+	builder = builder.replace(REG_VIEW_PART, function(text) {
+		var data = [];
+		var comkeys = Object.keys(F.components.instances);
+		var key = text.substring(6, text.length - 2);
+		for (var i = 0; i < comkeys.length; i++) {
+			var com = F.components.instances[comkeys[i]];
+			if (com.parts && com.group && components[com.group] && com.parts[key])
+				data.push(com.parts[key]);
+		}
+
+		if (!data.length)
+			return '$EMPTY';
+
+		data = data.join('');
+		var index = $VIEWCACHE.indexOf(data);
+		if (index === -1)
+			index = $VIEWCACHE.push(data) - 1;
+		return '$VIEWCACHE[' + index + ']';
+	});
+
+	var fn = ('(function(self,repository,model,session,query,body,url,global,helpers,user,config,functions,index,output,files,mobile,settings){var G=F.global;var R=this.repository;var M=model;var theme=this.themeName;var language=this.language;var sitemap=this.repository.$sitemap;' + (isCookie ? 'var cookie=function(name){return self.req.cookie(name)};' : '') + (functions.length ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})');
 	try {
 		fn = eval(fn);
-		fn.components = Object.keys(components);
+		fn.components = keys;
 	} catch (e) {
 		throw new Error(filename + ': ' + e.message.toString());
 	}
@@ -2049,6 +2070,10 @@ function view_prepare(command, dynamicCommand, functions, controller, components
 		case 'foreach':
 		case 'end':
 			return '';
+
+		case 'part':
+			tmp = command.indexOf('(');
+			return '/*PART{0}*/'.format(command.substring(tmp + 2, command.length - 2));
 
 		case 'section':
 			tmp = command.indexOf('(');

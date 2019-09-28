@@ -4638,6 +4638,9 @@ global.INSTALL = F.install = function(type, name, declaration, options, callback
 			content.css && Fs.appendFileSync(F.path.temp(temporary + '.css'), hash + (DEBUG ? component_debug(name, content.css, 'css') : content.css) + hash.substring(0, hash.length - 1));
 		}
 
+		if (!Object.keys(content.parts).length)
+			content.parts = null;
+
 		if (content.js)
 			F.components.js = true;
 
@@ -4676,6 +4679,7 @@ global.INSTALL = F.install = function(type, name, declaration, options, callback
 				F.temporary.owners[_owner] = true;
 				_controller = '';
 				obj.name = name;
+				obj.parts = content.parts;
 				F.components.instances[name] = obj;
 				obj && typeof(obj.install) === 'function' && obj.install(options || CONF[_owner], name);
 			} catch(e) {
@@ -4688,6 +4692,7 @@ global.INSTALL = F.install = function(type, name, declaration, options, callback
 				F.temporary.owners[_owner] = true;
 				obj = require(js);
 				obj.name = name;
+				obj.parts = content.parts;
 				obj.$owner = _owner;
 				_controller = '';
 				F.components.instances[name] = obj;
@@ -18578,12 +18583,13 @@ global.clearTimeout2 = function(name) {
 };
 
 function parseComponent(body, filename) {
-	var response = {};
 
+	var response = {};
 	response.css = '';
 	response.js = '';
 	response.install = '';
 	response.files = {};
+	response.parts = {};
 
 	var beg = 0;
 	var end = 0;
@@ -18620,6 +18626,20 @@ function parseComponent(body, filename) {
 		data = data.substring(tmp + 1);
 		F.$bundling && Fs.writeFile(U.join(p, name), data.trim(), encoding || 'base64', NOOP);
 		response.files[name] = 1;
+	}
+
+	while (true) {
+		beg = body.indexOf('@{part');
+		if (beg === -1)
+			break;
+		end = body.indexOf('@{end}', beg);
+		if (end === -1)
+			break;
+		var tmp = body.substring(beg, end);
+		var tmpend = tmp.indexOf('}', 4);
+		response.parts[tmp.substring(tmp.indexOf(' '), tmpend).trim()] = body.substring(beg + tmpend + 1, end).trim();
+		body = body.substring(0, beg).trim() + body.substring(end + 8).trim();
+		end += 5;
 	}
 
 	while (true) {
