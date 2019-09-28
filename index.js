@@ -1534,10 +1534,11 @@ F.controller = function(name) {
  * @return {Framework}
  */
 F.useConfig = function(name) {
+	OBSOLETE('F.useConfig', 'F.useConfig will be moreved in Total.js v4');
 	return F.$configure_configs(name, true);
 };
 
-Mail.use = F.useSMTP = function(smtp, options, callback) {
+Mail.use = function(smtp, options, callback) {
 
 	if (typeof(options) === 'function') {
 		callback = options;
@@ -1557,7 +1558,11 @@ Mail.use = F.useSMTP = function(smtp, options, callback) {
 		else if (err)
 			F.error(err, 'F.useSMTP()', null);
 	});
+};
 
+F.useSMTP = function(smtp, options, callback) {
+	OBSOLETE('F.useSMTP', 'Use `Mail.use() instead of F.useSMTP()');
+	Mail.use(smtp, options, callback);
 	return F;
 };
 
@@ -6121,7 +6126,7 @@ global.AUDIT = function(name, $, type, message) {
 	if (message)
 		data.message = message;
 
-	F.onAudit(name, data);
+	DEF.onAudit(name, data);
 };
 
 global.NOSQLREADER = function(filename) {

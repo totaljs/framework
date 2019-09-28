@@ -68,13 +68,13 @@ x added: `$PATCH(schema, model, [options], callback, [controller])` method
 x added: `.env` parser to `process.env`
 x added: `String.parseENV()` for parsing `.env` syntax
 x added: `$.noop()` for custom responses
-- added: `$ACTION(schemaroute, [model], callback, [controller])` evaluates schema
-- added: `process.send('total:restart')` performs a restart of app when the app is in debug mode
-- added: `NOSQLREADER(filename)` for reading different files of NoSQL embedded databases
-- added: `TABLEREADER(filename)` for reading different files of Table embedded databases
-- added: `Mail.use()` an alias for `F.useSMTP()`
-- added: `F.onAudit(name, data)` delegate for handling audit logs
-- added: Components support a new features called `Parts`, more in docs
+x added: `$ACTION(schemaroute, [model], callback, [controller])` evaluates schema
+x added: `process.send('total:restart')` performs a restart of app when the app is in debug mode
+x added: `NOSQLREADER(filename)` for reading different files of NoSQL embedded databases
+x added: `TABLEREADER(filename)` for reading different files of Table embedded databases
+x added: `Mail.use()` an alias for `F.useSMTP()`
+x added: `F.onAudit(name, data)` delegate for handling audit logs
+x added: Components support a new features called `Parts`, more in docs
 
 x updated: `$.invalid()` without arguments can return a function `function(err)`
 x updated: Mail `unsubscribe` appends new header which enables `unsubscribe` in e.g. iOS
@@ -82,7 +82,7 @@ x updated: `MODIFY`, handler contains a new argument `controller`
 x updated: `headers` argument in `controller.proxy` supports `flags: []` for REQEUST method
 x updated: `.filefs()` and `.filenosql()` supports `download` with `true` or with `(name, type) => 'new_name'` (`filename` will be read from NoSQL binary file)
 x updated: `$.done(arg)` argument `@arg` can be `boolean` (response will be as a value) or object/primitive value (`arg` will be as a value)
-- updated: `String.arg(obj, [encode], [def])` added `encode` (`true`, `json`, `html`) and `def` arguments
+x updated: `String.arg(obj, [encode], [def])` added `encode` (`true`, `json`, `html`) and `def` arguments
 x updated: `AUTH(req, res, flags, next)` and `next` function can handle `callback(err, user)`
 x updated: `REQUEST()` supports `keepalive` flag
 x updated: `bundles` mechanism supports merging files `--filename` between `bundles` files
@@ -125,15 +125,15 @@ x renamed: `*.routeImage` to `*.public_image`
 x renamed: `*.routeDownload` to `*.public_download`
 x renamed: `*.routeStatic` to `*.public`
 x renamed: `controller.viewCompile()` to `controller.view_compile()`
-- renamed: event `cache-set` to `cache_set`:
-- renamed: event `controller-render-meta` to `controller_render_meta`
-- renamed: event `request-end` to `request_end`
-- renamed: event `websocket-begin` to `websocket_begin`
-- renamed: event `websocket-end` to `websocket_end`
-- renamed: event `request-begin` to `request_begin`
-- renamed: event `upload-begin` to `upload_begin`
-- renamed: event `upload-end` to `upload_end`
-- renamed: event `cache-expire` to `cache_expired`
+x renamed: event `cache-set` to `cache_set`:
+x renamed: event `controller-render-meta` to `controller_render_meta`
+x renamed: event `request-end` to `request_end`
+x renamed: event `websocket-begin` to `websocket_begin`
+x renamed: event `websocket-end` to `websocket_end`
+x renamed: event `request-begin` to `request_begin`
+x renamed: event `upload-begin` to `upload_begin`
+x renamed: event `upload-end` to `upload_end`
+x renamed: event `cache-expire` to `cache_expired`
 
 x __removed: backward compatibility__ with older version of Node.js < 10
 x removed: `F.hash()`, alternative `String.prototype.hash()`
