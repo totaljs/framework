@@ -21,8 +21,8 @@ x added: `DECRYPTREQ(req, val, [key])` to decrypt value according to the request
 x added: `controller.nocache()`
 x added: `controller.nocontent()`
 x added: `REPO` as a global variable
-x added: `MAIN` as a global variable
 x added: `FUNC` as a global variable
+x added: `MAIN` as a global variable
 x added: `DEF` as a global variable for defining of behaviour for some operations (alternative to `F`)
 x added: `PREF.set(name, [value])` (read+write) or `PREF.propname` (only read) for reading/writing a persistent preferences
 x added: `F.onPrefSave = function(obj)` to write preferences
