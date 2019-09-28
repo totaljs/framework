@@ -53,8 +53,8 @@ x added: `global.REQUIRE()` for local modules within app directory
 x added: `global.isWORKER` variable which contains `true` (when the process is executed as a worker) or `false`
 x added: `ACTION(url, [data], callback)` can evaluate a route without request creation
 x added: `ROUTE('🔒 METHOD URL')`, it means that 🔒 adds `authorized` flag
-x added: `ROUTE('++ METHOD URL')`, it means that `++` or `+` adds `authorized` flag
-x added: `ROUTE('-- METHOD URL')`, it means that `--` or `-` adds `authorized` flag
+x added: `ROUTE('+METHOD URL')`, it means that `++` or `+` adds `authorized` flag
+x added: `ROUTE('-METHOD URL')`, it means that `--` or `-` adds `authorized` flag
 x added: `SchemaOptions`, `OperationOptions`, `TaskOptions` supports filtered query arguments via `$.filter`
 x added: `controller.done([value])`
 x added: `SITEMAP()` as alias to `F.sitemap()`
