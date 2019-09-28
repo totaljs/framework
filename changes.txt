@@ -1,101 +1,101 @@
 ======= 3.3.0
 
-x added: `NEWTASK(name, declaration)` for creating preddefined `TaskBuilder`
-x added: `TASK(name, taskname, callback, [controller/SchemaOptions/OperationOptions/ErrorBuilder])` for executing preddefined `TaskBuilder`
-x added: a new config key `directory_tasks` for `TaskBuilder`
-x added: a global alias `MODIFY()` for `F.modify()`
-x added: a global alias `VIEWCOMPILE()` for `F.view_compile()`
-x added: `mail.type = 'html'` can be `html` (default) or `plain`
-x added: `$.headers` into the `SchemaOptions`, `OperationOptions` and `TaskBuilder`
-x added: `String.parseCSV([delimiter])` returns `Object Array`
-x added: `String.parseUA([structured])` a simple user-agent parser
-x added: `req.useragent([structured])` returns parsed User-Agent
-x added: a new config key `default_crypto` it can rewrite Total.js crypto mechanism (default: `undefined`)
-x added: a new config key `default_crypto_iv` it's an initialization vector (default: generated from `secret`) or it can contain a custom `hex` value
-x added: a new config key `allow_workers_silent` can enable/disable silent workers (default: `false`)
-x added: a new config sub-type called `random`, example: `secret_key    (random)  : 10` and `10` means a length of value
+- added: `NEWTASK(name, declaration)` for creating preddefined `TaskBuilder`
+- added: `TASK(name, taskname, callback, [controller/SchemaOptions/OperationOptions/ErrorBuilder])` for executing preddefined `TaskBuilder`
+- added: a new config key `directory_tasks` for `TaskBuilder`
+- added: a global alias `MODIFY()` for `F.modify()`
+- added: a global alias `VIEWCOMPILE()` for `F.view_compile()`
+- added: `mail.type = 'html'` can be `html` (default) or `plain`
+- added: `$.headers` into the `SchemaOptions`, `OperationOptions` and `TaskBuilder`
+- added: `String.parseCSV([delimiter])` returns `Object Array`
+- added: `String.parseUA([structured])` a simple user-agent parser
+- added: `req.useragent([structured])` returns parsed User-Agent
+- added: a new config key `default_crypto` it can rewrite Total.js crypto mechanism (default: `undefined`)
+- added: a new config key `default_crypto_iv` it's an initialization vector (default: generated from `secret`) or it can contain a custom `hex` value
+- added: a new config key `allow_workers_silent` can enable/disable silent workers (default: `false`)
+- added: a new config sub-type called `random`, example: `secret_key    (random)  : 10` and `10` means a length of value
 - added: a new command `clear_dnscache` for clearing DNS cache
 - added: commands `INSTALL('command', 'command_name', function)` for registering commands and `CMD(name, [a], [b], [c], [d])` for executing commands
-x added: `ENCRYPTREQ(req, val, [key], [strict])` to encrypt value according to the request meta data
-x added: `DECRYPTREQ(req, val, [key])` to decrypt value according to the request meta data
-x added: `controller.nocache()`
-x added: `controller.nocontent()`
-x added: `REPO` as a global variable
-x added: `FUNC` as a global variable
-x added: `MAIN` as a global variable
-x added: `DEF` as a global variable for defining of behaviour for some operations (alternative to `F`)
-x added: `PREF.set(name, [value])` (read+write) or `PREF.propname` (only read) for reading/writing a persistent preferences
-x added: `F.onPrefSave = function(obj)` to write preferences
-x added: `F.onPrefLoad = function(next(obj))` to read preferences
-x added: `RESTBuilder.url(url)` which returns a new instance of `RESTBuilder` for chaining
-x added: `restbuilder.keepalive()` enables a keepalive for `RESTBuilder` instance
-x added: `SESSION()` management, more in docs
-x added: `controller.sessionid` with ID of `SESSION()`
-x added: `AUTH()` supports a new auth declaration with `$` as `AuthOptions` like `SchemaOptions` or `OperationOptions`
-x added: `AuthOptions` to prototypes
-x added: `ErrorBuilder.length` property (alias for `instance.items.length)
-x added: Schemas `prepare` supports `req` argument
-x added: `DEF.currencies.eur = function(val) {}` registers a currency formatter
-x added: `DEF.helpers` registers a new view engine helper (`F.helpers` is alias for for this object)
-x added: `DEF.validators` is alias for for `F.validators`
-x added: usage of currency formatter `Number.currency(currency)`
-x added: new schema type `Number2` with default value is `null`, not zero `0`
-x added: `@{json2(model, elementID, key1, key2, key3)}` can serialize data with keys defined into the `<script type="application/json">`
-x added: schemas supports `PATCH` and `.setPatch()`, only specified field are processed
-x added: `SchemaOptions` supports `$.keys` for `PATCH` method
-x added: `schema.cl(name)` ("cl" means codelist) returns `{Array}` a list of values from defined enum/keyvalue
-x added: `schema.props()` returns `{Object}` meta info about all defined properties
-x added: `SchemaOptions`, `OperationOptions` and `TaskOptions` supports `$.req` and `$.res` properties
-x added: `AUDIT(name, $, [type], message)` a method for audit logs
-x added: __obsolete__ message to older declaration of middleware, schemas and operations
-x added: `U.diffarr(prop, arr_A, arr_B)` for comparing of two arrays
-x added: `DIFFARR(prop, arr_A, arr_B)` is a global alias for `U.diffarr()`
-x added: `global.REQUIRE()` for local modules within app directory
-x added: `global.isWORKER` variable which contains `true` (when the process is executed as a worker) or `false`
-x added: `ACTION(url, [data], callback)` can evaluate a route without request creation
-x added: `ROUTE('🔒 METHOD URL')`, it means that 🔒 adds `authorized` flag
-x added: `ROUTE('+METHOD URL')`, it means that `++` or `+` adds `authorized` flag
-x added: `ROUTE('-METHOD URL')`, it means that `--` or `-` adds `authorized` flag
-x added: `SchemaOptions`, `OperationOptions`, `TaskOptions` supports filtered query arguments via `$.filter`
-x added: `controller.done([value])`
-x added: `SITEMAP()` as alias to `F.sitemap()`
-x added: config key `allow_localize` enables a localization for all `HTML` files
-x added: `controller.breadcrumb` returns all sitemap items
-x added: `PAUSESERVER(name, pause)` pauses web server (alias for `F.wait()`)
-x added: `PROXY(endpoint, hostname, [copypath], [before_fn(uri,req,res)], [after_fn(res)])` makes a direct proxy from webserver
-x added: `schema.middleware(function($, next))` for creating simple middlewares for Schema operations
-x added: `FILE404(fn(req, res))` performs a simple fallback for non-existing files
-x added: `$PATCH(schema, model, [options], callback, [controller])` method
-x added: `.env` parser to `process.env`
-x added: `String.parseENV()` for parsing `.env` syntax
-x added: `$.noop()` for custom responses
-x added: `$ACTION(schemaroute, [model], callback, [controller])` evaluates schema
-x added: `process.send('total:restart')` performs a restart of app when the app is in debug mode
-x added: `NOSQLREADER(filename)` for reading different files of NoSQL embedded databases
-x added: `TABLEREADER(filename)` for reading different files of Table embedded databases
-x added: `Mail.use()` an alias for `F.useSMTP()`
-x added: `F.onAudit(name, data)` delegate for handling audit logs
-x added: Components support a new features called `Parts`, more in docs
+- added: `ENCRYPTREQ(req, val, [key], [strict])` to encrypt value according to the request meta data
+- added: `DECRYPTREQ(req, val, [key])` to decrypt value according to the request meta data
+- added: `controller.nocache()`
+- added: `controller.nocontent()`
+- added: `REPO` as a global variable
+- added: `FUNC` as a global variable
+- added: `MAIN` as a global variable
+- added: `DEF` as a global variable for defining of behaviour for some operations (alternative to `F`)
+- added: `PREF.set(name, [value])` (read+write) or `PREF.propname` (only read) for reading/writing a persistent preferences
+- added: `F.onPrefSave = function(obj)` to write preferences
+- added: `F.onPrefLoad = function(next(obj))` to read preferences
+- added: `RESTBuilder.url(url)` which returns a new instance of `RESTBuilder` for chaining
+- added: `restbuilder.keepalive()` enables a keepalive for `RESTBuilder` instance
+- added: `SESSION()` management, more in docs
+- added: `controller.sessionid` with ID of `SESSION()`
+- added: `AUTH()` supports a new auth declaration with `$` as `AuthOptions` like `SchemaOptions` or `OperationOptions`
+- added: `AuthOptions` to prototypes
+- added: `ErrorBuilder.length` property (alias for `instance.items.length)
+- added: Schemas `prepare` supports `req` argument
+- added: `DEF.currencies.eur = function(val) {}` registers a currency formatter
+- added: `DEF.helpers` registers a new view engine helper (`F.helpers` is alias for for this object)
+- added: `DEF.validators` is alias for for `F.validators`
+- added: usage of currency formatter `Number.currency(currency)`
+- added: new schema type `Number2` with default value is `null`, not zero `0`
+- added: `@{json2(model, elementID, key1, key2, key3)}` can serialize data with keys defined into the `<script type="application/json">`
+- added: schemas supports `PATCH` and `.setPatch()`, only specified field are processed
+- added: `SchemaOptions` supports `$.keys` for `PATCH` method
+- added: `schema.cl(name)` ("cl" means codelist) returns `{Array}` a list of values from defined enum/keyvalue
+- added: `schema.props()` returns `{Object}` meta info about all defined properties
+- added: `SchemaOptions`, `OperationOptions` and `TaskOptions` supports `$.req` and `$.res` properties
+- added: `AUDIT(name, $, [type], message)` a method for audit logs
+- added: __obsolete__ message to older declaration of middleware, schemas and operations
+- added: `U.diffarr(prop, arr_A, arr_B)` for comparing of two arrays
+- added: `DIFFARR(prop, arr_A, arr_B)` is a global alias for `U.diffarr()`
+- added: `global.REQUIRE()` for local modules within app directory
+- added: `global.isWORKER` variable which contains `true` (when the process is executed as a worker) or `false`
+- added: `ACTION(url, [data], callback)` can evaluate a route without request creation
+- added: `ROUTE('🔒 METHOD URL')`, it means that 🔒 adds `authorized` flag
+- added: `ROUTE('+METHOD URL')`, it means that `++` or `+` adds `authorized` flag
+- added: `ROUTE('-METHOD URL')`, it means that `--` or `-` adds `authorized` flag
+- added: `SchemaOptions`, `OperationOptions`, `TaskOptions` supports filtered query arguments via `$.filter`
+- added: `controller.done([value])`
+- added: `SITEMAP()` as alias to `F.sitemap()`
+- added: config key `allow_localize` enables a localization for all `HTML` files
+- added: `controller.breadcrumb` returns all sitemap items
+- added: `PAUSESERVER(name, pause)` pauses web server (alias for `F.wait()`)
+- added: `PROXY(endpoint, hostname, [copypath], [before_fn(uri,req,res)], [after_fn(res)])` makes a direct proxy from webserver
+- added: `schema.middleware(function($, next))` for creating simple middlewares for Schema operations
+- added: `FILE404(fn(req, res))` performs a simple fallback for non-existing files
+- added: `$PATCH(schema, model, [options], callback, [controller])` method
+- added: `.env` parser to `process.env`
+- added: `String.parseENV()` for parsing `.env` syntax
+- added: `$.noop()` for custom responses
+- added: `$ACTION(schemaroute, [model], callback, [controller])` evaluates schema
+- added: `process.send('total:restart')` performs a restart of app when the app is in debug mode
+- added: `NOSQLREADER(filename)` for reading different files of NoSQL embedded databases
+- added: `TABLEREADER(filename)` for reading different files of Table embedded databases
+- added: `Mail.use()` an alias for `F.useSMTP()`
+- added: `F.onAudit(name, data)` delegate for handling audit logs
+- added: Components support a new features called `Parts`, more in docs
 
-x updated: `$.invalid()` without arguments can return a function `function(err)`
-x updated: Mail `unsubscribe` appends new header which enables `unsubscribe` in e.g. iOS
-x updated: `MODIFY`, handler contains a new argument `controller`
-x updated: `headers` argument in `controller.proxy` supports `flags: []` for REQEUST method
-x updated: `.filefs()` and `.filenosql()` supports `download` with `true` or with `(name, type) => 'new_name'` (`filename` will be read from NoSQL binary file)
-x updated: `$.done(arg)` argument `@arg` can be `boolean` (response will be as a value) or object/primitive value (`arg` will be as a value)
-x updated: `String.arg(obj, [encode], [def])` added `encode` (`true`, `json`, `html`) and `def` arguments
-x updated: `AUTH(req, res, flags, next)` and `next` function can handle `callback(err, user)`
-x updated: `REQUEST()` supports `keepalive` flag
-x updated: `bundles` mechanism supports merging files `--filename` between `bundles` files
-x updated: `String.hash(true)` returns unsigned int
-x updated: `CONF:default_image_converter` supports `magick` for new version of ImageMagick
-x updated: `CONF.default_image_consumption` can contain ZERO value which means disabled optimialization of CPU/memory consumption
-x updated: `CONF.default_image_consumption` has changed a default value to `0`
-x updated: `U.parseXML(str, [replace])` and `String.parseXML([replace])` contains a new argument called `replace`
-x updated: `LOAD()` added a callback function
-x updated: components support `encoding="utf8"` attribute for `<file` tag (default: `base64`)
-x updated: `EventEmitter2` supports a new argument `obj`, example: `U.EventEmitter2(obj)` or supports `.extend` method: `U.EventEmitter2.extend(proto)`
-x updated: `UID()` generates new types of `UID` with 100% backward compatibility
+- updated: `$.invalid()` without arguments can return a function `function(err)`
+- updated: Mail `unsubscribe` appends new header which enables `unsubscribe` in e.g. iOS
+- updated: `MODIFY`, handler contains a new argument `controller`
+- updated: `headers` argument in `controller.proxy` supports `flags: []` for REQEUST method
+- updated: `.filefs()` and `.filenosql()` supports `download` with `true` or with `(name, type) => 'new_name'` (`filename` will be read from NoSQL binary file)
+- updated: `$.done(arg)` argument `@arg` can be `boolean` (response will be as a value) or object/primitive value (`arg` will be as a value)
+- updated: `String.arg(obj, [encode], [def])` added `encode` (`true`, `json`, `html`) and `def` arguments
+- updated: `AUTH(req, res, flags, next)` and `next` function can handle `callback(err, user)`
+- updated: `REQUEST()` supports `keepalive` flag
+- updated: `bundles` mechanism supports merging files `--filename` between `bundles` files
+- updated: `String.hash(true)` returns unsigned int
+- updated: `CONF:default_image_converter` supports `magick` for new version of ImageMagick
+- updated: `CONF.default_image_consumption` can contain ZERO value which means disabled optimialization of CPU/memory consumption
+- updated: `CONF.default_image_consumption` has changed a default value to `0`
+- updated: `U.parseXML(str, [replace])` and `String.parseXML([replace])` contains a new argument called `replace`
+- updated: `LOAD()` added a callback function
+- updated: components support `encoding="utf8"` attribute for `<file` tag (default: `base64`)
+- updated: `EventEmitter2` supports a new argument `obj`, example: `U.EventEmitter2(obj)` or supports `.extend` method: `U.EventEmitter2.extend(proto)`
+- updated: `UID()` generates new types of `UID` with 100% backward compatibility
 - updated: `FILESTORAGE()` now it works in cluster mode
 
 - fixed: schemas validation
@@ -118,27 +118,27 @@ x updated: `UID()` generates new types of `UID` with 100% backward compatibility
 - fixed: uploading files
 - fixed: `U.getExtension()` by @molda
 
-x renamed: `*.routeScript` to `*.public_js`
-x renamed: `*.routeStyle` to `*.public_css`
-x renamed: `*.routeFont` to `*.public_font`
-x renamed: `*.routeVideo` to `*.public_video`
-x renamed: `*.routeImage` to `*.public_image`
-x renamed: `*.routeDownload` to `*.public_download`
-x renamed: `*.routeStatic` to `*.public`
-x renamed: `controller.viewCompile()` to `controller.view_compile()`
-x renamed: event `cache-set` to `cache_set`:
-x renamed: event `controller-render-meta` to `controller_render_meta`
-x renamed: event `request-end` to `request_end`
-x renamed: event `websocket-begin` to `websocket_begin`
-x renamed: event `websocket-end` to `websocket_end`
-x renamed: event `request-begin` to `request_begin`
-x renamed: event `upload-begin` to `upload_begin`
-x renamed: event `upload-end` to `upload_end`
-x renamed: event `cache-expire` to `cache_expired`
+- renamed: `*.routeScript` to `*.public_js`
+- renamed: `*.routeStyle` to `*.public_css`
+- renamed: `*.routeFont` to `*.public_font`
+- renamed: `*.routeVideo` to `*.public_video`
+- renamed: `*.routeImage` to `*.public_image`
+- renamed: `*.routeDownload` to `*.public_download`
+- renamed: `*.routeStatic` to `*.public`
+- renamed: `controller.viewCompile()` to `controller.view_compile()`
+- renamed: event `cache-set` to `cache_set`:
+- renamed: event `controller-render-meta` to `controller_render_meta`
+- renamed: event `request-end` to `request_end`
+- renamed: event `websocket-begin` to `websocket_begin`
+- renamed: event `websocket-end` to `websocket_end`
+- renamed: event `request-begin` to `request_begin`
+- renamed: event `upload-begin` to `upload_begin`
+- renamed: event `upload-end` to `upload_end`
+- renamed: event `cache-expire` to `cache_expired`
 
-x __removed: backward compatibility__ with older version of Node.js < 10
-x removed: `F.hash()`, alternative `String.prototype.hash()`
-x removed: `controller.hash()`, alternative `String.prototype.hash()`
+- __removed: backward compatibility__ with older version of Node.js < 10
+- removed: `F.hash()`, alternative `String.prototype.hash()`
+- removed: `controller.hash()`, alternative `String.prototype.hash()`
 
 - improved Schemas and error handling
 - improved `res.filefs()` method for nonexistent files
