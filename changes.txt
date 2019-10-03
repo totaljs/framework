@@ -1,3 +1,7 @@
+======= 3.3.1
+
+- fixed: `AUDIT()` method
+
 ======= 3.3.0
 
 - added: `NEWTASK(name, declaration)` for creating preddefined `TaskBuilder`

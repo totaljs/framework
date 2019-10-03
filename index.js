@@ -6360,7 +6360,7 @@ F.onPrefLoad = function(next) {
 	});
 };
 
-F.onAudit = function(name, data) {
+DEF.onAudit = F.onAudit = function(name, data) {
 	F.path.verify('logs');
 	U.queue('F.logger', 5, (next) => Fs.appendFile(U.combine(CONF.directory_logs, name + '.log'), JSON.stringify(data) + '\n', next));
 };
@@ -11223,7 +11223,7 @@ Controller.prototype = {
 	},
 
 	get schema() {
-		return this.route.schema[0] === 'default' ? this.route.schema[1] : this.route.schema.join('/');
+		return this.route.schema ? this.route.schema[0] === 'default' ? this.route.schema[1] : this.route.schema.join('/') : '';
 	},
 
 	get workflow() {
