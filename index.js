@@ -115,6 +115,21 @@ global.REQUIRE = function(path) {
 	return require(F.directory + '/' + path);
 };
 
+function flowwrapper(name) {
+	if (!name)
+		name = 'default';
+	if (F.flows[name])
+		return F.flows[name];
+	var flow = new framework_flow.make(name);
+	return F.flows[name] = flow;
+}
+
+global.FLOWSTREAM = function(name) {
+	global.framework_flow = require('./flow');
+	global.FLOW = flowwrapper;
+	return flowwrapper(name);
+};
+
 var DEF = global.DEF = {};
 
 DEF.currencies = {};
@@ -1103,6 +1118,7 @@ function Framework() {
 
 	self.workers = {};
 	self.sessions = {};
+	self.flows = {};
 	self.databases = {};
 	self.databasescleaner = {};
 	self.directory = HEADERS.workers2.cwd = HEADERS.workers.cwd = directory;
