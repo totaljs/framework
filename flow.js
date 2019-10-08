@@ -30,11 +30,10 @@ MP.send = function(output) {
 		if (self.schema.connections) {
 			outputs = Object.keys(self.schema.connections);
 			for (var i = 0; i < outputs.length; i++)
-				count += MP.send(outputs[i]);
+				count += self.send(outputs[i]);
 		}
 		return count;
 	}
-
 
 	var meta = self.main.meta;
 	var now = Date.now();
