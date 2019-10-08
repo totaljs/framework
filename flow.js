@@ -5,16 +5,80 @@ function Message() {}
 
 var MP = Message.prototype;
 
+MP.emit = function(name, a, b, c, d, e, f, g) {
+
+	if (!this.$events)
+		return this;
+
+	var evt = this.$events[name];
+	if (evt) {
+		var clean = false;
+		for (var i = 0, length = evt.length; i < length; i++) {
+			if (evt[i].$once)
+				clean = true;
+			evt[i].call(this, a, b, c, d, e, f, g);
+		}
+		if (clean) {
+			evt = evt.remove(n => n.$once);
+			if (evt.length)
+				this.$events[name] = evt;
+			else
+				this.$events[name] = undefined;
+		}
+	}
+	return this;
+};
+
+MP.on = function(name, fn) {
+	if (!this.$events)
+		this.$events = {};
+	if (this.$events[name])
+		this.$events[name].push(fn);
+	else
+		this.$events[name] = [fn];
+	return this;
+};
+
+MP.once = function(name, fn) {
+	fn.$once = true;
+	return this.on(name, fn);
+};
+
+MP.removeListener = function(name, fn) {
+	if (this.$events) {
+		var evt = this.$events[name];
+		if (evt) {
+			evt = evt.remove(n => n === fn);
+			if (evt.length)
+				this.$events[name] = evt;
+			else
+				this.$events[name] = undefined;
+		}
+	}
+	return this;
+};
+
+MP.removeAllListeners = function(name) {
+	if (this.$events) {
+		if (name === true)
+			this.$events = EMPTYOBJECT;
+		else if (name)
+			this.$events[name] = undefined;
+		else
+			this.$events = {};
+	}
+	return this;
+};
+
 MP.clone = function() {
 	var self = this;
 	var obj = new Message();
+	obj.$events = self.$events;
 	obj.duration = self.duration;
 	obj.repo = self.repo;
 	obj.main = self.main;
-	obj.prev = self.prev;
-	obj.id = self.id;
+	obj.counter = self.counter;
 	obj.data = self.data;
-	obj.prev = self.main.meta.flow[self.instanceid];
 	obj.count = self.count;
 	obj.processed = 0;
 	return obj;
@@ -55,16 +119,23 @@ MP.send = function(output) {
 			if (next && next.message) {
 				var inputindex = +output.index;
 				var message = self.clone();
+				message.id = output.id;
 				message.count++;
-				message.input = inputindex;
-				message.output = output;
-				message.instance = next;
+
+				message.fromindex = i;
+				message.fromid = self.to ? self.to.id : null;
+				message.from = self.to;
+				message.toindex = inputindex;
+				message.toid = next.id;
+				message.to = next;
+
 				message.options = schema.options;
 				message.schema = schema;
 				message.duration2 = now;
 				schema.stats.input++;
 				schema.stats.pending++;
-				next.message(message);
+				self.$events.message && self.emit('message', message);
+				setImmediate(sendmessage, next, message);
 				count++;
 			}
 		}
@@ -88,6 +159,8 @@ MP.destroy = function() {
 		self.schema.stats.duration = Date.now() - self.duration2;
 	}
 
+	self.$events.end && self.emit('end', self);
+
 	self.repo = null;
 	self.main = null;
 	self.prev = null;
@@ -98,6 +171,8 @@ MP.destroy = function() {
 	self.duration = null;
 	self.duration2 = null;
 	self.instance = null;
+	self.caller = null;
+	self.$events = null;
 };
 
 function Flow(name) {
@@ -194,8 +269,12 @@ FP.use = function(schema, callback) {
 	return self;
 };
 
+function sendmessage(instance, message) {
+	instance.message(message);
+}
+
 // path = ID__INPUTINDEX
-FP.trigger = function(path, data) {
+FP.trigger = function(path, data, events) {
 	path = path.split('__');
 	var self = this;
 	var inputindex = +path[1];
@@ -204,25 +283,52 @@ FP.trigger = function(path, data) {
 		var instance = self.meta.components[schema.component];
 		if (instance && instance.message) {
 			var message = new Message();
+
+			// message.id = path[0];
+			message.$events = events || {};
 			message.duration = message.duration2 = Date.now();
+
 			message.count = 1;
 			message.repo = {};
 			message.main = self;
 			message.data = data;
-			message.prev = null;
-			message.id = self.meta.messages++;
-			message.input = inputindex;
-			message.output = -1;
-			message.instance = instance;
+			message.counter = self.meta.messages++;
+
+			message.fromid = null;
+			message.fromindex = -1;
+			message.from = null;
+
+			message.to = instance;
+			message.toid = instance.id;
+			message.toindex = inputindex;
+
 			message.options = instance.options;
 			message.schema = schema;
 			message.processed = 0;
 			schema.stats.input++;
 			schema.stats.pending++;
-			instance.message(message);
-			return true;
+			setImmediate(sendmessage, instance, message);
+			return message;
 		}
 	}
+};
+
+FP.trigger2 = function(path, data) {
+	var self = this;
+	var keys = Object.keys(self.meta.flow);
+	var events = {};
+	var obj;
+
+	path = path.split('__');
+
+	for (var i = 0; i < keys.length; i++) {
+		var key = keys[i];
+		var flow = self.meta.flow[key];
+		if (flow.component === path[0])
+			obj = self.trigger(key + '__' + [1], data, events);
+	}
+
+	return obj;
 };
 
 FP.clear = function() {
