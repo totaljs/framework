@@ -24,7 +24,11 @@ flow.register('condition', function(self) {
 	};
 
 	self.message = function(message) {
-		console.log('message:', message.data);
+		if (message.cache.kokotaris)
+			message.cache.kokotaris++;
+		else
+			message.cache.kokotaris = 1;
+		console.log('con message:', message.data, message.cache);
 		message.data.value += 5;
 		message.send(1); // send output 1
 		message.send(0); // send output 0
@@ -32,7 +36,7 @@ flow.register('condition', function(self) {
 
 }, { operator: '>', value: 3 });
 
-flow.register('something', 'instance.message=function(message){console.log("NOFUCK",message.data);};');
+flow.register('something', 'instance.message=function(message){console.log("NOFUCK",message.data,message.cache);};');
 
 flow.register('sms', function(self) {
 
@@ -42,7 +46,7 @@ flow.register('sms', function(self) {
 
 	self.message = function(message) {
 		message.data = message.options;
-		console.log('SMS send:', message.data);
+		console.log('SMS send:', message.data, message.cache);
 		setTimeout(function() {
 			message.destroy();
 		}, 500);
@@ -50,7 +54,7 @@ flow.register('sms', function(self) {
 
 }, { operator: '>', value: 3 });
 
-flow.use('{"COM1":{"component":"trigger","connections":{"1":[{"id":"COM2","index":"0"}],"0":[{"id":"COM3","index":"0"}]}},"COM2":{"component":"condition"},"COM3":{"component":"sms","options":{"message":"EMBEDDED FLOW IS ALIVE"}}}', console.log);
+flow.use('{"COM1":{"component":"trigger","connections":{"1":[{"id":"COM2","index":"0"}],"0":[{"id":"COM3","index":"0"},{"id":"COM2","index":"0"}]}},"COM2":{"component":"condition"},"COM3":{"component":"sms","options":{"message":"EMBEDDED FLOW IS ALIVE"}}}', console.log);
 
 // flow.trigger2('trigger__0', { value: 2 })
 flow.trigger('COM1__0', { value: 2 }).on('message', function(msg) {
