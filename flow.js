@@ -304,7 +304,7 @@ function sendmessage(instance, message, event) {
 FP.trigger = function(path, data, events) {
 	path = path.split('__');
 	var self = this;
-	var inputindex = +path[1];
+	var inputindex = path.length === 1 ? 0 : +path[1];
 	var schema = self.meta.flow[path[0]];
 	if (schema && schema.component) {
 		var instance = self.meta.components[schema.component];
@@ -356,7 +356,7 @@ FP.trigger2 = function(path, data) {
 		var key = keys[i];
 		var flow = self.meta.flow[key];
 		if (flow.component === path[0])
-			obj = self.trigger(key + '__' + [1], data, events);
+			obj = self.trigger(key + '__' + (path.length === 1 ? 0 : path[1]), data, events);
 	}
 
 	return obj;
