@@ -117,22 +117,19 @@ MP.send = function(output) {
 			if (next && next.message) {
 				var inputindex = +output.index;
 				var message = self.clone();
-
 				// message.id = output.id;
 				message.used++;
-
 				message.fromindex = i;
 				message.fromid = self.toid;
 				message.from = self.to;
 				message.fromcomponent = self.schema.component;
 				message.fromschema = self.toschema;
-
 				message.toindex = inputindex;
 				message.toid = output.id;
 				message.to = next;
 				message.tocomponent = schema.component;
 				message.toschema = message.schema = schema;
-
+				message.cache = schema.cache;
 				message.options = schema.options;
 				message.duration2 = now;
 				schema.stats.input++;
@@ -187,6 +184,7 @@ function Flow(name) {
 	t.meta.components = {};
 	t.meta.flow = {};
 	t.meta.messages = 0;
+	t.meta.cache = {};
 	t.$events = {};
 	new framework_utils.EventEmitter2(t);
 }
@@ -199,15 +197,17 @@ FP.register = function(name, declaration) {
 	if (typeof(declaration) === 'string')
 		declaration = new Function('instance', declaration);
 
+	var cache;
 	var prev = self.meta.components[name];
 	if (prev) {
+		cache = prev.cache;
 		prev.connected = false;
 		prev.disabled = true;
 		prev.destroy = null;
 		prev.disconnect && prev.disconnect();
 	}
 
-	var curr = { id: name, main: self, connected: true, disabled: false };
+	var curr = { id: name, main: self, connected: true, disabled: false, cache: cache || {} };
 	declaration(curr);
 	self.meta.components[name] = curr;
 	self.$events.register && self.emit('register', name, curr);
@@ -236,6 +236,7 @@ FP.unregister = function(name) {
 		curr.connected = false;
 		curr.disabled = true;
 		curr.destroy = null;
+		curr.cache = null;
 		curr.disconnect && curr.disconnect();
 		curr.uninstall && curr.uninstall();
 		delete self.meta.components[name];
@@ -262,6 +263,7 @@ FP.use = function(schema, callback) {
 			var key = keys[i];
 			var instance = schema[key];
 			schema[key].stats = { pending: 0, input: 0, output: 0, duration: 0 };
+			schema[key].cache = {};
 			var component = self.meta.components[instance.component];
 			if (!component)
 				err.push(key, '"' + instance.component + '" component not found.');
@@ -318,6 +320,7 @@ FP.trigger = function(path, data, events) {
 			message.toindex = inputindex;
 			message.tocomponent = instance.id;
 			message.toschema = message.schema = schema;
+			message.cache = instance.cache;
 
 			message.options = instance.options;
 			message.processed = 0;
