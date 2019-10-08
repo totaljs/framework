@@ -52,8 +52,8 @@ flow.register('sms', function(self) {
 
 flow.use('{"COM1":{"component":"trigger","connections":{"1":[{"id":"COM2","index":"0"}],"0":[{"id":"COM3","index":"0"}]}},"COM2":{"component":"condition"},"COM3":{"component":"sms","options":{"message":"EMBEDDED FLOW IS ALIVE"}}}', console.log);
 
-//flow.trigger('COM1__0', { value: 2 });
-flow.trigger2('trigger__0', { value: 2 }).on('message', function(msg) {
+// flow.trigger2('trigger__0', { value: 2 })
+flow.trigger('COM1__0', { value: 2 }).on('message', function(msg) {
 	console.log('MSG --->', msg.id, msg.fromid, msg.toid);
 }).on('end', function(msg) {
 	console.log('END', msg.data);

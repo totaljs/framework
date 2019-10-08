@@ -77,9 +77,9 @@ MP.clone = function() {
 	obj.duration = self.duration;
 	obj.repo = self.repo;
 	obj.main = self.main;
-	obj.counter = self.counter;
-	obj.data = self.data;
 	obj.count = self.count;
+	obj.data = self.data;
+	obj.used = self.used;
 	obj.processed = 0;
 	return obj;
 };
@@ -119,8 +119,9 @@ MP.send = function(output) {
 			if (next && next.message) {
 				var inputindex = +output.index;
 				var message = self.clone();
+
 				message.id = output.id;
-				message.count++;
+				message.used++;
 
 				message.fromindex = i;
 				message.fromid = self.to ? self.to.id : null;
@@ -150,6 +151,7 @@ MP.replace = function(data) {
 };
 
 MP.destroy = function() {
+
 	var self = this;
 
 	if (self.processed === 0) {
@@ -163,15 +165,13 @@ MP.destroy = function() {
 
 	self.repo = null;
 	self.main = null;
-	self.prev = null;
+	self.from = null;
+	self.to = null;
 	self.data = null;
-	self.prev = null;
 	self.schema = null;
 	self.options = null;
 	self.duration = null;
 	self.duration2 = null;
-	self.instance = null;
-	self.caller = null;
 	self.$events = null;
 };
 
@@ -269,7 +269,8 @@ FP.use = function(schema, callback) {
 	return self;
 };
 
-function sendmessage(instance, message) {
+function sendmessage(instance, message, event) {
+	event && message.$events.message && message.emit('message', message);
 	instance.message(message);
 }
 
@@ -288,11 +289,12 @@ FP.trigger = function(path, data, events) {
 			message.$events = events || {};
 			message.duration = message.duration2 = Date.now();
 
-			message.count = 1;
+			message.used = 1;
 			message.repo = {};
 			message.main = self;
 			message.data = data;
-			message.counter = self.meta.messages++;
+			message.count = self.meta.messages++;
+			message.id = path[0];
 
 			message.fromid = null;
 			message.fromindex = -1;
@@ -307,7 +309,7 @@ FP.trigger = function(path, data, events) {
 			message.processed = 0;
 			schema.stats.input++;
 			schema.stats.pending++;
-			setImmediate(sendmessage, instance, message);
+			setImmediate(sendmessage, instance, message, true);
 			return message;
 		}
 	}
