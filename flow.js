@@ -22,10 +22,7 @@ MP.emit = function(name, a, b, c, d, e, f, g) {
 		}
 		if (clean) {
 			evt = evt.remove(n => n.$once);
-			if (evt.length)
-				self.$events[name] = evt;
-			else
-				self.$events[name] = undefined;
+			self.$events[name] = evt.length ? evt : undefined;
 		}
 	}
 	return self;
@@ -53,10 +50,7 @@ MP.removeListener = function(name, fn) {
 		var evt = self.$events[name];
 		if (evt) {
 			evt = evt.remove(n => n === fn);
-			if (evt.length)
-				self.$events[name] = evt;
-			else
-				self.$events[name] = undefined;
+			self.$events[name] = evt.length ? evt : undefined;
 		}
 	}
 	return self;
@@ -65,7 +59,7 @@ MP.removeListener = function(name, fn) {
 MP.removeAllListeners = function(name) {
 	if (this.$events) {
 		if (name === true)
-			this.$events = EMPTYOBJECT;
+			this.$events = {};
 		else if (name)
 			this.$events[name] = undefined;
 		else
@@ -144,6 +138,7 @@ MP.send = function(output) {
 				schema.stats.input++;
 				schema.stats.pending++;
 				self.$events.message && self.emit('message', message);
+				self.main.$events.message && self.main.emit('message', message);
 				setImmediate(sendmessage, next, message);
 				count++;
 			}
@@ -170,6 +165,7 @@ MP.destroy = function() {
 	}
 
 	self.$events.end && self.emit('end', self);
+	self.main.$events.end && self.main.emit('end', self);
 
 	self.repo = null;
 	self.main = null;
@@ -260,6 +256,7 @@ FP.use = function(schema, callback) {
 	var err = new ErrorBuilder();
 
 	if (schema) {
+
 		var keys = Object.keys(schema);
 		for (var i = 0; i < keys.length; i++) {
 			var key = keys[i];
@@ -271,15 +268,22 @@ FP.use = function(schema, callback) {
 		}
 
 		self.meta.flow = schema;
+
 	} else
 		err.push('schema', 'Flow schema is invalid.');
 
+	self.$events.schema && self.emit('schema', schema);
 	callback && callback(err.length ? err : null);
 	return self;
 };
 
 function sendmessage(instance, message, event) {
-	event && message.$events.message && message.emit('message', message);
+
+	if (event) {
+		message.$events.message && message.emit('message', message);
+		message.main.$events.end && message.main.emit('message', message);
+	}
+
 	instance.message(message);
 }
 
