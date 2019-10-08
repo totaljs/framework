@@ -123,6 +123,7 @@ FP.register = function(name, declaration) {
 	if (prev) {
 		prev.connected = false;
 		prev.disabled = true;
+		prev.destroy = null;
 		prev.disconnect && prev.disconnect();
 	}
 
@@ -132,6 +133,9 @@ FP.register = function(name, declaration) {
 	self.$events.register && self.emit('register', name, curr);
 	curr.install && !prev && curr.install();
 	curr.connect && curr.connect();
+	curr.destroy = function() {
+		self.unregister(name);
+	};
 	return self;
 };
 
@@ -151,6 +155,7 @@ FP.unregister = function(name) {
 		self.$events.unregister && self.emit('unregister', name, curr);
 		curr.connected = false;
 		curr.disabled = true;
+		curr.destroy = null;
 		curr.disconnect && curr.disconnect();
 		curr.uninstall && curr.uninstall();
 		delete self.meta.components[name];
