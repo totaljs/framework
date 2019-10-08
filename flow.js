@@ -167,25 +167,29 @@ FP.use = function(schema, callback) {
 	var self = this;
 
 	if (typeof(schema) === 'string')
-		schema = schema.parseJSON();
+		schema = schema.parseJSON(true);
 
 	// schema.COMPONENT_ID.component = 'condition';
 	// schema.COMPONENT_ID.options = {};
 	// schema.COMPONENT_ID.connections = { '0': [{ id: 'COMPONENT_ID', index: '2' }] }
 
 	var err = new ErrorBuilder();
-	var keys = Object.keys(schema);
 
-	for (var i = 0; i < keys.length; i++) {
-		var key = keys[i];
-		var instance = schema[key];
-		schema[key].stats = { pending: 0, input: 0, output: 0, duration: 0 };
-		var component = self.meta.components[instance.component];
-		if (!component)
-			err.push(key, '"' + instance.component + '" component not found.');
-	}
+	if (schema) {
+		var keys = Object.keys(schema);
+		for (var i = 0; i < keys.length; i++) {
+			var key = keys[i];
+			var instance = schema[key];
+			schema[key].stats = { pending: 0, input: 0, output: 0, duration: 0 };
+			var component = self.meta.components[instance.component];
+			if (!component)
+				err.push(key, '"' + instance.component + '" component not found.');
+		}
 
-	self.meta.flow = schema;
+		self.meta.flow = schema;
+	} else
+		err.push('schema', 'Flow schema is invalid.');
+
 	callback && callback(err.length ? err : null);
 	return self;
 };

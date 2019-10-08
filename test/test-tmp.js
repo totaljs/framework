@@ -40,4 +40,9 @@ flow.register('sms', function(self) {
 
 flow.use('{"COM1":{"component":"condition","connections":{"1":[{"id":"COM2","index":"0"}],"0":[{"id":"COM3","index":"0"}]}},"COM2":{"component":"condition"},"COM3":{"component":"sms","options":{"message":"EMBEDDED FLOW IS ALIVE"}}}', console.log);
 
+setTimeout(function() {
+	flow.use('{"COM1":{"component":"condition","connections":{"1":[{"id":"COM2","index":"0"}]}},"COM2":{"component":"condition"}}', console.log);
+	flow.trigger('COM1__0', { value: 1000 });
+}, 3000);
+
 flow.trigger('COM1__0', { value: 2 });
