@@ -42,7 +42,7 @@ flow.register('sms', function(self) {
 
 	self.message = function(message) {
 		message.data = message.options;
-		console.log('SMS send:', message.input, message.data, message.options);
+		console.log('SMS send:', message, message.data, message.options);
 		setTimeout(function() {
 			message.destroy();
 		}, 500);
@@ -54,7 +54,7 @@ flow.use('{"COM1":{"component":"trigger","connections":{"1":[{"id":"COM2","index
 
 // flow.trigger2('trigger__0', { value: 2 })
 flow.trigger('COM1__0', { value: 2 }).on('message', function(msg) {
-	console.log('MSG --->', msg.id, msg.fromid, msg.toid);
+	console.log('MSG --->', msg.schema);
 }).on('end', function(msg) {
 	console.log('END', msg.data);
 });

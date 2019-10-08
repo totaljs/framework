@@ -7,36 +7,39 @@ var MP = Message.prototype;
 
 MP.emit = function(name, a, b, c, d, e, f, g) {
 
-	if (!this.$events)
-		return this;
+	var self = this;
 
-	var evt = this.$events[name];
+	if (!self.$events)
+		return self;
+
+	var evt = self.$events[name];
 	if (evt) {
 		var clean = false;
 		for (var i = 0, length = evt.length; i < length; i++) {
 			if (evt[i].$once)
 				clean = true;
-			evt[i].call(this, a, b, c, d, e, f, g);
+			evt[i].call(self, a, b, c, d, e, f, g);
 		}
 		if (clean) {
 			evt = evt.remove(n => n.$once);
 			if (evt.length)
-				this.$events[name] = evt;
+				self.$events[name] = evt;
 			else
-				this.$events[name] = undefined;
+				self.$events[name] = undefined;
 		}
 	}
-	return this;
+	return self;
 };
 
 MP.on = function(name, fn) {
-	if (!this.$events)
-		this.$events = {};
-	if (this.$events[name])
-		this.$events[name].push(fn);
+	var self = this;
+	if (!self.$events)
+		self.$events = {};
+	if (self.$events[name])
+		self.$events[name].push(fn);
 	else
-		this.$events[name] = [fn];
-	return this;
+		self.$events[name] = [fn];
+	return self;
 };
 
 MP.once = function(name, fn) {
@@ -45,17 +48,18 @@ MP.once = function(name, fn) {
 };
 
 MP.removeListener = function(name, fn) {
-	if (this.$events) {
-		var evt = this.$events[name];
+	var self = this;
+	if (self.$events) {
+		var evt = self.$events[name];
 		if (evt) {
 			evt = evt.remove(n => n === fn);
 			if (evt.length)
-				this.$events[name] = evt;
+				self.$events[name] = evt;
 			else
-				this.$events[name] = undefined;
+				self.$events[name] = undefined;
 		}
 	}
-	return this;
+	return self;
 };
 
 MP.removeAllListeners = function(name) {
@@ -120,18 +124,22 @@ MP.send = function(output) {
 				var inputindex = +output.index;
 				var message = self.clone();
 
-				message.id = output.id;
+				// message.id = output.id;
 				message.used++;
 
 				message.fromindex = i;
-				message.fromid = self.to ? self.to.id : null;
+				message.fromid = self.toid;
 				message.from = self.to;
+				message.fromcomponent = self.schema.component;
+				message.fromschema = self.toschema;
+
 				message.toindex = inputindex;
-				message.toid = next.id;
+				message.toid = output.id;
 				message.to = next;
+				message.tocomponent = schema.component;
+				message.toschema = message.schema = schema;
 
 				message.options = schema.options;
-				message.schema = schema;
 				message.duration2 = now;
 				schema.stats.input++;
 				schema.stats.pending++;
@@ -167,8 +175,9 @@ MP.destroy = function() {
 	self.main = null;
 	self.from = null;
 	self.to = null;
+	self.fromschema = null;
+	self.toschema = null;
 	self.data = null;
-	self.schema = null;
 	self.options = null;
 	self.duration = null;
 	self.duration2 = null;
@@ -285,7 +294,6 @@ FP.trigger = function(path, data, events) {
 		if (instance && instance.message) {
 			var message = new Message();
 
-			// message.id = path[0];
 			message.$events = events || {};
 			message.duration = message.duration2 = Date.now();
 
@@ -294,19 +302,22 @@ FP.trigger = function(path, data, events) {
 			message.main = self;
 			message.data = data;
 			message.count = self.meta.messages++;
-			message.id = path[0];
 
 			message.fromid = null;
 			message.fromindex = -1;
 			message.from = null;
+			message.fromcomponent = null;
+			message.fromschema = null;
 
 			message.to = instance;
-			message.toid = instance.id;
+			message.toid = path[0];
 			message.toindex = inputindex;
+			message.tocomponent = instance.id;
+			message.toschema = message.schema = schema;
 
 			message.options = instance.options;
-			message.schema = schema;
 			message.processed = 0;
+
 			schema.stats.input++;
 			schema.stats.pending++;
 			setImmediate(sendmessage, instance, message, true);
