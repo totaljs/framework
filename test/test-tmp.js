@@ -15,7 +15,8 @@ flow.register('condition', function(self) {
 	self.message = function(message) {
 		console.log('message:', message.data);
 		message.data.value += 5;
-		message.send();
+		message.send(1); // send output 1
+		message.send(0); // send output 0
 	};
 
 }, { operator: '>', value: 3 });
@@ -37,9 +38,6 @@ flow.register('sms', function(self) {
 
 }, { operator: '>', value: 3 });
 
-flow.use('{"COM1":{"component":"condition","connections":{"1":[{"id":"COM2","index":"0"}],"0":[{"id":"COM2","index":"0"}]}},"COM2":{"component":"something","options":{"message":"EMBEDDED FLOW IS ALIVE"}}}', console.log);
-flow.trigger('COM1__0', { value: 2 });
+flow.use('{"COM1":{"component":"condition","connections":{"1":[{"id":"COM2","index":"0"}],"0":[{"id":"COM3","index":"0"}]}},"COM2":{"component":"condition"},"COM3":{"component":"sms","options":{"message":"EMBEDDED FLOW IS ALIVE"}}}', console.log);
 
-setTimeout(function() {
-	console.log(flow);
-}, 3000);
+flow.trigger('COM1__0', { value: 2 });
