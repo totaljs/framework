@@ -119,14 +119,14 @@ MP.send = function(output) {
 				var message = self.clone();
 				// message.id = output.id;
 				message.used++;
-				message.fromindex = i;
-				message.fromid = self.toid;
 				message.from = self.to;
+				message.fromid = self.toid;
+				message.fromindex = i;
 				message.fromcomponent = self.schema.component;
 				message.fromschema = self.toschema;
-				message.toindex = inputindex;
-				message.toid = output.id;
 				message.to = next;
+				message.toid = output.id;
+				message.toindex = inputindex;
 				message.tocomponent = schema.component;
 				message.toschema = message.schema = schema;
 				message.cache = schema.cache;
@@ -182,8 +182,8 @@ function Flow(name) {
 	t.name = name;
 	t.meta = {};
 	t.meta.components = {};
-	t.meta.flow = {};
 	t.meta.messages = 0;
+	t.meta.flow = {};
 	t.meta.cache = {};
 	t.$events = {};
 	new framework_utils.EventEmitter2(t);
@@ -217,6 +217,17 @@ FP.register = function(name, declaration) {
 		self.unregister(name);
 	};
 	return self;
+};
+
+FP.destroy = function() {
+	var self = this;
+	self.unregister();
+	setTimeout(function() {
+		self.emit('destroy');
+		self.meta = null;
+		self.$events = null;
+	}, 500);
+	delete F.flows[self.name];
 };
 
 FP.unregister = function(name) {
@@ -309,9 +320,9 @@ FP.trigger = function(path, data, events) {
 			message.data = data;
 			message.count = self.meta.messages++;
 
+			message.from = null;
 			message.fromid = null;
 			message.fromindex = -1;
-			message.from = null;
 			message.fromcomponent = null;
 			message.fromschema = null;
 

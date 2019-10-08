@@ -61,4 +61,5 @@ flow.trigger('COM1__0', { value: 2 }).on('message', function(msg) {
 	console.log('MSG --->', msg.fromid);
 }).on('end', function(msg) {
 	console.log('END', msg.data);
+	flow.destroy();
 });
