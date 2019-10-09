@@ -1,5 +1,7 @@
 ======= 3.3.1
 
+- added: `RESTBuilder.callback()` which performs `.exec()` automatically
+
 - fixed: `AUDIT()` method
 
 ======= 3.3.0

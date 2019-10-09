@@ -5173,6 +5173,15 @@ RESTP.type = function(value) {
 	return this;
 };
 
+function execrestbuilder(instance, callback) {
+	instance.exec(callback);
+}
+
+RESTP.callback = function(callback) {
+	setImmediate(execrestbuilder, this, callback);
+	return this;
+};
+
 RESTP.cache = function(expire) {
 	this.$cache_expire = expire;
 	return this;
