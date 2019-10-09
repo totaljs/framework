@@ -82,13 +82,13 @@ MP.clone = function() {
 	return obj;
 };
 
-MP.send = function(output) {
+MP.send = function(outputindex) {
 
 	var self = this;
 	var outputs;
 	var count = 0;
 
-	if (output == null) {
+	if (outputindex == null) {
 		if (self.schema.connections) {
 			outputs = Object.keys(self.schema.connections);
 			for (var i = 0; i < outputs.length; i++)
@@ -100,7 +100,7 @@ MP.send = function(output) {
 	var meta = self.main.meta;
 	var now = Date.now();
 
-	outputs = self.schema.connections ? (self.schema.connections[output] || EMPTYARRAY) : EMPTYARRAY;
+	outputs = self.schema.connections ? (self.schema.connections[outputindex] || EMPTYARRAY) : EMPTYARRAY;
 
 	if (self.processed === 0) {
 		self.processed = 1;
@@ -115,13 +115,12 @@ MP.send = function(output) {
 		if (schema && schema.component) {
 			var next = meta.components[schema.component];
 			if (next && next.message) {
-				var inputindex = +output.index;
+				var inputindex = output.index;
 				var message = self.clone();
-				// message.id = output.id;
 				message.used++;
 				message.from = self.to;
 				message.fromid = self.toid;
-				message.fromindex = i;
+				message.fromindex = outputindex;
 				message.fromcomponent = self.schema.component;
 				message.fromschema = self.toschema;
 				message.to = next;
@@ -304,7 +303,7 @@ function sendmessage(instance, message, event) {
 FP.trigger = function(path, data, events) {
 	path = path.split('__');
 	var self = this;
-	var inputindex = path.length === 1 ? 0 : +path[1];
+	var inputindex = path.length === 1 ? 0 : path[1];
 	var schema = self.meta.flow[path[0]];
 	if (schema && schema.component) {
 		var instance = self.meta.components[schema.component];
@@ -322,7 +321,7 @@ FP.trigger = function(path, data, events) {
 
 			message.from = null;
 			message.fromid = null;
-			message.fromindex = -1;
+			message.fromindex = null;
 			message.fromcomponent = null;
 			message.fromschema = null;
 
