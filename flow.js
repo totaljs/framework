@@ -1,6 +1,8 @@
 if (!global.framework_utils)
 	global.framework_utils = require('./utils');
 
+const D = '__';
+
 function Message() {}
 
 var MP = Message.prototype;
@@ -315,14 +317,14 @@ FP.$can = function(isinput, id, index) {
 	var self = this;
 	if (!self.meta.flow.paused)
 		return true;
-	var key = (isinput ? 'input' : 'output') + '_' + id + '_' + index;
+	var key = (isinput ? 'input' : 'output') + D + id + D + index;
 	if (!self.meta.flow.paused[key])
 		return true;
 };
 
 // path = ID__INPUTINDEX
 FP.trigger = function(path, data, events) {
-	path = path.split('__');
+	path = path.split(D);
 	var self = this;
 	var inputindex = path.length === 1 ? 0 : path[1];
 	var schema = self.meta.flow[path[0]];
@@ -371,13 +373,13 @@ FP.trigger2 = function(path, data) {
 	var events = {};
 	var obj;
 
-	path = path.split('__');
+	path = path.split(D);
 
 	for (var i = 0; i < keys.length; i++) {
 		var key = keys[i];
 		var flow = self.meta.flow[key];
 		if (flow.component === path[0])
-			obj = self.trigger(key + '__' + (path.length === 1 ? 0 : path[1]), data, events);
+			obj = self.trigger(key + D + (path.length === 1 ? 0 : path[1]), data, events);
 	}
 
 	return obj;
