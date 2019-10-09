@@ -109,10 +109,17 @@ MP.send = function(outputindex) {
 		self.schema.stats.duration = now - self.duration2;
 	}
 
+	if (!self.main.$can(false, self.toid, outputindex))
+		return count;
+
 	for (var i = 0; i < outputs.length; i++) {
 		var output = outputs[i];
+
+		if (output.disabled || output.paused)
+			continue;
+
 		var schema = meta.flow[output.id];
-		if (schema && schema.component) {
+		if (schema && schema.component && self.main.$can(true, output.id, output.index)) {
 			var next = meta.components[schema.component];
 			if (next && next.message) {
 				var inputindex = output.index;
@@ -271,10 +278,15 @@ FP.use = function(schema, callback) {
 		var keys = Object.keys(schema);
 		for (var i = 0; i < keys.length; i++) {
 			var key = keys[i];
+			if (key === 'paused')
+				continue;
+
 			var instance = schema[key];
+			if (!instance.component)
+				continue;
+			var component = self.meta.components[instance.component];
 			schema[key].stats = { pending: 0, input: 0, output: 0, duration: 0 };
 			schema[key].cache = {};
-			var component = self.meta.components[instance.component];
 			if (!component)
 				err.push(key, '"' + instance.component + '" component not found.');
 		}
@@ -299,6 +311,15 @@ function sendmessage(instance, message, event) {
 	instance.message(message);
 }
 
+FP.$can = function(isinput, id, index) {
+	var self = this;
+	if (!self.meta.flow.paused)
+		return true;
+	var key = (isinput ? 'input' : 'output') + '_' + id + '_' + index;
+	if (!self.meta.flow.paused[key])
+		return true;
+};
+
 // path = ID__INPUTINDEX
 FP.trigger = function(path, data, events) {
 	path = path.split('__');
@@ -307,7 +328,8 @@ FP.trigger = function(path, data, events) {
 	var schema = self.meta.flow[path[0]];
 	if (schema && schema.component) {
 		var instance = self.meta.components[schema.component];
-		if (instance && instance.message) {
+		if (instance && instance.message && self.$can(true, path[0], path[1])) {
+
 			var message = new Message();
 
 			message.$events = events || {};
