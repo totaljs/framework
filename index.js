@@ -11926,6 +11926,8 @@ ControllerProto.invalid = function(status) {
 
 	if (type === 'string')
 		builder.push(status);
+	else if (status instanceof Error)
+		builder.push(status);
 
 	setImmediate(next_controller_invalid, self, builder);
 	return builder;

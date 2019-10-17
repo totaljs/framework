@@ -3,6 +3,7 @@
 - added: `RESTBuilder.callback()` which performs `.exec()` automatically
 
 - fixed: `AUDIT()` method
+- fixed: error handling in `controller.invalid()`
 
 ======= 3.3.0
 
