@@ -929,9 +929,11 @@ function autoprefixer(value) {
 		var updated = plus + delimiter;
 
 		if (name === 'opacity') {
-			var opacity = +plus.replace('opacity', '').replace(':', '').replace(/\s/g, '');
+			var opacity = plus.replace('opacity', '').replace(':', '').replace(/\s/g, '');
+			index = opacity.indexOf('!');
+			opacity = index === -1 ? (+opacity) : (+opacity.substring(0, index));
 			if (!isNaN(opacity)) {
-				updated += 'filter:alpha(opacity=' + Math.floor(opacity * 100) + ')';
+				updated += 'filter:alpha(opacity=' + Math.floor(opacity * 100) + ')' + (index !== -1 ? ' !important' : '');
 				value = value.replacer(replace, before + '@[[' + output.length + ']]');
 				output.push(updated);
 			}
