@@ -4,6 +4,7 @@
 
 - fixed: `AUDIT()` method
 - fixed: error handling in `controller.invalid()`
+- fixed: `req.authorize()`
 
 ======= 3.3.0
 

@@ -16170,18 +16170,18 @@ function extend_request(PROTO) {
 	 */
 	PROTO.authorize = function(callback) {
 
+		var req = this;
+
 		if (!F.onAuthorize) {
 			callback(null, null, false);
-			return this;
+			return req;
 		}
 
 		if (F.onAuthorize.$newversion) {
 			req.authorizecallback = callback;
 			F.onAuthorize(req, req.res, req.flags, req_authorizecallback);
-			return this;
+			return req;
 		}
-
-		var req = this;
 
 		F.onAuthorize(req, req.res, req.flags || [], function(isAuthorized, user) {
 
