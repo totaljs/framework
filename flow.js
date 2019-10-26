@@ -5,6 +5,61 @@ const D = '__';
 
 function Message() {}
 
+Message.prototype = {
+
+	get user() {
+		return this.controller ? this.controller.user : null;
+	},
+
+	get session() {
+		return this.controller ? this.controller.session : null;
+	},
+
+	get sessionid() {
+		return this.controller && this.controller ? this.controller.req.sessionid : null;
+	},
+
+	get language() {
+		return (this.controller ? this.controller.language : '') || '';
+	},
+
+	get ip() {
+		return this.controller ? this.controller.ip : null;
+	},
+
+	get id() {
+		return this.controller ? this.controller.id : null;
+	},
+
+	get req() {
+		return this.controller ? this.controller.req : null;
+	},
+
+	get res() {
+		return this.controller ? this.controller.res : null;
+	},
+
+	get params() {
+		return this.controller ? this.controller.params : null;
+	},
+
+	get files() {
+		return this.controller ? this.controller.files : null;
+	},
+
+	get body() {
+		return this.controller ? this.controller.body : null;
+	},
+
+	get query() {
+		return this.controller ? this.controller.query : null;
+	},
+
+	get headers() {
+		return this.controller && this.controller.req ? this.controller.req.headers : null;
+	}
+};
+
 var MP = Message.prototype;
 
 MP.emit = function(name, a, b, c, d, e, f, g) {
@@ -323,7 +378,7 @@ FP.$can = function(isinput, id, index) {
 };
 
 // path = ID__INPUTINDEX
-FP.trigger = function(path, data, events) {
+FP.trigger = function(path, data, controller, events) {
 	path = path.split(D);
 	var self = this;
 	var inputindex = path.length === 1 ? 0 : path[1];
@@ -336,6 +391,7 @@ FP.trigger = function(path, data, events) {
 
 			message.$events = events || {};
 			message.duration = message.duration2 = Date.now();
+			message.controller = controller;
 
 			message.used = 1;
 			message.repo = {};
@@ -367,7 +423,7 @@ FP.trigger = function(path, data, events) {
 	}
 };
 
-FP.trigger2 = function(path, data) {
+FP.trigger2 = function(path, data, controller) {
 	var self = this;
 	var keys = Object.keys(self.meta.flow);
 	var events = {};
@@ -379,7 +435,7 @@ FP.trigger2 = function(path, data) {
 		var key = keys[i];
 		var flow = self.meta.flow[key];
 		if (flow.component === path[0])
-			obj = self.trigger(key + D + (path.length === 1 ? 0 : path[1]), data, events);
+			obj = self.trigger(key + D + (path.length === 1 ? 0 : path[1]), data, controller, events);
 	}
 
 	return obj;

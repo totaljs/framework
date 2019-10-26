@@ -1,6 +1,7 @@
 ======= 3.3.1
 
 - added: `RESTBuilder.callback()` which performs `.exec()` automatically
+- added: `FLOWSTREAM()`
 
 - fixed: `AUDIT()` method
 - fixed: error handling in `controller.invalid()`
