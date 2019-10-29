@@ -412,7 +412,7 @@ FP.trigger = function(path, data, controller, events) {
 			message.toschema = message.schema = schema;
 			message.cache = instance.cache;
 
-			message.options = instance.options;
+			message.options = schema.options;
 			message.processed = 0;
 
 			schema.stats.input++;
