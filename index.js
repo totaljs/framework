@@ -1411,7 +1411,7 @@ global.ON = F.on = function(name, fn) {
 		case 'request-begin':
 		case 'upload-begin':
 		case 'upload-end':
-			OBSOLETE(name, 'Name of event has been replaced to "{0}"'.format(name.repalce(/-/g, '_')));
+			OBSOLETE(name, 'Name of event has been replaced to "{0}"'.format(name.replace(/-/g, '_')));
 			break;
 		case 'cache-expire':
 			OBSOLETE(name, 'Name of event has been replaced to "cache_expired"');
