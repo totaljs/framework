@@ -362,7 +362,7 @@ function sendmessage(instance, message, event) {
 
 	if (event) {
 		message.$events.message && message.emit('message', message);
-		message.main.$events.end && message.main.emit('message', message);
+		message.main.$events.message && message.main.emit('message', message);
 	}
 
 	instance.message(message);
