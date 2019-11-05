@@ -6031,7 +6031,7 @@ function convertorcompile(schema, data, key) {
 			obj.fn2 = obj.fn;
 			obj.fn = function(val, obj) {
 				if (!(val instanceof Array))
-					val = [val];
+					val = val == null || val == '' ? [] : [val];
 				var output = [];
 				for (var i = 0, length = val.length; i < length; i++) {
 					var o = obj.fn2(val[i], obj);

@@ -7,6 +7,7 @@
 - fixed: error handling in `controller.invalid()`
 - fixed: `req.authorize()`
 - fixed: CSS auto-vendor-prefixes, fixed `opacity` with `!important`
+- fixed: `CONVERT()` a problem with arrays
 
 ======= 3.3.0
 
