@@ -1,3 +1,7 @@
+======= 3.3.2
+
+- fixed: default time zone (`utc` is default time zone)
+
 ======= 3.3.1
 
 - added: `RESTBuilder.callback()` which performs `.exec()` automatically

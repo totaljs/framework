@@ -964,7 +964,7 @@ function Framework() {
 		default_websocket_maxlength: 2,
 		default_websocket_encodedecode: true,
 		default_maxopenfiles: 0,
-		default_timezone: '',
+		default_timezone: 'utc',
 		default_root: '',
 		default_response_maxage: '11111111',
 		default_errorbuilder_status: 200,
