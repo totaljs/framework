@@ -21,7 +21,7 @@
 
 /**
  * @module Framework
- * @version 3.3.2
+ * @version 3.3.3
  */
 
 'use strict';
@@ -893,8 +893,8 @@ function Framework() {
 	var self = this;
 
 	self.$id = null; // F.id ==> property
-	self.version = 3320;
-	self.version_header = '3.3.0';
+	self.version = 3330;
+	self.version_header = '3.3.3';
 	self.version_node = process.version.toString();
 	self.syshash = (__dirname + '-' + Os.hostname() + '-' + Os.platform() + '-' + Os.arch() + '-' + Os.release() + '-' + Os.tmpdir() + JSON.stringify(process.versions)).md5();
 	self.pref = global.PREF;
@@ -6218,7 +6218,7 @@ global.LOGMAIL = F.logmail = function(address, subject, body, callback) {
 	if (!subject)
 		subject = CONF.name + ' v' + CONF.version;
 
-	var body = '<!DOCTYPE html><html><head><title>' + subject + '</title><meta charset="utf-8" /></head><body><pre style="max-width:600px;font-size:13px;line-height:16px">' + (typeof(body) === 'object' ? JSON.stringify(body).escape() : body) + '</pre></body></html>';
+	var body = '<!DOCTYPE html><html><head><title>' + subject + '</title><meta charset="utf-8" /></head><body><pre style="max-width:600px;font-size:13px;line-height:16px;white-space:pre-line">' + (typeof(body) === 'object' ? JSON.stringify(body).escape() : body) + '</pre></body></html>';
 	return F.onMail(address, subject, body, callback);
 };
 
