@@ -883,6 +883,7 @@ const controller_error_status = function(controller, status, problem) {
 	controller.req.$total_route = F.lookup(controller.req, '#' + status, EMPTYARRAY, 0);
 	controller.req.$total_exception = problem;
 	controller.req.$total_execute(status, true);
+
 	return controller;
 };
 
@@ -16330,8 +16331,10 @@ function extend_request(PROTO) {
 		var res = this.res;
 
 		if (isError || !route) {
-			F.stats.response['error' + status]++;
-			status !== 500 && F.$events.error && EMIT('error' + status, this, res, this.$total_exception);
+			var key = 'error' + status;
+			F.stats.response[key]++;
+			status !== 500 && F.$events.error && EMIT('error', this, res, this.$total_exception);
+			F.$events[key] && EMIT(key, this, res, this.$total_exception);
 		}
 
 		if (!route) {
@@ -16717,7 +16720,7 @@ function extend_request(PROTO) {
 				req.$total_route = F.lookup(req, '#404', EMPTYARRAY, 0);
 			var code = req.buffer_exceeded ? 431 : 404;
 			if (!req.$total_schema || !req.$total_route)
-				req.$total_execute(code);
+				req.$total_execute(code, code);
 			else
 				req.$total_validate(req.$total_route, subscribe_validate_callback, code);
 		}
