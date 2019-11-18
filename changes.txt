@@ -1,5 +1,7 @@
 ======= 3.3.3
 
+- fixed: `ON('error404')` when the route doens't exist
+
 - improved: `LOGMAIL()` mail format
 
 ======= 3.3.2
