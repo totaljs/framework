@@ -2816,7 +2816,7 @@ SchemaBuilderEntityProto.$execute = function(type, name, model, options, callbac
 	if (model && !controller && model.$$controller)
 		controller = model.$$controller;
 
-	var opfilter = [type + 'filter#' + name];
+	var opfilter = self.meta[type + 'filter#' + name];
 	if (opfilter && controller) {
 		controller.$filterschema = opfilter;
 		controller.$filter = null;
