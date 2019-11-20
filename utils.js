@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkUtils
- * @version 3.3.0
+ * @version 3.3.3
  */
 
 'use strict';
@@ -2889,6 +2889,11 @@ exports.ls = function(path, callback, filter) {
  */
 exports.ls2 = function(path, callback, filter) {
 	ls(path, callback, true, filter);
+};
+
+DP.setTimeZone = function(timezone) {
+	var dt = this.toLocaleString('en-US', { timeZone: timezone, hour12: false, dateStyle: 'short', timeStyle: 'short' });
+	return new Date(Date.parse(dt));
 };
 
 DP.add = function(type, value) {

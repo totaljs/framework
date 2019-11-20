@@ -1,5 +1,7 @@
 ======= 3.3.3
 
+- added: `date.setTimeZone(timezone)`
+
 - fixed: `ON('error404')` when the route doens't exist
 - fixed: `filter` in Schema `workflows`, `transformations` and `operations`
 
