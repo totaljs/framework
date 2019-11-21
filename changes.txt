@@ -1,9 +1,13 @@
 ======= 3.3.3
 
 - added: `date.setTimeZone(timezone)`
+- added: `NOSQL('~absolute_path.nosql')' loads external NoSQL embedded database
+- added: `TABLE('~absolute_path.nosql')' loads external Table
 
 - fixed: `ON('error404')` when the route doens't exist
 - fixed: `filter` in Schema `workflows`, `transformations` and `operations`
+- fixed: `NOSQL()` joins with absolute paths
+- fixed: `TABLE()` joins with absolute paths
 
 - improved: `LOGMAIL()` mail format
 

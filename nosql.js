@@ -536,12 +536,12 @@ exports.worker = function() {
 	};
 };
 
-function Table(name, filename, readonly) {
+function Table(name, filename, readonly, specific) {
 	var t = this;
-	t.filename = readonly ? filename : filename + EXTENSION_TABLE;
+	t.filename = readonly ? filename : filename + (specific ? '' : EXTENSION_TABLE);
 	t.filenameBackup = readonly ? '' : filename + EXTENSION_TABLE_BACKUP;
-	t.filenameCounter = readonly ? '' : filename + EXTENSION_TABLE + EXTENSION_COUNTER;
-	t.filenameMeta = readonly ? '' : filename + EXTENSION_TABLE + '-meta';
+	t.filenameCounter = readonly ? '' : filename + (specific ? '' : EXTENSION_TABLE) + EXTENSION_COUNTER;
+	t.filenameMeta = readonly ? '' : filename + (specific ? '' : EXTENSION_TABLE) + '-meta';
 	t.directory = Path.dirname(filename);
 	t.filenameLock = t.filename + '-lock';
 	t.name = name;
@@ -612,22 +612,22 @@ function Table(name, filename, readonly) {
 	});
 }
 
-function Database(name, filename, readonly) {
+function Database(name, filename, readonly, specific) {
 
 	var self = this;
 	var http = filename.substring(0, 6);
 	self.readonly = http === 'http:/' || http === 'https:';
-	self.filename = self.readonly ? filename.format('') : readonly ? filename : filename + EXTENSION;
+	self.filename = self.readonly ? filename.format('') : readonly ? filename : filename + (specific ? '' : EXTENSION);
 	self.directory = Path.dirname(filename);
 
 	if (!readonly) {
 		self.filenameLock = self.filename + '-lock';
-		self.filenameCounter = self.readonly ? filename.format('counter', '-') : filename + EXTENSION + EXTENSION_COUNTER;
+		self.filenameCounter = self.readonly ? filename.format('counter', '-') : filename + (specific ? '' : EXTENSION) + EXTENSION_COUNTER;
 		self.filenameLog = self.readonly || readonly ? '' : filename + EXTENSION_LOG;
 		self.filenameBackup = self.readonly || readonly ? '' : filename + EXTENSION_BACKUP;
-		self.filenameStorage = self.readonly || readonly ? '' : filename + '-storage/{0}' + EXTENSION;
+		self.filenameStorage = self.readonly || readonly ? '' : filename + '-storage/{0}' + (specific ? '' : EXTENSION);
 		self.filenameMeta = filename + EXTENSION_META;
-		self.filenameBackup2 = framework_utils.join(self.directory, name + '_backup' + EXTENSION);
+		self.filenameBackup2 = framework_utils.join(self.directory, name + '_backup' + (specific ? '' : EXTENSION));
 		self.inmemory = {};
 		self.inmemorylastusage;
 		// self.metadata;
@@ -738,12 +738,12 @@ exports.DatabaseBinary = Binary;
 exports.DatabaseStorage = Storage;
 exports.DatabaseTable = Table;
 
-exports.load = function(name, filename) {
-	return new Database(name, filename);
+exports.load = function(name, filename, specific) {
+	return new Database(name, filename, undefined, specific);
 };
 
-exports.table = function(name, filename) {
-	return new Table(name, filename);
+exports.table = function(name, filename, specific) {
+	return new Table(name, filename, undefined, specific);
 };
 
 exports.memory = exports.inmemory = function(name) {
@@ -2276,8 +2276,7 @@ DatabaseBuilder.prototype.$callbackjoin = function(callback) {
 				unique.add(val);
 		}
 
-		var isTable = self.db instanceof Table;
-		var db = join.table ? TABLE(join.name) : NOSQL(join.name);
+		var db = join.instance ? join.instance : (self.db instanceof Table ? TABLE(join.name) : NOSQL(join.name));
 
 		if (join.scalartype) {
 			join.items = [];
@@ -2312,15 +2311,15 @@ DatabaseBuilder.prototype.$callbackjoin = function(callback) {
 		} else {
 
 			if (unique.size) {
+
 				join.builder.$options.fields && join.builder.$options.fields.push(join.a);
 				join.builder.$callback = function(err, docs) {
 					join.items = docs;
 					next();
 				};
-				if (isTable)
-					db.find(join.builder).in(join.a, Array.from(unique));
-				else
-					db.find(join.builder).in(join.a, Array.from(unique));
+
+				db.find(join.builder).in(join.a, Array.from(unique));
+
 			} else {
 				join.items = join.builder.$options.first ? null : [];
 				next();
@@ -2423,11 +2422,14 @@ DatabaseBuilder.prototype.join = function(field, name) {
 		self.$join = {};
 
 	var table = self.db instanceof Table;
+	var instance;
 
 	if (name instanceof Database) {
+		instance = name;
 		name = name.name;
 		table = false;
 	} else if (name instanceof Table) {
+		instance = name;
 		table = true;
 		name = name.name;
 	}
@@ -2441,6 +2443,7 @@ DatabaseBuilder.prototype.join = function(field, name) {
 	item.field = field;
 	item.name = name;
 	item.table = table;
+	item.instance = instance;
 	item.builder = join = new DatabaseBuilder(self.db);
 
 	join.on = function(a, b) {
@@ -2452,7 +2455,6 @@ DatabaseBuilder.prototype.join = function(field, name) {
 		self.$join[key].b = b;
 
 		self.$keys && self.$keys.push(b);
-
 		return join;
 	};
 

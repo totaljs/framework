@@ -1685,12 +1685,17 @@ function nosqlwrapper(name) {
 	if (db)
 		return db;
 
-	var is = name.substring(0, 6);
-	if (is === 'http:/' || is === 'https:')
-		db = framework_nosql.load(U.getName(name), name);
-	else {
-		F.path.verify('databases');
-		db = framework_nosql.load(name, F.path.databases(name));
+	// absolute
+	if (name[0] === '~') {
+		db = framework_nosql.load(U.getName(name), name.substring(1), true);
+	} else {
+		var is = name.substring(0, 6);
+		if (is === 'http:/' || is === 'https:')
+			db = framework_nosql.load(U.getName(name), name);
+		else {
+			F.path.verify('databases');
+			db = framework_nosql.load(name, F.path.databases(name));
+		}
 	}
 
 	F.databases[name] = db;
@@ -1713,8 +1718,14 @@ function tablewrapper(name) {
 	var db = F.databases['$' + name];
 	if (db)
 		return db;
-	F.path.verify('databases');
-	db = framework_nosql.table(name, F.path.databases(name));
+
+	if (name[0] === '~') {
+		db = framework_nosql.load(U.getName(name), name.substring(1), true);
+	} else {
+		F.path.verify('databases');
+		db = framework_nosql.table(name, F.path.databases(name));
+	}
+
 	F.databases['$' + name] = db;
 	return db;
 }
