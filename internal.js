@@ -2136,7 +2136,6 @@ function view_prepare(command, dynamicCommand, functions, controller, components
 		case 'FUNC':
 		case 'function':
 		case 'MODEL':
-		case 'FUNC':
 		case 'SCHEMA':
 		case 'MODULE':
 		case 'functions':
