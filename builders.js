@@ -936,6 +936,13 @@ SchemaBuilderEntityProto.$parse = function(name, value, required, custom) {
 		return parseLength(lower, result);
 	}
 
+	if (lower.indexOf('base64') !== -1) {
+		result.type = 3;
+		result.raw = 'string';
+		result.subtype = 'base64';
+		return result;
+	}
+
 	if ((/^(upper|uppercase)+(\(\d+\))?$/).test(lower)) {
 		result.subtype = 'uppercase';
 		result.type = 3;
@@ -2254,6 +2261,10 @@ SchemaBuilderEntityProto.prepare = function(model, dependencies, req) {
 							if (tmp && !type.required && !tmp.isJSON())
 								tmp = '';
 							break;
+						case 'base64':
+							if (tmp && !type.required && !tmp.isBase64())
+								tmp = '';
+							break;
 					}
 
 
@@ -2438,6 +2449,10 @@ SchemaBuilderEntityProto.prepare = function(model, dependencies, req) {
 							break;
 						case 'json':
 							if (tmp && !type.required && !tmp.isJSON())
+								continue;
+							break;
+						case 'base64':
+							if (tmp && !type.required && !tmp.isBase64())
 								continue;
 							break;
 					}
@@ -5986,6 +6001,9 @@ function convertorcompile(schema, data, key) {
 				break;
 			case 'capitalize2':
 				obj.fn = (val, obj) => $convertstring(val, obj).capitalize(true);
+				break;
+			case 'base64':
+				obj.fn = val => typeof(val) === 'string' ? val.isBase64() ? val : '' : '';
 				break;
 			case 'email':
 				obj.fn = function(val, obj) {

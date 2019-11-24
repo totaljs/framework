@@ -71,6 +71,7 @@ const regexpN = /\n/g;
 const regexpCHARS = /\W|_/g;
 const regexpCHINA = /[\u3400-\u9FBF]/;
 const regexpLINES = /\n|\r|\r\n/;
+const regexpBASE64 = /^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$/;
 const SOUNDEX = { a: '', e: '', i: '', o: '', u: '', b: 1, f: 1, p: 1, v: 1, c: 2, g: 2, j: 2, k: 2, q: 2, s: 2, x: 2, z: 2, d: 3, t: 3, l: 4, m: 5, n: 5, r: 6 };
 const ENCODING = 'utf8';
 const NEWLINE = '\r\n';
@@ -2451,6 +2452,8 @@ function validate_builder_default(name, value, entity) {
 			return value.isURL();
 		case 'phone':
 			return value.isPhone();
+		case 'base64':
+			return value.isBase64();
 	}
 
 	if (type === 'number')
@@ -4182,6 +4185,11 @@ SP.isEmail = function() {
 
 SP.isPhone = function() {
 	return this.length < 6 ? false : F.validators.phone.test(this);
+};
+
+SP.isBase64 = function() {
+	var str = this;
+	return str.length % 4 !== 0 || !regexpBASE64.test(str);
 };
 
 SP.isUID = function() {

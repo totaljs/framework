@@ -1,6 +1,8 @@
 ======= 3.3.3
 
 - added: `date.setTimeZone(timezone)`
+- added: `String.isBase64()`
+- added: new schema type `Base64`
 
 - fixed: `ON('error404')` when the route doens't exist
 - fixed: `filter` in Schema `workflows`, `transformations` and `operations`
