@@ -373,6 +373,7 @@ function test_Schema() {
 		schema.define('phone', 'Phone');
 		schema.define('url', 'Url');
 		schema.define('uid', 'UID');
+		schema.define('base64', 'Base64');
 
 		var obj = {};
 		schema.fields.forEach(n => obj[n] = 'total fraMEWOrk');
@@ -380,6 +381,7 @@ function test_Schema() {
 		obj.phone = '+421 903 163 302';
 		obj.url = 'https://www.totaljs.com';
 		obj.uid = UID();
+		obj.base64 = 'WA==';
 
 		var res = schema.make(obj);
 		assert.ok(res.capitalize === 'Total FraMEWOrk', 'SchemaBuilder: Capitalize');
@@ -393,16 +395,20 @@ function test_Schema() {
 		assert.ok(res.phone === '+421903163302', 'SchemaBuilder: Phone');
 		assert.ok(res.url === 'https://www.totaljs.com', 'SchemaBuilder: URL');
 		assert.ok(res.uid ? true : false, 'SchemaBuilder: UID');
+		assert.ok(res.base64 ? true : false, 'SchemaBuilder: Base64');
 
 		obj.phone = '+4210000';
 		obj.uid = U.GUID(10);
 		obj.url = 'totaljs.com';
 		obj.zip = 'A349393';
+		obj.base64 = 'adlajkd';
+
 		res = schema.make(obj);
 		assert.ok(res.zip ? false : true, 'SchemaBuilder: Zip must be empty');
 		assert.ok(res.phone ? false : true, 'SchemaBuilder: Phone must be empty');
 		assert.ok(res.url ? false : true, 'SchemaBuilder: URL must be empty');
 		assert.ok(res.uid ? false : true, 'SchemaBuilder: UID must be empty');
+		assert.ok(res.base64 ? false : true, 'SchemaBuilder: Base64 must be empty');
 	});
 
 	NEWSCHEMA('Hooks').make(function(schema) {
