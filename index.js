@@ -1685,12 +1685,17 @@ function nosqlwrapper(name) {
 	if (db)
 		return db;
 
-	var is = name.substring(0, 6);
-	if (is === 'http:/' || is === 'https:')
-		db = framework_nosql.load(U.getName(name), name);
-	else {
-		F.path.verify('databases');
-		db = framework_nosql.load(name, F.path.databases(name));
+	// absolute
+	if (name[0] === '~') {
+		db = framework_nosql.load(U.getName(name), name.substring(1), true);
+	} else {
+		var is = name.substring(0, 6);
+		if (is === 'http:/' || is === 'https:')
+			db = framework_nosql.load(U.getName(name), name);
+		else {
+			F.path.verify('databases');
+			db = framework_nosql.load(name, F.path.databases(name));
+		}
 	}
 
 	F.databases[name] = db;
@@ -1713,8 +1718,14 @@ function tablewrapper(name) {
 	var db = F.databases['$' + name];
 	if (db)
 		return db;
-	F.path.verify('databases');
-	db = framework_nosql.table(name, F.path.databases(name));
+
+	if (name[0] === '~') {
+		db = framework_nosql.load(U.getName(name), name.substring(1), true);
+	} else {
+		F.path.verify('databases');
+		db = framework_nosql.table(name, F.path.databases(name));
+	}
+
 	F.databases['$' + name] = db;
 	return db;
 }
@@ -9724,11 +9735,10 @@ F.$configure_configs = function(arr, rewrite) {
 
 		var filenameA = U.combine('/', 'config');
 		var filenameB = U.combine('/', 'config-' + (DEBUG ? 'debug' : 'release'));
-
 		arr = [];
 
 		// read all files from "configs" directory
-		var configs = F.path.configs();
+		var configs = PATH.configs();
 		if (existsSync(configs)) {
 			var tmp = Fs.readdirSync(configs);
 			for (var i = 0, length = tmp.length; i < length; i++) {
@@ -9800,6 +9810,8 @@ F.$configure_configs = function(arr, rewrite) {
 			name = name.substring(0, index).trim();
 		} else
 			subtype = '';
+
+		var generated = [];
 
 		switch (name) {
 			case 'secret':
@@ -10051,7 +10063,12 @@ F.$configure_configs = function(arr, rewrite) {
 					obj[name] = value.parseDate();
 				else if (subtype === 'env' || subtype === 'environment')
 					obj[name] = process.env[value];
-				else {
+				else if (subtype === 'random')
+					obj[name] = GUID(value || 10);
+				else if (subtype === 'generate') {
+					obj[name] = GUID(value || 10);
+					generated.push(name);
+				} else {
 					if (value.isNumber()) {
 						obj[name] = value[0] !== '0' ? U.parseInt(value) : value;
 					} else if (value.isNumber(true))
@@ -10063,12 +10080,32 @@ F.$configure_configs = function(arr, rewrite) {
 		}
 	}
 
+	// Cache for generated passwords
+	if (generated.length) {
+		var filenameC = U.combine('/databases/', 'configuration.json');
+		var gdata;
+
+		if (existsSync(filenameC)) {
+			gdata = Fs.readFileSync(filenameC).toString('utf8').parseJSON(true);
+			for (var i = 0; i < generated.length; i++) {
+				if (gdata[generated[i]] != null)
+					obj[generated[i]] = gdata[generated[i]];
+			}
+		}
+
+		tmp = {};
+		for (var i = 0; i < generated.length; i++)
+			tmp[generated[i]] = obj[generated[i]];
+
+		Fs.writeFileSync(filenameC, JSON.stringify(tmp), NOOP);
+	}
+
 	U.extend(CONF, obj, rewrite);
 
 	if (!CONF.secret_uid)
 		CONF.secret_uid = (CONF.name).crc32(true).toString();
 
-	var tmp = CONF.mail_smtp_options;
+	tmp = CONF.mail_smtp_options;
 	if (typeof(tmp) === 'string' && tmp) {
 		tmp = new Function('return ' + tmp)();
 		CONF.mail_smtp_options = tmp;
