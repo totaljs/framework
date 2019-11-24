@@ -4189,7 +4189,7 @@ SP.isPhone = function() {
 
 SP.isBase64 = function() {
 	var str = this;
-	return str.length % 4 !== 0 || !regexpBASE64.test(str);
+	return str.length % 4 === 0 && regexpBASE64.test(str);
 };
 
 SP.isUID = function() {
