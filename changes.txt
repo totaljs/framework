@@ -1,11 +1,11 @@
 ======= 3.3.3
 
 - added: `date.setTimeZone(timezone)`
-- added: `String.isBase64()`
-- added: new schema type `Base64`
 - added: `NOSQL('~absolute_path.nosql')' loads external NoSQL embedded database
 - added: `TABLE('~absolute_path.nosql')' loads external Table
 - added: `(generate)` subtype into the `config` files
+- added: `String.isBase64()`
+- added: new schema type `Base64`
 
 - fixed: `ON('error404')` when the route doens't exist
 - fixed: `filter` in Schema `workflows`, `transformations` and `operations`
