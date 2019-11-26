@@ -18842,7 +18842,7 @@ function controller_json_workflow_multiple(id) {
 
 			// IS IT AN OPERATION?
 			if (!self.route.schema.length) {
-				RUN(w.id, self.body, w.view ? self.callback(w.view) : self.callback(), null, self, w.index ? w.id[w.index] : null);
+				RUN(w.id, self.body, w.view ? self.callback(w.view) : self.callback(), null, self, w.index != null ? w.id[w.index] : null);
 				return;
 			}
 

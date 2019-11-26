@@ -12,6 +12,7 @@
 - fixed: `NOSQL()` joins with absolute paths
 - fixed: `TABLE()` joins with absolute paths
 - fixed: `(random)` subtype in `config` files
+- fixed: `(response)` phrase in `ROUTE()` for multiple `OPERATIONS`
 
 - improved: `LOGMAIL()` mail format
 
