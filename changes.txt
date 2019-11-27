@@ -7,6 +7,8 @@
 - added: `String.isBase64()`
 - added: new schema type `Base64`
 
+- updated: `WEBSOCKET()` supports `+`, `-` and `🔒` as authorization flags
+
 - fixed: `ON('error404')` when the route doens't exist
 - fixed: `filter` in Schema `workflows`, `transformations` and `operations`
 - fixed: `NOSQL()` joins with absolute paths

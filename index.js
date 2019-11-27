@@ -3401,6 +3401,14 @@ global.WEBSOCKET = F.websocket = function(url, funcInitialize, flags, length) {
 	var urlraw = U.path(url2) + (isWILDCARD ? '*' : '');
 	var params = [];
 
+	var first = url.substring(0, 1);
+	if (first === '+' || first === '-' || url.substring(0, 2) === '🔒') {
+		// auth/unauth
+		url = url.replace(/^(\+|-|🔒)+/g, '').trim();
+		!flags && (flags = []);
+		flags.push(first === '-' ? 'unauthorized' : 'authorized');
+	}
+
 	if (url.indexOf('{') !== -1) {
 		routeURL.forEach(function(o, i) {
 
