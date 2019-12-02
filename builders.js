@@ -227,6 +227,16 @@ SchemaOptionsProto.cancel = function() {
 	return self;
 };
 
+SchemaOptionsProto.extend = function(data) {
+	var self = this;
+	var ext = self.schema.extensions[self.name];
+	if (ext) {
+		for (var i = 0; i < ext.length; i++)
+			ext[i](self, data);
+		return true;
+	}
+};
+
 SchemaOptionsProto.redirect = function(url) {
 	this.callback(new F.callback_redirect(url));
 	return this;
@@ -411,6 +421,7 @@ function SchemaBuilderEntity(parent, name) {
 	this.properties = [];
 	this.inherits = [];
 	this.resourcePrefix;
+	this.extensions = {};
 	this.resourceName;
 	this.transforms;
 	this.workflows;
@@ -1117,6 +1128,15 @@ SchemaBuilderEntityProto.setSave = function(fn, description, filter) {
 	return this;
 };
 
+SchemaBuilderEntityProto.setSaveExtension = function(fn) {
+	var key = 'save';
+	if (this.extensions[key])
+		this.extensions[key].push(fn);
+	else
+		this.extensions[key] = [fn];
+	return this;
+};
+
 /**
  * Set insert handler
  * @param {Function(error, model, helper, next(value), controller)} fn
@@ -1134,6 +1154,15 @@ SchemaBuilderEntityProto.setInsert = function(fn, description, filter) {
 	this.meta.insert = description || null;
 	this.meta.insertfilter = filter;
 	!fn.$newversion && OBSOLETE('Schema("{0}").setInsert()'.format(this.name), MSG_OBSOLETE_NEW);
+	return this;
+};
+
+SchemaBuilderEntityProto.setInsertExtension = function(fn) {
+	var key = 'insert';
+	if (this.extensions[key])
+		this.extensions[key].push(fn);
+	else
+		this.extensions[key] = [fn];
 	return this;
 };
 
@@ -1157,6 +1186,15 @@ SchemaBuilderEntityProto.setUpdate = function(fn, description, filter) {
 	return this;
 };
 
+SchemaBuilderEntityProto.setUpdateExtension = function(fn) {
+	var key = 'update';
+	if (this.extensions[key])
+		this.extensions[key].push(fn);
+	else
+		this.extensions[key] = [fn];
+	return this;
+};
+
 /**
  * Set patch handler
  * @param {Function(error, model, helper, next(value), controller)} fn
@@ -1173,6 +1211,15 @@ SchemaBuilderEntityProto.setPatch = function(fn, description, filter) {
 	this.meta.patch = description || null;
 	this.meta.patchfilter = filter;
 	!fn.$newversion && OBSOLETE('Schema("{0}").setPatch()'.format(this.name), MSG_OBSOLETE_NEW);
+	return this;
+};
+
+SchemaBuilderEntityProto.setPatchExtension = function(fn) {
+	var key = 'patch';
+	if (this.extensions[key])
+		this.extensions[key].push(fn);
+	else
+		this.extensions[key] = [fn];
 	return this;
 };
 
@@ -1206,6 +1253,15 @@ SchemaBuilderEntityProto.setGet = SchemaBuilderEntityProto.setRead = function(fn
 	return this;
 };
 
+SchemaBuilderEntityProto.setGetExtension = SchemaBuilderEntityProto.setReadExtension = function(fn) {
+	var key = 'read';
+	if (this.extensions[key])
+		this.extensions[key].push(fn);
+	else
+		this.extensions[key] = [fn];
+	return this;
+};
+
 /**
  * Set query handler
  * @param {Function(error, helper, next(value), controller)} fn
@@ -1228,6 +1284,15 @@ SchemaBuilderEntityProto.setQuery = function(fn, description, filter) {
 	return this;
 };
 
+SchemaBuilderEntityProto.setQueryExtension = function(fn) {
+	var key = 'query';
+	if (this.extensions[key])
+		this.extensions[key].push(fn);
+	else
+		this.extensions[key] = [fn];
+	return this;
+};
+
 /**
  * Set remove handler
  * @param {Function(error, helper, next(value), controller)} fn
@@ -1246,6 +1311,15 @@ SchemaBuilderEntityProto.setRemove = function(fn, description, filter) {
 	this.meta.remove = description || null;
 	this.meta.removefilter = filter;
 	!fn.$newversion && OBSOLETE('Schema("{0}").setRemove()'.format(this.name), MSG_OBSOLETE_NEW);
+	return this;
+};
+
+SchemaBuilderEntityProto.setRemoveExtension = function(fn) {
+	var key = 'remove';
+	if (this.extensions[key])
+		this.extensions[key].push(fn);
+	else
+		this.extensions[key] = [fn];
 	return this;
 };
 
@@ -1297,6 +1371,15 @@ SchemaBuilderEntityProto.addTransform = function(name, fn, description, filter) 
 	return this;
 };
 
+SchemaBuilderEntityProto.addTransformExtension = function(name, fn) {
+	var key = 'transform.' + name;
+	if (this.extensions[key])
+		this.extensions[key].push(fn);
+	else
+		this.extensions[key] = [fn];
+	return this;
+};
+
 /**
  * Add a new operation for the entity
  * @param {String} name Operation name, optional.
@@ -1322,6 +1405,15 @@ SchemaBuilderEntityProto.addOperation = function(name, fn, description, filter) 
 	this.meta['operation#' + name] = description || null;
 	this.meta['operationfilter#' + name] = filter;
 	!fn.$newversion && OBSOLETE('Schema("{0}").addOperation("{1}")'.format(this.name, name), MSG_OBSOLETE_NEW);
+	return this;
+};
+
+SchemaBuilderEntityProto.addOperationExtension = function(name, fn) {
+	var key = 'operation.' + name;
+	if (this.extensions[key])
+		this.extensions[key].push(fn);
+	else
+		this.extensions[key] = [fn];
 	return this;
 };
 
@@ -1353,6 +1445,15 @@ SchemaBuilderEntityProto.addWorkflow = function(name, fn, description, filter) {
 	return this;
 };
 
+SchemaBuilderEntityProto.addWorkflowExtension = function(name, fn) {
+	var key = 'workflow.' + name;
+	if (this.extensions[key])
+		this.extensions[key].push(fn);
+	else
+		this.extensions[key] = [fn];
+	return this;
+};
+
 SchemaBuilderEntityProto.addHook = function(name, fn, description, filter) {
 
 	if (!this.hooks)
@@ -1369,6 +1470,15 @@ SchemaBuilderEntityProto.addHook = function(name, fn, description, filter) {
 	this.meta['hook#' + name] = description || null;
 	this.meta['hookfilter#' + name] = filter;
 	!fn.$newversion && OBSOLETE('Schema("{0}").addHook("{1}")'.format(this.name, name), MSG_OBSOLETE_NEW);
+	return this;
+};
+
+SchemaBuilderEntityProto.addHookExtension = function(name, fn) {
+	var key = 'hook.' + name;
+	if (this.extensions[key])
+		this.extensions[key].push(fn);
+	else
+		this.extensions[key] = [fn];
 	return this;
 };
 

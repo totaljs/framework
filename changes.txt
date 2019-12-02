@@ -6,6 +6,18 @@
 - added: `(generate)` subtype into the `config` files
 - added: `String.isBase64()`
 - added: new schema type `Base64`
+- added: SchemaEntity supports `schema.addWorkflowExtension(name, fn($, [data]))`
+- added: SchemaEntity supports `schema.addTransformExtension(name, fn($, [data]))`
+- added: SchemaEntity supports `schema.addOperationExtension(name, fn($, [data]))`
+- added: SchemaEntity supports `schema.addHookExtension(name, fn($, [data]))`
+- added: SchemaEntity supports `schema.setSaveExtension(fn($, [data]))`
+- added: SchemaEntity supports `schema.setReadExtension(fn($, [data]))`
+- added: SchemaEntity supports `schema.setQueryExtension(fn($, [data]))`
+- added: SchemaEntity supports `schema.setRemoveExtension(fn($, [data]))`
+- added: SchemaEntity supports `schema.setInsertExtension(fn($, [data]))`
+- added: SchemaEntity supports `schema.setUpdateExtension(fn($, [data]))`
+- added: SchemaEntity supports `schema.setPatchExtension(fn($, [data]))`
+- added: SchemaOptions supports `$.extend([data])` for evaluating of all extensions for the current operation
 
 - updated: `WEBSOCKET()` supports `+`, `-` and `🔒` as authorization flags
 
