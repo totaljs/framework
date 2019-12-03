@@ -7250,7 +7250,7 @@ global.LOAD = F.load = function(debug, types, pwd, ready) {
 						noservice = false;
 						break;
 				}
-				if (noservice)
+				if (!noservice)
 					break;
 			}
 
