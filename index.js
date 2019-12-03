@@ -7240,7 +7240,21 @@ global.LOAD = F.load = function(debug, types, pwd, ready) {
 				F.$configure_sitemap();
 
 			F.consoledebug('init');
-			F.cache.init(true);
+
+			var noservice = true;
+
+			for (var i = 0; i < types.length; i++) {
+				switch(types[i]) {
+					case 'service':
+					case 'services':
+						noservice = false;
+						break;
+				}
+				if (noservice)
+					break;
+			}
+
+			F.cache.init(noservice);
 			EMIT('init');
 
 			F.$load(types, directory, function() {

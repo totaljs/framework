@@ -20,6 +20,7 @@
 - added: SchemaOptions supports `$.extend([data])` for evaluating of all extensions for the current operation
 
 - updated: `WEBSOCKET()` supports `+`, `-` and `🔒` as authorization flags
+- updated: `LOAD()` supports `service` type
 
 - fixed: `ON('error404')` when the route doens't exist
 - fixed: `filter` in Schema `workflows`, `transformations` and `operations`
