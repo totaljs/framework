@@ -14896,6 +14896,10 @@ WebSocket.prototype = {
 			this.$params = EMPTYOBJECT;
 			return EMPTYOBJECT;
 		}
+	},
+
+	get keys() {
+		return this._keys;
 	}
 };
 

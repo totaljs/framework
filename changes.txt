@@ -18,6 +18,7 @@
 - added: SchemaEntity supports `schema.setUpdateExtension(fn($, [data]))`
 - added: SchemaEntity supports `schema.setPatchExtension(fn($, [data]))`
 - added: SchemaOptions supports `$.extend([data])` for evaluating of all extensions for the current operation
+- added: `WebSocket.keys` property (it contains all keys with connections)
 
 - updated: `WEBSOCKET()` supports `+`, `-` and `🔒` as authorization flags
 - updated: `LOAD()` supports `service` type
