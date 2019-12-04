@@ -10096,7 +10096,7 @@ F.$configure_configs = function(arr, rewrite) {
 
 	// Cache for generated passwords
 	if (generated && generated.length) {
-		var filenameC = U.combine('/databases/', 'configuration.json');
+		var filenameC = U.combine('/databases/', 'config.json');
 		var gdata;
 
 		if (existsSync(filenameC)) {
