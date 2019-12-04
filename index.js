@@ -10111,6 +10111,7 @@ F.$configure_configs = function(arr, rewrite) {
 		for (var i = 0; i < generated.length; i++)
 			tmp[generated[i]] = obj[generated[i]];
 
+		F.path.verify('databases');
 		Fs.writeFileSync(filenameC, JSON.stringify(tmp), NOOP);
 	}
 
