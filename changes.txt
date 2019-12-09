@@ -1,12 +1,3 @@
-======= 3.3.4
-
-- added: `threads` directory for server-less functionality
-- added: a global variable called `THREAD` with a name of current thread
-- added: `require('total.js').http(..., { thread: 'thread_name' })` evaluates only specified thread
-- added: `require('total.js').cluster.http(..., { thread: 'thread_name' })` evaluates only specified thread in cluster
-
-- fixed: a response in `ROUTE()` with mulitple operations if the result contained some error
-
 ======= 3.3.3
 
 - added: `date.setTimeZone(timezone)`
@@ -28,6 +19,10 @@
 - added: SchemaEntity supports `schema.setPatchExtension(fn($, [data]))`
 - added: SchemaOptions supports `$.extend([data])` for evaluating of all extensions for the current operation
 - added: `WebSocket.keys` property (it contains all keys with connections)
+- added: `threads` directory for server-less functionality
+- added: a global variable called `THREAD` with a name of current thread
+- added: `require('total.js').http(..., { thread: 'thread_name' })` evaluates only specified thread
+- added: `require('total.js').cluster.http(..., { thread: 'thread_name' })` evaluates only specified thread in cluster
 
 - updated: `WEBSOCKET()` supports `+`, `-` and `🔒` as authorization flags
 - updated: `LOAD()` supports `service` type
@@ -38,6 +33,7 @@
 - fixed: `TABLE()` joins with absolute paths
 - fixed: `(random)` subtype in `config` files
 - fixed: `(response)` phrase in `ROUTE()` for multiple `OPERATIONS`
+- fixed: a response in `ROUTE()` with mulitple operations if the result contained some error
 
 - improved: `LOGMAIL()` mail format
 
