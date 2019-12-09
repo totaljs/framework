@@ -1,3 +1,10 @@
+======= 3.3.4
+
+- added: `threads` directory for server-less functionality
+- added: a global variable called `THREAD` with a name of current thread
+- added: `require('total.js').http(..., { thread: 'thread_name' })` evaluates only specified thread
+- added: `require('total.js').cluster.http(..., { thread: 'thread_name' })` evaluates only specified thread in cluster
+
 ======= 3.3.3
 
 - added: `date.setTimeZone(timezone)`

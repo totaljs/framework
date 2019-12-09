@@ -110,6 +110,7 @@ Object.freeze(EMPTYREQUEST);
 global.EMPTYOBJECT = EMPTYOBJECT;
 global.EMPTYARRAY = EMPTYARRAY;
 global.NOW = new Date();
+global.THREAD = '';
 global.isWORKER = false;
 global.REQUIRE = function(path) {
 	return require(F.directory + '/' + path);
@@ -4188,7 +4189,6 @@ F.$load = function(types, targetdirectory, callback, packageName) {
 		});
 	}
 
-
 	if (can('packages')) {
 		operations.push(function(resume) {
 			dir = U.combine(targetdirectory, isPackage ? '/packages/' : CONF.directory_packages);
@@ -4338,6 +4338,23 @@ F.$load = function(types, targetdirectory, callback, packageName) {
 				});
 			} else
 				resume();
+		});
+	}
+
+	var thread = global.THREAD;
+	if (thread) {
+		operations.push(function(resume) {
+			arr = [];
+			dir = '/threads/' + thread;
+			F.$configure_env(dir + '/.env');
+			F.$configure_configs(dir + '/config');
+			F.$configure_configs(dir + '/config-' + (DEBUG ? 'debug' : 'release'));
+			dir = U.combine(targetdirectory, '/threads/' + thread);
+			listing(dir, 0, arr);
+			arr.forEach(function(item) {
+				dependencies.push(next => F.install('module', 'threads/' + item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next, packageName));
+			});
+			resume();
 		});
 	}
 
@@ -5192,10 +5209,7 @@ global.INSTALL = F.install = function(type, name, declaration, options, callback
 			} else {
 				F.$configure_env('@' + name + '/.env');
 				F.$configure_configs('@' + name + '/config');
-				if (DEBUG)
-					F.$configure_configs('@' + name + '/config-debug');
-				else
-					F.$configure_configs('@' + name + '/config-release');
+				F.$configure_configs('@' + name + '/config-' + (DEBUG ? 'debug' : 'release'));
 				F.isTest && F.$configure_configs('@' + name + '/config-test');
 				F.$configure_versions('@' + name + '/versions');
 				F.$configure_dependencies('@' + name + '/dependencies');
@@ -7318,6 +7332,9 @@ F.initialize = function(http, debug, options) {
 	var ip = options.ip;
 	var listenpath = options.listenpath;
 
+	if (options.thread)
+		global.THREAD = options.thread;
+
 	options.config && U.extend_headers2(CONF, options.config);
 
 	if (options.debug || options['allow-debug'] || options.allow_debug)
@@ -7684,6 +7701,7 @@ F.console = function() {
 	CONF.author && console.log('Author        : ' + CONF.author);
 	console.log('Date          : ' + NOW.format('yyyy-MM-dd HH:mm:ss'));
 	console.log('Mode          : ' + (DEBUG ? 'debug' : 'release'));
+	global.THREAD && console.log('Thread        : ' + global.THREAD);
 	console.log('====================================================');
 	CONF.default_root && console.log('Root          : ' + F.config.default_root);
 	console.log('Directory     : ' + process.cwd());

@@ -25,6 +25,7 @@ framework.on('ready', function() {
 	assert.ok(CONF.testhex === 123456, 'config: hex encode');
 	assert.ok(CONF.testbase === 123456, 'config: base encode');
 	assert.ok(CONF.testenv === 'custom environment app', 'config: read env');
+	assert.ok(CONF.JEBO === 'Z LESA', 'threads: config');
 });
 
 AUTH(function($) {
@@ -975,7 +976,7 @@ framework.on('load', function() {
 	}, 2000);
 });
 
-framework.useConfig('my-config.txt').useConfig('/configs/my-config.config').http('release', { port: 8001 });
+framework.useConfig('my-config.txt').useConfig('/configs/my-config.config').http('release', { port: 8001, thread: 'users' });
 
 process.on('uncaughtException', function(err) {
 	console.error(err);

@@ -211,6 +211,7 @@ function master(count, mode, options, callback, https) {
 	console.log('====================================================');
 	console.log('Date        : ' + new Date().format('yyyy-MM-dd HH:mm:ss'));
 	console.log('Mode        : ' + mode);
+	options.thread && console.log('Thread      : ' + options.thread);
 	console.log('====================================================\n');
 
 	// Remove all DB locks
