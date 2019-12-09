@@ -5742,17 +5742,21 @@ global.RUN = function(name, value, callback, param, controller, result) {
 			opt.repeated++;
 			setImmediate(opt => opt.$current(opt), opt);
 		} else {
+
 			if (opt.error.items.length) {
-				error.push(opt.error);
 				if (opt.$current.$binderror)
 					value = opt.error.output(false);
 			}
 
 			if (opt.error.items.length && opt.$current.$stop) {
+				error.push(opt.error);
 				name = null;
 				opt.next = null;
 				callback(error, opt.response, opt);
 			} else {
+
+				// Because "controller_json_workflow_multiple()" returns error instead of results
+				// error.push(opt.error);
 
 				if (result && (result === opt.meta.current || result === opt.name))
 					opt.output = value;

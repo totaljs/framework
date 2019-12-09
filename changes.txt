@@ -5,6 +5,8 @@
 - added: `require('total.js').http(..., { thread: 'thread_name' })` evaluates only specified thread
 - added: `require('total.js').cluster.http(..., { thread: 'thread_name' })` evaluates only specified thread in cluster
 
+- fixed: a response in `ROUTE()` with mulitple operations if the result contained some error
+
 ======= 3.3.3
 
 - added: `date.setTimeZone(timezone)`
