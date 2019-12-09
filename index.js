@@ -95,10 +95,10 @@ const GZIPFILE = { memLevel: 9 };
 const GZIPSTREAM = { memLevel: 1 };
 const MODELERROR = {};
 const IMAGES = { jpg: 1, png: 1, gif: 1, apng: 1, jpeg: 1, heif: 1, heic: 1, webp: 1 };
-const PREFFILE = 'preferences.json';
 const KEYSLOCALIZE = { html: 1, htm: 1 };
 const PROXYOPTIONS = { end: true };
 const PROXYKEEPALIVE = new http.Agent({ keepAlive: true, timeout: 60000 });
+var PREFFILE = 'preferences.json';
 
 var PATHMODULES = require.resolve('./index');
 PATHMODULES = PATHMODULES.substring(0, PATHMODULES.length - 8);
@@ -4323,6 +4323,25 @@ F.$load = function(types, targetdirectory, callback, packageName) {
 		});
 	}
 
+	var thread = global.THREAD;
+	if (thread) {
+
+		// Updates PREF file
+		PREFFILE = PREFFILE.replace('.json', '_' + thread + '.json');
+
+		operations.push(function(resume) {
+			arr = [];
+			dir = '/threads/' + thread;
+			F.$configure_env(dir + '/.env');
+			F.$configure_configs(dir + '/config');
+			F.$configure_configs(dir + '/config-' + (DEBUG ? 'debug' : 'release'));
+			dir = U.combine(targetdirectory, '/threads/' + thread);
+			listing(dir, 0, arr);
+			arr.forEach(item => dependencies.push(next => F.install('module', 'threads/' + item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next, packageName)));
+			resume();
+		});
+	}
+
 	if (can('preferences')) {
 		operations.push(function(resume) {
 			if (F.onPrefLoad) {
@@ -4338,23 +4357,6 @@ F.$load = function(types, targetdirectory, callback, packageName) {
 				});
 			} else
 				resume();
-		});
-	}
-
-	var thread = global.THREAD;
-	if (thread) {
-		operations.push(function(resume) {
-			arr = [];
-			dir = '/threads/' + thread;
-			F.$configure_env(dir + '/.env');
-			F.$configure_configs(dir + '/config');
-			F.$configure_configs(dir + '/config-' + (DEBUG ? 'debug' : 'release'));
-			dir = U.combine(targetdirectory, '/threads/' + thread);
-			listing(dir, 0, arr);
-			arr.forEach(function(item) {
-				dependencies.push(next => F.install('module', 'threads/' + item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next, packageName));
-			});
-			resume();
 		});
 	}
 
@@ -10114,7 +10116,8 @@ F.$configure_configs = function(arr, rewrite) {
 
 	// Cache for generated passwords
 	if (generated && generated.length) {
-		var filenameC = U.combine('/databases/', 'config.json');
+
+		var filenameC = U.combine('/databases/', 'config{0}.json'.format(global.THREAD ? ('_' + global.THREAD) : ''));
 		var gdata;
 
 		if (existsSync(filenameC)) {
