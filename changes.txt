@@ -26,6 +26,7 @@
 
 - updated: `WEBSOCKET()` supports `+`, `-` and `🔒` as authorization flags
 - updated: `LOAD()` supports `service` type
+- updated: cluster watches `restart` or `restart_NAME_of_THREAD` files for restarting of existing threads
 
 - fixed: `ON('error404')` when the route doens't exist
 - fixed: `filter` in Schema `workflows`, `transformations` and `operations`

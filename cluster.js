@@ -172,7 +172,7 @@ exports.https = function(count, mode, options, callback) {
 exports.restart = function(index) {
 	if (index === undefined) {
 		for (var i = 0; i < THREADS; i++)
-			exports.restart(i);
+			setTimeout(index => exports.restart(index), i * 2000, i);
 	} else {
 		var fork = FORKS[index];
 		if (fork) {
@@ -182,6 +182,8 @@ exports.restart = function(index) {
 			exec(index);
 		} else
 			exec(index);
+
+		console.log('======= ' + (new Date().format('yyyy-MM-dd HH:mm:ss')) + ': restarted thread with index "{0}"'.format(index));
 	}
 };
 
@@ -242,6 +244,24 @@ function master(count, mode, options, callback, https) {
 	});
 
 	process.title = 'total: cluster';
+
+	var filename = require('path').join(process.cwd(), 'restart' + (options.thread ? ('_' + options.thread) : ''));
+	var restartthreads = function(err) {
+		if (!err) {
+			Fs.unlink(filename, NOOP);
+			if (!F.restarting) {
+				exports.restart();
+				F.restarting = true;
+				setTimeout(function() {
+					F.restarting = false;
+				}, 30000);
+			}
+		}
+	};
+
+	setInterval(function() {
+	 	Fs.stat(filename, restartthreads);
+	}, 10000);
 }
 
 function message(m) {
