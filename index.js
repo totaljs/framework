@@ -91,6 +91,7 @@ const CLUSTER_CACHE_SET = { TYPE: 'cache', method: 'set' };
 const CLUSTER_CACHE_REMOVE = { TYPE: 'cache', method: 'remove' };
 const CLUSTER_CACHE_REMOVEALL = { TYPE: 'cache', method: 'removeAll' };
 const CLUSTER_CACHE_CLEAR = { TYPE: 'cache', method: 'clear' };
+const CLUSTER_SNAPSHOT = { TYPE: 'snapshot' };
 const GZIPFILE = { memLevel: 9 };
 const GZIPSTREAM = { memLevel: 1 };
 const MODELERROR = {};
@@ -997,6 +998,7 @@ function Framework() {
 		allow_compile_style: true,
 		allow_compile_html: true,
 		allow_localize: true,
+		allow_stats_snapshot: true,
 		allow_performance: false,
 		allow_custom_titles: false,
 		allow_cache_snapshot: false,
@@ -1757,7 +1759,7 @@ F.stop = F.kill = function(signal) {
 
 	EMIT('exit', signal);
 
-	if (!F.isWorker && process.send)
+	if (!F.isWorker && process.send && process.connected)
 		TRY(() => process.send('total:stop'));
 
 	F.cache.stop();
@@ -7484,6 +7486,7 @@ F.initialize = function(http, debug, options) {
 					F.removeAllListeners('load');
 					F.removeAllListeners('ready');
 					options.package && INSTALL('package', options.package);
+					runsnapshot();
 				}, 500);
 
 				if (F.isTest) {
@@ -10994,7 +10997,8 @@ FrameworkCacheProto.init = function(notimer) {
 FrameworkCacheProto.init_timer = function() {
 	var self = this;
 	self.interval && clearInterval(self.interval);
-	self.interval = setInterval(() => F.cache.recycle(), 1000 * 60);
+	// self.interval = setInterval(() => F.cache.recycle(), 1000 * 60);
+	self.interval = setInterval(() => F.cache.recycle(), 5000);
 	return self;
 };
 
@@ -11090,6 +11094,7 @@ FrameworkCacheProto.recycle = function() {
 	persistent && this.savepersistent();
 	CONF.allow_cache_snapshot && this.save();
 	F.service(this.count);
+	CONF.allow_stats_snapshot && F.snapshotstats();
 	return this;
 };
 
@@ -18391,15 +18396,20 @@ process.on('SIGTERM', forcestop);
 process.on('SIGINT', forcestop);
 process.on('exit', forcestop);
 
+function process_ping() {
+	process.connected && process.send('total:ping');
+}
+
 process.on('message', function(msg, h) {
 	if (msg === 'total:debug') {
 		U.wait(() => F.isLoaded, function() {
-
 			F.isLoaded = undefined;
 			F.console();
 		}, 10000, 500);
 	} else if (msg === 'reconnect')
 		F.reconnect();
+	else if (msg === 'total:ping')
+		setImmediate(process_ping);
 	else if (msg === 'reset')
 		F.cache.clear();
 	else if (msg === 'stop' || msg === 'exit' || msg === 'kill')
@@ -19065,6 +19075,42 @@ global.ACTION = function(url, data, callback) {
 	setImmediate(evalroutehandler, controller);
 	return controller;
 };
+
+function runsnapshot() {
+
+	var main = {};
+	var stats = {};
+	stats.id = F.id;
+	stats.version = {};
+	stats.version.node = process.version;
+	stats.version.total = F.version_header;
+	stats.version.app = CONF.version;
+	stats.pid = process.pid;
+	stats.thread = global.THREAD;
+	stats.mode = DEBUG ? 'debug' : 'release';
+
+	main.pid = process.pid;
+	main.stats = [stats];
+
+	F.snapshotstats = function() {
+
+		var memory = process.memoryUsage();
+		stats.date = NOW;
+		stats.memory = (memory.heapUsed / 1024 / 1024).floor(2);
+		stats.rm = F.stats.performance.request.floor(2); // request min
+		stats.fm = F.stats.performance.file.floor(2);    // files min
+		stats.requests = F.stats.request.request;
+		stats.pending = F.stats.request.pending;
+
+		if (F.isCluster) {
+			if (process.connected) {
+				CLUSTER_SNAPSHOT.data = stats;
+				process.send(CLUSTER_SNAPSHOT);
+			}
+		} else
+			Fs.writeFile(process.mainModule.filename + '.json', JSON.stringify(main, null, '  '), NOOP);
+	};
+}
 
 // Because of controller prototypes
 // It's used in VIEW() and VIEWCOMPILE()

@@ -30,6 +30,7 @@ const CLUSTER_REQ = { TYPE: 'req' };
 const CLUSTER_RES = { TYPE: 'res' };
 const CLUSTER_EMIT = { TYPE: 'emit' };
 const CLUSTER_MASTER = { TYPE: 'master' };
+const MAXTHREADLATENCY = 70;
 const FORKS = [];
 
 var OPERATIONS = {};
@@ -38,6 +39,8 @@ var OPTIONS = {};
 var THREADS = 0;
 var MASTER = null;
 var CONTINUE = false;
+var STATS = [];
+var TIMEOUTS = {};
 
 exports.on = function(name, callback) {
 	!MASTER && (MASTER = {});
@@ -189,8 +192,13 @@ exports.restart = function(index) {
 
 function master(count, mode, options, callback, https) {
 
-	if (count == null || count === 'auto')
+	if (count == null)
 		count = require('os').cpus().length;
+
+	OPTIONS.auto = count === 'auto';
+
+	if (OPTIONS.auto)
+		count = 1;
 
 	if (typeof(options) === 'function') {
 		callback = options;
@@ -209,7 +217,7 @@ function master(count, mode, options, callback, https) {
 	console.log('PID         : ' + process.pid);
 	console.log('Node.js     : ' + process.version);
 	console.log('OS          : ' + Os.platform() + ' ' + Os.release());
-	console.log('Threads     : {0}x'.format(count));
+	console.log('Threads     : {0}'.format(OPTIONS.auto ? 'auto' : (count + 'x')));
 	console.log('====================================================');
 	console.log('Date        : ' + new Date().format('yyyy-MM-dd HH:mm:ss'));
 	console.log('Mode        : ' + mode);
@@ -259,9 +267,87 @@ function master(count, mode, options, callback, https) {
 		}
 	};
 
+	var killme = function(fork) {
+		fork.kill();
+	};
+
+	var counter = 0;
+	var main = {};
+	main.pid = process.pid;
+	main.version = {};
+	main.version.node = process.version;
+	main.version.total = F.version_header;
+	main.version.app = CONF.version;
+	main.thread = options.thread;
+
 	setInterval(function() {
-	 	Fs.stat(filename, restartthreads);
-	}, 10000);
+
+		counter++;
+
+		if (counter % 10 === 0) {
+			main.date = new Date();
+			main.threads = THREADS;
+			var memory = process.memoryUsage();
+			main.memory = (memory.heapUsed / 1024 / 1024).floor(2);
+			main.stats = STATS;
+			Fs.writeFile(process.mainModule.filename + '.json', JSON.stringify(main, null, '  '), NOOP);
+		}
+
+		Fs.stat(filename, restartthreads);
+
+		// Ping
+		if (!OPTIONS.auto)
+			return;
+
+		var isfree = false;
+		var isempty = false;
+
+		// Auto-ping
+		for (var i = 0; i < FORKS.length; i++) {
+			var fork = FORKS[i];
+			if (fork) {
+				if (fork.$ping) {
+					if (fork.$ping < MAXTHREADLATENCY)
+						isfree = true;
+				} else
+					isempty = true;
+
+				fork.$ping_beg = Date.now();
+				fork.send('total:ping');
+			}
+		}
+
+		if (isfree || isempty) {
+			if (!isempty && THREADS > 1) {
+				// try to remove last
+				var lastindex = FORKS.length - 1;
+				var last = FORKS[lastindex];
+				if (last == null) {
+					TIMEOUTS[index] && clearTimeout(TIMEOUTS[index]);
+					FORKS.splice(lastindex, 1);
+					THREADS = FORKST.length;
+					return;
+				}
+
+				for (var i = 0; i < STATS.length; i++) {
+					if (STATS[i].id === last.$id) {
+						if (STATS[i].pending < 2) {
+							// nothing pending
+							fork.$ready = false;
+							fork.removeAllListeners();
+							fork.disconnect();
+							setTimeout(killme, 1000, fork);
+							FORKS.splice(lastindex, 1);
+						}
+						break;
+					}
+				}
+				THREADS = FORKS.length;
+			}
+		} else if (!options.max || THREADS < options.max)
+			exec(THREADS++, https);
+
+	}, 5000);
 }
 
 function message(m) {
@@ -272,12 +358,30 @@ function message(m) {
 		return;
 	}
 
+	if (m === 'total:ping') {
+		this.$ping = Date.now() - this.$ping_beg;
+		return;
+	}
+
 	if (m.TYPE === 'master') {
 		if (MASTER && MASTER[m.name]) {
 			for (var i = 0, length = MASTER[m.name].length; i < length; i++)
 				MASTER[m.name][i](m.a, m.b, m.c, m.d, m.e);
 		}
+	} if (m.TYPE === 'snapshot') {
+		var is = false;
+		STATS[i];
+		for (var i = 0; i < STATS.length; i++) {
+			if (STATS[i].id === m.data.id) {
+				m.data.ping = this.$ping;
+				STATS[i] = m.data;
+				is = true;
+				break;
+			}
+		}
+		!is && STATS.push(m.data);
 	} else {
+
 		if (m.target === 'master') {
 			exports.res(m);
 		} else {
@@ -293,10 +397,19 @@ function mastersend(m) {
 }
 
 function exec(index, https) {
+
+	if (TIMEOUTS[index]) {
+		clearTimeout(TIMEOUTS[index]);
+		delete TIMEOUTS[index];
+	}
+
 	var fork = Cluster.fork();
 	fork.$id = index.toString();
 	fork.on('message', message);
-	fork.on('exit', () => FORKS[index] = null);
+	fork.on('exit', function(e) {
+		FORKS[index] = null;
+		TIMEOUTS[index] = setTimeout(exports.restart, 1000, index);
+	});
 
 	if (FORKS[index] === undefined)
 		FORKS.push(fork);

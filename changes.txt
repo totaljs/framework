@@ -23,10 +23,13 @@
 - added: a global variable called `THREAD` with a name of current thread
 - added: `require('total.js').http(..., { thread: 'thread_name' })` evaluates only specified thread
 - added: `require('total.js').cluster.http(..., { thread: 'thread_name' })` evaluates only specified thread in cluster
+- added: framework creates a file with app stats in the form `your_init_script_name.js.json`
+- added: a new config key `allow_stats_snapshot`
 
 - updated: `WEBSOCKET()` supports `+`, `-` and `🔒` as authorization flags
 - updated: `LOAD()` supports `service` type
 - updated: cluster watches `restart` or `restart_NAME_of_THREAD` files for restarting of existing threads
+- updated: cluster supports `auto` mode
 
 - fixed: `ON('error404')` when the route doens't exist
 - fixed: `filter` in Schema `workflows`, `transformations` and `operations`
