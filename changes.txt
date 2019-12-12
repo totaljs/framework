@@ -25,6 +25,7 @@
 - added: `require('total.js').cluster.http(..., { thread: 'thread_name' })` evaluates only specified thread in cluster
 - added: framework creates a file with app stats in the form `your_init_script_name.js.json`
 - added: a new config key `allow_stats_snapshot`
+- added: view engine `@{import()}` supports auto-merging JS or CSS files: `@{import('default.js + ui.js')}`
 
 - updated: `WEBSOCKET()` supports `+`, `-` and `🔒` as authorization flags
 - updated: `LOAD()` supports `service` type

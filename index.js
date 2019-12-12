@@ -13149,6 +13149,8 @@ ControllerProto.$absolute = function(files, base) {
 	return self.public(files, base);
 };
 
+var $importmergecache = {};
+
 ControllerProto.$import = function() {
 
 	var self = this;
@@ -13190,23 +13192,62 @@ ControllerProto.$import = function() {
 			continue;
 		}
 
-		var extension = filename.substring(filename.lastIndexOf('.'));
+		var k = 'import#' + filename;
+
+		if (F.temporary.other[k]) {
+			builder += F.temporary.other[k];
+			continue;
+		}
+
+		var ext;
+
+		if (filename.indexOf('+') !== -1) {
+
+			// MERGE
+			var merge = filename.split('+');
+			var hash = 'merge' + filename.hash(true);
+
+			if ($importmergecache[hash]) {
+				builder += F.temporary.other[k] = $importmergecache[hash];
+				continue;
+			}
+
+			merge[0] = merge[0].trim();
+			ext = U.getExtension(merge[0]);
+
+			merge[0] = ext === 'css' ? self.public_css(merge[0]) : self.public_js(merge[0]);
+
+			for (var j = 1; j < merge.length; j++) {
+				merge[j] = merge[j].trim();
+				merge[j] = ext === 'css' ? self.public_css(merge[j]) : self.public_js(merge[j]);
+			}
+
+			var tmp = ext === 'css' ? self.public_css(merge[0], true) : self.public_js(merge[0], true);
+			$importmergecache[hash] = F.temporary.other[k] = tmp;
+
+			merge.unshift(merge[0]);
+			MERGE.apply(global, merge);
+			builder += tmp;
+			continue;
+		}
+
+		ext = filename.substring(filename.lastIndexOf('.'));
 		var tag = filename[0] !== '!';
 		if (!tag)
 			filename = filename.substring(1);
 
 		if (filename[0] === '#')
-			extension = '.js';
+			ext = '.js';
 
-		switch (extension) {
+		switch (ext) {
 			case '.js':
-				builder += self.public_js(filename, tag);
+				builder += F.temporary.other[k] = self.public_js(filename, tag);
 				break;
 			case '.css':
-				builder += self.public_css(filename, tag);
+				builder += F.temporary.other[k] = self.public_css(filename, tag);
 				break;
 			case '.ico':
-				builder += self.$favicon(filename);
+				builder += F.temporary.other[k] = self.$favicon(filename);
 				break;
 			case '.jpg':
 			case '.gif':
@@ -13217,7 +13258,7 @@ ControllerProto.$import = function() {
 			case '.webp':
 			case '.heic':
 			case '.apng':
-				builder += self.public_image(filename);
+				builder += F.temporary.other[k] = self.public_image(filename);
 				break;
 			case '.mp4':
 			case '.avi':
@@ -13228,10 +13269,10 @@ ControllerProto.$import = function() {
 			case '.mpe':
 			case '.mpeg':
 			case '.m4v':
-				builder += self.public_video(filename);
+				builder += F.temporary.other[k] = self.public_video(filename);
 				break;
 			default:
-				builder += self.public(filename);
+				builder += F.temporary.other[k] = self.public(filename);
 				break;
 		}
 	}
