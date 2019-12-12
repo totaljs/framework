@@ -1766,10 +1766,6 @@ function view_parse(content, minify, filename, controller) {
 		if (!value)
 			return '$EMPTY';
 
-		if (!minify) {
-
-		}
-
 		if (!nocompressHTML && is)
 			value += ' ';
 
