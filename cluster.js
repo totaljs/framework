@@ -323,9 +323,9 @@ function master(count, mode, options, callback, https) {
 				var lastindex = FORKS.length - 1;
 				var last = FORKS[lastindex];
 				if (last == null) {
-					TIMEOUTS[index] && clearTimeout(TIMEOUTS[index]);
+					TIMEOUTS[lastindex] && clearTimeout(TIMEOUTS[lastindex]);
 					FORKS.splice(lastindex, 1);
-					THREADS = FORKST.length;
+					THREADS = FORKS.length;
 					return;
 				}
 
@@ -406,7 +406,7 @@ function exec(index, https) {
 	var fork = Cluster.fork();
 	fork.$id = index.toString();
 	fork.on('message', message);
-	fork.on('exit', function(e) {
+	fork.on('exit', function() {
 		FORKS[index] = null;
 		TIMEOUTS[index] = setTimeout(exports.restart, 1000, index);
 	});
