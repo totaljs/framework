@@ -31,6 +31,7 @@
 - updated: `LOAD()` supports `service` type
 - updated: cluster watches `restart` or `restart_NAME_of_THREAD` files for restarting of existing threads
 - updated: cluster supports `auto` mode
+- updated: cluster supports watcher in `debug` mode
 
 - fixed: `ON('error404')` when the route doens't exist
 - fixed: `filter` in Schema `workflows`, `transformations` and `operations`

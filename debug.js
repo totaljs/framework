@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkDebug
- * @version 3.1.0
+ * @version 3.3.3
  */
 
 const Path = require('path');
@@ -32,6 +32,8 @@ const isWindows = Os.platform().substring(0, 3).toLowerCase() === 'win';
 
 var first = process.argv.indexOf('restart') === -1;
 var options = null;
+var initdelay;
+var watchercallback;
 
 module.exports = function(opt) {
 	options = opt;
@@ -46,8 +48,12 @@ module.exports = function(opt) {
 	// options.livereload = true;
 };
 
-process.on('uncaughtException', e => e.toString().indexOf('ESRCH') == -1 && console.log(e));
-process.title = 'total: debug';
+module.exports.watcher = function(callback) {
+	initdelay && clearTimeout(initdelay);
+	initdelay = null;
+	watchercallback = callback;
+	runwatching();
+};
 
 function runapp() {
 
@@ -102,9 +108,12 @@ function runwatching() {
 
 	function app() {
 
-		global.OBSOLETE = NOOP;
-		F.config.allow_ssc_validation = true;
-		F.$configure_configs();
+		if (!watchercallback) {
+			global.OBSOLETE = NOOP;
+			F.config.allow_ssc_validation = true;
+			F.$configure_configs();
+		}
+
 		F.directory = directory;
 
 		const fork = require('child_process').fork;
@@ -125,10 +134,12 @@ function runwatching() {
 			U.combine(CONF.directory_themes),
 			U.combine(CONF.directory_configs),
 			U.combine(CONF.directory_bundles),
-			U.combine('/threads/'),
 			U.combine('/startup/'),
 			U.combine('/plugins/')
 		];
+
+		if (global.THREAD)
+			directories.push(U.combine('/threads/' + global.THREAD + '/'));
 
 		const SRC = U.combine(CONF.directory_src);
 		const prefix = '----------------> ';
@@ -145,7 +156,7 @@ function runwatching() {
 		var force = false;
 		var changes = [];
 		var app = null;
-		var status = 0;
+		var status = watchercallback ? 1 : 0;
 		var pid = '';
 		var isLoaded = false;
 		var isSkip = false;
@@ -162,7 +173,7 @@ function runwatching() {
 		blacklist['/package.json'] = 1;
 		blacklist['/readme.md'] = 1;
 
-		if (isRELOAD) {
+		if (isRELOAD && !watchercallback) {
 			var tmppath = Path.join(Os.tmpdir(), 'totaljslivereload');
 			Fs.mkdir(tmppath, function() {
 				F.console = NOOP;
@@ -197,6 +208,7 @@ function runwatching() {
 		}
 
 		function onComplete(f) {
+
 			Fs.readdir(directory, function(err, arr) {
 
 				var length = arr.length;
@@ -212,7 +224,6 @@ function runwatching() {
 					if (files[name] === undefined)
 						files[name] = isLoaded ? 0 : null;
 				}
-
 				refresh();
 			});
 		}
@@ -266,6 +277,7 @@ function runwatching() {
 					} else {
 
 						var ticks = stat.mtime.getTime();
+
 						if (files[filename] != null && files[filename] !== ticks) {
 
 							if (filename.endsWith('.bundle') && files[filename.replace(/\.bundle$/, '.url')]) {
@@ -335,6 +347,14 @@ function runwatching() {
 		}
 
 		function restart() {
+
+			if (watchercallback) {
+				if (first)
+					first = false;
+				else
+					watchercallback(changes);
+				return;
+			}
 
 			if (app !== null) {
 				try
@@ -434,7 +454,7 @@ function runwatching() {
 
 		if (process.pid > 0) {
 
-			console.log(prefix.substring(8) + 'DEBUG PID: ' + process.pid + ' (v' + VERSION + ')');
+			!watchercallback && console.log(prefix.substring(8) + 'DEBUG PID: ' + process.pid + ' (v' + VERSION + ')');
 
 			pid = Path.join(directory, PIDNAME);
 			Fs.writeFileSync(pid, process.pid);
@@ -474,7 +494,15 @@ function normalize(path) {
 	return isWindows ? path.replace(/\\/g, '/') : path;
 }
 
-if (debugging)
-	setImmediate(runapp);
-else
-	setImmediate(runwatching);
+function init() {
+
+	process.on('uncaughtException', e => e.toString().indexOf('ESRCH') == -1 && console.log(e));
+	process.title = 'total: debug';
+
+	if (debugging)
+		setImmediate(runapp);
+	else
+		setImmediate(runwatching);
+}
+
+initdelay = setTimeout(init, 100);

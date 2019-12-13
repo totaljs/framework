@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkCluster
- * @version 3.0.0
+ * @version 3.3.3
  */
 
 const Fs = require('fs');
@@ -186,7 +186,7 @@ exports.restart = function(index) {
 		} else
 			exec(index);
 
-		console.log('======= ' + (new Date().format('yyyy-MM-dd HH:mm:ss')) + ': restarted thread with index "{0}"'.format(index));
+		RELEASE && console.log('======= ' + (new Date().format('yyyy-MM-dd HH:mm:ss')) + ': restarted thread with index "{0}"'.format(index));
 	}
 };
 
@@ -223,6 +223,31 @@ function master(count, mode, options, callback, https) {
 	console.log('Mode        : ' + mode);
 	options.thread && console.log('Thread      : ' + options.thread);
 	console.log('====================================================\n');
+
+	if (options.thread)
+		global.THREAD = options.thread;
+
+	if (mode === 'debug') {
+		require('./debug').watcher(function(changes) {
+			var can = false;
+			if (options.thread) {
+				for (var i = 0; i < changes.length; i++) {
+					var change = changes[i];
+					if (change.indexOf('/threads/') !== -1) {
+						if (change.indexOf('/threads/' + options.thread + '/') !== -1) {
+							can = true;
+							break;
+						}
+					} else {
+						can = true;
+						break;
+					}
+				}
+			} else
+				can = true;
+			can && exports.restart();
+		});
+	}
 
 	// Remove all DB locks
 	Fs.readdir(F.path.databases(), function(err, files) {
@@ -325,6 +350,7 @@ function master(count, mode, options, callback, https) {
 				if (last == null) {
 					TIMEOUTS[lastindex] && clearTimeout(TIMEOUTS[lastindex]);
 					FORKS.splice(lastindex, 1);
+					STATS.splice(lastindex, 1);
 					THREADS = FORKS.length;
 					return;
 				}
@@ -338,6 +364,7 @@ function master(count, mode, options, callback, https) {
 							fork.disconnect();
 							setTimeout(killme, 1000, fork);
 							FORKS.splice(lastindex, 1);
+							STATS.splice(lastindex, 1);
 						}
 						break;
 					}

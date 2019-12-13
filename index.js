@@ -19142,6 +19142,7 @@ function runsnapshot() {
 		stats.fm = F.stats.performance.file.floor(2);    // files min
 		stats.requests = F.stats.request.request;
 		stats.pending = F.stats.request.pending;
+		stats.errors = F.errors.length;
 
 		if (F.isCluster) {
 			if (process.connected) {
