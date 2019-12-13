@@ -8087,6 +8087,9 @@ function makeproxycallback(response) {
 	response.pipe(this.$res, PROXYOPTIONS);
 }
 
+
+const TRAVELCHARS = { e: 1, E: 1 };
+
 /**
  * Continue to process
  * @private
@@ -8111,10 +8114,10 @@ F.$requestcontinue = function(req, res, headers) {
 		if (!tmp) {
 			// Stops path travelsation outside of "public" directory
 			// A potential security issue
-			for (var i = 0; i < req.uri.pathname.length; i++) {
+			for (var i = 0; i < req.uri.pathname.length - 1; i++) {
 				var c = req.uri.pathname[i];
 				var n = req.uri.pathname[i + 1];
-				if ((c === '.' && (n === '/' || n === '%')) || (c === '%' && n === '2' && req.uri.pathname[i + 2] === 'e')) {
+				if ((c === '.' && (n === '/' || n === '%')) || (c === '%' && n === '2' && TRAVELCHARS[req.uri.pathname[i + 2]])) {
 					F.temporary.shortcache[req.uri.pathname] = 2;
 					req.$total_status(404);
 					return;
@@ -8127,6 +8130,7 @@ F.$requestcontinue = function(req, res, headers) {
 		}
 
 		F.stats.request.file++;
+
 		if (F._length_files)
 			req.$total_file();
 		else
