@@ -40,6 +40,7 @@
 - fixed: `(random)` subtype in `config` files
 - fixed: `(response)` phrase in `ROUTE()` for multiple `OPERATIONS`
 - fixed: a response in `ROUTE()` with mulitple operations if the result contained some error
+- fixed: a security bug with a path traversal vulnerability
 
 - improved: `LOGMAIL()` mail format
 
