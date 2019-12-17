@@ -7712,8 +7712,22 @@ F.console = function() {
 	console.log('Directory     : ' + process.cwd());
 	console.log('node_modules  : ' + PATHMODULES);
 	console.log('====================================================\n');
+
 	if (!F.isWorker) {
 		console.log('{2}://{0}:{1}/'.format(F.ip, F.port, F.isHTTPS ? 'https' : 'http'));
+
+		if (F.ip === '0.0.0.0') {
+			var ni = Os.networkInterfaces();
+			if (ni.en0) {
+				for (var i = 0; i < ni.en0.length; i++) {
+					var nii = ni.en0[i];
+					// nii.family === 'IPv6' ||
+					if (nii.family === 'IPv4')
+						console.log('{2}://{0}:{1}/'.format(nii.address, F.port, F.isHTTPS ? 'https' : 'http'));
+				}
+			}
+		}
+
 		console.log('');
 	}
 };

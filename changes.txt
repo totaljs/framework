@@ -43,6 +43,7 @@
 - fixed: a security bug with a path traversal vulnerability
 
 - improved: `LOGMAIL()` mail format
+- improved: starting logs in console output (added IPv4 local address)
 
 ======= 3.3.2
 
