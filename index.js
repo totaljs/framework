@@ -7724,7 +7724,7 @@ F.console = function() {
 					var nii = ni.en0[i];
 					// nii.family === 'IPv6' ||
 					if (nii.family === 'IPv4') {
-						hostname = '{2}://{0}:{1}/'.format(nii.address, F.port, F.isHTTPS ? 'https' : 'http');
+						hostname += '\n{2}://{0}:{1}/'.format(nii.address, F.port, F.isHTTPS ? 'https' : 'http');
 						break;
 					}
 				}
