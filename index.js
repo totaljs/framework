@@ -7714,7 +7714,8 @@ F.console = function() {
 	console.log('====================================================\n');
 
 	if (!F.isWorker) {
-		console.log('{2}://{0}:{1}/'.format(F.ip, F.port, F.isHTTPS ? 'https' : 'http'));
+
+		var hostname = '{2}://{0}:{1}/'.format(F.ip, F.port, F.isHTTPS ? 'https' : 'http');
 
 		if (F.ip === '0.0.0.0') {
 			var ni = Os.networkInterfaces();
@@ -7722,12 +7723,15 @@ F.console = function() {
 				for (var i = 0; i < ni.en0.length; i++) {
 					var nii = ni.en0[i];
 					// nii.family === 'IPv6' ||
-					if (nii.family === 'IPv4')
-						console.log('{2}://{0}:{1}/'.format(nii.address, F.port, F.isHTTPS ? 'https' : 'http'));
+					if (nii.family === 'IPv4') {
+						hostname = '{2}://{0}:{1}/'.format(nii.address, F.port, F.isHTTPS ? 'https' : 'http');
+						break;
+					}
 				}
 			}
 		}
 
+		console.log(hostname);
 		console.log('');
 	}
 };
