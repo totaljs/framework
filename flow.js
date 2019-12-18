@@ -341,15 +341,18 @@ FP.use = function(schema, callback) {
 			var instance = schema[key];
 			if (!instance.component)
 				continue;
+
 			var component = self.meta.components[instance.component];
 			schema[key].stats = { pending: 0, input: 0, output: 0, duration: 0 };
 			schema[key].cache = {};
+
 			if (!component)
 				err.push(key, '"' + instance.component + '" component not found.');
+
+			component.options && component.options.call(schema[key], schema[key].options);
 		}
 
 		self.meta.flow = schema;
-
 	} else
 		err.push('schema', 'Flow schema is invalid.');
 
