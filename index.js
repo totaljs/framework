@@ -9841,6 +9841,7 @@ F.$configure_configs = function(arr, rewrite) {
 	var tmp;
 	var subtype;
 	var value;
+	var generated = [];
 
 	for (var i = 0; i < length; i++) {
 		var str = arr[i];
@@ -9869,8 +9870,6 @@ F.$configure_configs = function(arr, rewrite) {
 			name = name.substring(0, index).trim();
 		} else
 			subtype = '';
-
-		var generated = [];
 
 		switch (name) {
 			case 'secret':
@@ -10139,9 +10138,10 @@ F.$configure_configs = function(arr, rewrite) {
 		}
 	}
 
+	console.log(generated);
+
 	// Cache for generated passwords
 	if (generated && generated.length) {
-
 		var filenameC = U.combine('/databases/', 'config{0}.json'.format(global.THREAD ? ('_' + global.THREAD) : ''));
 		var gdata;
 
@@ -10157,7 +10157,7 @@ F.$configure_configs = function(arr, rewrite) {
 		for (var i = 0; i < generated.length; i++)
 			tmp[generated[i]] = obj[generated[i]];
 
-		F.path.verify('databases');
+		PATH.verify('databases');
 		Fs.writeFileSync(filenameC, JSON.stringify(tmp), NOOP);
 	}
 
