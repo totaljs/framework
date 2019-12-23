@@ -10138,8 +10138,6 @@ F.$configure_configs = function(arr, rewrite) {
 		}
 	}
 
-	console.log(generated);
-
 	// Cache for generated passwords
 	if (generated && generated.length) {
 		var filenameC = U.combine('/databases/', 'config{0}.json'.format(global.THREAD ? ('_' + global.THREAD) : ''));
