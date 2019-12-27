@@ -102,7 +102,6 @@ function clusterlock(db, method) {
 			});
 		});
 	});
-
 }
 
 function clusterunlock(db) {
@@ -7253,7 +7252,6 @@ DatabaseBuilder.prototype.gridfilter = function(name, obj, type, key) {
 		var arr = value.split(',');
 
 		if (type === undefined || type === String) {
-			console.log(arr);
 			builder.or();
 			for (var i = 0, length = arr.length; i < length; i++) {
 				var item = arr[i].trim();
@@ -7305,6 +7303,159 @@ DatabaseBuilder.prototype.gridsort = function(sort) {
 		index = sort.lastIndexOf(' ');
 	builder.sort(sort.substring(0, index), sort[index + 1] === 'd');
 	return builder;
+};
+
+DatabaseBuilder.prototype.autofill = function($, allowedfields, skipfilter, defsort, maxlimit, localized) {
+
+	if (typeof(defsort) === 'number') {
+		maxlimit = defsort;
+		defsort = null;
+	}
+
+	var self = this;
+	var query = $.query || $.options;
+	var schema = $.schema;
+	var skipped;
+	var allowed;
+	var key;
+	var tmp;
+
+	if (skipfilter) {
+		key = 'NDB_' + skipfilter;
+		skipped = CACHE[key];
+		if (!skipped) {
+			tmp = skipfilter.split(',').trim();
+			var obj = {};
+			for (var i = 0; i < tmp.length; i++)
+				obj[tmp[i]] = 1;
+			skipped = CACHE[key] = obj;
+		}
+	}
+
+	if (allowedfields) {
+		key = 'NDB_' + allowedfields;
+		allowed = CACHE[key];
+		if (!allowed) {
+			var obj = {};
+			var arr = [];
+			var filter = [];
+
+			if (localized)
+				localized = localized.split(',');
+
+			tmp = allowedfields.split(',').trim();
+			for (var i = 0; i < tmp.length; i++) {
+				var k = tmp[i].split(':').trim();
+				obj[k[0]] = 1;
+
+				if (localized && localized.indexOf(k[0]) !== -1)
+					arr.push(k[0] + '§');
+				else
+					arr.push(k[0]);
+
+				k[1] && filter.push({ name: k[0], type: (k[1] || '').toLowerCase() });
+			}
+			allowed = CACHE[key] = { keys: arr, meta: obj, filter: filter };
+		}
+	}
+
+	var fields = query.fields;
+	var fieldscount = 0;
+	var opt = self.$options;
+
+	if (!opt.fields)
+		opt.fields = [];
+
+	if (fields) {
+		fields = fields.replace(REG_FIELDS_CLEANER, '').split(',');
+		for (var i = 0; i < fields.length; i++) {
+			var field = fields[i];
+			if (allowed && allowed.meta[field]) {
+				opt.fields.push(fields[i]);
+				fieldscount++;
+			} else if (schema.schema[field]) {
+				if (skipped && skipped[field])
+					continue;
+				opt.fields.push(field);
+				fieldscount++;
+			}
+		}
+	}
+
+	if (!fieldscount) {
+		if (allowed) {
+			for (var i = 0; i < allowed.keys.length; i++)
+				opt.fields.push(allowed.keys[i]);
+		}
+		if (schema.fields) {
+			for (var i = 0; i < schema.fields.length; i++) {
+				if (skipped && skipped[schema.fields[i]])
+					continue;
+				opt.fields.push(schema.fields[i]);
+			}
+		}
+	}
+
+	if (allowed && allowed.filter) {
+		for (var i = 0; i < allowed.filter.length; i++) {
+			tmp = allowed.filter[i];
+			self.gridfilter(tmp.name, query, tmp.type);
+		}
+	}
+
+	if (schema.fields) {
+		for (var i = 0; i < schema.fields.length; i++) {
+			var name = schema.fields[i];
+			if ((!skipped || !skipped[name]) && query[name]) {
+				var field = schema.schema[name];
+				var type = 'string';
+				switch (field.type) {
+					case 2:
+						type = 'number';
+						break;
+					case 4:
+						type = 'boolean';
+						break;
+					case 5:
+						type = 'date';
+						break;
+				}
+				self.gridfilter(name, query, type);
+			}
+		}
+	}
+
+	if (query.sort) {
+		var index = query.sort.lastIndexOf('_');
+		if (index !== -1) {
+			var name = query.sort.substring(0, index);
+			var can = true;
+
+			if (skipped && skipped[name])
+				can = false;
+
+			if (can && allowed && !allowed.meta[name])
+				can = false;
+
+			if (can && !allowed) {
+				if (!schema.schema[name])
+					can = false;
+			} else if (!can)
+				can = !!schema.schema[name];
+
+			if (can)
+				self.sort(name, query.sort[index + 1] === 'd');
+			else if (defsort)
+				self.gridsort(defsort);
+
+		} else if (defsort)
+			self.gridsort(defsort);
+
+	} else if (defsort)
+		self.gridsort(defsort);
+
+	maxlimit && self.paginate(query.page, query.limit, maxlimit || 50);
+	return self;
 };
 
 function cluster_send(obj) {

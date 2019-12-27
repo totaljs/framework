@@ -27,6 +27,7 @@
 - added: a new config key `allow_stats_snapshot`
 - added: view engine `@{import()}` supports auto-merging JS or CSS files: `@{import('default.js + ui.js')}`
 - added: `exports.options` delegate to component in `FLOWSTREAM`
+- added: `DatabaseBuilder.autofill()` from DBMS
 
 - updated: `WEBSOCKET()` supports `+`, `-` and `🔒` as authorization flags
 - updated: `LOAD()` supports `service` type
