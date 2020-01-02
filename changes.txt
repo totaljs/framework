@@ -44,6 +44,7 @@
 - fixed: a response in `ROUTE()` with mulitple operations if the result contained some error
 - fixed: a security bug with a path traversal vulnerability
 - fixed: `debug` watcher for `themes`
+- fixed: `generators` in schemas with a new declaration
 
 - improved: `LOGMAIL()` mail format
 - improved: starting logs in console output (added IPv4 local address)
