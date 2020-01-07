@@ -13968,29 +13968,29 @@ ControllerProto.file = function(filename, download, headers, done) {
 	return this;
 };
 
-ControllerProto.filefs = function(name, id, download, headers, callback) {
+ControllerProto.filefs = function(name, id, download, headers, callback, checkmeta) {
 	var self = this;
 	var options = {};
 	options.id = id;
 	options.download = download;
 	options.headers = headers;
 	options.done = callback;
-	FILESTORAGE(name).res(self.res, options, $file_notmodified);
+	FILESTORAGE(name).res(self.res, options, checkmeta, $file_notmodified);
 	return self;
 };
 
-ControllerProto.filenosql = function(name, id, download, headers, callback) {
+ControllerProto.filenosql = function(name, id, download, headers, callback, checkmeta) {
 	var self = this;
 	var options = {};
 	options.id = id;
 	options.download = download;
 	options.headers = headers;
 	options.done = callback;
-	NOSQL(name).binary.res(self.res, options, $file_notmodified);
+	NOSQL(name).binary.res(self.res, options, checkmeta, $file_notmodified);
 	return self;
 };
 
-ControllerProto.imagefs = function(name, id, make, headers, callback) {
+ControllerProto.imagefs = function(name, id, make, headers, callback, checkmeta) {
 	var self = this;
 	var options = {};
 	options.id = id;
@@ -13998,11 +13998,11 @@ ControllerProto.imagefs = function(name, id, make, headers, callback) {
 	options.make = make;
 	options.headers = headers;
 	options.done = callback;
-	FILESTORAGE(name).res(self.res, options, $file_notmodified);
+	FILESTORAGE(name).res(self.res, options, checkmeta, $file_notmodified);
 	return self;
 };
 
-ControllerProto.imagenosql = function(name, id, make, headers, callback) {
+ControllerProto.imagenosql = function(name, id, make, headers, callback, checkmeta) {
 	var self = this;
 	var options = {};
 	options.id = id;
@@ -14010,7 +14010,7 @@ ControllerProto.imagenosql = function(name, id, make, headers, callback) {
 	options.make = make;
 	options.headers = headers;
 	options.done = callback;
-	NOSQL(name).binary.res(self.res, options, $file_notmodified);
+	NOSQL(name).binary.res(self.res, options, checkmeta, $file_notmodified);
 	return self;
 };
 
@@ -17159,29 +17159,29 @@ function extend_response(PROTO) {
 	 * @param {Function} done Optional, callback.
 	 * @return {Framework}
 	 */
-	PROTO.filefs = function(name, id, download, headers, callback) {
+	PROTO.filefs = function(name, id, download, headers, callback, checkmeta) {
 		var self = this;
 		var options = {};
 		options.id = id;
 		options.download = download;
 		options.headers = headers;
 		options.done = callback;
-		FILESTORAGE(name).res(self, options, $file_notmodified);
+		FILESTORAGE(name).res(self, options, checkmeta, $file_notmodified);
 		return self;
 	};
 
-	PROTO.filenosql = function(name, id, download, headers, callback) {
+	PROTO.filenosql = function(name, id, download, headers, callback, checkmeta) {
 		var self = this;
 		var options = {};
 		options.id = id;
 		options.download = download;
 		options.headers = headers;
 		options.done = callback;
-		NOSQL(name).binary.res(self, options, $file_notmodified);
+		NOSQL(name).binary.res(self, options, checkmeta, $file_notmodified);
 		return self;
 	};
 
-	PROTO.imagefs = function(name, id, make, headers, callback) {
+	PROTO.imagefs = function(name, id, make, headers, callback, checkmeta) {
 		var self = this;
 		var options = {};
 		options.id = id;
@@ -17189,11 +17189,11 @@ function extend_response(PROTO) {
 		options.make = make;
 		options.headers = headers;
 		options.done = callback;
-		FILESTORAGE(name).res(self, options, $file_notmodified);
+		FILESTORAGE(name).res(self, options, checkmeta, $file_notmodified);
 		return self;
 	};
 
-	PROTO.imagenosql = function(name, id, make, headers, callback) {
+	PROTO.imagenosql = function(name, id, make, headers, callback, checkmeta) {
 		var self = this;
 		var options = {};
 		options.id = id;
@@ -17201,7 +17201,7 @@ function extend_response(PROTO) {
 		options.make = make;
 		options.headers = headers;
 		options.done = callback;
-		NOSQL(name).binary.res(self, options, $file_notmodified);
+		NOSQL(name).binary.res(self, options, checkmeta, $file_notmodified);
 		return self;
 	};
 

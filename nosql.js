@@ -4708,7 +4708,7 @@ Binary.prototype.meta = function(id, callback, count) {
 	return self;
 };
 
-Binary.prototype.res = function(res, options, notmodified) {
+Binary.prototype.res = function(res, options, checkcustom, notmodified) {
 
 	var self = this;
 	var isnew = false;
@@ -4746,7 +4746,16 @@ Binary.prototype.res = function(res, options, notmodified) {
 	stream.on('data', function(buffer) {
 		var json = buffer.toString('utf8').replace(REGCLEAN, '');
 		if (json) {
+
 			var obj = JSON.parse(json, jsonparser);
+
+			if (checkcustom && checkcustom(obj) == false) {
+				if (RELEASE)
+					F.temporary.notfound[F.createTemporaryKey(req)] = true;
+				res.throw404();
+				return;
+			}
+
 			var utc = obj.date ? new Date(+obj.date.substring(0, 4), +obj.date.substring(4, 6), +obj.date.substring(6, 8)).toUTCString() : '';
 
 			if (!options.download && req.headers['if-modified-since'] === utc) {
