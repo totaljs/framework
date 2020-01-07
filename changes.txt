@@ -28,12 +28,15 @@
 - added: view engine `@{import()}` supports auto-merging JS or CSS files: `@{import('default.js + ui.js')}`
 - added: `exports.options` delegate to component in `FLOWSTREAM`
 - added: `DatabaseBuilder.autofill()` from DBMS
+- added: `HttpFile.extension` property
+- added: `HttpFile.size` property alias to `HttpFile.length`
 
 - updated: `WEBSOCKET()` supports `+`, `-` and `🔒` as authorization flags
 - updated: `LOAD()` supports `service` type
 - updated: cluster watches `restart` or `restart_NAME_of_THREAD` files for restarting of existing threads
 - updated: cluster supports `auto` mode
 - updated: cluster supports watcher in `debug` mode
+- updated: `*.filefs()`, `*.filenosql()`, `*.imagefs()`, `*.imagenosql()` by adding `checkmeta` argument
 
 - fixed: `ON('error404')` when the route doens't exist
 - fixed: `filter` in Schema `workflows`, `transformations` and `operations`
