@@ -666,6 +666,17 @@ function HttpFile() {
 	this.rem = true;
 }
 
+HttpFile.prototype = {
+	get size() {
+		return this.length;
+	},
+	get extension() {
+		if (!this.$extension)
+			this.$extension = framework_utils.getExtension(this.name);
+		return this.$extension;
+	}
+};
+
 var HFP = HttpFile.prototype;
 
 HFP.rename = HFP.move = function(filename, callback) {
