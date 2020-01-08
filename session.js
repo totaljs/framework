@@ -90,7 +90,7 @@ SessionProto.has2 = function(id, callback) {
 SessionProto.contains = function(sessionid, callback) {
 	var self = this;
 	var item = self.items.get(sessionid);
-	if (item && item.expire >= NOW && item.data)
+	if (item && item.expire >= NOW && item.data && !item.released)
 		callback(null, item.data, item);
 	else
 		callback();
@@ -98,7 +98,7 @@ SessionProto.contains = function(sessionid, callback) {
 
 SessionProto.contains2 = function(id, callback) {
 	for (var m of this.items.values()) {
-		if (m && m.expire >= NOW && m.id === id && m.data) {
+		if (m && m.expire >= NOW && m.id === id && m.data && !m.released) {
 			callback(null, m.data, m);
 			return;
 		}
@@ -273,6 +273,7 @@ SessionProto.release = function(sessionid, expire, callback) {
 		var count = 0;
 		for (var m of self.items.values()) {
 			if (m.data) {
+				m.released = true;
 				self.onrelease && self.onrelease(m);
 				m.data = null;
 				count++;
@@ -284,6 +285,7 @@ SessionProto.release = function(sessionid, expire, callback) {
 
 	var item = self.items.get(sessionid);
 	if (item) {
+		item.released = true;
 		self.onrelease && self.onrelease(item);
 		item.data = null;
 	}
@@ -315,6 +317,7 @@ SessionProto.release2 = function(id, expire, callback) {
 
 	for (var m of self.items.values()) {
 		if (m && m.id === id && m.data) {
+			m.released = true;
 			self.onrelease && self.onrelease(m);
 			m.data = null;
 			count++;
@@ -337,6 +340,7 @@ SessionProto.releaseunused = function(lastusage, callback) {
 	var lu = NOW.add(lastusage[0] === '-' ? lastusage : ('-' + lastusage));
 	for (var m of self.items.values()) {
 		if (m.data && (!m.used || m.used <= lu)) {
+			m.released = true;
 			self.onrelease && self.onrelease(m);
 			m.data = null;
 			count++;
@@ -536,6 +540,10 @@ SessionProto.get = function(sessionid, expire, callback) {
 
 			self.pending[item.id] = [];
 			self.ondata(item, function(err, data) {
+
+				if (item.released)
+					item.released = false;
+
 				item.data = data;
 				callback(err, data, item, true);
 				item.used = NOW;
