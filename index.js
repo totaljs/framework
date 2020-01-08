@@ -7926,7 +7926,6 @@ F.service = function(count) {
 				session.ddos = {};
 				session.ddosis = false;
 			}
-			session.releaseunused();
 		}
 	}
 
