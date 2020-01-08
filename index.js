@@ -1009,6 +1009,7 @@ function Framework() {
 		allow_clear_temp: true,
 		allow_ssc_validation: false,
 		allow_workers_silent: false,
+		allow_sessions_unused: '-20 minutes',
 
 		nosql_worker: false,
 		nosql_inmemory: null, // String Array
@@ -7826,7 +7827,10 @@ F.service = function(count) {
 		keys = Object.keys(F.sessions);
 		for (var i = 0; i < keys.length; i++) {
 			var key = keys[i];
-			F.sessions[key] && F.sessions[key].clean();
+			if (F.sessions[key]) {
+				F.sessions[key].clean();
+				CONF.allow_sessions_unused && F.sessions[key].releaseunused(CONF.allow_sessions_unused);
+			}
 		}
 	}
 
@@ -7922,6 +7926,7 @@ F.service = function(count) {
 				session.ddos = {};
 				session.ddosis = false;
 			}
+			session.releaseunused();
 		}
 	}
 
