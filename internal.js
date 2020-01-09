@@ -672,7 +672,7 @@ HttpFile.prototype = {
 	},
 	get extension() {
 		if (!this.$extension)
-			this.$extension = framework_utils.getExtension(this.name);
+			this.$extension = framework_utils.getExtension(this.filename);
 		return this.$extension;
 	},
 	set extension(val) {
