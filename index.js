@@ -13237,19 +13237,26 @@ ControllerProto.$import = function() {
 			}
 
 			merge[0] = merge[0].trim();
-			ext = U.getExtension(merge[0]);
+			var index = merge[0].lastIndexOf('.');
+			var mergename = merge[0];
+			var crc = 0;
 
+			ext = U.getExtension(merge[0]);
 			merge[0] = ext === 'css' ? self.public_css(merge[0]) : self.public_js(merge[0]);
 
 			for (var j = 1; j < merge.length; j++) {
 				merge[j] = merge[j].trim();
 				merge[j] = ext === 'css' ? self.public_css(merge[j]) : self.public_js(merge[j]);
+				crc += merge[j].crc32(true);
 			}
 
-			var tmp = ext === 'css' ? self.public_css(merge[0], true) : self.public_js(merge[0], true);
+			var outputname = mergename.substring(0, index) + crc + mergename.substring(index);
+			outputname = ext === 'css' ? self.public_css(outputname) : self.public_js(outputname);
+
+			var tmp = ext === 'css' ? self.public_css(outputname, true) : self.public_js(outputname, true);
 			$importmergecache[hash] = F.temporary.other[k] = tmp;
 
-			merge.unshift(merge[0]);
+			merge.unshift(outputname);
 			MERGE.apply(global, merge);
 			builder += tmp;
 			continue;
