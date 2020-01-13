@@ -13975,6 +13975,7 @@ ControllerProto.file = function(filename, download, headers, done) {
 	res.options.download = download;
 	res.options.headers = headers;
 	res.options.callback = done;
+
 	res.$file();
 	return this;
 };
@@ -17526,11 +17527,15 @@ function extend_response(PROTO) {
 
 		!req.$key && (req.$key = createTemporaryKey(req));
 
-		if (F.temporary.notfound[req.$key]) {
-			DEBUG && (F.temporary.notfound[req.$key] = undefined);
-			if (!F.routes.filesfallback || !F.routes.filesfallback(req, res))
-				res.throw404();
-			return res;
+		// "$keyskip" solves a problem with handling files in 404 state
+		if (!req.$keyskip) {
+			if (F.temporary.notfound[req.$key]) {
+				req.$keyskip = true;
+				DEBUG && (F.temporary.notfound[req.$key] = undefined);
+				if (!F.routes.filesfallback || !F.routes.filesfallback(req, res))
+					res.throw404();
+				return res;
+			}
 		}
 
 		// Is package?

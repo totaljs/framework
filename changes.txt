@@ -50,6 +50,7 @@
 - fixed: a security bug with a path traversal vulnerability
 - fixed: `debug` watcher for `themes`
 - fixed: `generators` in schemas with a new declaration
+- fixed: a problem with handling files in 404 action
 
 - improved: `LOGMAIL()` mail format
 - improved: starting logs in console output (added IPv4 local address)
