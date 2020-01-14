@@ -10939,6 +10939,18 @@ FrameworkPathProto.modules = function(filename) {
 	return U.combine(CONF.directory_modules, filename);
 };
 
+FrameworkPathProto.schemas = function(filename) {
+	return U.combine(CONF.directory_schemas, filename);
+};
+
+FrameworkPathProto.operations = function(filename) {
+	return U.combine(CONF.directory_operations, filename);
+};
+
+FrameworkPathProto.tasks = function(filename) {
+	return U.combine(CONF.directory_tasks, filename);
+};
+
 FrameworkPathProto.controllers = function(filename) {
 	return U.combine(CONF.directory_controllers, filename);
 };
