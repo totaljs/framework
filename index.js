@@ -10761,8 +10761,7 @@ global.UPDATE = function(version, callback, pauseserver) {
 	opt.callback = function(err, response) {
 		callback && callback(err, response);
 		// rename version
-		if (!err)
-			Fs.renameSync(filename, filename + '_bk');
+		Fs.renameSync(filename, filename + '_bk');
 		EMIT('update', err, response);
 		F.isCluster && process.send('total:update');
 		pauseserver && PAUSESERVER(pauseserver);
