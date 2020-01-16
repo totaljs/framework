@@ -10740,6 +10740,8 @@ global.UPDATE = function(versions, callback, pauseserver) {
 	if (!(versions instanceof Array))
 		versions = [versions];
 
+	pauseserver && PAUSESERVER(pauseserver);
+
 	if (F.id && F.id !== '0') {
 		if (callback || pauseserver) {
 			ONCE('update', function() {
