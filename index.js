@@ -10725,24 +10725,20 @@ global.PAUSESERVER = F.wait = function(name, enable) {
 	return enable === true;
 };
 
-global.UPDATE = function(version, callback, pauseserver) {
+global.UPDATE = function(versions, callback, pauseserver) {
 
 	if (typeof(version) === 'function') {
-		callback = version;
-		version = CONF.version;
+		callback = versions;
+		versions = CONF.version;
 	}
 
-	var filename = PATH.updates(version + '.js');
-	var response;
-
-	try {
-		response = Fs.readFileSync(filename);
-	} catch (e) {
-		callback && callback();
-		if (F.isCluster && F.id && F.id !== '0')
-			process.send('total:update');
-		return;
+	if (typeof(callback) === 'string') {
+		pauseserver = callback;
+		callback = null;
 	}
+
+	if (!(versions instanceof Array))
+		versions = [versions];
 
 	if (F.id && F.id !== '0') {
 		if (callback || pauseserver) {
@@ -10754,40 +10750,58 @@ global.UPDATE = function(version, callback, pauseserver) {
 		return;
 	}
 
-	pauseserver && PAUSESERVER(pauseserver);
+	var errorbuilder = new ErrorBuilder();
 
-	var opt = {};
-	opt.version = version;
-	opt.callback = function(err, response) {
-		callback && callback(err, response);
-		// rename version
-		Fs.renameSync(filename, filename + '_bk');
-		EMIT('update', err, response);
-		F.isCluster && process.send('total:update');
-		pauseserver && PAUSESERVER(pauseserver);
-	};
+	versions.wait(function(version, next) {
 
-	opt.done = function(arg) {
-		return function(err, response) {
-			if (err) {
-				opt.callback(err);
-			} else if (arg)
-				opt.callback(null, SUCCESS(err == null, arg === true ? response : arg));
-			else
-				opt.callback(null, SUCCESS(err == null));
+		var filename = PATH.updates(version + '.js');
+		var response;
+
+		try {
+			response = Fs.readFileSync(filename);
+		} catch (e) {
+			next();
+			return;
+		}
+
+		var opt = {};
+		opt.version = version;
+		opt.callback = function(err) {
+			err && errorbuilder.push(err);
+			Fs.renameSync(filename, filename + '_bk');
+			next();
 		};
-	};
 
-	opt.success = function() {
-		opt.callback(null, SUCCESS(true));
-	};
+		opt.done = function(arg) {
+			return function(err) {
+				if (err) {
+					opt.callback(err);
+				} else if (arg)
+					opt.callback();
+				else
+					opt.callback();
+			};
+		};
 
-	opt.invalid = function(err) {
-		opt.callback(err);
-	};
+		opt.success = function() {
+			opt.callback(null);
+		};
 
-	var fn = new Function('$', response);
-	fn(opt, response.toString('utf8'));
+		opt.invalid = function(err) {
+			opt.callback(err);
+		};
+
+		var fn = new Function('$', response);
+		fn(opt, response.toString('utf8'));
+
+	}, function() {
+		var err = errorbuilder.length ? errorbuilder : null;
+		callback && callback(err);
+		if (F.isCluster && F.id && F.id !== '0')
+			process.send('total:update');
+		pauseserver && PAUSESERVER(pauseserver);
+		EMIT('update', err);
+	});
 };
 
 // =================================================================================
