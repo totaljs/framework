@@ -10725,7 +10725,7 @@ global.PAUSESERVER = F.wait = function(name, enable) {
 	return enable === true;
 };
 
-global.UPDATE = function(version, callback) {
+global.UPDATE = function(version, callback, pauseserver) {
 
 	if (typeof(version) === 'function') {
 		callback = version;
@@ -10745,12 +10745,18 @@ global.UPDATE = function(version, callback) {
 	}
 
 	if (F.id && F.id !== '0') {
-		callback && ONCE('update', callback);
+		if (callback || pauseserver) {
+			ONCE('update', function() {
+				callback && callback();
+				pauseserver && PAUSESERVER(pauseserver);
+			});
+		}
 		return;
 	}
 
-	var opt = {};
+	pauseserver && PAUSESERVER(pauseserver);
 
+	var opt = {};
 	opt.version = version;
 	opt.callback = function(err, response) {
 		callback && callback(err, response);
@@ -10759,6 +10765,7 @@ global.UPDATE = function(version, callback) {
 			Fs.renameSync(filename, filename + '_bk');
 		EMIT('update', err, response);
 		F.isCluster && process.send('total:update');
+		pauseserver && PAUSESERVER(pauseserver);
 	};
 
 	opt.done = function(arg) {

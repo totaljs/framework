@@ -34,7 +34,7 @@
 - added: `allow_sessions_unused` config key for cleaning of unused sessions
 - added: missing `PATH.schemas`, `PATH.operations` and `PATH.tasks`
 - added: a new method `PATH.updates`
-- added: easy updating of applications via `UPDATE(version, [callback])`
+- added: easy updating of applications via `UPDATE(version, [callback], [pause_server_message])`
 
 - updated: `WEBSOCKET()` supports `+`, `-` and `🔒` as authorization flags
 - updated: `LOAD()` supports `service` type
