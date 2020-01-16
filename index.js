@@ -10725,53 +10725,63 @@ global.PAUSESERVER = F.wait = function(name, enable) {
 	return enable === true;
 };
 
-global.UPDATE_VERSION = function(version, callback) {
+global.UPDATE = function(version, callback) {
 
-	if (F.id && F.id !== '0') {
-		callback && callback();
-		return;
+	if (typeof(version) === 'function') {
+		callback = version;
+		version = CONF.version;
 	}
 
 	var filename = PATH.updates(version + '.js');
-	Fs.readFile(filename, function(err, response) {
+	var response;
 
-		if (response) {
+	try {
+		response = Fs.readFileSync(filename);
+	} catch (e) {
+		callback && callback();
+		if (F.isCluster && F.id && F.id !== '0')
+			process.send('total:update');
+		return;
+	}
 
-			var opt = {};
+	if (F.id && F.id !== '0') {
+		callback && ONCE('update', callback);
+		return;
+	}
 
-			opt.version = version;
-			opt.callback = function(err, response) {
-				callback && callback(err, response);
-				// rename version
-				if (!err)
-					Fs.renameSync(filename, filename + '_bk');
-			};
+	var opt = {};
 
-			opt.done = function(arg) {
-				return function(err, response) {
-					if (err) {
-						opt.callback(err);
-					} else if (arg)
-						opt.callback(null, SUCCESS(err == null, arg === true ? response : arg));
-					else
-						opt.callback(null, SUCCESS(err == null));
-				};
-			};
+	opt.version = version;
+	opt.callback = function(err, response) {
+		callback && callback(err, response);
+		// rename version
+		if (!err)
+			Fs.renameSync(filename, filename + '_bk');
+		EMIT('update', err, response);
+		F.isCluster && process.send('total:update');
+	};
 
-			opt.success = function() {
-				opt.callback(null, SUCCESS(true));
-			};
-
-			opt.invalid = function(err) {
+	opt.done = function(arg) {
+		return function(err, response) {
+			if (err) {
 				opt.callback(err);
-			};
+			} else if (arg)
+				opt.callback(null, SUCCESS(err == null, arg === true ? response : arg));
+			else
+				opt.callback(null, SUCCESS(err == null));
+		};
+	};
 
-			var fn = new Function('$', response);
-			fn(opt, response.toString('utf8'));
+	opt.success = function() {
+		opt.callback(null, SUCCESS(true));
+	};
 
-		} else if (callback)
-			callback();
-	});
+	opt.invalid = function(err) {
+		opt.callback(err);
+	};
+
+	var fn = new Function('$', response);
+	fn(opt, response.toString('utf8'));
 };
 
 // =================================================================================
@@ -18553,6 +18563,8 @@ process.on('message', function(msg, h) {
 		F.reconnect();
 	else if (msg === 'total:ping')
 		setImmediate(process_ping);
+	else if (msg === 'total:update')
+		EMIT('update');
 	else if (msg === 'reset')
 		F.cache.clear();
 	else if (msg === 'stop' || msg === 'exit' || msg === 'kill')

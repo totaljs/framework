@@ -72,6 +72,8 @@ exports.make = function(callback) {
 					return resume();
 
 				var dbpath = CONF.directory_databases;
+				var pathupdate = CONF.directory_updates;
+				var pathstartup = '/startup';
 
 				F.restore(filename, target, resume, function(p, dir) {
 
@@ -97,8 +99,14 @@ exports.make = function(callback) {
 							exists = Fs.statSync(Path.join(target, p)) != null;
 						} catch (e) {}
 
-						// DB file
-						if (exists && p.startsWith(dbpath))
+						if ((dirname === pathupdate || dirname === pathstartup) && !exists) {
+							try {
+								exists = Fs.statSync(Path.join(target, p + '_bk')) != null;
+							} catch (e) {}
+						}
+
+						// A specific file like DB file or startup file or update script
+						if (exists && (p.startsWith(dbpath) || p.startsWith(pathupdate) || p.startsWith(pathstartup)))
 							return false;
 
 						if (INTERNAL[p] || U.getExtension(p) === 'resource' || mergeme) {

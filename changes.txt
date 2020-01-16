@@ -33,6 +33,8 @@
 - added: auto-session cleaner of unused sessions
 - added: `allow_sessions_unused` config key for cleaning of unused sessions
 - added: missing `PATH.schemas`, `PATH.operations` and `PATH.tasks`
+- added: a new method `PATH.updates`
+- added: easy updating of applications via `UPDATE(version, [callback])`
 
 - updated: `WEBSOCKET()` supports `+`, `-` and `🔒` as authorization flags
 - updated: `LOAD()` supports `service` type
@@ -52,6 +54,7 @@
 - fixed: `debug` watcher for `themes`
 - fixed: `generators` in schemas with a new declaration
 - fixed: a problem with handling files in 404 action
+- fixed: `startup` directory in bundles
 
 - improved: `LOGMAIL()` mail format
 - improved: starting logs in console output (added IPv4 local address)
