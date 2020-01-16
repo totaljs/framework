@@ -941,6 +941,7 @@ function Framework() {
 		directory_services: '/services/',
 		directory_themes: '/themes/',
 		directory_tasks: '/tasks/',
+		directory_updates: '/updates/',
 
 		// all HTTP static request are routed to directory-public
 		static_url: '',
@@ -4397,7 +4398,7 @@ F.$startup = function(callback) {
 		return callback();
 
 	run.wait(function(filename, next) {
-		var fn = dir + filename + new Date().format('yyMMdd_HHmmss');
+		var fn = dir + filename + '_bk';
 		Fs.renameSync(dir + filename, fn);
 		var fork = Child.fork(fn, [], { cwd: directory });
 		fork.on('exit', function() {
@@ -10724,6 +10725,55 @@ global.PAUSESERVER = F.wait = function(name, enable) {
 	return enable === true;
 };
 
+global.UPDATE_VERSION = function(version, callback) {
+
+	if (F.id && F.id !== '0') {
+		callback && callback();
+		return;
+	}
+
+	var filename = PATH.updates(version + '.js');
+	Fs.readFile(filename, function(err, response) {
+
+		if (response) {
+
+			var opt = {};
+
+			opt.version = version;
+			opt.callback = function(err, response) {
+				callback && callback(err, response);
+				// rename version
+				if (!err)
+					Fs.renameSync(filename, filename + '_bk');
+			};
+
+			opt.done = function(arg) {
+				return function(err, response) {
+					if (err) {
+						opt.callback(err);
+					} else if (arg)
+						opt.callback(null, SUCCESS(err == null, arg === true ? response : arg));
+					else
+						opt.callback(null, SUCCESS(err == null));
+				};
+			};
+
+			opt.success = function() {
+				opt.callback(null, SUCCESS(true));
+			};
+
+			opt.invalid = function(err) {
+				opt.callback(err);
+			};
+
+			var fn = new Function('$', response);
+			fn(opt, response.toString('utf8'));
+
+		} else if (callback)
+			callback();
+	});
+};
+
 // =================================================================================
 // Framework route
 // =================================================================================
@@ -10924,6 +10974,10 @@ FrameworkPathProto.temporary = function(filename) {
 
 FrameworkPathProto.views = function(filename) {
 	return U.combine(CONF.directory_views, filename);
+};
+
+FrameworkPathProto.updates = function(filename) {
+	return U.combine(CONF.directory_updates, filename);
 };
 
 FrameworkPathProto.workers = function(filename) {

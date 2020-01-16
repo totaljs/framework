@@ -134,6 +134,7 @@ function runwatching() {
 			U.combine(CONF.directory_themes),
 			U.combine(CONF.directory_configs),
 			U.combine(CONF.directory_bundles),
+			U.combine(CONF.directory_updates),
 			U.combine('/startup/'),
 			U.combine('/plugins/')
 		];
