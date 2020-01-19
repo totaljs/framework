@@ -33,6 +33,7 @@
 - added: auto-session cleaner of unused sessions
 - added: `allow_sessions_unused` config key for cleaning of unused sessions
 - added: missing `PATH.schemas`, `PATH.operations` and `PATH.tasks`
+- added: NOSQL counter `.reset([type], [id], [date], [callback])` method
 
 - updated: `WEBSOCKET()` supports `+`, `-` and `🔒` as authorization flags
 - updated: `LOAD()` supports `service` type

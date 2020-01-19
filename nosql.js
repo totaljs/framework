@@ -4084,6 +4084,152 @@ CP.save = function() {
 	return self;
 };
 
+CP.reset = function(countertype, counterid, date, callback) {
+
+	var self = this;
+
+	if (date)
+		date = date.split('-');
+
+
+	var allow = null;
+
+	if (countertype) {
+		if (!(countertype instanceof Array))
+			countertype = [countertype];
+		allow = {};
+		for (var i = 0; i < countertype.length; i++)
+			allow[countertype[i]] = 1;
+	}
+
+	self.db.readonly && self.db.throwReadonly();
+
+	if (self.type) {
+		setTimeout(() => self.save(), 200);
+		return self;
+	}
+
+	var filename = self.db.filenameCounter;
+	var reader = Fs.createReadStream(filename);
+	var writer = Fs.createWriteStream(filename + '-tmp');
+	var counter = 0;
+
+	self.type = 4;
+
+	reader.on('data', framework_utils.streamer(NEWLINEBUF, function(value) {
+
+		var id = value.substring(0, value.indexOf('='));
+		// 0 === typeYEARid=COUNT
+		// N === MMdd=COUNT
+
+		var arr = value.trim().split(';');
+		var type = id.substring(0, 3);
+		var year = id.substring(3, 7);
+
+		if (counterid && counterid !== id.substring(7)) {
+			writer.write(arr.join(';') + NEWLINE);
+			return;
+		}
+
+		if (allow && !allow[type]) {
+			if (type === 'mma' && !allow.min && !allow.max) {
+				writer.write(arr.join(';') + NEWLINE);
+				return;
+			}
+		}
+
+		if (date) {
+			if (date[0] !== year) {
+				writer.write(arr.join(';') + NEWLINE);
+				return;
+			}
+		}
+
+		var values = [];
+
+		for (var i = 1; i < arr.length; i++) {
+
+			var stat = arr[i].split('=');
+			var statcount;
+
+			if (type === 'mma') {
+				statcount = stat[1].split('X');
+				statcount[0] = +statcount[0];
+				statcount[1] = +statcount[1];
+			} else
+				statcount = +stat[1];
+
+			if (date && ((date[1] && stat[0].substring(0, 2) !== date[1]) || (date[2] && stat[0].substring(2, 4) !== date[2]))) {
+				if (type === 'mma')
+					values.push(statcount[0], statcount[1]);
+				else
+					values.push(statcount);
+				continue;
+			}
+
+			if (allow && type === 'mma') {
+				if (allow.min) {
+					stat[1] = '0X' + statcount[1];
+					arr[i] = stat.join('=');
+					values.push(statcount[1]);
+					continue;
+				} else if (allow.max) {
+					stat[1] = statcount[0] + 'X0';
+					arr[i] = stat.join('=');
+					values.push(statcount[0]);
+					continue;
+				} else {
+					// reset entire mma
+					values.push(0);
+				}
+			}
+
+			stat[1] = type === 'mma' ? '0X0' : '0';
+
+			if (stat[1] === '0X0' || stat[1] === '0')
+				arr.splice(i, 1);
+			else
+				arr[i] = stat.join('=');
+		}
+
+		var min = null;
+		var max = null;
+		var sum = 0;
+
+		for (var i = 0; i < values.length; i++) {
+			var val = values[i];
+			if (min == null)
+				min = val;
+			else if (min > val)
+				min = val;
+			if (max == null)
+				max = val;
+			else if (max < val)
+				max = val;
+			sum += val;
+		}
+
+		var tmp = arr[0].split('=');
+		tmp[1] = (type === 'mma' ? ((min || 0) + 'X' + (max || 0)) : ((sum || 0) + ''));
+		arr[0] = tmp.join('=');
+		writer.write(arr.join(';') + NEWLINE);
+		counter++;
+	}));
+
+	CLEANUP(writer, function() {
+		Fs.rename(filename + '-tmp', filename, function() {
+			F.isCluster && clusterunlock(self);
+			clearTimeout(self.timeout);
+			self.timeout = 0;
+			self.type = 0;
+			counter && self.$events.stats && setImmediate(() => self.emit('stats', counter));
+			callback && callback(null, counter);
+		});
+	});
+
+	return self;
+};
+
 CP.$save = function() {
 
 	var self = this;
@@ -4119,7 +4265,7 @@ CP.$save = function() {
 		writer.end();
 	};
 
-	reader.on('data', framework_utils.streamer(NEWLINEBUF, function(value, index) {
+	reader.on('data', framework_utils.streamer(NEWLINEBUF, function(value) {
 
 		var id = value.substring(0, value.indexOf('='));
 		var count = cache[id];
