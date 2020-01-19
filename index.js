@@ -19279,7 +19279,7 @@ function runsnapshot() {
 		stats.requests = F.stats.request.request;
 		stats.pending = F.stats.request.pending;
 		stats.errors = F.errors.length;
-		stats.timeout = F.stats.response.error408;
+		stats.timeouts = F.stats.response.error408;
 
 		if (F.isCluster) {
 			if (process.connected) {
