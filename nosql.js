@@ -4088,9 +4088,13 @@ CP.reset = function(countertype, counterid, date, callback) {
 
 	var self = this;
 
+	if (self.type) {
+		setTimeout((countertype, counterid, date, callback) => self.reset(countertype, counterid, date, callback), 200, countertype, counterid, date, callback);
+		return self;
+	}
+
 	if (date)
 		date = date.split('-');
-
 
 	var allow = null;
 
@@ -4103,11 +4107,6 @@ CP.reset = function(countertype, counterid, date, callback) {
 	}
 
 	self.db.readonly && self.db.throwReadonly();
-
-	if (self.type) {
-		setTimeout(() => self.save(), 200);
-		return self;
-	}
 
 	var filename = self.db.filenameCounter;
 	var reader = Fs.createReadStream(filename);
@@ -4186,9 +4185,10 @@ CP.reset = function(countertype, counterid, date, callback) {
 
 			stat[1] = type === 'mma' ? '0X0' : '0';
 
-			if (stat[1] === '0X0' || stat[1] === '0')
+			if (stat[1] === '0X0' || stat[1] === '0') {
 				arr.splice(i, 1);
-			else
+				i--;
+			} else
 				arr[i] = stat.join('=');
 		}
 
@@ -4198,23 +4198,33 @@ CP.reset = function(countertype, counterid, date, callback) {
 
 		for (var i = 0; i < values.length; i++) {
 			var val = values[i];
+
 			if (min == null)
 				min = val;
 			else if (min > val)
 				min = val;
+
 			if (max == null)
 				max = val;
 			else if (max < val)
 				max = val;
+
 			sum += val;
 		}
 
 		var tmp = arr[0].split('=');
 		tmp[1] = (type === 'mma' ? ((min || 0) + 'X' + (max || 0)) : ((sum || 0) + ''));
 		arr[0] = tmp.join('=');
-		writer.write(arr.join(';') + NEWLINE);
+
+		if (arr.length > 1)
+			writer.write(arr.join(';') + NEWLINE);
+
 		counter++;
 	}));
+
+	reader.on('end', function() {
+		writer.end();
+	});
 
 	CLEANUP(writer, function() {
 		Fs.rename(filename + '-tmp', filename, function() {
