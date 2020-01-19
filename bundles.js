@@ -1,3 +1,29 @@
+// Copyright 2012-2019 (c) Peter Širka <petersirka@gmail.com>
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+/**
+ * @module FrameworkBundles
+ * @version 3.3.3
+ */
+
 require('./index');
 
 const Fs = require('fs');
@@ -72,6 +98,8 @@ exports.make = function(callback) {
 					return resume();
 
 				var dbpath = CONF.directory_databases;
+				var pathupdate = CONF.directory_updates;
+				var pathstartup = '/startup';
 
 				F.restore(filename, target, resume, function(p, dir) {
 
@@ -97,8 +125,14 @@ exports.make = function(callback) {
 							exists = Fs.statSync(Path.join(target, p)) != null;
 						} catch (e) {}
 
-						// DB file
-						if (exists && p.startsWith(dbpath))
+						if ((dirname === pathupdate || dirname === pathstartup) && !exists) {
+							try {
+								exists = Fs.statSync(Path.join(target, p + '_bk')) != null;
+							} catch (e) {}
+						}
+
+						// A specific file like DB file or startup file or update script
+						if (exists && (p.startsWith(dbpath) || p.startsWith(pathupdate) || p.startsWith(pathstartup)))
 							return false;
 
 						if (INTERNAL[p] || U.getExtension(p) === 'resource' || mergeme) {

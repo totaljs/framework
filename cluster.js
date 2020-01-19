@@ -390,12 +390,18 @@ function message(m) {
 		return;
 	}
 
+	if (m === 'total:update') {
+		for (var i = 1, length = FORKS.length; i < length; i++)
+			FORKS[i] && FORKS[i].$ready && FORKS[i].send(m);
+		return;
+	}
+
 	if (m.TYPE === 'master') {
 		if (MASTER && MASTER[m.name]) {
 			for (var i = 0, length = MASTER[m.name].length; i < length; i++)
 				MASTER[m.name][i](m.a, m.b, m.c, m.d, m.e);
 		}
-	} if (m.TYPE === 'snapshot') {
+	} else if (m.TYPE === 'snapshot') {
 		var is = false;
 		STATS[i];
 		for (var i = 0; i < STATS.length; i++) {
