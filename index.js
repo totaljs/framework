@@ -3367,6 +3367,18 @@ global.WEBSOCKET = F.websocket = function(url, funcInitialize, flags, length) {
 			throw new Error('Sitemap item "' + url + '" not found.');
 	}
 
+	var first = url.substring(0, 1);
+	if (first === '+' || first === '-' || url.substring(0, 2) === '🔒') {
+		// auth/unauth
+		url = url.replace(/^(\+|-|🔒)+/g, '').trim();
+		!flags && (flags = []);
+		flags.push(first === '-' ? 'unauthorized' : 'authorized');
+	}
+
+	var index = url.substring(0, 7).indexOf(' ');
+	if (index !== -1)
+		url = url.substring(index + 1).trim();
+
 	if (url === '')
 		url = '/';
 
