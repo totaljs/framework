@@ -4222,9 +4222,10 @@ CP.reset = function(countertype, counterid, date, callback) {
 		counter++;
 	}));
 
-	reader.on('end', function() {
-		writer.end();
-	});
+	var flush = () => writer.end();
+
+	reader.on('error', flush);
+	reader.on('end', flush);
 
 	CLEANUP(writer, function() {
 		Fs.rename(filename + '-tmp', filename, function() {
