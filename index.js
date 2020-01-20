@@ -10910,7 +10910,9 @@ FrameworkPathProto.verify = function(name) {
 		return F;
 	var directory = CONF['directory_' + name] || name;
 	var dir = U.combine(directory);
-	!existsSync(dir) && Fs.mkdirSync(dir);
+	try {
+		!existsSync(dir) && Fs.mkdirSync(dir);
+	} catch (e) {}
 	F.temporary.path[prop] = true;
 	return F;
 };
