@@ -661,7 +661,8 @@ SchemaBuilderEntityProto.inherit = function(group, name) {
 		copy_inherit(self, 'constants', schema.constants);
 
 		schema.properties.forEach(function(item) {
-			self.properties.indexOf(item) === -1 && schema.properties.push(item);
+			if (self.properties.indexOf(item) === -1)
+				self.properties.push(item);
 		});
 
 		if (schema.preparation) {
