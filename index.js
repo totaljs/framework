@@ -15592,6 +15592,10 @@ WebSocketClient.prototype = {
 		return this.req.query;
 	},
 
+	get headers() {
+		return this.req.headers;
+	},
+
 	get uri() {
 		return this.req.uri;
 	},
