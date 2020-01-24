@@ -49,6 +49,19 @@ function Session(name, ondata) {
 
 const SessionProto = Session.prototype;
 
+SessionProto.listlive = function(callback) {
+
+	var self = this;
+	var arr = [];
+
+	for (var m of self.items.values()) {
+		if (m && !m.released && m.data && m.expire >= NOW)
+			arr.push(m);
+	}
+
+	callback(null, arr);
+};
+
 SessionProto.list = function(id, callback) {
 
 	var self = this;
