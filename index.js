@@ -11133,8 +11133,7 @@ FrameworkCacheProto.init = function(notimer) {
 FrameworkCacheProto.init_timer = function() {
 	var self = this;
 	self.interval && clearInterval(self.interval);
-	// self.interval = setInterval(() => F.cache.recycle(), 1000 * 60);
-	self.interval = setInterval(() => F.cache.recycle(), 5000);
+	self.interval = setInterval(() => F.cache.recycle(), 1000 * 60);
 	return self;
 };
 
