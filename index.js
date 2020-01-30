@@ -11626,6 +11626,10 @@ Controller.prototype = {
 
 	set params(val) {
 		this.$params = val;
+	},
+
+	get ua() {
+		return this.controller && this.controller.req ? (this.controller.req.headers['user-agent'] || '').parseUA() : null;
 	}
 };
 
@@ -18541,6 +18545,10 @@ MiddlewareOptions.prototype = {
 
 	get headers() {
 		return this.req.headers;
+	},
+
+	get ua() {
+		return this.req ? (this.req.headers['user-agent'] || '').parseUA() : null;
 	},
 
 	get sessionid() {

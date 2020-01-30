@@ -37,6 +37,8 @@
 - added: easy updating of applications via `UPDATE(versions, [callback], [pause_server_message])`
 - added: NOSQL counter `.reset([type], [id], [date], [callback])` method-
 - added: `session.listlive(callback)` returns all live items in session
+- added: `controller.ua()` returns parsed User-Agent
+- added: `$.ua()` returns parsed User-Agent in Schemas, Operations, TaskBuilder, `MIDDLEWARE()` and `AUTH()`
 
 - updated: `WEBSOCKET()` supports `+`, `-` and `🔒` as authorization flags
 - updated: `LOAD()` supports `service` type

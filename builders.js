@@ -139,6 +139,10 @@ TaskBuilder.prototype = {
 		return this.controller && this.controller.req ? this.controller.req.headers : null;
 	},
 
+	get ua() {
+		return this.controller && this.controller.req ? (this.controller.req.headers['user-agent'] || '').parseUA() : null;
+	},
+
 	get filter() {
 		var ctrl = this.controller;
 		if (ctrl && !ctrl.$filter)
@@ -205,6 +209,10 @@ SchemaOptions.prototype = {
 
 	get headers() {
 		return this.controller && this.controller.req ? this.controller.req.headers : null;
+	},
+
+	get ua() {
+		return this.controller && this.controller.req ? (this.controller.req.headers['user-agent'] || '').parseUA() : null;
 	},
 
 	get filter() {
@@ -5864,6 +5872,10 @@ OperationOptions.prototype = {
 		return this.controller && this.controller.req ? this.controller.req.headers : null;
 	},
 
+	get ua() {
+		return this.controller && this.controller.req ? (this.controller.req.headers['user-agent'] || '').parseUA() : null;
+	},
+
 	get filter() {
 		var ctrl = this.controller;
 		if (ctrl && !ctrl.$filter)
@@ -5983,6 +5995,10 @@ AuthOptions.prototype = {
 
 	get headers() {
 		return this.req.headers;
+	},
+
+	get ua() {
+		return this.req ? (this.req.headers['user-agent'] || '').parseUA() : null;
 	}
 };
 
