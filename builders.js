@@ -6024,10 +6024,10 @@ AuthOptionsProto.invalid = function(user) {
 	this.next(false, user);
 };
 
-AuthOptionsProto.done = function() {
+AuthOptionsProto.done = function(response) {
 	var self = this;
 	return function(is, user) {
-		self.next(is, user);
+		self.next(is, response ? response : user);
 	};
 };
 
