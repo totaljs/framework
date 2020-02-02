@@ -140,7 +140,7 @@ TaskBuilder.prototype = {
 	},
 
 	get ua() {
-		return this.controller && this.controller.req ? (this.controller.req.headers['user-agent'] || '').parseUA() : null;
+		return this.controller && this.controller.req ? this.controller.req.ua : null;
 	},
 
 	get filter() {
@@ -212,7 +212,7 @@ SchemaOptions.prototype = {
 	},
 
 	get ua() {
-		return this.controller && this.controller.req ? (this.controller.req.headers['user-agent'] || '').parseUA() : null;
+		return this.controller && this.controller.req ? this.controller.req.ua : null;
 	},
 
 	get filter() {
@@ -5873,7 +5873,7 @@ OperationOptions.prototype = {
 	},
 
 	get ua() {
-		return this.controller && this.controller.req ? (this.controller.req.headers['user-agent'] || '').parseUA() : null;
+		return this.controller && this.controller.req ? this.controller.req.ua : null;
 	},
 
 	get filter() {
@@ -5998,7 +5998,7 @@ AuthOptions.prototype = {
 	},
 
 	get ua() {
-		return this.req ? (this.req.headers['user-agent'] || '').parseUA() : null;
+		return this.req ? this.req.ua : null;
 	}
 };
 

@@ -6168,7 +6168,7 @@ global.AUDIT = function(name, $, type, message) {
 	if ($.req) {
 		if ($.req.sessionid)
 			data.sessionid = $.req.sessionid;
-		data.ua = $.req.useragent();
+		data.ua = $.req.ua;
 		data.ip = $.ip;
 	}
 
@@ -9096,7 +9096,7 @@ global.ENCRYPTREQ = function(req, val, key, strict) {
 		req = req.req;
 
 	var obj = {};
-	obj.ua = (req.headers['user-agent'] || '').parseUA();
+	obj.ua = req.ua;
 	if (strict)
 		obj.ip = req.ip;
 	obj.data = val;
@@ -9106,12 +9106,10 @@ global.ENCRYPTREQ = function(req, val, key, strict) {
 global.DECRYPTREQ = function(req, val, key) {
 	if (!val)
 		return;
-
 	if (req instanceof Controller)
 		req = req.req;
-
 	var obj = F.decrypt(val, key || '', true);
-	if (!obj || (obj.ip && obj.ip !== req.ip) || (obj.ua !== (req.headers['user-agent'] || '').parseUA()))
+	if (!obj || (obj.ip && obj.ip !== req.ip) || (obj.ua !== req.ua))
 		return;
 	return obj.data;
 };
@@ -11629,7 +11627,7 @@ Controller.prototype = {
 	},
 
 	get ua() {
-		return this.controller && this.controller.req ? (this.controller.req.headers['user-agent'] || '').parseUA() : null;
+		return this.controller && this.controller.req ? this.controller.req.ua : null;
 	}
 };
 
@@ -16344,6 +16342,14 @@ function extend_request(PROTO) {
 		}
 	});
 
+	Object.defineProperty(PROTO, 'ua', {
+		get: function() {
+			if (this.$ua === undefined)
+				this.$ua = (this.headers['user-agent'] || '').parseUA();
+			return this.$ua;
+		}
+	});
+
 	Object.defineProperty(PROTO, 'mobile', {
 		get: function() {
 			if (this.$mobile === undefined)
@@ -18548,7 +18554,7 @@ MiddlewareOptions.prototype = {
 	},
 
 	get ua() {
-		return this.req ? (this.req.headers['user-agent'] || '').parseUA() : null;
+		return this.req ? this.req.ua : null;
 	},
 
 	get sessionid() {
