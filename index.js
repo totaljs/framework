@@ -11627,7 +11627,7 @@ Controller.prototype = {
 	},
 
 	get ua() {
-		return this.controller && this.controller.req ? this.controller.req.ua : null;
+		return this.req ? this.req.ua : null;
 	}
 };
 
