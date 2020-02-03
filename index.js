@@ -13778,6 +13778,7 @@ ControllerProto.json = function(obj, headers, beautify, replacer) {
 
 	F.stats.response.json++;
 	res.options.body = obj;
+	res.options.compress = obj.length > 4096;
 	res.$text();
 	self.precache && self.precache(obj, res.options.type, headers);
 	return self;
@@ -13914,7 +13915,7 @@ ControllerProto.callback = function(view) {
 			res.options.body = '{"success":' + (data.success == null ? 'true' : data.success) + '}';
 			res.options.type = CT_JSON;
 			res.$text();
-		} else
+	 	} else
 			self.json(data);
 	};
 };
@@ -13980,6 +13981,7 @@ ControllerProto.content = function(body, type, headers) {
 		res.options.type = type || CT_TEXT;
 
 	res.options.body = body;
+	res.options.compress = body.length > 4096;
 	res.$text();
 
 	if (self.precache && (!self.status || self.status === 200)) {
@@ -17274,6 +17276,7 @@ function extend_response(PROTO) {
 		res.options.compress = compress === undefined || compress === true;
 		res.options.body = body;
 		res.options.type = type;
+		res.options.compress = body.length > 4096;
 		headers && (res.options.headers = headers);
 		res.$text();
 		return res;
@@ -17519,7 +17522,7 @@ function extend_response(PROTO) {
 		if (obj && obj.$$schema)
 			obj = obj.$clean();
 		res.options.body = JSON.stringify(obj);
-		res.options.compress = res.options.body.length > 1024;
+		res.options.compress = res.options.body.length > 4096;
 		res.options.type = CT_JSON;
 		return res.$text();
 	};

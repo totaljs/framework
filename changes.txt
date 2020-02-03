@@ -47,7 +47,7 @@
 - updated: cluster supports watcher in `debug` mode
 - updated: `*.filefs()`, `*.filenosql()`, `*.imagefs()`, `*.imagenosql()` by adding `checkmeta` argument
 - updated: `$.done([user_instance])` method in `AUTH()`, added a new argument called `user_instance` (optional)
-- updated: GZIP is enabled only for JSON bodies which have more than 1024 bytes
+- updated: GZIP is enabled only for JSON bodies which have more than 4096 bytes
 
 - fixed: `ON('error404')` when the route doens't exist
 - fixed: `filter` in Schema `workflows`, `transformations` and `operations`
