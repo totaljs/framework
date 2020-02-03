@@ -13784,7 +13784,16 @@ ControllerProto.json = function(obj, headers, beautify, replacer) {
 };
 
 ControllerProto.success = function(is, value) {
-	return this.json(SUCCESS(is === undefined ? true : is, value));
+	if (value === undefined) {
+		F.stats.response.json++;
+		var res = this.res;
+		res.options.body = '{"success":' + (is == null ? 'true' : is) + '}';
+		res.options.type = CT_JSON;
+		res.options.compress = false;
+		res.$text();
+		return this;
+	} else
+		return this.json(SUCCESS(is == null ? true : is, value));
 };
 
 ControllerProto.done = function(arg) {
@@ -13794,8 +13803,13 @@ ControllerProto.done = function(arg) {
 			self.invalid(err);
 		} else if (arg)
 			self.json(SUCCESS(err == null, arg === true ? response : arg));
-		else
-			self.json(SUCCESS(err == null));
+		else {
+			var res = self.res;
+			res.options.body = '{"success":' + (err == null) + '}';
+			res.options.type = CT_JSON;
+			res.options.compress = false;
+			res.$text();
+		}
 	};
 };
 
@@ -13893,7 +13907,14 @@ ControllerProto.callback = function(view) {
 
 		if (typeof(view) === 'string')
 			self.view(view, data);
-		else
+		else if (data === SUCCESSHELPER && data.value === undefined) {
+			F.stats.response.json++;
+			var res = self.res;
+			res.options.compress = false;
+			res.options.body = '{"success":' + (data.success == null ? 'true' : data.success) + '}';
+			res.options.type = CT_JSON;
+			res.$text();
+		} else
 			self.json(data);
 	};
 };
@@ -17498,6 +17519,7 @@ function extend_response(PROTO) {
 		if (obj && obj.$$schema)
 			obj = obj.$clean();
 		res.options.body = JSON.stringify(obj);
+		res.options.compress = res.options.body.length > 1024;
 		res.options.type = CT_JSON;
 		return res.$text();
 	};
