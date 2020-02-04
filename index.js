@@ -5874,12 +5874,10 @@ F.onMapping = function(url, def, ispublic, encode) {
 	return def;
 };
 
-F.download = F.snapshot = function(url, filename, callback) {
+global.DOWNLOAD = F.download = F.snapshot = function(url, filename, callback) {
 
 	if (!F.isLoaded) {
-		setTimeout(function(url, filename, callback) {
-			F.snapshot(url, filename, callback);
-		}, 200, url, filename, callback);
+		setTimeout(F.snapshot, 200, url, filename, callback);
 		return F;
 	}
 
