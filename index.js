@@ -372,10 +372,8 @@ global.FILESTORAGE = function(name) {
 	return filestoragewrapper(name);
 };
 
-global.UID = function(type) {
-
+global.UID16 = function(type) {
 	var index;
-
 	if (type) {
 		if (UIDGENERATOR.types[type])
 			index = UIDGENERATOR.types[type] = UIDGENERATOR.types[type] + 1;
@@ -385,8 +383,21 @@ global.UID = function(type) {
 		}
 	} else
 		index = UIDGENERATOR.index++;
+	return UIDGENERATOR.date16 + index.padLeft(3, '0') + UIDGENERATOR.instance + UIDGENERATOR.date16.length + (index % 2 ? 1 : 0) + 'c'; // "c" version
+};
 
-	return UIDGENERATOR.date + index.padLeft(3, '0') + UIDGENERATOR.instance + (index % 2 ? 1 : 0) + 'a'; // "a" version
+global.UID = function(type) {
+	var index;
+	if (type) {
+		if (UIDGENERATOR.types[type])
+			index = UIDGENERATOR.types[type] = UIDGENERATOR.types[type] + 1;
+		else {
+			UIDGENERATOR.multiple = true;
+			index = UIDGENERATOR.types[type] = 1;
+		}
+	} else
+		index = UIDGENERATOR.index++;
+	return UIDGENERATOR.date + index.padLeft(3, '0') + UIDGENERATOR.instance + UIDGENERATOR.date.length + (index % 2 ? 1 : 0) + 'b'; // "b" version
 };
 
 global.UIDF = function(type) {
@@ -843,7 +854,10 @@ const UIDGENERATOR = { types: {}, typesnumber: {} };
 function UIDGENERATOR_REFRESH() {
 
 	var ticks = NOW.getTime();
-	UIDGENERATOR.date = Math.round(((ticks - 1548975600000) / 1000 / 60)) + '';
+	var dt = Math.round(((ticks - 1548975600000) / 1000 / 60));
+
+	UIDGENERATOR.date = dt + '';
+	UIDGENERATOR.date16 = dt.toString(16);
 
 	var seconds = ((NOW.getSeconds() / 60) + '').substring(2, 4);
 	UIDGENERATOR.datenumber = +((((ticks - 1548975600000) / 1000 / 60) >> 0) + seconds); // 1548975600000 means 1.1.2019
@@ -1119,7 +1133,7 @@ function Framework() {
 		url: /^(https?:\/\/(?:www\.|(?!www))[^\s.#!:?+=&@!$'~*,;/()[\]]+\.[^\s#!?+=&@!$'~*,;()[\]\\]{2,}\/?|www\.[^\s#!:.?+=&@!$'~*,;/()[\]]+\.[^\s#!?+=&@!$'~*,;()[\]\\]{2,}\/?)/i,
 		phone: /^[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}$/im,
 		zip: /^\d{5}(?:[-\s]\d{4})?$/,
-		uid: /(^\d{14,}[a-z]{3}[01]{1}|^\d{9,14}[a-z]{2}[01]{1}a)$/
+		uid: /^\d{14,}[a-z]{3}[01]{1}|^\d{9,14}[a-z]{2}[01]{1}a|^\d{9,18}[a-z]{2}\d{1}[01]{1}b|^[0-9a-f]{6,18}[a-z]{2}\d{1}[01]{1}c$/
 	};
 
 	self.workers = {};

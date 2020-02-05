@@ -4203,8 +4203,13 @@ SP.isUID = function() {
 		var sum;
 		var beg;
 		var end;
+		var e = str[str.length - 1];
 
-		if (str[str.length - 1] === 'a') {
+		if (e === 'b' || e === 'c') {
+			sum = str[str.length - 2];
+			beg = +str[str.length - 3];
+			end = str.length - 5;
+		} else if (e === 'a') {
 			sum = str[str.length - 2];
 			beg = 6;
 			end = str.length - 4;
@@ -4228,9 +4233,18 @@ SP.parseUID = function() {
 	var self = this;
 	var obj = {};
 	var hash;
+	var e = self[self.length - 1];
 
-	if (self[self.length - 1] === 'a') {
-
+	if (e === 'b' || e === 'c') {
+		end = +self[self.length - 3];
+		var ticks = ((e === 'b' ? (+self.substring(0, end)) : parseInt(self.substring(0, end), 16)) * 1000 * 60) + 1548975600000;
+		obj.date = new Date(ticks);
+		beg = end;
+		end = self.length - 5;
+		hash = +self.substring(end + 3, end + 4);
+		obj.century = Math.floor((obj.date.getFullYear() - 1) / 100) + 1;
+		obj.hash = self.substring(end, end + 2);
+	} else if (e === 'a') {
 		var ticks = ((+self.substring(0, 6)) * 1000 * 60) + 1548975600000;
 		obj.date = new Date(ticks);
 		beg = 7;
@@ -4239,7 +4253,6 @@ SP.parseUID = function() {
 		obj.century = Math.floor((obj.date.getFullYear() - 1) / 100) + 1;
 		obj.hash = self.substring(end, end + 2);
 	} else {
-
 		var y = self.substring(0, 2);
 		var M = self.substring(2, 4);
 		var d = self.substring(4, 6);
