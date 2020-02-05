@@ -5888,12 +5888,10 @@ F.onMapping = function(url, def, ispublic, encode) {
 	return def;
 };
 
-F.download = F.snapshot = function(url, filename, callback) {
+global.DOWNLOAD = F.download = F.snapshot = function(url, filename, callback) {
 
 	if (!F.isLoaded) {
-		setTimeout(function(url, filename, callback) {
-			F.snapshot(url, filename, callback);
-		}, 200, url, filename, callback);
+		setTimeout(F.snapshot, 200, url, filename, callback);
 		return F;
 	}
 
@@ -13792,13 +13790,23 @@ ControllerProto.json = function(obj, headers, beautify, replacer) {
 
 	F.stats.response.json++;
 	res.options.body = obj;
+	res.options.compress = obj.length > 4096;
 	res.$text();
 	self.precache && self.precache(obj, res.options.type, headers);
 	return self;
 };
 
 ControllerProto.success = function(is, value) {
-	return this.json(SUCCESS(is === undefined ? true : is, value));
+	if (value === undefined) {
+		F.stats.response.json++;
+		var res = this.res;
+		res.options.body = '{"success":' + (is == null ? 'true' : is) + '}';
+		res.options.type = CT_JSON;
+		res.options.compress = false;
+		res.$text();
+		return this;
+	} else
+		return this.json(SUCCESS(is == null ? true : is, value));
 };
 
 ControllerProto.done = function(arg) {
@@ -13808,8 +13816,13 @@ ControllerProto.done = function(arg) {
 			self.invalid(err);
 		} else if (arg)
 			self.json(SUCCESS(err == null, arg === true ? response : arg));
-		else
-			self.json(SUCCESS(err == null));
+		else {
+			var res = self.res;
+			res.options.body = '{"success":' + (err == null) + '}';
+			res.options.type = CT_JSON;
+			res.options.compress = false;
+			res.$text();
+		}
 	};
 };
 
@@ -13907,7 +13920,14 @@ ControllerProto.callback = function(view) {
 
 		if (typeof(view) === 'string')
 			self.view(view, data);
-		else
+		else if (data === SUCCESSHELPER && data.value === undefined) {
+			F.stats.response.json++;
+			var res = self.res;
+			res.options.compress = false;
+			res.options.body = '{"success":' + (data.success == null ? 'true' : data.success) + '}';
+			res.options.type = CT_JSON;
+			res.$text();
+	 	} else
 			self.json(data);
 	};
 };
@@ -13973,6 +13993,7 @@ ControllerProto.content = function(body, type, headers) {
 		res.options.type = type || CT_TEXT;
 
 	res.options.body = body;
+	res.options.compress = body.length > 4096;
 	res.$text();
 
 	if (self.precache && (!self.status || self.status === 200)) {
@@ -17267,6 +17288,7 @@ function extend_response(PROTO) {
 		res.options.compress = compress === undefined || compress === true;
 		res.options.body = body;
 		res.options.type = type;
+		res.options.compress = body.length > 4096;
 		headers && (res.options.headers = headers);
 		res.$text();
 		return res;
@@ -17512,6 +17534,7 @@ function extend_response(PROTO) {
 		if (obj && obj.$$schema)
 			obj = obj.$clean();
 		res.options.body = JSON.stringify(obj);
+		res.options.compress = res.options.body.length > 4096;
 		res.options.type = CT_JSON;
 		return res.$text();
 	};
