@@ -4194,7 +4194,8 @@ SP.isBase64 = function() {
 
 SP.isUID = function() {
 	var str = this;
-	if (str.length < 13)
+
+	if (str.length < 12)
 		return false;
 
 	var is = F.validators.uid.test(str);
@@ -4209,6 +4210,8 @@ SP.isUID = function() {
 			sum = str[str.length - 2];
 			beg = +str[str.length - 3];
 			end = str.length - 5;
+			var tmp = e === 'c' ? (+str.substring(beg, end)) : parseInt(str.substring(beg, end), 16);
+			return sum === (tmp % 2 ? '1' : '0');
 		} else if (e === 'a') {
 			sum = str[str.length - 2];
 			beg = 6;
@@ -4237,7 +4240,7 @@ SP.parseUID = function() {
 
 	if (e === 'b' || e === 'c') {
 		end = +self[self.length - 3];
-		var ticks = ((e === 'b' ? (+self.substring(0, end)) : parseInt(self.substring(0, end), 16)) * 1000 * 60) + 1548975600000;
+		var ticks = ((e === 'b' ? (+self.substring(0, end)) : parseInt(self.substring(0, end), 16)) * 1000 * 60) + 1580511600000; // 1.1.2020
 		obj.date = new Date(ticks);
 		beg = end;
 		end = self.length - 5;
@@ -4245,7 +4248,7 @@ SP.parseUID = function() {
 		obj.century = Math.floor((obj.date.getFullYear() - 1) / 100) + 1;
 		obj.hash = self.substring(end, end + 2);
 	} else if (e === 'a') {
-		var ticks = ((+self.substring(0, 6)) * 1000 * 60) + 1548975600000;
+		var ticks = ((+self.substring(0, 6)) * 1000 * 60) + 1548975600000; // old 1.1.2019
 		obj.date = new Date(ticks);
 		beg = 7;
 		end = self.length - 4;

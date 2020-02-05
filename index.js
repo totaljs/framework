@@ -854,13 +854,13 @@ const UIDGENERATOR = { types: {}, typesnumber: {} };
 function UIDGENERATOR_REFRESH() {
 
 	var ticks = NOW.getTime();
-	var dt = Math.round(((ticks - 1548975600000) / 1000 / 60));
+	var dt = Math.round(((ticks - 1580511600000) / 1000 / 60));
 
 	UIDGENERATOR.date = dt + '';
 	UIDGENERATOR.date16 = dt.toString(16);
 
 	var seconds = ((NOW.getSeconds() / 60) + '').substring(2, 4);
-	UIDGENERATOR.datenumber = +((((ticks - 1548975600000) / 1000 / 60) >> 0) + seconds); // 1548975600000 means 1.1.2019
+	UIDGENERATOR.datenumber = +((((ticks - 1580511600000) / 1000 / 60) >> 0) + seconds); // 1580511600000 means 1.1.2020
 	UIDGENERATOR.indexnumber = 1;
 	UIDGENERATOR.index = 1;
 	UIDGENERATOR.instance = random2string();
@@ -1133,7 +1133,7 @@ function Framework() {
 		url: /^(https?:\/\/(?:www\.|(?!www))[^\s.#!:?+=&@!$'~*,;/()[\]]+\.[^\s#!?+=&@!$'~*,;()[\]\\]{2,}\/?|www\.[^\s#!:.?+=&@!$'~*,;/()[\]]+\.[^\s#!?+=&@!$'~*,;()[\]\\]{2,}\/?)/i,
 		phone: /^[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}$/im,
 		zip: /^\d{5}(?:[-\s]\d{4})?$/,
-		uid: /^\d{14,}[a-z]{3}[01]{1}|^\d{9,14}[a-z]{2}[01]{1}a|^\d{9,18}[a-z]{2}\d{1}[01]{1}b|^[0-9a-f]{6,18}[a-z]{2}\d{1}[01]{1}c$/
+		uid: /^\d{14,}[a-z]{3}[01]{1}|^\d{9,14}[a-z]{2}[01]{1}a|^\d{4,18}[a-z]{2}\d{1}[01]{1}b|^[0-9a-f]{4,18}[a-z]{2}\d{1}[01]{1}c$/
 	};
 
 	self.workers = {};
