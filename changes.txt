@@ -62,6 +62,7 @@
 - fixed: a problem with handling files in 404 action
 - fixed: `startup` directory in bundles
 - fixed: `schema.inherit()` didn't copy `required` fields.
+- fixed: `SUCCESS()` serialization with `SUCCESS()` argument
 - fixed: a critial bug with `UID()` generator
 
 - improved: `LOGMAIL()` mail format

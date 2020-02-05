@@ -805,7 +805,7 @@ global.SUCCESS = function(success, value) {
 		success = true;
 
 	SUCCESSHELPER.success = !!success;
-	SUCCESSHELPER.value = value == null ? undefined : (value && value.$$schema ? value.$clean() : value);
+	SUCCESSHELPER.value = value === SUCCESSHELPER ? value.value : value == null ? undefined : (value && value.$$schema ? value.$clean() : value);
 	SUCCESSHELPER.error = err ? err : undefined;
 	return SUCCESSHELPER;
 };
