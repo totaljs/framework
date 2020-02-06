@@ -70,7 +70,7 @@ function TaskBuilder($) {
 		t.error = $.error;
 		t.controller = $.controller;
 	} else {
-		if ($ instanceof Controller)
+		if ($ instanceof Controller || $ instanceof WebSocketClient)
 			t.controller = $;
 		else if ($ instanceof ErrorBuilder)
 			t.error = $;
@@ -5617,7 +5617,7 @@ global.OPERATION = function(name, value, callback, param, controller) {
 		value = EMPTYOBJECT;
 	}
 
-	if (param instanceof Controller || param instanceof OperationOptions || param instanceof SchemaOptions || param instanceof TaskBuilder || param instanceof AuthOptions) {
+	if (param instanceof Controller || param instanceof OperationOptions || param instanceof SchemaOptions || param instanceof TaskBuilder || param instanceof AuthOptions || param instanceof WebSocketClient) {
 		controller = param;
 		param = undefined;
 	}
