@@ -40,6 +40,7 @@
 - added: `controller.ua` returns parsed User-Agent
 - added: `$.ua` returns parsed User-Agent in Schemas, Operations, TaskBuilder, `MIDDLEWARE()` and `AUTH()`
 - added: support for `.mjs` extensions
+- added: a simple support for DDOS protection `allow_ddos : Number` (max. concurent requests by IP just-in-time)
 
 - updated: `WEBSOCKET()` supports `+`, `-` and `🔒` as authorization flags
 - updated: `LOAD()` supports `service` type
