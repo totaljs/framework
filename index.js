@@ -45,7 +45,7 @@ const CT_TEXT = 'text/plain';
 const CT_HTML = 'text/html';
 const CT_JSON = 'application/json';
 const COMPRESSION = { 'text/plain': true, 'text/javascript': true, 'text/css': true, 'text/jsx': true, 'application/javascript': true, 'application/x-javascript': true, 'application/json': true, 'text/xml': true, 'image/svg+xml': true, 'text/x-markdown': true, 'text/html': true };
-const COMPRESSIONSPECIAL = { 'js': 1, 'css': 1 };
+const COMPRESSIONSPECIAL = { js: 1, css: 1, mjs: 1 };
 const REG_TEMPORARY = /\//g;
 const REG_MOBILE = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet/i;
 const REG_ROBOT = /search|agent|bot|crawler|spider/i;
@@ -99,6 +99,7 @@ const IMAGES = { jpg: 1, png: 1, gif: 1, apng: 1, jpeg: 1, heif: 1, heic: 1, web
 const KEYSLOCALIZE = { html: 1, htm: 1 };
 const PROXYOPTIONS = { end: true };
 const PROXYKEEPALIVE = new http.Agent({ keepAlive: true, timeout: 60000 });
+const JSFILES = { js: 1, mjs: 1 };
 var PREFFILE = 'preferences.json';
 
 var PATHMODULES = require.resolve('./index');
@@ -966,7 +967,7 @@ function Framework() {
 		static_url_font: '/fonts/',
 		static_url_download: '/download/',
 		static_url_components: '/components.',
-		static_accepts: { flac: true, jpg: true, jpeg: true, png: true, gif: true, ico: true, js: true, css: true, txt: true, xml: true, woff: true, woff2: true, otf: true, ttf: true, eot: true, svg: true, zip: true, rar: true, pdf: true, docx: true, xlsx: true, doc: true, xls: true, html: true, htm: true, appcache: true, manifest: true, map: true, ogv: true, ogg: true, mp4: true, mp3: true, webp: true, webm: true, swf: true, package: true, json: true, md: true, m4v: true, jsx: true, heif: true, heic: true, ics: true },
+		static_accepts: { flac: true, jpg: true, jpeg: true, png: true, gif: true, ico: true, js: true, mjs: true, css: true, txt: true, xml: true, woff: true, woff2: true, otf: true, ttf: true, eot: true, svg: true, zip: true, rar: true, pdf: true, docx: true, xlsx: true, doc: true, xls: true, html: true, htm: true, appcache: true, manifest: true, map: true, ogv: true, ogg: true, mp4: true, mp3: true, webp: true, webm: true, swf: true, package: true, json: true, md: true, m4v: true, jsx: true, heif: true, heic: true, ics: true },
 
 		// 'static-accepts-custom': [],
 		default_crypto_iv: Buffer.from(self.syshash).slice(0, 16),
@@ -4416,7 +4417,7 @@ F.$startup = function(callback) {
 
 	Fs.readdirSync(dir).forEach(function(o) {
 		var extension = U.getExtension(o);
-		if (extension === 'js')
+		if (JSFILES[extension])
 			run.push(o);
 	});
 
@@ -6531,7 +6532,7 @@ function compile_merge(res, repeated) {
 
 				var output = compile_content(req.extension, framework_internal.parseBlock(block, data), filename);
 
-				if (req.extension === 'js') {
+				if (JSFILES[req.extension]) {
 					if (output[output.length - 1] !== ';')
 						output += ';';
 				} else if (req.extension === 'html') {
@@ -6581,7 +6582,7 @@ function compile_merge(res, repeated) {
 			}
 
 			var output = compile_content(req.extension, framework_internal.parseBlock(block, buffer.toString(ENCODING)), filename);
-			if (req.extension === 'js') {
+			if (JSFILES[req.extension]) {
 				if (output[output.length - 1] !== ';')
 					output += ';' + NEWLINE;
 			} else if (req.extension === 'html') {
@@ -6639,16 +6640,16 @@ function compile_merge(res, repeated) {
 
 function merge_debug_writer(writer, filename, extension, index, block) {
 	var plus = '===========================================================================================';
-	var beg = extension === 'js' ? '/*\n' : extension === 'css' ? '/*!\n' : '<!--\n';
-	var end = extension === 'js' || extension === 'css' ? '\n */' : '\n-->';
+	var beg = JSFILES[extension] ? '/*\n' : extension === 'css' ? '/*!\n' : '<!--\n';
+	var end = JSFILES[extension] || extension === 'css' ? '\n */' : '\n-->';
 	var mid = extension !== 'html' ? ' * ' : ' ';
 	writer.write((index > 0 ? '\n\n' : '') + beg + mid + plus + '\n' + mid + 'MERGED: ' + filename + '\n' + (block ? mid + 'BLOCKS: ' + block + '\n' : '') + mid + plus + end + '\n\n', ENCODING);
 }
 
 function component_debug(filename, value, extension) {
 	var plus = '===========================================================================================';
-	var beg = extension === 'js' ? '/*\n' : extension === 'css' ? '/*!\n' : '<!--\n';
-	var end = extension === 'js' || extension === 'css' ? '\n */' : '\n-->';
+	var beg = JSFILES[extension] ? '/*\n' : extension === 'css' ? '/*!\n' : '<!--\n';
+	var end = JSFILES[extension] || extension === 'css' ? '\n */' : '\n-->';
 	var mid = extension !== 'html' ? ' * ' : ' ';
 	return beg + mid + plus + '\n' + mid + 'COMPONENT: ' + filename + '\n' + mid + plus + end + '\n\n' + value;
 }
@@ -6764,6 +6765,7 @@ function compile_content(extension, content, filename) {
 
 	switch (extension) {
 		case 'js':
+		case 'mjs':
 			return CONF.allow_compile_script ? framework_internal.compile_javascript(content, filename) : content;
 
 		case 'css':
@@ -8900,7 +8902,7 @@ F.clear = function(callback, isInit) {
 					if (filename.indexOf('.package') !== -1)
 						return true;
 					var ext = U.getExtension(filename);
-					return ext === 'js' || ext === 'css' || ext === 'tmp' || ext === 'upload' || ext === 'html' || ext === 'htm';
+					return JSFILES[ext]  || ext === 'css' || ext === 'tmp' || ext === 'upload' || ext === 'html' || ext === 'htm';
 				});
 			}
 			return F;
@@ -12750,6 +12752,7 @@ ControllerProto.place = function(name) {
 
 		switch (U.getExtension(val)) {
 			case 'js':
+			case 'mjs':
 				val = '<script src="' + val + '"></script>';
 				break;
 			case 'css':
@@ -13115,7 +13118,7 @@ ControllerProto.head = function() {
 		var ext = U.getExtension(val);
 		if (ext === 'css')
 			header += '<link type="text/css" rel="stylesheet" href="' + (is ? self.public_css(val) : val) + '" />';
-		else if (ext === 'js')
+		else if (JSFILES[ext])
 			header += '<script src="' + (is ? self.public_js(val) : val) + '"></script>';
 	}
 
@@ -13272,6 +13275,7 @@ ControllerProto.$absolute = function(files, base) {
 		for (var i = 0, length = files.length; i < length; i++) {
 			switch (ftype) {
 				case 'js':
+				case 'mjs':
 					builder += self.public_js(files[i], true, base);
 					break;
 				case 'css':
@@ -13290,6 +13294,7 @@ ControllerProto.$absolute = function(files, base) {
 
 	switch (ftype) {
 		case 'js':
+		case 'mjs':
 			return self.public_js(files, true, base);
 		case 'css':
 			return self.public_css(files, true, base);
@@ -18489,6 +18494,7 @@ function $decodeURIComponent(value) {
 }
 
 global.Controller = Controller;
+global.WebSocketClient = WebSocketClient;
 
 process.on('unhandledRejection', function(e) {
 	F.error(e, '', null);

@@ -39,6 +39,7 @@
 - added: `session.listlive(callback)` returns all live items in session
 - added: `controller.ua` returns parsed User-Agent
 - added: `$.ua` returns parsed User-Agent in Schemas, Operations, TaskBuilder, `MIDDLEWARE()` and `AUTH()`
+- added: support for `.mjs` extensions
 
 - updated: `WEBSOCKET()` supports `+`, `-` and `🔒` as authorization flags
 - updated: `LOAD()` supports `service` type
