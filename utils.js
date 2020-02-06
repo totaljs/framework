@@ -354,6 +354,7 @@ exports.resolve = function(url, callback) {
 
 	var uri = Url.parse(url);
 
+
 	if (!callback)
 		return dnscache[uri.host];
 
@@ -398,11 +399,13 @@ exports.clearDNS = function() {
 	CMD('clear_dnscache');
 };
 
-if (global.F) {
-	F.install('command', 'clear_dnscache', function() {
-		dnscache = {};
-	});
-}
+setImmediate(function() {
+	if (global.F) {
+		F.install('command', 'clear_dnscache', function() {
+			dnscache = {};
+		});
+	}
+});
 
 
 exports.keywords = function(content, forSearch, alternative, max_count, max_length, min_length) {

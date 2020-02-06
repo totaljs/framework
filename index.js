@@ -5892,7 +5892,7 @@ F.onMapping = function(url, def, ispublic, encode) {
 global.DOWNLOAD = F.download = F.snapshot = function(url, filename, callback) {
 
 	if (!F.isLoaded) {
-		setTimeout(F.snapshot, 200, url, filename, callback);
+		setTimeout(F.download, 200, url, filename, callback);
 		return F;
 	}
 
@@ -5906,7 +5906,7 @@ global.DOWNLOAD = F.download = F.snapshot = function(url, filename, callback) {
 		url = 'http://' + (F.ip === 'auto' ? '0.0.0.0' : F.ip) + ':' + F.port + url;
 	}
 
-	U.download(url, FLAGS_INSTALL, function(err, response) {
+	U.download(url, FLAGS_DOWNLOAD, function(err, response) {
 
 		if (err) {
 			callback && callback(err);
@@ -5915,9 +5915,15 @@ global.DOWNLOAD = F.download = F.snapshot = function(url, filename, callback) {
 		}
 
 		var stream = Fs.createWriteStream(filename);
+
 		response.pipe(stream);
 
 		response.on('error', function(err) {
+			callback && callback(err);
+			callback = null;
+		});
+
+		stream.on('error', function(err) {
 			callback && callback(err);
 			callback = null;
 		});
@@ -5926,6 +5932,7 @@ global.DOWNLOAD = F.download = F.snapshot = function(url, filename, callback) {
 			callback && callback(null, filename);
 			callback = null;
 		});
+
 	});
 
 	return F;

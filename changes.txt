@@ -65,6 +65,7 @@
 - fixed: `schema.inherit()` didn't copy `required` fields.
 - fixed: `SUCCESS()` serialization with `SUCCESS()` argument
 - fixed: a critial bug with `UID()` generator
+- fixed: clearing of DNS cache
 
 - improved: `LOGMAIL()` mail format
 - improved: starting logs in console output (added IPv4 local address)
