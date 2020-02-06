@@ -268,6 +268,9 @@ HEADERS.responseNotModified[HEADER_CACHE] = 'public, max-age=11111111';
 HEADERS.response503 = {};
 HEADERS.response503[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
 HEADERS.response503[HEADER_TYPE] = CT_HTML;
+HEADERS.response503ddos = {};
+HEADERS.response503ddos[HEADER_CACHE] = 'private, no-cache, no-store, max-age=0';
+HEADERS.response503ddos[HEADER_TYPE] = CT_TEXT;
 
 Object.freeze(HEADERS.authorization);
 
@@ -1026,6 +1029,7 @@ function Framework() {
 		allow_ssc_validation: false,
 		allow_workers_silent: false,
 		allow_sessions_unused: '-20 minutes',
+		allow_ddos: 0,
 
 		nosql_worker: false,
 		nosql_inmemory: null, // String Array
@@ -1175,6 +1179,7 @@ function Framework() {
 		internal: {}, // controllers/modules names for the routing
 		owners: {},
 		ready: {},
+		ddos: {},
 		service: { redirect: 0, request: 0, file: 0 }
 	};
 
@@ -1214,6 +1219,7 @@ function Framework() {
 			desktop: 0
 		},
 		response: {
+			ddos: 0,
 			view: 0,
 			json: 0,
 			websocket: 0,
@@ -7833,6 +7839,9 @@ F.service = function(count) {
 	// clears temporary memory for non-exist files
 	F.temporary.notfound = {};
 
+	if (CONF.allow_ddos)
+		F.temporary.ddos = {};
+
 	// every 7 minutes (default) service clears static cache
 	if (count % CONF.default_interval_clear_cache === 0) {
 		F.$events.clear && EMIT('clear', 'temporary', F.temporary);
@@ -8036,6 +8045,22 @@ F.listener = function(req, res) {
 	else if (!req.host) // HTTP 1.0 without host
 		return res.throw400();
 
+	if (CONF.allow_ddos) {
+		var ip = req.ip;
+		if (F.temporary.ddos[ip] > CONF.allow_ddos) {
+			F.stats.response.ddos++;
+			res.options.code = 503;
+			res.options.headers = HEADERS.response503ddos;
+			res.options.body = '503 Service Unavailable';
+			res.$text();
+			return;
+		}
+		if (F.temporary.ddos[ip])
+			F.temporary.ddos[ip]++;
+		else
+			F.temporary.ddos[ip] = 1;
+	}
+
 	if (F._request_check_proxy) {
 		for (var i = 0; i < F.routes.proxies.length; i++) {
 			var proxy = F.routes.proxies[i];
@@ -8049,7 +8074,6 @@ F.listener = function(req, res) {
 
 	var headers = req.headers;
 	req.$protocol = ((req.connection && req.connection.encrypted) || ((headers['x-forwarded-proto'] || ['x-forwarded-protocol']) === 'https')) ? 'https' : 'http';
-
 	req.uri = framework_internal.parseURI(req);
 
 	F.stats.request.request++;
@@ -18466,7 +18490,11 @@ function $image_filename(exists, size, isFile, stats, res) {
 
 function response_end(res) {
 	F.reqstats(false, res.req.isStaticFile);
+
 	res.success = true;
+
+	if (CONF.allow_ddos && F.temporary.ddos[res.req.ip])
+		F.temporary.ddos[res.req.ip]--;
 
 	if (!res.req.isStaticFile) {
 		F.$events['request-end'] && EMIT('request-end', res.req, res);
