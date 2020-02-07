@@ -33,6 +33,23 @@ T.current = null;
 T.results = [];
 T.running = false;
 T.immediate = null;
+T.color = {
+    green: '',
+    red: '',
+    reset: ''
+};
+
+process.argv.forEach(function (val, index, array) {
+    if (index > 1) {
+        switch(val) {
+            case "-c":
+                T.color.green = '\x1b[1m\x1b[32m';
+                T.color.red = '\x1b[1m\x1b[31m';
+                T.color.reset = '\x1b[0m';
+                break;
+        }
+    }
+});
 
 function NEXT() {
 
@@ -213,10 +230,10 @@ function logger(fail, name, description) {
 	if (fail) {
 		T.countno++;
 		T.current.countno++;
-		console.error('Failed [x] '.padRight(20, '.') + ' ' + name + (description ? (' <' + description + '>') : '') + ' [' + time + ']');
+		console.error(T.color.red + 'Failed [x]' + T.color.reset + ' '.padRight(20, '.') + ' ' + name + (description ? (' <' + description + '>') : '') + ' [' + time + ']');
 	} else {
 		T.countok++;
 		T.current.countok++;
-		console.info('Passed '.padRight(20, '.') + ' ' + name + (description ? (' <' + description + '>') : '') + ' [' + time + ']');
+		console.info(T.color.green + 'Passed' + T.color.reset + ' '.padRight(20, '.') + ' ' + name + (description ? (' <' + description + '>') : '') + ' [' + time + ']');
 	}
 }
