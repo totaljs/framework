@@ -3483,10 +3483,13 @@ SP.parseUA = function(structured) {
 				case 'firefox':
 				case 'msie':
 				case 'opera':
+				case 'brave':
+				case 'vivaldi':
 				case 'outlook':
 				case 'safari':
 				case 'mail':
 				case 'edge':
+				case 'maxthon':
 				case 'electron':
 					data[arr[i]] = 1;
 					break;

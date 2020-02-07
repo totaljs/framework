@@ -51,6 +51,7 @@
 - updated: `$.done([user_instance])` method in `AUTH()`, added a new argument called `user_instance` (optional)
 - updated: GZIP is enabled only for JSON bodies which have more than 4096 bytes
 - updated: `.env` parser supports parsing of `.env-debug` or `.env-release` files according to the mode
+- updated: list of user-agents in `String.parseUA()`
 
 - fixed: `ON('error404')` when the route doens't exist
 - fixed: `filter` in Schema `workflows`, `transformations` and `operations`
