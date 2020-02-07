@@ -1029,7 +1029,7 @@ function Framework() {
 		allow_ssc_validation: false,
 		allow_workers_silent: false,
 		allow_sessions_unused: '-20 minutes',
-		allow_ddos: 0,
+		allow_reqlimit: 0,
 
 		nosql_worker: false,
 		nosql_inmemory: null, // String Array
@@ -7841,7 +7841,7 @@ F.service = function(count) {
 	// clears temporary memory for non-exist files
 	F.temporary.notfound = {};
 
-	if (CONF.allow_ddos)
+	if (CONF.allow_reqlimit)
 		F.temporary.ddos = {};
 
 	// every 7 minutes (default) service clears static cache
@@ -8047,9 +8047,9 @@ F.listener = function(req, res) {
 	else if (!req.host) // HTTP 1.0 without host
 		return res.throw400();
 
-	if (CONF.allow_ddos) {
+	if (CONF.allow_reqlimit) {
 		var ip = req.ip;
-		if (F.temporary.ddos[ip] > CONF.allow_ddos) {
+		if (F.temporary.ddos[ip] > CONF.allow_reqlimit) {
 			F.stats.response.ddos++;
 			res.options.code = 503;
 			res.options.headers = HEADERS.response503ddos;
@@ -18501,7 +18501,7 @@ function response_end(res) {
 
 	res.success = true;
 
-	if (CONF.allow_ddos && F.temporary.ddos[res.req.ip])
+	if (CONF.allow_reqlimit && F.temporary.ddos[res.req.ip])
 		F.temporary.ddos[res.req.ip]--;
 
 	if (!res.req.isStaticFile) {
