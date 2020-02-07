@@ -26,6 +26,8 @@ framework.on('ready', function() {
 	assert.ok(CONF.testbase === 123456, 'config: base encode');
 	assert.ok(CONF.testenv === 'custom environment app', 'config: read env');
 	assert.ok(CONF.JEBO === 'Z LESA', 'threads: config');
+	assert.ok(process.env.APP_ENV === 'staging', '.env: not parsed');
+	assert.ok(process.env.DB_HOST2 === 'totallus', '.env-mode: not parsed');
 });
 
 AUTH(function($) {

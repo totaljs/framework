@@ -4370,6 +4370,7 @@ F.$load = function(types, targetdirectory, callback, packageName) {
 			arr = [];
 			dir = '/threads/' + thread;
 			F.$configure_env(dir + '/.env');
+			F.$configure_env(dir + '/.env-' + (DEBUG ? 'debug' : 'release'));
 			F.$configure_configs(dir + '/config');
 			F.$configure_configs(dir + '/config-' + (DEBUG ? 'debug' : 'release'));
 			dir = U.combine(targetdirectory, '/threads/' + thread);
@@ -5247,6 +5248,7 @@ global.INSTALL = F.install = function(type, name, declaration, options, callback
 				F.$configure_workflows();
 			} else {
 				F.$configure_env('@' + name + '/.env');
+				F.$configure_env('@' + name + '/.env-' + (DEBUG ? 'debug' : 'release'));
 				F.$configure_configs('@' + name + '/config');
 				F.$configure_configs('@' + name + '/config-' + (DEBUG ? 'debug' : 'release'));
 				F.isTest && F.$configure_configs('@' + name + '/config-test');
@@ -9821,10 +9823,15 @@ F.$configure_env = function(filename) {
 		data = Fs.readFileSync(filename).toString(ENCODING);
 	}
 
+	var filename2 = null;
+
 	if (!filename) {
 		filename = U.combine('/', '.env');
-		if (!existsSync(filename, true))
+		filename2 = '.env-' + (DEBUG ? 'debug' : 'release');
+		if (!existsSync(filename, true)) {
+			F.$configure_env(filename2);
 			return F;
+		}
 		data = Fs.readFileSync(filename).toString(ENCODING);
 	}
 
@@ -9837,6 +9844,7 @@ F.$configure_env = function(filename) {
 			process.env[key] = data[key];
 	}
 
+	filename2 && F.$configure_env(filename2);
 	return F;
 };
 
