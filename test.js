@@ -34,21 +34,21 @@ T.results = [];
 T.running = false;
 T.immediate = null;
 T.color = {
-    green: '',
-    red: '',
-    reset: ''
+	green: '',
+	red: '',
+	reset: ''
 };
 
-process.argv.forEach(function (val, index, array) {
-    if (index > 1) {
-        switch(val) {
-            case "-c":
-                T.color.green = '\x1b[1m\x1b[32m';
-                T.color.red = '\x1b[1m\x1b[31m';
-                T.color.reset = '\x1b[0m';
-                break;
-        }
-    }
+process.argv.forEach(function (val, index) {
+	if (index > 1) {
+		switch(val) {
+			case '-c':
+				T.color.green = '\x1b[1m\x1b[32m';
+				T.color.red = '\x1b[1m\x1b[31m';
+				T.color.reset = '\x1b[0m';
+				break;
+		}
+	}
 });
 
 function NEXT() {
