@@ -3538,6 +3538,8 @@ SP.parseUA = function(structured) {
 		} else if (data.Chrome) {
 			if (data.Safari)
 				delete data.Safari;
+			if (data.SamsungBrowser)
+				delete data.SamsungBrowser;
 		} else if (data.SamsungBrowser) {
 			if (data.Safari)
 				delete data.Safari;
