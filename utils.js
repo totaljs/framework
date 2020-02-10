@@ -4017,6 +4017,14 @@ SP.format = function() {
 	});
 };
 
+SP.encryptUID = function(key) {
+	return exports.encryptUID(this, key);
+};
+
+SP.decryptUID = function(key) {
+	return exports.decryptUID(this, key);
+};
+
 SP.encode = function() {
 	var output = '';
 	for (var i = 0, length = this.length; i < length; i++) {

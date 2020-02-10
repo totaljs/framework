@@ -42,6 +42,8 @@
 - added: support for `.mjs` extensions
 - added: a simple support for DDOS protection `allow_reqlimit : Number` (max. concurent requests by IP just-in-time)
 - added: unit-testing supports colors, added by @dacrhu
+- added: `String.encryptUID()` as alias for `U.encryptUID()`
+- added: `String.decryptUID()` as alias for `U.decryptUID()`
 
 - updated: `WEBSOCKET()` supports `+`, `-` and `🔒` as authorization flags
 - updated: `LOAD()` supports `service` type
