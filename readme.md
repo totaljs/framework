@@ -132,7 +132,7 @@ Please support the framework on social networks.
 
 ## Contact
 
-- (c) 2012-2019 by Peter Širka - <petersirka@gmail.com>
+- (c) 2012-2020 by Peter Širka - <petersirka@gmail.com>
 - contact form <https://www.totaljs.com/contact/>
 - <info@totaljs.com>
 
