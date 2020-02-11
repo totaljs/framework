@@ -21,7 +21,7 @@
 
 /**
  * @module Framework
- * @version 3.3.3
+ * @version 3.4.0
  */
 
 'use strict';
@@ -914,8 +914,8 @@ function Framework() {
 	var self = this;
 
 	self.$id = null; // F.id ==> property
-	self.version = 3330;
-	self.version_header = '3.3.3';
+	self.version = 3400;
+	self.version_header = '3.4.0';
 	self.version_node = process.version.toString();
 	self.syshash = (__dirname + '-' + Os.hostname() + '-' + Os.platform() + '-' + Os.arch() + '-' + Os.release() + '-' + Os.tmpdir() + JSON.stringify(process.versions)).md5();
 	self.pref = global.PREF;

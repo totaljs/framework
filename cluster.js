@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkCluster
- * @version 3.3.3
+ * @version 3.4.0
  */
 
 const Fs = require('fs');

@@ -1,4 +1,4 @@
-======= 3.3.3
+======= 3.4.0
 
 - added: `date.setTimeZone(timezone)`
 - added: `NOSQL('~absolute_path.nosql')' loads external NoSQL embedded database
