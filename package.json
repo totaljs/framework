@@ -12,7 +12,7 @@
         "tpm": "./bin/tpm",
         "totalpackage": "./bin/tpm"
     },
-    "description": "Web framework for Node.js",
+    "description": "MVC framework for Node.js",
     "devDependencies": {},
     "directories": {
         "test": "test"
