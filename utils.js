@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkUtils
- * @version 3.4.0
+ * @version 3.4.1
  */
 
 'use strict';
@@ -3746,12 +3746,46 @@ function parseTerminal2(lines, fn, skip, take) {
 
 function parseDateFormat(format, val) {
 
-	format = format.split(REG_DATE);
-	var tmp = val.split(REG_DATE);
-	var dt = {};
+	var tmp = [];
+	var tmpformat = [];
+	var prev = '';
+	var prevformat = '';
+	var allowed = { y: 1, Y: 1, M: 1, m: 1, d: 1, D: 1, H: 1, s: 1, a: 1, w: 1 };
 
 	for (var i = 0; i < format.length; i++) {
-		var type = format[i];
+
+		if (!allowed[format[i]])
+			continue;
+
+		if (prev !== format[i]) {
+			prevformat && tmpformat.push(prevformat);
+			prevformat = format[i];
+			prev = format[i];
+		} else
+			prevformat += format[i];
+	}
+
+	prev = '';
+
+	for (var i = 0; i < val.length; i++) {
+		var code = val.charCodeAt(i);
+		if (code >= 48 && code <= 57)
+			prev += val[i];
+	}
+
+	prevformat && tmpformat.push(prevformat);
+
+	var f = 0;
+	for (var i = 0; i < tmpformat.length; i++) {
+		var l = tmpformat[i].length;
+		tmp.push(prev.substring(f, f + l));
+		f += l;
+	}
+
+	var dt = {};
+
+	for (var i = 0; i < tmpformat.length; i++) {
+		var type = tmpformat[i];
 		if (tmp[i])
 			dt[type[0]] = +tmp[i];
 	}
@@ -3766,7 +3800,7 @@ function parseDateFormat(format, val) {
 		}
 	}
 
-	return new Date(dt.y || 0, (dt.M || 1) - 1, dt.d || 0, h || 0, dt.m || 0, dt.s || 0);
+	return new Date((dt.y || dt.Y) || 0, (dt.M || 1) - 1, dt.d || 0, h || 0, dt.m || 0, dt.s || 0);
 }
 
 SP.parseDate = function(format) {
