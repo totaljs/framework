@@ -3754,15 +3754,17 @@ function parseDateFormat(format, val) {
 
 	for (var i = 0; i < format.length; i++) {
 
-		if (!allowed[format[i]])
+		var c = format[i];
+
+		if (!allowed[c])
 			continue;
 
-		if (prev !== format[i]) {
+		if (prev !== c) {
 			prevformat && tmpformat.push(prevformat);
-			prevformat = format[i];
-			prev = format[i];
+			prevformat = c;
+			prev = c;
 		} else
-			prevformat += format[i];
+			prevformat += c;
 	}
 
 	prev = '';
@@ -3794,13 +3796,11 @@ function parseDateFormat(format, val) {
 
 	if (h != null) {
 		var ampm = val.match(REG_TIME);
-		if (ampm) {
-			if (ampm[0].toLowerCase() === 'pm')
-				h += 12;
-		}
+		if (ampm && ampm[0].toLowerCase() === 'pm')
+			h += 12;
 	}
 
-	return new Date((dt.y || dt.Y) || 0, (dt.M || 1) - 1, dt.d || 0, h || 0, dt.m || 0, dt.s || 0);
+	return new Date((dt.y || dt.Y) || 0, (dt.M || 1) - 1, dt.d || dt.D || 0, h || 0, dt.m || 0, dt.s || 0);
 }
 
 SP.parseDate = function(format) {
