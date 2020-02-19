@@ -3167,8 +3167,10 @@ DP.format = function(format, resource) {
 	format = format.replace(regexpDATEFORMAT, function(key) {
 		switch (key) {
 			case 'yyyy':
+			case 'YYYY':
 				return beg + 'd.getFullYear()' + end;
 			case 'yy':
+			case 'YY':
 				return beg + 'd.getFullYear().toString().substring(2)' + end;
 			case 'MMM':
 				ismm = true;
@@ -3181,14 +3183,18 @@ DP.format = function(format, resource) {
 			case 'M':
 				return beg + '(d.getMonth() + 1)' + end;
 			case 'ddd':
+			case 'DDD':
 				isdd = true;
 				return beg + '(F.resource(resource, dd) || dd).substring(0, 2).toUpperCase()' + end;
 			case 'dddd':
+			case 'DDDD':
 				isdd = true;
 				return beg + '(F.resource(resource, dd) || dd)' + end;
 			case 'dd':
+			case 'DD':
 				return beg + 'd.getDate().toString().padLeft(2, \'0\')' + end;
 			case 'd':
+			case 'D':
 				return beg + 'd.getDate()' + end;
 			case 'HH':
 			case 'hh':
