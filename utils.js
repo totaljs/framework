@@ -51,7 +51,7 @@ if (!global.framework_utils)
 var regexpSTATIC = /\.\w{2,8}($|\?)+/;
 const regexpTRIM = /^[\s]+|[\s]+$/g;
 const regexpDATE = /(\d{1,2}\.\d{1,2}\.\d{4})|(\d{4}-\d{1,2}-\d{1,2})|(\d{1,2}:\d{1,2}(:\d{1,2})?)/g;
-const regexpDATEFORMAT = /yyyy|yy|M+|d+|HH|H|hh|h|mm|m|ss|s|a|ww|w/g;
+const regexpDATEFORMAT = /YYYY|yyyy|YY|yy|MMMM|MMM|MM|M|dddd|DDDD|DDD|ddd|DD|dd|D|d|HH|H|hh|h|mm|m|ss|s|a|ww|w/g;
 const regexpSTRINGFORMAT = /\{\d+\}/g;
 const regexpPATH = /\\/g;
 const regexpTags = /<\/?[^>]+(>|$)/g;
