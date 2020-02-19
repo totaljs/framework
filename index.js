@@ -287,6 +287,8 @@ var _prefix;
 !global.framework_image && (global.framework_image = require('./image'));
 !global.framework_session && (global.framework_session = require('./session'));
 
+require('./tangular');
+
 function sessionwrapper(name) {
 	if (!name)
 		name = 'default';
