@@ -2,6 +2,8 @@
 
 - fixed: `String.parseDate(format)` with defined format
 
+- improved: `Date.format()`
+
 ======= 3.4.0
 
 - added: `date.setTimeZone(timezone)`
