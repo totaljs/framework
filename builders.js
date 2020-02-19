@@ -2480,11 +2480,11 @@ SchemaBuilderEntityProto.prepare = function(model, dependencies, req) {
 						}
 					}
 
-
 					entity = GETSCHEMA(type.raw);
 					if (entity) {
 						item[property] = entity.prepare(val, undefined);
 						item[property].$$parent = item;
+						item[property].$$controller = req;
 						dependencies && dependencies.push({ name: type.raw, value: self.$onprepare(property, item[property], undefined, model, req) });
 					} else
 						item[property] = null;
@@ -2614,6 +2614,7 @@ SchemaBuilderEntityProto.prepare = function(model, dependencies, req) {
 					if (entity) {
 						tmp = entity.prepare(tmp, dependencies);
 						tmp.$$parent = item;
+						tmp.$$controller = req;
 						dependencies && dependencies.push({ name: type.raw, value: self.$onprepare(property, tmp, j, model, req) });
 					} else
 						throw new Error('Schema "{0}" not found'.format(type.raw));
@@ -3586,7 +3587,6 @@ SchemaInstance.prototype.$controller = function(controller) {
 SchemaInstance.prototype.$save = function(helper, callback, async) {
 
 	if (this.$$async && !this.$$async.running) {
-
 		if (typeof(helper) === 'function') {
 			async = callback;
 			callback = helper;

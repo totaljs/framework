@@ -3,6 +3,7 @@
 - added: `SchemaOptions.parent` returns a parent model
 
 - fixed: `String.parseDate(format)` with defined format
+- fixed: inheriting of controllers between schemas
 
 - improved: `Date.format()`
 
