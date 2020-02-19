@@ -1,5 +1,7 @@
 ======= 3.4.1
 
+- added: `SchemaOptions.parent` returns a parent model
+
 - fixed: `String.parseDate(format)` with defined format
 
 - improved: `Date.format()`

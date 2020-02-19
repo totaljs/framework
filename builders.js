@@ -167,6 +167,10 @@ SchemaOptions.prototype = {
 		return this.model.$$keys;
 	},
 
+	get parent() {
+		return this.model.$$parent;
+	},
+
 	get sessionid() {
 		return this.controller && this.controller ? this.controller.req.sessionid : null;
 	},
