@@ -5,6 +5,7 @@
 
 - fixed: `String.parseDate(format)` with defined format
 - fixed: inheriting of controllers between schemas
+- fixed: `MailMessage.attachments()`
 
 - improved: `Date.format()`
 

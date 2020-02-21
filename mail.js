@@ -432,7 +432,7 @@ Mailer.prototype.$writeattachment = function(obj) {
 	var stream;
 
 	if (attachment.storage) {
-		FILESTORAGE(attachment.storage).binary.readbase64(attachment.filename, function(err, stream, meta) {
+		FILESTORAGE(attachment.storage).readbase64(attachment.filename, function(err, stream, meta) {
 			if (err) {
 				F.error(err, 'Mail.filestorage()', attachment.filename);
 				mailer.$writeattachment(obj);
