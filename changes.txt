@@ -3,6 +3,8 @@
 - added: `SchemaOptions.parent` returns a parent model
 - added: Tangular template engine (experimental)
 
+- updated: `HttpFile.fs()` by adding `id` argument for updating of existing file
+
 - fixed: `String.parseDate(format)` with defined format
 - fixed: inheriting of controllers between schemas
 - fixed: `MailMessage.attachments()`

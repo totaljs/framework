@@ -801,20 +801,26 @@ HFP.image = function(im) {
 	return framework_image.init(this.path, im, this.width, this.height);
 };
 
-HFP.fs = function(storagename, custom, callback) {
+HFP.fs = function(storagename, custom, callback, id) {
 	if (typeof(custom) === 'function') {
+		id = callback;
 		callback = custom;
 		custom = null;
 	}
-	return FILESTORAGE(storagename).insert(this.filename, Fs.createReadStream(this.path), custom, callback);
+	var storage = FILESTORAGE(storagename);
+	var stream = Fs.createReadStream(this.path);
+	return id ? storage.update(id, this.filename, stream, custom, callback) : storage.insert(this.filename, stream, custom, callback);
 };
 
-HFP.nosql = function(name, custom, callback) {
+HFP.nosql = function(name, custom, callback, id) {
 	if (typeof(custom) === 'function') {
+		id = callback;
 		callback = custom;
 		custom = null;
 	}
-	return NOSQL(name).binary.insert(this.filename, Fs.createReadStream(this.path), custom, callback);
+	var storage = NOSQL(name).binary;
+	var stream = Fs.createReadStream(this.path);
+	return id ? storage.update(id, this.filename, stream, custom, callback) : storage.insert(this.filename, stream, custom, callback);
 };
 
 // *********************************************************************************
