@@ -13843,10 +13843,10 @@ ControllerProto.json = function(obj, headers, beautify, replacer) {
 };
 
 ControllerProto.success = function(is, value) {
-	if (value === undefined) {
+	if (value === undefined && (is == null || typeof(is) === 'boolean')) {
 		F.stats.response.json++;
 		var res = this.res;
-		res.options.body = '{"success":' + (is == null ? 'true' : is) + '}';
+		res.options.body = '{"success":' + (is == null ? 'true' : is + '}');
 		res.options.type = CT_JSON;
 		res.options.compress = false;
 		res.$text();

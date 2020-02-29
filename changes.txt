@@ -9,6 +9,7 @@
 - fixed: inheriting of controllers between schemas
 - fixed: `MailMessage.attachments()`
 - fixed: calling of `F.snapshotstats` in cache recycle
+- fixed: `controller.success()`
 
 - improved: `Date.format()`
 
