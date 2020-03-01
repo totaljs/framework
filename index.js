@@ -1028,7 +1028,7 @@ function Framework() {
 		allow_head: false,
 		allow_filter_errors: true,
 		allow_clear_temp: true,
-		allow_ssc_validation: false,
+		allow_ssc_validation: true,
 		allow_workers_silent: false,
 		allow_sessions_unused: '-20 minutes',
 		allow_reqlimit: 0,

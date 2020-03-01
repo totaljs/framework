@@ -4,6 +4,7 @@
 - added: Tangular template engine (experimental)
 
 - updated: `HttpFile.fs()` by adding `id` argument for updating of existing file
+- updated: `allow_ssc_validation`, changed a default value to `true`
 
 - fixed: `String.parseDate(format)` with defined format
 - fixed: inheriting of controllers between schemas
