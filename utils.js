@@ -3370,6 +3370,10 @@ SP.hash = function(type, salt) {
 	}
 };
 
+SP.makeid = function() {
+	return this.hash(true).toString(16);
+};
+
 SP.crc32 = function(unsigned) {
 	var crc = -1;
 	for (var i = 0, length = this.length; i < length; i++)
@@ -6920,3 +6924,5 @@ const BUFEMPTYJSON = Buffer.from('{}');
 
 global.WAIT = exports.wait;
 !global.F && require('./index');
+
+console.log(''.parseInt(9999));

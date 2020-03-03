@@ -2,6 +2,7 @@
 
 - added: `SchemaOptions.parent` returns a parent model
 - added: Tangular template engine (experimental)
+- added: `String.makeid()` for creating of unique identifier from string
 
 - updated: `HttpFile.fs()` by adding `id` argument for updating of existing file
 - updated: default value for `allow_ssc_validation` to `true`
@@ -672,7 +673,7 @@
 - added: `NOSQL('users').backups([filter(doc)], callback(err, response))` returns all backups
 - added: `SchemaOptions.invalid(name, [value], [path], [index])` alias to `$.errors.push() + callback()`
 - added: `SchemaOptions.success()` alias to `callback(SUCCESS(value))`
-- added: `controller.sitemapid` contains a sitemap identificator
+- added: `controller.sitemapid` contains a sitemap identifier
 - added: `controller.sitemap_add(parent, name, url)` appends a new item into the sitemap per request
 - added: `@{sitemap_add(parent, name, url)}` appends a new item into the sitemap per request
 - added: `SchemaEntity.required('fieldname', boolean/function(model))` which can disable/enable validation for this field
@@ -890,10 +891,10 @@
 - updated: Components (now doesn't have to has `html` body)
 - updated: A component implementation can contain `exports.group = 'name';`
 - updated: framework loads all dependencies in order
-- updated: routes (web/websockets/files) can have an identificator in this form `F.route('/', ['id:custom_dentificator']);
-- updated: `UNINSTALL(type, url/id/fn)` supports new types `web`, `websocket` and `file`, e.g. `UNINSTALL('web', 'id:custom_identificator')`
+- updated: routes (web/websockets/files) can have an identifier in this form `F.route('/', ['id:custom_dentificator']);
+- updated: `UNINSTALL(type, url/id/fn)` supports new types `web`, `websocket` and `file`, e.g. `UNINSTALL('web', 'id:custom_identifier')`
 - updated: `U.request()`, added a new flag: `raw` (sends raw data)
-- updated: `F.schedule()` returns an identificator
+- updated: `F.schedule()` returns an identifier
 - updated: `U.clone()` supports `buffer` properties
 - updated: `setTimeout2(name, fn(param), timeout, [limit], [param])` added a new argument `limit` and `param`
 - updated: `F.script()` --> `now` argument (in the script body) is function `now()` which it still returns `new Date()`
@@ -1186,7 +1187,7 @@
 - added: `ErrorBuilder.plain()` returns all errors as a simple string
 - added: `Array.findItem()` alias to `Array.find()`
 - added: `Number.async(fn(index, next), callback)` for asynchronous operations
-- added: `UID()` for generating unique identificators (contains minimum 18 chars)
+- added: `UID()` for generating unique identifiers (contains minimum 18 chars)
 - added: `F.restart()` for restarting app
 - added: `F.on('restart')`
 - added: quicksort algorithm for sorting arrays
@@ -1957,7 +1958,7 @@ Framework loads modules, packages, models, definitions, controllers
 - updated: @{get} is deprecated
 - updated: String.encode(), String.decode()
 - updated: (IMPORTANT) changed the arguments in callback for workflow, compose, transform
-- updated: BINARY total --translate SOME TEXT create translate identificator
+- updated: BINARY total --translate SOME TEXT create translate identifier
 
 - renamed: config['directory-angular'] to config['directory-public-virtual']
 - renamed: config['allow-compress-html'] to config['allow-compile-html']
