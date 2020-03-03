@@ -4592,7 +4592,7 @@ exports.encryptUID = function(val, key) {
 	if (!key)
 		key = CONF.secret;
 
-	val = val.toString();
+	val = val + '';
 
 	for (var i = 0; i < val.length; i++)
 		sum += val.charCodeAt(i);
