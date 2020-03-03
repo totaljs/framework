@@ -9242,6 +9242,8 @@ global.RESOURCE = F.resource = function(name, key) {
  * @param {String} text
  * @return {String}
  */
+
+// var obsolete_translate = false;
 global.TRANSLATE = F.translate = function(language, text) {
 
 	if (!text) {
@@ -9252,6 +9254,15 @@ global.TRANSLATE = F.translate = function(language, text) {
 	if (text[0] === '#' && text[1] !== ' ')
 		return F.resource(language, text.substring(1));
 
+	/*
+	var value = F.resource(language, 'T' + text.hash(true).toString(16));
+	if (!value) {
+		value = F.resources[language]['T' + text.hash()];
+		if (value && !obsolete_translate) {
+			obsolete_translate = true;
+			OBSOLETE(language + '.resource', 'A resource file contains older keys with localization, please regenerate localization.');
+		}
+	}*/
 	var value = F.resource(language, 'T' + text.hash());
 	return value ? value : text;
 };
