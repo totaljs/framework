@@ -13843,16 +13843,23 @@ ControllerProto.json = function(obj, headers, beautify, replacer) {
 };
 
 ControllerProto.success = function(is, value) {
-	if (value === undefined && (is == null || typeof(is) === 'boolean')) {
+	var t = typeof(is);
+	if (value === undefined && (is == null || t === 'boolean')) {
 		F.stats.response.json++;
 		var res = this.res;
 		res.options.body = '{"success":' + (is == null ? 'true' : is) + '}';
 		res.options.type = CT_JSON;
 		res.options.compress = false;
 		res.$text();
-		return this;
-	} else
-		return this.json(SUCCESS(is == null ? true : is, value));
+	} else {
+		if (t && t !== 'boolean') {
+			value = t;
+			t = true;
+		}
+		this.json(SUCCESS(is == null ? true : is, value));
+	}
+
+	return this;
 };
 
 ControllerProto.done = function(arg) {
