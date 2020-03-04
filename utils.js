@@ -6924,5 +6924,3 @@ const BUFEMPTYJSON = Buffer.from('{}');
 
 global.WAIT = exports.wait;
 !global.F && require('./index');
-
-console.log(''.parseInt(9999));
