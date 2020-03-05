@@ -136,7 +136,7 @@ exports.make = function(callback) {
 							return false;
 
 						if (INTERNAL[p] || U.getExtension(p) === 'resource' || mergeme) {
-							var hash = Math.random().toString(16).substring(5);
+							var hash = p.hash(true).toString(16);
 							Merge.push({ name: p, filename: Path.join(target, p + hash), type: mergeme });
 							META.files.push(p + hash);
 							return p + hash;
@@ -172,7 +172,6 @@ exports.make = function(callback) {
 
 	async.push(function(next) {
 		U.ls(path, function(files, dirs) {
-
 
 			for (var i = 0, length = dirs.length; i < length; i++)
 				Dirs.push(normalize(dirs[i].substring(Length)));
