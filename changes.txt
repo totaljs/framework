@@ -15,6 +15,7 @@
 - fixed: removing of unused files when a bundle is extracting
 
 - improved: `Date.format()`
+- improved: Total.js translate (supports ErrorBuilder and DBMS)
 
 ======= 3.4.0
 
