@@ -13,6 +13,7 @@
 - fixed: calling of `F.snapshotstats` in cache recycle
 - fixed: `controller.success()`
 - fixed: removing of unused files when a bundle is extracting
+- fixed: a processor function in `F.backup()`
 
 - improved: `Date.format()`
 - improved: Total.js translate (supports ErrorBuilder and DBMS)

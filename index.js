@@ -7076,7 +7076,7 @@ F.backup = function(filename, filelist, callback, filter) {
 					return;
 				}
 
-				if (filter && !filter(file.substring(path.length - 1), true))
+				if (filter && !filter(file.substring(path.length - 1), false))
 					return next();
 
 				var data = Buffer.alloc(0);
