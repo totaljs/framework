@@ -7022,6 +7022,20 @@ F.backup = function(filename, filelist, callback, filter) {
 			return a.localeCompare(b);
 		});
 
+		var clean = function(path, files) {
+			var index = 0;
+			while (true) {
+				var filename = files[index];
+				if (!filename)
+					break;
+				if (filename.substring(0, path.length) === path) {
+					files.splice(index, 1);
+					continue;
+				} else
+					index++;
+			}
+		};
+
 		var writer = Fs.createWriteStream(filename);
 
 		writer.on('finish', function() {
@@ -7062,8 +7076,10 @@ F.backup = function(filename, filelist, callback, filter) {
 
 						d.wait(function(item, next) {
 
-							if (filter && !filter(item.substring(length), true))
+							if (filter && !filter(item.substring(length), true)) {
+								clean(item, f);
 								return next();
+							}
 
 							writer.write(item.substring(length).padRight(padding) + ':#\n', 'utf8');
 							next();
