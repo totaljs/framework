@@ -83,6 +83,10 @@ Message.prototype = {
 
 	get headers() {
 		return this.controller && this.controller.req ? this.controller.req.headers : null;
+	},
+
+	get ua() {
+		return this.controller && this.controller.req ? this.controller.req.ua : null;
 	}
 };
 

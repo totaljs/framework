@@ -3,6 +3,7 @@
 - added: `SchemaOptions.parent` returns a parent model
 - added: Tangular template engine (experimental)
 - added: `String.makeid()` for creating of unique identifier from string
+- added: a new property called `message.ua` to `FLOWSTREAM()`
 
 - updated: `HttpFile.fs()` by adding `id` argument for updating of existing file
 - updated: default value for `allow_ssc_validation` to `true`
