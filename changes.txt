@@ -1,3 +1,7 @@
+======= 3.4.2
+
+- fixed: phone validation
+
 ======= 3.4.1
 
 - added: `SchemaOptions.parent` returns a parent model
