@@ -142,7 +142,7 @@ function runwatching() {
 			directories.push(U.combine('/threads/' + global.THREAD + '/'));
 
 		const SRC = U.combine(CONF.directory_src);
-		const prefix = '----------------> ';
+		const prefix = '--------> ';
 
 		options.watch && options.watch.forEach(function(item) {
 			if (item[0] === '/')
