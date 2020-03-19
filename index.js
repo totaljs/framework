@@ -15378,12 +15378,17 @@ WebSocketProto.send = function(message, id, blacklist, replacer) {
 	return self;
 };
 
-WebSocketProto.send2 = function(message, comparer, replacer) {
+WebSocketProto.send2 = function(message, comparer, replacer, params) {
 
 	var self = this;
 	var keys = self._keys;
 	if (!keys || !keys.length || message === undefined)
 		return self;
+
+	if (!params && replacer != null && typeof(replacer) !== 'function') {
+		params = replacer;
+		replacer = null;
+	}
 
 	var data;
 	var raw = false;
@@ -15400,7 +15405,7 @@ WebSocketProto.send2 = function(message, comparer, replacer) {
 				data = message;
 		}
 
-		if (comparer && !comparer(conn, message))
+		if (comparer && !comparer(conn, message, params))
 			continue;
 
 		conn.send(data, raw);
