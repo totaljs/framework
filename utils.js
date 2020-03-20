@@ -5551,7 +5551,23 @@ AP.where = function(cb, value) {
  * @param {Object} value Optional.
  * @return {Array}
  */
-AP.findItem = AP.find = function(cb, value) {
+AP.findItem = function(cb, value) {
+	var self = this;
+	var index = self.findIndex(cb, value);
+	if (index === -1)
+		return null;
+	return self[index];
+};
+
+var arrfindobsolete;
+
+AP.find = function(cb, value) {
+
+	if (!arrfindobsolete) {
+		arrfindobsolete = true;
+		OBSOLETE('Array.prototype.find()', 'alternative "Array.prototype.findItem()"');
+	}
+
 	var self = this;
 	var index = self.findIndex(cb, value);
 	if (index === -1)
