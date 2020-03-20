@@ -94,8 +94,10 @@ exports.make = function(callback) {
 			var dirs = {};
 			files.wait(function(filename, resume) {
 
-				if (!filename.endsWith('.bundle'))
+				if (!filename.endsWith('.bundle') || filename.endsWith('-bk.bundle'))
 					return resume();
+
+				console.log('-----', U.getName(filename));
 
 				var dbpath = CONF.directory_databases;
 				var pathupdate = CONF.directory_updates;
