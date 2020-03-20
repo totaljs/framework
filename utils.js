@@ -5565,7 +5565,7 @@ AP.find = function(cb, value) {
 
 	if (!arrfindobsolete) {
 		arrfindobsolete = true;
-		OBSOLETE('Array.prototype.find()', 'alternative "Array.prototype.findItem()"');
+		OBSOLETE('Array.prototype.find()', 'will be removed in v4, use alternative "Array.prototype.findItem()"');
 	}
 
 	var self = this;
