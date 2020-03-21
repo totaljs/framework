@@ -3370,6 +3370,10 @@ SP.hash = function(type, salt) {
 	}
 };
 
+global.HASH = function(value, type) {
+	return value.hash(type ? type : true);
+};
+
 SP.makeid = function() {
 	return this.hash(true).toString(16);
 };
