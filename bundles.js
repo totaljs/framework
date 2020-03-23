@@ -97,7 +97,8 @@ exports.make = function(callback) {
 				if (!filename.endsWith('.bundle') || filename.endsWith('-bk.bundle'))
 					return resume();
 
-				console.log('-----', U.getName(filename));
+				if (CONSOLE)
+					console.log('-----', U.getName(filename));
 
 				var dbpath = CONF.directory_databases;
 				var pathupdate = CONF.directory_updates;
