@@ -10841,7 +10841,7 @@ global.PAUSESERVER = F.wait = function(name, enable) {
 	return enable === true;
 };
 
-global.UPDATE = function(versions, callback, pauseserver) {
+global.UPDATE = function(versions, callback, pauseserver, noarchive) {
 
 	if (typeof(version) === 'function') {
 		callback = versions;
@@ -10886,7 +10886,10 @@ global.UPDATE = function(versions, callback, pauseserver) {
 		opt.version = version;
 		opt.callback = function(err) {
 			err && errorbuilder.push(err);
-			Fs.renameSync(filename, filename + '_bk');
+
+			if (!noarchive)
+				Fs.renameSync(filename, filename + '_bk');
+
 			next();
 		};
 

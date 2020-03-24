@@ -5,6 +5,7 @@
 - updated: `websocket.send2(message, comparer, replacer, [params])` by adding `params` argument for comparer function
 - updated: bundling skips all bundles with `-bk.bundle` in filename
 - updated: bundle filenames are displayed in console
+- updated: `UPDATE()` method by adding `noarchive` argument
 
 - fixed: phone validation
 
