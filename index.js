@@ -11652,7 +11652,7 @@ Controller.prototype = {
 	},
 
 	get isTest() {
-		OBSOLETE('controller.isTest', 'Use: controller.isTest');
+		OBSOLETE('controller.isTest', 'Use: F.isTest');
 		return this.req.headers['x-assertion-testing'] === '1';
 	},
 
