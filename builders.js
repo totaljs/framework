@@ -171,6 +171,12 @@ SchemaOptions.prototype = {
 		return this.model.$$parent;
 	},
 
+	get repo() {
+		if (!this.model.$$repository)
+			this.model.$$repository = {};
+		return this.model.$$repository;
+	},
+
 	get sessionid() {
 		return this.controller && this.controller ? this.controller.req.sessionid : null;
 	},
