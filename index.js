@@ -4195,7 +4195,7 @@ F.$load = function(types, targetdirectory, callback, packageName) {
 			var ext = U.getExtension(o);
 			if (ext)
 				ext = '.' + ext;
-			if (ext !== extension || o[0] === '.' || o.endsWith('-bk' + extension))
+			if (ext !== extension || o[0] === '.' || o.endsWith('-bk' + extension) || o.endsWith('_bk' + extension))
 				return;
 
 			var name = (level ? U.$normalize(directory).replace(dir, '') + '/' : '') + o.substring(0, o.length - ext.length);

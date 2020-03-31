@@ -33,6 +33,7 @@ const INTERNAL = { '/sitemap': 1, '/versions': 1, '/workflows': 1, '/dependencie
 const isWindows = require('os').platform().substring(0, 3).toLowerCase() === 'win';
 const REGAPPEND = /\/--[a-z0-9]+/i;
 const REGAPPENDREPLACE = /\/--/g;
+const REGBK = /(-|_)bk\.bundle$/i;
 const META = {};
 
 META.version = 1;
@@ -94,7 +95,7 @@ exports.make = function(callback) {
 			var dirs = {};
 			files.wait(function(filename, resume) {
 
-				if (!filename.endsWith('.bundle') || filename.endsWith('-bk.bundle'))
+				if (!filename.endsWith('.bundle') || REGBK.test(filename))
 					return resume();
 
 				if (CONSOLE)
