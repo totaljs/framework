@@ -116,14 +116,29 @@ global.TEST = function(name, url, scope) {
 		return;
 	}
 
+	var subdomain;
+	var method;
+	var index = url.indexOf(' ');
+
+	if (index !== -1) {
+		method = url.substring(0, index);
+		url = url.substring(index + 1).trim();
+	}
+
+	url = url.replace(/\[.*?]/g, function(text) {
+		subdomain = text.replace(/\[|\]/g, '').trim();
+		return '';
+	});
+
 	if (!url.startsWith('http://', true) && !url.startsWith('https://', true))
-		url = 'http://' + F.ip + ':' + F.port + (url[0] !== '/' ? '/' : '') + url;
+		url = 'http://' + (subdomain ? (subdomain + '.') : '') + F.ip + ':' + F.port + (url[0] !== '/' ? '/' : '') + url;
 
 	var fn = function() {
 		T.now = Date.now();
 		T.currentname = name;
 		T.current.count++;
 		var builder = new RESTBuilder(url);
+		method && builder.method(method);
 		builder.header('X-Assertion-Testing', '1');
 		scope.call(builder, builder);
 	};

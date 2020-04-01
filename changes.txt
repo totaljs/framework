@@ -7,6 +7,7 @@
 - updated: bundling skips all bundles with `-bk.bundle` in filename
 - updated: bundle filenames are displayed in console
 - updated: `UPDATE()` method by adding `noarchive` argument
+- updated: `TEST()` method supports `[subdomain]` keyword and `METHOD url` in URL address
 
 - fixed: phone validation
 
