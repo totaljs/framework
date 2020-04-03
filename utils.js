@@ -1385,6 +1385,9 @@ function download_call(uri, options) {
 
 	var timeout = function() {
 		if (options.callback) {
+			options.timeoutid && clearTimeout(options.timeoutid);
+			options.timeoutid = null;
+			req.abort();
 			options.callback(new Error(exports.httpStatus(408)));
 			options.callback = null;
 			options.evt.removeAllListeners();

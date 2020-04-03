@@ -8618,9 +8618,10 @@ F.$cors = function(req, res, fn, arg) {
  * @param {Socket} socket
  * @param {Buffer} head
  */
+const REGWS = /websocket/i;
 F.$upgrade = function(req, socket, head) {
 
-	if ((req.headers.upgrade || '').toLowerCase() !== 'websocket' || F._length_wait)
+	if (!REGWS.test(req.headers.upgrade || '') || F._length_wait)
 		return;
 
 	// disables timeout
@@ -15610,13 +15611,14 @@ WebSocketProto.destroy = function(problem) {
 
 	setTimeout(function() {
 
-		self._keys.forEach(function(key) {
+		for (var i = 0; i < self._keys.length; i++) {
+			var key = self._keys[i];
 			var conn = self.connections[key];
 			if (conn) {
 				conn._isClosed = true;
 				conn.socket.removeAllListeners();
 			}
-		});
+		}
 
 		self.connections = null;
 		self._keys = null;
@@ -15624,6 +15626,7 @@ WebSocketProto.destroy = function(problem) {
 		self.buffer = null;
 		delete F.connections[self.id];
 		self.removeAllListeners();
+
 	}, 1000);
 
 	return self;
