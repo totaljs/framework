@@ -1141,6 +1141,7 @@ function Framework() {
 
 	self.owners = [];
 	self.modificators = null;
+	self.modificators2 = null;
 	DEF.helpers = self.helpers = {};
 	self.modules = {};
 	self.models = {};
@@ -4086,10 +4087,26 @@ global.MODULE = F.module = function(name) {
  * @param {Function(type, filename, content)} fn The `fn` must return modified value.
  * @return {Framework}
  */
-global.MODIFY = F.modify = function(fn) {
-	if (!F.modificators)
-		F.modificators = [];
-	F.modificators.push(fn);
+global.MODIFY = F.modify = function(filename, fn) {
+
+	if (typeof(filename) === 'function') {
+		fn = filename;
+		filename = null;
+	}
+
+	if (filename) {
+		if (!F.modificators2)
+			F.modificators2 = {};
+		if (F.modificators2[filename])
+			F.modificators2[filename].push(fn);
+		else
+			F.modificators2[filename] = [fn];
+	} else {
+		if (!F.modificators)
+			F.modificators = [];
+		F.modificators.push(fn);
+	}
+
 	fn.$owner = _owner;
 	return F;
 };
@@ -19169,7 +19186,8 @@ function parseComponent(body, filename) {
 }
 
 function getSchemaName(schema, params) {
-	schema = schema.split('/');
+	if (!(schema instanceof Array))
+		schema = schema.split('/');
 	return schema[0] === 'default' ? (params ? params[schema[1]] : schema[1]) : (schema.length > 1 ? (schema[0] + '/' + schema[1]) : schema[0]);
 }
 

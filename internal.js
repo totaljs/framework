@@ -3052,10 +3052,30 @@ function viewengine_read(path, controller) {
 
 function modificators(value, filename, type, controller) {
 
+	if (filename) {
+		var length = F.directory.length;
+		if (filename.substring(0, length) === F.directory) {
+			filename = filename.substring(length);
+			if (filename[0] !== '/')
+				filename = '/' + filename;
+		}
+
+		if (F.modificators2) {
+			var arr = F.modificators2[filename];
+			if (arr) {
+				for (var i = 0; i < arr.length; i++) {
+					var output = arr[i](type || 'view', filename, value, controller);
+					if (output)
+						value = output;
+				}
+			}
+		}
+	}
+
 	if (!F.modificators)
 		return value;
 
-	for (var i = 0, length = F.modificators.length; i < length; i++) {
+	for (var i = 0; i < F.modificators.length; i++) {
 		var output = F.modificators[i](type || 'view', filename, value, controller);
 		if (output)
 			value = output;
