@@ -19169,7 +19169,8 @@ function parseComponent(body, filename) {
 }
 
 function getSchemaName(schema, params) {
-	return schema[0] === 'default' ? (params ? params[schema[1]] : schema[1]) : schema[0] + '/' + schema[1];
+	schema = schema.split('/');
+	return schema[0] === 'default' ? (params ? params[schema[1]] : schema[1]) : (schema.length > 1 ? (schema[0] + '/' + schema[1]) : schema[0]);
 }
 
 // Default action for workflow routing
