@@ -5925,7 +5925,7 @@ F.onMapping = function(url, def, ispublic, encode) {
 
 global.DOWNLOAD = F.download = F.snapshot = function(url, filename, callback) {
 
-	if (!F.isLoaded) {
+	if (!F.isLoaded && url[0] === '/') {
 		setTimeout(F.download, 200, url, filename, callback);
 		return F;
 	}

@@ -10,6 +10,7 @@
 - updated: `TEST()` method supports `[subdomain]` keyword and `METHOD url` in URL address
 
 - fixed: phone validation
+- fixed: `DOWNLOAD()`
 
 ======= 3.4.1
 
