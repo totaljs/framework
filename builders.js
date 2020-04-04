@@ -172,6 +172,8 @@ SchemaOptions.prototype = {
 	},
 
 	get repo() {
+		if (this.controller)
+			return this.controller.repository;
 		if (!this.model.$$repository)
 			this.model.$$repository = {};
 		return this.model.$$repository;
@@ -859,6 +861,7 @@ SchemaBuilderEntityProto.$parse = function(name, value, required, custom) {
 	//  9 = keyvalue
 	// 10 = custom object type
 	// 11 = number2
+	// 12 = object as filter
 
 	if (value === null)
 		return result;
@@ -940,6 +943,12 @@ SchemaBuilderEntityProto.$parse = function(name, value, required, custom) {
 
 	if (lower === 'array') {
 		result.isArray = true;
+		return result;
+	}
+
+	if (value.indexOf(',') !== -1) {
+		// multiple
+		result.type = 12;
 		return result;
 	}
 
@@ -2126,8 +2135,10 @@ SchemaBuilderEntityProto.default = function() {
 		switch (type.type) {
 			// undefined
 			// object
+			// object: convertor
 			case 0:
 			case 6:
+			case 12:
 				item[property] = type.isArray ? [] : null;
 				break;
 			// numbers: integer, float
@@ -2166,6 +2177,7 @@ SchemaBuilderEntityProto.default = function() {
 					}
 				}
 				break;
+
 			// enum + keyvalue
 			case 8:
 			case 9:
@@ -2509,6 +2521,11 @@ SchemaBuilderEntityProto.prepare = function(model, dependencies, req) {
 					item[property] = self.$onprepare(property, typeval === 'number' ? val : typeval === 'string' ? parseNumber(val) : null, undefined, model, req);
 					break;
 
+				// object: convertor
+				case 12:
+					item[property] = self.$onprepare(property, val && typeval === 'object' && !(val instanceof Array) ? CONVERT(val, type.raw) : null, undefined, model, req);
+					break;
+
 			}
 			continue;
 		}
@@ -2630,6 +2647,12 @@ SchemaBuilderEntityProto.prepare = function(model, dependencies, req) {
 
 				case 11:
 					tmp = self.$onprepare(property, typeval === 'number' ? tmp : typeval === 'string' ? parseNumber(tmp) : null, j, model, req);
+					if (tmp == null)
+						continue;
+					break;
+
+				case 12:
+					tmp = self.$onprepare(property, tmp ? CONVERT(tmp, type.raw) : null, j, model, req);
 					if (tmp == null)
 						continue;
 					break;
@@ -3453,7 +3476,7 @@ SchemaInstance.prototype.$response = function(index) {
 		return index == undefined ? a.response : a.response[index === 'prev' ? (a.response.length - 1) : index];
 };
 
-SchemaInstance.prototype.$repository = function(name, value) {
+SchemaInstance.prototype.$sitory = function(name, value) {
 
 	if (this.$$repository === undefined) {
 		if (value === undefined)
