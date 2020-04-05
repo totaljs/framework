@@ -15,6 +15,7 @@
 
 - fixed: phone validation
 - fixed: `DOWNLOAD()`
+- fixed: `Number.VAT()` by Tomas Novak
 
 ======= 3.4.1
 
