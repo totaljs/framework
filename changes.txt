@@ -11,7 +11,7 @@
 - updated: `TEST()` method supports `[subdomain]` keyword and `METHOD url` in URL address
 - updated: `MODIFY([filename], fn)` by adding `filename` argument
 
-- improved: `filename` in modificators (now contains relative paths)
+- improved: `filename` in modificators (now it contains relative paths)
 
 - fixed: phone validation
 - fixed: `DOWNLOAD()`
