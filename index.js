@@ -1109,7 +1109,7 @@ function Framework() {
 	self.versions = null;
 	self.workflows = {};
 	self.uptodates = null;
-	self.schedules = [];
+	self.schedules = {};
 
 	self.isDebug = true;
 	self.isTest = false;
@@ -1923,12 +1923,12 @@ global.SCHEDULE = F.schedule = function(date, repeat, fn) {
 	var sum = date.getTime();
 	repeat && (repeat = repeat.replace('each', '1'));
 	var id = U.GUID(5);
-	F.schedules.push({ expire: sum, fn: fn, repeat: repeat, owner: _owner, id: id });
+	F.schedules[id] = { expire: sum, fn: fn, repeat: repeat, owner: _owner };
 	return id;
 };
 
 F.clearSchedule = function(id) {
-	F.schedules = F.schedules.remove('id', id);
+	delete F.schedules[id];
 	return F;
 };
 
@@ -5748,7 +5748,13 @@ F.$uninstall = function(owner, controller) {
 	F.routes.files = F.routes.files.remove('owner', owner);
 	F.routes.websockets = F.routes.websockets.remove('owner', owner);
 	F.routes.cors = F.routes.cors.remove('owner', owner);
-	F.schedules = F.schedules.remove('owner', owner);
+	//TODO: Improve time complexity here, still O(n)
+	//F.schedules = F.schedules.remove('owner', owner);
+	Object.keys(F.schedules).forEach(key => {
+		if (F.schedules[key].owner == owner) {
+			delete F.schedules[key];
+		}
+	})
 
 	if (F.modificators)
 		F.modificators = F.modificators.remove('$owner', owner);
@@ -6344,6 +6350,7 @@ F.usage = function(detailed) {
 	var resources = Object.keys(F.resources);
 	var controllers = Object.keys(F.controllers);
 	var connections = Object.keys(F.connections);
+	var schedules = Object.keys(F.schedules);
 	var workers = Object.keys(F.workers);
 	var modules = Object.keys(F.modules);
 	var isomorphic = Object.keys(F.isomorphic);
@@ -6393,7 +6400,7 @@ F.usage = function(detailed) {
 		cache: cache.length,
 		worker: workers.length,
 		connection: connections.length,
-		schedule: F.schedules.length,
+		schedule: schedules.length,
 		helpers: helpers.length,
 		error: F.errors.length,
 		problem: F.problems.length,
@@ -8062,29 +8069,25 @@ F.service = function(count) {
 		WORKERID = 0;
 
 	// Run schedules
-	if (!F.schedules.length)
+	if (!Object.keys(F.schedules).length)
 		return F;
 
 	var expire = NOW.getTime();
-	var index = 0;
 
-	while (true) {
-		var schedule = F.schedules[index++];
-		if (!schedule)
-			break;
+	Object.keys(F.schedules).forEach(key => {
+		var schedule = F.schedules[key];
+
 		if (schedule.expire > expire)
 			continue;
-
-		index--;
 
 		if (schedule.repeat)
 			schedule.expire = NOW.add(schedule.repeat);
 		else
-			F.schedules.splice(index, 1);
+			delete F.schedules[key];
 
 		CONF.allow_debug && F.consoledebug('schedule', schedule.id);
 		schedule.fn.call(F);
-	}
+	})
 
 	return F;
 };
