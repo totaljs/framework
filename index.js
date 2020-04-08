@@ -1932,7 +1932,6 @@ F.clearSchedule = function(id) {
 	return F;
 };
 
-
 /**
  * Auto resize picture according the path
  * @param {String} url Relative path.
@@ -5748,13 +5747,14 @@ F.$uninstall = function(owner, controller) {
 	F.routes.files = F.routes.files.remove('owner', owner);
 	F.routes.websockets = F.routes.websockets.remove('owner', owner);
 	F.routes.cors = F.routes.cors.remove('owner', owner);
-	//TODO: Improve time complexity here, still O(n)
-	//F.schedules = F.schedules.remove('owner', owner);
-	Object.keys(F.schedules).forEach(key => {
-		if (F.schedules[key].owner == owner) {
+
+	var keys = Object.keys(F.schedules);
+
+	for (var i = 0; i < keys.length; i++) {
+		var key = keys[i];
+		if (F.schedules[key].owner == owner)
 			delete F.schedules[key];
-		}
-	})
+	}
 
 	if (F.modificators)
 		F.modificators = F.modificators.remove('$owner', owner);
@@ -8069,25 +8069,25 @@ F.service = function(count) {
 		WORKERID = 0;
 
 	// Run schedules
-	if (!Object.keys(F.schedules).length)
+	keys = Object.keys(F.schedules);
+
+	if (!keys.length)
 		return F;
 
 	var expire = NOW.getTime();
 
-	Object.keys(F.schedules).forEach(key => {
+	for (var i = 0; i < keys.length; i++) {
+		var key = keys[i];
 		var schedule = F.schedules[key];
-
-		if (schedule.expire > expire)
-			continue;
-
-		if (schedule.repeat)
-			schedule.expire = NOW.add(schedule.repeat);
-		else
-			delete F.schedules[key];
-
-		CONF.allow_debug && F.consoledebug('schedule', schedule.id);
-		schedule.fn.call(F);
-	})
+		if (schedule.expire <= expire) {
+			if (schedule.repeat)
+				schedule.expire = NOW.add(schedule.repeat);
+			else
+				delete F.schedules[key];
+			CONF.allow_debug && F.consoledebug('schedule', schedule.id);
+			schedule.fn.call(F);
+		}
+	}
 
 	return F;
 };
