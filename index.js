@@ -8084,7 +8084,7 @@ F.service = function(count) {
 				schedule.expire = NOW.add(schedule.repeat);
 			else
 				delete F.schedules[key];
-			CONF.allow_debug && F.consoledebug('schedule', schedule.id);
+			CONF.allow_debug && F.consoledebug('schedule', key);
 			schedule.fn.call(F);
 		}
 	}
