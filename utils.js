@@ -1195,7 +1195,7 @@ exports.atob = function(str) {
  * @param {Number} timeout Request timeout.
  * return {Boolean}
  */
-exports.download = function(url, flags, data, callback, cookies, headers, encoding, timeout) {
+exports.download = function(url, flags, data, callback, cookies, headers, encoding, timeout, param) {
 
 	// No data (data is optional argument)
 	if (typeof(data) === 'function') {
@@ -1349,6 +1349,7 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 	// uri.agent = false;
 	uri.headers = headers;
 	options.uri = uri;
+	options.param = param;
 
 	if (options.resolve && (uri.hostname === 'localhost' || uri.hostname.charCodeAt(0) < 64))
 		options.resolve = null;
@@ -1438,7 +1439,7 @@ function download_process_timeout(req) {
 		options.timeoutid && clearTimeout(options.timeoutid);
 		options.timeoutid = null;
 		req.abort();
-		options.callback(new Error(exports.httpStatus(408)));
+		options.callback(new Error(exports.httpStatus(408)), null, null, null, null, options.param);
 		options.callback = null;
 		options.evt.removeAllListeners();
 		options.evt = null;
@@ -1451,7 +1452,7 @@ function download_process_error(err) {
 	if (options.callback && !options.done) {
 		options.timeoutid && clearTimeout(options.timeoutid);
 		options.timeoutid = null;
-		options.callback(err);
+		options.callback(err, null, null, null, null, options.param);
 		options.callback = null;
 		options.evt.removeAllListeners();
 		options.evt = null;
@@ -1472,7 +1473,7 @@ function download_response(res) {
 		if (options.redirect > 3) {
 			options.canceled = true;
 			options.timeoutid && clearTimeout(options.timeoutid);
-			options.callback && options.callback(new Error('Too many redirects.'));
+			options.callback && options.callback(new Error('Too many redirects.'), null, null, null, null, options.param);
 			res.req.removeAllListeners();
 			res.req = null;
 			res.removeAllListeners();
@@ -1524,7 +1525,7 @@ function download_response(res) {
 
 	res.resume();
 	options.timeoutid && clearTimeout(options.timeoutid);
-	options.callback && options.callback(null, res, res.statusCode, res.headers, uri.host);
+	options.callback && options.callback(null, res, res.statusCode, res.headers, uri.host, options.param);
 }
 
 exports.$$download = function(url, flags, data, cookies, headers, encoding, timeout) {
