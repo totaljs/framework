@@ -861,13 +861,13 @@ function request_call(uri, options) {
 	var connection = uri.protocol === 'https:' ? Https : Http;
 	var req = options.post ? connection.request(opt, request_response) : connection.get(opt, request_response);
 
+	req.$options = options;
+	req.$uri = uri;
+
 	if (!options.callback) {
 		req.on('error', NOOP);
 		return;
 	}
-
-	req.$options = options;
-	req.$uri = uri;
 
 	req.on('error', request_process_error);
 	options.timeoutid && clearTimeout(options.timeoutid);
@@ -1313,10 +1313,8 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 					options.keepalive = true;
 					break;
 				default:
-
 					// Fallback for methods (e.g. CalDAV)
 					method = flags[i].charCodeAt(0) > 96 ? flags[i].toUpperCase() : flags[i];
-
 					break;
 			}
 		}
@@ -1378,16 +1376,19 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 
 	if (proxy)
 		download_call(uri, options);
-	else if (options.resolve) {
-		exports.resolve(url, function(err, u) {
-			!err && (uri.host = u.host);
-			download_call(uri, options);
-		});
-	} else
+	else if (options.resolve)
+		exports.resolve(url, download_resolve, options);
+	else
 		download_call(uri, options);
 
 	return options.evt;
 };
+
+function download_resolve(err, uri, options) {
+	if (!err)
+		options.uri.host = uri.host;
+	download_call(options.uri, options);
+}
 
 function download_call(uri, options) {
 
@@ -1407,52 +1408,61 @@ function download_call(uri, options) {
 		opt = uri;
 
 	var connection = uri.protocol === 'https:' ? Https : Http;
-	var req = options.post ? connection.request(opt, (res) => download_response(res, uri, options)) : connection.get(opt, (res) => download_response(res, uri, options));
+	var req = options.post ? connection.request(opt, download_response) : connection.get(opt, download_response);
+
+	req.$options = options;
+	req.$uri = uri;
 
 	if (!options.callback) {
 		req.on('error', NOOP);
 		return;
 	}
 
-	var timeout = function() {
-		if (options.callback) {
-			options.timeoutid && clearTimeout(options.timeoutid);
-			options.timeoutid = null;
-			req.abort();
-			options.callback(new Error(exports.httpStatus(408)));
-			options.callback = null;
-			options.evt.removeAllListeners();
-			options.evt = null;
-			options.canceled = true;
-		}
-	};
-
-	req.on('error', function(err) {
-		if (options.callback) {
-			options.timeoutid && clearTimeout(options.timeoutid);
-			options.timeoutid = null;
-			options.callback(err);
-			options.callback = null;
-			options.evt.removeAllListeners();
-			options.evt = null;
-			options.canceled = true;
-		}
-	});
-
+	req.on('error', download_process_error);
 	options.timeoutid && clearTimeout(options.timeoutid);
-	options.timeoutid = setTimeout(timeout, options.timeout);
-	req.setTimeout(options.timeout, timeout);
-
-	req.on('response', function(response) {
-		response.req = req;
-		options.length = +response.headers['content-length'] || 0;
-		options.evt && options.evt.$events.begin && options.evt.emit('begin', options.length);
-	});
-
+	options.timeoutid = setTimeout(download_process_timeout, options.timeout);
+	req.on('response', download_assign_res);
 	req.end(options.data);
 }
 
-function download_response(res, uri, options) {
+function download_assign_res(response) {
+	response.req = this;
+	var options = this.$options;
+	options.length = +response.headers['content-length'] || 0;
+	options.evt && options.evt.$events.begin && options.evt.emit('begin', options.length);
+}
+
+function download_process_timeout(req) {
+	var options = req.$options;
+	if (options.callback) {
+		options.timeoutid && clearTimeout(options.timeoutid);
+		options.timeoutid = null;
+		req.abort();
+		options.callback(new Error(exports.httpStatus(408)));
+		options.callback = null;
+		options.evt.removeAllListeners();
+		options.evt = null;
+		options.canceled = true;
+	}
+}
+
+function download_process_error(err) {
+	var options = this.$options;
+	if (options.callback && !options.done) {
+		options.timeoutid && clearTimeout(options.timeoutid);
+		options.timeoutid = null;
+		options.callback(err);
+		options.callback = null;
+		options.evt.removeAllListeners();
+		options.evt = null;
+		options.canceled = true;
+	}
+}
+
+function download_response(res) {
+
+	var options = this.$options;
+	var uri = this.$uri;
 
 	res._bufferlength = 0;
 
@@ -1509,32 +1519,8 @@ function download_response(res, uri, options) {
 		return;
 	}
 
-	res.on('data', function(chunk) {
-		if (!options.canceled) {
-			var self = this;
-			self._bufferlength += chunk.length;
-			options.evt && options.evt.$events.data && options.evt.emit('data', chunk, options.length ? (self._bufferlength / options.length) * 100 : 0);
-		}
-	});
-
-	res.on('end', function() {
-
-		var self = this;
-
-		if (!options.canceled) {
-			var str = self._buffer ? self._buffer.toString(options.encoding) : '';
-			self._buffer = undefined;
-			options.evt && options.evt.$events.end && options.evt.emit('end', str, self.statusCode, self.headers, uri.host);
-		}
-
-		if (options.evt) {
-			options.evt.removeAllListeners();
-			options.evt = null;
-		}
-
-		res.req && res.req.removeAllListeners();
-		res.removeAllListeners();
-	});
+	res.on('data', download_process_data);
+	res.on('end', download_process_end);
 
 	res.resume();
 	options.timeoutid && clearTimeout(options.timeoutid);
@@ -1546,6 +1532,40 @@ exports.$$download = function(url, flags, data, cookies, headers, encoding, time
 		exports.download(url, flags, data, callback, cookies, headers, encoding, timeout);
 	};
 };
+
+function download_process_end() {
+
+	var res = this;
+	var self = this;
+	var options = self.req.$options;
+	var uri = self.req.$uri;
+
+	if (!options.canceled) {
+		var str = self._buffer ? self._buffer.toString(options.encoding) : '';
+		self._buffer = undefined;
+		options.evt && options.evt.$events.end && options.evt.emit('end', str, self.statusCode, self.headers, uri.host);
+	}
+
+	if (options.evt) {
+		options.evt.removeAllListeners();
+		options.evt = null;
+	}
+
+	res.req && res.req.removeAllListeners();
+	res.removeAllListeners();
+}
+
+function download_process_data(chunk) {
+	var self = this;
+	var options = self.req.$options;
+	if (!options.canceled) {
+		self._bufferlength += chunk.length;
+		if (options.evt) {
+			options.evt.$events.data && options.evt.emit('data', chunk, options.length ? (self._bufferlength / options.length) * 100 : 0);
+			options.evt.$events.progress && options.evt.emit('progress', options.length ? (self._bufferlength / options.length) * 100 : 0);
+		}
+	}
+}
 
 /**
  * Upload a stream through HTTP
