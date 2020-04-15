@@ -3476,7 +3476,7 @@ SchemaInstance.prototype.$response = function(index) {
 		return index == undefined ? a.response : a.response[index === 'prev' ? (a.response.length - 1) : index];
 };
 
-SchemaInstance.prototype.$sitory = function(name, value) {
+SchemaInstance.prototype.$repository = function(name, value) {
 
 	if (this.$$repository === undefined) {
 		if (value === undefined)
