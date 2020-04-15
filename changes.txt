@@ -13,6 +13,8 @@
 - updated: background of schedulers by @fgnm
 
 - improved: `filename` in modificators (now it contains relative paths)
+- improved: performance of `U.request()` (around +30%)
+- improved: performance of `RESTBuilder`
 
 - fixed: phone validation
 - fixed: `DOWNLOAD()`

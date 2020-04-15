@@ -5973,23 +5973,17 @@ global.DOWNLOAD = F.download = F.snapshot = function(url, filename, callback) {
 
 		var stream = Fs.createWriteStream(filename);
 
+		var done = function(err) {
+			if (callback) {
+				callback(err);
+				callback = null;
+			}
+		};
+
 		response.pipe(stream);
-
-		response.on('error', function(err) {
-			callback && callback(err);
-			callback = null;
-		});
-
-		stream.on('error', function(err) {
-			callback && callback(err);
-			callback = null;
-		});
-
-		CLEANUP(stream, function() {
-			callback && callback(null, filename);
-			callback = null;
-		});
-
+		response.on('error', done);
+		stream.on('error', done);
+		CLEANUP(stream, done);
 	});
 
 	return F;

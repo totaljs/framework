@@ -5457,74 +5457,80 @@ RESTP.exec = function(callback) {
 		}
 	}
 
-	return U.request(self.$url, flags, self.$data, function(err, response, status, headers, hostname) {
-
-		var type = err ? '' : headers['content-type'] || '';
-		var output = new RESTBuilderResponse();
-
-		if (type) {
-			var index = type.lastIndexOf(';');
-			if (index !== -1)
-				type = type.substring(0, index).trim();
-		}
-
-		var ishead = response === headers;
-
-		if (ishead)
-			response = '';
-
-		if (ishead) {
-			output.value = status < 400;
-		} else if (self.$plain) {
-			output.value = response;
-		} else {
-			switch (type.toLowerCase()) {
-				case 'text/xml':
-				case 'application/xml':
-					output.value = response ? response.parseXML(self.$replace ? true : false) : {};
-					break;
-				case 'application/x-www-form-urlencoded':
-					output.value = response ? F.onParseQuery(response) : {};
-					break;
-				case 'application/json':
-				case 'text/json':
-					output.value = response ? response.parseJSON(true) : null;
-					break;
-				default:
-					output.value = response && response.isJSON() ? response.parseJSON(true) : null;
-					break;
-			}
-		}
-
-		if (output.value == null)
-			output.value = EMPTYOBJECT;
-
-		output.response = response;
-		output.status = status;
-		output.headers = headers;
-		output.hostname = hostname;
-		output.cache = false;
-		output.datetime = NOW;
-
-		if (self.$schema) {
-
-			if (err)
-				return callback(err, EMPTYOBJECT, output);
-
-			self.$schema.make(self.maketransform(output.value, output), function(err, model) {
-				!err && key && output.status === 200 && F.cache.add(key, output, self.$cache_expire);
-				callback(err, err ? EMPTYOBJECT : model, output);
-				output.cache = true;
-			});
-
-		} else {
-			!err && key && output.status === 200 && F.cache.add(key, output, self.$cache_expire);
-			callback(err, self.maketransform(output.value, output), output);
-			output.cache = true;
-		}
-
-	}, self.$cookies, self.$headers, undefined, self.$timeout, self.$files);
+	self.$exec_cb = callback;
+	self.$exec_key = key;
+	return U.request(self.$url, flags, self.$data, exec_callback, self.$cookies, self.$headers, undefined, self.$timeout, self.$files, self);
 };
+
+function exec_callback(err, response, status, headers, hostname, cookies, self) {
+
+	var callback = self.$exec_cb;
+	var key = self.$exec_key;
+	var type = err ? '' : headers['content-type'] || '';
+	var output = new RESTBuilderResponse();
+
+	if (type) {
+		var index = type.lastIndexOf(';');
+		if (index !== -1)
+			type = type.substring(0, index).trim();
+	}
+
+	var ishead = response === headers;
+
+	if (ishead)
+		response = '';
+
+	if (ishead) {
+		output.value = status < 400;
+	} else if (self.$plain) {
+		output.value = response;
+	} else {
+		switch (type.toLowerCase()) {
+			case 'text/xml':
+			case 'application/xml':
+				output.value = response ? response.parseXML(self.$replace ? true : false) : {};
+				break;
+			case 'application/x-www-form-urlencoded':
+				output.value = response ? F.onParseQuery(response) : {};
+				break;
+			case 'application/json':
+			case 'text/json':
+				output.value = response ? response.parseJSON(true) : null;
+				break;
+			default:
+				output.value = response && response.isJSON() ? response.parseJSON(true) : null;
+				break;
+		}
+	}
+
+	if (output.value == null)
+		output.value = EMPTYOBJECT;
+
+	output.response = response;
+	output.status = status;
+	output.headers = headers;
+	output.hostname = hostname;
+	output.cache = false;
+	output.datetime = NOW;
+
+	if (self.$schema) {
+
+		if (err)
+			return callback(err, EMPTYOBJECT, output);
+
+		self.$schema.make(self.maketransform(output.value, output), function(err, model) {
+			!err && key && output.status === 200 && F.cache.add(key, output, self.$cache_expire);
+			callback(err, err ? EMPTYOBJECT : model, output);
+			output.cache = true;
+		});
+
+	} else {
+		!err && key && output.status === 200 && F.cache.add(key, output, self.$cache_expire);
+		callback(err, self.maketransform(output.value, output), output);
+		output.cache = true;
+	}
+
+}
 
 function exec_removelisteners(evt) {
 	evt.removeAllListeners();
