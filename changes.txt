@@ -11,6 +11,8 @@
 - updated: `TEST()` method supports `[subdomain]` keyword and `METHOD url` in URL address
 - updated: `MODIFY([filename], fn)` by adding `filename` argument
 - updated: background of schedulers by @fgnm
+- updated: `U.download()` by adding `param` argument
+- updated: `U.request()` by adding `param` argument
 
 - improved: `filename` in modificators (now it contains relative paths)
 - improved: performance of `U.request()` (around +30%)
