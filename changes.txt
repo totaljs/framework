@@ -20,6 +20,7 @@
 - improved: performance of `RESTBuilder`
 - improved: CSS minifier by compressing single hex color from e.g. `#000000` to `#000`
 
+- fixed: localization in `totaljs` executable script
 - fixed: phone validation
 - fixed: `DOWNLOAD()`
 - fixed: `Number.VAT()` by Tomas Novak
