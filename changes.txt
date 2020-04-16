@@ -19,6 +19,7 @@
 - improved: performance of `U.download()` (around +30%)
 - improved: performance of `RESTBuilder`
 
+- fixed: localization in `totaljs` executable script
 - fixed: phone validation
 - fixed: `DOWNLOAD()`
 - fixed: `Number.VAT()` by Tomas Novak
