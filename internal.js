@@ -76,6 +76,7 @@ const REG_CSS_9 = /;\}/g;
 const REG_CSS_10 = /\$[a-z0-9-_]+(\s)*:.*?;/gi;
 const REG_CSS_11 = /\$.*?(;|\}|!)/gi;
 const REG_CSS_12 = /(margin|padding):.*?(;|})/g;
+const REG_CSS_13 = /#(0{6}|1{6}|2{6}|3{6}|4{6}|5{6}|6{6}|7{6}|8{6}|9{6}|0{6}|A{6}|B{6}|C{6}|D{6}|E{6}|F{6})/gi;
 const REG_VIEW_PART = /\/\*PART.*?\*\//g;
 const AUTOVENDOR = ['filter', 'appearance', 'column-count', 'column-gap', 'column-rule', 'display', 'transform', 'transform-style', 'transform-origin', 'transition', 'user-select', 'animation', 'perspective', 'animation-name', 'animation-duration', 'animation-timing-function', 'animation-delay', 'animation-iteration-count', 'animation-direction', 'animation-play-state', 'opacity', 'background', 'background-image', 'font-smoothing', 'text-size-adjust', 'backface-visibility', 'box-sizing', 'overflow-scrolling'];
 const WRITESTREAM = { flags: 'w' };
@@ -840,7 +841,11 @@ function compile_autovendor(css) {
 				return search;
 		}
 		return ',';
-	}).replace(REG_CSS_7, '}').replace(REG_CSS_8, '{').replace(REG_CSS_9, '}').replace(REG_CSS_12, cssmarginpadding).trim();
+	}).replace(REG_CSS_7, '}').replace(REG_CSS_8, '{').replace(REG_CSS_9, '}').replace(REG_CSS_12, cssmarginpadding).replace(REG_CSS_13, csscolors).trim();
+}
+
+function csscolors(text) {
+	return text.substring(0, 4);
 }
 
 function cssmarginpadding(text) {

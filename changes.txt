@@ -18,6 +18,7 @@
 - improved: performance of `U.request()` (around +30%)
 - improved: performance of `U.download()` (around +30%)
 - improved: performance of `RESTBuilder`
+- improved: CSS minifier by compressing single hex color from e.g. `#000000` to `#000`
 
 - fixed: phone validation
 - fixed: `DOWNLOAD()`
