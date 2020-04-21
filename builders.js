@@ -913,8 +913,12 @@ SchemaBuilderEntityProto.$parse = function(name, value, required, custom) {
 
 		if (value instanceof SchemaBuilderEntity)
 			result.type = 7;
-		else
+		else {
 			result.type = 10;
+			if (!this.asyncfields)
+				this.asyncfields = [];
+			this.asyncfields.push(name);
+		}
 
 		return result;
 	}
@@ -2189,6 +2193,21 @@ SchemaBuilderEntityProto.default = function() {
 	return item;
 };
 
+function SchemaOptionsField(name, model, controller, next, builder) {
+	this.model = model;
+	this.value = model[name];
+	this.controller = (controller instanceof SchemaOptions || controller instanceof OperationOptions) ? controller.controller : controller;
+	this.callback = this.next = function(value) {
+		model[name] = value;
+		next();
+	};
+	this.invalid = function(err) {
+		err && builder.push(err);
+		model[name] = null;
+		next();
+	};
+}
+
 /**
  * Create schema instance
  * @param {function|object} model
@@ -2198,9 +2217,11 @@ SchemaBuilderEntityProto.default = function() {
  */
 SchemaBuilderEntityProto.make = function(model, filter, callback, argument, novalidate, workflow, req) {
 
+	var self = this;
+
 	if (typeof(model) === 'function') {
-		model.call(this, this);
-		return this;
+		model.call(self, self);
+		return self;
 	}
 
 	if (typeof(filter) === 'function') {
@@ -2209,7 +2230,7 @@ SchemaBuilderEntityProto.make = function(model, filter, callback, argument, nova
 		filter = tmp;
 	}
 
-	var output = this.prepare(model, null, req);
+	var output = self.prepare(model, null, req);
 
 	if (workflow)
 		output.$$workflow = workflow;
@@ -2219,10 +2240,33 @@ SchemaBuilderEntityProto.make = function(model, filter, callback, argument, nova
 		return output;
 	}
 
-	var builder = this.validate(output, undefined, undefined, undefined, filter);
+	var builder;
+
+	if (self.asyncfields) {
+		builder = new ErrorBuilder();
+		self.asyncfields.wait(function(name, next) {
+			var value = output[name];
+			if (value != null)
+				self.schema[name].raw(new SchemaOptionsField(name, output, req, next, builder));
+			else
+				next();
+		}, function() {
+			self.validate(output, undefined, undefined, builder, filter);
+			if (builder.is) {
+				self.onError && self.onError(builder, model, 'make');
+				callback && callback(builder, null, argument);
+			} else
+				callback && callback(null, output, argument);
+		});
+
+		// is async
+		return;
+	}
+
+	builder = self.validate(output, undefined, undefined, undefined, filter);
 
 	if (builder.is) {
-		this.onError && this.onError(builder, model, 'make');
+		self.onError && self.onError(builder, model, 'make');
 		callback && callback(builder, null, argument);
 	} else
 		callback && callback(null, output, argument);
@@ -2511,9 +2555,13 @@ SchemaBuilderEntityProto.prepare = function(model, dependencies, req) {
 
 				case 10:
 					// custom object type
+					// SKIPS because this is async function
+					/*
 					item[property] = type.raw(val == null ? '' : val.toString());
 					if (item[property] === undefined)
 						item[property] = null;
+					*/
+					item[property] = val + '';
 					break;
 
 				// number: nullable
