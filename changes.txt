@@ -3,6 +3,7 @@
 - added: `HASH(value, [type])` for creating hash like in jComponent
 - added: `SchemaOptions.repo` as alias to `SchemaInstance.model.$$repository`
 - added: a new type `CONVERT syntax` to `schema.define()` (more in docs)
+- added: `SchemaEntity.verify(name, function($))` for async verification of values
 
 - updated: `websocket.send2(message, comparer, replacer, [params])` by adding `params` argument for comparer function
 - updated: bundling skips all bundles with `-bk.bundle` in filename

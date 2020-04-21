@@ -21,14 +21,14 @@
 
 /**
  * @module FrameworkBuilders
- * @version 3.4.1
+ * @version 3.4.2
  */
 
 'use strict';
 
 const REQUIRED = 'The field "@" is invalid.';
 const DEFAULT_SCHEMA = 'default';
-const SKIP = { $$schema: 1, $$async: 1, $$repository: 1, $$controller: 1, $$workflow: 1, $$parent: 1, $$keys: 1 };
+const SKIP = { $$schema: 1, $$async: 1, $$repository: 1, $$controller: 1, $$workflow: 1, $$parent: 1, $$keys: 1, $$verify: 1 };
 const REGEXP_CLEAN_EMAIL = /\s/g;
 const REGEXP_CLEAN_PHONE = /\s|\.|-|\(|\)/g;
 const REGEXP_NEWOPERATION = /^(async\s)?function(\s)?\([a-zA-Z$\s]+\)|^function anonymous\(\$|^\([a-zA-Z$\s]+\)|^function\*\(\$|^\([a-zA-Z$\s]+\)/;
@@ -440,6 +440,7 @@ function SchemaBuilderEntity(parent, name) {
 	this.meta = {};
 	this.properties = [];
 	this.inherits = [];
+	this.verifications = null;
 	this.resourcePrefix;
 	this.extensions = {};
 	this.resourceName;
@@ -541,6 +542,7 @@ SchemaBuilderEntityProto.clear = function() {
 	self.schema = {};
 	self.properties = [];
 	self.fields = [];
+	self.verifications = null;
 
 	if (self.preparation)
 		self.preparation = null;
@@ -647,6 +649,14 @@ SchemaBuilderEntityProto.define = function(name, type, required, custom) {
 		a.def = val;
 		return this;
 	};
+};
+
+SchemaBuilderEntityProto.verify = function(name, fn) {
+	var self = this;
+	if (!self.verifications)
+		self.verifications = [];
+	self.verifications.push({ name: name, fn: fn });
+	return self;
 };
 
 SchemaBuilderEntityProto.inherit = function(group, name) {
@@ -2193,18 +2203,18 @@ SchemaBuilderEntityProto.default = function() {
 	return item;
 };
 
-function SchemaOptionsField(name, model, controller, next, builder) {
-	this.model = model;
-	this.value = model[name];
-	this.controller = (controller instanceof SchemaOptions || controller instanceof OperationOptions) ? controller.controller : controller;
-	this.callback = this.next = function(value) {
-		model[name] = value;
-		next();
+function SchemaOptionsVerify(controller, builder) {
+	var t = this;
+	t.controller = (controller instanceof SchemaOptions || controller instanceof OperationOptions) ? controller.controller : controller;
+	t.callback = t.next = t.success = function(value) {
+		if (value !== undefined)
+			t.model[t.name] = value;
+		t.$next();
 	};
-	this.invalid = function(err) {
+	t.invalid = function(err) {
 		err && builder.push(err);
-		model[name] = null;
-		next();
+		t.model[t.name] = null;
+		t.$next();
 	};
 }
 
@@ -2230,7 +2240,8 @@ SchemaBuilderEntityProto.make = function(model, filter, callback, argument, nova
 		filter = tmp;
 	}
 
-	var output = self.prepare(model, null, req);
+	var verifications = [];
+	var output = self.prepare(model, null, req, verifications);
 
 	if (workflow)
 		output.$$workflow = workflow;
@@ -2240,18 +2251,40 @@ SchemaBuilderEntityProto.make = function(model, filter, callback, argument, nova
 		return output;
 	}
 
-	var builder;
+	var builder = self.validate(output, undefined, undefined, undefined, filter);
 
-	if (self.asyncfields) {
-		builder = new ErrorBuilder();
-		self.asyncfields.wait(function(name, next) {
-			var value = output[name];
-			if (value != null)
-				self.schema[name].raw(new SchemaOptionsField(name, output, req, next, builder));
-			else
-				next();
+	if (builder.is) {
+		self.onError && self.onError(builder, model, 'make');
+		callback && callback(builder, null, argument);
+	} else {
+
+		if (self.verifications)
+			verifications.unshift({ model: output, entity: self });
+
+		if (!verifications.length) {
+			callback && callback(null, output, argument);
+			return output;
+		}
+
+		var options = new SchemaOptionsVerify(req, builder);
+
+		verifications.wait(function(item, next) {
+			item.entity.verifications.wait(function(verify, resume) {
+				options.value = item.model[verify.name];
+
+				// Empty values are skipped
+				if (options.value == null || options.value === '') {
+					resume();
+					return;
+				}
+
+				options.model = item.model;
+				options.name = verify.name;
+				options.$next = resume;
+				verify.fn(options);
+
+			}, next);
 		}, function() {
-			self.validate(output, undefined, undefined, builder, filter);
 			if (builder.is) {
 				self.onError && self.onError(builder, model, 'make');
 				callback && callback(builder, null, argument);
@@ -2259,19 +2292,7 @@ SchemaBuilderEntityProto.make = function(model, filter, callback, argument, nova
 				callback && callback(null, output, argument);
 		});
 
-		// is async
-		return;
 	}
-
-	builder = self.validate(output, undefined, undefined, undefined, filter);
-
-	if (builder.is) {
-		self.onError && self.onError(builder, model, 'make');
-		callback && callback(builder, null, argument);
-	} else
-		callback && callback(null, output, argument);
-
-	return output;
 };
 
 SchemaBuilderEntityProto.load = SchemaBuilderEntityProto.make; // Because JSDoc doesn't work with double asserting
@@ -2326,7 +2347,7 @@ SchemaBuilderEntityProto.$ondefault = function(property, create, entity) {
  * @param {String|Array} [dependencies] INTERNAL.
  * @return {SchemaInstance}
  */
-SchemaBuilderEntityProto.prepare = function(model, dependencies, req) {
+SchemaBuilderEntityProto.prepare = function(model, dependencies, req, verifications) {
 
 	var self = this;
 	var obj = self.schema;
@@ -2452,7 +2473,6 @@ SchemaBuilderEntityProto.prepare = function(model, dependencies, req) {
 							break;
 					}
 
-
 					if (!tmp && type.def !== undefined)
 						tmp = def ? type.def() : type.def;
 
@@ -2494,13 +2514,10 @@ SchemaBuilderEntityProto.prepare = function(model, dependencies, req) {
 
 				// object
 				case 6:
-
 					// item[property] = self.$onprepare(property, model[property], undefined, model, req);
 					item[property] = self.$onprepare(property, val, undefined, model, req);
-
 					if (item[property] === undefined)
 						item[property] = null;
-
 					break;
 
 				// enum
@@ -2544,9 +2561,14 @@ SchemaBuilderEntityProto.prepare = function(model, dependencies, req) {
 
 					entity = GETSCHEMA(type.raw);
 					if (entity) {
-						item[property] = entity.prepare(val, undefined);
+
+						item[property] = entity.prepare(val, undefined, req, verifications);
 						item[property].$$parent = item;
 						item[property].$$controller = req;
+
+						if (entity.verifications)
+							verifications.push({ model: item[property], entity: entity });
+
 						dependencies && dependencies.push({ name: type.raw, value: self.$onprepare(property, item[property], undefined, model, req) });
 					} else
 						item[property] = null;
@@ -2554,14 +2576,9 @@ SchemaBuilderEntityProto.prepare = function(model, dependencies, req) {
 					break;
 
 				case 10:
-					// custom object type
-					// SKIPS because this is async function
-					/*
 					item[property] = type.raw(val == null ? '' : val.toString());
 					if (item[property] === undefined)
 						item[property] = null;
-					*/
-					item[property] = val + '';
 					break;
 
 				// number: nullable
@@ -2682,8 +2699,9 @@ SchemaBuilderEntityProto.prepare = function(model, dependencies, req) {
 				case 7:
 
 					entity = self.parent.collection[type.raw] || GETSCHEMA(type.raw);
+
 					if (entity) {
-						tmp = entity.prepare(tmp, dependencies);
+						tmp = entity.prepare(tmp, dependencies, req, verifications);
 						tmp.$$parent = item;
 						tmp.$$controller = req;
 						dependencies && dependencies.push({ name: type.raw, value: self.$onprepare(property, tmp, j, model, req) });
@@ -2691,6 +2709,10 @@ SchemaBuilderEntityProto.prepare = function(model, dependencies, req) {
 						throw new Error('Schema "{0}" not found'.format(type.raw));
 
 					tmp = self.$onprepare(property, tmp, j, model, req);
+
+					if (entity.verifications && tmp)
+						verifications.push({ model: tmp, entity: entity });
+
 					break;
 
 				case 11:
