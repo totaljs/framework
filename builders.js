@@ -28,7 +28,7 @@
 
 const REQUIRED = 'The field "@" is invalid.';
 const DEFAULT_SCHEMA = 'default';
-const SKIP = { $$schema: 1, $$async: 1, $$repository: 1, $$controller: 1, $$workflow: 1, $$parent: 1, $$keys: 1, $$verify: 1 };
+const SKIP = { $$schema: 1, $$async: 1, $$repository: 1, $$controller: 1, $$workflow: 1, $$parent: 1, $$keys: 1 };
 const REGEXP_CLEAN_EMAIL = /\s/g;
 const REGEXP_CLEAN_PHONE = /\s|\.|-|\(|\)/g;
 const REGEXP_NEWOPERATION = /^(async\s)?function(\s)?\([a-zA-Z$\s]+\)|^function anonymous\(\$|^\([a-zA-Z$\s]+\)|^function\*\(\$|^\([a-zA-Z$\s]+\)/;
@@ -2256,6 +2256,7 @@ SchemaBuilderEntityProto.make = function(model, filter, callback, argument, nova
 	if (builder.is) {
 		self.onError && self.onError(builder, model, 'make');
 		callback && callback(builder, null, argument);
+		return output;
 	} else {
 
 		if (self.verifications)
