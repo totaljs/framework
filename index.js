@@ -2336,7 +2336,7 @@ global.ROUTE = F.web = F.route = function(url, funcExecute, flags, length, langu
 
 	if (url) {
 
-		url = url.replace(/\t/g, ' ');
+		url = url.replace(/\t/g, ' ').trim();
 
 		var first = url.substring(0, 1);
 		if (first === '+' || first === '-' || url.substring(0, 2) === '🔒') {
