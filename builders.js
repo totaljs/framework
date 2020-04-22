@@ -2229,6 +2229,65 @@ function SchemaOptionsVerify(controller, builder) {
 	};
 }
 
+SchemaOptionsVerify.prototype = {
+
+	get user() {
+		return this.controller ? this.controller.user : null;
+	},
+
+	get session() {
+		return this.controller ? this.controller.session : null;
+	},
+
+	get sessionid() {
+		return this.controller && this.controller ? this.controller.req.sessionid : null;
+	},
+
+	get language() {
+		return (this.controller ? this.controller.language : '') || '';
+	},
+
+	get ip() {
+		return this.controller ? this.controller.ip : null;
+	},
+
+	get id() {
+		return this.controller ? this.controller.id : null;
+	},
+
+	get req() {
+		return this.controller ? this.controller.req : null;
+	},
+
+	get res() {
+		return this.controller ? this.controller.res : null;
+	},
+
+	get params() {
+		return this.controller ? this.controller.params : null;
+	},
+
+	get files() {
+		return this.controller ? this.controller.files : null;
+	},
+
+	get body() {
+		return this.controller ? this.controller.body : null;
+	},
+
+	get query() {
+		return this.controller ? this.controller.query : null;
+	},
+
+	get headers() {
+		return this.controller && this.controller.req ? this.controller.req.headers : null;
+	},
+
+	get ua() {
+		return this.controller && this.controller.req ? this.controller.req.ua : null;
+	}
+};
+
 /**
  * Create schema instance
  * @param {function|object} model
