@@ -26,6 +26,7 @@
 - fixed: phone validation
 - fixed: `DOWNLOAD()`
 - fixed: `Number.VAT()` by Tomas Novak
+- fixed: debugging mode in Node.js v14
 
 ======= 3.4.1
 

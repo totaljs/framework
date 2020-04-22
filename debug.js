@@ -456,7 +456,7 @@ function runwatching() {
 			!watchercallback && console.log(prefix.substring(8) + 'DEBUG PID: ' + process.pid + ' (v' + VERSION + ')');
 
 			pid = Path.join(directory, PIDNAME);
-			Fs.writeFileSync(pid, process.pid);
+			Fs.writeFileSync(pid, process.pid + '');
 
 			setInterval(function() {
 				Fs.exists(pid, function(e) {
