@@ -651,11 +651,18 @@ SchemaBuilderEntityProto.define = function(name, type, required, custom) {
 	};
 };
 
-SchemaBuilderEntityProto.verify = function(name, fn) {
+SchemaBuilderEntityProto.verify = function(name, fn, cache) {
 	var self = this;
+
 	if (!self.verifications)
 		self.verifications = [];
-	self.verifications.push({ name: name, fn: fn });
+
+	var cachekey;
+
+	if (cache)
+		cachekey = self.name + '_verify_' + name + '_';
+
+	self.verifications.push({ name: name, fn: fn, cache: cache, cachekey: cachekey });
 	return self;
 };
 
@@ -2209,10 +2216,14 @@ function SchemaOptionsVerify(controller, builder) {
 	t.callback = t.next = t.success = function(value) {
 		if (value !== undefined)
 			t.model[t.name] = value;
+		t.cache && CACHE(t.cachekey, { value: t.model[t.name] }, t.cache);
 		t.$next();
 	};
 	t.invalid = function(err) {
-		err && builder.push(err);
+		if (err) {
+			builder.push(err);
+			t.cache && CACHE(t.cachekey, { error: err }, t.cache);
+		}
 		t.model[t.name] = null;
 		t.$next();
 	};
@@ -2270,7 +2281,9 @@ SchemaBuilderEntityProto.make = function(model, filter, callback, argument, nova
 		var options = new SchemaOptionsVerify(req, builder);
 
 		verifications.wait(function(item, next) {
+
 			item.entity.verifications.wait(function(verify, resume) {
+
 				options.value = item.model[verify.name];
 
 				// Empty values are skipped
@@ -2279,12 +2292,31 @@ SchemaBuilderEntityProto.make = function(model, filter, callback, argument, nova
 					return;
 				}
 
+				var cachekey = verify.cachekey;
+
+				if (cachekey) {
+					cachekey += options.value + '';
+					var cachevalue = F.cache.get2(cachekey);
+					if (cachevalue) {
+						if (cachevalue.error)
+							builder.push(cachevalue.error);
+						else
+							item.model[verify.name] = cachevalue.value;
+						resume();
+						return;
+					}
+				}
+
+				options.cache = verify.cache;
+				options.cachekey = cachekey;
+				options.entity = item.entity;
 				options.model = item.model;
 				options.name = verify.name;
 				options.$next = resume;
 				verify.fn(options);
 
-			}, next);
+			}, next, 3); // "3" means count of imaginary "threads" - we will see how it will work
+
 		}, function() {
 			if (builder.is) {
 				self.onError && self.onError(builder, model, 'make');
