@@ -1100,6 +1100,7 @@ function Framework() {
 
 	global.REPO = global.G = self.global = {};
 	global.MAIN = {};
+	global.TEMP = {};
 
 	self.$bundling = true;
 	self.resources = {};
@@ -7911,6 +7912,8 @@ F.service = function(count) {
 		F.temporary.range = {};
 		F.temporary.views = {};
 		F.temporary.other = {};
+
+		global.TEMP = {};
 		global.$VIEWCACHE && global.$VIEWCACHE.length && (global.$VIEWCACHE = []);
 
 		// Clears command cache
