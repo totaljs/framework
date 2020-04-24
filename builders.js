@@ -3489,10 +3489,13 @@ SchemaBuilderEntityProto.instancePrototype = function() {
 	return this.CurrentSchemaInstance.prototype;
 };
 
-SchemaBuilderEntityProto.cl = function(name) {
+SchemaBuilderEntityProto.cl = function(name, value) {
 	var o = this.schema[name];
-	if (o && (o.type === 8 || o.type === 9))
+	if (o && (o.type === 8 || o.type === 9)) {
+		if (value)
+			o.raw = value;
 		return o.raw;
+	}
 };
 
 SchemaBuilderEntityProto.props = function() {
