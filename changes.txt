@@ -29,6 +29,7 @@
 - fixed: `Number.VAT()` by Tomas Novak
 - fixed: debugging mode in Node.js v14
 - fixed: `ROUTE()` method, there was a problem with spaces `GET /*      `
+- fixed: `ACTION()` with json output
 
 ======= 3.4.1
 

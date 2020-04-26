@@ -14046,13 +14046,17 @@ ControllerProto.callback = function(view) {
 		if (typeof(view) === 'string')
 			self.view(view, data);
 		else if (data === SUCCESSHELPER && data.value === undefined) {
-			F.stats.response.json++;
-			var res = self.res;
-			res.options.compress = false;
-			res.options.body = '{"success":' + (data.success == null ? 'true' : data.success) + '}';
-			res.options.type = CT_JSON;
-			res.$text();
-	 	} else
+			if (self.$evalroutecallback) {
+				self.$evalroutecallback(null, data);
+			} else {
+				F.stats.response.json++;
+				var res = self.res;
+				res.options.compress = false;
+				res.options.body = '{"success":' + (data.success == null ? 'true' : data.success) + '}';
+				res.options.type = CT_JSON;
+				res.$text();
+			}
+		} else
 			self.json(data);
 	};
 };
