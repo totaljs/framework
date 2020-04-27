@@ -31,6 +31,8 @@
 - fixed: `ROUTE()` method, there was a problem with spaces `GET /*      `
 - fixed: `ACTION()` with json output
 - fixed: controller in `$ACTION()` with used `get` and `query` actions
+- fixed: `PATCH` method in `$ACTION()`
+- fixed: `schema.allow()` in `PATCH` method
 
 ======= 3.4.1
 

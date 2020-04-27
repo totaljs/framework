@@ -563,6 +563,8 @@ global.$PATCH = function(schema, model, options, callback, controller, novalidat
 	return performschema('$patch', schema, model, options, callback, controller, novalidate);
 };
 
+
+
 // GET Users/Neviem  --> @query @workflow
 global.$ACTION = function(schema, model, callback, controller) {
 
@@ -651,16 +653,30 @@ global.$ACTION = function(schema, model, callback, controller) {
 	}
 
 	if (meta.validate) {
-		meta.schema.make(model, function(err, response) {
-			if (err)
-				callback(err);
-			else
-				performsschemaaction(meta, response, callback, controller);
-		});
+
+		var req = controller ? controller.req : null;
+		if (meta.method === 'PATCH') {
+			if (!req)
+				req = {};
+			req.$patch = true;
+		}
+
+		var data = {};
+		data.meta = meta;
+		data.callback = callback;
+		data.controller = controller;
+		meta.schema.make(model, null, performsschemaaction_async, data, null, null, req);
 	} else
 		performsschemaaction(meta, null, callback, controller);
 
 };
+
+function performsschemaaction_async(err, response, data) {
+	if (err)
+		data.callback(err);
+	else
+		performsschemaaction(data.meta, response, data.callback, data.controller);
+}
 
 function performsschemaaction(meta, model, callback, controller) {
 
