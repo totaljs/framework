@@ -30,6 +30,7 @@
 - fixed: debugging mode in Node.js v14
 - fixed: `ROUTE()` method, there was a problem with spaces `GET /*      `
 - fixed: `ACTION()` with json output
+- fixed: controller in `$ACTION()` with used `get` and `query` actions
 
 ======= 3.4.1
 

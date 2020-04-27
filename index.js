@@ -666,10 +666,11 @@ function performsschemaaction(meta, model, callback, controller) {
 
 	if (meta.multiple) {
 
-		if (model)
-			model.$$controller = controller;
+		if (!model)
+			model = meta.schema.default();
 
-		var async = (model ? model : meta.schema.default()).$async(callback, meta.opcallbackindex === - 1 ? null : meta.opcallbackindex);
+		model.$$controller = controller;
+		var async = model.$async(callback, meta.opcallbackindex === - 1 ? null : meta.opcallbackindex);
 
 		for (var i = 0; i < meta.op.length; i++) {
 			var op = meta.op[i];
