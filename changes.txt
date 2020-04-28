@@ -33,6 +33,7 @@
 - fixed: controller in `$ACTION()` with used `get` and `query` actions
 - fixed: `PATCH` method in `$ACTION()`
 - fixed: `schema.allow()` in `PATCH` method
+- fixed: image resizing in debug-mode
 
 ======= 3.4.1
 
