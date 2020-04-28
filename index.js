@@ -17660,7 +17660,7 @@ function extend_response(PROTO) {
 
 		res.options.make = make;
 
-		if (persistent == true || (persistent == null && CONF.allow_persistent_images === true))
+		if (persistent === true || (persistent == null && CONF.allow_persistent_images === true))
 			res.options.persistent = true;
 
 		headers && (res.options.headers = headers);
