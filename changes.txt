@@ -5,6 +5,7 @@
 - added: a new type `CONVERT syntax` to `schema.define()` (more in docs)
 - added: `SchemaEntity.verify(name, function($), [cache])` for async verification of values
 - added: `TEMP` variable as a new global variable (it's cleaned every 7 minutes)
+- added: `CONF.allow_persistent_images: true` which allows to reuse resized images in temp directory
 
 - updated: `websocket.send2(message, comparer, replacer, [params])` by adding `params` argument for comparer function
 - updated: bundling skips all bundles with `-bk.bundle` in filename

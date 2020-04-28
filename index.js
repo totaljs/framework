@@ -1073,6 +1073,7 @@ function Framework() {
 		allow_workers_silent: false,
 		allow_sessions_unused: '-20 minutes',
 		allow_reqlimit: 0,
+		allow_persistent_images: true,
 
 		nosql_worker: false,
 		nosql_inmemory: null, // String Array
@@ -17653,11 +17654,14 @@ function extend_response(PROTO) {
 	 * @param {Function} callback Optional.
 	 * @return {Framework}
 	 */
-	PROTO.image = function(filename, make, headers, callback) {
+	PROTO.image = function(filename, make, headers, callback, persistent) {
 
 		var res = this;
 
 		res.options.make = make;
+
+		if (persistent == true || (persistent == null && CONF.allow_persistent_images === true))
+			res.options.persistent = true;
 
 		headers && (res.options.headers = headers);
 		callback && (res.options.callback = callback);
@@ -18155,6 +18159,7 @@ function extend_response(PROTO) {
 		// res.options.cache
 		// res.options.headers
 		// res.options.make = function(image, res)
+		// res.options.persistent
 
 		var res = this;
 		var options = res.options;
@@ -18202,6 +18207,12 @@ function extend_response(PROTO) {
 		var plus = F.id ? 'i-' + F.id + '_' : '';
 
 		options.name = F.path.temp(plus + key);
+
+		if (options.persistent) {
+			fsFileExists(options.name, $image_persistent, res);
+			return;
+		}
+
 		F.temporary.processing[key] = true;
 
 		if (options.stream)
@@ -18362,6 +18373,21 @@ function extend_response(PROTO) {
 		F.$events[key] && EMIT(key, req, res, res.options.problem);
 		return res;
 	};
+}
+
+function $image_persistent(exists, size, isFile, stats, res) {
+	if (exists) {
+		delete F.temporary.processing[res.req.$key];
+		F.temporary.path[res.req.$key] = [res.options.name, stats.size, stats.mtime.toUTCString()];
+		res.options.filename = res.options.name;
+		res.$file();
+	} else {
+		F.temporary.processing[res.req.$key] = true;
+		if (res.options.stream)
+			fsFileExists(res.options.name, $image_stream, res);
+		else
+			fsFileExists(res.options.filename, $image_filename, res);
+	}
 }
 
 function $continue_timeout(res) {
