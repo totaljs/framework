@@ -16729,6 +16729,10 @@ function extend_request(PROTO) {
 		return uri.protocol + '//' + uri.hostname + (uri.port && uri.port !== 80 ? ':' + uri.port : '') + (path || '');
 	};
 
+	PROTO.filecache = function(callback) {
+		F.exists(this, this.res, 20, callback);
+	};
+
 	PROTO.$total_success = function() {
 		this.$total_timeout && clearTimeout(this.$total_timeout);
 		this.$total_canceled = true;
