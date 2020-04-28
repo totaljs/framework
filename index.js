@@ -17950,7 +17950,8 @@ function extend_response(PROTO) {
 			return res;
 		}
 
-		if (!res.options.components && (DEBUG || res.$nocache))
+		// (DEBUG && !res.options.make) --> because of image convertor
+		if (!res.options.components && ((DEBUG && !res.options.make) || res.$nocache))
 			F.isProcessed(req.$key) && (F.temporary.path[req.$key] = undefined);
 
 		if (name[1] && !compress)
