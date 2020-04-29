@@ -7,6 +7,7 @@
 - added: `TEMP` variable as a new global variable (it's cleaned every 7 minutes)
 - added: `CONF.allow_persistent_images: true` which allows to reuse resized images in temp directory
 - added: `req.filecache(callback)` as alias for `F.exists()`
+- added: own QueryParser
 
 - updated: `websocket.send2(message, comparer, replacer, [params])` by adding `params` argument for comparer function
 - updated: bundling skips all bundles with `-bk.bundle` in filename

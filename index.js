@@ -1022,6 +1022,7 @@ function Framework() {
 		default_theme: '',
 		default_proxy: '',
 		default_request_maxkeys: 33,
+		default_request_maxkey: 25,
 
 		// default maximum request size / length
 		// default 10 kB
@@ -6094,6 +6095,22 @@ F.$onParseJSON = function(req) {
 	req.body = F.onParseJSON.$def ? JSON.parse(req.buffer_data) : F.onParseJSON(req.buffer_data);
 };
 
+function parseQueryArguments(val) {
+	var arr = val.split('&', QUERYPARSEROPTIONS.maxKeys);
+	var obj = {};
+	for (var i = 0; i < arr.length; i++) {
+		var item = arr[i];
+		var index = item.indexOf('=');
+		// Max. length of key
+		if (index > 1 && index < CONF.default_request_maxkey) {
+			var k = item.substring(0, index);
+			if (obj[k] == null)
+				obj[k] = decodeURIComponent(item.substring(index + 1));
+		}
+	}
+	return obj;
+}
+
 /**
  * Global JSON parsing
  * @param {String} value
@@ -6101,7 +6118,8 @@ F.$onParseJSON = function(req) {
  */
 F.onParseQuery = function(value) {
 	if (value) {
-		var val = Qs.parse(value, null, null, QUERYPARSEROPTIONS);
+		// var val = Qs.parse(value, null, null, QUERYPARSEROPTIONS);
+		var val = parseQueryArguments(value);
 		F._length_convertors && F.convert(val);
 		return val;
 	}
@@ -6112,7 +6130,8 @@ F.onParseQuery.$def = true;
 F.$onParseQueryBody = function(req) {
 	if (F.onParseQuery.$def) {
 		if (req.buffer_data) {
-			req.body = Qs.parse(req.buffer_data, null, null, QUERYPARSEROPTIONS);
+			// req.body = Qs.parse(req.buffer_data, null, null, QUERYPARSEROPTIONS);
+			req.body = parseQueryArguments(req.buffer_data);
 			F._length_convertors && F.convert(req.body);
 		} else
 			req.body = {};
@@ -6123,7 +6142,8 @@ F.$onParseQueryBody = function(req) {
 F.$onParseQueryUrl = function(req) {
 	if (F.onParseQuery.$def) {
 		if (req.uri.query) {
-			req._querydata = Qs.parse(req.uri.query, null, null, QUERYPARSEROPTIONS);
+			// req._querydata = Qs.parse(req.uri.query, null, null, QUERYPARSEROPTIONS);
+			req._querydata = parseQueryArguments(req.uri.query);
 			F._length_convertors && F.convert(req._querydata);
 		} else
 			req._querydata = {};
