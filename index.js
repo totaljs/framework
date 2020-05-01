@@ -3932,7 +3932,7 @@ F.$filelocalize = function(req, res, nominify) {
 
 			var mtime = stats.mtime.toUTCString();
 
-			if (!nominify && (req.extension === 'html' || req.extension === 'htm'))
+			if (CONF.allow_compile_html && CONF.allow_compile && !nominify && (req.extension === 'html' || req.extension === 'htm'))
 				content = framework_internal.compile_html(content, filename);
 
 			if (RELEASE) {

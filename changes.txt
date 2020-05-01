@@ -31,6 +31,7 @@
 - fixed: `DOWNLOAD()`
 - fixed: `Number.VAT()` by Tomas Novak
 - fixed: debugging mode in Node.js v14
+- fixed: `allow_compile_html` in static files
 - fixed: `ROUTE()` method, there was a problem with spaces `GET /*      `
 - fixed: `ACTION()` with json output
 - fixed: controller in `$ACTION()` with used `get` and `query` actions
