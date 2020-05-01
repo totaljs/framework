@@ -6541,17 +6541,9 @@ exports.queue = function(name, max, fn) {
 	return true;
 };
 
-exports.minifyStyle = function(value) {
-	return require('./internal').compile_css(value);
-};
-
-exports.minifyScript = function(value) {
-	return require('./internal').compile_javascript(value);
-};
-
-exports.minifyHTML = function(value) {
-	return require('./internal').compile_html(value);
-};
+exports.minifyStyle = require('./internal').compile_css;
+exports.minifyScript = require('./internal').compile_javascript;
+exports.minifyHTML = require('./internal').compile_html;
 
 exports.parseTheme = function(value) {
 	if (value[0] !== '=')
