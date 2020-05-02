@@ -5,23 +5,59 @@
 
 	var Tangular = {};
 	var Thelpers = Tangular.helpers = {};
-	Tangular.version = 'v3.0.1';
+	Tangular.version = 'v4.0.0';
 	Tangular.cache = {};
 	Tangular.debug = false;
 
 	W.Tangular = Tangular;
 	W.Thelpers = Thelpers;
 
-	var SKIP = { 'null': true, 'undefined': true, 'true': true, 'false': true };
-	var REG_VARIABLES = /&&|\|\|/;
-	var REG_KEY = /[a-z0-9._]+/gi;
-	var REG_KEYCLEAN = /^[a-z0-9_$]+/i;
-	var REG_NUM = /^[0-9]/;
-	var REG_STRING = /'.*?'|".?"/g;
+	var SKIP = { 'null': true, 'undefined': true, 'true': true, 'false': true, 'Object': 1, 'String': 1, 'Number': 1, 'Boolean': 1, 'Date': 1, 'Array': 1, 'window': 1, 'global': 1, 'arguments': 1, 'eval': 1, 'Function': 1, 'function': 1, 'var': 1, 'let': 1, 'const': 1, 'delete': 1 };
 	var REG_CMDFIND = /\{\{.*?\}\}/g;
 	var REG_CMDCLEAN = /\{\{|\}\}/g;
 	var REG_ENCODE = /[<>&"]/g;
 	var REG_TRIM = /\n$/g;
+
+	function parseInlineVariables(line, blacklist) {
+
+		var tmp = '';
+		var variables = [];
+		var skip = 0;
+
+		for (var i = 0; i < line.length; i++) {
+			var c = line.charCodeAt(i);
+
+			if (!skip) {
+
+				if ((tmp && c > 47 && c < 58) || (c > 64 && c < 91) || (c > 96 && c < 123) || (c === 95 || c === 36)) {
+					tmp += line.charAt(i);
+					continue;
+				}
+
+				if (tmp) {
+					if (!SKIP[tmp] && variables.indexOf(tmp) === -1 && (!blacklist || blacklist.indexOf(tmp) === -1))
+						variables.push(tmp);
+					tmp = '';
+				}
+			}
+
+			if (c === 46 || c === 124) { // "." or "|"
+				skip = c;
+			} else if ((skip === 46 || skip === 124) && c === 40) { // ("." or "|") and "("
+				skip = 0;
+			} else if (c === 96 || c === 34 || c === 39) { // "`" or "'" or "\""
+				if (c === skip)
+					skip = 0;
+				else
+					skip = c;
+			}
+		}
+
+		if (tmp && !SKIP[tmp] && variables.indexOf(tmp) === -1 && (!blacklist || blacklist.indexOf(tmp) === -1))
+			variables.push(tmp);
+
+		return variables;
+	}
 
 	Tangular.toArray = function(obj) {
 		var keys = Object.keys(obj);
@@ -67,9 +103,9 @@
 				// end of loop
 				loops.pop();
 			} else if (cmd.substring(0, 3) === 'if ') {
-				ifcount++;
 				// condition
-				variable = self.parseVariables(cmd.substring(3), loops);
+				ifcount++;
+				variable = parseInlineVariables(cmd.substring(3), loops);
 				if (variable.length) {
 					for (var i = 0; i < variable.length; i++) {
 						var name = variable[i];
@@ -109,7 +145,7 @@
 				isloop = true;
 			} else if (cmd.substring(0, 8) === 'else if ') {
 				// else if
-				variable = self.parseVariables(cmd.substring(8), loops);
+				variable = parseInlineVariables(cmd.substring(8), loops);
 				if (variable.length) {
 					for (var i = 0; i < variable.length; i++) {
 						var name = variable[i];
@@ -123,23 +159,16 @@
 				isif = true;
 			} else if (cmd !== 'continue' && cmd !== 'break' && cmd !== 'else') {
 
-
-				variable = cmd ? cmd.match(REG_KEYCLEAN) : null;
-
-				if (variable)
-					variable = variable.toString();
-
-				if (variable && SKIP[variable])
-					variable = null;
-
-				if (variable && loops.indexOf(variable) === -1) {
-					if (self.variables[variable])
-						self.variables[variable]++;
+				variable = parseInlineVariables(cmd);
+				for (var i = 0; i < variable.length; i++) {
+					var v = variable[i];
+					if (self.variables[v])
+						self.variables[v]++;
 					else
-						self.variables[variable] = 1;
+						self.variables[v] = 1;
+				}
 
-					variable = [variable];
-				} else
+				if (!variable.length)
 					variable = null;
 
 				if (cmd.indexOf('|') === -1)
@@ -170,31 +199,12 @@
 
 		}).split(self.split);
 
-
-		for (var i = 0, length = self.builder.length; i < length; i++)
-			self.builder[i] = self.builder[i].replace(REG_TRIM, '');
+		for (var i = 0; i < self.builder.length; i++) {
+			var m = self.builder[i];
+			self.builder[i] = m ? m.replace(REG_TRIM, '') : m;
+		}
 
 		return self.make();
-	};
-
-	Template.prototype.parseVariables = function(condition, skip) {
-
-		var variables = [];
-		var arr = condition.split(REG_VARIABLES);
-		for (var i = 0, length = arr.length; i < length; i++) {
-
-			var key = arr[i].replace(REG_STRING, '');
-			var keys = key.match(REG_KEY);
-
-			for (var j = 0; j < keys.length; j++) {
-				key = keys[j];
-				key = key.split('.')[0];
-				if (!key || (REG_NUM).test(key) || SKIP[key])
-					continue;
-				variables.indexOf(key) === -1 && skip.indexOf(key) === -1 && variables.push(key);
-			}
-		}
-		return variables;
 	};
 
 	Template.prototype.safe = function(cmd) {
@@ -272,8 +282,7 @@
 			}
 		}
 
-		builder.push((length ? ('$output+=$text[' + length + '];') : '') + 'return $output;');
-
+		builder.push((length ? ('$output+=$text[' + length + '];') : '') + 'return $output.charAt(0) === \'\\n\'?$output.substring(1):$output;');
 		delete self.variables.$;
 		var variables = Object.keys(self.variables);
 		var names = ['$ || {}', 'model'];
@@ -291,11 +300,12 @@
 			console && console.warn('Tangular: missing helper', '"' + name + '"');
 			return a;
 		}
+
 		return Thelpers[name].call(model, a, b, c, d, e, f, g, h);
 	};
 
 	Thelpers.encode = function(value) {
-		return value == null ? '' : value.toString().replace(REG_ENCODE, function(c) {
+		return value == null ? '' : (value + '').replace(REG_ENCODE, function(c) {
 			switch (c) {
 				case '&': return '&amp;';
 				case '<': return '&lt;';
@@ -311,9 +321,7 @@
 	};
 
 	Tangular.render = function(template, model, repository) {
-		if (model == null)
-			model = {};
-		return new Template().compile(template)(model, repository);
+		return new Template().compile(template)(model == null ? {} : model, repository);
 	};
 
 	Tangular.compile = function(template) {
