@@ -44,6 +44,7 @@ var schemacache = {};
 var operations = {};
 var tasks = {};
 var transforms = { pagination: {}, error: {}, restbuilder: {} };
+var restbuilderupgrades = [];
 
 function SchemaBuilder(name) {
 	this.name = name;
@@ -4465,6 +4466,16 @@ ErrorBuilder.prototype.push = function(name, error, path, index, prefix) {
 	return this;
 };
 
+ErrorBuilder.assign = function(arr) {
+	var builder = new ErrorBuilder();
+	for (var i = 0; i < arr.length; i++) {
+		if (arr[i].error)
+			builder.items.push(arr[i]);
+	}
+	builder.count = builder.items.length;
+	return builder.count ? builder : null;
+};
+
 /**
  * Remove error
  * @param {String} name Property name.
@@ -5144,6 +5155,9 @@ function RESTBuilder(url) {
 	// this.$cache_expire;
 	// this.$cache_nocache;
 	// this.$redirect
+
+	// Auto Total.js Error Handling
+	this.$errorbuilderhandling = true;
 }
 
 RESTBuilder.make = function(fn) {
@@ -5174,7 +5188,6 @@ RESTBuilder.PUT = function(url, data) {
 	var builder = new RESTBuilder(url);
 	builder.$method = 'put';
 	builder.$type = 1;
-	data && builder.raw(data);
 	builder.put(data);
 	return builder;
 };
@@ -5199,6 +5212,10 @@ RESTBuilder.HEAD = function(url) {
 	var builder = new RESTBuilder(url);
 	builder.$method = 'head';
 	return builder;
+};
+
+RESTBuilder.upgrade = function(fn) {
+	restbuilderupgrades.push(fn);
 };
 
 /**
@@ -5280,6 +5297,11 @@ RESTP.maxlength = function(number) {
 
 RESTP.auth = function(user, password) {
 	this.$headers['authorization'] = 'Basic ' + Buffer.from(user + ':' + password).toString('base64');
+	return this;
+};
+
+RESTP.convert = function(convert) {
+	this.$convert = convert;
 	return this;
 };
 
@@ -5583,6 +5605,13 @@ RESTP.exec = function(callback) {
 	if (self.$files && self.$method === 'get')
 		self.$method = 'post';
 
+	self.$callback = callback;
+
+	if (restbuilderupgrades.length) {
+		for (var i = 0; i < restbuilderupgrades.length; i++)
+			restbuilderupgrades[i](self);
+	}
+
 	var flags = self.$flags ? self.$flags : [self.$method];
 	var key;
 
@@ -5622,15 +5651,14 @@ RESTP.exec = function(callback) {
 		}
 	}
 
-	self.$exec_cb = callback;
-	self.$exec_key = key;
+	self.$callback_key = key;
 	return U.request(self.$url, flags, self.$data, exec_callback, self.$cookies, self.$headers, undefined, self.$timeout, self.$files, self);
 };
 
 function exec_callback(err, response, status, headers, hostname, cookies, self) {
 
-	var callback = self.$exec_cb;
-	var key = self.$exec_key;
+	var callback = self.$callback;
+	var key = self.$callback_key;
 	var type = err ? '' : headers['content-type'] || '';
 	var output = new RESTBuilderResponse();
 
@@ -5678,12 +5706,29 @@ function exec_callback(err, response, status, headers, hostname, cookies, self) 
 	output.cache = false;
 	output.datetime = NOW;
 
+	var val;
+
 	if (self.$schema) {
 
 		if (err)
 			return callback(err, EMPTYOBJECT, output);
 
-		self.$schema.make(self.maketransform(output.value, output), function(err, model) {
+		val = self.maketransform(output.value, output);
+
+		if (self.$errorbuilderhandling) {
+			// Is the response Total.js ErrorBuilder?
+			if (val instanceof Array && val[0] && val[0].error) {
+				err = ErrorBuilder.assign(val);
+				if (err)
+					val = EMPTYOBJECT;
+				if (err) {
+					callback(err, EMPTYOBJECT, output);
+					return;
+				}
+			}
+		}
+
+		self.$schema.make(val, function(err, model) {
 			!err && key && output.status === 200 && F.cache.add(key, output, self.$cache_expire);
 			callback(err, err ? EMPTYOBJECT : model, output);
 			output.cache = true;
@@ -5691,10 +5736,24 @@ function exec_callback(err, response, status, headers, hostname, cookies, self) 
 
 	} else {
 		!err && key && output.status === 200 && F.cache.add(key, output, self.$cache_expire);
-		callback(err, self.maketransform(output.value, output), output);
+
+		val = self.maketransform(output.value, output);
+
+		if (self.$errorbuilderhandling) {
+			// Is the response Total.js ErrorBuilder?
+			if (val instanceof Array && val[0].error) {
+				err = ErrorBuilder.assign(val);
+				if (err)
+					val = EMPTYOBJECT;
+			}
+		}
+
+		if (self.$convert && val && val !== EMPTYOBJECT)
+			val = CONVERT(val, self.$convert);
+
+		callback(err, val, output);
 		output.cache = true;
 	}
-
 }
 
 function exec_removelisteners(evt) {

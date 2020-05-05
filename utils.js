@@ -48,6 +48,7 @@ const COMPARER = global.Intl ? global.Intl.Collator().compare : function(a, b) {
 if (!global.framework_utils)
 	global.framework_utils = exports;
 
+const Internal = require('./internal');
 var regexpSTATIC = /\.\w{2,8}($|\?)+/;
 const regexpTRIM = /^[\s]+|[\s]+$/g;
 const regexpDATE = /(\d{1,2}\.\d{1,2}\.\d{4})|(\d{4}-\d{1,2}-\d{1,2})|(\d{1,2}:\d{1,2}(:\d{1,2})?)/g;
@@ -66,6 +67,7 @@ const regexpFLOAT = /(^-|\s-)?[0-9.,]+/g;
 const regexpALPHA = /^[A-Za-z0-9]+$/;
 const regexpSEARCH = /[^a-zA-Zá-žÁ-Ž\d\s:]/g;
 const regexpTERMINAL = /[\w\S]+/g;
+const regexpCONFIGURE = /\[\w+\]/g;
 const regexpY = /y/g;
 const regexpN = /\n/g;
 const regexpCHARS = /\W|_/g;
@@ -918,6 +920,8 @@ function request_process_timeout(req) {
 			clearTimeout(options.timeoutid);
 			options.timeoutid = null;
 		}
+		req.socket.destroy();
+		req.socket.end();
 		req.abort();
 		options.canceled = true;
 		options.callback(new Error(exports.httpStatus(408)), '', 0, undefined, req.$uri.host, EMPTYOBJECT, options.param);
@@ -4020,6 +4024,15 @@ SP.localeCompare2 = function(value) {
 	return COMPARER(this, value);
 };
 
+var configurereplace = function(text) {
+	var val = CONF[text.substring(1, text.length - 1)];
+	return val == null ? '' : val;
+};
+
+SP.env = function() {
+	return this.replace(regexpCONFIGURE, configurereplace);
+};
+
 /**
  * Parse configuration from a string
  * @param {Object} def
@@ -6541,9 +6554,17 @@ exports.queue = function(name, max, fn) {
 	return true;
 };
 
-exports.minifyStyle = require('./internal').compile_css;
-exports.minifyScript = require('./internal').compile_javascript;
-exports.minifyHTML = require('./internal').compile_html;
+exports.minifyStyle = function(val) {
+	return Internal.compile_css(val);
+};
+
+exports.minifyScript = function(val) {
+	return Internal.compile_javascript(val);
+};
+
+exports.minifyHTML = function(val) {
+	return Internal.compile_html(val);
+};
 
 exports.parseTheme = function(value) {
 	if (value[0] !== '=')

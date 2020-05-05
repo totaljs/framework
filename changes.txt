@@ -8,6 +8,10 @@
 - added: `CONF.allow_persistent_images: true` which allows to reuse resized images in temp directory
 - added: `req.filecache(callback)` as alias for `F.exists()`
 - added: own QueryParser
+- added: `RESTBuilderInstance.convert('name:String,age:Number')` method
+- added: `RESTBuilder.upgrade(fn(restbuilder))` for upgrading of `RESTBuilder`
+- added: `RESTBuilder` parses Total.js Errors in responses as Error
+- added: `String.prototype.env()` replaces all values in the form `[key]` for `CONF.key`
 
 - updated: `websocket.send2(message, comparer, replacer, [params])` by adding `params` argument for comparer function
 - updated: bundling skips all bundles with `-bk.bundle` in filename
