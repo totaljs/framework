@@ -6185,6 +6185,8 @@ function onSchema_callback(err, res, callback) {
 		callback(null, res);
 }
 
+var onmailsendforce = (cb, message) => message.send2(cb);
+
 /**
  * Mail delegate
  * @param {String or Array String} address
@@ -6224,7 +6226,7 @@ F.onMail = function(address, subject, body, callback, replyTo) {
 	tmp = CONF.mail_address_copy;
 	tmp && tmp.length > 3 && message.bcc(tmp);
 
-	message.$sending = setImmediate(cb => message.send2(cb), callback);
+	message.$sending = setImmediate(onmailsendforce, callback, message);
 	return message;
 };
 
