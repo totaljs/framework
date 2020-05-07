@@ -12,8 +12,10 @@
 - added: `RESTBuilder.upgrade(fn(restbuilder))` for upgrading of `RESTBuilder`
 - added: `RESTBuilder` parses Total.js Errors in responses as Error
 - added: `String.prototype.env()` replaces all values in the form `[key]` for `CONF.key`
+- added: WebSocket supports a new type - raw `buffer`
 
 - updated: `websocket.send2(message, comparer, replacer, [params])` by adding `params` argument for comparer function
+- updated: `Websocket.encodedecode` can enable/disable easily encoding of messages
 - updated: bundling skips all bundles with `-bk.bundle` in filename
 - updated: bundle filenames are displayed in console
 - updated: `UPDATE()` method by adding `noarchive` argument

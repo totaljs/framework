@@ -3527,6 +3527,7 @@ global.WEBSOCKET = F.websocket = function(url, funcInitialize, flags, length) {
 	var isJSON = false;
 	var isBINARY = false;
 	var isROLE = false;
+	var isBUFFER = false;
 	var count = 0;
 	var membertype = 0;
 
@@ -3586,6 +3587,12 @@ global.WEBSOCKET = F.websocket = function(url, funcInitialize, flags, length) {
 			isBINARY = true;
 
 		if (flag === 'raw') {
+			isBINARY = false;
+			isJSON = false;
+		}
+
+		if (flag === 'buffer') {
+			isBUFFER = true;
 			isBINARY = false;
 			isJSON = false;
 		}
@@ -3665,6 +3672,7 @@ global.WEBSOCKET = F.websocket = function(url, funcInitialize, flags, length) {
 	r.isWEBSOCKET = true;
 	r.MEMBER = membertype;
 	r.isJSON = isJSON;
+	r.isBUFFER = isBUFFER;
 	r.isBINARY = isBINARY;
 	r.isROLE = isROLE;
 	r.isWILDCARD = isWILDCARD;
@@ -8790,6 +8798,8 @@ F.$websocketcontinue_process = function(route, req, path) {
 		socket.type = 1;
 	else if (route.isJSON)
 		socket.type = 3;
+	else if (route.isBUFFER)
+		socket.type = 4;
 
 	var next = function() {
 
@@ -8802,6 +8812,7 @@ F.$websocketcontinue_process = function(route, req, path) {
 		}
 
 		var connection = new WebSocket(path, route.controller, id);
+		connection.encodedecode = CONF.default_websocket_encodedecode === true;
 		connection.route = route;
 		connection.options = route.options;
 		F.connections[id] = connection;
@@ -16004,10 +16015,12 @@ function websocket_close() {
 
 WebSocketClientProto.$ondata = function(data) {
 
-	if (this.isClosed)
+	var self = this;
+
+	if (self.isClosed)
 		return;
 
-	var current = this.current;
+	var current = self.current;
 
 	if (data) {
 		if (current.buffer) {
@@ -16018,7 +16031,7 @@ WebSocketClientProto.$ondata = function(data) {
 			current.buffer = data;
 	}
 
-	if (!this.$parse())
+	if (!self.$parse())
 		return;
 
 	if (!current.final && current.type !== 0x00)
@@ -16030,15 +16043,15 @@ WebSocketClientProto.$ondata = function(data) {
 		case 0x01:
 
 			// text
-			if (this.inflate) {
-				current.final && this.parseInflate();
+			if (self.inflate) {
+				current.final && self.parseInflate();
 			} else {
-				tmp = this.$readbody();
+				tmp = self.$readbody();
 				if (current.body)
 					current.body += tmp;
 				else
 					current.body = tmp;
-				current.final && this.$decode();
+				current.final && self.$decode();
 			}
 
 			break;
@@ -16046,43 +16059,43 @@ WebSocketClientProto.$ondata = function(data) {
 		case 0x02:
 
 			// binary
-			if (this.inflate) {
-				current.final && this.parseInflate();
+			if (self.inflate) {
+				current.final && self.parseInflate();
 			} else {
-				tmp = this.$readbody();
+				tmp = self.$readbody();
 				if (current.body) {
 					CONCAT[0] = current.body;
 					CONCAT[1] = tmp;
 					current.body = Buffer.concat(CONCAT);
 				} else
 					current.body = tmp;
-				current.final && this.$decode();
+				current.final && self.$decode();
 			}
 
 			break;
 
 		case 0x08:
 			// close
-			this.closemessage = current.buffer.slice(4).toString('utf8');
-			this.closecode = current.buffer[2] << 8 | current.buffer[3];
+			self.closemessage = current.buffer.slice(4).toString('utf8');
+			self.closecode = current.buffer[2] << 8 | current.buffer[3];
 
-			if (this.closemessage && CONF.default_websocket_encodedecode)
-				this.closemessage = $decodeURIComponent(this.closemessage);
+			if (self.closemessage && self.container.encodedecode)
+				self.closemessage = $decodeURIComponent(self.closemessage);
 
-			this.close();
+			self.close();
 			break;
 
 		case 0x09:
 			// ping, response pong
-			this.socket.write(U.getWebSocketFrame(0, 'PONG', 0x0A));
+			self.socket.write(U.getWebSocketFrame(0, 'PONG', 0x0A));
 			current.buffer = null;
 			current.inflatedata = null;
-			this.$ping = true;
+			self.$ping = true;
 			break;
 
 		case 0x0a:
 			// pong
-			this.$ping = true;
+			self.$ping = true;
 			current.buffer = null;
 			current.inflatedata = null;
 			break;
@@ -16090,7 +16103,7 @@ WebSocketClientProto.$ondata = function(data) {
 
 	if (current.buffer) {
 		current.buffer = current.buffer.slice(current.length, current.buffer.length);
-		current.buffer.length && this.$ondata();
+		current.buffer.length && self.$ondata();
 	}
 };
 
@@ -16222,7 +16235,10 @@ WebSocketClientProto.$decode = function() {
 		case 3: // JSON
 			if (data instanceof Buffer)
 				data = data.toString(ENCODING);
-			CONF.default_websocket_encodedecode === true && (data = $decodeURIComponent(data));
+
+			if (this.container.encodedecode === true)
+				data = $decodeURIComponent(data);
+
 			if (data.isJSON()) {
 				var tmp = F.onParseJSON(data, this.req);
 				if (tmp !== undefined)
@@ -16230,10 +16246,14 @@ WebSocketClientProto.$decode = function() {
 			}
 			break;
 
+		case 4: // BUFFER
+			this.container.emit('message', this, data);
+			break;
+
 		default: // TEXT
 			if (data instanceof Buffer)
 				data = data.toString(ENCODING);
-			this.container.emit('message', this, CONF.default_websocket_encodedecode === true ? $decodeURIComponent(data) : data);
+			this.container.emit('message', this, this.container.encodedecode === true ? $decodeURIComponent(data) : data);
 			break;
 	}
 
@@ -16335,7 +16355,7 @@ WebSocketClientProto.send = function(message, raw, replacer) {
 
 	if (self.type !== 1) {
 		var data = self.type === 3 ? (raw ? message : JSON.stringify(message, replacer)) : typeof(message) === 'object' ? JSON.stringify(message, replacer) : message.toString();
-		if (CONF.default_websocket_encodedecode === true && data)
+		if (self.container.encodedecode === true && data)
 			data = encodeURIComponent(data);
 		if (self.deflate) {
 			self.deflatepending.push(Buffer.from(data));
@@ -16401,7 +16421,7 @@ WebSocketClientProto.close = function(message, code) {
 	if (!self.isClosed) {
 		self.isClosed = true;
 		if (self.ready)
-			self.socket.end(U.getWebSocketFrame(code || 1000, message ? (CONF.default_websocket_encodedecode ? encodeURIComponent(message) : message) : '', 0x08));
+			self.socket.end(U.getWebSocketFrame(code || 1000, message ? (self.container.encodedecode ? encodeURIComponent(message) : message) : '', 0x08));
 		else
 			self.socket.end();
 		self.req.connection.destroy();
