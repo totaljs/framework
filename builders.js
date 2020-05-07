@@ -5717,7 +5717,7 @@ function exec_callback(err, response, status, headers, hostname, cookies, self) 
 
 		if (self.$errorbuilderhandling) {
 			// Is the response Total.js ErrorBuilder?
-			if (val instanceof Array && val.length && val[0].error) {
+			if (val instanceof Array && val.length && val[0] && val[0].error) {
 				err = ErrorBuilder.assign(val);
 				if (err)
 					val = EMPTYOBJECT;
@@ -5741,7 +5741,7 @@ function exec_callback(err, response, status, headers, hostname, cookies, self) 
 
 		if (self.$errorbuilderhandling) {
 			// Is the response Total.js ErrorBuilder?
-			if (val instanceof Array && val.length && val[0].error) {
+			if (val instanceof Array && val.length && val[0] && val[0].error) {
 				err = ErrorBuilder.assign(val);
 				if (err)
 					val = EMPTYOBJECT;
