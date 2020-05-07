@@ -5598,7 +5598,7 @@ AP.skip = function(count) {
  * @param {Object} value Optional.
  * @return {Array}
  */
-AP.where = function(cb, value) {
+AP.where = AP.findAll = function(cb, value) {
 
 	var self = this;
 	var selected = [];
