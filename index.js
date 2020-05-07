@@ -6102,7 +6102,7 @@ function parseQueryArguments(val) {
 		var item = arr[i];
 		var index = item.indexOf('=');
 		// Max. length of key
-		if (index > 1 && index < CONF.default_request_maxkey) {
+		if (index > 0 && index < CONF.default_request_maxkey) {
 			var k = item.substring(0, index);
 			if (obj[k] == null)
 				obj[k] = decodeURIComponent(item.substring(index + 1));
