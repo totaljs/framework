@@ -345,7 +345,7 @@ Message.prototype.send2 = function(callback) {
 
 	// Computes a hostname
 	if (!CONF.mail_smtp) {
-		var ea = (this.addressFrom.address || this.addressFrom);
+		var ea = (this.addressFrom.address || this.addressFrom) || '';
 		ea = ea.substring(ea.lastIndexOf('@') + 1);
 		if (ea)
 			ea = 'smtp.' + ea;
