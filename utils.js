@@ -4895,6 +4895,10 @@ NP.floor = function(decimals) {
 	return Math.floor(this * Math.pow(10, decimals)) / Math.pow(10, decimals);
 };
 
+NP.fixed = function(decimals) {
+	return +this.toFixed(decimals);
+};
+
 NP.padLeft = function(max, c) {
 	return this.toString().padLeft(max, c || '0');
 };
