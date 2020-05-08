@@ -3591,11 +3591,8 @@ global.WEBSOCKET = F.websocket = function(url, funcInitialize, flags, length) {
 			isJSON = false;
 		}
 
-		if (flag === 'buffer') {
+		if (flag === 'buffer')
 			isBUFFER = true;
-			isBINARY = false;
-			isJSON = false;
-		}
 
 		if (flag[0] === '@') {
 			isROLE = true;
@@ -8798,8 +8795,9 @@ F.$websocketcontinue_process = function(route, req, path) {
 		socket.type = 1;
 	else if (route.isJSON)
 		socket.type = 3;
-	else if (route.isBUFFER)
-		socket.type = 4;
+
+	if (route.isBUFFER)
+		socket.typebuffer = true;
 
 	var next = function() {
 
@@ -16226,6 +16224,12 @@ WebSocketClientProto.$readbody = function() {
 WebSocketClientProto.$decode = function() {
 	var data = this.current.body;
 
+	// Buffer
+	if (this.typebuffer) {
+		this.container.emit('message', this, data);
+		return;
+	}
+
 	switch (this.type) {
 
 		case 1: // BINARY
@@ -16244,10 +16248,6 @@ WebSocketClientProto.$decode = function() {
 				if (tmp !== undefined)
 					this.container.emit('message', this, tmp);
 			}
-			break;
-
-		case 4: // BUFFER
-			this.container.emit('message', this, data);
 			break;
 
 		default: // TEXT
