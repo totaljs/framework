@@ -563,8 +563,6 @@ global.$PATCH = function(schema, model, options, callback, controller, novalidat
 	return performschema('$patch', schema, model, options, callback, controller, novalidate);
 };
 
-
-
 // GET Users/Neviem  --> @query @workflow
 global.$ACTION = function(schema, model, callback, controller) {
 
