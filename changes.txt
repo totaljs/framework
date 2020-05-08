@@ -28,7 +28,7 @@
 - updated: `schema.cl(name, [value])` method by adding `value` argument for replacing of existing code-list
 - updated: Tangular version to `v4.0.0`
 
-- improved: `filename` in modificators (now it contains relative paths)
+- improved: `filename` in modificators (now filenames contain relative paths)
 - improved: performance of `U.request()` (around +30%)
 - improved: performance of `U.download()` (around +30%)
 - improved: performance of `RESTBuilder`
