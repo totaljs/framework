@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkMail
- * @version 3.4.1
+ * @version 3.4.3
  */
 
 'use strict';

@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkDebug
- * @version 3.4.0
+ * @version 3.4.3
  */
 
 const Path = require('path');
