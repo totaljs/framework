@@ -29,8 +29,8 @@
 - updated: Tangular version to `v4.0.0`
 
 - improved: `filename` in modificators (now filenames contain relative paths)
-- improved: performance of `U.request()` (around +30%)
-- improved: performance of `U.download()` (around +30%)
+- improved: performance of `U.request()` (around +10%)
+- improved: performance of `U.download()` (around +10%)
 - improved: performance of `RESTBuilder`
 - improved: CSS minifier by compressing single hex color from e.g. `#000000` to `#000`
 
