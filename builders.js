@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkBuilders
- * @version 3.4.3
+ * @version 3.4.4
  */
 
 'use strict';
@@ -337,6 +337,16 @@ SchemaOptionsProto.response = function(index) {
 
 SchemaOptionsProto.DB = function() {
 	return F.database(this.error);
+};
+
+SchemaOptionsProto.successful = function(callback) {
+	var self = this;
+	return function(err, a, b, c) {
+		if (err)
+			self.invalid(err);
+		else
+			callback.call(self, a, b, c);
+	};
 };
 
 SchemaOptionsProto.success = function(a, b) {
@@ -6169,6 +6179,16 @@ OperationOptionsProto.noop = function(nocustomresponse) {
 	!nocustomresponse && self.controller && self.controller.custom();
 	self.callback(NoOp);
 	return self;
+};
+
+OperationOptionsProto.successful = function(callback) {
+	var self = this;
+	return function(err, a, b, c) {
+		if (err)
+			self.invalid(err);
+		else
+			callback.call(self, a, b, c);
+	};
 };
 
 OperationOptionsProto.redirect = function(url) {
