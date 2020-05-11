@@ -13,7 +13,7 @@ $ npm install -g total.js
 
 [![Support](https://www.totaljs.com/img/button-support.png?v=3)](https://www.totaljs.com/support/)
 
-- [__NEW__: Total.js Code editor](http://www.totaljs.com/code/)
+- [Total.js Code editor](http://www.totaljs.com/code/)
 - [Total.js CMS](http://www.totaljs.com/cms/)
 - [Total.js Eshop](http://www.totaljs.com/eshop/)
 - [Total.js Wiki](https://www.totaljs.com/wiki/)
@@ -25,25 +25,20 @@ $ npm install -g total.js
 - [Total.js SuperAdmin](https://www.totaljs.com/superadmin/)
 - [Total.js HelpDesk](https://www.totaljs.com/helpdesk/)
 - [Total.js OpenPlatform](https://www.totaljs.com/openplatform/)
-- [Total.js AppMonitor](https://www.totaljs.com/monitor/)
-- [Total.js AppDesigner](https://www.totaljs.com/designer/)
-- [Total.js modules and packages](https://modules.totaljs.com)
 - [Total.js +100 examples](https://github.com/totaljs/examples)
 - [NoSQL embedded database explorer](https://www.totaljs.com/nosql/)
-- [Download +100 UI components for free](https://componentator.com)
+- [Download +200 UI components for free](https://componentator.com)
 - [Download +100 CMS widgets for free](https://componentator.com/widgets/)
 
 ---
 
-- [Homepage](http://www.totaljs.com)
+- [Website](http://www.totaljs.com)
 - [__Get Started__](http://www.totaljs.com/get-started/)
 - [__Documentation__](http://docs.totaljs.com)
 - [__Wiki for Total.js products__](http://wiki.totaljs.com)
-- [__Live chat with professional support__](https://messenger.totaljs.com)
-- [__HelpDesk with professional support__](https://helpdesk.totaljs.com)
-- [__Blogs__](https://blog.totaljs.com)
-- [__Membership__](https://my.totaljs.com)
-- [Gitter - Chat for GitHub](https://gitter.im/totaljs/framework)
+- [__Live chat with professional support__](https://platform.totaljs.com?app=messenger)
+- [__Total.js Blog__](https://blog.totaljs.com)
+- [__Membership__](https://platform.totaljs.com)
 - [Changelog](https://github.com/totaljs/framework/blob/master/changes.txt)
 
 ## Official support
@@ -87,11 +82,7 @@ $ npm install -g total.js
 | Supports themes |
 | Supports scripting |
 | Possibility to rewrite existing functionality |
-| NoSQL embedded database (__NEW: joins, scalar operations and in-memory mode__) |
-
-## Useful modules
-
-- [Node Database Management System (ORM)](https://github.com/totaljs/dbms)
+| NoSQL embedded database
 
 ## Social networks
 
