@@ -93,33 +93,6 @@ $ npm install -g total.js
 
 - [Node Database Management System (ORM)](https://github.com/totaljs/dbms)
 
-## Contributors
-
-| Contributor | Type | E-mail |
-|-------------|------|--------|
-| [Peter Širka](https://github.com/petersirka) | author + support | <petersirka@gmail.com> |
-| [Martin Smola](https://github.com/molda) | contributor + support | <smola.martin@gmail.com> |
-| [Jozef Gula](https://github.com/jozefgula) | contributor | <gula.jozef@gmail.com> |
-| [Andrea Sessa](https://github.com/asessa) | contributor | <andrea.sessa@gmail.com> |
-| [Gera G. Güiles](https://github.com/Maxima-Solutions) | contributor | <gerardo.gonzalezg@gmail.com> |
-| [Tom Spaccialbelli](https://github.com/harry-stot) | contributor | <tom.spaccialbelli@gmail.com> |
-| [Radek / rsmogura](https://github.com/rsmogura) | contributor | ... |
-| [Liao San-Kai](https://github.com/liaosankai) | contributor | <liaosankai@gmail.com> |
-| [Ivan Marchukov](https://github.com/deadman2000) | contributor | <marchukov.ivan@gmail.com> |
-| [Dusan Dragula](https://github.com/DusanDragulaGR) | contributor | <dusan.dragula@goodrequest.com> |
-| [Сковорода Никита Андреевич](https://github.com/ChALkeR) | contributor | <chalkerx@gmail.com> |
-| [Андрей Владимирович](https://github.com/anddesigner) | contributor | <and.designer93@gmail.com> |
-| [Guy Fraser](https://github.com/aubergine10) | contributor | <guy.fraser1@gmail.com> |
-| [Peter Štolc](https://github.com/fokinko) | contributor | <stolcp@gmail.com> |
-| [Denis Granec](https://github.com/PatchwerkQWER) | contributor | <danis1999@gmail.com> |
-| [Chao Tang Chang](https://github.com/ckpiggy) | contributor | <mrgmp2004@hotmail.com> |
-| [luoage](https://github.com/luoage) | contributor | <luoage@msn.cn> |
-| [Mato Holly](https://github.com/boardshepherd) | contributor | <mato.holly@gmail.com> |
-| [Tema Smirnov](https://github.com/TemaSM) | contributor | <github.tema@smirnov.one> |
-| [Jeroen van Hilst](https://github.com/frunjik) | contributor | <frunjik@gmail.com> |
-| [Pedro Maia Costa](https://github.com/pnmcosta) | contributor | <pedro@pmcdigital.pt> |
-| [Sarp Aykent](https://github.com/HACKHERS) | contributor | <shackhers@gmail.com> |
-
 ## Social networks
 
 Please support the framework on social networks.
