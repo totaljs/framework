@@ -1,4 +1,4 @@
-======= 3.4.2
+======= 3.4.3
 
 - added: `HASH(value, [type])` for creating hash like in jComponent
 - added: `SchemaOptions.repo` as alias to `SchemaInstance.model.$$repository`
