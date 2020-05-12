@@ -16418,9 +16418,11 @@ WebSocketClientProto.close = function(message, code) {
 	var self = this;
 	if (!self.isClosed) {
 		self.isClosed = true;
-		if (self.ready)
-			self.socket.end(U.getWebSocketFrame(code || 1000, message ? (self.container.encodedecode ? encodeURIComponent(message) : message) : '', 0x08));
-		else
+		if (self.ready) {
+			if (message && self.container && self.container.encodedecode)
+				message = encodeURIComponent(message);
+			self.socket.end(U.getWebSocketFrame(code || 1000, message || '', 0x08));
+		} else
 			self.socket.end();
 		self.req.connection.destroy();
 	}

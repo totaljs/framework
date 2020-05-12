@@ -3,6 +3,7 @@
 - added: schema options `$.successful(function(response) {})`
 
 - updated: snapshot `startscript.js.json` contains tabs instead of spaces
+- fixed: a bug when closing of websocket
 
 ======= 3.4.3
 
