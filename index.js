@@ -7884,7 +7884,7 @@ F.console = function() {
 };
 
 F.usagesnapshot = function(filename) {
-	Fs.writeFile(filename || F.path.root('usage' + (F.id ? ('-' + F.id) : '') + '.log'), JSON.stringify(F.usage(true), null, '    '), NOOP);
+	Fs.writeFile(filename || F.path.root('usage' + (F.id ? ('-' + F.id) : '') + '.log'), JSON.stringify(F.usage(true), null, '\t'), NOOP);
 	return F;
 };
 

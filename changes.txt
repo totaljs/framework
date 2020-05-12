@@ -2,6 +2,8 @@
 
 - added: schema options `$.successful(function(response) {})`
 
+- updated: snapshot `startscript.js.json` contains tabs instead of spaces
+
 ======= 3.4.3
 
 - added: `HASH(value, [type])` for creating hash like in jComponent
