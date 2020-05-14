@@ -3604,6 +3604,7 @@ SchemaInstance.prototype.$async = function(callback, index) {
 	a.indexer = 0;
 	a.response = [];
 	a.fn = [];
+	a.op = [];
 	a.pending = 0;
 
 	a.next = function() {
@@ -3648,8 +3649,24 @@ Object.defineProperty(SchemaInstance.prototype, '$parent', {
 
 SchemaInstance.prototype.$response = function(index) {
 	var a = this.$$async;
-	if (a)
-		return index == undefined ? a.response : a.response[index === 'prev' ? (a.response.length - 1) : index];
+	if (a) {
+
+		if (index == null)
+			return a.response;
+
+		if (typeof(index) === 'string') {
+
+			if (index === 'prev')
+				return a.response[a.response.length - 1];
+
+			index = a.op.indexOf(index);
+
+			if (index !== -1)
+				return a.response[index];
+
+		} else
+			return a.response[index];
+	}
 };
 
 SchemaInstance.prototype.$repository = function(name, value) {
@@ -3752,11 +3769,15 @@ SchemaInstance.prototype.$push = function(type, name, helper, first, async, call
 
 	var a = self.$$async;
 	var obj = { fn: fn, async: async, index: a.length };
+	var key = type === 'workflow' || type === 'transform' || type === 'operation' || type === 'hook' ? (type + '.' + name) : type;
 
-	if (first)
+	if (first) {
 		a.fn.unshift(obj);
-	else
+		a.op.unshift(key);
+	} else {
 		a.fn.push(obj);
+		a.op.push(key);
+	}
 
 	return self;
 };
