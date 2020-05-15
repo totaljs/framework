@@ -966,6 +966,7 @@ function Framework() {
 		trace: true,
 		trace_console: true,
 
+		nowarnings: process.argv.indexOf('restart') !== -1,
 		name: 'Total.js',
 		version: '1.0.0',
 		author: '',
