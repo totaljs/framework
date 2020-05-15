@@ -2492,7 +2492,15 @@ DatabaseBuilder.prototype.make = function(fn, id) {
 
 DatabaseBuilder.prototype.rule = function(rule, params) {
 	var self = this;
-	self.$rule = rule;
+
+	if (typeof(rule) === 'string') {
+		var fn = CACHE[self.$rule];
+		if (!fn)
+			fn = CACHE[self.$rule] = new Function('doc', 'param', 'return ' + rule);
+		self.$rule = fn;
+	} else
+		self.$rule = rule;
+
 	self.$params = params;
 	return self;
 };
@@ -2758,7 +2766,7 @@ DatabaseBuilder.prototype.like = DatabaseBuilder.prototype.search = function(nam
 				code = '$is=doc.{0}?doc.{0}.endsWith(arg.{1}):false;';
 				break;
 			case '*':
-				code = '$is=false;if(doc.{0}){if(doc.{0} instanceof Array){for(var $i=0;$i<doc.{0}.length;$i++){if(doc.{0}[$i].toLowerCase().indexOf(arg.{1})!==-1){$is=true;break;}}}else{$is=doc.{0}.toLowerCase?doc.{0}.toLowerCase().indexOf(arg.{1})!==-1:false}}';
+				code = '$is=false;if(doc.{0}){if(doc.{0} instanceof Array){for(var $i=0;$i<doc.{0}.length;$i++){if(doc.{0}[$i].toLowerCase().indexOf(arg.{1})!==-1){$is=true;break;}}}else{$is=doc&&doc.{0}?(doc.{0} + \'\').toLowerCase().indexOf(arg.{1})!==-1:false}}';
 				if (value instanceof Array)
 					value = value.join(' ');
 				value = value.toLowerCase();
