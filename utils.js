@@ -1953,7 +1953,7 @@ global.CLONE = exports.clone = function(obj, skip, skipFunctions) {
 		return obj;
 
 	var type = typeof(obj);
-	if (type !== 'object' || obj instanceof Date)
+	if (type !== 'object' || obj instanceof Date || obj instanceof Error)
 		return obj;
 
 	var length;
@@ -1966,7 +1966,7 @@ global.CLONE = exports.clone = function(obj, skip, skipFunctions) {
 
 		for (var i = 0; i < length; i++) {
 			type = typeof(obj[i]);
-			if (type !== 'object' || obj[i] instanceof Date) {
+			if (type !== 'object' || obj[i] instanceof Date || obj[i] instanceof Error) {
 				if (skipFunctions && type === 'function')
 					continue;
 				o[i] = obj[i];
@@ -1995,7 +1995,7 @@ global.CLONE = exports.clone = function(obj, skip, skipFunctions) {
 		}
 
 		var type = typeof(val);
-		if (type !== 'object' || val instanceof Date) {
+		if (type !== 'object' || val instanceof Date || val instanceof Error) {
 			if (skipFunctions && type === 'function')
 				continue;
 			o[m] = val;

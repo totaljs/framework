@@ -8,6 +8,7 @@
 
 - fixed: a bug when closing of websocket
 - fixed: `DatabaseBuilder.search()` method
+- fixed: `Error` in `CLONE()` method
 
 ======= 3.4.3
 
