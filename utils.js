@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkUtils
- * @version 3.4.3
+ * @version 3.4.4
  */
 
 'use strict';
@@ -3660,48 +3660,55 @@ SP.parseCSV = function(delimiter) {
 	if (!delimiter)
 		delimiter = ',';
 
-	var q = '"';
-	var output = [];
-	var lines = this.split('\n');
+	var delimiterstring = '"';
+	var t = this;
+	var scope;
+	var tmp = {};
+	var index = 1;
+	var data = [];
+	var current = 'a';
 
-	for (var j = 0; j < lines.length; j++) {
+	for (var i = 0; i < t.length; i++) {
+		var c = t[i];
 
-		var t = lines[j] + delimiter;
-		var values = {};
-		var skip = false;
-		var p = null;
-		var beg = 0;
-		var index = 97;
+		if (!scope) {
 
-		for (var i = 0, length = t.length; i < length; i++) {
-
-			var c = t[i];
-
-			if (c === q && (!p || p === delimiter)) {
-				if (skip) {
-					if (t[i + 1] === delimiter)
-						skip = false;
-				} else
-					skip = true;
-			}
-
-			if (skip)
+			if (c === '\n' || c === '\r') {
+				tmp && data.push(tmp);
+				index = 1;
+				current = 'a';
+				tmp = null;
 				continue;
+			}
 
 			if (c === delimiter) {
-				var tmp = t.substring(beg, i).trim();
-				values[String.fromCharCode(index++)] = (tmp[0] === q && tmp[tmp.length - 1] === q ? tmp.substring(1, tmp.length - 1) : tmp).replace(/""/g, q);
-				beg = i + 1;
+				current = String.fromCharCode(97 + index);
+				index++;
+				continue;
 			}
-
-			if (c !== ' ')
-				p = c;
 		}
 
-		output.push(values);
+		if (c === delimiterstring) {
+			// Check escaped quotes
+			if (scope && t[i + 1] === delimiterstring) {
+				i++;
+			} else {
+				scope = c === scope ? '' : c;
+				continue;
+			}
+		}
+
+		if (!tmp)
+			tmp = {};
+
+		if (tmp[current])
+			tmp[current] += c;
+		else
+			tmp[current] = c;
 	}
 
-	return output;
+	tmp && data.push(tmp);
+	return data;
 };
 
 SP.parseTerminal = function(fields, fn, skip, take) {
