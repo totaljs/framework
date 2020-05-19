@@ -4912,7 +4912,17 @@ Binary.prototype.res = function(res, options, checkcustom, notmodified) {
 		var json = buffer.toString('utf8').replace(REGCLEAN, '');
 		if (json) {
 
-			var obj = JSON.parse(json, jsonparser);
+			var obj;
+
+			try {
+				obj = JSON.parse(json, jsonparser);
+			} catch (e) {
+				console.log('FileStorage Error:', filename, e);
+				if (RELEASE)
+					F.temporary.notfound[F.createTemporaryKey(req)] = true;
+				res.throw404();
+				return;
+			}
 
 			if (checkcustom && checkcustom(obj) == false) {
 				if (RELEASE)
