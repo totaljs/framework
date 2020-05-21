@@ -145,9 +145,6 @@ function prototypeString() {
 	str = 'https://mail.google.com';
 	assert.ok(str.isURL() === true, 'string.isURL(): ' + str);
 
-	str = 'http://w';
-	assert.ok(str.isURL() === false, 'string.isURL(): ' + str);
-
 	str = 'petersirka@gmail.com';
 	assert.ok(str.isEmail() === true, 'string.isEmail(): ' + str);
 

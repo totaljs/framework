@@ -5,6 +5,7 @@
 - updated: `SchemaOptions` method `$.response([index/operation_name])`, e.g. `$.response('workflow.NAME')`
 - updated: snapshot `startscript.js.json` contains tabs instead of spaces
 - updated: `DatabaseBuilder.rule(rule, [param])`, supports string declaration of filter function
+- updated: `URL` validation
 
 - fixed: `String.parseCSV()`, now supports multiline strings
 - fixed: a bug when closing of websocket
