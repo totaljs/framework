@@ -5669,40 +5669,6 @@ SP.clear = function(beg, end, callback) {
 	return self;
 };
 
-function Backuper(filename) {
-	this.filename = filename;
-	this.items = [];
-	this.is = false;
-	this.callback;
-}
-
-Backuper.prototype.write = function(value) {
-	this.items.push(value);
-	this.flush();
-	return this;
-};
-
-Backuper.prototype.flush = function() {
-	var self = this;
-
-	if (self.is)
-		return self;
-
-	if (!self.items.length)
-		return self;
-
-	var value = self.items.join('');
-	self.is = true;
-
-	Fs.appendFile(self.filename, value, function() {
-		self.is = false;
-		self.flush();
-	});
-
-	self.items = [];
-	return self;
-};
-
 TP.ready = function(fn) {
 	var self = this;
 	if (self.ready)
