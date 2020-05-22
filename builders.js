@@ -708,8 +708,17 @@ SchemaBuilderEntityProto.inherit = function(group, name) {
 		copy_inherit(self, 'operations', schema.operations);
 		copy_inherit(self, 'constants', schema.constants);
 
-		schema.middlewares && copy_inherit(self, 'middlewares', schema.middlewares);
-		schema.verifications && copy_inherit(self, 'verifications', schema.verifications);
+		if (schema.middlewares) {
+			self.middlewares = [];
+			for (var i = 0; i < schema.middlewares.length; i++)
+				self.middlewares.push(schema.middlewares[i]);
+		}
+
+		if (schema.verifications) {
+			self.verifications = [];
+			for (var i = 0; i < schema.verifications.length; i++)
+				self.verifications.push(schema.verifications[i]);
+		}
 
 		schema.properties.forEach(function(item) {
 			if (self.properties.indexOf(item) === -1)
