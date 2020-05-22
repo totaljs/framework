@@ -708,6 +708,9 @@ SchemaBuilderEntityProto.inherit = function(group, name) {
 		copy_inherit(self, 'operations', schema.operations);
 		copy_inherit(self, 'constants', schema.constants);
 
+		schema.middlewares && copy_inherit(self, 'middlewares', schema.middlewares);
+		schema.verifications && copy_inherit(self, 'verifications', schema.verifications);
+
 		schema.properties.forEach(function(item) {
 			if (self.properties.indexOf(item) === -1)
 				self.properties.push(item);

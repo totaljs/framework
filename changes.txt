@@ -11,6 +11,7 @@
 - fixed: a bug when closing of websocket
 - fixed: `DatabaseBuilder.search()` method
 - fixed: `Error` in `CLONE()` method
+- fixed: `schema.inherit()` by adding `schema.middleware()` and `schema.verify()`
 
 ======= 3.4.3
 
