@@ -7031,7 +7031,7 @@ NoSQLReader.prototype.compare2 = function(docs, custom, done) {
 
 					var clean = {};
 
-					for(var $i = 0; $i < item.fields.length; $i++) {
+					for (var $i = 0; $i < item.fields.length; $i++) {
 						var prop = item.fields[$i];
 						clean[prop] = output[prop];
 					}
