@@ -21,7 +21,7 @@
 
 /**
  * @module WebSocketClient
- * @version 3.1.0
+ * @version 3.4.4
  */
 
 if (!global.framework_utils)
@@ -101,7 +101,10 @@ WebSocketClientProto.connect = function(url, protocol, origin) {
 
 	self.req.on('response', function() {
 		self.$events.error && self.emit('error', new Error('Unexpected server response.'));
-		self.free();
+		if (self.options.reconnectserver)
+			self.connect(url, protocol, origin);
+		else
+			self.free();
 	});
 
 	self.req.on('upgrade', function(response, socket) {
