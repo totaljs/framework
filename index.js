@@ -17241,6 +17241,34 @@ function extend_request(PROTO) {
 				req.$total_validate(req.$total_route, subscribe_validate_callback, code);
 		}
 	};
+
+	PROTO.snapshot = function(callback) {
+
+		var req = this;
+		var builder = [];
+		var keys = Object.keys(req.headers);
+		var max = 0;
+
+		for (var i = 0; i < keys.length; i++) {
+			var length = keys[i].length;
+			if (length > max)
+				max = length;
+		}
+
+		builder.push('url'.padRight(max + 1) + ': ' + req.method.toUpperCase() + ' ' + req.url);
+
+		for (var i = 0; i < keys.length; i++)
+			builder.push(keys[i].padRight(max + 1) + ': ' + req.headers[keys[i]]);
+
+		builder.push('');
+
+		var data = [];
+		req.on('data', chunk => data.push(chunk));
+		req.on('end', function() {
+			builder.push(Buffer.concat(data).toString('utf8'));
+			callback(null, builder.join('\n'));
+		});
+	};
 }
 
 function total_endmiddleware(req) {
