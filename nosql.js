@@ -1150,10 +1150,8 @@ DP.find2 = function(builder) {
 	var self = this;
 	if (builder instanceof DatabaseBuilder)
 		builder.db = self;
-	else {
+	else
 		builder = new DatabaseBuilder(self);
-		builder.$options.notall = true;
-	}
 
 	if (self.readonly)
 		return self.find(builder);
@@ -5808,11 +5806,8 @@ TP.find2 = function(builder) {
 	var self = this;
 	if (builder)
 		builder.db = self;
-	else {
+	else
 		builder = new DatabaseBuilder(self);
-		builder.$options.notall = true;
-	}
-
 	self.pending_reader2.push(builder);
 	setImmediate(next_operation, self, 11);
 	return builder;
@@ -7081,6 +7076,7 @@ NoSQLReader.prototype.compare2 = function(docs, custom, done) {
 NoSQLReader.prototype.compare = function(docs) {
 
 	var self = this;
+
 	for (var i = 0; i < docs.length; i++) {
 
 		var doc = self.clone ? U.clone(docs[i]) : docs[i];
@@ -7126,7 +7122,7 @@ NoSQLReader.prototype.compare = function(docs) {
 
 			item.counter++;
 
-			if (b.$options.notall && !b.$inlinesort && !item.done)
+			if (!b.$inlinesort && !item.done)
 				item.done = b.$options.take && b.$options.take <= item.counter;
 
 			if (b.$options.readertype)
