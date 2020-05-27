@@ -21,7 +21,7 @@
 
 /**
  * @module NoSQL Stream
- * @version 1.0.1
+ * @version 1.2.0
  */
 
 require('./index');
@@ -48,10 +48,10 @@ function NoSQLStream(filename) {
 	this.buffersize = BUFFERSIZE;
 	this.linesize = 0;
 	this.start = 0;
+	this.indexer = 0;
 	// this.canceled = false;
 	// this.docs = '';
 	// this.docscount = 0;
-	// this.indexer = 0;
 }
 
 const NoSQLStreamProto = NoSQLStream.prototype;
@@ -85,84 +85,33 @@ NoSQLStreamProto.readhelpers = function() {
 		} else
 			self.buffer = chunk;
 
-		if (self.linesize) {
+		var index = self.buffer.lastIndexOf(NEWLINEBUFFER);
+		if (index === -1) {
+			self.read();
+			return;
+		}
 
-			while (self.buffer.length >= self.linesize) {
-
-				var tmp = self.buffer.toString('utf8', 0, self.linesize - 1);
-				if (tmp[0] === self.remchar) {
-					self.buffer = self.buffer.slice(self.linesize);
-					if (self.buffer.length > self.linesize)
-						continue;
-					else
-						break;
-				}
-
+		var tmp = self.buffer.toString('utf8', 0, index).split('\n');
+		for (var i = 0; i < tmp.length; i++) {
+			if (tmp[i][0] !== self.remchar) {
 				if (self.array)
-					self.docs.push(tmp);
+					self.docs.push(tmp[i]);
 				else
-					self.docs += (self.docs ? self.divider : '') + tmp;
-
+					self.docs += (self.docs ? self.divider : '') + tmp[i];
 				self.docscount++;
 				self.indexer++;
-
-				if (self.docscount >= self.buffercount) {
-					if (self.ondocuments() === false)
-						self.canceled = true;
-					self.docs = self.array ? [] : '';
-					self.docscount = 0;
-					if (self.canceled) {
-						self.read(self.$callback, self.$noclose);
-						return;
-					}
-				}
-
-				self.buffer = self.buffer.slice(self.linesize);
-			}
-
-		} else {
-			var index = self.buffer.indexOf(NEWLINEBUFFER, beg);
-			while (index !== -1) {
-
-				var tmp = self.buffer.toString('utf8', 0, index);
-				if (tmp[0] === self.remchar) {
-					self.buffer = self.buffer.slice(index + 1);
-					index = self.buffer.indexOf(NEWLINEBUFFER);
-					if (index === -1)
-						break;
-					continue;
-				}
-
-				if (self.array)
-					self.docs.push(tmp);
-				else
-					self.docs += (self.docs ? self.divider : '') + tmp;
-
-				self.docscount++;
-				self.indexer++;
-
-				if (self.docscount >= self.buffercount) {
-
-					if (self.ondocuments() === false)
-						self.canceled = true;
-
-					self.docs = self.array ? [] : '';
-					self.docscount = 0;
-
-					if (self.canceled) {
-						self.read(self.$callback, self.$noclose);
-						return;
-					}
-				}
-
-				self.buffer = self.buffer.slice(index + 1);
-				index = self.buffer.indexOf(NEWLINEBUFFER);
-				if (index === -1)
-					break;
 			}
 		}
 
+		self.buffer = self.buffer.slice(index + 1);
+
+		if (self.ondocuments() === false)
+			self.canceled = true;
+
+		self.docs = self.array ? [] : '';
+		self.docscount = 0;
 		self.ticks++;
+
 		if (self.ticks % 5 === 0)
 			setImmediate(self.cb_readticks);
 		else
@@ -188,80 +137,31 @@ NoSQLStreamProto.readhelpers = function() {
 		} else
 			self.buffer = chunk;
 
-		if (self.linesize) {
+		var index = self.buffer.indexOf(NEWLINEBUFFER);
+		if (index === -1) {
+			self.readreverse2();
+			return;
+		}
 
-			while (self.buffer.length >= self.linesize) {
-
-				var tmp = self.buffer.toString('utf8', self.buffer.length - self.linesize, self.buffer.length - 1);
-				if (tmp[0] === self.remchar) {
-					self.buffer = self.buffer.slice(0, self.buffer.length - self.linesize);
-					if (self.buffer.length > self.linesize)
-						continue;
-					else
-						break;
-				}
-
+		var tmp = self.buffer.toString('utf8', index).trim().split('\n');
+		for (var i = 0; i < tmp.length; i++) {
+			if (tmp[i][0] !== self.remchar) {
 				if (self.array)
-					self.docs.push(tmp);
+					self.docs.push(tmp[i]);
 				else
-					self.docs += (self.docs ? self.divider : '') + tmp;
-
+					self.docs += (self.docs ? self.divider : '') + tmp[i];
 				self.docscount++;
 				self.indexer++;
-
-				if (self.docscount >= self.buffercount) {
-					if (self.ondocuments() === false)
-						self.canceled = true;
-					self.docs = self.array ? [] : '';
-					self.docscount = 0;
-					if (self.canceled) {
-						self.read(self.$callback, self.$noclose);
-						return;
-					}
-				}
-
-				self.buffer = self.buffer.slice(0, self.buffer.length - self.linesize);
-			}
-
-		} else {
-			var index = self.buffer.lastIndexOf(NEWLINEBUFFER, self.buffer.length - 2);
-			while (index !== -1) {
-
-				var tmp = self.buffer.toString('utf8', index);
-				if (tmp[1] === self.remchar) {
-					self.buffer = self.buffer.slice(0, index);
-					index = self.buffer.lastIndexOf(NEWLINEBUFFER);
-					if (index === -1)
-						break;
-					continue;
-				}
-
-				if (self.array)
-					self.docs.push(tmp.trim());
-				else
-					self.docs += (self.docs ? self.divider : '') + tmp.trim();
-
-				self.docscount++;
-
-				if (self.docscount >= self.buffercount) {
-					if (self.ondocuments() === false)
-						self.canceled = true;
-					self.docs = self.array ? [] : '';
-					self.docscount = 0;
-				}
-
-				if (self.canceled) {
-					self.readreverse2();
-					return;
-				}
-
-				self.buffer = self.buffer.slice(0, index);
-				index = self.buffer.lastIndexOf(NEWLINEBUFFER, self.buffer.length - 2);
-				if (index === -1)
-					break;
 			}
 		}
 
+		if (self.ondocuments() === false)
+			self.canceled = true;
+
+		// self.buffer = self.buffer.slice(0, index + 1);
+		self.buffer = self.buffer.slice(0, index + 1);
+		self.docs = self.array ? [] : '';
+		self.docscount = 0;
 		self.ticks++;
 
 		if (self.ticks % 5 === 0)
@@ -276,6 +176,9 @@ NoSQLStreamProto.readhelpers = function() {
 
 	self.cb_readstream = function(chunk) {
 
+		if (self.canceled)
+			return;
+
 		var beg = 0;
 
 		if (self.buffer) {
@@ -287,72 +190,36 @@ NoSQLStreamProto.readhelpers = function() {
 
 			if (beg < 0)
 				beg = 0;
-
 		} else
 			self.buffer = chunk;
 
-		if (self.linesize) {
-			while (self.buffer.length >= self.linesize) {
-				var tmp = self.buffer.toString('utf8', 0, self.linesize - 1);
+		var index = self.buffer.lastIndexOf(NEWLINEBUFFER);
+		if (index === -1)
+			return;
 
+		var tmp = self.buffer.toString('utf8', 0, index).split('\n');
+		for (var i = 0; i < tmp.length; i++) {
+			if (tmp[i][0] !== self.remchar) {
 				if (self.array)
-					self.docs.push(tmp);
+					self.docs.push(tmp[i]);
 				else
-					self.docs += (self.docs ? self.divider : '') + tmp;
-
+					self.docs += (self.docs ? self.divider : '') + tmp[i];
 				self.docscount++;
 				self.indexer++;
-
-				if (self.docscount >= self.buffercount) {
-
-					if (self.ondocuments() === false)
-						self.canceled = true;
-
-					self.docs = self.array ? [] : '';
-					self.docscount = 0;
-
-					if (self.canceled) {
-						self.stream.destroy && self.stream.destroy();
-						return;
-					}
-				}
-
-				self.buffer = self.buffer.slice(self.linesize);
 			}
+		}
+
+		self.buffer = self.buffer.slice(index + 1);
+
+		if (self.ondocuments() === false)
+			self.canceled = true;
+
+		if (self.canceled) {
+			self.stream.destroy && self.stream.destroy();
 		} else {
-			var index = self.buffer.indexOf(NEWLINEBUFFER, beg);
-			while (index !== -1) {
-
-				var tmp = self.buffer.toString('utf8', 0, index).trim();
-
-				if (self.array)
-					self.docs.push(tmp);
-				else
-					self.docs += (self.docs ? self.divider : '') + tmp;
-
-
-				self.docscount++;
-				self.indexer++;
-
-				if (self.docscount >= self.buffercount) {
-
-					if (self.ondocuments() === false)
-						self.canceled = true;
-
-					self.docs = self.array ? [] : '';
-					self.docscount = 0;
-
-					if (self.canceled) {
-						self.stream.destroy && self.stream.destroy();
-						return;
-					}
-				}
-
-				self.buffer = self.buffer.slice(index + 1);
-				index = self.buffer.indexOf(NEWLINEBUFFER);
-				if (index === -1)
-					break;
-			}
+			self.docs = self.array ? [] : '';
+			self.docscount = 0;
+			self.ticks++;
 		}
 	};
 
@@ -417,7 +284,7 @@ NoSQLStreamProto.writehelpers = function() {
 		self.flush();
 	};
 
-	self.cb_readwritebuffer = function(err, size, chunk) {
+	self.cb_readwritebuffer2 = function(err, size, chunk) {
 
 		self.position += size;
 
@@ -498,6 +365,58 @@ NoSQLStreamProto.writehelpers = function() {
 					break;
 			}
 		}
+
+		if (self.bufferstack.length || self.bufferstacknew.length)
+			setImmediate(self.cb_writeticks);
+		else
+			self.readupdate();
+	};
+
+	self.cb_readwritebuffer = function(err, size, chunk) {
+
+		self.position += size;
+
+		var beg = 0;
+		var index;
+
+		if (self.buffer) {
+			self.cache[0] = self.buffer;
+			self.cache[1] = chunk;
+			beg = self.buffer.length - 1;
+			if (beg < 0)
+				beg = 0;
+			self.buffer = Buffer.concat(self.cache);
+		} else
+			self.buffer = chunk;
+
+
+		var index = self.buffer.lastIndexOf(NEWLINEBUFFER);
+		if (index === -1) {
+			self.readupdate();
+			return;
+		}
+
+		var tmp = self.buffer.toString('utf8', 0, index).split('\n');
+		for (var i = 0; i < tmp.length; i++) {
+			var size = Buffer.byteLength(tmp[i], 'utf8');
+			if (tmp[i][0] !== self.remchar) {
+				if (self.array)
+					self.docs.push(tmp[i]);
+				else
+					self.docs += (self.docs ? self.divider : '') + tmp[i];
+				self.docsbuffer.push({ length: size, doc: tmp[i], position: self.positionupdate });
+				self.docscount++;
+				self.indexer++;
+			}
+			self.positionupdate += size + 1;
+		}
+
+		if (self.ondocuments() === false)
+			self.canceled = true;
+
+		self.docsbuffer = [];
+		self.docs = self.array ? [] : '';
+		self.buffer = self.buffer.slice(index + 1);
 
 		if (self.bufferstack.length || self.bufferstacknew.length)
 			setImmediate(self.cb_writeticks);
