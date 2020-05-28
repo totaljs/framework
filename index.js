@@ -7949,7 +7949,7 @@ F.service = function(count) {
 	if (CONF.allow_reqlimit)
 		F.temporary.ddos = {};
 
-	// every 7 minutes (default) service clears static cache
+	// every 10 minutes (default) service clears static cache
 	if (count % CONF.default_interval_clear_cache === 0) {
 		F.$events.clear && EMIT('clear', 'temporary', F.temporary);
 		F.temporary.path = {};
