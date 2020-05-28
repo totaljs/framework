@@ -16139,6 +16139,10 @@ WebSocketClientProto.$parse = function() {
 	var length = U.getMessageLength(current.buffer, F.isLE);
 	// index for data
 
+	// Solving a problem with The value "-1" is invalid for option "size"
+	if (length <= 0)
+		return;
+
 	var index = current.buffer[1] & 0x7f;
 	index = ((index === 126) ? 4 : (index === 127 ? 10 : 2)) + (current.isMask ? 4 : 0);
 
