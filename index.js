@@ -1324,7 +1324,7 @@ function Framework() {
 	self.isWindows = Os.platform().substring(0, 3).toLowerCase() === 'win';
 
 	self.$events = {};
-	self.commands = {};
+	self.commands = { reload_preferences: [loadpreferences] };
 }
 
 // ======================================================
@@ -4448,18 +4448,9 @@ F.$load = function(types, targetdirectory, callback, packageName) {
 
 	if (can('preferences')) {
 		operations.push(function(resume) {
-			if (F.onPrefLoad) {
-				F.onPrefLoad(function(value) {
-					if (value) {
-						var keys = Object.keys(value);
-						for (var i = 0; i < keys.length; i++) {
-							var key = keys[i];
-							F.pref[key] = global.PREF[key] = value[key];
-						}
-					}
-					resume();
-				});
-			} else
+			if (F.onPrefLoad)
+				loadpreferences(resume);
+			else
 				resume();
 		});
 	}
@@ -4478,6 +4469,19 @@ F.$load = function(types, targetdirectory, callback, packageName) {
 
 	return F;
 };
+
+function loadpreferences(callback) {
+	F.onPrefLoad(function(value) {
+		if (value) {
+			var keys = Object.keys(value);
+			for (var i = 0; i < keys.length; i++) {
+				var key = keys[i];
+				F.pref[key] = global.PREF[key] = value[key];
+			}
+		}
+		callback && callback();
+	});
+}
 
 F.$startup = function(callback) {
 
