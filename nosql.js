@@ -26,6 +26,7 @@
 
 'use strict';
 
+const Readable = require('stream').Readable;
 const Fs = require('fs');
 const Path = require('path');
 const NoSQLStream = require('./nosqlstream');
@@ -4779,10 +4780,18 @@ Binary.prototype.saveforce = function(id, name, filename, filenameto, callback, 
 	if (!callback)
 		callback = NOOP;
 
+	var isbuffer = filename instanceof Buffer;
 	var self = this;
 	var header = Buffer.alloc(BINARY_HEADER_LENGTH, ' ');
-	var reader = Fs.createReadStream(filename);
+	var reader = isbuffer ? new Readable() : Fs.createReadStream(filename);
 	var writer = Fs.createWriteStream(filenameto);
+
+
+	if (isbuffer) {
+		reader._read = NOOP; // _read is required but you can noop it
+		reader.push(filename);
+		reader.push(null);
+	}
 
 	var meta = { name: name, size: 0, width: 0, height: 0, ext: U.getExtension(name), custom: custom };
 	var tmp;
