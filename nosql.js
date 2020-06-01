@@ -4783,9 +4783,8 @@ Binary.prototype.saveforce = function(id, name, filename, filenameto, callback, 
 	var isbuffer = filename instanceof Buffer;
 	var self = this;
 	var header = Buffer.alloc(BINARY_HEADER_LENGTH, ' ');
-	var reader = isbuffer ? new Readable() : Fs.createReadStream(filename);
+	var reader = isbuffer ? new Readable() : filename instanceof Readable ? filename : Fs.createReadStream(filename);
 	var writer = Fs.createWriteStream(filenameto);
-
 
 	if (isbuffer) {
 		reader._read = NOOP; // _read is required but you can noop it
