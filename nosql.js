@@ -73,6 +73,7 @@ const BOOLEAN = { '1': 1, 'true': 1, 'on': 1 };
 const TABLERECORD = { '+': 1, '-': 1, '*': 1 };
 const CLUSTERMETA = {};
 const UNKNOWN = 'unknown';
+const MKDIR = { recursive: true };
 
 const COMPARER = global.Intl ? global.Intl.Collator().compare : function(a, b) {
 	return a.removeDiacritics().localeCompare(b.removeDiacritics());
@@ -4406,6 +4407,7 @@ function Binary(db, directory, ext) {
 	t.metafile = directory + 'meta.json';
 	t.meta = { $version: 1, updated: NOW };
 	t.cachekey = 'nobin_' + db.name + '_';
+	t.logger = directory + '/files.log';
 	t.$refresh();
 }
 
@@ -4722,6 +4724,135 @@ Binary.prototype.insertstream = function(id, name, type, stream, callback, custo
 	return cacheid || id;
 };
 
+Binary.prototype.makedirectory = function(id) {
+
+	var val = (HASH(id, true) % 10000) + '';
+	var diff = 4 - val.length;
+
+	if (diff > 0) {
+		for (var i = 0; i < diff; i++)
+			val = '0' + val;
+	}
+
+	if (diff.length > 4)
+		val = val.substring(0, 4);
+
+	return Path.join(this.directory, val);
+};
+
+Binary.prototype.append = Binary.prototype.save = function(id, name, filename, callback, custom) {
+
+	if (typeof(filename) === 'function' || filename == null) {
+		custom = callback;
+		callback = filename;
+		filename = name;
+		name = U.getName(filename);
+	}
+
+	var self = this;
+	var directory = self.makedirectory(id);
+	var filenameto = Path.join(directory, id + '.file');
+	var cachekey = self.cachekey + directory;
+
+	var index = name.lastIndexOf('/');
+	if (index !== -1)
+		name = name.substring(index + 1);
+
+	if (F.temporary.other[cachekey]) {
+		self.saveforce(id, name, filename, filenameto, callback, custom);
+	} else {
+		Fs.mkdir(directory, MKDIR, function(err) {
+			if (err)
+				callback(err);
+			else {
+				F.temporary.other[cachekey] = 1;
+				self.saveforce(id, name, filename, filenameto, callback, custom);
+			}
+		});
+	}
+
+	return self;
+};
+
+Binary.prototype.saveforce = function(id, name, filename, filenameto, callback, custom) {
+
+	if (!callback)
+		callback = NOOP;
+
+	var self = this;
+	var header = Buffer.alloc(BINARY_HEADER_LENGTH, ' ');
+	var reader = Fs.createReadStream(filename);
+	var writer = Fs.createWriteStream(filenameto);
+
+	var meta = { name: name, size: 0, width: 0, height: 0, ext: U.getExtension(name), custom: custom };
+	var tmp;
+
+	writer.write(header, 'binary');
+
+	if (IMAGES[meta.ext]) {
+		reader.once('data', function(buffer) {
+			switch (meta.ext) {
+				case 'gif':
+					tmp = framework_image.measureGIF(buffer);
+					break;
+				case 'png':
+					tmp = framework_image.measurePNG(buffer);
+					break;
+				case 'jpg':
+				case 'jpeg':
+					tmp = framework_image.measureJPG(buffer);
+					break;
+				case 'svg':
+					tmp = framework_image.measureSVG(buffer);
+					break;
+			}
+		});
+	}
+
+	reader.pipe(writer);
+
+	CLEANUP(writer, function() {
+
+		Fs.open(filenameto, 'r+', function(err, fd) {
+
+			if (err) {
+				// Unhandled error
+				callback(err);
+				return;
+			}
+
+			if (tmp) {
+				meta.width = tmp.width;
+				meta.height = tmp.height;
+			}
+
+			meta.size = writer.bytesWritten - BINARY_HEADER_LENGTH;
+
+			self.total++;
+			self.size += meta.size;
+
+			if (meta.name.length > 250)
+				meta.name = meta.name.substring(0, 250);
+
+			header.write(JSON.stringify(meta));
+
+			// Update header
+			Fs.write(fd, header, 0, header.length, 0, function(err) {
+				if (err) {
+					callback(err);
+					Fs.close(fd, NOOP);
+				} else {
+					meta.id = id;
+					meta.date = NOW = new Date();
+					meta.type = 'save';
+					Fs.appendFile(self.logger, JSON.stringify(meta) + '\n', NOOP);
+					Fs.close(fd, () => callback(null, meta));
+				}
+			});
+		});
+	});
+};
+
 Binary.prototype.update = function(id, name, buffer, custom, callback) {
 
 	var type = framework_utils.getContentType(framework_utils.getExtension(name));
@@ -4833,7 +4964,7 @@ Binary.prototype.update = function(id, name, buffer, custom, callback) {
 	return cacheid;
 };
 
-Binary.prototype.meta = function(id, callback, count) {
+Binary.prototype.readmeta = function(id, callback, count) {
 
 	var self = this;
 
@@ -4842,21 +4973,25 @@ Binary.prototype.meta = function(id, callback, count) {
 		return self;
 	}
 
-	var isnew = false;
+	var version = 0;
 
 	if (id > 0)
-		isnew = true;
+		version = 1;
 	else if (id[0] === 'B' || id[0] === 'b') {
 		id = +id.substring(id.length - DIRECTORYLENGTH);
-		isnew = true;
-	} else if (id.indexOf('#') === -1)
+		version = 1;
+	} else if (self.ext === '.file')
+		version = 2;
+	else if (id.indexOf('#') === -1)
 		id = self.db.name + '#' + id;
 
 	var filename;
 
-	if (isnew) {
+	if (version === 1)
 		filename = Path.join(self.$directory(id), id.toString().padLeft(DIRECTORYLENGTH, '0') + self.ext);
-	} else
+	else if (version === 2)
+		filename = Path.join(self.makedirectory(id), id + self.ext);
+	else
 		filename = framework_utils.join(self.directory, id + self.ext);
 
 	var stream = Fs.createReadStream(filename, BINARYREADMETA);
@@ -4876,27 +5011,32 @@ Binary.prototype.meta = function(id, callback, count) {
 Binary.prototype.res = function(res, options, checkcustom, notmodified) {
 
 	var self = this;
-	var isnew = false;
-	var id = options.id || '';
 	var req = res.req;
-
-	if (id > 0)
-		isnew = true;
-	else if (id[0] === 'B' || id[0] === 'b') {
-		id = +id.substring(id.length - DIRECTORYLENGTH);
-		isnew = true;
-	} else if (id.indexOf('#') === -1)
-		id = self.db.name + '#' + id;
 
 	if (RELEASE && req.$key && F.temporary.notfound[req.$key] !== undefined) {
 		res.throw404();
 		return res;
 	}
 
+	var version = 0;
+	var id = options.id || '';
+
+	if (id > 0)
+		version = 1;
+	else if (id[0] === 'B' || id[0] === 'b') {
+		id = +id.substring(id.length - DIRECTORYLENGTH);
+		version = 1;
+	} else if (self.ext === '.file')
+		version = 2;
+	else if (id.indexOf('#') === -1)
+		id = self.db.name + '#' + id;
+
 	var filename;
 
-	if (isnew)
+	if (version === 1)
 		filename = Path.join(self.$directory(id), id.toString().padLeft(DIRECTORYLENGTH, '0') + self.ext);
+	else if (version === 2)
+		filename = Path.join(self.makedirectory(id), id + self.ext);
 	else
 		filename = framework_utils.join(self.directory, id + self.ext);
 
@@ -4983,21 +5123,25 @@ Binary.prototype.read = function(id, callback, count) {
 		return self;
 	}
 
-	var isnew = false;
+	var version = 0;
 
 	if (id > 0)
-		isnew = true;
+		version = 1;
 	else if (id[0] === 'B' || id[0] === 'b') {
 		id = +id.substring(id.length - DIRECTORYLENGTH);
-		isnew = true;
-	} else if (id.indexOf('#') === -1)
+		version = 1;
+	} else if (self.ext === '.file')
+		version = 2;
+	else if (id.indexOf('#') === -1)
 		id = self.db.name + '#' + id;
 
 	var filename;
 
-	if (isnew) {
+	if (version === 1)
 		filename = Path.join(self.$directory(id), id.toString().padLeft(DIRECTORYLENGTH, '0') + self.ext);
-	} else
+	else if (version === 2)
+		filename = Path.join(self.makedirectory(id), id + self.ext);
+	else
 		filename = framework_utils.join(self.directory, id + self.ext);
 
 	var stream = Fs.createReadStream(filename, BINARYREADMETA);
@@ -5025,21 +5169,25 @@ Binary.prototype.readbase64 = function(id, callback, count) {
 		return self;
 	}
 
-	var isnew = false;
+	var version = 0;
 
 	if (id > 0)
-		isnew = true;
+		version = 1;
 	else if (id[0] === 'B' || id[0] === 'b') {
 		id = +id.substring(id.length - DIRECTORYLENGTH);
-		isnew = true;
-	} else if (id.indexOf('#') === -1)
+		version = 1;
+	} else if (self.ext === '.file')
+		version = 2;
+	else if (id.indexOf('#') === -1)
 		id = self.db.name + '#' + id;
 
 	var filename;
 
-	if (isnew) {
+	if (version === 1)
 		filename = Path.join(self.$directory(id), id.toString().padLeft(DIRECTORYLENGTH, '0') + self.ext);
-	} else
+	else if (version === 2)
+		filename = Path.join(self.makedirectory(id), id + self.ext);
+	else
 		filename = framework_utils.join(self.directory, id + self.ext);
 
 	var stream = Fs.createReadStream(filename, BINARYREADMETA);
@@ -5058,7 +5206,6 @@ Binary.prototype.readbase64 = function(id, callback, count) {
 	return self;
 };
 
-
 function readfileattempt(self, id, callback, count) {
 	self.read(id, callback, count + 1);
 }
@@ -5067,26 +5214,30 @@ Binary.prototype.remove = function(id, callback) {
 
 	var self = this;
 	var cacheid = id;
-	var isnew = false;
+	var version = 0;
 	var filename;
 
 	if (id > 0)
-		isnew = true;
+		version = 1;
 	else if (id[0] === 'B' || id[0] === 'b') {
-		isnew = true;
+		version = 1;
 		id = +id.substring(id.length - DIRECTORYLENGTH);
-	} else if (id.indexOf('#') === -1)
+	} else if (self.ext === '.file')
+		version = 2;
+	else if (id.indexOf('#') === -1)
 		id = self.db.name + '#' + id;
 
-	if (isnew) {
+	if (version === 1) {
 		var path = self.$directory(id);
 		filename = Path.join(path, id.toString().padLeft(DIRECTORYLENGTH, '0') + self.ext);
-	} else
+	} else if (version === 2)
+		filename = Path.join(self.makedirectory(id), id + self.ext);
+	else
 		filename = framework_utils.join(self.directory, id + self.ext);
 
 	Fs.unlink(filename, function(err) {
 
-		if (isnew && !err) {
+		if (version === 1 && !err) {
 
 			self.meta.count--;
 
@@ -5097,6 +5248,9 @@ Binary.prototype.remove = function(id, callback) {
 				self.$save();
 			}
 		}
+
+		if (!err && version === 2)
+			Fs.appendFile(self.logger, JSON.stringify({ type: 'remove', id: id, date: new Date() }) + '\n', NOOP);
 
 		callback && callback(null, err ? false : true);
 	});
@@ -5149,6 +5303,7 @@ Binary.prototype.clear = function(callback) {
 		}
 
 		pending.push(target + '/meta.json');
+		pending.push(self.logger);
 		self.$events.clear && self.emit('clear', pending.length);
 		pending.length && F.unlink(pending, F.errorhandling);
 		directories.wait(function(path, next) {
@@ -5175,13 +5330,16 @@ Binary.prototype.browse = function(directory, callback) {
 			if (files && files.length) {
 				for (var i = 0; i < files.length; i++) {
 					var p = files[i];
-					if (p[3] === '-' && p[7] === '-')
+					if (p[3] === '-' && p[7] === '-' || p.length === 4)
 						dirs.push(p);
 				}
 			}
 			directory(null, dirs);
 		});
 	} else {
+
+		var version = directory.length === 4 ? 2 : 1;
+
 		Fs.readdir(Path.join(self.directory, directory), function(err, response) {
 
 			var target = framework_utils.join(self.directory, directory);
@@ -5189,6 +5347,7 @@ Binary.prototype.browse = function(directory, callback) {
 			var le = self.ext.length;
 
 			response.wait(function(item, next) {
+
 				Fs.stat(target + '/' + item, function(err, stat) {
 
 					if (err)
@@ -5200,8 +5359,12 @@ Binary.prototype.browse = function(directory, callback) {
 						var json = Buffer.from(buffer, 'binary').toString('utf8').replace(REGCLEAN, '').parseJSON(true);
 						if (json) {
 							var id = item.substring(0, item.length - le);
-							json.id = 'B' + json.date + 'T' + id;
-							json.index = +id.substring(id.length - DIRECTORYLENGTH);
+							if (version === 2) {
+								json.id = id;
+							} else {
+								json.id = 'B' + json.date + 'T' + id;
+								json.index = +id.substring(id.length - DIRECTORYLENGTH);
+							}
 							json.ctime = stat.ctime;
 							json.mtime = stat.mtime;
 							output.push(json);

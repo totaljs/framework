@@ -4,6 +4,7 @@
 - added: `options.reconnectserver` to `WEBSOCKETCLIENT`
 - added: `req.snapshot(callback(err, request_body))`
 - added: a new command `CMD('reload_preferences')`
+- added: a new FILESTORAGE mechanism based on `UID`
 
 - updated: `SchemaOptions` method `$.response([index/operation_name])`, e.g. `$.response('workflow.NAME')`
 - updated: snapshot `startscript.js.json` contains tabs instead of spaces
