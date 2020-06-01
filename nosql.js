@@ -4792,7 +4792,8 @@ Binary.prototype.saveforce = function(id, name, filename, filenameto, callback, 
 		reader.push(null);
 	}
 
-	var meta = { name: name, size: 0, width: 0, height: 0, ext: U.getExtension(name), custom: custom };
+	var ext = U.getExtension(name);
+	var meta = { name: name, size: 0, width: 0, height: 0, ext: ext, custom: custom, type: U.getContentType(ext) };
 	var tmp;
 
 	writer.write(header, 'binary');
