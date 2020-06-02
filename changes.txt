@@ -6,6 +6,7 @@
 - added: a new command `CMD('reload_preferences')`
 - added: a new FILESTORAGE mechanism based on `UID`
 - added: `sql` extension to `U.getContentType()`
+- added: `F.stats.performance.usage` which contains percentual usage of the thread
 
 - updated: `SchemaOptions` method `$.response([index/operation_name])`, e.g. `$.response('workflow.NAME')`
 - updated: snapshot `startscript.js.json` contains tabs instead of spaces

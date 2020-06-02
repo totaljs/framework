@@ -1233,7 +1233,8 @@ function Framework() {
 
 		performance: {
 			request: 0,
-			file: 0
+			file: 0,
+			usage: 0
 		},
 
 		other: {
@@ -11407,6 +11408,7 @@ FrameworkCacheProto.recycle = function() {
 	CONF.allow_cache_snapshot && this.save();
 	F.service(this.count);
 	CONF.allow_stats_snapshot && F.snapshotstats && F.snapshotstats();
+	measure_usage();
 	return this;
 };
 
@@ -19612,8 +19614,9 @@ function runsnapshot() {
 		var memory = process.memoryUsage();
 		stats.date = NOW;
 		stats.memory = (memory.heapUsed / 1024 / 1024).floor(2);
-		stats.rm = F.stats.performance.request.floor(2); // request min
-		stats.fm = F.stats.performance.file.floor(2);    // files min
+		stats.rm = F.stats.performance.request.floor(2);  // request min
+		stats.fm = F.stats.performance.file.floor(2);     // files min
+		stats.usage = F.stats.performance.usage.floor(2); // app usage in %
 		stats.requests = F.stats.request.request;
 		stats.pending = F.stats.request.pending;
 		stats.errors = F.errors.length;
@@ -19627,6 +19630,20 @@ function runsnapshot() {
 		} else
 			Fs.writeFile(process.mainModule.filename + '.json', JSON.stringify(main, null, '  '), NOOP);
 	};
+}
+
+var lastusagedate;
+
+function measure_usage_response() {
+	var diff = (Date.now() - lastusagedate) - 50;
+	if (diff > 50)
+		diff = 50;
+	F.stats.performance.usage = diff <= 2 ? 0 : (diff / 50) * 100;
+}
+
+function measure_usage() {
+	lastusagedate = Date.now();
+	setTimeout(measure_usage_response, 50);
 }
 
 // Because of controller prototypes
