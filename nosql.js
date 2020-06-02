@@ -4783,14 +4783,8 @@ Binary.prototype.saveforce = function(id, name, filename, filenameto, callback, 
 	var isbuffer = filename instanceof Buffer;
 	var self = this;
 	var header = Buffer.alloc(BINARY_HEADER_LENGTH, ' ');
-	var reader = isbuffer ? new Readable() : filename instanceof Readable ? filename : Fs.createReadStream(filename);
+	var reader = isbuffer ? null : filename instanceof Readable ? filename : Fs.createReadStream(filename);
 	var writer = Fs.createWriteStream(filenameto);
-
-	if (isbuffer) {
-		reader._read = NOOP; // _read is required but you can noop it
-		reader.push(filename);
-		reader.push(null);
-	}
 
 	var ext = U.getExtension(name);
 	var meta = { name: name, size: 0, width: 0, height: 0, ext: ext, custom: custom, type: U.getContentType(ext) };
@@ -4818,7 +4812,10 @@ Binary.prototype.saveforce = function(id, name, filename, filenameto, callback, 
 		});
 	}
 
-	reader.pipe(writer);
+	if (isbuffer)
+		writer.end(filename);
+	else
+		reader.pipe(writer);
 
 	CLEANUP(writer, function() {
 
