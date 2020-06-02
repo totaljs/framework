@@ -186,6 +186,7 @@ var CONTENTTYPES = {
 	tif: 'image/tiff',
 	tiff: 'image/tiff',
 	txt: 'text/plain',
+	sql: 'text/plain',
 	wav: 'audio/x-wav',
 	webm: 'video/webm',
 	webp: 'image/webp',
