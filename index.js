@@ -626,7 +626,7 @@ global.$ACTION = function(schema, model, callback, controller) {
 			if (o.meta[item] === undefined) {
 				if (o.meta['workflow#' + item] !== undefined)
 					tmp.type = '$workflow';
-				else if (o.meta['workflow#' + item] !== undefined)
+				else if (o.meta['transform#' + item] !== undefined)
 					tmp.type = '$transform';
 				else if (o.meta['operation#' + item] !== undefined)
 					tmp.type = '$operation';
@@ -19361,7 +19361,7 @@ function controller_json_workflow(id) {
 			} else if (schema.meta['workflow#' + w.id] !== undefined) {
 				w.type = '$workflow';
 				w.name = w.id;
-			} else if (schema.meta['workflow#' + w.id] !== undefined) {
+			} else if (schema.meta['transform#' + w.id] !== undefined) {
 				w.type = '$transform';
 				w.name = w.id;
 			} else if (schema.meta['operation#' + w.id] !== undefined) {
@@ -19426,7 +19426,7 @@ function controller_json_workflow_multiple(id) {
 					op.push({ name: '$' + id });
 				} else if (schema.meta['workflow#' + id] !== undefined) {
 					op.push({ name: '$workflow', id: id });
-				} else if (schema.meta['workflow#' + id] !== undefined) {
+				} else if (schema.meta['transform#' + id] !== undefined) {
 					op.push({ name: '$transform', id: id });
 				} else if (schema.meta['operation#' + id] !== undefined) {
 					op.push({ name: '$operation', id: id });
