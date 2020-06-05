@@ -18,6 +18,7 @@
 - fixed: `DatabaseBuilder.search()` method
 - fixed: `Error` in `CLONE()` method
 - fixed: `schema.inherit()` by adding `schema.middleware()` and `schema.verify()`
+- fixed: parsing messages in WebSocket
 
 ======= 3.4.3
 
