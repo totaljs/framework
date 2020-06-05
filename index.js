@@ -16050,9 +16050,11 @@ WebSocketClientProto.$ondata = function(data) {
 				current.final && self.parseInflate();
 			} else {
 				tmp = self.$readbody();
-				if (current.body)
-					current.body += tmp;
-				else
+				if (current.body) {
+					CONCAT[0] = current.body;
+					CONCAT[1] = tmp;
+					current.body = Buffer.concat(CONCAT);
+				} else
 					current.body = tmp;
 				current.final && self.$decode();
 			}
@@ -16199,35 +16201,17 @@ WebSocketClientProto.$parse = function() {
 };
 
 WebSocketClientProto.$readbody = function() {
-
 	var current = this.current;
 	var length = current.data.length;
-	var buf;
-
-	if (current.type === 1) {
-
-		buf = Buffer.alloc(length);
-		for (var i = 0; i < length; i++)  {
-			if (current.isMask)
-				buf[i] = current.data[i] ^ current.mask[i % 4];
-			else
-				buf[i] = current.data[i];
-		}
-
-		return buf.toString('utf8');
-
-	} else {
-
-		buf = Buffer.alloc(length);
-		for (var i = 0; i < length; i++) {
-			// does frame contain mask?
-			if (current.isMask)
-				buf[i] = current.data[i] ^ current.mask[i % 4];
-			else
-				buf[i] = current.data[i];
-		}
-		return buf;
+	var buf = Buffer.alloc(length);
+	for (var i = 0; i < length; i++) {
+		// does frame contain mask?
+		if (current.isMask)
+			buf[i] = current.data[i] ^ current.mask[i % 4];
+		else
+			buf[i] = current.data[i];
 	}
+	return buf;
 };
 
 WebSocketClientProto.$decode = function() {
@@ -16242,10 +16226,12 @@ WebSocketClientProto.$decode = function() {
 	switch (this.type) {
 
 		case 1: // BINARY
-			this.container.emit('message', this, new Uint8Array(data).buffer);
+			// this.container.emit('message', this, new Uint8Array(data).buffer);
+			this.container.emit('message', this, data);
 			break;
 
 		case 3: // JSON
+
 			if (data instanceof Buffer)
 				data = data.toString(ENCODING);
 

@@ -443,8 +443,11 @@ WebSocketClientProto.$decode = function() {
 
 	switch (this.options.type) {
 
-		case 'binary': // BINARY
-			this.emit('message', new Uint8Array(data).buffer);
+		case 'buffer': // Buffer
+		case 'binary': // Binary
+			// this.emit('message', Buffer.from(new Uint8Array(data)));
+			// break;
+			this.emit('message', data);
 			break;
 
 		case 'json': // JSON
@@ -545,8 +548,48 @@ WebSocketClientProto.send = function(message, raw, replacer) {
 
 	var t = this.options.type;
 
-	if (t !== 'binary') {
-		var data = t === 'json' ? (raw ? message : JSON.stringify(message, replacer)) : (message || '').toString();
+	if (t !== 'binary' && t !== 'buffer') {
+		var data = t === 'json' ? (raw ? message : JSON.stringify(message, replacer)) : ((message == null ? '' : message) + '');
+
+		if (this.options.encodedecode && data)
+			data = encodeURIComponent(data);
+
+		if (this.deflate) {
+			this.deflatepending.push(Buffer.from(data, ENCODING));
+			this.sendDeflate();
+		} else
+			this.socket.write(U.getWebSocketFrame(0, data, 0x01));
+
+	} else if (message) {
+		if (this.deflate) {
+			this.deflatepending.push(message);
+			this.sendDeflate();
+		} else
+			this.socket.write(U.getWebSocketFrame(0, message, 0x02));
+	}
+
+	return this;
+};
+
+/**
+ * Sends a message
+ * @param {String/Object} message
+ * @param {Boolean} raw The message won't be converted e.g. to JSON.
+ * @return {WebSocketClient}
+ */
+WebSocketClientProto.sendcustom = function(type, message) {
+
+	if (this.isClosed)
+		return this;
+
+	if (type === 'binary' || type === 'buffer') {
+		if (this.deflate) {
+			this.deflatepending.push(message);
+			this.sendDeflate();
+		} else
+			this.socket.write(U.getWebSocketFrame(0, message, 0x02));
+	} else {
+		var data = (message == null ? '' : message) + '';
 		if (this.options.encodedecode && data)
 			data = encodeURIComponent(data);
 		if (this.deflate) {
@@ -554,12 +597,6 @@ WebSocketClientProto.send = function(message, raw, replacer) {
 			this.sendDeflate();
 		} else
 			this.socket.write(U.getWebSocketFrame(0, data, 0x01));
-	} else if (message) {
-		if (this.deflate) {
-			this.deflatepending.push(Buffer.from(message));
-			this.sendDeflate();
-		} else
-			this.socket.write(U.getWebSocketFrame(0, new Int8Array(message), 0x02));
 	}
 
 	return this;
