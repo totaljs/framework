@@ -13513,7 +13513,7 @@ ControllerProto.$import = function() {
 			continue;
 		}
 
-		var k = 'import#' + filename;
+		var k = 'import#' + (self.themeName || '') + filename;
 
 		if (F.temporary.other[k]) {
 			builder += F.temporary.other[k];
