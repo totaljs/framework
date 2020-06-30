@@ -20,6 +20,7 @@
 - fixed: `schema.inherit()` by adding `schema.middleware()` and `schema.verify()`
 - fixed: parsing messages in WebSocket
 - fixed: a problem in some commands pre-render in the view compiler
+- fixed: parsing of query strings
 
 ======= 3.4.3
 

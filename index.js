@@ -69,6 +69,7 @@ const REG_ENCODINGCLEANER = /[;\s]charset=utf-8/g;
 const REG_SKIPERROR = /epipe|invalid\sdistance/i;
 const REG_OLDCONF = /-/g;
 const REG_UTF8 = /[^\x20-\x7E]+/;
+const REG_ENCODEDSPACE = /\+/g;
 const FLAGS_INSTALL = ['get'];
 const FLAGS_DOWNLOAD = ['get', 'dnscache'];
 const QUERYPARSEROPTIONS = { maxKeys: 33 };
@@ -6104,19 +6105,91 @@ F.$onParseJSON = function(req) {
 	req.body = F.onParseJSON.$def ? JSON.parse(req.buffer_data) : F.onParseJSON(req.buffer_data);
 };
 
-function parseQueryArguments(val) {
-	var arr = val.split('&', QUERYPARSEROPTIONS.maxKeys);
+function parseQueryArgumentsDecode(val) {
+	try {
+		return decodeURIComponent(val);
+	} catch (e) {
+		return '';
+	}
+}
+
+function parseQueryArguments(str) {
+
 	var obj = {};
-	for (var i = 0; i < arr.length; i++) {
-		var item = arr[i];
-		var index = item.indexOf('=');
-		// Max. length of key
-		if (index > 0 && index < CONF.default_request_maxkey) {
-			var k = item.substring(0, index);
-			if (obj[k] == null)
-				obj[k] = decodeURIComponent(item.substring(index + 1));
+	var key = '';
+	var val = '';
+	var is = false;
+	var decodev = false;
+	var decodek = false;
+	var count = 0;
+	var pos = 0;
+
+	str += '&';
+
+	for (var i = 0; i < str.length; i++) {
+		var n = str.charCodeAt(i);
+
+		if (n === 38) {
+
+			if (key) {
+				if (pos < i)
+					val += str.substring(pos, i);
+
+				if (decodev)
+					val = parseQueryArgumentsDecode(val);
+
+				if (decodek)
+					key = parseQueryArgumentsDecode(key);
+
+				obj[key] = val;
+			}
+
+			if (key)
+				key = '';
+
+			if (val)
+				val = '';
+
+			pos = i + 1;
+			is = false;
+			decodek = false;
+			decodev = false;
+
+			if ((count++) >= QUERYPARSEROPTIONS.maxKeys)
+				break;
+
+		} else {
+
+			if (n === 61) {
+				if ((i - pos) > CONF.default_request_maxkey)
+					key = '';
+				else {
+					if (pos < i)
+						key += str.substring(pos, i);
+					pos = i + 1;
+					is = true;
+				}
+				continue;
+			}
+
+			if (n === 43) {
+
+				if (is)
+					val += str.substring(pos, i) + ' ';
+				else
+					key += str.substring(pos, i) + ' ';
+
+				pos = i + 1;
+			} else if (is) {
+				if (n === 37 && !decodev)
+					decodev = true;
+			} else {
+				if (n === 37 && !decodev)
+					decodek = true;
+			}
 		}
 	}
+
 	return obj;
 }
 
