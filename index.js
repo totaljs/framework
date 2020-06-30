@@ -6173,19 +6173,23 @@ function parseQueryArguments(str) {
 			}
 
 			if (n === 43) {
-
 				if (is)
 					val += str.substring(pos, i) + ' ';
 				else
 					key += str.substring(pos, i) + ' ';
-
 				pos = i + 1;
-			} else if (is) {
-				if (n === 37 && !decodev)
-					decodev = true;
-			} else {
-				if (n === 37 && !decodev)
-					decodek = true;
+			}
+
+			if (n === 37) {
+				if (str.charCodeAt(i + 1) === 48 && str.charCodeAt(i + 2) === 48)
+					pos = i + 3;
+				else if (is) {
+					if (!decodev)
+						decodev = true;
+				} else {
+					if (!decodev)
+						decodek = true;
+				}
 			}
 		}
 	}
