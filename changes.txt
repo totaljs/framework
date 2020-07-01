@@ -1,7 +1,7 @@
 ======= 3.4.4
 
 - added: schema options `$.successful(function(response) {})`
-- added: `options.reconnectserver` to `WEBSOCKETCLIENT`
+- added: `options.reconnectserver {Boolean}`  to `WEBSOCKETCLIENT`
 - added: `req.snapshot(callback(err, request_body))`
 - added: a new command `CMD('reload_preferences')`
 - added: a new FILESTORAGE mechanism based on `UID`
