@@ -13,6 +13,7 @@
 - updated: `DatabaseBuilder.rule(rule, [param])`, supports string declaration of filter function
 - updated: `URL` validation
 
+- fixed: cleaning of NoSQL embedded databases
 - fixed: `String.parseCSV()`, now supports multiline strings
 - fixed: a bug when closing of websocket
 - fixed: `DatabaseBuilder.search()` method
