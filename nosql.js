@@ -2030,7 +2030,7 @@ DP.$clean = function() {
 	fs.divider = NEWLINE;
 
 	fs.ondocuments = function() {
-		writer.write(fs.docs + NEWLINE);
+		fs.docs && writer.write(fs.docs + NEWLINE);
 	};
 
 	fs.$callback = function() {
@@ -6618,7 +6618,7 @@ TP.$clean = function() {
 		fs.buffercount = self.buffercount;
 
 	fs.ondocuments = function() {
-		writer.write(fs.docs + NEWLINE);
+		fs.docs && writer.write(fs.docs + NEWLINE);
 	};
 
 	fs.$callback = function() {
