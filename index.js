@@ -1074,7 +1074,7 @@ function Framework() {
 		allow_workers_silent: false,
 		allow_sessions_unused: '-20 minutes',
 		allow_reqlimit: 0,
-		allow_persistent_images: true,
+		allow_persistent_images: false,
 
 		nosql_worker: false,
 		nosql_inmemory: null, // String Array
