@@ -1,3 +1,7 @@
+======= 3.4.5
+
+- fixed: parsing of longer WebSocket messages
+
 ======= 3.4.4
 
 - added: schema options `$.successful(function(response) {})`

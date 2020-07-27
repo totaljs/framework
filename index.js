@@ -21,7 +21,7 @@
 
 /**
  * @module Framework
- * @version 3.4.4
+ * @version 3.4.5
  */
 
 'use strict';
@@ -956,8 +956,8 @@ function Framework() {
 	var self = this;
 
 	self.$id = null; // F.id ==> property
-	self.version = 3440;
-	self.version_header = '3.4.4';
+	self.version = 3450;
+	self.version_header = '3.4.5';
 	self.version_node = process.version.toString();
 	self.syshash = (__dirname + '-' + Os.hostname() + '-' + Os.platform() + '-' + Os.arch() + '-' + Os.release() + '-' + Os.tmpdir() + JSON.stringify(process.versions)).md5();
 	self.pref = global.PREF;
@@ -16208,7 +16208,10 @@ WebSocketClientProto.$parse = function() {
 	var current = self.current;
 
 	// check end message
-	if (!current.buffer || current.buffer.length <= 2 || ((current.buffer[0] & 0x80) >> 7) !== 1)
+
+	// Long messages doesn't work because 0x80 still returns 0
+	// if (!current.buffer || current.buffer.length <= 2 || ((current.buffer[0] & 0x80) >> 7) !== 1)
+	if (!current.buffer || current.buffer.length <= 2)
 		return;
 
 	// webSocked - Opcode
