@@ -1,6 +1,9 @@
-======= 3.4.5
+======= 3.4.6
 
 - fixed: parsing of longer WebSocket messages
+
+======= 3.4.5
+
 - fixed: a problem with persistent images
 
 ======= 3.4.4
