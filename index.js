@@ -21,7 +21,7 @@
 
 /**
  * @module Framework
- * @version 3.4.5
+ * @version 3.4.6
  */
 
 'use strict';
@@ -956,8 +956,8 @@ function Framework() {
 	var self = this;
 
 	self.$id = null; // F.id ==> property
-	self.version = 3450;
-	self.version_header = '3.4.5';
+	self.version = 3460;
+	self.version_header = '3.4.6';
 	self.version_node = process.version.toString();
 	self.syshash = (__dirname + '-' + Os.hostname() + '-' + Os.platform() + '-' + Os.arch() + '-' + Os.release() + '-' + Os.tmpdir() + JSON.stringify(process.versions)).md5();
 	self.pref = global.PREF;
@@ -1074,7 +1074,7 @@ function Framework() {
 		allow_workers_silent: false,
 		allow_sessions_unused: '-20 minutes',
 		allow_reqlimit: 0,
-		allow_persistent_images: true,
+		allow_persistent_images: false,
 
 		nosql_worker: false,
 		nosql_inmemory: null, // String Array
@@ -18319,17 +18319,13 @@ function extend_response(PROTO) {
 			return $image_nocache(res);
 
 		var req = this.req;
-		!req.$key && (req.$key = createTemporaryKey(req));
+		if (!req.$key)
+			req.$key = createTemporaryKey(req);
 
-		if (F.temporary.notfound[req.$key]) {
-			DEBUG && (F.temporary.notfound[req.$key] = undefined);
-			if (!F.routes.filesfallback || !F.routes.filesfallback(req, res))
-				res.throw404();
-			return res;
-		}
+		var key = req.$key;
 
-		var key = req.$key || createTemporaryKey(req);
 		if (F.temporary.notfound[key]) {
+			DEBUG && (F.temporary.notfound[key] = undefined);
 			if (!F.routes.filesfallback || !F.routes.filesfallback(req, res))
 				res.throw404();
 			return res;
@@ -18345,7 +18341,7 @@ function extend_response(PROTO) {
 			return res;
 		}
 
-		if (F.temporary.processing[req.$key]) {
+		if (F.temporary.processing[key]) {
 			if (req.processing > CONF.default_request_timeout) {
 				res.throw408();
 			} else {
@@ -18357,7 +18353,7 @@ function extend_response(PROTO) {
 
 		var plus = F.id ? 'i-' + F.id + '_' : '';
 
-		options.name = F.path.temp(plus + key);
+		options.name = F.path.temp((options.persistent ? 'timg_' : '') + plus + key);
 
 		if (options.persistent) {
 			fsFileExists(options.name, $image_persistent, res);
@@ -18766,6 +18762,7 @@ function $image_filename(exists, size, isFile, stats, res) {
 	}
 
 	F.stats.response.image++;
+
 	image.save(options.name, function(err) {
 
 		delete F.temporary.processing[req.$key];
@@ -18897,7 +18894,7 @@ function fsStreamRead(filename, options, callback, res) {
  * @return {String}
  */
 function createTemporaryKey(req) {
-	return (req.uri ? req.uri.pathname : req).replace(REG_TEMPORARY, '-').substring(1);
+	return (req.uri ? req.uri.pathname : req).replace(REG_TEMPORARY, '_').substring(1);
 }
 
 F.createTemporaryKey = createTemporaryKey;
