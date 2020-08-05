@@ -937,7 +937,7 @@ Mailer.prototype.$send = function(obj, options, autosend) {
 				obj.messagecallback && obj.messagecallback(err, obj.instance);
 				obj.messagecallback = null;
 
-				if (obj.message) {
+				if (obj.messages.length) {
 					// a problem
 					buffer = [];
 					obj.count--;
