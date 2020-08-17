@@ -455,7 +455,7 @@ exports.routeCompare = function(url, route, isSystem, isWildcard) {
 	var length = url.length;
 	var lengthRoute = route.length;
 
-	if (lengthRoute !== length && !isWildcard)
+	if ((lengthRoute !== length && !isWildcard) || (isWildcard && length < lengthRoute))
 		return false;
 
 	if (isWildcard && lengthRoute === 1 && route[0] === '/')

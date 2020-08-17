@@ -1,10 +1,8 @@
-======= 3.4.7
-
-- fixed mail error handling
-
 ======= 3.4.6
 
+- fixed: routing evaluation
 - fixed: parsing of longer WebSocket messages
+- fixed: mail error handling
 
 ======= 3.4.5
 
