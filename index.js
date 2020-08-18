@@ -3939,7 +3939,7 @@ F.$filelocalize = function(req, res, nominify) {
 			var mtime = stats.mtime.toUTCString();
 
 			if (CONF.allow_compile_html && CONF.allow_compile && !nominify && (req.extension === 'html' || req.extension === 'htm'))
-				content = framework_internal.compile_html(content, filename);
+				content = framework_internal.compile_html(content, filename, true);
 
 			if (RELEASE) {
 				F.temporary.other[key] = Buffer.from(content);

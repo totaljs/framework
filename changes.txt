@@ -1,5 +1,6 @@
 ======= 3.4.6
 
+- fixed: applying of `default_root` in static files
 - fixed: routing evaluation
 - fixed: parsing of longer WebSocket messages
 - fixed: mail error handling
