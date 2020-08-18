@@ -95,7 +95,7 @@ const PROXYOPTIONSHTTP = {};
 const REG_ROOT = /@\{#\}(\/)?/g;
 const REG_NOREMAP = /@\{noremap\}(\n)?/g;
 const REG_REMAP = /href=".*?"|src=".*?"/gi;
-const REG_AJAX = /('|")+(!)?(GET|POST|PUT|DELETE|PATH)\s(\(.*?\)\s)?\//g;
+const REG_AJAX = /('|")+(!)?(GET|POST|PUT|DELETE|PATCH)\s(\(.*?\)\s)?\//g;
 const REG_URLEXT = /(https|http|wss|ws|file):\/\/|\/\/[a-z0-9]|[a-z]:/i;
 const REG_TEXTAPPLICATION = /text|application/i;
 const REG_TIME = /am|pm/i;
