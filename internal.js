@@ -1306,8 +1306,8 @@ exports.compile_javascript = function(source, filename, nomarkup) {
 	return minify_javascript(source);
 };
 
-exports.compile_html = function(source, filename) {
-	return compressCSS(compressJS(compressHTML(source, true), 0, filename), 0, filename);
+exports.compile_html = function(source, filename, nomarkup) {
+	return compressCSS(compressJS(compressHTML(source, true), 0, filename, nomarkup), 0, filename, nomarkup);
 };
 
 // *********************************************************************************
