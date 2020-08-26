@@ -4347,7 +4347,7 @@ SP.isUID = function() {
 	if (str.length < 12)
 		return false;
 
-	var is = F.validators.uid.test(str);
+	var is = DEF.validators.uid.test(str);
 	if (is) {
 
 		var sum;
@@ -4355,11 +4355,11 @@ SP.isUID = function() {
 		var end;
 		var e = str[str.length - 1];
 
-		if (e === 'b' || e === 'c') {
+		if (e === 'b' || e === 'c' || e === 'd') {
 			sum = str[str.length - 2];
 			beg = +str[str.length - 3];
 			end = str.length - 5;
-			var tmp = e === 'c' ? (+str.substring(beg, end)) : parseInt(str.substring(beg, end), 16);
+			var tmp = e === 'c' || e === 'd' ? (+str.substring(beg, end)) : parseInt(str.substring(beg, end), 16);
 			return sum === (tmp % 2 ? '1' : '0');
 		} else if (e === 'a') {
 			sum = str[str.length - 2];
@@ -4387,9 +4387,9 @@ SP.parseUID = function() {
 	var hash;
 	var e = self[self.length - 1];
 
-	if (e === 'b' || e === 'c') {
+	if (e === 'b' || e === 'c' || e === 'd') {
 		end = +self[self.length - 3];
-		var ticks = ((e === 'b' ? (+self.substring(0, end)) : parseInt(self.substring(0, end), 16)) * 1000 * 60) + 1580511600000; // 1.1.2020
+		var ticks = ((e === 'b' ? (+self.substring(0, end)) : parseInt(self.substring(0, end), e=== 'd' ? 36 : 16)) * 1000 * 60) + 1580511600000; // 1.1.2020
 		obj.date = new Date(ticks);
 		beg = end;
 		end = self.length - 5;
