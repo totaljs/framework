@@ -638,6 +638,8 @@ Mailer.prototype.$writemessage = function(obj, buffer) {
 	var msg = obj.messages.shift();
 	var message = [];
 
+	F.stats.performance.mail++;
+
 	if (global.F)
 		global.F.stats.other.mail++;
 

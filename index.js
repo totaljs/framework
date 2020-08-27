@@ -1234,8 +1234,11 @@ function Framework() {
 
 		performance: {
 			request: 0,
+			message: 0,
 			file: 0,
-			usage: 0
+			online: 0,
+			usage: 0,
+			mail: 0
 		},
 
 		other: {
@@ -8009,18 +8012,15 @@ F.service = function(count) {
 	var keys;
 	var releasegc = false;
 
-	if (F.temporary.service.request)
-		F.temporary.service.request++;
-	else
-		F.temporary.service.request = 1;
+	F.temporary.service.request = F.stats.performance.request;
+	F.temporary.service.file = F.stats.performance.file;
+	F.temporary.service.message = F.stats.performance.message;
+	F.temporary.service.mail = F.stats.performance.mail;
 
-	if (F.temporary.service.file)
-		F.temporary.service.file++;
-	else
-		F.temporary.service.file = 1;
-
-	F.stats.performance.request = F.stats.request.request ? F.stats.request.request / F.temporary.service.request : 0;
-	F.stats.performance.file = F.stats.request.file ? F.stats.request.file / F.temporary.service.file : 0;
+	F.stats.performance.request = 0;
+	F.stats.performance.file = 0;
+	F.stats.performance.message = 0;
+	F.stats.performance.mail = 0;
 
 	// clears short cahce temporary cache
 	F.temporary.shortcache = {};
@@ -16075,6 +16075,7 @@ WebSocketClientProto.upgrade = function(container) {
 	F.$events['websocket-begin'] && EMIT('websocket-begin', self.container, self);
 	F.$events.websocket_begin && EMIT('websocket_begin', self.container, self);
 	self.container.$events.open && self.container.emit('open', self);
+	F.stats.performance.online++;
 	return self;
 };
 
@@ -16088,6 +16089,7 @@ function websocket_onerror(e) {
 }
 
 function websocket_close() {
+	F.stats.performance.online--;
 	this.destroy && this.destroy();
 	this.$websocket.$onclose();
 }
@@ -16295,6 +16297,7 @@ WebSocketClientProto.$readbody = function() {
 
 WebSocketClientProto.$decode = function() {
 	var data = this.current.body;
+	F.stats.performance.message++;
 
 	// Buffer
 	if (this.typebuffer) {
@@ -19676,13 +19679,17 @@ function runsnapshot() {
 		var memory = process.memoryUsage();
 		stats.date = NOW;
 		stats.memory = (memory.heapUsed / 1024 / 1024).floor(2);
-		stats.rm = F.stats.performance.request.floor(2);  // request min
-		stats.fm = F.stats.performance.file.floor(2);     // files min
+		stats.rm = F.temporary.service.request || 0;      // request min
+		stats.fm = F.temporary.service.file || 0;         // files min
+		stats.wm = F.temporary.service.message || 0;      // websocket messages min
+		stats.mm = F.temporary.service.mail || 0;         // mail min
 		stats.usage = F.stats.performance.usage.floor(2); // app usage in %
 		stats.requests = F.stats.request.request;
 		stats.pending = F.stats.request.pending;
 		stats.errors = F.errors.length;
+		stats.online = F.stats.performance.online;
 		stats.timeouts = F.stats.response.error408;
+		stats.uptime = F.cache.count;
 
 		if (F.isCluster) {
 			if (process.connected) {
