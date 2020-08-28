@@ -967,7 +967,8 @@ function Framework() {
 		trace: true,
 		trace_console: true,
 
-		nowarnings: process.argv.indexOf('restart') !== -1,
+		//nowarnings: process.argv.indexOf('restart') !== -1,
+		nowarnings: true,
 		name: 'Total.js',
 		version: '1.0.0',
 		author: '',
@@ -1174,6 +1175,7 @@ function Framework() {
 	self.convertors2 = null;
 	self.tests = [];
 	self.errors = [];
+	self.timeouts = [];
 	self.problems = [];
 	self.changes = [];
 	self.server = null;
@@ -1227,15 +1229,18 @@ function Framework() {
 		owners: {},
 		ready: {},
 		ddos: {},
-		service: { redirect: 0, request: 0, file: 0 }
+		service: { redirect: 0, request: 0, file: 0, usage: 0 }
 	};
 
 	self.stats = {
 
 		performance: {
 			request: 0,
+			message: 0,
 			file: 0,
-			usage: 0
+			online: 0,
+			usage: 0,
+			mail: 0
 		},
 
 		other: {
@@ -3985,6 +3990,7 @@ F.error = function(err, name, uri) {
 		return F;
 
 	if (F.errors) {
+		F.stats.error++;
 		NOW = new Date();
 		F.errors.push({ error: err.stack, name: name, url: uri ? typeof(uri) === 'string' ? uri : Parser.format(uri) : undefined, date: NOW });
 		F.errors.length > 50 && F.errors.shift();
@@ -8009,18 +8015,15 @@ F.service = function(count) {
 	var keys;
 	var releasegc = false;
 
-	if (F.temporary.service.request)
-		F.temporary.service.request++;
-	else
-		F.temporary.service.request = 1;
+	F.temporary.service.request = F.stats.performance.request;
+	F.temporary.service.file = F.stats.performance.file;
+	F.temporary.service.message = F.stats.performance.message;
+	F.temporary.service.mail = F.stats.performance.mail;
 
-	if (F.temporary.service.file)
-		F.temporary.service.file++;
-	else
-		F.temporary.service.file = 1;
-
-	F.stats.performance.request = F.stats.request.request ? F.stats.request.request / F.temporary.service.request : 0;
-	F.stats.performance.file = F.stats.request.file ? F.stats.request.file / F.temporary.service.file : 0;
+	F.stats.performance.request = 0;
+	F.stats.performance.file = 0;
+	F.stats.performance.message = 0;
+	F.stats.performance.mail = 0;
 
 	// clears short cahce temporary cache
 	F.temporary.shortcache = {};
@@ -11483,7 +11486,8 @@ FrameworkCacheProto.recycle = function() {
 	persistent && this.savepersistent();
 	CONF.allow_cache_snapshot && this.save();
 	F.service(this.count);
-	CONF.allow_stats_snapshot && F.snapshotstats && F.snapshotstats();
+	CONF.allow_stats_snapshot && F.snapshotstats();
+	F.temporary.service.usage = 0;
 	measure_usage();
 	return this;
 };
@@ -16075,6 +16079,7 @@ WebSocketClientProto.upgrade = function(container) {
 	F.$events['websocket-begin'] && EMIT('websocket-begin', self.container, self);
 	F.$events.websocket_begin && EMIT('websocket_begin', self.container, self);
 	self.container.$events.open && self.container.emit('open', self);
+	F.stats.performance.online++;
 	return self;
 };
 
@@ -16088,6 +16093,7 @@ function websocket_onerror(e) {
 }
 
 function websocket_close() {
+	F.stats.performance.online--;
 	this.destroy && this.destroy();
 	this.$websocket.$onclose();
 }
@@ -16294,7 +16300,9 @@ WebSocketClientProto.$readbody = function() {
 };
 
 WebSocketClientProto.$decode = function() {
+
 	var data = this.current.body;
+	F.stats.performance.message++;
 
 	// Buffer
 	if (this.typebuffer) {
@@ -16925,6 +16933,12 @@ function extend_request(PROTO) {
 			var key = 'error' + status;
 			F.stats.response[key]++;
 			status !== 500 && F.$events.error && EMIT('error', this, res, this.$total_exception);
+
+			if (status === 408) {
+				if (F.timeouts.push((NOW = new Date()).toJSON() + ' ' + this.url) > 5)
+					F.timeouts.shift();
+			}
+
 			F.$events[key] && EMIT(key, this, res, this.$total_exception);
 		}
 
@@ -19659,6 +19673,8 @@ function runsnapshot() {
 
 	var main = {};
 	var stats = {};
+	var lastwarning = 0;
+
 	stats.id = F.id;
 	stats.version = {};
 	stats.version.node = process.version;
@@ -19667,6 +19683,7 @@ function runsnapshot() {
 	stats.pid = process.pid;
 	stats.thread = global.THREAD;
 	stats.mode = DEBUG ? 'debug' : 'release';
+	stats.overload = 0;
 
 	main.pid = process.pid;
 	main.stats = [stats];
@@ -19676,13 +19693,28 @@ function runsnapshot() {
 		var memory = process.memoryUsage();
 		stats.date = NOW;
 		stats.memory = (memory.heapUsed / 1024 / 1024).floor(2);
-		stats.rm = F.stats.performance.request.floor(2);  // request min
-		stats.fm = F.stats.performance.file.floor(2);     // files min
+		stats.rm = F.temporary.service.request || 0;      // request min
+		stats.fm = F.temporary.service.file || 0;         // files min
+		stats.wm = F.temporary.service.message || 0;      // websocket messages min
+		stats.mm = F.temporary.service.mail || 0;         // mail min
 		stats.usage = F.stats.performance.usage.floor(2); // app usage in %
 		stats.requests = F.stats.request.request;
 		stats.pending = F.stats.request.pending;
-		stats.errors = F.errors.length;
+		stats.errors = F.stats.error;
 		stats.timeouts = F.stats.response.error408;
+		stats.uptime = F.cache.count;
+		stats.online = F.stats.performance.online;
+
+		var err = F.errors[F.errors.length - 1];
+		var timeout = F.timeouts[F.timeouts.length - 1];
+
+		stats.lasterror = err ? (err.date.toJSON() + ' ' + err.error) : undefined;
+		stats.lasttimeout = timeout;
+
+		if ((stats.usage > 80 || stats.memory > 600 || stats.pending > 1000) && lastwarning !== NOW.getHours()) {
+			lastwarning = NOW.getHours();
+			stats.overload++;
+		}
 
 		if (F.isCluster) {
 			if (process.connected) {
@@ -19700,7 +19732,10 @@ function measure_usage_response() {
 	var diff = (Date.now() - lastusagedate) - 50;
 	if (diff > 50)
 		diff = 50;
-	F.stats.performance.usage = diff <= 2 ? 0 : (diff / 50) * 100;
+	var val = diff <= 2 ? 0 : (diff / 50) * 100;
+	if (F.temporary.service.usage < val)
+		F.temporary.service.usage = val;
+	F.stats.performance.usage = val;
 }
 
 function measure_usage() {

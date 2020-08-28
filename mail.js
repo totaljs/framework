@@ -567,6 +567,9 @@ Mailer.prototype.send = function(smtp, options, messages, callback) {
 	obj.id = id;
 	obj.try = messages === undefined;
 	obj.messages = obj.try ? EMPTYARRAY : messages instanceof Array ? messages : [messages];
+
+	F.stats.performance.mail += obj.messages.length;
+
 	obj.callback = callback;
 	obj.closed = false;
 	obj.message = null;
