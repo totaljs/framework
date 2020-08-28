@@ -2,6 +2,8 @@
 
 - added: a support for Total.js v4 UIDs
 
+- updated: file stats
+
 - fixed: applying of `default_root` in static files
 - fixed: routing evaluation
 - fixed: parsing of longer WebSocket messages
