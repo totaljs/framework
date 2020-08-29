@@ -734,6 +734,7 @@ HFP.readSync = function() {
 
 HFP.read = function(callback) {
 	var self = this;
+	F.stats.performance.open++;
 	Fs.readFile(self.path, callback);
 	return self;
 };

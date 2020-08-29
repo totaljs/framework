@@ -464,6 +464,7 @@ Mailer.prototype.$writeattachment = function(obj) {
 			}
 		});
 	} else {
+		F.stats.performance.open++;
 		stream = Fs.createReadStream(attachment.filename, ATTACHMENT_SO);
 		writeattachemnt_stream(attachment, obj, stream);
 	}

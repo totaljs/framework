@@ -3526,8 +3526,10 @@ CP.read = function(options, callback, reader) {
 			});
 			return self;
 		}
-	} else
+	} else {
+		F.stats.performance.open++;
 		reader = Fs.createReadStream(self.db.filenameCounter);
+	}
 
 	// 0 == options.subtype: summarize
 	// 1 == options.subtype: full
@@ -3710,8 +3712,10 @@ CP.stats = CP.stats_sum = function(top, year, month, day, type, callback, reader
 			});
 			return self;
 		}
-	} else
+	} else {
+		F.stats.performance.open++;
 		reader = Fs.createReadStream(self.db.filenameCounter);
+	}
 
 	if (typeof(day) == 'function') {
 		callback = day;
@@ -4117,6 +4121,7 @@ CP.reset = function(countertype, counterid, date, callback) {
 	}
 
 	self.db.readonly && self.db.throwReadonly();
+	F.stats.performance.open++;
 
 	var filename = self.db.filenameCounter;
 	var reader = Fs.createReadStream(filename);
@@ -4262,6 +4267,8 @@ CP.$save = function() {
 		setTimeout(() => self.save(), 200);
 		return self;
 	}
+
+	F.stats.performance.open++;
 
 	var filename = self.db.filenameCounter;
 	var reader = Fs.createReadStream(filename);
@@ -4540,6 +4547,7 @@ Binary.prototype.insert = function(name, buffer, custom, callback) {
 		name = name.substring(0, 80) + name.substring(name.lastIndexOf('.'));
 
 	if (!buffer) {
+		F.stats.performance.open++;
 		var reader = Fs.createReadStream(name);
 		CLEANUP(reader);
 		return self.insertstream(null, framework_utils.getName(name), type, reader, callback, custom);
@@ -4780,6 +4788,7 @@ Binary.prototype.saveforce = function(id, name, filename, filenameto, callback, 
 	if (!callback)
 		callback = NOOP;
 
+	F.stats.performance.open++;
 	var isbuffer = filename instanceof Buffer;
 	var self = this;
 	var header = Buffer.alloc(BINARY_HEADER_LENGTH, ' ');
@@ -4889,6 +4898,7 @@ Binary.prototype.update = function(id, name, buffer, custom, callback) {
 			buffer = undefined;
 		}
 
+		F.stats.performance.open++;
 		var reader = Fs.createReadStream(name);
 		CLEANUP(reader);
 		return self.insertstream(id, framework_utils.getName(name), type, reader, callback, custom);
@@ -5000,6 +5010,7 @@ Binary.prototype.readmeta = function(id, callback, count) {
 	else
 		filename = framework_utils.join(self.directory, id + self.ext);
 
+	F.stats.performance.open++;
 	var stream = Fs.createReadStream(filename, BINARYREADMETA);
 	stream.on('error', err => callback(err));
 	stream.on('data', function(buffer) {
@@ -5047,7 +5058,6 @@ Binary.prototype.res = function(res, options, checkcustom, notmodified) {
 		filename = framework_utils.join(self.directory, id + self.ext);
 
 	F.stats.performance.open++;
-
 	var stream = Fs.createReadStream(filename, BINARYREADMETA);
 
 	stream.on('error', function() {
