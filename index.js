@@ -8379,6 +8379,7 @@ F.$requestcontinue = function(req, res, headers) {
 	// Validates if this request is the file (static file)
 	if (req.isStaticFile) {
 
+		F.stats.performance.file++;
 		tmp = F.temporary.shortcache[req.uri.pathname];
 
 		if (!tmp) {
@@ -8408,6 +8409,8 @@ F.$requestcontinue = function(req, res, headers) {
 
 		return;
 	}
+
+	F.stats.performance.request++;
 
 	if (!PERF[req.method]) {
 		req.$total_status(404);
