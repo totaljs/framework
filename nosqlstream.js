@@ -452,6 +452,7 @@ NoSQLStreamProto.openreadreverse = function() {
 NoSQLStreamProto.openupdate = function() {
 	var self = this;
 	self.type = 'r+';
+	F.stats.performance.open++;
 	Fs.open(self.filename, self.type, function(err, fd) {
 
 		if (err) {
@@ -515,6 +516,7 @@ NoSQLStreamProto.openstream = function(stream) {
 
 NoSQLStreamProto.open = function() {
 	var self = this;
+	F.stats.performance.open++;
 	Fs.open(self.filename, self.type, function(err, fd) {
 
 		if (err) {

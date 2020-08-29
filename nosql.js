@@ -5046,6 +5046,8 @@ Binary.prototype.res = function(res, options, checkcustom, notmodified) {
 	else
 		filename = framework_utils.join(self.directory, id + self.ext);
 
+	F.stats.performance.open++;
+
 	var stream = Fs.createReadStream(filename, BINARYREADMETA);
 
 	stream.on('error', function() {
@@ -5150,6 +5152,7 @@ Binary.prototype.read = function(id, callback, count) {
 	else
 		filename = framework_utils.join(self.directory, id + self.ext);
 
+	F.stats.performance.open++;
 	var stream = Fs.createReadStream(filename, BINARYREADMETA);
 	stream.on('error', err => callback(err));
 	stream.on('data', function(buffer) {
@@ -5196,6 +5199,7 @@ Binary.prototype.readbase64 = function(id, callback, count) {
 	else
 		filename = framework_utils.join(self.directory, id + self.ext);
 
+	F.stats.performance.open++;
 	var stream = Fs.createReadStream(filename, BINARYREADMETA);
 	stream.on('error', err => callback(err));
 	stream.on('data', function(buffer) {
@@ -5359,6 +5363,7 @@ Binary.prototype.browse = function(directory, callback) {
 					if (err)
 						return next();
 
+					F.stats.performance.open++;
 					var stream = Fs.createReadStream(target + '/' + item, BINARYREADMETA);
 
 					stream.on('data', function(buffer) {
@@ -5416,8 +5421,8 @@ Binary.prototype.all = function(callback) {
 				if (err)
 					return next();
 
+				F.stats.performance.open++;
 				var stream = Fs.createReadStream(target + '/' + item, BINARYREADMETA);
-
 				stream.on('data', function(buffer) {
 					var json = Buffer.from(buffer, 'binary').toString('utf8').replace(REGCLEAN, '').parseJSON(true);
 					if (json) {
