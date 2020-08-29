@@ -1030,7 +1030,7 @@ function Framework() {
 		default_request_maxlength: 10,
 		default_websocket_maxlength: 2,
 		default_websocket_encodedecode: true,
-		default_maxopenfiles: 0,
+		default_maxopenfiles: 100,
 		default_timezone: 'utc',
 		default_root: '',
 		default_response_maxage: '11111111',
@@ -1238,6 +1238,7 @@ function Framework() {
 			request: 0,
 			message: 0,
 			file: 0,
+			open: 0,
 			online: 0,
 			usage: 0,
 			mail: 0
@@ -6936,6 +6937,7 @@ function compile_gzip(arr, callback) {
 	var filename = F.path.temp('file' + arr[0].hash().toString().replace('-', '0') + '.gz');
 	arr.push(filename);
 
+	F.stats.performance.open++;
 	var reader = Fs.createReadStream(arr[0]);
 	var writer = Fs.createWriteStream(filename);
 
@@ -8019,11 +8021,13 @@ F.service = function(count) {
 	F.temporary.service.file = F.stats.performance.file;
 	F.temporary.service.message = F.stats.performance.message;
 	F.temporary.service.mail = F.stats.performance.mail;
+	F.temporary.service.open = F.stats.performance.open;
 
 	F.stats.performance.request = 0;
 	F.stats.performance.file = 0;
 	F.stats.performance.message = 0;
 	F.stats.performance.mail = 0;
+	F.stats.performance.open = 0;
 
 	// clears short cahce temporary cache
 	F.temporary.shortcache = {};
@@ -18860,6 +18864,7 @@ process.on('uncaughtException', function(e) {
 
 function fsFileRead(filename, callback, a, b, c) {
 	U.queue('F.files', CONF.default_maxopenfiles, function(next) {
+		F.stats.performance.open++;
 		Fs.readFile(filename, function(err, result) {
 			next();
 			callback(err, result, a, b, c);
@@ -18869,6 +18874,7 @@ function fsFileRead(filename, callback, a, b, c) {
 
 function fsFileExists(filename, callback, a, b, c) {
 	U.queue('F.files', CONF.default_maxopenfiles, function(next) {
+		F.stats.performance.open++;
 		Fs.lstat(filename, function(err, stats) {
 			next();
 			callback(!err && stats.isFile(), stats ? stats.size : 0, stats ? stats.isFile() : false, stats, a, b, c);
@@ -18898,6 +18904,7 @@ function fsStreamRead(filename, options, callback, res) {
 		opt = HEADERS.fsStreamRead;
 
 	U.queue('F.files', CONF.default_maxopenfiles, function(next) {
+		F.stats.performance.open++;
 		var stream = Fs.createReadStream(filename, opt);
 		stream.on('error', NOOP);
 		callback(stream, next, res);
@@ -19700,7 +19707,8 @@ function runsnapshot() {
 		stats.fm = F.temporary.service.file || 0;         // files min
 		stats.wm = F.temporary.service.message || 0;      // websocket messages min
 		stats.mm = F.temporary.service.mail || 0;         // mail min
-		stats.usage = F.stats.performance.usage.floor(2); // app usage in %
+		stats.om = F.temporary.service.open || 0;         // mail min
+		stats.usage = F.temporary.service.usage.floor(2); // app usage in %
 		stats.requests = F.stats.request.request;
 		stats.pending = F.stats.request.pending;
 		stats.errors = F.stats.error;
