@@ -18302,7 +18302,6 @@ function extend_response(PROTO) {
 			headers = U.extend_headers(headers, options.headers);
 
 		F.stats.response.stream++;
-		F.reqstats(false, req.isStaticFile);
 
 		if (req.method === 'HEAD') {
 			res.writeHead(options.code || 200, headers);
@@ -18809,8 +18808,8 @@ function $image_filename(exists, size, isFile, stats, res) {
 }
 
 function response_end(res) {
-	F.reqstats(false, res.req.isStaticFile);
 
+	F.reqstats(false, res.req.isStaticFile);
 	res.success = true;
 
 	if (CONF.allow_reqlimit && F.temporary.ddos[res.req.ip])
