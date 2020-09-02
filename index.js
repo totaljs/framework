@@ -19740,10 +19740,10 @@ function runsnapshot() {
 var lastusagedate;
 
 function measure_usage_response() {
-	var diff = (Date.now() - lastusagedate) - 50;
+	var diff = (Date.now() - lastusagedate) - 60;
 	if (diff > 50)
 		diff = 50;
-	var val = diff <= 2 ? 0 : (diff / 50) * 100;
+	var val = diff < 0 ? 0 : (diff / 50) * 100;
 	if (F.temporary.service.usage < val)
 		F.temporary.service.usage = val;
 	F.stats.performance.usage = val;

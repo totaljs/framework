@@ -3,6 +3,7 @@
 - added: a support for Total.js v4 UIDs
 
 - updated: file stats
+- updated: calculating of `usage`
 
 - fixed: applying of `default_root` in static files
 - fixed: routing evaluation
