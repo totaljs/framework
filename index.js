@@ -1234,6 +1234,8 @@ function Framework() {
 
 	self.stats = {
 
+		error: 0,
+
 		performance: {
 			request: 0,
 			message: 0,
