@@ -441,6 +441,9 @@ WebSocketClientProto.$readbody = function() {
 WebSocketClientProto.$decode = function() {
 	var data = this.current.body;
 
+	if (global.F)
+		global.F.stats.performance.message++;
+
 	switch (this.options.type) {
 
 		case 'buffer': // Buffer
