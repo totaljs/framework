@@ -94,6 +94,7 @@ WebSocketClientProto.connect = function(url, protocol, origin) {
 
 	self.req = (isSecure ? Https : Http).get(options);
 	self.req.$main = self;
+	F.stats.performance.online++;
 
 	self.req.on('error', function(e) {
 		self.$events.error && self.emit('error', e);
@@ -162,6 +163,7 @@ function websocket_close() {
 	var ws = this.$websocket;
 	ws.closed = true;
 	ws.$onclose();
+	F.stats.performance.online--;
 	ws.options.reconnect && setTimeout(function(ws) {
 		ws.isClosed = false;
 		ws._isClosed = false;
