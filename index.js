@@ -1239,6 +1239,7 @@ function Framework() {
 		performance: {
 			request: 0,
 			message: 0,
+			external: 0,
 			file: 0,
 			open: 0,
 			dbrm: 0,
@@ -8028,7 +8029,9 @@ F.service = function(count) {
 	F.temporary.service.open = F.stats.performance.open;
 	F.temporary.service.dbrm = F.stats.performance.dbrm;
 	F.temporary.service.dbwm = F.stats.performance.dbwm;
+	F.temporary.service.external = F.stats.performance.external;
 
+	F.stats.performance.external = 0;
 	F.stats.performance.dbrm = 0;
 	F.stats.performance.dbwm = 0;
 	F.stats.performance.request = 0;
@@ -8348,6 +8351,8 @@ function makeproxy(proxy, req, res) {
 		else
 			request = http.request(uri, makeproxycallback);
 	}
+
+	F.stats.performance.external++;
 
 	request.on('error', makeproxyerror);
 	request.$res = res;
@@ -19715,6 +19720,7 @@ function runsnapshot() {
 		stats.wm = F.temporary.service.message || 0;      // websocket messages min
 		stats.mm = F.temporary.service.mail || 0;         // mail min
 		stats.om = F.temporary.service.open || 0;         // mail min
+		stats.em = F.temporary.service.external || 0;     // external requests min
 		stats.dbrm = F.temporary.service.dbrm || 0;       // DB read min
 		stats.dbwm = F.temporary.service.dbwm || 0;       // DB write min
 		stats.usage = F.temporary.service.usage.floor(2); // app usage in %

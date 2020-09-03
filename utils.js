@@ -554,6 +554,9 @@ global.REQUEST = exports.request = function(url, flags, data, callback, cookies,
 	if (callback === NOOP)
 		callback = null;
 
+	if (global.F)
+		global.F.stats.performance.external++;
+
 	var options = { length: 0, timeout: timeout || CONF.default_restbuilder_timeout, evt: new EventEmitter2(), encoding: typeof(encoding) !== 'string' ? ENCODING : encoding, callback: callback, post: false, redirect: 0 };
 	var method;
 	var type = 0;
@@ -1380,6 +1383,9 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 	if (options.keepalive && !options.proxy && uri.protocol !== 'https:')
 		uri.agent = KeepAlive;
 
+	if (global.F)
+		global.F.stats.performance.external++;
+
 	if (proxy)
 		download_call(uri, options);
 	else if (options.resolve)
@@ -1609,6 +1615,9 @@ exports.send = function(name, stream, url, callback, cookies, headers, method, t
 	h['Cache-Control'] = 'max-age=0';
 	h['Content-Type'] = 'multipart/form-data; boundary=' + BOUNDARY;
 
+	if (global.F)
+		global.F.stats.performance.external++;
+
 	var e = new EventEmitter2();
 	var uri = Url.parse(url);
 	var options = { protocol: uri.protocol, auth: uri.auth, method: method || 'POST', hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };
@@ -1700,6 +1709,9 @@ exports.upload = function(files, url, callback, cookies, headers, method, timeou
 			builder += (builder ? '; ' : '') + m + '=' + cookies[m];
 		builder && (h['Cookie'] = builder);
 	}
+
+	if (global.F)
+		global.F.stats.performance.external++;
 
 	h['Cache-Control'] = 'max-age=0';
 	h['Content-Type'] = 'multipart/form-data; boundary=' + BOUNDARY;
