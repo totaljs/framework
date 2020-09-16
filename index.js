@@ -3998,7 +3998,7 @@ F.error = function(err, name, uri) {
 	if (F.errors) {
 		F.stats.error++;
 		NOW = new Date();
-		F.errors.push({ error: err.stack, name: name, url: uri ? typeof(uri) === 'string' ? uri : Parser.format(uri) : undefined, date: NOW });
+		F.errors.push({ error: err.stack ? err.stack : err, name: name, url: uri ? typeof(uri) === 'string' ? uri : Parser.format(uri) : undefined, date: NOW });
 		F.errors.length > 50 && F.errors.shift();
 	}
 
