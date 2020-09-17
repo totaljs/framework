@@ -8308,6 +8308,7 @@ F.listener = function(req, res) {
 	else if (F.onLocale)
 		req.$language = F.onLocale(req, res, req.isStaticFile);
 
+	req.on('aborted', onrequesterror);
 	F.reqstats(true, true);
 
 	if (F._length_request_middleware)
@@ -8315,6 +8316,13 @@ F.listener = function(req, res) {
 	else
 		F.$requestcontinue(req, res, headers);
 };
+
+function onrequesterror() {
+	F.reqstats(false);
+	this.success = true;
+	if (this.res)
+		this.res.$aborted = true;
+}
 
 function requestcontinue_middleware(req, res)  {
 	if (req.$total_middleware)
