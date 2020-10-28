@@ -9965,6 +9965,9 @@ F.$configure_versions = function(arr, clean) {
 		var key = str.substring(0, index).trim();
 		var filename = str.substring(index + len).trim();
 
+		if (CONF.default_root)
+			key = U.join(CONF.default_root, key);
+
 		if (filename === 'auto') {
 
 			if (ismap)
@@ -9976,7 +9979,9 @@ F.$configure_versions = function(arr, clean) {
 				ON('ready', function() {
 					F.consoledebug('"versions" is getting checksum of ' + key);
 					makehash(key, function(hash) {
+
 						F.consoledebug('"versions" is getting checksum of ' + key + ' (done)');
+
 						if (hash) {
 							var index = key.lastIndexOf('.');
 							filename = key.substring(0, index) + '-' + hash + key.substring(index);
@@ -10626,15 +10631,18 @@ F.$public = function(name, directory, theme) {
 			filename = filename.substring(1);
 	}
 
-	return F.temporary.other[key] = framework_internal.preparePath(F.$version(filename, true));
+	return F.temporary.other[key] = F.$version(framework_internal.preparePath(filename), true);
 };
 
 F.$version = function(name, def) {
 	var tmp;
+
 	if (F.versions)
 		tmp = F.versions[name] || name;
+
 	if (F.onVersion)
 		tmp = F.onVersion(name) || name;
+
 	return tmp === 'auto' && def ? name : (tmp || name);
 };
 

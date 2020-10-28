@@ -9,6 +9,7 @@
 - fixed: routing evaluation
 - fixed: parsing of longer WebSocket messages
 - fixed: mail error handling
+- fixed: `versions` with `default_root`
 
 ======= 3.4.5
 
