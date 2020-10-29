@@ -3103,7 +3103,7 @@ global.MERGE = F.merge = function(url) {
 	if (url[0] === '#')
 		url = sitemapurl(url.substring(1));
 
-	url = F.$version(url);
+	url = F.$version(framework_internal.preparePath(url));
 
 	if (url === 'auto') {
 		// auto-generating
@@ -3113,8 +3113,6 @@ global.MERGE = F.merge = function(url) {
 		}, 500, arg);
 		return F;
 	}
-
-	url = framework_internal.preparePath(url);
 
 	var arr = [];
 
