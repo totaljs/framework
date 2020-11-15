@@ -1958,15 +1958,16 @@ function view_parse(content, minify, filename, controller) {
 							tmp = tmp.replace(/(\s)?'(meta|head)'(\s|,)?/g, '').replace(/(,,|,\)|\s{2,})/g, '');
 							if (isMeta || isHead) {
 								var tmpimp = '';
-								if (!isMeta)
+								if (isMeta)
 									tmpimp += (isMeta ? '\'meta\'' : '');
-								if (!isHead)
+								if (isHead)
 									tmpimp += (tmpimp ? ',' : '') + (isHead ? '\'head\'' : '');
 								if (tmpimp)
 									builder += '+self.$import(' + tmpimp + ')';
 							}
 						}
-						can = true;
+						if (tmp !== 'self.$import()')
+							can = true;
 						break;
 					}
 				}
