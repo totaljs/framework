@@ -8294,6 +8294,7 @@ F.listener = function(req, res) {
 	}
 
 	req.path = framework_internal.routeSplit(req.uri.pathname);
+
 	req.processing = 0;
 	req.isAuthorized = true;
 	req.xhr = headers['x-requested-with'] === 'XMLHttpRequest';
@@ -12524,7 +12525,6 @@ ControllerProto.transfer = function(url, flags) {
 		selected = route;
 		break;
 	}
-
 
 	if (!selected)
 		return false;
@@ -17048,7 +17048,7 @@ function extend_request(PROTO) {
 			if (controller.isCanceled)
 				return;
 
-			if (this.$total_route.isCACHE && !F.temporary.other[this.uri.pathname])
+			if (!controller.isTransfer && this.$total_route.isCACHE && !F.temporary.other[this.uri.pathname])
 				F.temporary.other[this.uri.pathname] = this.path;
 
 			if (this.$total_route.isGENERATOR)
