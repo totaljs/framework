@@ -3941,7 +3941,7 @@ F.$filelocalize = function(req, res, nominify) {
 			return;
 		}
 
-		content = framework_internal.markup(F.translator(req.$language, framework_internal.modificators(content.toString(ENCODING), filename, 'static')));
+		content = framework_internal.markup(F.translator(req.$language, framework_internal.modificators(content.toString(ENCODING), filename, 'static')), filename);
 
 		Fs.lstat(filename, function(err, stats) {
 

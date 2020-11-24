@@ -1267,7 +1267,7 @@ exports.compile_css = function(value, filename, nomarkup) {
 
 	// Internal markup
 	if (!nomarkup)
-		value = markup(value);
+		value = markup(value, filename);
 
 	if (global.F) {
 		value = modificators(value, filename, 'style');
@@ -1296,7 +1296,7 @@ exports.compile_javascript = function(source, filename, nomarkup) {
 
 	// Internal markup
 	if (!nomarkup)
-		source = markup(source);
+		source = markup(source, filename);
 
 	if (global.F) {
 		source = modificators(source, filename, 'script');
@@ -3388,7 +3388,7 @@ function existsSync(filename) {
 	}
 }
 
-function markup(body) {
+function markup(body, filename) {
 	body = body.ROOT();
 	var command = view_find_command(body, 0, true);
 	if (!command)
@@ -3435,7 +3435,7 @@ function markup(body) {
 			try {
 				r.push({ cmd: command.phrase, value: eval('(' + cmd + ')') });
 			} catch (e) {
-				console.log('A markup compilation error -->', cmd, e, '"' + body.trim().max(0, 150) + '"');
+				console.log('A markup compilation error -->', cmd, e, '"' + body.trim().max(0, 150) + '"', filename);
 			}
 		}
 
