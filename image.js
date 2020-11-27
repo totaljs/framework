@@ -38,6 +38,7 @@ const SPAWN_OPT = { shell: true };
 const D = require('os').platform().substring(0, 3).toLowerCase() === 'win' ? '"' : '\'';
 const CMD_CONVERT = { gm: 'gm', im: 'convert', magick: 'magick' };
 const CMD_CONVERT2 = { gm: 'gm convert', im: 'convert', magick: 'magick' };
+const SUPPORTEDIMAGES = { jpg: 1, png: 1, gif: 1, apng: 1, jpeg: 1, heif: 1, heic: 1, webp: 1, ico: 1 };
 
 var CACHE = {};
 var middlewares = {};
@@ -322,7 +323,7 @@ ImageProto.stream = function(type, writer) {
 
 	!self.builder.length && self.minify();
 
-	if (!type)
+	if (!type || !SUPPORTEDIMAGES[type])
 		type = self.outputType;
 
 	F.stats.performance.open++;
