@@ -459,22 +459,17 @@ function runwatching() {
 			Fs.writeFileSync(pid, process.pid + '');
 
 			setInterval(function() {
-				Fs.exists(pid, function(e) {
-
-					if (e)
-						return;
-
-					Fs.unlink(pid, noop);
-
-					if (app !== null) {
-						isSkip = true;
-						process.kill(app.pid);
+				Fs.stat(pid, function(err) {
+					if (err) {
+						Fs.unlink(pid, noop);
+						if (app !== null) {
+							isSkip = true;
+							process.kill(app.pid);
+						}
+						process.exit(0);
 					}
-
-					process.exit(0);
 				});
-
-			}, 3000);
+			}, 4000);
 		}
 
 		restart();
