@@ -16127,7 +16127,6 @@ function websocket_onerror(e) {
 }
 
 function websocket_close() {
-	F.stats.performance.online--;
 	this.destroy && this.destroy();
 	this.$websocket.$onclose();
 }
@@ -16430,9 +16429,11 @@ WebSocketClientProto.$onerror = function(err) {
 };
 
 WebSocketClientProto.$onclose = function() {
+
 	if (this._isClosed)
 		return;
 
+	F.stats.performance.online--;
 	this.isClosed = true;
 	this._isClosed = true;
 
