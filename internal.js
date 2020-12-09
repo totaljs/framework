@@ -1966,8 +1966,10 @@ function view_parse(content, minify, filename, controller) {
 									builder += '+self.$import(' + tmpimp + ')';
 							}
 						}
+
 						if (tmp !== 'self.$import()')
 							can = true;
+
 						break;
 					}
 				}
@@ -1975,6 +1977,10 @@ function view_parse(content, minify, filename, controller) {
 
 			if (can && !counter) {
 				try {
+
+					if (tmp.lastIndexOf(')') === -1)
+						tmp += ')';
+
 					var r = (new Function('self', 'config', 'return ' + tmp))(controller, CONF).replace(REG_7, '\\\\').replace(REG_8, '\\\'');
 					if (r) {
 						txtindex = $VIEWCACHE.indexOf(r);
