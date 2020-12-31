@@ -6621,6 +6621,10 @@ exports.set = function(obj, path, value) {
 	var v = arr[arr.length - 1];
 	var ispush = v.lastIndexOf('[]') !== -1;
 	var a = builder.join(';') + ';var v=typeof(a)===\'function\'?a(U.get(b)):a;w' + (v[0] === '[' ? '' : '.') + (ispush ? v.replace(REGREPLACEARR, '.push(v)') : (v + '=v')) + ';return v';
+
+	if ((/__proto__|constructor|prototype/).test(a))
+		throw new Error('Prototype pollution');
+
 	var fn = new Function('w', 'a', 'b', a);
 	F.temporary.other[cachekey] = fn;
 	fn(obj, value, path);
