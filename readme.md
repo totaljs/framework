@@ -7,6 +7,8 @@ Node.js framework
 
 __Total.js framework__ is a framework for Node.js platfrom written in `pure` JavaScript similar to PHP's Laravel or Python's Django or ASP.NET MVC. It can be used as web, desktop, service or IoT application.
 
+< [Total.js 4 is here!](github.com/totaljs/framework4)
+
 ```bash
 $ npm install -g total.js
 ```
@@ -96,7 +98,7 @@ Please support the framework on social networks.
 
 ## Contact
 
-- (c) 2012-2020 by Peter Širka - <petersirka@gmail.com>
+- (c) 2012-2021 by Peter Širka - <petersirka@gmail.com>
 - contact form <https://www.totaljs.com/contact/>
 - <info@totaljs.com>
 
