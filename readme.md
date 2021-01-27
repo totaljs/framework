@@ -1,5 +1,3 @@
-![Total.js logo](https://www.totaljs.com/img/logo-totaljs.png)
-
 [![Professional Support](https://www.totaljs.com/img/badge-support.svg)](https://www.totaljs.com/support/) [![Chat with contributors](https://www.totaljs.com/img/badge-chat.svg)](https://messenger.totaljs.com) [![NPM version][npm-version-image]][npm-url] [![NPM quality][npm-quality]](http://packagequality.com/#?package=total.js) [![NPM downloads][npm-downloads-image]][npm-url] [![MIT License][license-image]][license-url] [![Build Status][travis-image]][travis-url] [![Gitter chat](https://badges.gitter.im/totaljs/framework.png)](https://messenger.totaljs.com)
 
 Node.js framework
@@ -12,8 +10,6 @@ __IMPORTANT__: [New version __Total.js 4__](github.com/totaljs/framework4)
 ```bash
 $ npm install -g total.js
 ```
-
-[![Support](https://www.totaljs.com/img/button-support.png?v=3)](https://www.totaljs.com/support/)
 
 - [Total.js Code editor](http://www.totaljs.com/code/)
 - [Total.js CMS](http://www.totaljs.com/cms/)
