@@ -34,7 +34,6 @@ const Fs = require('fs');
 const REGEXP_SVG = /(width="\d+")+|(height="\d+")+/g;
 const REGEXP_PATH = /\//g;
 const REGEXP_ESCAPE = /'/g;
-const REGEXP_CHECK = /["|;|'|`|\\]/;
 const SPAWN_OPT = { shell: true };
 const D = require('os').platform().substring(0, 3).toLowerCase() === 'win' ? '"' : '\'';
 const CMD_CONVERT = { gm: 'gm', im: 'convert', magick: 'magick' };
@@ -288,11 +287,7 @@ ImageProto.pipe = function(stream, type, options) {
 
 	!self.builder.length && self.minify();
 
-	if (type) {
-		// check invalid characters
-		if (REGEXP_CHECK.test(type))
-			type = self.outputType;
-	} else
+	if (!type || !SUPPORTEDIMAGES[type])
 		type = self.outputType;
 
 	F.stats.performance.open++;
@@ -330,13 +325,7 @@ ImageProto.stream = function(type, writer) {
 
 	!self.builder.length && self.minify();
 
-	if (type) {
-		// check invalid characters
-		if (REGEXP_CHECK.test(type))
-			type = self.outputType;
-		else if (!SUPPORTEDIMAGES[type])
-			type = self.outputType;
-	} else
+	if (!type || !SUPPORTEDIMAGES[type])
 		type = self.outputType;
 
 	F.stats.performance.open++;
