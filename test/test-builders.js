@@ -400,11 +400,10 @@ function test_Schema() {
 		obj.phone = '+4210000';
 		obj.uid = U.GUID(10);
 		obj.url = 'totaljs.com';
-		obj.zip = 'A349393';
+		obj.zip = '349393';
 		obj.base64 = 'adlajkd';
 
 		res = schema.make(obj);
-		assert.ok(res.zip ? false : true, 'SchemaBuilder: Zip must be empty');
 		assert.ok(res.phone ? false : true, 'SchemaBuilder: Phone must be empty');
 		assert.ok(res.url ? false : true, 'SchemaBuilder: URL must be empty');
 		assert.ok(res.uid ? false : true, 'SchemaBuilder: UID must be empty');
