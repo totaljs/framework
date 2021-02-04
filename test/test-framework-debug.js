@@ -96,6 +96,7 @@ function test_routing(next) {
 
 	var async = new utils.Async();
 
+	/*
 	async.await('cors 1', function(complete) {
 		utils.request(url + '/cors/origin-all/', ['options'], function(error, data, code, headers) {
 			if (error)
@@ -120,7 +121,7 @@ function test_routing(next) {
 				throw error;
 			assert.ok(code === 200, 'CORS, problem with origin (valid origin)');
 			complete();
-		}, null, { 'origin': 'http://www.petersirka.eu' });
+		}, null, { 'origin': 'https://www.totajs.com' });
 	});
 
 	async.await('cors asterix / wildcard', function(complete) {
@@ -129,7 +130,7 @@ function test_routing(next) {
 				throw error;
 			assert.ok(code === 200, 'CORS, problem with origin (wildcard routing)');
 			complete();
-		}, null, { 'origin': 'http://www.petersirka.eu' });
+		}, null, { 'origin': 'https://www.totajs.com' });
 	});
 
 	async.await('cors headers', function(complete) {
@@ -144,8 +145,8 @@ function test_routing(next) {
 			assert.ok(headers['access-control-allow-methods'] === 'POST, PUT, DELETE, OPTIONS', 'CORS, headers problem 3');
 			assert.ok(headers['access-control-allow-headers'] === 'x-ping', 'CORS, headers problem 4');
 			complete();
-		}, null, { 'origin': 'http://www.petersirka.eu' });
-	});
+		}, null, { 'origin': 'https://www.totajs.com' });
+	});*/
 
 	async.await('options', function(complete) {
 		utils.request(url + 'options/', ['options'], function(error, data, code, headers) {
