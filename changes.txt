@@ -1,6 +1,7 @@
 ======= 3.4.8
 
 - fixed: command injection in `Image.pipe()` and `Image.stream()`
+- fixed `DELETE` method for the schemas (now it works like `PATCH` method)
 
 ======= 3.4.7
 

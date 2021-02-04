@@ -647,14 +647,14 @@ global.$ACTION = function(schema, model, callback, controller) {
 
 		meta.multiple = meta.op.length > 1;
 		meta.schema = o;
-		meta.validate = meta.method !== 'GET' && meta.method !== 'DELETE';
+		meta.validate = meta.method !== 'GET';
 		F.temporary.other[schema] = meta;
 	}
 
 	if (meta.validate) {
 
 		var req = controller ? controller.req : null;
-		if (meta.method === 'PATCH') {
+		if (meta.method === 'PATCH' || meta.method === 'DELETE') {
 			if (!req)
 				req = {};
 			req.$patch = true;
@@ -752,7 +752,7 @@ function performschema(type, schema, model, options, callback, controller, noval
 			model.$$keys = keys;
 			model.$$controller = controller;
 			model[type](options, callback);
-			if (req && req.$patch && req.method && req.method !== 'PATCH')
+			if (req && req.$patch && req.method && (req.method !== 'PATCH' & req.method !== 'DELETE'))
 				delete req.$patch;
 		}
 	}, null, novalidate, workflow, req);
@@ -6265,7 +6265,7 @@ F.onSchema = function(req, route, callback) {
 	} else
 		schema = GETSCHEMA(route.schema[0], route.schema[1]);
 
-	if (req.method === 'PATCH')
+	if (req.method === 'PATCH' || req.method === 'DELETE')
 		req.$patch = true;
 
 	if (schema)
@@ -17105,7 +17105,7 @@ function extend_request(PROTO) {
 		var self = this;
 		self.$total_schema = false;
 
-		if (!self.$total_route.schema || self.method === 'DELETE')
+		if (!self.$total_route.schema)
 			return next(self, code);
 
 		if (!self.$total_route.schema[1]) {
