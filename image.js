@@ -286,7 +286,8 @@ ImageProto.pipe = function(stream, type, options) {
 	}
 
 	!self.builder.length && self.minify();
-	!type || !SUPPORTEDIMAGES[type] && (type = self.outputType);
+	if (!type || !SUPPORTEDIMAGES[type])
+		type = self.outputType;
 
 	F.stats.performance.open++;
 	var cmd = spawn(CMD_CONVERT[self.cmdarg], self.arg(self.filename ? wrap(self.filename) : '-', (type ? type + ':' : '') + '-'), SPAWN_OPT);
