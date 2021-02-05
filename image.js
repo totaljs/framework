@@ -287,7 +287,7 @@ ImageProto.pipe = function(stream, type, options) {
 
 	!self.builder.length && self.minify();
 
-	if (!type || !SUPPORTEDIMAGES[type])
+  if (!type || !SUPPORTEDIMAGES[type])
 		type = self.outputType;
 
 	F.stats.performance.open++;
