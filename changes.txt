@@ -2,13 +2,10 @@
 
 - fixed measuring dimension for `.gif` images
 
-======= 3.4.8
+======= 3.4.7
 
 - fixed: command injection in `Image.pipe()` and `Image.stream()`
 - fixed `DELETE` method for the schemas (now it works like `PATCH` method)
-
-======= 3.4.7
-
 - fixed: `controller.transfer()`
 
 ======= 3.4.6
