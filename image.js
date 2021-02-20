@@ -55,7 +55,7 @@ function u32(buf, o) {
 }
 
 exports.measureGIF = function(buffer) {
-	return { width: buffer[6], height: buffer[8] };
+	return { width: buffer.readInt16LE(6), height: buffer.readInt16LE(8) };
 };
 
 // MIT
