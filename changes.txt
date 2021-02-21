@@ -1,6 +1,7 @@
 ======= 3.4.9
 
 - fixed measuring dimension for `.gif` images
+- fixed potential remote code execution in `U.set()` founded by [Snyk](https://snyk.io/vuln)
 
 ======= 3.4.7
 
