@@ -21,7 +21,7 @@
 
 /**
  * @module Framework
- * @version 3.4.6
+ * @version 3.4.8
  */
 
 'use strict';
