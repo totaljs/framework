@@ -590,6 +590,9 @@ global.REQUEST = exports.request = function(url, flags, data, callback, cookies,
 			}
 
 			switch (flags[i].toLowerCase()) {
+				case 'insecure':
+					options.insecure = true;
+					break;
 				case 'utf8':
 				case 'ascii':
 				case 'base64':
@@ -728,6 +731,11 @@ global.REQUEST = exports.request = function(url, flags, data, callback, cookies,
 	uri.headers = headers;
 	options.uri = uri;
 
+	if (options.insecure) {
+		uri.rejectUnauthorized = false;
+		uri.requestCert = true;
+	}
+
 	if (options.resolve && (uri.hostname === 'localhost' || uri.hostname.charCodeAt(0) < 64))
 		options.resolve = null;
 
@@ -859,6 +867,12 @@ function request_call(uri, options) {
 		opt.headers = uri.headers;
 		opt.method = uri.method;
 		opt.headers.host = uri.host;
+
+		if (options.insecure) {
+			opt.rejectUnauthorized = false;
+			opt.requestCert = true;
+		}
+
 		if (options.proxy._auth)
 			opt.headers['Proxy-Authorization'] = options.proxy._auth;
 	} else

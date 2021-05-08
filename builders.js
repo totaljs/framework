@@ -5584,6 +5584,11 @@ RESTP.cache = function(expire) {
 	return this;
 };
 
+RESTP.insecure = function() {
+	this.$insecure = true;
+	return this;
+};
+
 RESTP.set = function(name, value) {
 	if (!this.$data)
 		this.$data = {};
@@ -5666,6 +5671,7 @@ RESTP.exec = function(callback) {
 		self.$redirect === false && flags.push('noredirect');
 		self.$proxy && flags.push('proxy ' + self.$proxy);
 		self.$keepalive && flags.push('keepalive');
+		self.$insecure && flags.push('insecure');
 
 		if (self.$files) {
 			flags.push('upload');

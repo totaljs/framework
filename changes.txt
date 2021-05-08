@@ -1,6 +1,8 @@
 ======= 3.4.9
 
 - added HTML escaping for meta tags
+- added `insecure` flag into the `U.request()` method
+- added `RESTBuilder.insecure()` method
 
 ======= 3.4.8
 
