@@ -1,3 +1,7 @@
+======= 3.4.9
+
+- added HTML escaping for meta tags
+
 ======= 3.4.8
 
 - fixed measuring dimension for `.gif` images
