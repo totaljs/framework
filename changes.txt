@@ -3,6 +3,7 @@
 - added HTML escaping for meta tags
 - added `insecure` flag into the `U.request()` method
 - added `RESTBuilder.insecure()` method
+- fixed security issue when parsing query arguments
 
 ======= 3.4.8
 

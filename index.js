@@ -6123,6 +6123,8 @@ function parseQueryArgumentsDecode(val) {
 	}
 }
 
+const QUERY_ALLOWED = { '45': 1, '95': 1, 46: 1, '91': 1, '92': 1 };
+
 function parseQueryArguments(str) {
 
 	var obj = {};
@@ -6180,6 +6182,21 @@ function parseQueryArguments(str) {
 					is = true;
 				}
 				continue;
+			}
+
+			if (!is) {
+
+				var can = false;
+
+				if (n > 47 && n < 58)
+					can = true;
+				else if ((n > 64 && n < 91) || (n > 96 && n < 123))
+					can = true;
+				else if (QUERY_ALLOWED[n])
+					can = true;
+
+				if (!can)
+					break;
 			}
 
 			if (n === 43) {
@@ -13101,7 +13118,7 @@ function querystring_encode(value, def, key) {
 		return querystring_encode(value[0], def) + (tmp ? tmp : '');
 	}
 
-	return value != null ? value instanceof Date ? encodeURIComponent(value.format()) : typeof(value) === 'string' ? encodeURIComponent(value) : value.toString() : def || '';
+	return value != null ? value instanceof Date ? encodeURIComponent(value.format()) : typeof(value) === 'string' ? encodeURIComponent(value) : (value + '') : def || '';
 }
 
 // @{href({ key1: 1, key2: 2 })}
@@ -13131,15 +13148,14 @@ ControllerProto.href = function(key, value) {
 
 			obj[key] = '\0';
 
-			var arr = Object.keys(obj);
-			for (var i = 0, length = arr.length; i < length; i++) {
-				var val = obj[arr[i]];
+			for (var k in obj) {
+				var val = obj[k];
 				if (val !== undefined) {
 					if (val instanceof Array) {
 						for (var j = 0; j < val.length; j++)
-							str += (str ? '&' : '') + arr[i] + '=' + (key === arr[i] ? '\0' : querystring_encode(val[j]));
+							str += (str ? '&' : '') + k + '=' + (key === k ? '\0' : querystring_encode(val[j]));
 					} else
-						str += (str ? '&' : '') + arr[i] + '=' + (key === arr[i] ? '\0' : querystring_encode(val));
+						str += (str ? '&' : '') + k + '=' + (key === k ? '\0' : querystring_encode(val));
 				}
 			}
 			self[cachekey] = str;
