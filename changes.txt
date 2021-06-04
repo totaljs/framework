@@ -4,6 +4,7 @@
 - added `insecure` flag into the `U.request()` method
 - added `RESTBuilder.insecure()` method
 - fixed security issue when parsing query arguments (reported by <https://github.com/fl4x>)
+- fixed security in `U.get()` and `U.set()` (reported by Agustin Gianni)
 
 ======= 3.4.8
 

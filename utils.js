@@ -6617,11 +6617,15 @@ exports.parseTheme = function(value) {
 	return value === '?' ? CONF.default_theme : value;
 };
 
+
 exports.set = function(obj, path, value) {
 	var cachekey = 'S+' + path;
 
 	if (F.temporary.other[cachekey])
 		return F.temporary.other[cachekey](obj, value);
+
+	if ((/__proto__|constructor|prototype|eval|function|\*|\+|;|\s|\(|\)|!/).test(path))
+		return value;
 
 	var arr = parsepath(path);
 	var builder = [];
@@ -6636,12 +6640,9 @@ exports.set = function(obj, path, value) {
 	var ispush = v.lastIndexOf('[]') !== -1;
 	var a = builder.join(';') + ';var v=typeof(a)===\'function\'?a(U.get(b)):a;w' + (v[0] === '[' ? '' : '.') + (ispush ? v.replace(REGREPLACEARR, '.push(v)') : (v + '=v')) + ';return v';
 
-	if ((/__proto__|constructor|prototype|eval/).test(a))
-		throw new Error('Potential vulnerability');
-
 	var fn = new Function('w', 'a', 'b', a);
 	F.temporary.other[cachekey] = fn;
-	fn(obj, value, path);
+	return fn(obj, value, path);
 };
 
 exports.get = function(obj, path) {
@@ -6650,6 +6651,9 @@ exports.get = function(obj, path) {
 
 	if (F.temporary.other[cachekey])
 		return F.temporary.other[cachekey](obj);
+
+	if ((/__proto__|constructor|prototype|eval|function|\*|\+|;|\s|\(|\)|!/).test(path))
+		return;
 
 	var arr = parsepath(path);
 	var builder = [];
