@@ -1,3 +1,7 @@
+======= 3.4.10
+
+- fixed CSS variables
+
 ======= 3.4.9
 
 - added HTML escaping for meta tags

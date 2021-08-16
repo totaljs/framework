@@ -1,4 +1,4 @@
-// Copyright 2012-2020 (c) Peter Širka <petersirka@gmail.com>
+// Copyright 2012-2021 (c) Peter Širka <petersirka@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the
@@ -21,7 +21,7 @@
 
 /**
  * @module Framework
- * @version 3.4.9
+ * @version 3.4.10
  */
 
 'use strict';
@@ -956,8 +956,8 @@ function Framework() {
 	var self = this;
 
 	self.$id = null; // F.id ==> property
-	self.version = 3490;
-	self.version_header = '3.4.9';
+	self.version = 3410;
+	self.version_header = '3.4.10';
 	self.version_node = process.version.toString();
 	self.syshash = (__dirname + '-' + Os.hostname() + '-' + Os.platform() + '-' + Os.arch() + '-' + Os.release() + '-' + Os.tmpdir() + JSON.stringify(process.versions)).md5();
 	self.pref = global.PREF;
