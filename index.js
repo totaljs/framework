@@ -11538,7 +11538,7 @@ FrameworkCacheProto.recycle = function() {
 	persistent && this.savepersistent();
 	CONF.allow_cache_snapshot && this.save();
 	F.service(this.count);
-	CONF.allow_stats_snapshot && F.snapshotstats();
+	CONF.allow_stats_snapshot && F.snapshotstats && F.snapshotstats();
 	F.temporary.service.usage = 0;
 	measure_usage();
 	return this;
