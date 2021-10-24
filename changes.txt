@@ -1,6 +1,7 @@
 ======= 3.4.11
 
 - fixed calling `F.snapshotstats()` #785
+- improved RegExp for validating URL addresses by [yetingli](https://github.com/yetingli)
 
 ======= 3.4.10
 
