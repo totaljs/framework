@@ -1,3 +1,7 @@
+======= 3.4.12
+
+- (critical) fixed WebSocket implementation for Safari +15
+
 ======= 3.4.11
 
 - fixed calling `F.snapshotstats()` #785
