@@ -21,7 +21,7 @@
 
 /**
  * @module Framework
- * @version 3.4.10
+ * @version 3.4.12
  */
 
 'use strict';
@@ -956,8 +956,8 @@ function Framework() {
 	var self = this;
 
 	self.$id = null; // F.id ==> property
-	self.version = 3410;
-	self.version_header = '3.4.10';
+	self.version = 3412;
+	self.version_header = '3.4.12';
 	self.version_node = process.version.toString();
 	self.syshash = (__dirname + '-' + Os.hostname() + '-' + Os.platform() + '-' + Os.arch() + '-' + Os.release() + '-' + Os.tmpdir() + JSON.stringify(process.versions)).md5();
 	self.pref = global.PREF;
@@ -16171,13 +16171,14 @@ WebSocketClientProto.$ondata = function(data) {
 	if (!current.final && current.type !== 0x00)
 		current.type2 = current.type;
 
+	var decompress = current.compressed && self.inflate;
 	var tmp;
 
 	switch (current.type === 0x00 ? current.type2 : current.type) {
 		case 0x01:
 
 			// text
-			if (self.inflate) {
+			if (decompress) {
 				current.final && self.parseInflate();
 			} else {
 				tmp = self.$readbody();
@@ -16195,7 +16196,7 @@ WebSocketClientProto.$ondata = function(data) {
 		case 0x02:
 
 			// binary
-			if (self.inflate) {
+			if (decompress) {
 				current.final && self.parseInflate();
 			} else {
 				tmp = self.$readbody();
@@ -16268,8 +16269,9 @@ WebSocketClientProto.$parse = function() {
 	if (!current.buffer || current.buffer.length <= 2)
 		return;
 
-	// webSocked - Opcode
+	// WebSocket - Opcode
 	current.type = current.buffer[0] & 0x0f;
+	current.compressed = (current.buffer[0] & 0x40) === 0x40;
 
 	// is final message?
 	current.final = ((current.buffer[0] & 0x80) >> 7) === 0x01;
@@ -16311,7 +16313,7 @@ WebSocketClientProto.$parse = function() {
 			current.buffer.copy(current.mask, 0, index - 4, index);
 		}
 
-		if (this.inflate) {
+		if (current.compressed && this.inflate) {
 
 			var buf = Buffer.alloc(length);
 			current.buffer.copy(buf, 0, index, mlength);

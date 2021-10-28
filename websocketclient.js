@@ -263,12 +263,13 @@ WebSocketClientProto.$ondata = function(data) {
 		current.type2 = current.type;
 
 	var tmp;
+	var decompress = current.compressed && this.inflate;
 
 	switch (current.type === 0x00 ? current.type2 : current.type) {
 		case 0x01:
 
 			// text
-			if (this.inflate) {
+			if (decompress) {
 				current.final && this.parseInflate();
 			} else {
 				tmp = this.$readbody();
@@ -283,7 +284,7 @@ WebSocketClientProto.$ondata = function(data) {
 
 		case 0x02:
 			// binary
-			if (this.inflate) {
+			if (decompress) {
 				current.final && this.parseInflate();
 			} else {
 				tmp = this.$readbody();
@@ -350,8 +351,9 @@ WebSocketClientProto.$parse = function() {
 	if (!current.buffer || current.buffer.length <= 2 || ((current.buffer[0] & 0x80) >> 7) !== 1)
 		return;
 
-	// webSocked - Opcode
+	// WebSocket - Opcode
 	current.type = current.buffer[0] & 0x0f;
+	current.compressed = (current.buffer[0] & 0x40) === 0x40;
 
 	// is final message?
 	current.final = ((current.buffer[0] & 0x80) >> 7) === 0x01;
@@ -384,7 +386,7 @@ WebSocketClientProto.$parse = function() {
 			current.buffer.copy(current.mask, 0, index - 4, index);
 		}
 
-		if (this.inflate) {
+		if (current.compressed && this.inflate) {
 
 			var buf = Buffer.alloc(length);
 			current.buffer.copy(buf, 0, index, mlength);
