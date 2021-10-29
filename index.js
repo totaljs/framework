@@ -7026,7 +7026,7 @@ F.restore = function(filename, target, callback, filter) {
 
 		index++;
 		item = data.slice(0, index - 1).toString('utf8').trim();
-		data = data.slice(index);
+		data = data.slice(index + (data[index] === 32 ? 1 : 0));
 		type = 1;
 		parser.next();
 	};

@@ -1,6 +1,7 @@
 ======= 3.4.12
 
 - (critical) fixed WebSocket implementation for Safari +15
+- (critical) fixed extracting packages/bundles
 
 ======= 3.4.11
 
