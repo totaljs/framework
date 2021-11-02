@@ -3316,7 +3316,7 @@ DP.format = function(format, resource) {
 
 	ismm && before.push('var mm = framework_utils.MONTHS[d.getMonth()];');
 	isdd && before.push('var dd = framework_utils.DAYS[d.getDay()];');
-	isww && before.push('var ww = new Date(+d);ww.setHours(0, 0, 0);ww.setDate(ww.getDate() + 4 - (ww.getDay() || 7));ww = Math.ceil((((ww - new Date(ww.getFullYear(), 0, 1)) / 8.64e7) + 1) / 7);');
+	isww && before.push('var ww = new Date(+d);ww.setHours(0,0,0,0);ww.setDate(ww.getDate()+3-(ww.getDay()+6)%7);var ww1=new Date(ww.getFullYear(),0,4);return 1+Math.round(((ww.getTime()-ww1.getTime())/86400000-3+(ww1.getDay()+6)%7)/7);');
 
 	datetimeformat[key] = new Function('d', 'resource', before.join('\n') + 'return \'' + format + '\';');
 	return datetimeformat[key](this, resource);

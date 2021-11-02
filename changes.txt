@@ -1,3 +1,7 @@
+======= 3.4.13
+
+- fixed wrong counting of week number in the `Date.format()`
+
 ======= 3.4.12
 
 - (critical) fixed WebSocket implementation for Safari +15
