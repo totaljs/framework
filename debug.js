@@ -416,7 +416,7 @@ function runwatching() {
 				// checks unexpected exit
 				if (isSkip === false) {
 					app = null;
-					process.exit();
+					process.exit(1);
 					return;
 				}
 
