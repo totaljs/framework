@@ -90,6 +90,43 @@ exports.measurePNG = function(buffer) {
 	return { width: u32(buffer, 16), height: u32(buffer, 16 + 4) };
 };
 
+exports.measureWEBP = function(buffer) {
+	var chunkHeader = buffer.toString('ascii', 12, 16);
+	buffer = buffer.slice(20, 30);
+
+	// Extended webp stream signature
+	if (chunkHeader === 'VP8X') {
+		var extendedHeader = buffer[0];
+		var validStart = (extendedHeader & 0xc0) === 0;
+		var validEnd = (extendedHeader & 0x01) === 0;
+		if (validStart && validEnd) {
+			return { width: 1 + buffer.readUIntLE(4, 3), height: 1 + buffer.readUIntLE(7, 3) };
+		} else {
+			return false;
+		}
+	}
+
+	// Lossy webp stream signature
+	if (chunkHeader === 'VP8 ' && buffer[0] !== 0x2f) {
+		return { width: buffer.readInt16LE(6) & 0x3fff, height: buffer.readInt16LE(8) & 0x3fff };
+	}
+
+	// Lossless webp stream signature
+	var signature = buffer.toString('hex', 3, 6);
+	if (chunkHeader === 'VP8L' && signature !== '9d012a') {
+		return { width: 1 + (((buffer[2] & 0x3F) << 8) | buffer[1]), height: 1 + (((buffer[4] & 0xF) << 10) | (buffer[3] << 2) | ((buffer[2] & 0xC0) >> 6)) };
+	}
+
+	return false;
+}
+
+exports.checkWEBP = function (buffer) {
+	var riffHeader = 'RIFF' === buffer.toString('ascii', 0, 4);
+	var webpHeader = 'WEBP' === buffer.toString('ascii', 8, 12);
+	var vp8Header  = 'VP8'  === buffer.toString('ascii', 12, 15);
+	return (riffHeader && webpHeader && vp8Header);
+}
+
 exports.measureSVG = function(buffer) {
 
 	var match = buffer.toString('utf8').match(REGEXP_SVG);
@@ -175,10 +212,19 @@ ImageProto.measure = function(callback) {
 
 	F.stats.performance.open++;
 	var extension = self.filename.substring(index).toLowerCase();
-	var stream = require('fs').createReadStream(self.filename, { start: 0, end: extension === '.jpg' ? 40000 : 24 });
+	let options = { start: 0 };
 
+	if (extension === '.jpg') {
+		options.end = 40000;
+	} else if (extension === '.webp') {
+		// nothing
+	} else {
+		options.end = 24;
+	}
+	
+	var stream = require('fs').createReadStream(self.filename, options);
+	
 	stream.on('data', function(buffer) {
-
 		switch (extension) {
 			case '.jpg':
 				callback(null, exports.measureJPG(buffer));
@@ -188,6 +234,9 @@ ImageProto.measure = function(callback) {
 				return;
 			case '.png':
 				callback(null, exports.measurePNG(buffer));
+				return;
+			case '.webp':
+				callback(null, exports.measureWEBP(buffer));
 				return;
 		}
 
