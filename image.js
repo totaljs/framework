@@ -214,10 +214,8 @@ ImageProto.measure = function(callback) {
 	var extension = self.filename.substring(index).toLowerCase();
 	let options = { start: 0 };
 
-	if (extension === '.jpg') {
+	if (extension === '.jpg' || extension === '.webp') {
 		options.end = 40000;
-	} else if (extension === '.webp') {
-		// nothing
 	} else {
 		options.end = 24;
 	}
