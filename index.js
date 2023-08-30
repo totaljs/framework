@@ -1853,7 +1853,7 @@ F.stop = F.kill = function(signal) {
 
 	// var extenddelay = F.grapdbinstance && require('./graphdb').getImportantOperations() > 0;
 	// setTimeout(() => process.exit(signal), global.TEST || extenddelay ? 2000 : 300);
-	setTimeout(() => process.exit(signal), global.TEST ? 2000 : 300);
+	setTimeout(() => process.exit(1), global.TEST ? 2000 : 300);
 	return F;
 };
 
@@ -18899,7 +18899,7 @@ process.on('uncaughtException', function(e) {
 	if (err.indexOf('listen EADDRINUSE') !== -1) {
 		process.send && process.send('total:eaddrinuse');
 		console.log('\nThe IP address and the PORT is already in use.\nYou must change the PORT\'s number or IP address.\n');
-		process.exit('SIGTERM');
+		process.exit(1);
 		return;
 	} else if (CONF.allow_filter_errors && REG_SKIPERROR.test(err))
 		return;
