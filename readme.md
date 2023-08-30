@@ -1,7 +1,7 @@
-[![Professional Support](https://www.totaljs.com/img/badge-support.svg)](https://www.totaljs.com/support/) [![Chat with contributors](https://www.totaljs.com/img/badge-chat.svg)](https://messenger.totaljs.com) [![NPM version][npm-version-image]][npm-url] [![NPM quality][npm-quality]](http://packagequality.com/#?package=total.js) [![NPM downloads][npm-downloads-image]][npm-url] [![MIT License][license-image]][license-url] [![Build Status][travis-image]][travis-url] [![Gitter chat](https://badges.gitter.im/totaljs/framework.png)](https://messenger.totaljs.com)
-
 Node.js framework
 =================
+
+[![Made in EU](https://cdn.componentator.com/eu-small.png)](https://european-union.europa.eu/)
 
 __Total.js framework__ is a framework for Node.js platfrom written in `pure` JavaScript similar to PHP's Laravel or Python's Django or ASP.NET MVC. It can be used as web, desktop, service or IoT application.
 
